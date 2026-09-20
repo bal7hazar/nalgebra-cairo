@@ -425,6 +425,87 @@
       "baseline": 25040,
       "const": 19840
     },
+    "matrix6_abs": {
+      "baseline": 44440,
+      "componentwise": 82860
+    },
+    "matrix6_abs_diff_eq": {
+      "all_compared": 82140,
+      "baseline": 29940
+    },
+    "matrix6_add": {
+      "assign": 82880,
+      "baseline": 52740,
+      "operator": 82880
+    },
+    "matrix6_blocks": {
+      "baseline": 26940,
+      "from_blocks": 26940
+    },
+    "matrix6_diagonal": {
+      "baseline": 25440,
+      "blocks": 26040
+    },
+    "matrix6_fill": {
+      "baseline": 42140,
+      "from_diagonal_element": 48440,
+      "identity": 48440,
+      "zeros": 45740
+    },
+    "matrix6_from_diagonal": {
+      "baseline": 39340,
+      "blocks": 35440
+    },
+    "matrix6_is_identity": {
+      "all_compared": 74740,
+      "baseline": 24340
+    },
+    "matrix6_mul": {
+      "alt_blocks": 282590,
+      "assign": 167400,
+      "baseline": 52740,
+      "fused": 167400
+    },
+    "matrix6_mul_vec": {
+      "alt_blocks": 64610,
+      "baseline": 26840,
+      "fused": 49400
+    },
+    "matrix6_neg": {
+      "baseline": 44440,
+      "operator": 55240
+    },
+    "matrix6_new": {
+      "baseline": 37440,
+      "new": 43740
+    },
+    "matrix6_scale": {
+      "baseline": 44840,
+      "blocks": 111340
+    },
+    "matrix6_sub": {
+      "assign": 82880,
+      "baseline": 52740,
+      "operator": 82880
+    },
+    "matrix6_tr_mul": {
+      "alt_transpose_then_mul": 167400,
+      "baseline": 52740,
+      "fused": 167400
+    },
+    "matrix6_tr_mul_vec": {
+      "alt_transpose_then_mul_vec": 49400,
+      "baseline": 26840,
+      "fused": 49400
+    },
+    "matrix6_trace": {
+      "baseline": 22940,
+      "blocks": 26540
+    },
+    "matrix6_transpose": {
+      "baseline": 44440,
+      "blocks": 48040
+    },
     "point2_abs_diff_eq": {
       "baseline": 17150,
       "outside": 19360,
@@ -1380,6 +1461,87 @@
     "vector4_xyz": {
       "baseline": 17540,
       "xyz": 17840
+    },
+    "vector6_abs": {
+      "baseline": 19440,
+      "componentwise": 25040
+    },
+    "vector6_abs_diff_eq": {
+      "all_compared": 25820,
+      "baseline": 18240
+    },
+    "vector6_add": {
+      "assign": 26680,
+      "baseline": 21740,
+      "operator": 26680
+    },
+    "vector6_blocks": {
+      "baseline": 18240,
+      "from_blocks": 18240
+    },
+    "vector6_component_mul": {
+      "baseline": 21740,
+      "component_mul": 32740
+    },
+    "vector6_dot": {
+      "alt_two_sum_prod3": 24080,
+      "alt_unfused": 33640,
+      "baseline": 18940,
+      "wide": 21690
+    },
+    "vector6_fill": {
+      "baseline": 19540,
+      "zeros": 20440
+    },
+    "vector6_inf_sup": {
+      "baseline": 21740,
+      "inf": 27490,
+      "sup": 27490
+    },
+    "vector6_lerp": {
+      "baseline": 22140,
+      "fused": 34940
+    },
+    "vector6_neg": {
+      "baseline": 19440,
+      "operator": 21240
+    },
+    "vector6_new": {
+      "baseline": 18440,
+      "new": 19340
+    },
+    "vector6_norm": {
+      "alt_via_norm_squared": 21610,
+      "baseline": 16940,
+      "wide_sqrt": 19760
+    },
+    "vector6_norm_squared": {
+      "alt_two_blocks": 22080,
+      "baseline": 16940,
+      "wide": 19690
+    },
+    "vector6_normalize": {
+      "baseline": 19440,
+      "unscale_by_norm": 39300
+    },
+    "vector6_scale": {
+      "baseline": 19840,
+      "mul_assign": 30840,
+      "scale": 30840
+    },
+    "vector6_sub": {
+      "assign": 26380,
+      "baseline": 21440,
+      "operator": 26380
+    },
+    "vector6_sum": {
+      "baseline": 16940,
+      "sum": 20540
+    },
+    "vector6_unscale": {
+      "baseline": 19840,
+      "div_assign": 36780,
+      "unscale": 36780
     }
   },
   "nalgebra_testing": {
