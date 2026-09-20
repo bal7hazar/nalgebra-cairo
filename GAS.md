@@ -2829,6 +2829,296 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `substitution` | 70020 | 45880 | x1.00 |
 | `alt_recip` | 78900 | 54760 | x1.19 |
 
+## nalgebra::linalg::lu::lu2::tests
+
+### lu2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 19690 | 2950 | x1.00 |
+
+### lu2_factors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `l` | 18340 | 100 | x1.00 |
+| `u` | 18340 | 100 | x1.00 |
+
+### lu2_is_invertible
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 17450 | 700 | x1.00 |
+
+### lu2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_no_pivot` | 25270 | 7230 | x1.00 |
+| `pivot` | 28590 | 10550 | x1.46 |
+
+### lu2_p
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `field` | 16740 | 0 | - |
+
+### lu2_permute
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 18640 | 800 | x1.00 |
+
+### lu2_permute_rows
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 20440 | 1200 | x1.00 |
+
+### lu2_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 32380 | 14240 | x1.00 |
+| `alt_recip` | 34900 | 16760 | x1.18 |
+
+### lu2_solve_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 31890 | 14540 | x1.00 |
+
+### lu2_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `columns` | 37720 | 19180 | x1.00 |
+| `alt_recip` | 38400 | 19860 | x1.04 |
+| `alt_solve_columns` | 50620 | 32080 | x1.67 |
+
+## nalgebra::linalg::lu::lu3::tests
+
+### lu3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 25820 | 7880 | x1.00 |
+
+### lu3_factors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `l` | 21940 | 0 | - |
+| `u` | 21940 | 0 | - |
+
+### lu3_is_invertible
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 18750 | 800 | x1.00 |
+
+### lu3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_no_pivot` | 44810 | 23270 | x1.00 |
+| `pivot` | 54800 | 33260 | x1.43 |
+
+### lu3_p
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `field` | 18640 | 0 | - |
+
+### lu3_permute
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 21480 | 1740 | x1.00 |
+
+### lu3_permute_rows
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 27320 | 3380 | x1.00 |
+
+### lu3_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 43600 | 23560 | x1.00 |
+| `alt_recip` | 47600 | 27560 | x1.17 |
+
+### lu3_solve_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 42610 | 23860 | x1.00 |
+
+### lu3_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 67190 | 44950 | x1.00 |
+| `columns` | 68470 | 46230 | x1.03 |
+| `alt_solve_columns` | 97820 | 75580 | x1.68 |
+
+### lu3_vs_matrix3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `cofactors` | 28200 | 10660 | x1.00 |
+| `lu` | 58780 | 41240 | x3.87 |
+
+### lu3_vs_matrix3_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `lu` | 101430 | 79590 | x1.00 |
+| `cofactors` | 110780 | 88940 | x1.12 |
+
+## nalgebra::linalg::lu::lu4::tests
+
+### lu4_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 30680 | 11140 | x1.00 |
+
+### lu4_factors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `l` | 30640 | 1600 | x1.00 |
+| `u` | 30640 | 1600 | x1.00 |
+
+### lu4_is_invertible
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 20450 | 900 | x1.00 |
+
+### lu4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_no_pivot` | 83120 | 54680 | x1.00 |
+| `pivot` | 104430 | 75990 | x1.39 |
+
+### lu4_p
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `field` | 20840 | 0 | - |
+
+### lu4_permute
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 25330 | 3290 | x1.00 |
+
+### lu4_permute_rows
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 45140 | 12700 | x1.00 |
+
+### lu4_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 56520 | 34180 | x1.00 |
+| `alt_recip` | 62000 | 39660 | x1.16 |
+
+### lu4_solve_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 55030 | 34480 | x1.00 |
+
+### lu4_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 115190 | 84250 | x1.00 |
+| `columns` | 120810 | 89870 | x1.07 |
+| `alt_solve_columns` | 174260 | 143320 | x1.70 |
+
+## nalgebra::linalg::lu::lu6::benches
+
+### lu6_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 42800 | 18860 | x1.00 |
+
+### lu6_factors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `l` | 49940 | 3600 | x1.00 |
+| `u` | 49940 | 3600 | x1.00 |
+
+### lu6_is_invertible
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 25050 | 1100 | x1.00 |
+
+### lu6_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_no_pivot` | 218750 | 174310 | x1.00 |
+| `pivot` | 283850 | 239410 | x1.37 |
+
+### lu6_p
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `field` | 26440 | 0 | - |
+
+### lu6_permute
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 42640 | 14800 | x1.00 |
+
+### lu6_permute_rows
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpositions` | 97640 | 44800 | x1.00 |
+
+### lu6_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 93160 | 65020 | x1.00 |
+| `alt_recip` | 101600 | 73460 | x1.13 |
+
+### lu6_solve_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 90670 | 65320 | x1.00 |
+
+### lu6_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 262640 | 213300 | x1.00 |
+| `columns` | 282760 | 233420 | x1.09 |
+| `alt_solve_columns` | 451860 | 402520 | x1.89 |
+
+### matrix6_lu
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `determinant` | 277710 | 254770 | x1.00 |
+| `solve` | 328070 | 305130 | x1.20 |
+| `try_inverse` | 521570 | 498630 | x1.96 |
+
 ## nalgebra::linalg::symmetric_eigen2::tests
 
 ### symmetric_eigen2_eigenvalues

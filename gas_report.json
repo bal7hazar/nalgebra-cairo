@@ -1980,6 +1980,210 @@
       "substitution": 70020
     }
   },
+  "nalgebra::linalg::lu::lu2::tests": {
+    "lu2_determinant": {
+      "baseline": 16740,
+      "pivots": 19690
+    },
+    "lu2_factors": {
+      "baseline": 18240,
+      "l": 18340,
+      "u": 18340
+    },
+    "lu2_is_invertible": {
+      "baseline": 16750,
+      "pivots": 17450
+    },
+    "lu2_new": {
+      "alt_no_pivot": 25270,
+      "baseline": 18040,
+      "pivot": 28590
+    },
+    "lu2_p": {
+      "baseline": 16740,
+      "field": 16740
+    },
+    "lu2_permute": {
+      "baseline": 17840,
+      "transpositions": 18640
+    },
+    "lu2_permute_rows": {
+      "baseline": 19240,
+      "transpositions": 20440
+    },
+    "lu2_solve": {
+      "alt_recip": 34900,
+      "baseline": 18140,
+      "substitution": 32380
+    },
+    "lu2_solve_singular": {
+      "baseline": 17350,
+      "none": 31890
+    },
+    "lu2_try_inverse": {
+      "alt_recip": 38400,
+      "alt_solve_columns": 50620,
+      "baseline": 18540,
+      "columns": 37720
+    }
+  },
+  "nalgebra::linalg::lu::lu3::tests": {
+    "lu3_determinant": {
+      "baseline": 17940,
+      "pivots": 25820
+    },
+    "lu3_factors": {
+      "baseline": 21940,
+      "l": 21940,
+      "u": 21940
+    },
+    "lu3_is_invertible": {
+      "baseline": 17950,
+      "pivots": 18750
+    },
+    "lu3_new": {
+      "alt_no_pivot": 44810,
+      "baseline": 21540,
+      "pivot": 54800
+    },
+    "lu3_p": {
+      "baseline": 18640,
+      "field": 18640
+    },
+    "lu3_permute": {
+      "baseline": 19740,
+      "transpositions": 21480
+    },
+    "lu3_permute_rows": {
+      "baseline": 23940,
+      "transpositions": 27320
+    },
+    "lu3_solve": {
+      "alt_recip": 47600,
+      "baseline": 20040,
+      "substitution": 43600
+    },
+    "lu3_solve_singular": {
+      "baseline": 18750,
+      "none": 42610
+    },
+    "lu3_try_inverse": {
+      "alt_recip": 67190,
+      "alt_solve_columns": 97820,
+      "baseline": 22240,
+      "columns": 68470
+    },
+    "lu3_vs_matrix3_determinant": {
+      "baseline": 17540,
+      "cofactors": 28200,
+      "lu": 58780
+    },
+    "lu3_vs_matrix3_inverse": {
+      "baseline": 21840,
+      "cofactors": 110780,
+      "lu": 101430
+    }
+  },
+  "nalgebra::linalg::lu::lu4::tests": {
+    "lu4_determinant": {
+      "baseline": 19540,
+      "pivots": 30680
+    },
+    "lu4_factors": {
+      "baseline": 29040,
+      "l": 30640,
+      "u": 30640
+    },
+    "lu4_is_invertible": {
+      "baseline": 19550,
+      "pivots": 20450
+    },
+    "lu4_new": {
+      "alt_no_pivot": 83120,
+      "baseline": 28440,
+      "pivot": 104430
+    },
+    "lu4_p": {
+      "baseline": 20840,
+      "field": 20840
+    },
+    "lu4_permute": {
+      "baseline": 22040,
+      "transpositions": 25330
+    },
+    "lu4_permute_rows": {
+      "baseline": 32440,
+      "transpositions": 45140
+    },
+    "lu4_solve": {
+      "alt_recip": 62000,
+      "baseline": 22340,
+      "substitution": 56520
+    },
+    "lu4_solve_singular": {
+      "baseline": 20550,
+      "none": 55030
+    },
+    "lu4_try_inverse": {
+      "alt_recip": 115190,
+      "alt_solve_columns": 174260,
+      "baseline": 30940,
+      "columns": 120810
+    }
+  },
+  "nalgebra::linalg::lu::lu6::benches": {
+    "lu6_determinant": {
+      "baseline": 23940,
+      "pivots": 42800
+    },
+    "lu6_factors": {
+      "baseline": 46340,
+      "l": 49940,
+      "u": 49940
+    },
+    "lu6_is_invertible": {
+      "baseline": 23950,
+      "pivots": 25050
+    },
+    "lu6_new": {
+      "alt_no_pivot": 218750,
+      "baseline": 44440,
+      "pivot": 283850
+    },
+    "lu6_p": {
+      "baseline": 26440,
+      "field": 26440
+    },
+    "lu6_permute": {
+      "baseline": 27840,
+      "transpositions": 42640
+    },
+    "lu6_permute_rows": {
+      "baseline": 52840,
+      "transpositions": 97640
+    },
+    "lu6_solve": {
+      "alt_recip": 101600,
+      "baseline": 28140,
+      "substitution": 93160
+    },
+    "lu6_solve_singular": {
+      "baseline": 25350,
+      "none": 90670
+    },
+    "lu6_try_inverse": {
+      "alt_recip": 262640,
+      "alt_solve_columns": 451860,
+      "baseline": 49340,
+      "columns": 282760
+    },
+    "matrix6_lu": {
+      "baseline": 22940,
+      "determinant": 277710,
+      "solve": 328070,
+      "try_inverse": 521570
+    }
+  },
   "nalgebra::linalg::symmetric_eigen2::tests": {
     "symmetric_eigen2_eigenvalues": {
       "baseline": 16340,
