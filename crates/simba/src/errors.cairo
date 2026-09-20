@@ -6,3 +6,5 @@ pub const OVERFLOW: felt252 = 'simba: overflow';
 pub const DIVISION_BY_ZERO: felt252 = 'simba: division by zero';
 /// Square root (or inverse square root, or norm of a negative accumulator) of a negative number.
 pub const SQRT_OF_NEGATIVE: felt252 = 'simba: sqrt of negative';
+/// The argument is outside the domain of the function (`asin` / `acos` outside `[-1, 1]`).
+pub const DOMAIN: felt252 = 'simba: out of domain';

@@ -42,6 +42,10 @@ class SqrtNegative(FixedError):
     message = "simba: sqrt of negative"
 
 
+class Domain(FixedError):
+    message = "simba: out of domain"
+
+
 def check(raw):
     """The single overflow check performed at the end of every kernel."""
     if not MIN <= raw <= MAX:
@@ -306,6 +310,146 @@ def sum_prod_n(pairs):
     return rescale(sum(a * b for a, b in pairs))
 
 
+# --- transcendental functions -------------------------------------------------------------------
+# The polynomial halves are the GENERATED programs of `simba::fixed::kernels::poly`, replayed
+# operation by operation (`poly_ops.run`), so the model cannot drift from the Cairo code. What is
+# written here is the hand-written half, `simba::fixed::kernels::transcendental`: octant folding,
+# signs, reflections and domain checks.
+
+from poly_ops import A, EXP_K_MAX, EXP_K_MIN, EXP_Q0, LN_M, SQRT2_M, run as _poly  # noqa: E402
+
+FRAC_PI_2 = 6746518852  # floor(pi/2 * 2^32), the constant of `fixed::types`
+PI_RAW = 2 * FRAC_PI_2  # floor(pi * 2^32), exactly twice FRAC_PI_2
+
+
+def _split_octant(n):
+    """`(high, q, low)` = the three symmetry bits of an octant index."""
+    high, m = divmod(n, 4)
+    q, low = divmod(m, 2)
+    return bool(high), bool(q), bool(low)
+
+
+def _octant_arg(low, r):
+    return _poly("octant_complement", r) if low else r
+
+
+def _sin_of_octant(n, r):
+    high, q, low = _split_octant(n)
+    arg = _octant_arg(low, r)
+    mag = _poly("cos_octant", arg) if q != low else _poly("sin_octant", arg)
+    return -mag if high else mag
+
+
+def sin(x):
+    """sin(x), x in Q32.32 radians. Total."""
+    return _sin_of_octant(*_poly("reduce_octant", x))
+
+
+def cos(x):
+    """cos(x) = sin(x + pi/2): the same reduction, octant shifted by two. Total."""
+    return _sin_of_octant(*_poly("reduce_octant_cos", x))
+
+
+def _fold(kernel, x):
+    n, r = _poly("reduce_octant", x)
+    high, q, low = _split_octant(n)
+    a, b = _poly(kernel, _octant_arg(low, r))
+    s0, c0 = (b, a) if low else (a, b)
+    sm, cm = (c0, s0) if q else (s0, c0)
+    return sm, cm, high, q
+
+
+def sin_cos(x):
+    """(sin x, cos x): one reduction, one shared r^2. Bit for bit (sin(x), cos(x))."""
+    sm, cm, high, q = _fold("sin_cos_octant", x)
+    return (-sm if high else sm), (-cm if q != high else cm)
+
+
+def tan(x):
+    """tan(x) from a sine and a cosine with 48 fractional bits."""
+    sm, cm, _high, q = _fold("sin_cos_octant_wide", x)
+    if cm == 0:
+        raise DivisionByZero()
+    m = check(_poly("tan_ratio", sm, cm))
+    return -m if q else m
+
+
+def atan2(y, x):
+    """atan2(y, x) in (-pi, pi]. atan2(0, 0) = 0. Total."""
+    ax, ay = abs(x), abs(y)
+    swap = ay > ax
+    num, den = (ax, ay) if swap else (ay, ax)
+    if den == 0:
+        return 0
+    a = _poly("atan_unit", (num << A) // den)
+    if swap:
+        a = FRAC_PI_2 - a
+    if x < 0:
+        a = PI_RAW - a
+    return -a if y < 0 else a
+
+
+def atan(x):
+    """atan(x) in (-pi/2, pi/2). Bit for bit atan2(x, ONE). Total."""
+    ax = abs(x)
+    swap = ax > ONE
+    t = (1 << (A + FRAC_BITS)) // ax if swap else ax << (A - FRAC_BITS)
+    a = _poly("atan_unit", t)
+    if swap:
+        a = FRAC_PI_2 - a
+    return -a if x < 0 else a
+
+
+def _asin_halves(ax):
+    """(asin|x|, acos|x|) for 0 <= ax <= 1, whichever branch applies."""
+    if ax <= HALF:
+        a = _poly("asin_unit", ax << (A - FRAC_BITS))
+        return a, FRAC_PI_2 - a
+    # s = sqrt((1 - x) / 2) at scale 2^A: sqrt(d * 2^(2A - 33)) with d = ONE - ax.
+    d = _poly("asin_double", isqrt((ONE - ax) << (2 * A - FRAC_BITS - 1)))
+    return FRAC_PI_2 - d, d
+
+
+def asin(x):
+    """asin(x) in [-pi/2, pi/2]. Raises `Domain` for |x| > 1."""
+    ax = abs(x)
+    if ax > ONE:
+        raise Domain(x)
+    m, _ = _asin_halves(ax)
+    return -m if x < 0 else m
+
+
+def acos(x):
+    """acos(x) in [0, pi]. Raises `Domain` for |x| > 1."""
+    ax = abs(x)
+    if ax > ONE:
+        raise Domain(x)
+    _, m = _asin_halves(ax)
+    return PI_RAW - m if x < 0 else m
+
+
+def exp(x):
+    """exp(x) in [0, MAX]: 0 below x = -22.9, `Overflow` above x = 21.487."""
+    from poly_ops import LN2, OFF_LN2
+
+    q, f = divmod(x * (1 << (A - FRAC_BITS)) + OFF_LN2, LN2)
+    k = q - EXP_Q0
+    if k < EXP_K_MIN:
+        return 0  # underflow to zero, not an error
+    if k > EXP_K_MAX:
+        raise Overflow(x)
+    return check(_poly("exp_kernel", f, 1 << (k + 33)))
+
+
+def ln(x):
+    """ln(x), the natural logarithm. Raises `Domain` for x <= 0."""
+    if x <= 0:
+        raise Domain(x)
+    e = x.bit_length() - 1
+    mant = x << (LN_M - e)
+    return _poly("ln_lower" if mant < SQRT2_M else "ln_upper", mant, e)
+
+
 # --- constants --------------------------------------------------------------------------------------
 
 
@@ -341,6 +485,84 @@ def constants():
     for name, value in real.items():
         out[name] = int(mpmath.floor(value * ONE))
     return out
+
+
+def self_check_transcendental(dense=4000):
+    """Checks the transcendental model against mpmath and pins the exact values.
+
+    Called by `tools/polygen/polygen.py` (default mode and `--check`): a divergence between the
+    generated Cairo kernels and this model is a hard error.
+    """
+    import mpmath as mpm
+    import random
+
+    mpm.mp.prec = 200
+    rng = random.Random(0x51_4D_42_41)
+
+    # Exact values that the documentation guarantees.
+    assert sin(0) == 0 and cos(0) == ONE and tan(0) == 0
+    assert sin_cos(0) == (0, ONE)
+    assert asin(0) == 0 and atan(0) == 0 and atan2(0, 0) == 0
+    assert acos(0) == FRAC_PI_2 and acos(ONE) == 0 and acos(-ONE) == PI_RAW
+    assert asin(ONE) == FRAC_PI_2 and asin(-ONE) == -FRAC_PI_2
+    assert atan2(0, ONE) == 0 and atan2(0, -ONE) == PI_RAW
+    assert atan2(ONE, 0) == FRAC_PI_2 and atan2(-ONE, 0) == -FRAC_PI_2
+    assert atan2(-1, -ONE) == -PI_RAW + 1 or atan2(-1, -ONE) < 0
+    assert exp(0) == ONE and ln(ONE) == 0
+    assert exp(MIN) == 0 and exp(-23 * ONE) == 0
+    for over in (22 * ONE, MAX):
+        try:
+            exp(over)
+            raise AssertionError(over)
+        except Overflow:
+            pass
+    for bad in (0, -1, MIN):
+        try:
+            ln(bad)
+            raise AssertionError(bad)
+        except Domain:
+            pass
+
+    worst = {}
+
+    def note(name, got, want):
+        worst[name] = max(worst.get(name, 0), abs(got - want * ONE))
+
+    for i in range(dense + 1):
+        x = int(mpm.nint((mpm.mpf(-7) + mpm.mpf(14) * i / dense) * ONE))
+        note("sin", sin(x), mpm.sin(mpm.mpf(x) / ONE))
+        note("cos", cos(x), mpm.cos(mpm.mpf(x) / ONE))
+        s, c = sin_cos(x)
+        assert (s, c) == (sin(x), cos(x)), x
+        note("atan", atan(x), mpm.atan(mpm.mpf(x) / ONE))
+        assert atan(x) == atan2(x, ONE), x
+        u = int(mpm.nint((mpm.mpf(-1) + 2 * mpm.mpf(i) / dense) * ONE))
+        note("asin", asin(u), mpm.asin(mpm.mpf(u) / ONE))
+        note("acos", acos(u), mpm.acos(mpm.mpf(u) / ONE))
+        assert sin(-x) == -sin(x) and cos(-x) == cos(x), x
+        assert asin(-u) == -asin(u) and atan(-x) == -atan(x), (x, u)
+
+    for _ in range(dense):
+        y, x = rng.randrange(MIN, MAX), rng.randrange(MIN, MAX)
+        note("atan2", atan2(y, x), mpm.atan2(mpm.mpf(y) / ONE, mpm.mpf(x) / ONE))
+        x = rng.randrange(-(1 << 63), 1 << 63)
+        note("sin_big", sin(x), mpm.sin(mpm.mpf(x) / ONE))
+        # `exp` is relative, `ln` absolute.
+        x = rng.randrange(-22 * ONE, 21 * ONE)
+        want = mpm.e ** (mpm.mpf(x) / ONE)
+        worst["exp"] = max(
+            worst.get("exp", 0), abs(exp(x) - want * ONE) / max(want * ONE, ONE) * ONE
+        )
+        x = rng.randrange(1, MAX)
+        note("ln", ln(x), mpm.log(mpm.mpf(x) / ONE))
+
+    limits = {
+        "sin": 3, "cos": 3, "atan": 3, "asin": 3, "acos": 3, "atan2": 3, "sin_big": 4,
+        "exp": 3, "ln": 3,
+    }
+    for name, limit in limits.items():
+        assert worst[name] <= limit, (name, float(worst[name]), limit)
+    return {k: float(v) for k, v in worst.items()}
 
 
 # --- self-check -------------------------------------------------------------------------------------
@@ -413,6 +635,10 @@ def _self_check():
                 pass
             assert rem(a, ONE) == a - floor(a)
     print("fixed_model: self-check passed")
+    worst = self_check_transcendental()
+    print("  transcendental worst error (ulp): " + ", ".join(
+        f"{k} {v:.2f}" for k, v in sorted(worst.items())
+    ))
     for name, raw in constants().items():
         print(f"  {name:<14} {raw:>22}  {raw / ONE!r}")
 

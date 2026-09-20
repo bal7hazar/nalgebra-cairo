@@ -12,7 +12,7 @@
 
 use crate::fixed::types::Fixed;
 use crate::fixed::wide::{Wide, WideTrait};
-use crate::fixed::{convert, fused, math, types};
+use crate::fixed::{convert, fused, math, transcendental, types};
 
 /// Real scalar: constants, conversions, helpers, fused kernels and wide accumulation.
 ///
@@ -157,9 +157,15 @@ pub trait Real<T> {
     fn wide_sqrt(w: Self::Wide) -> T;
 }
 
-/// Transcendental functions, implemented by work package 1.2 (generated typed Horner
-/// polynomials, DESIGN D6). Declared separately so that `Real` stays implementable by scalars
-/// without them. Angles are in radians.
+/// Transcendental functions (generated typed Horner polynomials, DESIGN D6). Declared separately
+/// from `Real` so that a scalar can be a `Real` without them. Angles are in radians.
+///
+/// The numeric specification of every function (error in ulp, exact values, symmetries, domain
+/// and panics) is documented on the implementation, `simba::fixed::transcendental`.
+///
+/// `exp2` / `log2` / `powi` are **not** part of this trait: nothing in nalgebra's static surface
+/// needs them, `exp2(x) = exp(x * LN_2)` and `log2(x) = ln(x) * (1 / LN_2)` compose from what is
+/// here, and `powi` with a runtime exponent needs a loop (AGENTS.md rule 1).
 pub trait Transcendental<T> {
     /// Sine.
     fn sin(self: T) -> T;
@@ -181,6 +187,51 @@ pub trait Transcendental<T> {
     fn exp(self: T) -> T;
     /// Natural logarithm.
     fn ln(self: T) -> T;
+}
+
+/// `Transcendental` for the Q32.32 `Fixed`: `#[inline(always)]` forwards to the free functions of
+/// `simba::fixed::transcendental`, where the numeric specification lives.
+pub impl FixedTranscendental of Transcendental<Fixed> {
+    #[inline(always)]
+    fn sin(self: Fixed) -> Fixed {
+        transcendental::sin(self)
+    }
+    #[inline(always)]
+    fn cos(self: Fixed) -> Fixed {
+        transcendental::cos(self)
+    }
+    #[inline(always)]
+    fn sin_cos(self: Fixed) -> (Fixed, Fixed) {
+        transcendental::sin_cos(self)
+    }
+    #[inline(always)]
+    fn tan(self: Fixed) -> Fixed {
+        transcendental::tan(self)
+    }
+    #[inline(always)]
+    fn asin(self: Fixed) -> Fixed {
+        transcendental::asin(self)
+    }
+    #[inline(always)]
+    fn acos(self: Fixed) -> Fixed {
+        transcendental::acos(self)
+    }
+    #[inline(always)]
+    fn atan(self: Fixed) -> Fixed {
+        transcendental::atan(self)
+    }
+    #[inline(always)]
+    fn atan2(y: Fixed, x: Fixed) -> Fixed {
+        transcendental::atan2(y, x)
+    }
+    #[inline(always)]
+    fn exp(self: Fixed) -> Fixed {
+        transcendental::exp(self)
+    }
+    #[inline(always)]
+    fn ln(self: Fixed) -> Fixed {
+        transcendental::ln(self)
+    }
 }
 
 /// `Real` for the Q32.32 `Fixed`: every method is an `#[inline(always)]` forward to the free
