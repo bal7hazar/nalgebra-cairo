@@ -18,6 +18,7 @@
 //! `determinant` (plus `d` for `LDLᵀ`). The input is a `SymMatrix2` / `SymMatrix3` at sizes 2 and
 //! 3, and — there being no `SymMatrix4` / `SymMatrix6` — a `Matrix4` / `Matrix6` whose LOWER
 //! triangle is read, like upstream.
+//! - `lu`: `P·A = L·U` with partial pivoting for any square matrix (upstream `LU`).
 
 pub mod cholesky;
 #[cfg(test)]
@@ -25,6 +26,7 @@ mod eigen_test_utils;
 #[cfg(test)]
 mod factor_test_utils;
 pub mod ldlt;
+pub mod lu;
 #[cfg(test)]
 mod oracle_cholesky;
 #[cfg(test)]
@@ -39,5 +41,9 @@ pub use cholesky::{
     Cholesky6Trait,
 };
 pub use ldlt::{Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait, Ldlt6, Ldlt6Trait};
+pub use lu::{
+    Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix3LuTrait,
+    Matrix4LuTrait, Matrix6LuTrait, Perm2, Perm3, Perm4, Perm6, PermTrait,
+};
 pub use symmetric_eigen2::{SymmetricEigen2, SymmetricEigen2Trait};
 pub use symmetric_eigen3::{SymmetricEigen3, SymmetricEigen3Trait};
