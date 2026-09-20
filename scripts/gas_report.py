@@ -93,7 +93,7 @@ def flatten(report, prefix=""):
     return {
         f"{module}::{group}__{variant}": gas
         for module, groups in report.items()
-        if module.startswith(prefix)
+        if not prefix or module == prefix or module.startswith(prefix + "::")
         for group, variants in groups.items()
         for variant, gas in variants.items()
     }
