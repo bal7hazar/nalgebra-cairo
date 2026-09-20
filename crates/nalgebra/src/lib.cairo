@@ -13,8 +13,9 @@ pub use base::{
     SymMatrix3, SymMatrix3Trait, Vector6, Vector6Trait,
 };
 pub use geometry::{
-    Rotation2, Rotation2AngleTrait, Rotation2Trait, UnitComplex, UnitComplexAngleTrait,
-    UnitComplexTrait,
+    Quaternion, QuaternionTrait, Rotation2, Rotation2AngleTrait, Rotation2Trait, Rotation3,
+    Rotation3AngleTrait, Rotation3Trait, UnitComplex, UnitComplexAngleTrait, UnitComplexTrait,
+    UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
 };
 pub use linalg::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
