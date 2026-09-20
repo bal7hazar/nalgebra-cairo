@@ -1,0 +1,31 @@
+{
+  "simba_fixed::benches": {
+    "simba_fixed_convert": {
+      "baseline": 15540,
+      "roundtrip": 15540
+    },
+    "simba_fixed_mul": {
+      "baseline": 16340,
+      "via_fixed": 17920,
+      "via_simba": 18090
+    },
+    "simba_fixed_norm3": {
+      "baseline": 16340,
+      "via_fixed": 18560,
+      "via_glam_native": 18560,
+      "via_simba": 18560
+    },
+    "simba_fixed_sin_cos": {
+      "baseline": 15540,
+      "via_fixed": 46940,
+      "via_glam_native": 46940,
+      "via_simba": 32760
+    },
+    "simba_fixed_sum_prod3": {
+      "baseline": 17140,
+      "via_fixed": 19290,
+      "via_glam_native": 19120,
+      "via_simba": 19290
+    }
+  }
+}
