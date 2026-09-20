@@ -625,6 +625,282 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `const` | 19840 | -5200 | - |
 
+### point2_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `outside` | 19360 | 2210 | x1.00 |
+| `within` | 20140 | 2990 | x1.35 |
+
+### point2_add_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `add_assign` | 18820 | 1580 | x1.00 |
+| `add_vector` | 18820 | 1580 | x1.00 |
+
+### point2_center
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum_prod2` | 21240 | 4000 | x1.00 |
+| `alt_lerp` | 21440 | 4200 | x1.05 |
+| `alt_add_scale` | 22320 | 5080 | x1.27 |
+| `alt_add_div` | 22920 | 5680 | x1.42 |
+
+### point2_coords
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `coords` | 16840 | 200 | x1.00 |
+| `into_vector` | 16840 | 200 | x1.00 |
+
+### point2_distance
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `norm` | 20240 | 3500 | x1.00 |
+| `alt_sqrt` | 22090 | 5350 | x1.53 |
+
+### point2_distance_squared
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 20170 | 3430 | x1.00 |
+| `alt_unfused` | 22560 | 5820 | x1.70 |
+
+### point2_from
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `array` | 18040 | 200 | x1.00 |
+| `from_coordinates` | 18040 | 200 | x1.00 |
+| `tuple` | 18040 | 200 | x1.00 |
+| `vector` | 18040 | 200 | x1.00 |
+
+### point2_from_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `from_homogeneous` | 23220 | 6080 | x1.00 |
+| `alt_recip` | 23530 | 6390 | x1.05 |
+
+### point2_inf_sup
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `inf` | 19090 | 1850 | x1.00 |
+| `sup` | 19090 | 1850 | x1.00 |
+| `inf_sup` | 22040 | 4800 | x2.59 |
+
+### point2_into
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `array` | 16140 | 0 | - |
+| `tuple` | 16140 | 0 | - |
+
+### point2_lerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `lerp` | 21840 | 4200 | x1.00 |
+
+### point2_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `neg` | 17240 | 600 | x1.00 |
+
+### point2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `new` | 17040 | 200 | x1.00 |
+
+### point2_origin
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `origin` | 17040 | 200 | x1.00 |
+
+### point2_push
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `push` | 17840 | 300 | x1.00 |
+
+### point2_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `mul_assign` | 20640 | 3600 | x1.00 |
+| `scale` | 20640 | 3600 | x1.00 |
+
+### point2_sub_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sub_point` | 18820 | 1580 | x1.00 |
+
+### point2_sub_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sub_assign` | 18820 | 1580 | x1.00 |
+| `sub_vector` | 18820 | 1580 | x1.00 |
+
+### point2_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `to_homogeneous` | 17440 | 300 | x1.00 |
+
+### point2_unscale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `div_assign` | 22620 | 5580 | x1.00 |
+| `unscale` | 22620 | 5580 | x1.00 |
+
+### point3_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `outside` | 19840 | 2290 | x1.00 |
+| `within` | 21780 | 4230 | x1.85 |
+
+### point3_add_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `add_assign` | 20560 | 2420 | x1.00 |
+| `add_vector` | 20560 | 2420 | x1.00 |
+
+### point3_center
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum_prod2` | 24190 | 6050 | x1.00 |
+| `alt_lerp` | 24490 | 6350 | x1.05 |
+| `alt_add_scale` | 25810 | 7670 | x1.27 |
+| `alt_add_div` | 26710 | 8570 | x1.42 |
+
+### point3_coords
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `coords` | 17640 | 300 | x1.00 |
+| `into_vector` | 17640 | 300 | x1.00 |
+
+### point3_distance
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `norm` | 21580 | 4440 | x1.00 |
+| `alt_sqrt` | 23430 | 6290 | x1.42 |
+
+### point3_distance_squared
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21510 | 4370 | x1.00 |
+| `alt_unfused` | 26290 | 9150 | x2.09 |
+
+### point3_from
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `array` | 19240 | 300 | x1.00 |
+| `from_coordinates` | 19240 | 300 | x1.00 |
+| `tuple` | 19240 | 300 | x1.00 |
+| `vector` | 19240 | 300 | x1.00 |
+
+### point3_from_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 26080 | 8240 | x1.00 |
+| `from_homogeneous` | 26760 | 8920 | x1.08 |
+
+### point3_inf_sup
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sup` | 20960 | 2820 | x1.00 |
+| `inf` | 20970 | 2830 | x1.00 |
+| `inf_sup` | 25390 | 7250 | x2.57 |
+
+### point3_into
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `array` | 16340 | 0 | - |
+| `tuple` | 16340 | 0 | - |
+
+### point3_lerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `lerp` | 24890 | 6350 | x1.00 |
+
+### point3_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `neg` | 18240 | 900 | x1.00 |
+
+### point3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `new` | 18040 | 300 | x1.00 |
+
+### point3_origin
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `origin` | 17740 | 300 | x1.00 |
+
+### point3_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `mul_assign` | 23190 | 5450 | x1.00 |
+| `scale` | 23190 | 5450 | x1.00 |
+
+### point3_sub_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sub_point` | 20560 | 2420 | x1.00 |
+
+### point3_sub_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sub_assign` | 20560 | 2420 | x1.00 |
+| `sub_vector` | 20560 | 2420 | x1.00 |
+
+### point3_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `to_homogeneous` | 18240 | 400 | x1.00 |
+
+### point3_unscale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `div_assign` | 26160 | 8420 | x1.00 |
+| `unscale` | 26160 | 8420 | x1.00 |
+
+### point3_xy
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `xy` | 17040 | 200 | x1.00 |
+
 ### sym_matrix2_abs_diff_eq
 
 | variant | raw | net | vs best |
@@ -943,6 +1219,138 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `const` | 16840 | -1200 | - |
+
+### unit2_axes
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `x_axis` | 17040 | 200 | x1.00 |
+| `y_axis` | 17040 | 200 | x1.00 |
+
+### unit2_dot
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `dot` | 19290 | 1950 | x1.00 |
+
+### unit2_new_normalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `new_normalize` | 25140 | 7700 | x1.00 |
+
+### unit2_renormalize_fast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fma_factor` | 24240 | 7600 | x1.00 |
+
+### unit3_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `outside` | 19840 | 2290 | x1.00 |
+| `within` | 21780 | 4230 | x1.85 |
+
+### unit3_axes
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `x_axis` | 17740 | 300 | x1.00 |
+| `y_axis` | 17740 | 300 | x1.00 |
+| `z_axis` | 17740 | 300 | x1.00 |
+
+### unit3_dot
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `dot` | 20090 | 2150 | x1.00 |
+| `dot_vector` | 20090 | 2150 | x1.00 |
+| `alt_unfused` | 24870 | 6930 | x3.22 |
+
+### unit3_into_inner
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `as_ref` | 17340 | 0 | - |
+| `into_inner` | 17340 | 0 | - |
+
+### unit3_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `neg` | 18240 | 900 | x1.00 |
+
+### unit3_new_normalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `new_normalize` | 28880 | 10740 | x1.00 |
+| `new_and_get` | 29180 | 11040 | x1.03 |
+| `try_new` | 29850 | 11710 | x1.09 |
+| `try_new_and_get` | 30650 | 12510 | x1.16 |
+
+### unit3_new_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `new_unchecked` | 17340 | 0 | - |
+
+### unit3_orthonormal_basis
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `orthonormal_basis` | 34380 | 15540 | x1.00 |
+
+### unit3_renormalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `renormalize` | 28080 | 10740 | x1.00 |
+
+### unit3_renormalize_fast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fma_factor` | 26990 | 9650 | x1.00 |
+| `alt_upstream` | 27830 | 10490 | x1.09 |
+| `alt_exact` | 28080 | 10740 | x1.11 |
+| `alt_mul_add` | 28430 | 11090 | x1.15 |
+| `alt_scale` | 28670 | 11330 | x1.17 |
+| `alt_lerp` | 29930 | 12590 | x1.30 |
+
+### unit3_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scale` | 23190 | 5450 | x1.00 |
+
+### unit4_axes
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `w_axis` | 18440 | 400 | x1.00 |
+| `x_axis` | 18440 | 400 | x1.00 |
+| `y_axis` | 18440 | 400 | x1.00 |
+| `z_axis` | 18440 | 400 | x1.00 |
+
+### unit4_dot
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `dot` | 20890 | 2350 | x1.00 |
+
+### unit4_new_normalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `new_normalize` | 32620 | 13780 | x1.00 |
+
+### unit4_renormalize_fast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fma_factor` | 29740 | 11700 | x1.00 |
 
 ### vector2_abs
 

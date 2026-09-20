@@ -425,6 +425,202 @@
       "baseline": 25040,
       "const": 19840
     },
+    "point2_abs_diff_eq": {
+      "baseline": 17150,
+      "outside": 19360,
+      "within": 20140
+    },
+    "point2_add_vector": {
+      "add_assign": 18820,
+      "add_vector": 18820,
+      "baseline": 17240
+    },
+    "point2_center": {
+      "alt_add_div": 22920,
+      "alt_add_scale": 22320,
+      "alt_lerp": 21440,
+      "baseline": 17240,
+      "sum_prod2": 21240
+    },
+    "point2_coords": {
+      "baseline": 16640,
+      "coords": 16840,
+      "into_vector": 16840
+    },
+    "point2_distance": {
+      "alt_sqrt": 22090,
+      "baseline": 16740,
+      "norm": 20240
+    },
+    "point2_distance_squared": {
+      "alt_unfused": 22560,
+      "baseline": 16740,
+      "fused": 20170
+    },
+    "point2_from": {
+      "array": 18040,
+      "baseline": 17840,
+      "from_coordinates": 18040,
+      "tuple": 18040,
+      "vector": 18040
+    },
+    "point2_from_homogeneous": {
+      "alt_recip": 23530,
+      "baseline": 17140,
+      "from_homogeneous": 23220
+    },
+    "point2_inf_sup": {
+      "baseline": 17240,
+      "inf": 19090,
+      "inf_sup": 22040,
+      "sup": 19090
+    },
+    "point2_into": {
+      "array": 16140,
+      "baseline": 16140,
+      "tuple": 16140
+    },
+    "point2_lerp": {
+      "baseline": 17640,
+      "lerp": 21840
+    },
+    "point2_neg": {
+      "baseline": 16640,
+      "neg": 17240
+    },
+    "point2_new": {
+      "baseline": 16840,
+      "new": 17040
+    },
+    "point2_origin": {
+      "baseline": 16840,
+      "origin": 17040
+    },
+    "point2_push": {
+      "baseline": 17540,
+      "push": 17840
+    },
+    "point2_scale": {
+      "baseline": 17040,
+      "mul_assign": 20640,
+      "scale": 20640
+    },
+    "point2_sub_point": {
+      "baseline": 17240,
+      "sub_point": 18820
+    },
+    "point2_sub_vector": {
+      "baseline": 17240,
+      "sub_assign": 18820,
+      "sub_vector": 18820
+    },
+    "point2_to_homogeneous": {
+      "baseline": 17140,
+      "to_homogeneous": 17440
+    },
+    "point2_unscale": {
+      "baseline": 17040,
+      "div_assign": 22620,
+      "unscale": 22620
+    },
+    "point3_abs_diff_eq": {
+      "baseline": 17550,
+      "outside": 19840,
+      "within": 21780
+    },
+    "point3_add_vector": {
+      "add_assign": 20560,
+      "add_vector": 20560,
+      "baseline": 18140
+    },
+    "point3_center": {
+      "alt_add_div": 26710,
+      "alt_add_scale": 25810,
+      "alt_lerp": 24490,
+      "baseline": 18140,
+      "sum_prod2": 24190
+    },
+    "point3_coords": {
+      "baseline": 17340,
+      "coords": 17640,
+      "into_vector": 17640
+    },
+    "point3_distance": {
+      "alt_sqrt": 23430,
+      "baseline": 17140,
+      "norm": 21580
+    },
+    "point3_distance_squared": {
+      "alt_unfused": 26290,
+      "baseline": 17140,
+      "fused": 21510
+    },
+    "point3_from": {
+      "array": 19240,
+      "baseline": 18940,
+      "from_coordinates": 19240,
+      "tuple": 19240,
+      "vector": 19240
+    },
+    "point3_from_homogeneous": {
+      "alt_recip": 26080,
+      "baseline": 17840,
+      "from_homogeneous": 26760
+    },
+    "point3_inf_sup": {
+      "baseline": 18140,
+      "inf": 20970,
+      "inf_sup": 25390,
+      "sup": 20960
+    },
+    "point3_into": {
+      "array": 16340,
+      "baseline": 16340,
+      "tuple": 16340
+    },
+    "point3_lerp": {
+      "baseline": 18540,
+      "lerp": 24890
+    },
+    "point3_neg": {
+      "baseline": 17340,
+      "neg": 18240
+    },
+    "point3_new": {
+      "baseline": 17740,
+      "new": 18040
+    },
+    "point3_origin": {
+      "baseline": 17440,
+      "origin": 17740
+    },
+    "point3_scale": {
+      "baseline": 17740,
+      "mul_assign": 23190,
+      "scale": 23190
+    },
+    "point3_sub_point": {
+      "baseline": 18140,
+      "sub_point": 20560
+    },
+    "point3_sub_vector": {
+      "baseline": 18140,
+      "sub_assign": 20560,
+      "sub_vector": 20560
+    },
+    "point3_to_homogeneous": {
+      "baseline": 17840,
+      "to_homogeneous": 18240
+    },
+    "point3_unscale": {
+      "baseline": 17740,
+      "div_assign": 26160,
+      "unscale": 26160
+    },
+    "point3_xy": {
+      "baseline": 16840,
+      "xy": 17040
+    },
     "sym_matrix2_abs_diff_eq": {
       "all_compared": 21710,
       "baseline": 17150
@@ -645,6 +841,100 @@
     "sym_matrix3_zeros": {
       "baseline": 18040,
       "const": 16840
+    },
+    "unit2_axes": {
+      "baseline": 16840,
+      "x_axis": 17040,
+      "y_axis": 17040
+    },
+    "unit2_dot": {
+      "baseline": 17340,
+      "dot": 19290
+    },
+    "unit2_new_normalize": {
+      "baseline": 17440,
+      "new_normalize": 25140
+    },
+    "unit2_renormalize_fast": {
+      "baseline": 16640,
+      "fma_factor": 24240
+    },
+    "unit3_abs_diff_eq": {
+      "baseline": 17550,
+      "outside": 19840,
+      "within": 21780
+    },
+    "unit3_axes": {
+      "baseline": 17440,
+      "x_axis": 17740,
+      "y_axis": 17740,
+      "z_axis": 17740
+    },
+    "unit3_dot": {
+      "alt_unfused": 24870,
+      "baseline": 17940,
+      "dot": 20090,
+      "dot_vector": 20090
+    },
+    "unit3_into_inner": {
+      "as_ref": 17340,
+      "baseline": 17340,
+      "into_inner": 17340
+    },
+    "unit3_neg": {
+      "baseline": 17340,
+      "neg": 18240
+    },
+    "unit3_new_normalize": {
+      "baseline": 18140,
+      "new_and_get": 29180,
+      "new_normalize": 28880,
+      "try_new": 29850,
+      "try_new_and_get": 30650
+    },
+    "unit3_new_unchecked": {
+      "baseline": 17340,
+      "new_unchecked": 17340
+    },
+    "unit3_orthonormal_basis": {
+      "baseline": 18840,
+      "orthonormal_basis": 34380
+    },
+    "unit3_renormalize": {
+      "baseline": 17340,
+      "renormalize": 28080
+    },
+    "unit3_renormalize_fast": {
+      "alt_exact": 28080,
+      "alt_lerp": 29930,
+      "alt_mul_add": 28430,
+      "alt_scale": 28670,
+      "alt_upstream": 27830,
+      "baseline": 17340,
+      "fma_factor": 26990
+    },
+    "unit3_scale": {
+      "baseline": 17740,
+      "scale": 23190
+    },
+    "unit4_axes": {
+      "baseline": 18040,
+      "w_axis": 18440,
+      "x_axis": 18440,
+      "y_axis": 18440,
+      "z_axis": 18440
+    },
+    "unit4_dot": {
+      "baseline": 18540,
+      "dot": 20890
+    },
+    "unit4_new_normalize": {
+      "baseline": 18840,
+      "new_normalize": 32620
+    },
+    "unit4_renormalize_fast": {
+      "baseline": 18040,
+      "fma_factor": 29740
     },
     "vector2_abs": {
       "abs": 18500,
