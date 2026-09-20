@@ -6,10 +6,10 @@
 
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
-use simba::scalar::Real;
+use simba::scalar::{Real, Transcendental};
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
-use super::{Vector4, Vector4Trait};
+use super::{Vector4, Vector4AngleTrait, Vector4Trait};
 
 fn fx(raw: i64) -> Fixed {
     Fixed { raw }
@@ -917,4 +917,64 @@ fn bench_vector4_lerp__lerp() {
     let t: Fixed = black_box(fx(0x40000000));
     let e: Vector4<Fixed> = black_box(v4(0, -0x1a0000000, 0x350000000, 0x1a0000000));
     assert!(a.lerp(b, t) == e);
+}
+
+// --- angle: the half-angle form against upstream's `acos` of the normalized dot product
+
+/// `angle` the way upstream writes it: `acos(a·b / (|a|·|b|))`. `acos` is cheaper than `atan2`
+/// (11 430 against 15 400 gas), but the product of the norms overflows for long vectors, and near
+/// 0 the cosine has no bits left for the angle (`cos θ = 1 - θ²/2`).
+#[inline(always)]
+fn alt_angle_acos(a: Vector4<Fixed>, b: Vector4<Fixed>) -> Fixed {
+    let n = a.norm() * b.norm();
+    if n == Real::ZERO {
+        return Real::ZERO;
+    }
+    Transcendental::acos(a.dot(b) / n)
+}
+
+#[test]
+fn test_angle_alt_acos_loses_precision_on_close_directions() {
+    // Two directions 2^-20 rad apart: the half-angle form gets the angle, `acos` returns exactly
+    // zero, because its cosine `1 - 2^-41` floors to 1.
+    let (a, b) = (v4(0x100000000, 0, 0, 0), v4(0x100000000, 0x1000, 0, 0));
+    assert!(Real::abs_diff_eq(a.angle(b), fx(4096), 4));
+    assert!(alt_angle_acos(a, b) == Real::ZERO);
+}
+
+#[test]
+#[should_panic(expected: 'simba: overflow')]
+fn test_angle_alt_acos_overflows_on_long_vectors() {
+    // Norms of 1e6: their product does not fit Q32.32, while the half-angle form normalizes
+    // first and answers pi/2.
+    let (a, b) = (v4(0xf424000000000, 0, 0, 0), v4(0, 0xf424000000000, 0, 0));
+    assert!(Real::abs_diff_eq(a.angle(b), Real::FRAC_PI_2, 4));
+    let _ = alt_angle_acos(black_box(a), black_box(b));
+}
+
+#[test]
+#[inline(never)]
+fn bench_vector4_angle__baseline() {
+    let _a: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, -0x80000000));
+    let _b: Vector4<Fixed> = black_box(v4(-0x480000000, 0x40000000, 0x200000000, 0x800000000));
+    let e: Fixed = black_box(fx(7121693092));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_vector4_angle__half_angle() {
+    let a: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, -0x80000000));
+    let b: Vector4<Fixed> = black_box(v4(-0x480000000, 0x40000000, 0x200000000, 0x800000000));
+    let e: Fixed = black_box(fx(7121693092));
+    assert!(a.angle(b) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_vector4_angle__alt_acos() {
+    let a: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, -0x80000000));
+    let b: Vector4<Fixed> = black_box(v4(-0x480000000, 0x40000000, 0x200000000, 0x800000000));
+    let e: Fixed = black_box(fx(7121693092));
+    assert!(alt_angle_acos(a, b) == e);
 }
