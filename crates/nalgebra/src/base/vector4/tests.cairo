@@ -3,17 +3,16 @@
 //! the oracle vectors of `tools/oracle` (upstream nalgebra 0.35 on the same raw inputs).
 //!
 //! `oracle.cairo` is emitted from `tools/oracle` (committed vectors, 4 cases per distribution,
-//! every op of the suite but `angle`, which waits for `Transcendental<Fixed>`) with
-//! `cargo run --release -- emit-cairo vector4 --from vectors --max-per-dist 4 --out <oracle.cairo>
-//! --ops <list>`, `<list>` being the comma-separated `vector4_<op>` names of the oracle tests
-//! at the bottom of this file.
+//! every op of the suite) with
+//! `cargo run --release -- emit-cairo vector4 --from vectors --max-per-dist 4 --out
+//! <oracle.cairo>`.
 
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
-use simba::scalar::{FixedReal, Real, Transcendental};
+use simba::scalar::Real;
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
-use super::{Vector4, Vector4AngleImpl, Vector4Trait, oracle};
+use super::{Vector4, Vector4AngleTrait, Vector4Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;
 const MIN: i64 = -0x8000000000000000;
@@ -709,86 +708,51 @@ fn test_lerp_overflow() {
         );
 }
 
-// --- angle (behind `Transcendental`)
-
-/// Test double for `Transcendental`: `atan2` is exact at the cardinal configurations used below
-/// and panics elsewhere. It is passed EXPLICITLY to `Vector4AngleImpl`, so these tests do not
-/// depend on (nor conflict with) the real `Transcendental<Fixed>` impl of `simba`.
-impl CardinalAtan2 of Transcendental<Fixed> {
-    fn sin(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn cos(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn tan(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn asin(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn acos(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn atan(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn exp(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn ln(self: Fixed) -> Fixed {
-        core::panic_with_felt252('unused')
-    }
-    fn sin_cos(self: Fixed) -> (Fixed, Fixed) {
-        core::panic_with_felt252('unused')
-    }
-    fn atan2(y: Fixed, x: Fixed) -> Fixed {
-        if y == Real::ZERO {
-            Real::ZERO
-        } else if x == Real::ZERO {
-            Real::FRAC_PI_2
-        } else if x == y {
-            Real::FRAC_PI_4
-        } else {
-            core::panic_with_felt252('not cardinal')
-        }
-    }
-}
-
-fn angle(a: Vector4<Fixed>, b: Vector4<Fixed>) -> Fixed {
-    Vector4AngleImpl::<Fixed, FixedReal, CardinalAtan2>::angle(a, b)
-}
+// --- angle
 
 #[test]
 fn test_angle_cardinal_directions() {
-    // 2 * atan2(|u - v|, |u + v|) on the normalized vectors, whatever their lengths.
-    assert!(angle(v4(0x300000000, 0, 0, 0), v4(0x300000000, 0, 0, 0)) == Real::ZERO);
-    assert!(angle(v4(0x300000000, 0, 0, 0), v4(0x1500000000, 0, 0, 0)) == Real::ZERO);
+    // 2 * atan2(|u - v|, |u + v|) on the normalized vectors, whatever their lengths. `atan2` is
+    // accurate to 1.12 ulp (DESIGN D6) and normalizing the inputs costs a couple more, so the
+    // cardinal angles land within 4 ulp of the exact 0, pi/2 and pi. Parallel vectors give
+    // EXACTLY zero (`|u - v| = 0` and `atan2(0, x) = 0` for `x > 0`).
+    let half_turn = Real::<Fixed>::PI;
+    let quarter_turn = Real::<Fixed>::FRAC_PI_2;
+    assert!(v4(0x300000000, 0, 0, 0).angle(v4(0x300000000, 0, 0, 0)) == Real::ZERO);
+    assert!(v4(0x300000000, 0, 0, 0).angle(v4(0x1500000000, 0, 0, 0)) == Real::ZERO);
     assert!(
-        angle(v4(0x300000000, 0, 0, 0), v4(0, 0x80000000, 0, 0)) == Real::<Fixed>::FRAC_PI_4
-            + Real::FRAC_PI_4,
+        Real::abs_diff_eq(v4(0x300000000, 0, 0, 0).angle(v4(0, 0x80000000, 0, 0)), quarter_turn, 4),
     );
     assert!(
-        angle(v4(0, 0x80000000, 0, 0), v4(-0x300000000, 0, 0, 0)) == Real::<Fixed>::FRAC_PI_4
-            + Real::FRAC_PI_4,
+        Real::abs_diff_eq(
+            v4(0, 0x80000000, 0, 0).angle(v4(-0x300000000, 0, 0, 0)), quarter_turn, 4,
+        ),
     );
     assert!(
-        angle(v4(0x300000000, 0, 0, 0), v4(-0x300000000, 0, 0, 0)) == Real::<Fixed>::FRAC_PI_2
-            + Real::FRAC_PI_2,
+        Real::abs_diff_eq(v4(0x300000000, 0, 0, 0).angle(v4(-0x300000000, 0, 0, 0)), half_turn, 4),
     );
     // Lengths whose product overflows (upstream divides by `|a| * |b|`).
     assert!(
-        angle(v4(0xf424000000000, 0, 0, 0), v4(0, 0xf424000000000, 0, 0)) == Real::<
-            Fixed,
-        >::FRAC_PI_4
-            + Real::FRAC_PI_4,
+        Real::abs_diff_eq(
+            v4(0xf424000000000, 0, 0, 0).angle(v4(0, 0xf424000000000, 0, 0)), quarter_turn, 4,
+        ),
     );
 }
 
 #[test]
 fn test_angle_of_zero_vector_is_zero() {
-    assert!(angle(Vector4Trait::<Fixed>::zeros(), v4(0x300000000, 0, 0, 0)) == Real::ZERO);
-    assert!(angle(v4(0x300000000, 0, 0, 0), Vector4Trait::<Fixed>::zeros()) == Real::ZERO);
+    assert!(Vector4Trait::<Fixed>::zeros().angle(v4(0x300000000, 0, 0, 0)) == Real::ZERO);
+    assert!(v4(0x300000000, 0, 0, 0).angle(Vector4Trait::<Fixed>::zeros()) == Real::ZERO);
+}
+
+#[test]
+fn test_angle_oracle() {
+    let mut cases = oracle::vector4_angle_cases();
+    assert!(cases.len() >= 12);
+    while let Some(case) = cases.pop_front() {
+        let (a, b, expected, tol) = *case;
+        assert!(Real::abs_diff_eq(vt(a).angle(vt(b)), fx(expected), tol));
+    }
 }
 
 // --- oracle vectors (upstream nalgebra on the same raw inputs; `tol` in ulp, 0 = bit for bit)

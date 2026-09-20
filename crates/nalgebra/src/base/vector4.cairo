@@ -165,6 +165,10 @@ pub trait Vector4AngleTrait<T> {
     /// Computed as `2 * atan2(|u - v|, |u + v|)` on the normalized vectors `u`, `v` (Kahan):
     /// unlike upstream's `acos(dot / (|a| * |b|))`, it cannot overflow on long vectors and stays
     /// accurate for nearly parallel ones. Panics when a norm does not fit. Upstream: `angle`.
+    ///
+    /// The robustness costs 57 530 gas against 23 910 for upstream's form, kept as
+    /// `bench_vector4_angle__alt_acos`: that one returns exactly 0 for two directions 2^-20 rad
+    /// apart (its cosine floors to 1) and panics on vectors whose norms multiply out of range.
     fn angle(self: Vector4<T>, other: Vector4<T>) -> T;
 }
 
