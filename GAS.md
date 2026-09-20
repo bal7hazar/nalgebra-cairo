@@ -1337,6 +1337,55 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `const` | 16840 | -1200 | - |
 
+### symmetric_eigen2_eigenvalues
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 23810 | 7470 | x1.00 |
+
+### symmetric_eigen2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 40870 | 24530 | x1.00 |
+
+### symmetric_eigen2_recompose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quadform` | 50640 | 15410 | x1.00 |
+
+### symmetric_eigen3_eigenvalues
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `without_eigenvectors` | 320410 | 303470 | x1.00 |
+| `via_new` | 567710 | 550770 | x1.81 |
+
+### symmetric_eigen3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `jacobi_3_sweeps` | 442130 | 425190 | x1.00 |
+| `no_renormalisation` | 545250 | 528310 | x1.24 |
+| `jacobi_4_sweeps` | 567710 | 550770 | x1.30 |
+| `diagonal_input` | 568170 | 551230 | x1.30 |
+| `jacobi_5_sweeps` | 693290 | 676350 | x1.59 |
+| `jacobi_6_sweeps` | 818870 | 801930 | x1.89 |
+
+### symmetric_eigen3_recompose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quadform` | 601480 | 32610 | x1.00 |
+
+### symmetric_eigen3_sweep
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `three_rotations_without_eigenvectors` | 92200 | 73460 | x1.00 |
+| `three_rotations` | 144120 | 125380 | x1.71 |
+
 ### unit2_axes
 
 | variant | raw | net | vs best |
