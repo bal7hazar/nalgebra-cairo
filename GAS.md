@@ -2,291 +2,7 @@
 
 Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
-## nalgebra
-
-### cholesky2_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 19940 | 3600 | x1.00 |
-
-### cholesky2_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 33450 | 16110 | x1.00 |
-| `triangular` | 34420 | 17080 | x1.06 |
-
-### cholesky2_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 17940 | 100 | x1.00 |
-
-### cholesky2_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 29690 | 12350 | x1.00 |
-
-### cholesky2_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 35120 | 17680 | x1.00 |
-| `alt_recip` | 35700 | 18260 | x1.03 |
-
-### cholesky3_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 22390 | 5450 | x1.00 |
-
-### cholesky3_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 52450 | 33010 | x1.00 |
-| `triangular` | 55360 | 35920 | x1.09 |
-
-### cholesky3_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 20940 | 0 | - |
-
-### cholesky3_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 44920 | 25480 | x1.00 |
-
-### cholesky3_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 47060 | 28320 | x1.00 |
-| `alt_recip` | 48150 | 29410 | x1.04 |
-
-### cholesky4_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 25040 | 7300 | x1.00 |
-
-### cholesky4_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 86200 | 58960 | x1.00 |
-| `triangular` | 92020 | 64780 | x1.10 |
-
-### cholesky4_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 28840 | 1600 | x1.00 |
-
-### cholesky4_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 68120 | 44680 | x1.00 |
-
-### cholesky4_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 59700 | 39460 | x1.00 |
-| `alt_recip` | 61300 | 41060 | x1.04 |
-
-### cholesky6_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 30940 | 11000 | x1.00 |
-
-### cholesky6_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 173690 | 132250 | x1.00 |
-| `triangular` | 188240 | 146800 | x1.11 |
-
-### cholesky6_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 45940 | 3600 | x1.00 |
-
-### cholesky6_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 137530 | 102090 | x1.00 |
-
-### cholesky6_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 87080 | 63240 | x1.00 |
-| `alt_recip` | 89700 | 65860 | x1.04 |
-
-### ldlt2_d
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `accessor` | 17040 | 0 | - |
-
-### ldlt2_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 18090 | 1750 | x1.00 |
-
-### ldlt2_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 29950 | 12610 | x1.00 |
-| `triangular` | 30920 | 13580 | x1.08 |
-
-### ldlt2_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 17940 | 100 | x1.00 |
-
-### ldlt2_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 24070 | 6730 | x1.00 |
-| `alt_products` | 26120 | 8780 | x1.30 |
-
-### ldlt2_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 29040 | 11600 | x1.00 |
-| `alt_recip` | 32000 | 14560 | x1.26 |
-
-### ldlt3_d
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `accessor` | 18240 | 0 | - |
-
-### ldlt3_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 20540 | 3600 | x1.00 |
-
-### ldlt3_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 47200 | 27760 | x1.00 |
-| `triangular` | 50110 | 30670 | x1.10 |
-
-### ldlt3_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 20940 | 0 | - |
-
-### ldlt3_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 37010 | 17570 | x1.00 |
-| `alt_products` | 42560 | 23120 | x1.32 |
-
-### ldlt3_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 38160 | 19420 | x1.00 |
-| `alt_recip` | 42600 | 23860 | x1.23 |
-
-### ldlt4_d
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `accessor` | 19640 | 0 | - |
-
-### ldlt4_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 23190 | 5450 | x1.00 |
-
-### ldlt4_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 79200 | 51960 | x1.00 |
-| `triangular` | 85020 | 57780 | x1.11 |
-
-### ldlt4_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 28840 | 1600 | x1.00 |
-
-### ldlt4_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 57720 | 34280 | x1.00 |
-| `alt_products` | 68820 | 45380 | x1.32 |
-
-### ldlt4_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 47980 | 27740 | x1.00 |
-| `alt_recip` | 53900 | 33660 | x1.21 |
-
-### ldlt6_d
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `accessor` | 23340 | 0 | - |
-
-### ldlt6_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `diagonal_product` | 29390 | 9150 | x1.00 |
-
-### ldlt6_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_recip` | 163490 | 121750 | x1.00 |
-| `triangular` | 178040 | 136300 | x1.12 |
-
-### ldlt6_l
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 46240 | 3600 | x1.00 |
-
-### ldlt6_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `factorize` | 122450 | 86710 | x1.00 |
-| `alt_products` | 150200 | 114460 | x1.32 |
-
-### ldlt6_solve
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `substitution` | 70020 | 45880 | x1.00 |
-| `alt_recip` | 78900 | 54760 | x1.19 |
+## nalgebra::base::matrix2::tests
 
 ### matrix2_abs
 
@@ -489,6 +205,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `const` | 16240 | -800 | - |
+
+## nalgebra::base::matrix3::tests
 
 ### matrix3_abs
 
@@ -713,6 +431,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `const` | 17740 | -1800 | - |
 
+## nalgebra::base::matrix4::tests
+
 ### matrix4_abs
 
 | variant | raw | net | vs best |
@@ -909,6 +629,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `const` | 19840 | -5200 | - |
 
+## nalgebra::base::matrix6::benches
+
 ### matrix6_abs
 
 | variant | raw | net | vs best |
@@ -1025,6 +747,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `blocks` | 48040 | 3600 | x1.00 |
+
+## nalgebra::base::point2::benches
 
 ### point2_abs_diff_eq
 
@@ -1164,6 +888,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `div_assign` | 22620 | 5580 | x1.00 |
 | `unscale` | 22620 | 5580 | x1.00 |
 
+## nalgebra::base::point3::benches
+
 ### point3_abs_diff_eq
 
 | variant | raw | net | vs best |
@@ -1302,137 +1028,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `xy` | 17040 | 200 | x1.00 |
 
-### rotation2_abs_diff_eq
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `all_compared` | 19850 | 2210 | x1.00 |
-
-### rotation2_angle
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `atan2` | 31940 | 15400 | x1.00 |
-
-### rotation2_angle_to
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `first_columns` | 36840 | 19300 | x1.00 |
-| `alt_product_then_angle` | 43300 | 25760 | x1.33 |
-
-### rotation2_from_matrix
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `normalize_first_column` | 26340 | 8300 | x1.00 |
-
-### rotation2_from_matrix_unchecked
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `wrap` | 18040 | 0 | - |
-
-### rotation2_from_unit_complex
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 20040 | 2400 | x1.00 |
-
-### rotation2_identity
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `const` | 17240 | -200 | - |
-
-### rotation2_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `transpose` | 19640 | 1600 | x1.00 |
-
-### rotation2_inverse_transform_point
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `transposed` | 21640 | 4000 | x1.00 |
-
-### rotation2_inverse_transform_vector
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_inverse_then_transform` | 21640 | 4000 | x1.00 |
-| `transposed` | 21640 | 4000 | x1.00 |
-
-### rotation2_matrix
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `accessor` | 16840 | 300 | x1.00 |
-
-### rotation2_mul
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_complex` | 23640 | 4600 | x1.00 |
-| `matrix` | 29300 | 10260 | x2.23 |
-
-### rotation2_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `sin_cos` | 34860 | 17420 | x1.00 |
-
-### rotation2_powf
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `atan2_sin_cos` | 53110 | 34670 | x1.00 |
-
-### rotation2_renormalize
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `first_column` | 26340 | 8300 | x1.00 |
-
-### rotation2_rotation_between
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `algebraic` | 32800 | 14560 | x1.00 |
-| `alt_unit_complex` | 32900 | 14660 | x1.01 |
-
-### rotation2_scaled_rotation_between
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `atan2_sin_cos` | 59910 | 41270 | x1.00 |
-
-### rotation2_to_homogeneous
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 16540 | 0 | - |
-
-### rotation2_to_unit_complex
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `first_column` | 17840 | 800 | x1.00 |
-
-### rotation2_transform_point
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_unit_complex` | 21640 | 4000 | x1.00 |
-| `matrix` | 21640 | 4000 | x1.00 |
-
-### rotation2_transform_vector
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_unit_complex` | 26340 | 8700 | x1.00 |
-| `matrix` | 26340 | 8700 | x1.00 |
+## nalgebra::base::sym_matrix2::tests
 
 ### sym_matrix2_abs_diff_eq
 
@@ -1589,6 +1185,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `const` | 15940 | -600 | - |
+
+## nalgebra::base::sym_matrix3::tests
 
 ### sym_matrix3_abs_diff_eq
 
@@ -1753,54 +1351,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `const` | 16840 | -1200 | - |
 
-### symmetric_eigen2_eigenvalues
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `closed_form` | 23810 | 7470 | x1.00 |
-
-### symmetric_eigen2_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `closed_form` | 40870 | 24530 | x1.00 |
-
-### symmetric_eigen2_recompose
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `quadform` | 50640 | 15410 | x1.00 |
-
-### symmetric_eigen3_eigenvalues
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `without_eigenvectors` | 320410 | 303470 | x1.00 |
-| `via_new` | 567710 | 550770 | x1.81 |
-
-### symmetric_eigen3_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `jacobi_3_sweeps` | 442130 | 425190 | x1.00 |
-| `no_renormalisation` | 545250 | 528310 | x1.24 |
-| `jacobi_4_sweeps` | 567710 | 550770 | x1.30 |
-| `diagonal_input` | 568170 | 551230 | x1.30 |
-| `jacobi_5_sweeps` | 693290 | 676350 | x1.59 |
-| `jacobi_6_sweeps` | 818870 | 801930 | x1.89 |
-
-### symmetric_eigen3_recompose
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `quadform` | 601480 | 32610 | x1.00 |
-
-### symmetric_eigen3_sweep
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `three_rotations_without_eigenvectors` | 92200 | 73460 | x1.00 |
-| `three_rotations` | 144120 | 125380 | x1.71 |
+## nalgebra::base::unit::benches
 
 ### unit2_axes
 
@@ -1934,154 +1485,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fma_factor` | 29740 | 11700 | x1.00 |
 
-### unit_complex_abs_diff_eq
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `all_compared` | 18870 | 2030 | x1.00 |
-
-### unit_complex_accessors
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `complex` | 16840 | 200 | x1.00 |
-| `cos_sin_angle` | 17240 | 600 | x3.00 |
-
-### unit_complex_angle
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `atan2` | 31540 | 15400 | x1.00 |
-
-### unit_complex_angle_to
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused_atan2` | 36040 | 19300 | x1.00 |
-
-### unit_complex_append_axisangle_linearized
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_renormalize_fast` | 29040 | 12000 | x1.00 |
-| `renormalize` | 29140 | 12100 | x1.01 |
-| `alt_sin_cos` | 37960 | 20920 | x1.74 |
-
-### unit_complex_from_rotation_matrix
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `first_column` | 17240 | 200 | x1.00 |
-
-### unit_complex_identity
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `const` | 16340 | -100 | - |
-| `from_cos_sin_unchecked` | 16340 | -100 | - |
-
-### unit_complex_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `conjugate` | 18040 | 1400 | x1.00 |
-
-### unit_complex_inverse_transform_point
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused` | 21240 | 4000 | x1.00 |
-
-### unit_complex_inverse_transform_vector
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused` | 21240 | 4000 | x1.00 |
-| `alt_inverse_then_transform` | 21540 | 4300 | x1.07 |
-
-### unit_complex_mul
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused` | 21240 | 4000 | x1.00 |
-
-### unit_complex_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `sin_cos` | 33460 | 17020 | x1.00 |
-
-### unit_complex_powf
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `atan2_sin_cos` | 51310 | 34270 | x1.00 |
-
-### unit_complex_renormalize
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `norm_and_divisions` | 24340 | 7700 | x1.00 |
-
-### unit_complex_renormalize_fast
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `mul_add` | 24240 | 7600 | x1.00 |
-| `alt_exact` | 24340 | 7700 | x1.01 |
-| `alt_lerp` | 24640 | 8000 | x1.05 |
-| `alt_mul_add_each` | 24640 | 8000 | x1.05 |
-| `alt_literal` | 25080 | 8440 | x1.11 |
-
-### unit_complex_rotation_between
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `algebraic` | 31300 | 14060 | x1.00 |
-| `alt_normalized_inputs` | 45140 | 27900 | x1.98 |
-| `alt_atan2` | 69860 | 52620 | x3.74 |
-
-### unit_complex_rotation_to
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused` | 21240 | 4000 | x1.00 |
-
-### unit_complex_scaled_rotation_between
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `atan2_sin_cos` | 57410 | 39770 | x1.00 |
-
-### unit_complex_slerp
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `angle_then_compose` | 61570 | 43930 | x1.00 |
-
-### unit_complex_to_homogeneous
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 16440 | 300 | x1.00 |
-
-### unit_complex_to_rotation_matrix
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `expand` | 16740 | 600 | x1.00 |
-
-### unit_complex_transform_point
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused` | 21240 | 4000 | x1.00 |
-
-### unit_complex_transform_vector
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused` | 25940 | 8700 | x1.00 |
+## nalgebra::base::vector2::benches
 
 ### vector2_abs
 
@@ -2290,6 +1694,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `div_assign` | 22620 | 5580 | x1.00 |
 | `unscale` | 22620 | 5580 | x1.00 |
 | `alt_recip` | 22930 | 5890 | x1.06 |
+
+## nalgebra::base::vector3::benches
 
 ### vector3_abs
 
@@ -2520,6 +1926,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `xy` | 17040 | 200 | x1.00 |
 
+## nalgebra::base::vector4::benches
+
 ### vector4_abs
 
 | variant | raw | net | vs best |
@@ -2729,6 +2137,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `xyz` | 17840 | 300 | x1.00 |
 
+## nalgebra::base::vector6::benches
+
 ### vector6_abs
 
 | variant | raw | net | vs best |
@@ -2846,7 +2256,633 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `div_assign` | 36780 | 16940 | x1.00 |
 | `unscale` | 36780 | 16940 | x1.00 |
 
-## nalgebra_testing
+## nalgebra::geometry::rotation2::benches
+
+### rotation2_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 19850 | 2210 | x1.00 |
+
+### rotation2_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 31940 | 15400 | x1.00 |
+
+### rotation2_angle_to
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_columns` | 36840 | 19300 | x1.00 |
+| `alt_product_then_angle` | 43300 | 25760 | x1.33 |
+
+### rotation2_from_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `normalize_first_column` | 26340 | 8300 | x1.00 |
+
+### rotation2_from_matrix_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wrap` | 18040 | 0 | - |
+
+### rotation2_from_unit_complex
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 20040 | 2400 | x1.00 |
+
+### rotation2_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 17240 | -200 | - |
+
+### rotation2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpose` | 19640 | 1600 | x1.00 |
+
+### rotation2_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transposed` | 21640 | 4000 | x1.00 |
+
+### rotation2_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_inverse_then_transform` | 21640 | 4000 | x1.00 |
+| `transposed` | 21640 | 4000 | x1.00 |
+
+### rotation2_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 16840 | 300 | x1.00 |
+
+### rotation2_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_complex` | 23640 | 4600 | x1.00 |
+| `matrix` | 29300 | 10260 | x2.23 |
+
+### rotation2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 34860 | 17420 | x1.00 |
+
+### rotation2_powf
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 53110 | 34670 | x1.00 |
+
+### rotation2_renormalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_column` | 26340 | 8300 | x1.00 |
+
+### rotation2_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `algebraic` | 32800 | 14560 | x1.00 |
+| `alt_unit_complex` | 32900 | 14660 | x1.01 |
+
+### rotation2_scaled_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 59910 | 41270 | x1.00 |
+
+### rotation2_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 16540 | 0 | - |
+
+### rotation2_to_unit_complex
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_column` | 17840 | 800 | x1.00 |
+
+### rotation2_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_unit_complex` | 21640 | 4000 | x1.00 |
+| `matrix` | 21640 | 4000 | x1.00 |
+
+### rotation2_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_unit_complex` | 26340 | 8700 | x1.00 |
+| `matrix` | 26340 | 8700 | x1.00 |
+
+## nalgebra::geometry::unit_complex::benches
+
+### unit_complex_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 18870 | 2030 | x1.00 |
+
+### unit_complex_accessors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `complex` | 16840 | 200 | x1.00 |
+| `cos_sin_angle` | 17240 | 600 | x3.00 |
+
+### unit_complex_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 31540 | 15400 | x1.00 |
+
+### unit_complex_angle_to
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused_atan2` | 36040 | 19300 | x1.00 |
+
+### unit_complex_append_axisangle_linearized
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_renormalize_fast` | 29040 | 12000 | x1.00 |
+| `renormalize` | 29140 | 12100 | x1.01 |
+| `alt_sin_cos` | 37960 | 20920 | x1.74 |
+
+### unit_complex_from_rotation_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_column` | 17240 | 200 | x1.00 |
+
+### unit_complex_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16340 | -100 | - |
+| `from_cos_sin_unchecked` | 16340 | -100 | - |
+
+### unit_complex_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `conjugate` | 18040 | 1400 | x1.00 |
+
+### unit_complex_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+| `alt_inverse_then_transform` | 21540 | 4300 | x1.07 |
+
+### unit_complex_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 33460 | 17020 | x1.00 |
+
+### unit_complex_powf
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 51310 | 34270 | x1.00 |
+
+### unit_complex_renormalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `norm_and_divisions` | 24340 | 7700 | x1.00 |
+
+### unit_complex_renormalize_fast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `mul_add` | 24240 | 7600 | x1.00 |
+| `alt_exact` | 24340 | 7700 | x1.01 |
+| `alt_lerp` | 24640 | 8000 | x1.05 |
+| `alt_mul_add_each` | 24640 | 8000 | x1.05 |
+| `alt_literal` | 25080 | 8440 | x1.11 |
+
+### unit_complex_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `algebraic` | 31300 | 14060 | x1.00 |
+| `alt_normalized_inputs` | 45140 | 27900 | x1.98 |
+| `alt_atan2` | 69860 | 52620 | x3.74 |
+
+### unit_complex_rotation_to
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_scaled_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 57410 | 39770 | x1.00 |
+
+### unit_complex_slerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `angle_then_compose` | 61570 | 43930 | x1.00 |
+
+### unit_complex_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 16440 | 300 | x1.00 |
+
+### unit_complex_to_rotation_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 16740 | 600 | x1.00 |
+
+### unit_complex_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 25940 | 8700 | x1.00 |
+
+## nalgebra::linalg::cholesky::benches
+
+### cholesky2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 19940 | 3600 | x1.00 |
+
+### cholesky2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 33450 | 16110 | x1.00 |
+| `triangular` | 34420 | 17080 | x1.06 |
+
+### cholesky2_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 17940 | 100 | x1.00 |
+
+### cholesky2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 29690 | 12350 | x1.00 |
+
+### cholesky2_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 35120 | 17680 | x1.00 |
+| `alt_recip` | 35700 | 18260 | x1.03 |
+
+### cholesky3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 22390 | 5450 | x1.00 |
+
+### cholesky3_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 52450 | 33010 | x1.00 |
+| `triangular` | 55360 | 35920 | x1.09 |
+
+### cholesky3_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 20940 | 0 | - |
+
+### cholesky3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 44920 | 25480 | x1.00 |
+
+### cholesky3_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 47060 | 28320 | x1.00 |
+| `alt_recip` | 48150 | 29410 | x1.04 |
+
+### cholesky4_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 25040 | 7300 | x1.00 |
+
+### cholesky4_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 86200 | 58960 | x1.00 |
+| `triangular` | 92020 | 64780 | x1.10 |
+
+### cholesky4_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 28840 | 1600 | x1.00 |
+
+### cholesky4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 68120 | 44680 | x1.00 |
+
+### cholesky4_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 59700 | 39460 | x1.00 |
+| `alt_recip` | 61300 | 41060 | x1.04 |
+
+### cholesky6_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 30940 | 11000 | x1.00 |
+
+### cholesky6_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 173690 | 132250 | x1.00 |
+| `triangular` | 188240 | 146800 | x1.11 |
+
+### cholesky6_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 45940 | 3600 | x1.00 |
+
+### cholesky6_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 137530 | 102090 | x1.00 |
+
+### cholesky6_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 87080 | 63240 | x1.00 |
+| `alt_recip` | 89700 | 65860 | x1.04 |
+
+## nalgebra::linalg::ldlt::benches
+
+### ldlt2_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 17040 | 0 | - |
+
+### ldlt2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 18090 | 1750 | x1.00 |
+
+### ldlt2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 29950 | 12610 | x1.00 |
+| `triangular` | 30920 | 13580 | x1.08 |
+
+### ldlt2_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 17940 | 100 | x1.00 |
+
+### ldlt2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 24070 | 6730 | x1.00 |
+| `alt_products` | 26120 | 8780 | x1.30 |
+
+### ldlt2_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 29040 | 11600 | x1.00 |
+| `alt_recip` | 32000 | 14560 | x1.26 |
+
+### ldlt3_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 18240 | 0 | - |
+
+### ldlt3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 20540 | 3600 | x1.00 |
+
+### ldlt3_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 47200 | 27760 | x1.00 |
+| `triangular` | 50110 | 30670 | x1.10 |
+
+### ldlt3_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 20940 | 0 | - |
+
+### ldlt3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 37010 | 17570 | x1.00 |
+| `alt_products` | 42560 | 23120 | x1.32 |
+
+### ldlt3_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 38160 | 19420 | x1.00 |
+| `alt_recip` | 42600 | 23860 | x1.23 |
+
+### ldlt4_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 19640 | 0 | - |
+
+### ldlt4_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 23190 | 5450 | x1.00 |
+
+### ldlt4_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 79200 | 51960 | x1.00 |
+| `triangular` | 85020 | 57780 | x1.11 |
+
+### ldlt4_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 28840 | 1600 | x1.00 |
+
+### ldlt4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 57720 | 34280 | x1.00 |
+| `alt_products` | 68820 | 45380 | x1.32 |
+
+### ldlt4_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 47980 | 27740 | x1.00 |
+| `alt_recip` | 53900 | 33660 | x1.21 |
+
+### ldlt6_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 23340 | 0 | - |
+
+### ldlt6_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 29390 | 9150 | x1.00 |
+
+### ldlt6_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 163490 | 121750 | x1.00 |
+| `triangular` | 178040 | 136300 | x1.12 |
+
+### ldlt6_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 46240 | 3600 | x1.00 |
+
+### ldlt6_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 122450 | 86710 | x1.00 |
+| `alt_products` | 150200 | 114460 | x1.32 |
+
+### ldlt6_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 70020 | 45880 | x1.00 |
+| `alt_recip` | 78900 | 54760 | x1.19 |
+
+## nalgebra::linalg::symmetric_eigen2::tests
+
+### symmetric_eigen2_eigenvalues
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 23810 | 7470 | x1.00 |
+
+### symmetric_eigen2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 40870 | 24530 | x1.00 |
+
+### symmetric_eigen2_recompose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quadform` | 50640 | 15410 | x1.00 |
+
+## nalgebra::linalg::symmetric_eigen3::tests
+
+### symmetric_eigen3_eigenvalues
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `without_eigenvectors` | 320410 | 303470 | x1.00 |
+| `via_new` | 567710 | 550770 | x1.81 |
+
+### symmetric_eigen3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `jacobi_3_sweeps` | 442130 | 425190 | x1.00 |
+| `no_renormalisation` | 545250 | 528310 | x1.24 |
+| `jacobi_4_sweeps` | 567710 | 550770 | x1.30 |
+| `diagonal_input` | 568170 | 551230 | x1.30 |
+| `jacobi_5_sweeps` | 693290 | 676350 | x1.59 |
+| `jacobi_6_sweeps` | 818870 | 801930 | x1.89 |
+
+### symmetric_eigen3_recompose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quadform` | 601480 | 32610 | x1.00 |
+
+### symmetric_eigen3_sweep
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `three_rotations_without_eigenvectors` | 92200 | 73460 | x1.00 |
+| `three_rotations` | 144120 | 125380 | x1.71 |
+
+## nalgebra_testing::tests
 
 ### testing
 
@@ -2854,177 +2890,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `add_u64` | 15910 | 370 | x1.00 |
 
-## simba
-
-### abs
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_p` | 16630 | 690 | x1.00 |
-| `alt_downcast_p` | 16650 | 710 | x1.03 |
-| `alt_trim_first_n` | 16810 | 870 | x1.26 |
-| `fixed_n` | 16810 | 870 | x1.26 |
-| `alt_trim_first_p` | 16820 | 880 | x1.28 |
-| `alt_native_p` | 16830 | 890 | x1.29 |
-| `alt_native_n` | 17010 | 1070 | x1.55 |
-| `alt_downcast_n` | 17080 | 1140 | x1.65 |
-
-### abs_diff_eq
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_lt` | 18500 | 1750 | x1.00 |
-| `fixed_gt` | 18590 | 1840 | x1.05 |
-| `alt_native_gt` | 19170 | 2420 | x1.38 |
-| `alt_native_lt` | 19270 | 2520 | x1.44 |
-
-### acos
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg15_large` | 27370 | 11430 | x1.00 |
-| `deg15_small` | 27370 | 11430 | x1.00 |
-
-### add
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_checked_pn` | 16980 | 640 | x1.00 |
-| `alt_native_pn` | 16980 | 640 | x1.00 |
-| `fixed_nn` | 16980 | 640 | x1.00 |
-| `fixed_pn` | 16980 | 640 | x1.00 |
-| `fixed_pp` | 16980 | 640 | x1.00 |
-
-### add_assign
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 16980 | 640 | x1.00 |
-
-### asin
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg11_small` | 25950 | 10010 | x1.00 |
-| `deg15_large` | 27360 | 11420 | x1.14 |
-| `deg15_small_x` | 27360 | 11420 | x1.14 |
-| `deg19_small` | 27760 | 11820 | x1.18 |
-
-### atan
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `reciprocal_only` | 28470 | 12530 | x1.00 |
-| `above_one_with_division` | 29540 | 13600 | x1.09 |
-| `unit_no_division` | 29540 | 13600 | x1.09 |
-| `via_atan2` | 31340 | 15400 | x1.23 |
-
-### atan2
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg17` | 29730 | 13390 | x1.00 |
-| `deg21` | 31340 | 15000 | x1.12 |
-| `deg25` | 31740 | 15400 | x1.15 |
-| `deg29` | 33150 | 16810 | x1.26 |
-
-### ceil
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_n` | 17520 | 1580 | x1.00 |
-| `fixed_p` | 17520 | 1580 | x1.00 |
-| `alt_neg_floor_n` | 17750 | 1810 | x1.15 |
-| `alt_neg_floor_p` | 17750 | 1810 | x1.15 |
-| `alt_branch_n` | 19400 | 3460 | x2.19 |
-| `alt_branch_p` | 19400 | 3460 | x2.19 |
-
-### clamp
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_below` | 17550 | 810 | x1.00 |
-| `fixed_inside` | 18080 | 1340 | x1.65 |
-| `fixed_above` | 18090 | 1350 | x1.67 |
-
-### cos
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg10` | 28840 | 12900 | x1.00 |
-
-### diff_prod
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed` | 19090 | 1950 | x1.00 |
-| `unfused` | 21480 | 4340 | x2.23 |
-
-### div
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_np` | 19080 | 2740 | x1.00 |
-| `fixed_pp` | 19080 | 2740 | x1.00 |
-| `fixed_nn` | 19160 | 2820 | x1.03 |
-| `fixed_pn` | 19160 | 2820 | x1.03 |
-| `alt_trunc_peel_np` | 19680 | 3340 | x1.22 |
-| `alt_trunc_peel_pp` | 19700 | 3360 | x1.23 |
-| `alt_floor_peel_pp` | 19930 | 3590 | x1.31 |
-| `alt_floor_peel_np` | 20280 | 3940 | x1.44 |
-| `alt_floor_peel_pn` | 20280 | 3940 | x1.44 |
-| `alt_native_trunc_np` | 29220 | 12880 | x4.70 |
-| `alt_native_trunc_pp` | 29220 | 12880 | x4.70 |
-
-### div_assign
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 19160 | 2820 | x1.00 |
-
-### eq
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_np` | 16940 | 500 | x1.00 |
-| `fixed_pn` | 16940 | 500 | x1.00 |
-| `fixed_pp` | 16940 | 500 | x1.00 |
-
-### exp
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg6_alt` | 28820 | 12880 | x1.00 |
-| `deg8` | 30230 | 14290 | x1.11 |
-| `deg8_negative` | 30230 | 14290 | x1.11 |
-| `deg10_alt` | 31640 | 15700 | x1.22 |
-
-### floor
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_n` | 17150 | 1210 | x1.00 |
-| `fixed_p` | 17150 | 1210 | x1.00 |
-| `alt_sub_rem_n` | 17420 | 1480 | x1.22 |
-| `alt_sub_rem_p` | 17420 | 1480 | x1.22 |
-| `alt_native_p` | 19410 | 3470 | x2.87 |
-| `alt_native_n` | 20270 | 4330 | x3.58 |
-
-### fract
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_p` | 17640 | 1700 | x1.00 |
-| `fixed_n` | 17720 | 1780 | x1.05 |
-| `alt_sub_trunc_p` | 18380 | 2440 | x1.44 |
-| `alt_sub_trunc_n` | 18460 | 2520 | x1.48 |
+## simba::fixed::convert::tests
 
 ### from_int
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `fixed_n` | 16040 | 100 | x1.00 |
-| `alt_native_n` | 16580 | 640 | x6.40 |
 
 ### from_ratio
 
@@ -3039,22 +2911,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fixed` | 15940 | 0 | - |
 
-### ge
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 17230 | 880 | x1.00 |
-| `fixed_np` | 17310 | 960 | x1.09 |
-| `fixed_pp` | 17310 | 960 | x1.09 |
-
-### gt
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 17220 | 870 | x1.00 |
-| `fixed_np` | 17320 | 970 | x1.11 |
-| `fixed_pp` | 17320 | 970 | x1.11 |
-
 ### into
 
 | variant | raw | net | vs best |
@@ -3065,51 +2921,31 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `fixed_u16` | 16040 | 100 | x1.00 |
 | `fixed_u8` | 16040 | 100 | x1.00 |
 
-### inv_sqrt
+### to_int
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fixed_p` | 18770 | 2830 | x1.00 |
-| `alt_constrain_p` | 18870 | 2930 | x1.04 |
-| `alt_two_step_p` | 19610 | 3670 | x1.30 |
-| `alt_recip_p` | 20050 | 4110 | x1.45 |
+| `fixed_n` | 17050 | 1110 | x1.00 |
+| `fixed_p` | 17050 | 1110 | x1.00 |
 
-### is_negative
+### try_into
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fixed_n` | 16720 | 680 | x1.00 |
-| `fixed_p` | 16820 | 780 | x1.15 |
-| `alt_native_n` | 16920 | 880 | x1.29 |
-| `alt_native_p` | 17020 | 980 | x1.44 |
-| `alt_is_ok_n` | 17220 | 1180 | x1.74 |
-| `alt_is_ok_p` | 17220 | 1180 | x1.74 |
+| `fixed_u128` | 16310 | 370 | x1.00 |
+| `fixed_u32` | 16310 | 370 | x1.00 |
+| `fixed_u64` | 16310 | 370 | x1.00 |
+| `fixed_i128` | 16580 | 640 | x1.73 |
+| `fixed_i64` | 16580 | 640 | x1.73 |
 
-### is_positive
+## simba::fixed::fused::tests
 
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_p` | 16720 | 770 | x1.00 |
-| `fixed_n` | 16810 | 860 | x1.12 |
-| `alt_native_p` | 16920 | 970 | x1.26 |
-| `alt_native_n` | 17020 | 1070 | x1.39 |
-
-### is_zero
+### diff_prod
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fixed_is_zero` | 16340 | 300 | x1.00 |
-| `fixed_is_one` | 16540 | 500 | x1.67 |
-| `fixed_is_non_zero` | 16640 | 600 | x2.00 |
-| `fixed_is_non_one` | 16740 | 700 | x2.33 |
-
-### le
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_np` | 17230 | 790 | x1.00 |
-| `fixed_pp` | 17230 | 790 | x1.00 |
-| `fixed_pn` | 17310 | 870 | x1.10 |
+| `fixed` | 19090 | 1950 | x1.00 |
+| `unfused` | 21480 | 4340 | x2.23 |
 
 ### lerp
 
@@ -3118,53 +2954,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `fixed` | 18790 | 2050 | x1.00 |
 | `unfused` | 19970 | 3230 | x1.58 |
 
-### ln
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg7_alt` | 27110 | 11170 | x1.00 |
-| `deg11` | 28520 | 12580 | x1.13 |
-| `deg11_tiny` | 28520 | 12580 | x1.13 |
-
-### lt
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_constrain_np` | 17220 | 780 | x1.00 |
-| `fixed_np` | 17220 | 780 | x1.00 |
-| `fixed_pp` | 17220 | 780 | x1.00 |
-| `alt_constrain_pn` | 17320 | 880 | x1.13 |
-| `fixed_pn` | 17320 | 880 | x1.13 |
-
-### max
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 17110 | 770 | x1.00 |
-| `fixed_np` | 17120 | 780 | x1.01 |
-
-### min
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_constrain_np` | 17110 | 770 | x1.00 |
-| `fixed_np` | 17110 | 770 | x1.00 |
-| `alt_constrain_pn` | 17120 | 780 | x1.01 |
-| `fixed_pn` | 17120 | 780 | x1.01 |
-
-### mul
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_kernel_raw_pn` | 18090 | 1750 | x1.00 |
-| `fixed_nn` | 18090 | 1750 | x1.00 |
-| `fixed_pn` | 18090 | 1750 | x1.00 |
-| `fixed_pp` | 18090 | 1750 | x1.00 |
-| `alt_postcheck_pn` | 18190 | 1850 | x1.06 |
-| `alt_via_u128_pn` | 18190 | 1850 | x1.06 |
-| `alt_native_trunc_pp` | 26600 | 10260 | x5.86 |
-| `alt_native_trunc_pn` | 26680 | 10340 | x5.91 |
-
 ### mul_add
 
 | variant | raw | net | vs best |
@@ -3172,29 +2961,12 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `fixed` | 18690 | 1950 | x1.00 |
 | `unfused` | 19230 | 2490 | x1.28 |
 
-### mul_assign
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 18090 | 1750 | x1.00 |
-
 ### mul_sub
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `fixed` | 18690 | 1950 | x1.00 |
 | `unfused` | 19230 | 2490 | x1.28 |
-
-### neg
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_native_n` | 16240 | 300 | x1.00 |
-| `alt_native_p` | 16240 | 300 | x1.00 |
-| `fixed_n` | 16240 | 300 | x1.00 |
-| `fixed_p` | 16240 | 300 | x1.00 |
-| `alt_downcast_n` | 16310 | 370 | x1.23 |
-| `alt_downcast_p` | 16310 | 370 | x1.23 |
 
 ### norm2
 
@@ -3236,118 +3008,12 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fixed` | 19490 | 2350 | x1.00 |
 
-### real_cross3
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `generic` | 23790 | 6650 | x1.00 |
-
-### real_dot3
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `direct` | 19290 | 2150 | x1.00 |
-| `generic` | 19290 | 2150 | x1.00 |
-| `generic_wide` | 19290 | 2150 | x1.00 |
-
-### real_norm3
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `generic` | 18560 | 2220 | x1.00 |
-
-### recip
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_p` | 18130 | 2190 | x1.00 |
-| `fixed_n` | 18390 | 2450 | x1.12 |
-| `alt_div_p` | 18680 | 2740 | x1.25 |
-| `alt_div_n` | 18760 | 2820 | x1.29 |
-
-### rem
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_np` | 18350 | 2010 | x1.00 |
-| `fixed_pp` | 18350 | 2010 | x1.00 |
-| `fixed_nn` | 18420 | 2080 | x1.03 |
-| `fixed_pn` | 18420 | 2080 | x1.03 |
-| `alt_native_trunc_np` | 20660 | 4320 | x2.15 |
-| `alt_native_trunc_pp` | 20660 | 4320 | x2.15 |
-
-### rem_assign
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 18420 | 2080 | x1.00 |
-
-### round
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_half_up_n` | 17520 | 1580 | x1.00 |
-| `alt_half_up_p` | 17520 | 1580 | x1.00 |
-| `fixed_n` | 17930 | 1990 | x1.26 |
-| `fixed_p` | 18090 | 2150 | x1.36 |
-
-### signum
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_n` | 16610 | 670 | x1.00 |
-| `fixed_p` | 16720 | 780 | x1.16 |
-| `fixed_z` | 16820 | 880 | x1.31 |
-| `alt_native_p` | 16940 | 1000 | x1.49 |
-| `alt_native_z` | 17290 | 1350 | x2.01 |
-| `alt_native_n` | 17380 | 1440 | x2.15 |
-
-### sin
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg7_alt` | 27430 | 11490 | x1.00 |
-| `deg11` | 28740 | 12800 | x1.11 |
-| `deg11_huge_argument` | 28740 | 12800 | x1.11 |
-| `deg11_negative` | 28740 | 12800 | x1.11 |
-| `deg11_alt` | 28840 | 12900 | x1.12 |
-| `deg9_alt` | 28840 | 12900 | x1.12 |
-
-### sin_cos
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `shared` | 33060 | 16820 | x1.00 |
-| `two_calls` | 42040 | 25800 | x1.53 |
-
 ### sqr
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `fixed` | 17690 | 1750 | x1.00 |
 | `unfused` | 17690 | 1750 | x1.00 |
-
-### sqrt
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_native_p` | 17760 | 1820 | x1.00 |
-| `fixed_p` | 17760 | 1820 | x1.00 |
-| `alt_constrain_p` | 17860 | 1920 | x1.05 |
-
-### sub
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_native_pn` | 16980 | 640 | x1.00 |
-| `fixed_pn` | 16980 | 640 | x1.00 |
-| `fixed_pp` | 16980 | 640 | x1.00 |
-
-### sub_assign
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_pn` | 16980 | 640 | x1.00 |
 
 ### sum_prod2
 
@@ -3368,10 +3034,538 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `fixed` | 21090 | 2350 | x1.00 |
+| `unfused` | 28260 | 9520 | x4.05 |
+
+## simba::fixed::kernels::alternatives::tests
+
+### abs
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_downcast_p` | 16650 | - | x1.00 |
+| `alt_trim_first_n` | 16810 | - | x1.01 |
+| `alt_trim_first_p` | 16820 | - | x1.01 |
+| `alt_native_p` | 16830 | - | x1.01 |
+| `alt_native_n` | 17010 | - | x1.02 |
+| `alt_downcast_n` | 17080 | - | x1.03 |
+
+### abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_gt` | 19170 | - | x1.00 |
+| `alt_native_lt` | 19270 | - | x1.01 |
+
+### add
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_checked_pn` | 16980 | - | x1.00 |
+| `alt_native_pn` | 16980 | - | x1.00 |
+
+### ceil
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_neg_floor_n` | 17750 | - | x1.00 |
+| `alt_neg_floor_p` | 17750 | - | x1.00 |
+| `alt_branch_n` | 19400 | - | x1.09 |
+| `alt_branch_p` | 19400 | - | x1.09 |
+
+### div
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_trunc_peel_np` | 19680 | - | x1.00 |
+| `alt_trunc_peel_pp` | 19700 | - | x1.00 |
+| `alt_floor_peel_pp` | 19930 | - | x1.01 |
+| `alt_floor_peel_np` | 20280 | - | x1.03 |
+| `alt_floor_peel_pn` | 20280 | - | x1.03 |
+| `alt_native_trunc_np` | 29220 | - | x1.48 |
+| `alt_native_trunc_pp` | 29220 | - | x1.48 |
+
+### floor
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_sub_rem_n` | 17420 | - | x1.00 |
+| `alt_sub_rem_p` | 17420 | - | x1.00 |
+| `alt_native_p` | 19410 | - | x1.11 |
+| `alt_native_n` | 20270 | - | x1.16 |
+
+### fract
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_sub_trunc_p` | 18380 | - | x1.00 |
+| `alt_sub_trunc_n` | 18460 | - | x1.00 |
+
+### from_int
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_n` | 16580 | - | x1.00 |
+
+### inv_sqrt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_constrain_p` | 18870 | - | x1.00 |
+| `alt_two_step_p` | 19610 | - | x1.04 |
+| `alt_recip_p` | 20050 | - | x1.06 |
+
+### is_negative
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_n` | 16920 | - | x1.00 |
+| `alt_native_p` | 17020 | - | x1.01 |
+| `alt_is_ok_n` | 17220 | - | x1.02 |
+| `alt_is_ok_p` | 17220 | - | x1.02 |
+
+### is_positive
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_p` | 16920 | - | x1.00 |
+| `alt_native_n` | 17020 | - | x1.01 |
+
+### lt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_constrain_np` | 17220 | - | x1.00 |
+| `alt_constrain_pn` | 17320 | - | x1.01 |
+
+### min
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_constrain_np` | 17110 | - | x1.00 |
+| `alt_constrain_pn` | 17120 | - | x1.00 |
+
+### mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_kernel_raw_pn` | 18090 | - | x1.00 |
+| `alt_postcheck_pn` | 18190 | - | x1.01 |
+| `alt_via_u128_pn` | 18190 | - | x1.01 |
+| `alt_native_trunc_pp` | 26600 | - | x1.47 |
+| `alt_native_trunc_pn` | 26680 | - | x1.47 |
+
+### neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_n` | 16240 | - | x1.00 |
+| `alt_native_p` | 16240 | - | x1.00 |
+| `alt_downcast_n` | 16310 | - | x1.00 |
+| `alt_downcast_p` | 16310 | - | x1.00 |
+
+### recip
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_div_p` | 18680 | - | x1.00 |
+| `alt_div_n` | 18760 | - | x1.00 |
+
+### rem
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_trunc_np` | 20660 | - | x1.00 |
+| `alt_native_trunc_pp` | 20660 | - | x1.00 |
+
+### round
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_half_up_n` | 17520 | - | x1.00 |
+| `alt_half_up_p` | 17520 | - | x1.00 |
+
+### signum
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_p` | 16940 | - | x1.00 |
+| `alt_native_z` | 17290 | - | x1.02 |
+| `alt_native_n` | 17380 | - | x1.03 |
+
+### sqrt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_p` | 17760 | - | x1.00 |
+| `alt_constrain_p` | 17860 | - | x1.01 |
+
+### sub
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_pn` | 16980 | - | x1.00 |
+
+### sum_prod8
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_typed` | 25090 | - | x1.00 |
+| `alt_typed_postcheck` | 25190 | - | x1.00 |
+| `alt_chunked` | 27480 | - | x1.10 |
+| `alt_native_trunc` | 87720 | - | x3.50 |
+
+### to_int
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_native_p` | 19370 | - | x1.00 |
+| `alt_native_n` | 19630 | - | x1.01 |
+
+### trunc
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_floor_fix_p` | 19100 | - | x1.00 |
+| `alt_floor_fix_n` | 19600 | - | x1.03 |
+
+## simba::fixed::math::tests
+
+### abs
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_p` | 16630 | 690 | x1.00 |
+| `fixed_n` | 16810 | 870 | x1.26 |
+
+### abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_lt` | 18500 | 1750 | x1.00 |
+| `fixed_gt` | 18590 | 1840 | x1.05 |
+
+### ceil
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_n` | 17520 | 1580 | x1.00 |
+| `fixed_p` | 17520 | 1580 | x1.00 |
+
+### clamp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_below` | 17550 | 810 | x1.00 |
+| `fixed_inside` | 18080 | 1340 | x1.65 |
+| `fixed_above` | 18090 | 1350 | x1.67 |
+
+### floor
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_n` | 17150 | 1210 | x1.00 |
+| `fixed_p` | 17150 | 1210 | x1.00 |
+
+### fract
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_p` | 17640 | 1700 | x1.00 |
+| `fixed_n` | 17720 | 1780 | x1.05 |
+
+### inv_sqrt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_p` | 18770 | 2830 | x1.00 |
+
+### is_negative
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_n` | 16720 | 680 | x1.00 |
+| `fixed_p` | 16820 | 780 | x1.15 |
+
+### is_positive
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_p` | 16720 | 770 | x1.00 |
+| `fixed_n` | 16810 | 860 | x1.12 |
+
+### max
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 17110 | 770 | x1.00 |
+| `fixed_np` | 17120 | 780 | x1.01 |
+
+### min
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_np` | 17110 | 770 | x1.00 |
+| `fixed_pn` | 17120 | 780 | x1.01 |
+
+### recip
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_p` | 18130 | 2190 | x1.00 |
+| `fixed_n` | 18390 | 2450 | x1.12 |
+
+### round
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_n` | 17930 | 1990 | x1.00 |
+| `fixed_p` | 18090 | 2150 | x1.08 |
+
+### signum
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_n` | 16610 | 670 | x1.00 |
+| `fixed_p` | 16720 | 780 | x1.16 |
+| `fixed_z` | 16820 | 880 | x1.31 |
+
+### sqrt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_p` | 17760 | 1820 | x1.00 |
+
+### trunc
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_p` | 17640 | 1700 | x1.00 |
+| `fixed_n` | 17720 | 1780 | x1.05 |
+
+## simba::fixed::ops::tests
+
+### add
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_nn` | 16980 | 640 | x1.00 |
+| `fixed_pn` | 16980 | 640 | x1.00 |
+| `fixed_pp` | 16980 | 640 | x1.00 |
+
+### add_assign
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 16980 | 640 | x1.00 |
+
+### div
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_np` | 19080 | 2740 | x1.00 |
+| `fixed_pp` | 19080 | 2740 | x1.00 |
+| `fixed_nn` | 19160 | 2820 | x1.03 |
+| `fixed_pn` | 19160 | 2820 | x1.03 |
+
+### div_assign
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 19160 | 2820 | x1.00 |
+
+### eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_np` | 16940 | 500 | x1.00 |
+| `fixed_pn` | 16940 | 500 | x1.00 |
+| `fixed_pp` | 16940 | 500 | x1.00 |
+
+### ge
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 17230 | 880 | x1.00 |
+| `fixed_np` | 17310 | 960 | x1.09 |
+| `fixed_pp` | 17310 | 960 | x1.09 |
+
+### gt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 17220 | 870 | x1.00 |
+| `fixed_np` | 17320 | 970 | x1.11 |
+| `fixed_pp` | 17320 | 970 | x1.11 |
+
+### le
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_np` | 17230 | 790 | x1.00 |
+| `fixed_pp` | 17230 | 790 | x1.00 |
+| `fixed_pn` | 17310 | 870 | x1.10 |
+
+### lt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_np` | 17220 | 780 | x1.00 |
+| `fixed_pp` | 17220 | 780 | x1.00 |
+| `fixed_pn` | 17320 | 880 | x1.13 |
+
+### mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_nn` | 18090 | 1750 | x1.00 |
+| `fixed_pn` | 18090 | 1750 | x1.00 |
+| `fixed_pp` | 18090 | 1750 | x1.00 |
+
+### mul_assign
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 18090 | 1750 | x1.00 |
+
+### neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_n` | 16240 | 300 | x1.00 |
+| `fixed_p` | 16240 | 300 | x1.00 |
+
+### rem
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_np` | 18350 | 2010 | x1.00 |
+| `fixed_pp` | 18350 | 2010 | x1.00 |
+| `fixed_nn` | 18420 | 2080 | x1.03 |
+| `fixed_pn` | 18420 | 2080 | x1.03 |
+
+### rem_assign
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 18420 | 2080 | x1.00 |
+
+### sub
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 16980 | 640 | x1.00 |
+| `fixed_pp` | 16980 | 640 | x1.00 |
+
+### sub_assign
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_pn` | 16980 | 640 | x1.00 |
+
+## simba::fixed::transcendental::tests
+
+### acos
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `deg15_large` | 27370 | 11430 | x1.00 |
+| `deg15_small` | 27370 | 11430 | x1.00 |
+
+### asin
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `deg11_small` | 25950 | 10010 | x1.00 |
+| `deg15_large` | 27360 | 11420 | x1.14 |
+| `deg15_small_x` | 27360 | 11420 | x1.14 |
+| `deg19_small` | 27760 | 11820 | x1.18 |
+
+### atan
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reciprocal_only` | 28470 | 12530 | x1.00 |
+| `above_one_with_division` | 29540 | 13600 | x1.09 |
+| `unit_no_division` | 29540 | 13600 | x1.09 |
+| `via_atan2` | 31340 | 15400 | x1.23 |
+
+### atan2
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `deg17` | 29730 | 13390 | x1.00 |
+| `deg21` | 31340 | 15000 | x1.12 |
+| `deg25` | 31740 | 15400 | x1.15 |
+| `deg29` | 33150 | 16810 | x1.26 |
+
+### cos
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `deg10` | 28840 | 12900 | x1.00 |
+
+### exp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `deg6_alt` | 28820 | 12880 | x1.00 |
+| `deg8` | 30230 | 14290 | x1.11 |
+| `deg8_negative` | 30230 | 14290 | x1.11 |
+| `deg10_alt` | 31640 | 15700 | x1.22 |
+
+### ln
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `deg7_alt` | 27110 | 11170 | x1.00 |
+| `deg11` | 28520 | 12580 | x1.13 |
+| `deg11_tiny` | 28520 | 12580 | x1.13 |
+
+### sin
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `deg7_alt` | 27430 | 11490 | x1.00 |
+| `deg11` | 28740 | 12800 | x1.11 |
+| `deg11_huge_argument` | 28740 | 12800 | x1.11 |
+| `deg11_negative` | 28740 | 12800 | x1.11 |
+| `deg11_alt` | 28840 | 12900 | x1.12 |
+| `deg9_alt` | 28840 | 12900 | x1.12 |
+
+### sin_cos
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `shared` | 33060 | 16820 | x1.00 |
+| `two_calls` | 42040 | 25800 | x1.53 |
+
+### tan
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wide_ratio` | 35440 | 19500 | x1.00 |
+| `q32_ratio` | 35880 | 19940 | x1.02 |
+
+## simba::fixed::types::tests
+
+### is_zero
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fixed_is_zero` | 16340 | 300 | x1.00 |
+| `fixed_is_one` | 16540 | 500 | x1.67 |
+| `fixed_is_non_zero` | 16640 | 600 | x2.00 |
+| `fixed_is_non_one` | 16740 | 700 | x2.33 |
+
+## simba::fixed::wide::tests
+
+### sum_prod4
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
 | `fused_kernel` | 21090 | 2350 | x1.00 |
 | `wide` | 21090 | 2350 | x1.00 |
 | `wide_from_prod` | 21090 | 2350 | x1.00 |
-| `unfused` | 28260 | 9520 | x4.05 |
 
 ### sum_prod6
 
@@ -3384,47 +3578,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_typed` | 25090 | 3150 | x1.00 |
 | `wide` | 25090 | 3150 | x1.00 |
 | `wide_from_prod` | 25090 | 3150 | x1.00 |
-| `alt_typed_postcheck` | 25190 | 3250 | x1.03 |
-| `alt_chunked` | 27480 | 5540 | x1.76 |
-| `alt_native_trunc` | 87720 | 65780 | x20.88 |
-
-### tan
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `wide_ratio` | 35440 | 19500 | x1.00 |
-| `q32_ratio` | 35880 | 19940 | x1.02 |
-
-### to_int
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_n` | 17050 | 1110 | x1.00 |
-| `fixed_p` | 17050 | 1110 | x1.00 |
-| `alt_native_p` | 19370 | 3430 | x3.09 |
-| `alt_native_n` | 19630 | 3690 | x3.32 |
-
-### trunc
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_p` | 17640 | 1700 | x1.00 |
-| `fixed_n` | 17720 | 1780 | x1.05 |
-| `alt_floor_fix_p` | 19100 | 3160 | x1.86 |
-| `alt_floor_fix_n` | 19600 | 3660 | x2.15 |
-
-### try_into
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fixed_u128` | 16310 | 370 | x1.00 |
-| `fixed_u32` | 16310 | 370 | x1.00 |
-| `fixed_u64` | 16310 | 370 | x1.00 |
-| `fixed_i128` | 16580 | 640 | x1.73 |
-| `fixed_i64` | 16580 | 640 | x1.73 |
 
 ### wide_mixed
 
@@ -3437,4 +3592,26 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `wide` | 20760 | 2820 | x1.00 |
+
+## simba::scalar::tests
+
+### real_cross3
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `generic` | 23790 | 6650 | x1.00 |
+
+### real_dot3
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `direct` | 19290 | 2150 | x1.00 |
+| `generic` | 19290 | 2150 | x1.00 |
+| `generic_wide` | 19290 | 2150 | x1.00 |
+
+### real_norm3
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `generic` | 18560 | 2220 | x1.00 |
 
