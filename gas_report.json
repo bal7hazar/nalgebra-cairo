@@ -1,5 +1,201 @@
 {
   "nalgebra": {
+    "cholesky2_determinant": {
+      "baseline": 16340,
+      "diagonal_product": 19940
+    },
+    "cholesky2_inverse": {
+      "alt_recip": 33450,
+      "baseline": 17340,
+      "triangular": 34420
+    },
+    "cholesky2_l": {
+      "baseline": 17840,
+      "expand": 17940
+    },
+    "cholesky2_new": {
+      "baseline": 17340,
+      "factorize": 29690
+    },
+    "cholesky2_solve": {
+      "alt_recip": 35700,
+      "baseline": 17440,
+      "substitution": 35120
+    },
+    "cholesky3_determinant": {
+      "baseline": 16940,
+      "diagonal_product": 22390
+    },
+    "cholesky3_inverse": {
+      "alt_recip": 52450,
+      "baseline": 19440,
+      "triangular": 55360
+    },
+    "cholesky3_l": {
+      "baseline": 20940,
+      "expand": 20940
+    },
+    "cholesky3_new": {
+      "baseline": 19440,
+      "factorize": 44920
+    },
+    "cholesky3_solve": {
+      "alt_recip": 48150,
+      "baseline": 18740,
+      "substitution": 47060
+    },
+    "cholesky4_determinant": {
+      "baseline": 17740,
+      "diagonal_product": 25040
+    },
+    "cholesky4_inverse": {
+      "alt_recip": 86200,
+      "baseline": 27240,
+      "triangular": 92020
+    },
+    "cholesky4_l": {
+      "baseline": 27240,
+      "expand": 28840
+    },
+    "cholesky4_new": {
+      "baseline": 23440,
+      "factorize": 68120
+    },
+    "cholesky4_solve": {
+      "alt_recip": 61300,
+      "baseline": 20240,
+      "substitution": 59700
+    },
+    "cholesky6_determinant": {
+      "baseline": 19940,
+      "diagonal_product": 30940
+    },
+    "cholesky6_inverse": {
+      "alt_recip": 173690,
+      "baseline": 41440,
+      "triangular": 188240
+    },
+    "cholesky6_l": {
+      "baseline": 42340,
+      "expand": 45940
+    },
+    "cholesky6_new": {
+      "baseline": 35440,
+      "factorize": 137530
+    },
+    "cholesky6_solve": {
+      "alt_recip": 89700,
+      "baseline": 23840,
+      "substitution": 87080
+    },
+    "ldlt2_d": {
+      "accessor": 17040,
+      "baseline": 17040
+    },
+    "ldlt2_determinant": {
+      "baseline": 16340,
+      "diagonal_product": 18090
+    },
+    "ldlt2_inverse": {
+      "alt_recip": 29950,
+      "baseline": 17340,
+      "triangular": 30920
+    },
+    "ldlt2_l": {
+      "baseline": 17840,
+      "expand": 17940
+    },
+    "ldlt2_new": {
+      "alt_products": 26120,
+      "baseline": 17340,
+      "factorize": 24070
+    },
+    "ldlt2_solve": {
+      "alt_recip": 32000,
+      "baseline": 17440,
+      "substitution": 29040
+    },
+    "ldlt3_d": {
+      "accessor": 18240,
+      "baseline": 18240
+    },
+    "ldlt3_determinant": {
+      "baseline": 16940,
+      "diagonal_product": 20540
+    },
+    "ldlt3_inverse": {
+      "alt_recip": 47200,
+      "baseline": 19440,
+      "triangular": 50110
+    },
+    "ldlt3_l": {
+      "baseline": 20940,
+      "expand": 20940
+    },
+    "ldlt3_new": {
+      "alt_products": 42560,
+      "baseline": 19440,
+      "factorize": 37010
+    },
+    "ldlt3_solve": {
+      "alt_recip": 42600,
+      "baseline": 18740,
+      "substitution": 38160
+    },
+    "ldlt4_d": {
+      "accessor": 19640,
+      "baseline": 19640
+    },
+    "ldlt4_determinant": {
+      "baseline": 17740,
+      "diagonal_product": 23190
+    },
+    "ldlt4_inverse": {
+      "alt_recip": 79200,
+      "baseline": 27240,
+      "triangular": 85020
+    },
+    "ldlt4_l": {
+      "baseline": 27240,
+      "expand": 28840
+    },
+    "ldlt4_new": {
+      "alt_products": 68820,
+      "baseline": 23440,
+      "factorize": 57720
+    },
+    "ldlt4_solve": {
+      "alt_recip": 53900,
+      "baseline": 20240,
+      "substitution": 47980
+    },
+    "ldlt6_d": {
+      "accessor": 23340,
+      "baseline": 23340
+    },
+    "ldlt6_determinant": {
+      "baseline": 20240,
+      "diagonal_product": 29390
+    },
+    "ldlt6_inverse": {
+      "alt_recip": 163490,
+      "baseline": 41740,
+      "triangular": 178040
+    },
+    "ldlt6_l": {
+      "baseline": 42640,
+      "expand": 46240
+    },
+    "ldlt6_new": {
+      "alt_products": 150200,
+      "baseline": 35740,
+      "factorize": 122450
+    },
+    "ldlt6_solve": {
+      "alt_recip": 78900,
+      "baseline": 24140,
+      "substitution": 70020
+    },
     "matrix2_abs": {
       "baseline": 18040,
       "componentwise": 21680

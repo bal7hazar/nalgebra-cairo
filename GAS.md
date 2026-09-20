@@ -4,6 +4,290 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 ## nalgebra
 
+### cholesky2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 19940 | 3600 | x1.00 |
+
+### cholesky2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 33450 | 16110 | x1.00 |
+| `triangular` | 34420 | 17080 | x1.06 |
+
+### cholesky2_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 17940 | 100 | x1.00 |
+
+### cholesky2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 29690 | 12350 | x1.00 |
+
+### cholesky2_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 35120 | 17680 | x1.00 |
+| `alt_recip` | 35700 | 18260 | x1.03 |
+
+### cholesky3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 22390 | 5450 | x1.00 |
+
+### cholesky3_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 52450 | 33010 | x1.00 |
+| `triangular` | 55360 | 35920 | x1.09 |
+
+### cholesky3_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 20940 | 0 | - |
+
+### cholesky3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 44920 | 25480 | x1.00 |
+
+### cholesky3_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 47060 | 28320 | x1.00 |
+| `alt_recip` | 48150 | 29410 | x1.04 |
+
+### cholesky4_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 25040 | 7300 | x1.00 |
+
+### cholesky4_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 86200 | 58960 | x1.00 |
+| `triangular` | 92020 | 64780 | x1.10 |
+
+### cholesky4_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 28840 | 1600 | x1.00 |
+
+### cholesky4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 68120 | 44680 | x1.00 |
+
+### cholesky4_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 59700 | 39460 | x1.00 |
+| `alt_recip` | 61300 | 41060 | x1.04 |
+
+### cholesky6_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 30940 | 11000 | x1.00 |
+
+### cholesky6_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 173690 | 132250 | x1.00 |
+| `triangular` | 188240 | 146800 | x1.11 |
+
+### cholesky6_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 45940 | 3600 | x1.00 |
+
+### cholesky6_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 137530 | 102090 | x1.00 |
+
+### cholesky6_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 87080 | 63240 | x1.00 |
+| `alt_recip` | 89700 | 65860 | x1.04 |
+
+### ldlt2_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 17040 | 0 | - |
+
+### ldlt2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 18090 | 1750 | x1.00 |
+
+### ldlt2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 29950 | 12610 | x1.00 |
+| `triangular` | 30920 | 13580 | x1.08 |
+
+### ldlt2_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 17940 | 100 | x1.00 |
+
+### ldlt2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 24070 | 6730 | x1.00 |
+| `alt_products` | 26120 | 8780 | x1.30 |
+
+### ldlt2_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 29040 | 11600 | x1.00 |
+| `alt_recip` | 32000 | 14560 | x1.26 |
+
+### ldlt3_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 18240 | 0 | - |
+
+### ldlt3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 20540 | 3600 | x1.00 |
+
+### ldlt3_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 47200 | 27760 | x1.00 |
+| `triangular` | 50110 | 30670 | x1.10 |
+
+### ldlt3_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 20940 | 0 | - |
+
+### ldlt3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 37010 | 17570 | x1.00 |
+| `alt_products` | 42560 | 23120 | x1.32 |
+
+### ldlt3_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 38160 | 19420 | x1.00 |
+| `alt_recip` | 42600 | 23860 | x1.23 |
+
+### ldlt4_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 19640 | 0 | - |
+
+### ldlt4_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 23190 | 5450 | x1.00 |
+
+### ldlt4_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 79200 | 51960 | x1.00 |
+| `triangular` | 85020 | 57780 | x1.11 |
+
+### ldlt4_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 28840 | 1600 | x1.00 |
+
+### ldlt4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 57720 | 34280 | x1.00 |
+| `alt_products` | 68820 | 45380 | x1.32 |
+
+### ldlt4_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 47980 | 27740 | x1.00 |
+| `alt_recip` | 53900 | 33660 | x1.21 |
+
+### ldlt6_d
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 23340 | 0 | - |
+
+### ldlt6_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 29390 | 9150 | x1.00 |
+
+### ldlt6_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 163490 | 121750 | x1.00 |
+| `triangular` | 178040 | 136300 | x1.12 |
+
+### ldlt6_l
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 46240 | 3600 | x1.00 |
+
+### ldlt6_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `factorize` | 122450 | 86710 | x1.00 |
+| `alt_products` | 150200 | 114460 | x1.32 |
+
+### ldlt6_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 70020 | 45880 | x1.00 |
+| `alt_recip` | 78900 | 54760 | x1.19 |
+
 ### matrix2_abs
 
 | variant | raw | net | vs best |
