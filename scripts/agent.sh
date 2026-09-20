@@ -5,7 +5,7 @@
 #   scripts/agent.sh <worktree> <claude|codex> <model> <brief.md> <log> [--resume "<follow-up>"]
 #
 # claude: `--model` is sonnet | opus | fable; codex: `<model>` may carry an effort suffix, e.g.
-# `gpt-5.6:high` (default effort: high). The agent writes REPORT.md (git-ignored) at the worktree
+# `gpt-5.5:high` (default effort: high; `gpt-5.6` is not served to ChatGPT accounts). The agent writes REPORT.md (git-ignored) at the worktree
 # root; the orchestrator reads that file and the log, never the transcript.
 set -euo pipefail
 worktree=$1; cli=$2; model=$3; brief=$4; log=$5; shift 5

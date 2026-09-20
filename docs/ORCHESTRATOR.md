@@ -33,7 +33,9 @@ large directly.
   them.
 - The smaller the model (or the lower the effort), the tighter the brief must be.
 - The codex model tiering is inferred from the names (`gpt-6-astra` above `gpt-5.6-*`, which are
-  above `gpt-5.5`); adjust it if the actual ranking is known.
+  above `gpt-5.5`); adjust it if the actual ranking is known. Observed on 2026-09-20: the ChatGPT
+  account refuses `gpt-5.6` ("not supported when using Codex with a ChatGPT account"); `gpt-5.5`
+  works.
 
 ## The brief (mandatory, in this order)
 
