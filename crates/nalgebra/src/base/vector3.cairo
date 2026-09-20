@@ -1,4 +1,27 @@
 //! `Vector3`: a statically sized 3-dimensional column vector (upstream `nalgebra::Vector3`).
+//!
+//! - `Vector3Trait` / `Vector3Impl`: constructors, component-wise operations, reductions, products,
+//!   norms and interpolation, generic over a `simba::scalar::Real` scalar;
+//! - `Vector3AngleTrait` / `Vector3AngleImpl`: `angle`, which additionally needs
+//!   `simba::scalar::Transcendental`;
+//! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a scalar, and
+//!   conversions from / to `(T, T, T)` and `[T; 3]`: their impls live in this module, where the
+//!   compiler finds them without any import.
+//!
+//! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
+//! floor rounding and one overflow check per output scalar); nothing wraps silently.
+
+use core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
+use simba::scalar::{Real, Transcendental};
+use super::vector2::Vector2;
+use super::vector4::Vector4;
+
+#[cfg(test)]
+mod benches;
+#[cfg(test)]
+mod oracle;
+#[cfg(test)]
+mod tests;
 
 /// A 3-dimensional column vector.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
@@ -6,4 +29,544 @@ pub struct Vector3<T> {
     pub x: T,
     pub y: T,
     pub z: T,
+}
+
+/// Operations of `Vector3<T>` over a `Real` scalar. By value, unrolled, no loop.
+pub trait Vector3Trait<T> {
+    /// The vector `(x, y, z)`. Upstream: `Vector3::new`.
+    fn new(x: T, y: T, z: T) -> Vector3<T>;
+    /// The zero vector. Upstream: `Vector3::zeros`.
+    fn zeros() -> Vector3<T>;
+    /// The vector whose components all equal `elem`. Upstream: `Vector3::repeat`.
+    fn repeat(elem: T) -> Vector3<T>;
+    /// Alias of `repeat`. Upstream: `Vector3::from_element`.
+    fn from_element(elem: T) -> Vector3<T>;
+    /// The unit axis `(1, 0, 0)`. Upstream: `Vector3::x` (`x_axis` returns a `Unit`, which is not
+    /// ported yet).
+    fn x() -> Vector3<T>;
+    /// The unit axis `(0, 1, 0)`. Upstream: `Vector3::y` (`y_axis` returns a `Unit`, which is not
+    /// ported yet).
+    fn y() -> Vector3<T>;
+    /// The unit axis `(0, 0, 1)`. Upstream: `Vector3::z` (`z_axis` returns a `Unit`, which is not
+    /// ported yet).
+    fn z() -> Vector3<T>;
+    /// The first two components. Upstream: the `xy` swizzle (`fixed_rows::<2>(0)`).
+    fn xy(self: Vector3<T>) -> Vector2<T>;
+    /// `(x, y, z, w)`: appends a component. Upstream: `push`.
+    fn push(self: Vector3<T>, w: T) -> Vector4<T>;
+    /// `(x, y, z, 0)`: homogeneous coordinates of a vector (as opposed to a point). Upstream:
+    /// `to_homogeneous`.
+    fn to_homogeneous(self: Vector3<T>) -> Vector4<T>;
+    /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale`
+    /// (`self * k`).
+    fn scale(self: Vector3<T>, k: T) -> Vector3<T>;
+    /// `self / k`, each component being the exactly floored quotient. Panics on a zero `k` and
+    /// on overflow. Upstream: `unscale` (`self / k`).
+    ///
+    /// One division per component on purpose: `scale(k.recip())` is cheaper but rounds `1 / k`
+    /// first, which costs up to `|self|` ulp instead of 1 (measured by
+    /// `bench_vector3_unscale__alt_recip` and `test_unscale_alt_recip_is_less_accurate`).
+    /// Callers dividing many vectors by the same value should store its reciprocal and `scale`.
+    fn unscale(self: Vector3<T>, k: T) -> Vector3<T>;
+    /// Component-wise product, each component floored once. Panics on overflow. Upstream:
+    /// `component_mul`.
+    fn component_mul(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T>;
+    /// Component-wise quotient, each component exactly floored. Panics on a zero component of
+    /// `rhs` and on overflow. Upstream: `component_div`.
+    fn component_div(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T>;
+    /// Component-wise absolute value. Exact; panics on overflow (`|MIN|`). Upstream: `abs`.
+    fn abs(self: Vector3<T>) -> Vector3<T>;
+    /// Component-wise minimum (infimum). Exact. Upstream: `inf`.
+    fn inf(self: Vector3<T>, other: Vector3<T>) -> Vector3<T>;
+    /// Component-wise maximum (supremum). Exact. Upstream: `sup`.
+    fn sup(self: Vector3<T>, other: Vector3<T>) -> Vector3<T>;
+    /// `(self.inf(other), self.sup(other))`. Exact. Upstream: `inf_sup`.
+    fn inf_sup(self: Vector3<T>, other: Vector3<T>) -> (Vector3<T>, Vector3<T>);
+    /// The smallest component. Exact. Upstream: `min`.
+    fn min(self: Vector3<T>) -> T;
+    /// The largest component. Exact. Upstream: `max`.
+    fn max(self: Vector3<T>) -> T;
+    /// The smallest absolute value of a component. Panics on overflow (`|MIN|`). Upstream:
+    /// `amin`.
+    fn amin(self: Vector3<T>) -> T;
+    /// The largest absolute value of a component (infinity norm). Panics on overflow (`|MIN|`).
+    /// Upstream: `amax`.
+    fn amax(self: Vector3<T>) -> T;
+    /// Index (0, 1, 2) of the smallest component, the first one on ties. Upstream: `imin`.
+    fn imin(self: Vector3<T>) -> usize;
+    /// Index (0, 1, 2) of the largest component, the first one on ties. Upstream: `imax`.
+    fn imax(self: Vector3<T>) -> usize;
+    /// Index of the component with the smallest absolute value, the first one on ties. Panics on
+    /// overflow (`|MIN|`). Upstream: `iamin`.
+    fn iamin(self: Vector3<T>) -> usize;
+    /// Index of the component with the largest absolute value, the first one on ties. Panics on
+    /// overflow (`|MIN|`). Upstream: `iamax`.
+    fn iamax(self: Vector3<T>) -> usize;
+    /// Sum of the components. Exact; panics on overflow. Upstream: `sum`.
+    fn sum(self: Vector3<T>) -> T;
+    /// `true` when every component is zero. Upstream: `Zero::is_zero`.
+    fn is_zero(self: Vector3<T>) -> bool;
+    /// `true` when every component is within `ulps` smallest units (raw units for fixed point) of
+    /// the matching component of `other`; cannot overflow. Upstream:
+    /// `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp instead of a float
+    /// epsilon (DESIGN D3).
+    fn abs_diff_eq(self: Vector3<T>, other: Vector3<T>, ulps: u64) -> bool;
+    /// Dot product, fused (`Real::sum_prod3`): the exact sum of products is floored once. Only
+    /// the result must fit: panics on overflow. Upstream: `dot`.
+    fn dot(self: Vector3<T>, rhs: Vector3<T>) -> T;
+    /// Cross product, each component fused (`Real::diff_prod`): the exact difference of products
+    /// is floored once. Panics on overflow of a result component. Upstream: `cross`.
+    fn cross(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T>;
+    /// Squared Euclidean norm, fused (floored once). Panics on overflow: above a norm of about
+    /// 46 340 (Q32.32) only `norm` works. Upstream: `norm_squared`.
+    fn norm_squared(self: Vector3<T>) -> T;
+    /// Euclidean norm (`Real::norm3`): square root of the UNSCALED exact sum of squares, floored
+    /// once. No intermediate overflow: only the result must fit, so the norm of
+    /// `(1e6, 1e6, 1e6)` is fine. Upstream: `norm`.
+    fn norm(self: Vector3<T>) -> T;
+    /// Alias of `norm_squared`. Upstream: `magnitude_squared`.
+    fn magnitude_squared(self: Vector3<T>) -> T;
+    /// Alias of `norm`. Upstream: `magnitude`.
+    fn magnitude(self: Vector3<T>) -> T;
+    /// `(self - rhs).norm()`. Panics when a component difference or the result overflows.
+    /// Upstream: `metric_distance`.
+    fn metric_distance(self: Vector3<T>, rhs: Vector3<T>) -> T;
+    /// `self / self.norm()`: the floored norm, then one exactly floored division per component
+    /// (`unscale`). The error is about `1 + 1 / norm` ulp per component whatever the magnitude of
+    /// `self`, from a few ulp up to the longest vector whose norm fits. Panics with a division by
+    /// zero when the norm is zero, and on overflow when the norm does not fit. Upstream:
+    /// `normalize`.
+    ///
+    /// The cheaper candidates are kept as benchmarks (`bench_vector3_normalize__alt_*`): one
+    /// reciprocal of the norm then one product per component is off by about `norm` ulp and
+    /// overflows for norms up to `2^-31`; `inv_sqrt(norm_squared)` also overflows for norms above
+    /// 46 340 and has no precision left for short vectors.
+    fn normalize(self: Vector3<T>) -> Vector3<T>;
+    /// `Some(self.normalize())`, or `None` when the norm is `<= min_norm`. With `min_norm >= 0`
+    /// it never divides by zero. Upstream: `try_normalize`.
+    fn try_normalize(self: Vector3<T>, min_norm: T) -> Option<Vector3<T>>;
+    /// `self` when its norm is `<= max`, otherwise `self.scale(max / norm)` like upstream. The
+    /// ratio is floored, so the capped norm is short of `max` by up to about `norm / max` ulp and
+    /// exceeds it by at most the final rounding of the components. `max` is expected to be
+    /// `>= 0`. Panics only when the norm does not fit. Upstream: `cap_magnitude`.
+    ///
+    /// The more accurate and dearer `normalize().scale(max)` is kept as a benchmark
+    /// (`bench_vector3_cap_magnitude__alt_normalize`).
+    fn cap_magnitude(self: Vector3<T>, max: T) -> Vector3<T>;
+    /// `self + (rhs - self) * t` per component (`Real::lerp`: exact difference and product, one
+    /// floor rounding). `t` is not clamped; `t = 0` gives `self` and `t = 1` gives `rhs` exactly.
+    /// Panics on overflow of the result. Upstream: `lerp` (`self * (1 - t) + rhs * t`).
+    fn lerp(self: Vector3<T>, rhs: Vector3<T>, t: T) -> Vector3<T>;
+    /// Two unit vectors `(u, w)` orthogonal to `self` and to each other, with `u x w = self`.
+    /// `self` MUST be a unit vector (not checked). Branches on the sign of `z` only (Duff et
+    /// al., "Building an Orthonormal Basis, Revisited"): two divisions by `1 + |z|` in `[1, 2]`
+    /// and fused products, every component is within about 3 ulp. Upstream:
+    /// `Vector3::orthonormal_subspace_basis(&[v], ..)` (rapier: `orthonormal_basis`, glam:
+    /// `any_orthonormal_pair`). The upstream construction is kept as a benchmark
+    /// (`bench_vector3_orthonormal_basis__alt_upstream`).
+    fn orthonormal_basis(self: Vector3<T>) -> (Vector3<T>, Vector3<T>);
+}
+
+/// `angle` needs inverse trigonometry, hence its own trait: scalars may implement `Real` only.
+pub trait Vector3AngleTrait<T> {
+    /// The smallest angle between two vectors, in `[0, π]` (up to the rounding of `atan2`); `0`
+    /// when one of them is zero.
+    ///
+    /// Computed as `2 * atan2(|u - v|, |u + v|)` on the normalized vectors `u`, `v` (Kahan):
+    /// unlike upstream's `acos(dot / (|a| * |b|))`, it cannot overflow on long vectors and stays
+    /// accurate for nearly parallel ones. Panics when a norm does not fit. Upstream: `angle`.
+    fn angle(self: Vector3<T>, other: Vector3<T>) -> T;
+}
+
+pub impl Vector3Impl<
+    T,
+    impl R: Real<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Div<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+    +Copy<T>,
+    +Drop<T>,
+> of Vector3Trait<T> {
+    #[inline(always)]
+    fn new(x: T, y: T, z: T) -> Vector3<T> {
+        Vector3 { x, y, z }
+    }
+
+    #[inline(always)]
+    fn zeros() -> Vector3<T> {
+        Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO }
+    }
+
+    #[inline(always)]
+    fn repeat(elem: T) -> Vector3<T> {
+        Vector3 { x: elem, y: elem, z: elem }
+    }
+
+    #[inline(always)]
+    fn from_element(elem: T) -> Vector3<T> {
+        Vector3 { x: elem, y: elem, z: elem }
+    }
+
+    #[inline(always)]
+    fn x() -> Vector3<T> {
+        Vector3 { x: R::ONE, y: R::ZERO, z: R::ZERO }
+    }
+
+    #[inline(always)]
+    fn y() -> Vector3<T> {
+        Vector3 { x: R::ZERO, y: R::ONE, z: R::ZERO }
+    }
+
+    #[inline(always)]
+    fn z() -> Vector3<T> {
+        Vector3 { x: R::ZERO, y: R::ZERO, z: R::ONE }
+    }
+
+    #[inline(always)]
+    fn xy(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.x, y: self.y }
+    }
+
+    #[inline(always)]
+    fn push(self: Vector3<T>, w: T) -> Vector4<T> {
+        Vector4 { x: self.x, y: self.y, z: self.z, w }
+    }
+
+    #[inline(always)]
+    fn to_homogeneous(self: Vector3<T>) -> Vector4<T> {
+        Vector4 { x: self.x, y: self.y, z: self.z, w: R::ZERO }
+    }
+
+    #[inline(always)]
+    fn scale(self: Vector3<T>, k: T) -> Vector3<T> {
+        Vector3 { x: self.x * k, y: self.y * k, z: self.z * k }
+    }
+
+    #[inline(always)]
+    fn unscale(self: Vector3<T>, k: T) -> Vector3<T> {
+        Vector3 { x: self.x / k, y: self.y / k, z: self.z / k }
+    }
+
+    #[inline(always)]
+    fn component_mul(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x * rhs.x, y: self.y * rhs.y, z: self.z * rhs.z }
+    }
+
+    #[inline(always)]
+    fn component_div(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x / rhs.x, y: self.y / rhs.y, z: self.z / rhs.z }
+    }
+
+    #[inline(always)]
+    fn abs(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: R::abs(self.x), y: R::abs(self.y), z: R::abs(self.z) }
+    }
+
+    #[inline(always)]
+    fn inf(self: Vector3<T>, other: Vector3<T>) -> Vector3<T> {
+        Vector3 {
+            x: R::min(self.x, other.x), y: R::min(self.y, other.y), z: R::min(self.z, other.z),
+        }
+    }
+
+    #[inline(always)]
+    fn sup(self: Vector3<T>, other: Vector3<T>) -> Vector3<T> {
+        Vector3 {
+            x: R::max(self.x, other.x), y: R::max(self.y, other.y), z: R::max(self.z, other.z),
+        }
+    }
+
+    #[inline(always)]
+    fn inf_sup(self: Vector3<T>, other: Vector3<T>) -> (Vector3<T>, Vector3<T>) {
+        (Self::inf(self, other), Self::sup(self, other))
+    }
+
+    #[inline(always)]
+    fn min(self: Vector3<T>) -> T {
+        R::min(R::min(self.x, self.y), self.z)
+    }
+
+    #[inline(always)]
+    fn max(self: Vector3<T>) -> T {
+        R::max(R::max(self.x, self.y), self.z)
+    }
+
+    #[inline(always)]
+    fn amin(self: Vector3<T>) -> T {
+        R::min(R::min(R::abs(self.x), R::abs(self.y)), R::abs(self.z))
+    }
+
+    #[inline(always)]
+    fn amax(self: Vector3<T>) -> T {
+        R::max(R::max(R::abs(self.x), R::abs(self.y)), R::abs(self.z))
+    }
+
+    #[inline(always)]
+    fn imin(self: Vector3<T>) -> usize {
+        let (i, m): (usize, T) = if self.x <= self.y {
+            (0, self.x)
+        } else {
+            (1, self.y)
+        };
+        if m <= self.z {
+            i
+        } else {
+            2
+        }
+    }
+
+    #[inline(always)]
+    fn imax(self: Vector3<T>) -> usize {
+        let (i, m): (usize, T) = if self.x >= self.y {
+            (0, self.x)
+        } else {
+            (1, self.y)
+        };
+        if m >= self.z {
+            i
+        } else {
+            2
+        }
+    }
+
+    #[inline(always)]
+    fn iamin(self: Vector3<T>) -> usize {
+        Self::imin(Self::abs(self))
+    }
+
+    #[inline(always)]
+    fn iamax(self: Vector3<T>) -> usize {
+        Self::imax(Self::abs(self))
+    }
+
+    #[inline(always)]
+    fn sum(self: Vector3<T>) -> T {
+        self.x + self.y + self.z
+    }
+
+    #[inline(always)]
+    fn is_zero(self: Vector3<T>) -> bool {
+        self.x == R::ZERO && self.y == R::ZERO && self.z == R::ZERO
+    }
+
+    #[inline(always)]
+    fn abs_diff_eq(self: Vector3<T>, other: Vector3<T>, ulps: u64) -> bool {
+        R::abs_diff_eq(self.x, other.x, ulps)
+            && R::abs_diff_eq(self.y, other.y, ulps)
+            && R::abs_diff_eq(self.z, other.z, ulps)
+    }
+
+    #[inline(always)]
+    fn dot(self: Vector3<T>, rhs: Vector3<T>) -> T {
+        R::sum_prod3(self.x, rhs.x, self.y, rhs.y, self.z, rhs.z)
+    }
+
+    #[inline(always)]
+    fn cross(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T> {
+        Vector3 {
+            x: R::diff_prod(self.y, rhs.z, self.z, rhs.y),
+            y: R::diff_prod(self.z, rhs.x, self.x, rhs.z),
+            z: R::diff_prod(self.x, rhs.y, self.y, rhs.x),
+        }
+    }
+
+    #[inline(always)]
+    fn norm_squared(self: Vector3<T>) -> T {
+        R::norm_squared3(self.x, self.y, self.z)
+    }
+
+    #[inline(always)]
+    fn norm(self: Vector3<T>) -> T {
+        R::norm3(self.x, self.y, self.z)
+    }
+
+    #[inline(always)]
+    fn magnitude_squared(self: Vector3<T>) -> T {
+        R::norm_squared3(self.x, self.y, self.z)
+    }
+
+    #[inline(always)]
+    fn magnitude(self: Vector3<T>) -> T {
+        R::norm3(self.x, self.y, self.z)
+    }
+
+    #[inline(always)]
+    fn metric_distance(self: Vector3<T>, rhs: Vector3<T>) -> T {
+        R::norm3(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
+    }
+
+    #[inline(always)]
+    fn normalize(self: Vector3<T>) -> Vector3<T> {
+        Self::unscale(self, R::norm3(self.x, self.y, self.z))
+    }
+
+    #[inline(always)]
+    fn try_normalize(self: Vector3<T>, min_norm: T) -> Option<Vector3<T>> {
+        let n = R::norm3(self.x, self.y, self.z);
+        if n <= min_norm {
+            None
+        } else {
+            Some(Self::unscale(self, n))
+        }
+    }
+
+    #[inline(always)]
+    fn cap_magnitude(self: Vector3<T>, max: T) -> Vector3<T> {
+        let n = R::norm3(self.x, self.y, self.z);
+        if n <= max {
+            self
+        } else {
+            Self::scale(self, max / n)
+        }
+    }
+
+    #[inline(always)]
+    fn lerp(self: Vector3<T>, rhs: Vector3<T>, t: T) -> Vector3<T> {
+        Vector3 {
+            x: R::lerp(self.x, rhs.x, t),
+            y: R::lerp(self.y, rhs.y, t),
+            z: R::lerp(self.z, rhs.z, t),
+        }
+    }
+
+    #[inline(always)]
+    fn orthonormal_basis(self: Vector3<T>) -> (Vector3<T>, Vector3<T>) {
+        // With d = 1 + |z|, p = x^2 / d, q = x * y / d, r = y^2 / d (Duff et al., signs folded):
+        //   z >= 0: u = (1 - p, -q, -x), w = (-q, 1 - r, -y);
+        //   z <  0: u = (1 - p, -q,  x), w = ( q, r - 1, -y).
+        let d = R::ONE + R::abs(self.z);
+        let xd = self.x / d;
+        let yd = self.y / d;
+        let q = xd * self.y;
+        let ux = R::diff_prod(R::ONE, R::ONE, xd, self.x);
+        let wy = R::diff_prod(R::ONE, R::ONE, yd, self.y);
+        if R::is_negative(self.z) {
+            (Vector3 { x: ux, y: -q, z: self.x }, Vector3 { x: q, y: -wy, z: -self.y })
+        } else {
+            (Vector3 { x: ux, y: -q, z: -self.x }, Vector3 { x: -q, y: wy, z: -self.y })
+        }
+    }
+}
+
+pub impl Vector3AngleImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Div<T>,
+    +PartialEq<T>,
+    +Copy<T>,
+    +Drop<T>,
+> of Vector3AngleTrait<T> {
+    fn angle(self: Vector3<T>, other: Vector3<T>) -> T {
+        let n1 = R::norm3(self.x, self.y, self.z);
+        let n2 = R::norm3(other.x, other.y, other.z);
+        if n1 == R::ZERO || n2 == R::ZERO {
+            return R::ZERO;
+        }
+        let u = Vector3 { x: self.x / n1, y: self.y / n1, z: self.z / n1 };
+        let v = Vector3 { x: other.x / n2, y: other.y / n2, z: other.z / n2 };
+        let d = R::norm3(u.x - v.x, u.y - v.y, u.z - v.z);
+        let s = R::norm3(u.x + v.x, u.y + v.y, u.z + v.z);
+        let half = Tr::atan2(d, s);
+        half + half
+    }
+}
+
+/// `lhs + rhs`, component-wise. Exact; panics on overflow. Upstream: `Add`.
+pub impl Vector3Add<T, +Add<T>, +Copy<T>, +Drop<T>> of Add<Vector3<T>> {
+    #[inline(always)]
+    fn add(lhs: Vector3<T>, rhs: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: lhs.x + rhs.x, y: lhs.y + rhs.y, z: lhs.z + rhs.z }
+    }
+}
+
+/// `lhs - rhs`, component-wise. Exact; panics on overflow. Upstream: `Sub`.
+pub impl Vector3Sub<T, +Sub<T>, +Copy<T>, +Drop<T>> of Sub<Vector3<T>> {
+    #[inline(always)]
+    fn sub(lhs: Vector3<T>, rhs: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: lhs.x - rhs.x, y: lhs.y - rhs.y, z: lhs.z - rhs.z }
+    }
+}
+
+/// `-a`, component-wise. Exact; panics on overflow (`-MIN`). Upstream: `Neg`.
+pub impl Vector3Neg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<Vector3<T>> {
+    #[inline(always)]
+    fn neg(a: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: -a.x, y: -a.y, z: -a.z }
+    }
+}
+
+/// `self += rhs`. Exact; panics on overflow. Upstream: `AddAssign`.
+pub impl Vector3AddAssign<T, +Add<T>, +Copy<T>, +Drop<T>> of AddAssign<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn add_assign(ref self: Vector3<T>, rhs: Vector3<T>) {
+        self = Vector3 { x: self.x + rhs.x, y: self.y + rhs.y, z: self.z + rhs.z };
+    }
+}
+
+/// `self -= rhs`. Exact; panics on overflow. Upstream: `SubAssign`.
+pub impl Vector3SubAssign<T, +Sub<T>, +Copy<T>, +Drop<T>> of SubAssign<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn sub_assign(ref self: Vector3<T>, rhs: Vector3<T>) {
+        self = Vector3 { x: self.x - rhs.x, y: self.y - rhs.y, z: self.z - rhs.z };
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place (corelib's binary `*` is homogeneous, so `v * k`
+/// is the named method `scale`). Upstream: `MulAssign<T>`.
+pub impl Vector3MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector3<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Vector3<T>, rhs: T) {
+        self = Vector3 { x: self.x * rhs, y: self.y * rhs, z: self.z * rhs };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place. Upstream: `DivAssign<T>`.
+pub impl Vector3DivAssign<T, +Div<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector3<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: Vector3<T>, rhs: T) {
+        self = Vector3 { x: self.x / rhs, y: self.y / rhs, z: self.z / rhs };
+    }
+}
+
+/// `(x, y, z).into()`. Upstream: `From<(T, T, T)>`-style construction (`From<[T; 3]>`).
+pub impl Vector3FromTuple<T> of Into<(T, T, T), Vector3<T>> {
+    #[inline(always)]
+    fn into(self: (T, T, T)) -> Vector3<T> {
+        let (x, y, z) = self;
+        Vector3 { x, y, z }
+    }
+}
+
+/// The components as a tuple `(x, y, z)`.
+pub impl Vector3IntoTuple<T> of Into<Vector3<T>, (T, T, T)> {
+    #[inline(always)]
+    fn into(self: Vector3<T>) -> (T, T, T) {
+        let Vector3 { x, y, z } = self;
+        (x, y, z)
+    }
+}
+
+/// `[x, y, z].into()`. Upstream: `From<[T; 3]>`.
+pub impl Vector3FromArray<T> of Into<[T; 3], Vector3<T>> {
+    #[inline(always)]
+    fn into(self: [T; 3]) -> Vector3<T> {
+        let [x, y, z] = self;
+        Vector3 { x, y, z }
+    }
+}
+
+/// The components as a fixed-size array `[x, y, z]`. Upstream: `Into<[T; 3]>`.
+pub impl Vector3IntoArray<T> of Into<Vector3<T>, [T; 3]> {
+    #[inline(always)]
+    fn into(self: Vector3<T>) -> [T; 3] {
+        let Vector3 { x, y, z } = self;
+        [x, y, z]
+    }
 }
