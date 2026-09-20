@@ -28,6 +28,10 @@ use crate::errors;
 
 #[cfg(test)]
 mod alternatives;
+pub mod poly;
+#[cfg(test)]
+pub mod poly_alternatives;
+pub mod transcendental;
 
 // `core::zeroable::IsZeroResult` is crate-private in the corelib: the libfunc is re-declared
 // with a local result enum.

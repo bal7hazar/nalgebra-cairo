@@ -50,4 +50,24 @@ mod with_prelude {
     fn test_api_stable_panic_message() {
         let _ = nalgebra_testing::black_box(Real::<Fixed>::MAX) + Real::EPSILON;
     }
+
+    /// `Transcendental` gives the method syntax and is usable next to `Real`.
+    #[test]
+    fn test_api_transcendental_methods() {
+        let quarter_turn = Real::<Fixed>::FRAC_PI_2;
+        assert!(quarter_turn.sin() == Real::ONE);
+        assert!(quarter_turn.cos() == Real::ZERO);
+        assert!(quarter_turn.sin_cos() == (Real::<Fixed>::ONE, Real::ZERO));
+        assert!(Real::<Fixed>::ZERO.tan() == Real::ZERO);
+        assert!(Real::<Fixed>::ONE.asin() == quarter_turn);
+        assert!(Real::<Fixed>::ONE.acos() == Real::ZERO);
+        assert!(Real::<Fixed>::ONE.atan() == Real::FRAC_PI_4);
+        assert!(Transcendental::atan2(Real::<Fixed>::ONE, Real::ZERO) == quarter_turn);
+    }
+
+    #[test]
+    #[should_panic(expected: 'simba: out of domain')]
+    fn test_api_transcendental_domain_panic() {
+        let _ = nalgebra_testing::black_box(Real::<Fixed>::TWO).acos();
+    }
 }
