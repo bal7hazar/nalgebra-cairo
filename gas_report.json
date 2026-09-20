@@ -898,6 +898,96 @@
       "baseline": 16840,
       "xy": 17040
     },
+    "rotation2_abs_diff_eq": {
+      "all_compared": 19850,
+      "baseline": 17640
+    },
+    "rotation2_angle": {
+      "atan2": 31940,
+      "baseline": 16540
+    },
+    "rotation2_angle_to": {
+      "alt_product_then_angle": 43300,
+      "baseline": 17540,
+      "first_columns": 36840
+    },
+    "rotation2_from_matrix": {
+      "baseline": 18040,
+      "normalize_first_column": 26340
+    },
+    "rotation2_from_matrix_unchecked": {
+      "baseline": 18040,
+      "wrap": 18040
+    },
+    "rotation2_from_unit_complex": {
+      "baseline": 17640,
+      "expand": 20040
+    },
+    "rotation2_identity": {
+      "baseline": 17440,
+      "const": 17240
+    },
+    "rotation2_inverse": {
+      "baseline": 18040,
+      "transpose": 19640
+    },
+    "rotation2_inverse_transform_point": {
+      "baseline": 17640,
+      "transposed": 21640
+    },
+    "rotation2_inverse_transform_vector": {
+      "alt_inverse_then_transform": 21640,
+      "baseline": 17640,
+      "transposed": 21640
+    },
+    "rotation2_matrix": {
+      "accessor": 16840,
+      "baseline": 16540
+    },
+    "rotation2_mul": {
+      "alt_complex": 23640,
+      "baseline": 19040,
+      "matrix": 29300
+    },
+    "rotation2_new": {
+      "baseline": 17440,
+      "sin_cos": 34860
+    },
+    "rotation2_powf": {
+      "atan2_sin_cos": 53110,
+      "baseline": 18440
+    },
+    "rotation2_renormalize": {
+      "baseline": 18040,
+      "first_column": 26340
+    },
+    "rotation2_rotation_between": {
+      "algebraic": 32800,
+      "alt_unit_complex": 32900,
+      "baseline": 18240
+    },
+    "rotation2_scaled_rotation_between": {
+      "atan2_sin_cos": 59910,
+      "baseline": 18640
+    },
+    "rotation2_to_homogeneous": {
+      "baseline": 16540,
+      "expand": 16540
+    },
+    "rotation2_to_unit_complex": {
+      "baseline": 17040,
+      "first_column": 17840
+    },
+    "rotation2_transform_point": {
+      "alt_unit_complex": 21640,
+      "baseline": 17640,
+      "matrix": 21640
+    },
+    "rotation2_transform_vector": {
+      "alt_unit_complex": 26340,
+      "baseline": 17640,
+      "matrix": 26340
+    },
     "sym_matrix2_abs_diff_eq": {
       "all_compared": 21710,
       "baseline": 17150
@@ -1248,6 +1338,109 @@
       "baseline": 18040,
       "fma_factor": 29740
     },
+    "unit_complex_abs_diff_eq": {
+      "all_compared": 18870,
+      "baseline": 16840
+    },
+    "unit_complex_accessors": {
+      "baseline": 16640,
+      "complex": 16840,
+      "cos_sin_angle": 17240
+    },
+    "unit_complex_angle": {
+      "atan2": 31540,
+      "baseline": 16140
+    },
+    "unit_complex_angle_to": {
+      "baseline": 16740,
+      "fused_atan2": 36040
+    },
+    "unit_complex_append_axisangle_linearized": {
+      "alt_renormalize_fast": 29040,
+      "alt_sin_cos": 37960,
+      "baseline": 17040,
+      "renormalize": 29140
+    },
+    "unit_complex_from_rotation_matrix": {
+      "baseline": 17040,
+      "first_column": 17240
+    },
+    "unit_complex_identity": {
+      "baseline": 16440,
+      "const": 16340,
+      "from_cos_sin_unchecked": 16340
+    },
+    "unit_complex_inverse": {
+      "baseline": 16640,
+      "conjugate": 18040
+    },
+    "unit_complex_inverse_transform_point": {
+      "baseline": 17240,
+      "fused": 21240
+    },
+    "unit_complex_inverse_transform_vector": {
+      "alt_inverse_then_transform": 21540,
+      "baseline": 17240,
+      "fused": 21240
+    },
+    "unit_complex_mul": {
+      "baseline": 17240,
+      "fused": 21240
+    },
+    "unit_complex_new": {
+      "baseline": 16440,
+      "sin_cos": 33460
+    },
+    "unit_complex_powf": {
+      "atan2_sin_cos": 51310,
+      "baseline": 17040
+    },
+    "unit_complex_renormalize": {
+      "baseline": 16640,
+      "norm_and_divisions": 24340
+    },
+    "unit_complex_renormalize_fast": {
+      "alt_exact": 24340,
+      "alt_lerp": 24640,
+      "alt_literal": 25080,
+      "alt_mul_add_each": 24640,
+      "baseline": 16640,
+      "mul_add": 24240
+    },
+    "unit_complex_rotation_between": {
+      "algebraic": 31300,
+      "alt_atan2": 69860,
+      "alt_normalized_inputs": 45140,
+      "baseline": 17240
+    },
+    "unit_complex_rotation_to": {
+      "baseline": 17240,
+      "fused": 21240
+    },
+    "unit_complex_scaled_rotation_between": {
+      "atan2_sin_cos": 57410,
+      "baseline": 17640
+    },
+    "unit_complex_slerp": {
+      "angle_then_compose": 61570,
+      "baseline": 17640
+    },
+    "unit_complex_to_homogeneous": {
+      "baseline": 16140,
+      "expand": 16440
+    },
+    "unit_complex_to_rotation_matrix": {
+      "baseline": 16140,
+      "expand": 16740
+    },
+    "unit_complex_transform_point": {
+      "baseline": 17240,
+      "fused": 21240
+    },
+    "unit_complex_transform_vector": {
+      "baseline": 17240,
+      "fused": 25940
+    },
     "vector2_abs": {
       "abs": 18500,
       "baseline": 16640
@@ -1260,6 +1453,11 @@
       "add": 18820,
       "add_assign": 18820,
       "baseline": 17240
+    },
+    "vector2_angle": {
+      "alt_acos": 39450,
+      "baseline": 16740,
+      "half_angle": 58030
     },
     "vector2_cap_magnitude": {
       "alt_normalize": 29410,
@@ -1403,6 +1601,11 @@
       "add": 20560,
       "add_assign": 20560,
       "baseline": 18140
+    },
+    "vector3_angle": {
+      "alt_acos": 40450,
+      "baseline": 17140,
+      "half_angle": 66550
     },
     "vector3_cap_magnitude": {
       "alt_normalize": 35100,
@@ -1561,6 +1764,11 @@
       "add": 22300,
       "add_assign": 22300,
       "baseline": 19040
+    },
+    "vector4_angle": {
+      "alt_acos": 41450,
+      "baseline": 17540,
+      "half_angle": 75070
     },
     "vector4_cap_magnitude": {
       "alt_normalize": 40790,

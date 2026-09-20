@@ -1302,6 +1302,138 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `xy` | 17040 | 200 | x1.00 |
 
+### rotation2_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 19850 | 2210 | x1.00 |
+
+### rotation2_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 31940 | 15400 | x1.00 |
+
+### rotation2_angle_to
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_columns` | 36840 | 19300 | x1.00 |
+| `alt_product_then_angle` | 43300 | 25760 | x1.33 |
+
+### rotation2_from_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `normalize_first_column` | 26340 | 8300 | x1.00 |
+
+### rotation2_from_matrix_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wrap` | 18040 | 0 | - |
+
+### rotation2_from_unit_complex
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 20040 | 2400 | x1.00 |
+
+### rotation2_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 17240 | -200 | - |
+
+### rotation2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transpose` | 19640 | 1600 | x1.00 |
+
+### rotation2_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transposed` | 21640 | 4000 | x1.00 |
+
+### rotation2_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_inverse_then_transform` | 21640 | 4000 | x1.00 |
+| `transposed` | 21640 | 4000 | x1.00 |
+
+### rotation2_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `accessor` | 16840 | 300 | x1.00 |
+
+### rotation2_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_complex` | 23640 | 4600 | x1.00 |
+| `matrix` | 29300 | 10260 | x2.23 |
+
+### rotation2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 34860 | 17420 | x1.00 |
+
+### rotation2_powf
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 53110 | 34670 | x1.00 |
+
+### rotation2_renormalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_column` | 26340 | 8300 | x1.00 |
+
+### rotation2_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `algebraic` | 32800 | 14560 | x1.00 |
+| `alt_unit_complex` | 32900 | 14660 | x1.01 |
+
+### rotation2_scaled_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 59910 | 41270 | x1.00 |
+
+### rotation2_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 16540 | 0 | - |
+
+### rotation2_to_unit_complex
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_column` | 17840 | 800 | x1.00 |
+
+### rotation2_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_unit_complex` | 21640 | 4000 | x1.00 |
+| `matrix` | 21640 | 4000 | x1.00 |
+
+### rotation2_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_unit_complex` | 26340 | 8700 | x1.00 |
+| `matrix` | 26340 | 8700 | x1.00 |
+
 ### sym_matrix2_abs_diff_eq
 
 | variant | raw | net | vs best |
@@ -1802,6 +1934,155 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fma_factor` | 29740 | 11700 | x1.00 |
 
+### unit_complex_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 18870 | 2030 | x1.00 |
+
+### unit_complex_accessors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `complex` | 16840 | 200 | x1.00 |
+| `cos_sin_angle` | 17240 | 600 | x3.00 |
+
+### unit_complex_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 31540 | 15400 | x1.00 |
+
+### unit_complex_angle_to
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused_atan2` | 36040 | 19300 | x1.00 |
+
+### unit_complex_append_axisangle_linearized
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_renormalize_fast` | 29040 | 12000 | x1.00 |
+| `renormalize` | 29140 | 12100 | x1.01 |
+| `alt_sin_cos` | 37960 | 20920 | x1.74 |
+
+### unit_complex_from_rotation_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_column` | 17240 | 200 | x1.00 |
+
+### unit_complex_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16340 | -100 | - |
+| `from_cos_sin_unchecked` | 16340 | -100 | - |
+
+### unit_complex_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `conjugate` | 18040 | 1400 | x1.00 |
+
+### unit_complex_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+| `alt_inverse_then_transform` | 21540 | 4300 | x1.07 |
+
+### unit_complex_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 33460 | 17020 | x1.00 |
+
+### unit_complex_powf
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 51310 | 34270 | x1.00 |
+
+### unit_complex_renormalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `norm_and_divisions` | 24340 | 7700 | x1.00 |
+
+### unit_complex_renormalize_fast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `mul_add` | 24240 | 7600 | x1.00 |
+| `alt_exact` | 24340 | 7700 | x1.01 |
+| `alt_lerp` | 24640 | 8000 | x1.05 |
+| `alt_mul_add_each` | 24640 | 8000 | x1.05 |
+| `alt_literal` | 25080 | 8440 | x1.11 |
+
+### unit_complex_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `algebraic` | 31300 | 14060 | x1.00 |
+| `alt_normalized_inputs` | 45140 | 27900 | x1.98 |
+| `alt_atan2` | 69860 | 52620 | x3.74 |
+
+### unit_complex_rotation_to
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_scaled_rotation_between
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 57410 | 39770 | x1.00 |
+
+### unit_complex_slerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `angle_then_compose` | 61570 | 43930 | x1.00 |
+
+### unit_complex_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 16440 | 300 | x1.00 |
+
+### unit_complex_to_rotation_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `expand` | 16740 | 600 | x1.00 |
+
+### unit_complex_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21240 | 4000 | x1.00 |
+
+### unit_complex_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 25940 | 8700 | x1.00 |
+
 ### vector2_abs
 
 | variant | raw | net | vs best |
@@ -1820,6 +2101,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `add` | 18820 | 1580 | x1.00 |
 | `add_assign` | 18820 | 1580 | x1.00 |
+
+### vector2_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_acos` | 39450 | 22710 | x1.00 |
+| `half_angle` | 58030 | 41290 | x1.82 |
 
 ### vector2_cap_magnitude
 
@@ -2021,6 +2309,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `add` | 20560 | 2420 | x1.00 |
 | `add_assign` | 20560 | 2420 | x1.00 |
+
+### vector3_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_acos` | 40450 | 23310 | x1.00 |
+| `half_angle` | 66550 | 49410 | x2.12 |
 
 ### vector3_cap_magnitude
 
@@ -2243,6 +2538,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `add` | 22300 | 3260 | x1.00 |
 | `add_assign` | 22300 | 3260 | x1.00 |
+
+### vector4_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_acos` | 41450 | 23910 | x1.00 |
+| `half_angle` | 75070 | 57530 | x2.41 |
 
 ### vector4_cap_magnitude
 
