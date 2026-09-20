@@ -580,6 +580,241 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `solve` | 328070 | 305130 | x1.20 |
 | `try_inverse` | 521570 | 498630 | x1.96 |
 
+## nalgebra::linalg::qr::qr2::tests
+
+### qr2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 50350 | 7630 | x1.00 |
+
+### qr2_factors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `unpack` | 43310 | 700 | x1.00 |
+
+### qr2_is_invertible
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 43420 | 700 | x1.00 |
+
+### qr2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `gram_schmidt` | 43250 | 26710 | x1.00 |
+
+### qr2_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 59510 | 16190 | x1.00 |
+
+### qr2_solve_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 59410 | 16090 | x1.00 |
+
+### qr2_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 62700 | 19980 | x1.00 |
+
+## nalgebra::linalg::qr::qr3::tests
+
+### qr3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 101680 | 19290 | x1.00 |
+
+### qr3_determinant_closed_form
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `matrix3_cofactors` | 28810 | 11260 | x1.00 |
+
+### qr3_factors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `unpack` | 83090 | 700 | x1.00 |
+
+### qr3_is_invertible
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 83190 | 800 | x1.00 |
+
+### qr3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_classical_gram_schmidt` | 76280 | 58730 | x1.00 |
+| `gram_schmidt` | 84130 | 66580 | x1.13 |
+| `alt_completed_basis` | 109920 | 92370 | x1.57 |
+| `alt_householder` | 195130 | 177580 | x3.02 |
+
+### qr3_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 108400 | 25210 | x1.00 |
+
+### qr3_solve_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 108100 | 25110 | x1.00 |
+
+### qr3_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 127070 | 44680 | x1.00 |
+
+## nalgebra::linalg::qr::qr4::tests
+
+### qr4_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `diagonal_product` | 194340 | 42390 | x1.00 |
+
+### qr4_factors
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `unpack` | 152650 | 700 | x1.00 |
+
+### qr4_is_invertible
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pivots` | 152850 | 900 | x1.00 |
+
+### qr4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `gram_schmidt` | 153790 | 134840 | x1.00 |
+
+### qr4_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 192380 | 39430 | x1.00 |
+
+### qr4_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `substitution` | 254870 | 102920 | x1.00 |
+
+## nalgebra::linalg::svd2::tests
+
+### svd2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `eigen_of_gram` | 81290 | 64740 | x1.00 |
+| `alt_normalised_columns` | 103090 | 86540 | x1.34 |
+
+### svd2_pseudo_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reciprocals` | 96760 | 26370 | x1.00 |
+
+### svd2_rank
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `comparisons` | 73030 | 2640 | x1.00 |
+
+### svd2_recompose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scaled_product` | 89550 | 19160 | x1.00 |
+
+### svd2_singular_values
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_sqrt_eigenvalues` | 37320 | 20770 | x1.00 |
+| `from_left_vectors` | 81290 | 64740 | x3.12 |
+
+### svd2_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `divisions` | 89700 | 18710 | x1.00 |
+
+### svd2_to_polar
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quadform` | 96960 | 26570 | x1.00 |
+
+## nalgebra::linalg::svd3::tests
+
+### svd3_gram
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 31050 | 13500 | x1.00 |
+| `transpose_mul_transpose` | 33810 | 16260 | x1.20 |
+
+### svd3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `eigen_of_gram` | 692950 | 675400 | x1.00 |
+| `alt_one_sided_jacobi` | 737370 | 719820 | x1.07 |
+| `alt_normalised_columns` | 746900 | 729350 | x1.08 |
+
+### svd3_pseudo_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reciprocals` | 736160 | 52790 | x1.00 |
+
+### svd3_rank
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `comparisons` | 687180 | 3810 | x1.00 |
+
+### svd3_recompose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scaled_product` | 725430 | 42060 | x1.00 |
+
+### svd3_singular_values
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_sqrt_eigenvalues` | 343420 | 325870 | x1.00 |
+| `from_left_vectors` | 692950 | 675400 | x2.07 |
+
+### svd3_solve
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `divisions` | 712870 | 28700 | x1.00 |
+
+### svd3_to_polar
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quadform` | 740190 | 56820 | x1.00 |
+
 ## nalgebra::linalg::symmetric_eigen2::tests
 
 ### symmetric_eigen2_eigenvalues

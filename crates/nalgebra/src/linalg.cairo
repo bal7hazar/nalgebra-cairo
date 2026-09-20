@@ -19,8 +19,15 @@
 //! 3, and — there being no `SymMatrix4` / `SymMatrix6` — a `Matrix4` / `Matrix6` whose LOWER
 //! triangle is read, like upstream.
 //! - `lu`: `P·A = L·U` with partial pivoting for any square matrix (upstream `LU`).
+//! - `qr`: `A = Q·R` with `Q` orthonormal and `R` upper triangular with a non-negative diagonal
+//!   (upstream `QR`, unpacked convention), sizes 2, 3 and 4, by modified Gram-Schmidt;
+//! - `svd2` / `svd3`: `M = U·Σ·Vᵀ`, the pseudo-inverse, the least-squares solve and the polar
+//!   decomposition `M = R·P` (upstream `SVD`), built on the symmetric eigen decomposition of
+//!   `MᵀM` (DESIGN D6).
 
 pub mod cholesky;
+#[cfg(test)]
+mod decomp_test_utils;
 #[cfg(test)]
 mod eigen_test_utils;
 #[cfg(test)]
@@ -30,9 +37,14 @@ pub mod lu;
 #[cfg(test)]
 mod oracle_cholesky;
 #[cfg(test)]
+mod oracle_svd;
+#[cfg(test)]
 mod oracle_symmetric_eigen;
 #[cfg(test)]
 mod oracle_udu;
+pub mod qr;
+pub mod svd2;
+pub mod svd3;
 pub mod symmetric_eigen2;
 pub mod symmetric_eigen3;
 
@@ -45,5 +57,10 @@ pub use lu::{
     Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix3LuTrait,
     Matrix4LuTrait, Matrix6LuTrait, Perm2, Perm3, Perm4, Perm6, PermTrait,
 };
+pub use qr::{
+    Matrix2QrTrait, Matrix3QrTrait, Matrix4QrTrait, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait,
+};
+pub use svd2::{Matrix2SvdTrait, Svd2, Svd2Trait};
+pub use svd3::{Matrix3SvdTrait, Svd3, Svd3Trait};
 pub use symmetric_eigen2::{SymmetricEigen2, SymmetricEigen2Trait};
 pub use symmetric_eigen3::{SymmetricEigen3, SymmetricEigen3Trait};

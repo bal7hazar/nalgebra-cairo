@@ -22,7 +22,9 @@ pub use geometry::{
 pub use linalg::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
     Cholesky6Trait, Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait, Ldlt6, Ldlt6Trait, Lu2,
-    Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix3LuTrait,
-    Matrix4LuTrait, Matrix6LuTrait, Perm2, Perm3, Perm4, Perm6, PermTrait, SymmetricEigen2,
+    Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix2QrTrait,
+    Matrix2SvdTrait, Matrix3LuTrait, Matrix3QrTrait, Matrix3SvdTrait, Matrix4LuTrait,
+    Matrix4QrTrait, Matrix6LuTrait, Perm2, Perm3, Perm4, Perm6, PermTrait, Qr2, Qr2Trait, Qr3,
+    Qr3Trait, Qr4, Qr4Trait, Svd2, Svd2Trait, Svd3, Svd3Trait, SymmetricEigen2,
     SymmetricEigen2Trait, SymmetricEigen3, SymmetricEigen3Trait,
 };
