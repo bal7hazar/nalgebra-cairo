@@ -923,6 +923,41 @@
       "baseline": 18040,
       "const": 16840
     },
+    "symmetric_eigen2_eigenvalues": {
+      "baseline": 16340,
+      "closed_form": 23810
+    },
+    "symmetric_eigen2_new": {
+      "baseline": 16340,
+      "closed_form": 40870
+    },
+    "symmetric_eigen2_recompose": {
+      "baseline": 35230,
+      "quadform": 50640
+    },
+    "symmetric_eigen3_eigenvalues": {
+      "baseline": 16940,
+      "via_new": 567710,
+      "without_eigenvectors": 320410
+    },
+    "symmetric_eigen3_new": {
+      "baseline": 16940,
+      "diagonal_input": 568170,
+      "jacobi_3_sweeps": 442130,
+      "jacobi_4_sweeps": 567710,
+      "jacobi_5_sweeps": 693290,
+      "jacobi_6_sweeps": 818870,
+      "no_renormalisation": 545250
+    },
+    "symmetric_eigen3_recompose": {
+      "baseline": 568870,
+      "quadform": 601480
+    },
+    "symmetric_eigen3_sweep": {
+      "baseline": 18740,
+      "three_rotations": 144120,
+      "three_rotations_without_eigenvectors": 92200
+    },
     "unit2_axes": {
       "baseline": 16840,
       "x_axis": 17040,
