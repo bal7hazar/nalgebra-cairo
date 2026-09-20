@@ -501,6 +501,58 @@
       "mul_vec": 25990
     }
   },
+  "nalgebra::geometry::similarity2::benches": {
+    "similarity2_inv_mul": {
+      "alt_inverse_then_mul": 53510,
+      "baseline": 18740,
+      "direct": 44720
+    },
+    "similarity2_inverse_transform_point": {
+      "alt_reciprocal": 33610,
+      "baseline": 17840,
+      "division": 29000
+    },
+    "similarity2_inverse_transform_vector": {
+      "alt_reciprocal": 32130,
+      "baseline": 17840,
+      "division": 27520
+    },
+    "similarity2_transform_point": {
+      "alt_rotate_scale_add": 29550,
+      "baseline": 17840,
+      "scale_translate": 25940
+    },
+    "similarity2_transform_vector": {
+      "baseline": 17840,
+      "scale_after_rotate": 25540
+    }
+  },
+  "nalgebra::geometry::similarity3::benches": {
+    "similarity3_inv_mul": {
+      "alt_inverse_then_mul": 119750,
+      "baseline": 20840,
+      "direct": 82820
+    },
+    "similarity3_inverse_transform_point": {
+      "alt_reciprocal": 60670,
+      "baseline": 19140,
+      "division": 58450
+    },
+    "similarity3_inverse_transform_vector": {
+      "alt_reciprocal": 56550,
+      "baseline": 19140,
+      "division": 51490
+    },
+    "similarity3_transform_point": {
+      "alt_rotate_scale_add": 53170,
+      "baseline": 19140,
+      "scale_translate": 51280
+    },
+    "similarity3_transform_vector": {
+      "baseline": 19140,
+      "scale_after_rotate": 47920
+    }
+  },
   "nalgebra::geometry::translation2::benches": {
     "translation2_abs_diff_eq": {
       "baseline": 16750,

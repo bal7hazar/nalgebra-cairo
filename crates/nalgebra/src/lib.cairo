@@ -15,9 +15,10 @@ pub use base::{
 pub use geometry::{
     Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3, Isometry3AngleTrait, Isometry3Trait,
     Quaternion, QuaternionTrait, Rotation2, Rotation2AngleTrait, Rotation2Trait, Rotation3,
-    Rotation3AngleTrait, Rotation3Trait, Translation2, Translation2Trait, Translation3,
-    Translation3Trait, UnitComplex, UnitComplexAngleTrait, UnitComplexTrait, UnitQuaternion,
-    UnitQuaternionAngleTrait, UnitQuaternionTrait,
+    Rotation3AngleTrait, Rotation3Trait, Similarity2, Similarity2AngleTrait, Similarity2Trait,
+    Similarity3, Similarity3AngleTrait, Similarity3Trait, Translation2, Translation2Trait,
+    Translation3, Translation3Trait, UnitComplex, UnitComplexAngleTrait, UnitComplexTrait,
+    UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
 };
 pub use linalg::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
