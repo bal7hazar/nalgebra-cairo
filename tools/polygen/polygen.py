@@ -89,6 +89,25 @@ def offset(period):
 
 OFF_TRIG = offset(8 * QUARTER_PI)
 
+# `exp`: x = q * ln2 + f at scale 2^A, exp(x) = 2^(q - EXP_Q0) * e^f. `exp` only has a
+# representable result for |x| < 23, so the reduction drift is irrelevant here (at most 32
+# quotients), but the same 2^61 scale is reused.
+LN2 = rnd(mp.log(2) * 2**A)
+OFF_LN2 = offset(LN2)
+EXP_Q0 = OFF_LN2 // LN2
+assert OFF_LN2 % LN2 == 0  # exp(0) reduces to q = EXP_Q0, f = 0 exactly
+# Smallest and largest quotient with a representable result: 2^(k+32) * e^f must be in
+# [1/2, 2^63), i.e. k in [-33, 30]. Outside, `exp` returns 0 or panics with OVERFLOW.
+EXP_K_MIN, EXP_K_MAX = -33, 30
+
+# `ln`: raw = m * 2^(e - 62), m in [2^62, 2^63); ln(raw / 2^32) = (e - 32) ln2 + ln(m / 2^62).
+LN_M = 62
+SQRT2_M = rnd(mp.sqrt(2) * 2**LN_M)
+LN_T = A + ACC - 1  # scale of the final sum: `s * acc` is `2 * atanh(s)` at this scale
+LN2_T = rnd(mp.log(2) * 2**LN_T)
+S_MAX = (mp.sqrt(2) - 1) / (mp.sqrt(2) + 1)  # largest |(m - 1) / (m + 1)|
+LN_OUT_HI = 0x1800000000  # 24 > ln(2^31); the interval shared by the two `ln` branches
+
 # --- fits ---------------------------------------------------------------------------------------
 
 MASTER = 200  # coefficients are kept at scale 2^MASTER and rounded to the scale of each step
@@ -126,6 +145,13 @@ SPECS = {
     "ASIN_5": (tail(odd_part(mp.asin), 1), 0, mpf(1) / 4, 5, Z),
     "ASIN_7": (tail(odd_part(mp.asin), 1), 0, mpf(1) / 4, 7, Z),
     "ASIN_9": (tail(odd_part(mp.asin), 1), 0, mpf(1) / 4, 9, Z),
+    # e^f = 1 + f * E(f), f in [0, ln 2]
+    "EXP_6": (tail(mp.exp, 1), 0, mp.log(2), 6, Z),
+    "EXP_8": (tail(mp.exp, 1), 0, mp.log(2), 8, Z),
+    "EXP_10": (tail(mp.exp, 1), 0, mp.log(2), 10, Z),
+    # atanh(s) = s * L(s^2), |s| <= (sqrt 2 - 1) / (sqrt 2 + 1)
+    "ATANH_3": (tail(odd_part(mp.atanh), 1), 0, S_MAX**2, 3, Z),
+    "ATANH_5": (tail(odd_part(mp.atanh), 1), 0, S_MAX**2, 5, Z),
 }
 
 _FITS = {}
@@ -275,6 +301,180 @@ def k_asin(m, name, prefix, fit_name, double, doc, cfg=None):
     return k.finish(k.upcast(out, 0, hi), (alias,), (doc_out,))
 
 
+def k_reduce_exp(m, doc):
+    """`x -> (q, f)`: `x * 2^(A-32) + OFF = q * ln2 + f`; `exp(x) = 2^(q - EXP_Q0) * e^f`."""
+    k = Kernel(m, "reduce_exp", "RedE", doc)
+    x = k.input("x", I64_MIN, I64_MAX, ty="i64")
+    q, f = k.div_rem(k.add(k.mul(x, 1 << (A - 32)), OFF_LN2), LN2)
+    return k.finish(
+        (q, f),
+        ("ExpQuot", "ExpArg"),
+        ("Quotient of the `exp` reduction: `exp(x) = 2^(q - EXP_Q0) * e^f`.",
+         "Reduced argument of `exp`, in [0, ln 2), scale 2^61."),
+    )
+
+
+def k_exp(m, name, prefix, fit_name, doc, cfg=None):
+    """`round(e^f * pow / 2^33)` for `f` in `[0, ln 2)` (scale 2^61) and `pow = 2^(k + 33)`."""
+    k = Kernel(m, name, prefix, doc, cfg=cfg)
+    f = k.input("f", 0, LN2 - 1, alias="ExpArg")
+    p = k.input("pow", 0, (1 << 64) - 1, ty="u64")
+    acc = k.horner(k.shr_floor(f, A - Z), program(fit_name)[0])
+    out = k.shr_round(k.mul(acc, p), ACC + 33 - 32)
+    return k.finish(
+        k.upcast(out, 0, 1 << 64), ("ExpOut",),
+        ("`exp(x)` in Q32.32, before the `i64` overflow check.",),
+    )
+
+
+def k_ln(m, name, prefix, fit_name, upper, doc, cfg=None):
+    """`ln(m * 2^(e - 32))` for the normalised mantissa `m` (scale 2^62) and exponent `e`.
+
+    lower half, `m` in `[1, sqrt 2)`:  `s = (m - 1) / (m + 1)`,  `ln = (e - 32) ln2 + 2 atanh(s)`
+    upper half, `m` in `[sqrt 2, 2)`:  `s = (2 - m) / (2 + m)`,  `ln = (e - 31) ln2 - 2 atanh(s)`
+    """
+    k = Kernel(m, name, prefix, doc, inline=None, cfg=cfg)
+    one = 1 << LN_M
+    if upper:
+        mant = k.input("m", SQRT2_M, 2 * one - 1, alias="LnUpper",
+                       alias_doc="Mantissa in [sqrt 2, 2), scale 2^62.")
+        num, den = k.sub(2 * one, mant), k.add(mant, 2 * one)
+    else:
+        mant = k.input("m", one, SQRT2_M - 1, alias="LnLower",
+                       alias_doc="Mantissa in [1, sqrt 2), scale 2^62.")
+        num, den = k.sub(mant, one), k.add(mant, one)
+    e = k.input("e", 0, 62, alias="LnExp", alias_doc="`floor(log2(raw))` of a positive raw value.")
+    q, _ = k.div_rem(k.mul(num, 1 << A), k.nonzero(den))
+    # `den >= 2^63` and `num < 2^62`, so `s <= (sqrt2 - 1) / (sqrt2 + 1) * 2^61`; the libfunc
+    # cannot know that (its divisor type still contains 0), hence one range check.
+    s = k.narrow(q, 0, rnd(S_MAX * 2**A) + 1)
+    acc = k.horner(square(k, s), program(fit_name)[0])
+    p = k.mul(s, acc)  # atanh(s) at scale 2^(A + ACC) = 2 atanh(s) at scale 2^LN_T
+    shift = LN_T - 32
+    # A multiple of 2^shift large enough to make the sum non-negative (removed after the shift,
+    # so the rounding stays a single round-to-nearest of the true value).
+    bias = -(-(32 * LN2_T + (p.hi if upper else 0)) >> shift) << shift
+    base = k.add(k.mul(e, LN2_T), bias - (31 if upper else 32) * LN2_T)
+    total = k.sub(base, p) if upper else k.add(base, p)
+    out = k.sub(k.shr_round(total, shift), bias >> shift)
+    return k.finish(
+        k.upcast(out, -LN_OUT_HI, LN_OUT_HI), ("LnOut",), ("`ln(x)` in Q32.32.",),
+    )
+
+
+def pow2_tree(name, lo, hi, base, out_doc):
+    """Generated compare tree `q -> Some(2^(q - base))` on `[lo, hi]`, `None` above, `Some(0)`
+    below: the only way to build a power of two from a runtime exponent without a loop."""
+    impls = []
+
+    def ty(a, b):
+        return f"BoundedInt<{hx(a)}, {hx(b)}>"
+
+    def node(a, b, var, ind):
+        pad = "    " * ind
+        if a == b:
+            return f"{pad}Some({hx(1 << (a - base))})\n"
+        mid = (a + b + 1) // 2
+        impls.append(
+            f"impl {name}C{a}x{b} of ConstrainHelper<{ty(a, b)}, {hx(mid)}> {{\n"
+            f"    type LowT = {ty(a, mid - 1)};\n    type HighT = {ty(mid, b)};\n}}\n"
+        )
+        # A leaf returns a constant, so its binding is unused: name it `_lo` / `_hi`.
+        lo_v = "_lo" if a == mid - 1 else "lo"
+        hi_v = "_hi" if mid == b else "hi"
+        return (
+            f"{pad}match bounded_int::constrain::<{ty(a, b)}, {hx(mid)}>({var}) {{\n"
+            f"{pad}    Ok({lo_v}) => {{\n" + node(a, mid - 1, lo_v, ind + 2) + f"{pad}    }},\n"
+            f"{pad}    Err({hi_v}) => {{\n" + node(mid, b, hi_v, ind + 2) + f"{pad}    }},\n"
+            f"{pad}}}\n"
+        )
+
+    qmax = (2**(A + 31) + OFF_LN2) // LN2
+    body = node(lo, hi, "q", 3)
+    impls.append(
+        f"impl {name}CLo of ConstrainHelper<ExpQuot, {hx(lo)}> {{\n"
+        f"    type LowT = {ty(0, lo - 1)};\n    type HighT = {ty(lo, qmax)};\n}}\n"
+    )
+    impls.append(
+        f"impl {name}CHi of ConstrainHelper<{ty(lo, qmax)}, {hx(hi + 1)}> {{\n"
+        f"    type LowT = {ty(lo, hi)};\n    type HighT = {ty(hi + 1, qmax)};\n}}\n"
+    )
+    return "".join(impls) + (
+        f"/// {out_doc}\n#[inline(always)]\n"
+        f"pub fn exp_pow2(q: ExpQuot) -> Option<u64> {{\n"
+        f"    match bounded_int::constrain::<ExpQuot, {hx(lo)}>(q) {{\n"
+        f"        Ok(_) => Some(0),\n"
+        f"        Err(q) => match bounded_int::constrain::<{ty(lo, qmax)}, {hx(hi + 1)}>(q) {{\n"
+        f"            Ok(q) => {{\n" + body + "            },\n"
+        f"            Err(_) => None,\n        }},\n    }}\n}}\n"
+    )
+
+
+def ln_normalize(prefix="LnN"):
+    """Generated compare tree: `raw` in `[1, 2^63)` -> `(raw * 2^(62 - e), e)`.
+
+    Six typed sign splits (`constrain`): every leaf knows `raw in [2^e, 2^(e+1))`, so the
+    multiplication by the constant `2^(62 - e)` lands in `[2^62, 2^63)` without any check.
+    """
+    impls = []
+
+    def ty(lo, hi):
+        return f"BoundedInt<{hx(lo)}, {hx(hi)}>"
+
+    def node(lo_e, hi_e, var, ind):
+        pad = "    " * ind
+        lo, hi = 1 << lo_e, (1 << (hi_e + 1)) - 1
+        if lo_e == hi_e:
+            shift = 1 << (62 - lo_e)
+            t = ty(lo, hi)
+            value = var if lo_e == 62 else (
+                f"bounded_int::mul::<{t}, UnitInt<{hx(shift)}>>({var}, {hx(shift)})"
+            )
+            if lo_e != 62:
+                impls.append(
+                    f"impl {prefix}M{lo_e} of MulHelper<{t}, UnitInt<{hx(shift)}>> {{\n"
+                    f"    type Result = {ty(lo * shift, hi * shift)};\n}}\n"
+                )
+            return (
+                f"{pad}(upcast({value}), upcast::<UnitInt<{hx(lo_e)}>, LnExp>({hx(lo_e)}))\n"
+            )
+        mid = (lo_e + hi_e + 1) // 2
+        b = 1 << mid
+        t = ty(lo, hi)
+        impls.append(
+            f"impl {prefix}C{lo_e}x{hi_e} of ConstrainHelper<{t}, {hx(b)}> {{\n"
+            f"    type LowT = {ty(lo, b - 1)};\n    type HighT = {ty(b, hi)};\n}}\n"
+        )
+        return (
+            f"{pad}match bounded_int::constrain::<{t}, {hx(b)}>({var}) {{\n"
+            f"{pad}    Ok(lo) => {{\n" + node(lo_e, mid - 1, "lo", ind + 2) + f"{pad}    }},\n"
+            f"{pad}    Err(hi) => {{\n" + node(mid, hi_e, "hi", ind + 2) + f"{pad}    }},\n"
+            f"{pad}}}\n"
+        )
+
+    body = node(0, 62, "raw", 1)
+    one = 1 << LN_M
+    text = "".join(impls)
+    text += f"/// Strictly positive Q32.32 raw value.\npub type LnArg = {ty(1, (1 << 63) - 1)};\n"
+    text += (
+        "/// Normalised mantissa in [1, 2), scale 2^62.\n"
+        f"pub type LnMant = {ty(one, 2 * one - 1)};\n"
+    )
+    text += (
+        f"impl {prefix}Split of ConstrainHelper<LnMant, {hx(SQRT2_M)}> {{\n"
+        f"    type LowT = {ty(one, SQRT2_M - 1)};\n    type HighT = {ty(SQRT2_M, 2 * one - 1)};\n}}\n"
+    )
+    text += (
+        "/// `(raw * 2^(62 - e), e)` with `e = floor(log2(raw))`: a generated tree of 6 typed\n"
+        "/// comparisons; every leaf multiplies by a constant, no range check.\n"
+        "pub fn ln_normalize(raw: LnArg) -> (LnMant, LnExp) {\n" + body + "}\n\n"
+        "/// Splits the mantissa at `sqrt 2` (`Ok`: lower half).\n#[inline(always)]\n"
+        "pub fn ln_split(m: LnMant) -> Result<LnLower, LnUpper> {\n"
+        f"    bounded_int::constrain::<LnMant, {hx(SQRT2_M)}>(m)\n}}\n"
+    )
+    return text
+
+
 def k_tan_ratio(m, doc):
     """`round(s * 2^32 / c)` for the wide sine and cosine (scale 2^48), `c != 0`.
 
@@ -308,9 +508,7 @@ HEADER = """//! GENERATED by `tools/polygen/polygen.py`: do not edit by hand.
 //! `asin(0) = 0` hold bit for bit.
 
 #[feature("bounded-int-utils")]
-use core::internal::bounded_int::{
-    self, AddHelper, BoundedInt, DivRemHelper, MulHelper, SubHelper, UnitInt, upcast,
-};
+use core::internal::bounded_int::{$USES};
 
 /// `pi/4` at scale 2^61: the unit of the octant reduction.
 pub const QUARTER_PI: felt252 = $QUARTER_PI;
@@ -326,17 +524,19 @@ ALT_HEADER = """//! GENERATED by `tools/polygen/polygen.py`: do not edit by hand
 //! variants side by side.
 
 #[feature("bounded-int-utils")]
-use core::internal::bounded_int::{
-    self, AddHelper, BoundedInt, DivRemHelper, MulHelper, SubHelper, UnitInt, upcast,
-};
+use core::internal::bounded_int::{$USES};
 use super::poly::{$IMPORTS};
 """
 
 
 def deg(name):
-    """Degree of the polynomial in the natural variable (`r`, `t`, `s`)."""
+    """Degree of the polynomial in the natural variable (`r`, `t`, `s`, `f`)."""
     n = SPECS[name][3] + 1
-    return 2 * n - 2 if name.startswith("COS") else 2 * n - 1
+    if name.startswith("COS"):
+        return 2 * n - 2  # even polynomial in r
+    if name.startswith("EXP"):
+        return n - 1  # plain polynomial in f
+    return 2 * n - 1  # odd polynomial: v * P(v^2)
 
 
 # Chosen variants (see `--report` and the `bench_*` groups of `fixed::transcendental`). One extra
@@ -348,6 +548,8 @@ SIN_FIT = "SIN_O5"
 COS_FIT = "COS_O5"
 ATAN_FIT = "ATAN_12"
 ASIN_FIT = "ASIN_7"
+EXP_FIT = "EXP_8"
+ATANH_FIT = "ATANH_5"
 
 FAMILIES = {
     "SIN_O": ("sin_octant", "SinO", lambda m, n, d, c: k_sin(
@@ -358,8 +560,15 @@ FAMILIES = {
         m, n, f"Atan{d}", c, f"`atan(t)` on [0, 1], degree {d}.", cfg="test")),
     "ASIN_": ("asin_unit", "Asin", lambda m, n, d, c: k_asin(
         m, n, f"Asin{d}", c, False, f"`asin(s)` on [0, 1/2], degree {d}.", cfg="test")),
+    "EXP_": ("exp_kernel", "Exp", lambda m, n, d, c: k_exp(
+        m, n, f"Exp{d}", c, f"`e^f` scaled by `pow`, degree {d}.", cfg="test")),
+    "ATANH_": ("ln_lower", "LnL", lambda m, n, d, c: k_ln(
+        m, n, f"LnL{d}", c, False, f"`ln` of a low mantissa, degree {d}.", cfg="test")),
 }
-CHOSEN = {"SIN_O": SIN_FIT, "COS_O": COS_FIT, "ATAN_": ATAN_FIT, "ASIN_": ASIN_FIT}
+CHOSEN = {
+    "SIN_O": SIN_FIT, "COS_O": COS_FIT, "ATAN_": ATAN_FIT, "ASIN_": ASIN_FIT,
+    "EXP_": EXP_FIT, "ATANH_": ATANH_FIT,
+}
 
 
 def build_main():
@@ -383,6 +592,18 @@ def build_main():
            f"`asin(s)` for `s` in [0, 1/2], degree {deg(ASIN_FIT)}.")
     k_asin(m, "asin_double", "AsinD", ASIN_FIT, True,
            f"`2 * asin(s)` for `s` in [0, 1/2], degree {deg(ASIN_FIT)} (`acos` of a big argument).")
+    k_reduce_exp(m, "`exp`: quotient and remainder of `x` modulo `ln 2`.")
+    k_exp(m, "exp_kernel", "Exp", EXP_FIT, f"`e^f` scaled by `pow`, degree {deg(EXP_FIT)}.")
+    m.add(pow2_tree(
+        "ExpP", EXP_Q0 + EXP_K_MIN, EXP_Q0 + EXP_K_MAX, EXP_Q0 - 33,
+        "`2^(q - EXP_Q0 + 33)` as the `pow` of `exp_kernel`: `Some(0)` when `exp(x)` underflows\n"
+        "/// to zero, `None` when it cannot fit Q32.32.",
+    ))
+    k_ln(m, "ln_lower", "LnL", ATANH_FIT, False,
+         f"`ln` of a mantissa in [1, sqrt 2), degree {deg(ATANH_FIT)}.")
+    k_ln(m, "ln_upper", "LnU", ATANH_FIT, True,
+         f"`ln` of a mantissa in [sqrt 2, 2), degree {deg(ATANH_FIT)}.")
+    m.add(ln_normalize())
     return m
 
 
@@ -399,16 +620,29 @@ def build_alternatives(main, keep_chosen=False):
                 if prefix == "ASIN_":
                     k_asin(m, f"asin_double_{d}", f"AsinD{d}", name, True,
                            f"`2 * asin(s)` on [0, 1/2], degree {d}.", cfg="test")
+                if prefix == "ATANH_":
+                    k_ln(m, f"ln_upper_{d}", f"LnU{d}", name, True,
+                         f"`ln` of a high mantissa, degree {d}.", cfg="test")
     return m
 
 
+def bounded_int_uses(body):
+    """The `core::internal::bounded_int` items the rendered body actually mentions."""
+    items = [
+        "self", "AddHelper", "BoundedInt", "ConstrainHelper", "DivRemHelper", "MulHelper",
+        "SubHelper", "UnitInt", "downcast", "upcast",
+    ]
+    return ", ".join(i for i in items if (i == "self" or i in body))
+
+
 def render(module, main=None):
+    body = module.render()
     if module.name == "poly":
         text = HEADER.replace("$QUARTER_PI", hx(QUARTER_PI)).replace("$HALF_PI", hx(HALF_PI))
     else:
-        body = module.render()
         names = sorted(k for k in main.seen if "<" not in k and f"{k}" in body)
         text = ALT_HEADER.replace("$IMPORTS", ", ".join(names))
+    text = text.replace("$USES", bounded_int_uses(body))
     if module.needs_is_zero:
         text += (
             "\n// `core::zeroable::IsZeroResult` is crate-private in the corelib: the libfunc is\n"
@@ -436,6 +670,13 @@ def render_ops(modules):
         f"QUARTER_PI = {QUARTER_PI}",
         f"HALF_PI = {HALF_PI}",
         f"OFF_TRIG = {OFF_TRIG}",
+        f"LN2 = {LN2}",
+        f"OFF_LN2 = {OFF_LN2}",
+        f"EXP_Q0 = {EXP_Q0}",
+        f"EXP_K_MIN = {EXP_K_MIN}",
+        f"EXP_K_MAX = {EXP_K_MAX}",
+        f"LN_M = {LN_M}",
+        f"SQRT2_M = {SQRT2_M}",
         "",
         "KERNELS = {",
     ]
@@ -552,6 +793,36 @@ def asin_model(run, name="asin_unit", acos=False):
     return f
 
 
+def exp_model(run, name="exp_kernel"):
+    """`exp` through a candidate kernel (mirrors `kernels::transcendental::exp`)."""
+
+    def f(x):
+        q, r = divmod(x * (1 << (A - 32)) + OFF_LN2, LN2)
+        k = q - EXP_Q0
+        if k < EXP_K_MIN:
+            return 0
+        if k > EXP_K_MAX:
+            raise OverflowError(x)
+        out = run(name, r, 1 << (k + 33))
+        if out > (1 << 63) - 1:
+            raise OverflowError(x)
+        return out
+
+    return f
+
+
+def ln_model(run, lower="ln_lower", upper="ln_upper"):
+    """`ln` through candidate kernels (mirrors `kernels::transcendental::ln`)."""
+
+    def f(x):
+        assert x > 0
+        e = x.bit_length() - 1
+        mant = x << (LN_M - e)
+        return run(lower if mant < SQRT2_M else upper, mant, e)
+
+    return f
+
+
 def variants(prefix):
     """Names of the generated kernels of a family, lowest degree first."""
     return [f"{FAMILIES[prefix][0]}_{deg(n)}" for n in SPECS if n.startswith(prefix)]
@@ -614,12 +885,40 @@ def report():
         show(asin_model(run, name), "asin", name, pts, mp.asin)
     show(asin_model(run, acos=True), "acos", ASIN_FIT, pts, mp.acos)
 
+    # `exp` spans 64 binades: the error is relative above 1 and absolute below (where the result
+    # is a handful of raw units and the rounding dominates).
+    exps = [rnd((mpf(-22) + mpf(43) * i / 40000) * ONE) for i in range(40001)]
+    for name in variants("EXP_"):
+        rel, absolute, arg = 0, 0, None
+        for x in exps:
+            want = mp.e ** (mpf(x) / ONE) * ONE
+            if want >= 2**63:
+                continue
+            d = abs(exp_model(run, name)(x) - want)
+            absolute = max(absolute, d)
+            if want >= ONE and d / want * ONE > rel:
+                rel, arg = d / want * ONE, x
+        print(
+            f"| `exp` | `{name}` | {float(rel):.2f} rel / {float(absolute):.2f} abs | ({arg},) |"
+        )
+
+    logs = [rnd(mpf(10) ** (mpf(-9) + mpf(18) * i / 40000) * ONE) for i in range(40001)]
+    logs = [v for v in logs if 0 < v < 1 << 63]
+    logs += [rng.randrange(1, 1 << 63) for _ in range(10000)]
+    for name in variants("ATANH_"):
+        up = name.replace("ln_lower", "ln_upper")
+        show(ln_model(run, name, up), "ln", name, [(v,) for v in logs], mp.log)
+
 
 # --- writing --------------------------------------------------------------------------------------
 
 
 def squash(s):
-    return "".join(s.split()).replace(",]", "]").replace(",)", ")").replace(",>", ">")
+    """Compares modulo `scarb fmt`: whitespace and the trailing commas it adds when wrapping."""
+    s = "".join(s.split())
+    for a, b in ((",]", "]"), (",)", ")"), (",>", ">"), (",}", "}")):
+        s = s.replace(a, b)
+    return s
 
 
 def scarb_fmt():

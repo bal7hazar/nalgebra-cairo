@@ -48,9 +48,14 @@ up). A bound that is off by one is a compile error, not a wrong result.
   `atan(0) = 0`, `asin(0) = 0` hold bit for bit and the functions are the identity for tiny
   arguments.
 - **Degrees** are chosen on the measured trade-off, `--report` for the accuracy and the
-  `bench_sin__*` / `bench_atan2__*` / `bench_asin__*` groups of `simba::fixed::transcendental`
-  for the gas. Change `SIN_FIT` / `COS_FIT` / `ATAN_FIT` / `ASIN_FIT`, regenerate, re-run the
-  gate: the losing degrees move to `poly_alternatives.cairo` automatically.
+  `bench_*` groups of `simba::fixed::transcendental` for the gas. Change `SIN_FIT` / `COS_FIT` /
+  `ATAN_FIT` / `ASIN_FIT` / `EXP_FIT` / `ATANH_FIT`, regenerate, re-run the gate: the losing
+  degrees move to `poly_alternatives.cairo` automatically.
+- **`exp` and `ln` reduce to a power of two**, not to an angle: `exp` divides by `ln 2` and turns
+  the quotient into `2^k` with a generated 6-level compare tree (`pow2_tree`); `ln` normalises
+  the mantissa with another generated tree (`ln_normalize`, `raw -> (m * 2^(62-e), e)`) and
+  splits at `sqrt 2` so the argument of `atanh` never exceeds 0.172. Both trees replace a loop
+  by six typed sign splits.
 
 Changing any of this changes the last bit of a public function, which is a breaking change
 (AGENTS.md, numeric rules): regenerate, update the expectations of `tests_generated.cairo`

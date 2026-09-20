@@ -16,13 +16,22 @@
 
 #[feature("bounded-int-utils")]
 use core::internal::bounded_int::{
-    self, AddHelper, BoundedInt, DivRemHelper, MulHelper, SubHelper, UnitInt, upcast,
+    self, AddHelper, BoundedInt, ConstrainHelper, DivRemHelper, MulHelper, SubHelper, UnitInt,
+    downcast, upcast,
 };
 
 /// `pi/4` at scale 2^61: the unit of the octant reduction.
 pub const QUARTER_PI: felt252 = 0x1921fb54442d1847;
 /// `pi/2` at scale 2^61.
 pub const HALF_PI: felt252 = 0x3243f6a8885a308e;
+
+// `core::zeroable::IsZeroResult` is crate-private in the corelib: the libfunc is
+// re-declared with a local result enum.
+enum IsZero<T> {
+    Zero,
+    NonZero: NonZero<T>,
+}
+extern fn bounded_int_is_zero<T>(value: T) -> IsZero<T> implicits() nopanic;
 
 impl RedH0 of MulHelper<i64, UnitInt<0x20000000>> {
     type Result = BoundedInt<-0x100000000000000000000000, 0xfffffffffffffffe0000000>;
@@ -1588,4 +1597,3082 @@ pub fn asin_double(s: AsinArg) -> AngPi3 {
     >(v25, 0x100000000000000000000000);
     let v28: BoundedInt<0x0, 0x10e000000> = upcast(v26);
     v28
+}
+
+impl RedEH117 of AddHelper<
+    BoundedInt<-0x100000000000000000000000, 0xfffffffffffffffe0000000>,
+    UnitInt<0x100000000e338fe758d475b2>,
+> {
+    type Result = BoundedInt<0xe338fe758d475b2, 0x200000000e338fe738d475b2>;
+}
+impl RedEH118 of DivRemHelper<
+    BoundedInt<0xe338fe758d475b2, 0x200000000e338fe738d475b2>, UnitInt<0x162e42fefa39ef35>,
+> {
+    type DivT = BoundedInt<0x0, 0x171547653>;
+    type RemT = BoundedInt<0x0, 0x162e42fefa39ef34>;
+}
+/// Quotient of the `exp` reduction: `exp(x) = 2^(q - EXP_Q0) * e^f`.
+pub type ExpQuot = BoundedInt<0x0, 0x171547653>;
+/// Reduced argument of `exp`, in [0, ln 2), scale 2^61.
+pub type ExpArg = BoundedInt<0x0, 0x162e42fefa39ef34>;
+/// `exp`: quotient and remainder of `x` modulo `ln 2`.
+#[inline(always)]
+pub fn reduce_exp(x: i64) -> (ExpQuot, ExpArg) {
+    let v1: BoundedInt<-0x100000000000000000000000, 0xfffffffffffffffe0000000> = bounded_int::mul::<
+        i64, UnitInt<0x20000000>,
+    >(x, 0x20000000);
+    let v2: BoundedInt<0xe338fe758d475b2, 0x200000000e338fe738d475b2> = bounded_int::add::<
+        BoundedInt<-0x100000000000000000000000, 0xfffffffffffffffe0000000>,
+        UnitInt<0x100000000e338fe758d475b2>,
+    >(v1, 0x100000000e338fe758d475b2);
+    let (v3, v4) = bounded_int::div_rem::<
+        BoundedInt<0xe338fe758d475b2, 0x200000000e338fe738d475b2>, UnitInt<0x162e42fefa39ef35>,
+    >(v2, 0x162e42fefa39ef35);
+    (v3, v4)
+}
+
+impl ExpH121 of DivRemHelper<BoundedInt<0x0, 0x162e42fefa39ef34>, UnitInt<0x2000000>> {
+    type DivT = BoundedInt<0x0, 0xb17217f7d>;
+    type RemT = BoundedInt<0x0, 0x1ffffff>;
+}
+impl ExpH122 of MulHelper<BoundedInt<0x0, 0xb17217f7d>, UnitInt<0x23814fa13b06f>> {
+    type Result = BoundedInt<0x0, 0x189c3af6ec607697733733>;
+}
+impl ExpH123 of AddHelper<
+    BoundedInt<0x0, 0x189c3af6ec607697733733>, UnitInt<0xc4c5337c654c83bc615d4d>,
+> {
+    type Result = BoundedInt<0xc4c5337c654c83bc615d4d, 0xdd616e7351acfa53d49480>;
+}
+impl ExpH124 of MulHelper<
+    BoundedInt<0x0, 0xb17217f7d>, BoundedInt<0xc4c5337c654c83bc615d4d, 0xdd616e7351acfa53d49480>,
+> {
+    type Result = BoundedInt<0x0, 0x9973077af8a00f737a0ef1008f80280>;
+}
+impl ExpH125 of AddHelper<
+    BoundedInt<0x0, 0x9973077af8a00f737a0ef1008f80280>, UnitInt<0x5b724712ae231b2454cd9746919eb4b2>,
+> {
+    type Result =
+        BoundedInt<0x5b724712ae231b2454cd9746919eb4b2, 0x6509778a5dad1c1b8c6e86569a96b732>;
+}
+impl ExpH126 of MulHelper<
+    BoundedInt<0x0, 0xb17217f7d>,
+    BoundedInt<0x5b724712ae231b2454cd9746919eb4b2, 0x6509778a5dad1c1b8c6e86569a96b732>,
+> {
+    type Result = BoundedInt<0x0, 0x460893538e59dd90ec06332282423e6035beb416a>;
+}
+impl ExpH127 of AddHelper<
+    BoundedInt<0x0, 0x460893538e59dd90ec06332282423e6035beb416a>,
+    UnitInt<0x221fe566748a979c9a71bd6de6f7e9eb7c605afbb9>,
+> {
+    type Result =
+        BoundedInt<
+            0x221fe566748a979c9a71bd6de6f7e9eb7c605afbb9,
+            0x26806e9bad703575a93220a00f1c0dd17fbc463d23,
+        >;
+}
+impl ExpH128 of DivRemHelper<
+    BoundedInt<
+        0x221fe566748a979c9a71bd6de6f7e9eb7c605afbb9, 0x26806e9bad703575a93220a00f1c0dd17fbc463d23,
+    >,
+    UnitInt<0x1000000000000000000000000000>,
+> {
+    type DivT = BoundedInt<0x221fe566748a979, 0x26806e9bad70357>;
+    type RemT = BoundedInt<0x0, 0xfffffffffffffffffffffffffff>;
+}
+impl ExpH129 of MulHelper<
+    BoundedInt<0x0, 0xb17217f7d>, BoundedInt<0x221fe566748a979, 0x26806e9bad70357>,
+> {
+    type Result = BoundedInt<0x0, 0x1aaff545b360df9224dbca7b>;
+}
+impl ExpH130 of AddHelper<
+    BoundedInt<0x0, 0x1aaff545b360df9224dbca7b>, UnitInt<0xaaab109b6da027b4cba58ebf>,
+> {
+    type Result = BoundedInt<0xaaab109b6da027b4cba58ebf, 0xc55b05e121010746f081593a>;
+}
+impl ExpH131 of MulHelper<
+    BoundedInt<0x0, 0xb17217f7d>,
+    BoundedInt<0xaaab109b6da027b4cba58ebf, 0xc55b05e121010746f081593a>,
+> {
+    type Result = BoundedInt<0x0, 0x88cbe4137ec643722456c342250e65752>;
+}
+impl ExpH132 of AddHelper<
+    BoundedInt<0x0, 0x88cbe4137ec643722456c342250e65752>,
+    UnitInt<0x2aaaaa1c9af21f01cffa6a9c0685afddcc>,
+> {
+    type Result =
+        BoundedInt<0x2aaaaa1c9af21f01cffa6a9c0685afddcc, 0x3337685dd2de8338f23fd6d028d696351e>;
+}
+impl ExpH133 of MulHelper<
+    BoundedInt<0x0, 0xb17217f7d>,
+    BoundedInt<0x2aaaaa1c9af21f01cffa6a9c0685afddcc, 0x3337685dd2de8338f23fd6d028d696351e>,
+> {
+    type Result = BoundedInt<0x0, 0x238022a0e706e5157ca9884751a762756d1d68fd1a6>;
+}
+impl ExpH134 of AddHelper<
+    BoundedInt<0x0, 0x238022a0e706e5157ca9884751a762756d1d68fd1a6>,
+    UnitInt<0x80000004b3a0898844fccb9b7b04c170231f4ddcf84>,
+> {
+    type Result =
+        BoundedInt<
+            0x80000004b3a0898844fccb9b7b04c170231f4ddcf84,
+            0xa38022a59aa76e9dc1a653e2ccac23e5903cb6da12a,
+        >;
+}
+impl ExpH135 of DivRemHelper<
+    BoundedInt<
+        0x80000004b3a0898844fccb9b7b04c170231f4ddcf84,
+        0xa38022a59aa76e9dc1a653e2ccac23e5903cb6da12a,
+    >,
+    UnitInt<0x1000000000000000000000000000>,
+> {
+    type DivT = BoundedInt<0x80000004b3a08988, 0xa38022a59aa76e9d>;
+    type RemT = BoundedInt<0x0, 0xfffffffffffffffffffffffffff>;
+}
+impl ExpH136 of MulHelper<
+    BoundedInt<0x0, 0xb17217f7d>, BoundedInt<0x80000004b3a08988, 0xa38022a59aa76e9d>,
+> {
+    type Result = BoundedInt<0x0, 0x71547652b6430cdd9f0dde5a9>;
+}
+impl ExpH137 of AddHelper<
+    BoundedInt<0x0, 0x71547652b6430cdd9f0dde5a9>, UnitInt<0xfffffffff97a8986501a1d5bc>,
+> {
+    type Result = BoundedInt<0xfffffffff97a8986501a1d5bc, 0x171547652afbd9663ef27fbb65>;
+}
+impl ExpH138 of MulHelper<
+    BoundedInt<0x0, 0xb17217f7d>,
+    BoundedInt<0xfffffffff97a8986501a1d5bc, 0x171547652afbd9663ef27fbb65>,
+> {
+    type Result = BoundedInt<0x0, 0xfffffffff7888f1cd81443f0ae015a9b51>;
+}
+impl ExpH139 of AddHelper<
+    BoundedInt<0x0, 0xfffffffff7888f1cd81443f0ae015a9b51>,
+    UnitInt<0x10000000000000000000000000000000000>,
+> {
+    type Result =
+        BoundedInt<0x10000000000000000000000000000000000, 0x1fffffffff7888f1cd81443f0ae015a9b51>;
+}
+impl ExpH140 of DivRemHelper<
+    BoundedInt<0x10000000000000000000000000000000000, 0x1fffffffff7888f1cd81443f0ae015a9b51>,
+    UnitInt<0x1000000000000000000>,
+> {
+    type DivT = BoundedInt<0x10000000000000000, 0x1fffffffff7888f1c>;
+    type RemT = BoundedInt<0x0, 0xffffffffffffffffff>;
+}
+impl ExpH141 of MulHelper<BoundedInt<0x10000000000000000, 0x1fffffffff7888f1c>, u64> {
+    type Result = BoundedInt<0x0, 0x1fffffffff7888f1a00000000087770e4>;
+}
+impl ExpH142 of AddHelper<
+    BoundedInt<0x0, 0x1fffffffff7888f1a00000000087770e4>, UnitInt<0x10000000000000000>,
+> {
+    type Result = BoundedInt<0x10000000000000000, 0x1fffffffff7888f1b00000000087770e4>;
+}
+impl ExpH143 of DivRemHelper<
+    BoundedInt<0x10000000000000000, 0x1fffffffff7888f1b00000000087770e4>,
+    UnitInt<0x20000000000000000>,
+> {
+    type DivT = BoundedInt<0x0, 0xfffffffffbc4478d>;
+    type RemT = BoundedInt<0x0, 0x1ffffffffffffffff>;
+}
+/// `exp(x)` in Q32.32, before the `i64` overflow check.
+pub type ExpOut = BoundedInt<0x0, 0x10000000000000000>;
+/// `e^f` scaled by `pow`, degree 8.
+#[inline(always)]
+pub fn exp_kernel(f: ExpArg, pow: u64) -> ExpOut {
+    let (v1, _) = bounded_int::div_rem::<
+        BoundedInt<0x0, 0x162e42fefa39ef34>, UnitInt<0x2000000>,
+    >(f, 0x2000000);
+    let v3: BoundedInt<0x0, 0x189c3af6ec607697733733> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>, UnitInt<0x23814fa13b06f>,
+    >(v1, 0x23814fa13b06f);
+    let v4: BoundedInt<0xc4c5337c654c83bc615d4d, 0xdd616e7351acfa53d49480> = bounded_int::add::<
+        BoundedInt<0x0, 0x189c3af6ec607697733733>, UnitInt<0xc4c5337c654c83bc615d4d>,
+    >(v3, 0xc4c5337c654c83bc615d4d);
+    let v5: BoundedInt<0x0, 0x9973077af8a00f737a0ef1008f80280> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>,
+        BoundedInt<0xc4c5337c654c83bc615d4d, 0xdd616e7351acfa53d49480>,
+    >(v1, v4);
+    let v6: BoundedInt<0x5b724712ae231b2454cd9746919eb4b2, 0x6509778a5dad1c1b8c6e86569a96b732> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x9973077af8a00f737a0ef1008f80280>,
+        UnitInt<0x5b724712ae231b2454cd9746919eb4b2>,
+    >(v5, 0x5b724712ae231b2454cd9746919eb4b2);
+    let v7: BoundedInt<0x0, 0x460893538e59dd90ec06332282423e6035beb416a> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>,
+        BoundedInt<0x5b724712ae231b2454cd9746919eb4b2, 0x6509778a5dad1c1b8c6e86569a96b732>,
+    >(v1, v6);
+    let v8: BoundedInt<
+        0x221fe566748a979c9a71bd6de6f7e9eb7c605afbb9, 0x26806e9bad703575a93220a00f1c0dd17fbc463d23,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x460893538e59dd90ec06332282423e6035beb416a>,
+        UnitInt<0x221fe566748a979c9a71bd6de6f7e9eb7c605afbb9>,
+    >(v7, 0x221fe566748a979c9a71bd6de6f7e9eb7c605afbb9);
+    let (v9, _) = bounded_int::div_rem::<
+        BoundedInt<
+            0x221fe566748a979c9a71bd6de6f7e9eb7c605afbb9,
+            0x26806e9bad703575a93220a00f1c0dd17fbc463d23,
+        >,
+        UnitInt<0x1000000000000000000000000000>,
+    >(v8, 0x1000000000000000000000000000);
+    let v11: BoundedInt<0x0, 0x1aaff545b360df9224dbca7b> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>, BoundedInt<0x221fe566748a979, 0x26806e9bad70357>,
+    >(v1, v9);
+    let v12: BoundedInt<0xaaab109b6da027b4cba58ebf, 0xc55b05e121010746f081593a> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x1aaff545b360df9224dbca7b>, UnitInt<0xaaab109b6da027b4cba58ebf>,
+    >(v11, 0xaaab109b6da027b4cba58ebf);
+    let v13: BoundedInt<0x0, 0x88cbe4137ec643722456c342250e65752> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>,
+        BoundedInt<0xaaab109b6da027b4cba58ebf, 0xc55b05e121010746f081593a>,
+    >(v1, v12);
+    let v14: BoundedInt<
+        0x2aaaaa1c9af21f01cffa6a9c0685afddcc, 0x3337685dd2de8338f23fd6d028d696351e,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x88cbe4137ec643722456c342250e65752>,
+        UnitInt<0x2aaaaa1c9af21f01cffa6a9c0685afddcc>,
+    >(v13, 0x2aaaaa1c9af21f01cffa6a9c0685afddcc);
+    let v15: BoundedInt<0x0, 0x238022a0e706e5157ca9884751a762756d1d68fd1a6> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>,
+        BoundedInt<0x2aaaaa1c9af21f01cffa6a9c0685afddcc, 0x3337685dd2de8338f23fd6d028d696351e>,
+    >(v1, v14);
+    let v16: BoundedInt<
+        0x80000004b3a0898844fccb9b7b04c170231f4ddcf84,
+        0xa38022a59aa76e9dc1a653e2ccac23e5903cb6da12a,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x238022a0e706e5157ca9884751a762756d1d68fd1a6>,
+        UnitInt<0x80000004b3a0898844fccb9b7b04c170231f4ddcf84>,
+    >(v15, 0x80000004b3a0898844fccb9b7b04c170231f4ddcf84);
+    let (v17, _) = bounded_int::div_rem::<
+        BoundedInt<
+            0x80000004b3a0898844fccb9b7b04c170231f4ddcf84,
+            0xa38022a59aa76e9dc1a653e2ccac23e5903cb6da12a,
+        >,
+        UnitInt<0x1000000000000000000000000000>,
+    >(v16, 0x1000000000000000000000000000);
+    let v19: BoundedInt<0x0, 0x71547652b6430cdd9f0dde5a9> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>, BoundedInt<0x80000004b3a08988, 0xa38022a59aa76e9d>,
+    >(v1, v17);
+    let v20: BoundedInt<0xfffffffff97a8986501a1d5bc, 0x171547652afbd9663ef27fbb65> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x71547652b6430cdd9f0dde5a9>, UnitInt<0xfffffffff97a8986501a1d5bc>,
+    >(v19, 0xfffffffff97a8986501a1d5bc);
+    let v21: BoundedInt<0x0, 0xfffffffff7888f1cd81443f0ae015a9b51> = bounded_int::mul::<
+        BoundedInt<0x0, 0xb17217f7d>,
+        BoundedInt<0xfffffffff97a8986501a1d5bc, 0x171547652afbd9663ef27fbb65>,
+    >(v1, v20);
+    let v22: BoundedInt<
+        0x10000000000000000000000000000000000, 0x1fffffffff7888f1cd81443f0ae015a9b51,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0xfffffffff7888f1cd81443f0ae015a9b51>,
+        UnitInt<0x10000000000000000000000000000000000>,
+    >(v21, 0x10000000000000000000000000000000000);
+    let (v23, _) = bounded_int::div_rem::<
+        BoundedInt<0x10000000000000000000000000000000000, 0x1fffffffff7888f1cd81443f0ae015a9b51>,
+        UnitInt<0x1000000000000000000>,
+    >(v22, 0x1000000000000000000);
+    let v25: BoundedInt<0x0, 0x1fffffffff7888f1a00000000087770e4> = bounded_int::mul::<
+        BoundedInt<0x10000000000000000, 0x1fffffffff7888f1c>, u64,
+    >(v23, pow);
+    let v26: BoundedInt<0x10000000000000000, 0x1fffffffff7888f1b00000000087770e4> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x1fffffffff7888f1a00000000087770e4>, UnitInt<0x10000000000000000>,
+    >(v25, 0x10000000000000000);
+    let (v27, _) = bounded_int::div_rem::<
+        BoundedInt<0x10000000000000000, 0x1fffffffff7888f1b00000000087770e4>,
+        UnitInt<0x20000000000000000>,
+    >(v26, 0x20000000000000000);
+    let v29: BoundedInt<0x0, 0x10000000000000000> = upcast(v27);
+    v29
+}
+
+impl ExpPC3098163977x3098164040 of ConstrainHelper<BoundedInt<0xb8aa3b09, 0xb8aa3b48>, 0xb8aa3b29> {
+    type LowT = BoundedInt<0xb8aa3b09, 0xb8aa3b28>;
+    type HighT = BoundedInt<0xb8aa3b29, 0xb8aa3b48>;
+}
+impl ExpPC3098163977x3098164008 of ConstrainHelper<BoundedInt<0xb8aa3b09, 0xb8aa3b28>, 0xb8aa3b19> {
+    type LowT = BoundedInt<0xb8aa3b09, 0xb8aa3b18>;
+    type HighT = BoundedInt<0xb8aa3b19, 0xb8aa3b28>;
+}
+impl ExpPC3098163977x3098163992 of ConstrainHelper<BoundedInt<0xb8aa3b09, 0xb8aa3b18>, 0xb8aa3b11> {
+    type LowT = BoundedInt<0xb8aa3b09, 0xb8aa3b10>;
+    type HighT = BoundedInt<0xb8aa3b11, 0xb8aa3b18>;
+}
+impl ExpPC3098163977x3098163984 of ConstrainHelper<BoundedInt<0xb8aa3b09, 0xb8aa3b10>, 0xb8aa3b0d> {
+    type LowT = BoundedInt<0xb8aa3b09, 0xb8aa3b0c>;
+    type HighT = BoundedInt<0xb8aa3b0d, 0xb8aa3b10>;
+}
+impl ExpPC3098163977x3098163980 of ConstrainHelper<BoundedInt<0xb8aa3b09, 0xb8aa3b0c>, 0xb8aa3b0b> {
+    type LowT = BoundedInt<0xb8aa3b09, 0xb8aa3b0a>;
+    type HighT = BoundedInt<0xb8aa3b0b, 0xb8aa3b0c>;
+}
+impl ExpPC3098163977x3098163978 of ConstrainHelper<BoundedInt<0xb8aa3b09, 0xb8aa3b0a>, 0xb8aa3b0a> {
+    type LowT = BoundedInt<0xb8aa3b09, 0xb8aa3b09>;
+    type HighT = BoundedInt<0xb8aa3b0a, 0xb8aa3b0a>;
+}
+impl ExpPC3098163979x3098163980 of ConstrainHelper<BoundedInt<0xb8aa3b0b, 0xb8aa3b0c>, 0xb8aa3b0c> {
+    type LowT = BoundedInt<0xb8aa3b0b, 0xb8aa3b0b>;
+    type HighT = BoundedInt<0xb8aa3b0c, 0xb8aa3b0c>;
+}
+impl ExpPC3098163981x3098163984 of ConstrainHelper<BoundedInt<0xb8aa3b0d, 0xb8aa3b10>, 0xb8aa3b0f> {
+    type LowT = BoundedInt<0xb8aa3b0d, 0xb8aa3b0e>;
+    type HighT = BoundedInt<0xb8aa3b0f, 0xb8aa3b10>;
+}
+impl ExpPC3098163981x3098163982 of ConstrainHelper<BoundedInt<0xb8aa3b0d, 0xb8aa3b0e>, 0xb8aa3b0e> {
+    type LowT = BoundedInt<0xb8aa3b0d, 0xb8aa3b0d>;
+    type HighT = BoundedInt<0xb8aa3b0e, 0xb8aa3b0e>;
+}
+impl ExpPC3098163983x3098163984 of ConstrainHelper<BoundedInt<0xb8aa3b0f, 0xb8aa3b10>, 0xb8aa3b10> {
+    type LowT = BoundedInt<0xb8aa3b0f, 0xb8aa3b0f>;
+    type HighT = BoundedInt<0xb8aa3b10, 0xb8aa3b10>;
+}
+impl ExpPC3098163985x3098163992 of ConstrainHelper<BoundedInt<0xb8aa3b11, 0xb8aa3b18>, 0xb8aa3b15> {
+    type LowT = BoundedInt<0xb8aa3b11, 0xb8aa3b14>;
+    type HighT = BoundedInt<0xb8aa3b15, 0xb8aa3b18>;
+}
+impl ExpPC3098163985x3098163988 of ConstrainHelper<BoundedInt<0xb8aa3b11, 0xb8aa3b14>, 0xb8aa3b13> {
+    type LowT = BoundedInt<0xb8aa3b11, 0xb8aa3b12>;
+    type HighT = BoundedInt<0xb8aa3b13, 0xb8aa3b14>;
+}
+impl ExpPC3098163985x3098163986 of ConstrainHelper<BoundedInt<0xb8aa3b11, 0xb8aa3b12>, 0xb8aa3b12> {
+    type LowT = BoundedInt<0xb8aa3b11, 0xb8aa3b11>;
+    type HighT = BoundedInt<0xb8aa3b12, 0xb8aa3b12>;
+}
+impl ExpPC3098163987x3098163988 of ConstrainHelper<BoundedInt<0xb8aa3b13, 0xb8aa3b14>, 0xb8aa3b14> {
+    type LowT = BoundedInt<0xb8aa3b13, 0xb8aa3b13>;
+    type HighT = BoundedInt<0xb8aa3b14, 0xb8aa3b14>;
+}
+impl ExpPC3098163989x3098163992 of ConstrainHelper<BoundedInt<0xb8aa3b15, 0xb8aa3b18>, 0xb8aa3b17> {
+    type LowT = BoundedInt<0xb8aa3b15, 0xb8aa3b16>;
+    type HighT = BoundedInt<0xb8aa3b17, 0xb8aa3b18>;
+}
+impl ExpPC3098163989x3098163990 of ConstrainHelper<BoundedInt<0xb8aa3b15, 0xb8aa3b16>, 0xb8aa3b16> {
+    type LowT = BoundedInt<0xb8aa3b15, 0xb8aa3b15>;
+    type HighT = BoundedInt<0xb8aa3b16, 0xb8aa3b16>;
+}
+impl ExpPC3098163991x3098163992 of ConstrainHelper<BoundedInt<0xb8aa3b17, 0xb8aa3b18>, 0xb8aa3b18> {
+    type LowT = BoundedInt<0xb8aa3b17, 0xb8aa3b17>;
+    type HighT = BoundedInt<0xb8aa3b18, 0xb8aa3b18>;
+}
+impl ExpPC3098163993x3098164008 of ConstrainHelper<BoundedInt<0xb8aa3b19, 0xb8aa3b28>, 0xb8aa3b21> {
+    type LowT = BoundedInt<0xb8aa3b19, 0xb8aa3b20>;
+    type HighT = BoundedInt<0xb8aa3b21, 0xb8aa3b28>;
+}
+impl ExpPC3098163993x3098164000 of ConstrainHelper<BoundedInt<0xb8aa3b19, 0xb8aa3b20>, 0xb8aa3b1d> {
+    type LowT = BoundedInt<0xb8aa3b19, 0xb8aa3b1c>;
+    type HighT = BoundedInt<0xb8aa3b1d, 0xb8aa3b20>;
+}
+impl ExpPC3098163993x3098163996 of ConstrainHelper<BoundedInt<0xb8aa3b19, 0xb8aa3b1c>, 0xb8aa3b1b> {
+    type LowT = BoundedInt<0xb8aa3b19, 0xb8aa3b1a>;
+    type HighT = BoundedInt<0xb8aa3b1b, 0xb8aa3b1c>;
+}
+impl ExpPC3098163993x3098163994 of ConstrainHelper<BoundedInt<0xb8aa3b19, 0xb8aa3b1a>, 0xb8aa3b1a> {
+    type LowT = BoundedInt<0xb8aa3b19, 0xb8aa3b19>;
+    type HighT = BoundedInt<0xb8aa3b1a, 0xb8aa3b1a>;
+}
+impl ExpPC3098163995x3098163996 of ConstrainHelper<BoundedInt<0xb8aa3b1b, 0xb8aa3b1c>, 0xb8aa3b1c> {
+    type LowT = BoundedInt<0xb8aa3b1b, 0xb8aa3b1b>;
+    type HighT = BoundedInt<0xb8aa3b1c, 0xb8aa3b1c>;
+}
+impl ExpPC3098163997x3098164000 of ConstrainHelper<BoundedInt<0xb8aa3b1d, 0xb8aa3b20>, 0xb8aa3b1f> {
+    type LowT = BoundedInt<0xb8aa3b1d, 0xb8aa3b1e>;
+    type HighT = BoundedInt<0xb8aa3b1f, 0xb8aa3b20>;
+}
+impl ExpPC3098163997x3098163998 of ConstrainHelper<BoundedInt<0xb8aa3b1d, 0xb8aa3b1e>, 0xb8aa3b1e> {
+    type LowT = BoundedInt<0xb8aa3b1d, 0xb8aa3b1d>;
+    type HighT = BoundedInt<0xb8aa3b1e, 0xb8aa3b1e>;
+}
+impl ExpPC3098163999x3098164000 of ConstrainHelper<BoundedInt<0xb8aa3b1f, 0xb8aa3b20>, 0xb8aa3b20> {
+    type LowT = BoundedInt<0xb8aa3b1f, 0xb8aa3b1f>;
+    type HighT = BoundedInt<0xb8aa3b20, 0xb8aa3b20>;
+}
+impl ExpPC3098164001x3098164008 of ConstrainHelper<BoundedInt<0xb8aa3b21, 0xb8aa3b28>, 0xb8aa3b25> {
+    type LowT = BoundedInt<0xb8aa3b21, 0xb8aa3b24>;
+    type HighT = BoundedInt<0xb8aa3b25, 0xb8aa3b28>;
+}
+impl ExpPC3098164001x3098164004 of ConstrainHelper<BoundedInt<0xb8aa3b21, 0xb8aa3b24>, 0xb8aa3b23> {
+    type LowT = BoundedInt<0xb8aa3b21, 0xb8aa3b22>;
+    type HighT = BoundedInt<0xb8aa3b23, 0xb8aa3b24>;
+}
+impl ExpPC3098164001x3098164002 of ConstrainHelper<BoundedInt<0xb8aa3b21, 0xb8aa3b22>, 0xb8aa3b22> {
+    type LowT = BoundedInt<0xb8aa3b21, 0xb8aa3b21>;
+    type HighT = BoundedInt<0xb8aa3b22, 0xb8aa3b22>;
+}
+impl ExpPC3098164003x3098164004 of ConstrainHelper<BoundedInt<0xb8aa3b23, 0xb8aa3b24>, 0xb8aa3b24> {
+    type LowT = BoundedInt<0xb8aa3b23, 0xb8aa3b23>;
+    type HighT = BoundedInt<0xb8aa3b24, 0xb8aa3b24>;
+}
+impl ExpPC3098164005x3098164008 of ConstrainHelper<BoundedInt<0xb8aa3b25, 0xb8aa3b28>, 0xb8aa3b27> {
+    type LowT = BoundedInt<0xb8aa3b25, 0xb8aa3b26>;
+    type HighT = BoundedInt<0xb8aa3b27, 0xb8aa3b28>;
+}
+impl ExpPC3098164005x3098164006 of ConstrainHelper<BoundedInt<0xb8aa3b25, 0xb8aa3b26>, 0xb8aa3b26> {
+    type LowT = BoundedInt<0xb8aa3b25, 0xb8aa3b25>;
+    type HighT = BoundedInt<0xb8aa3b26, 0xb8aa3b26>;
+}
+impl ExpPC3098164007x3098164008 of ConstrainHelper<BoundedInt<0xb8aa3b27, 0xb8aa3b28>, 0xb8aa3b28> {
+    type LowT = BoundedInt<0xb8aa3b27, 0xb8aa3b27>;
+    type HighT = BoundedInt<0xb8aa3b28, 0xb8aa3b28>;
+}
+impl ExpPC3098164009x3098164040 of ConstrainHelper<BoundedInt<0xb8aa3b29, 0xb8aa3b48>, 0xb8aa3b39> {
+    type LowT = BoundedInt<0xb8aa3b29, 0xb8aa3b38>;
+    type HighT = BoundedInt<0xb8aa3b39, 0xb8aa3b48>;
+}
+impl ExpPC3098164009x3098164024 of ConstrainHelper<BoundedInt<0xb8aa3b29, 0xb8aa3b38>, 0xb8aa3b31> {
+    type LowT = BoundedInt<0xb8aa3b29, 0xb8aa3b30>;
+    type HighT = BoundedInt<0xb8aa3b31, 0xb8aa3b38>;
+}
+impl ExpPC3098164009x3098164016 of ConstrainHelper<BoundedInt<0xb8aa3b29, 0xb8aa3b30>, 0xb8aa3b2d> {
+    type LowT = BoundedInt<0xb8aa3b29, 0xb8aa3b2c>;
+    type HighT = BoundedInt<0xb8aa3b2d, 0xb8aa3b30>;
+}
+impl ExpPC3098164009x3098164012 of ConstrainHelper<BoundedInt<0xb8aa3b29, 0xb8aa3b2c>, 0xb8aa3b2b> {
+    type LowT = BoundedInt<0xb8aa3b29, 0xb8aa3b2a>;
+    type HighT = BoundedInt<0xb8aa3b2b, 0xb8aa3b2c>;
+}
+impl ExpPC3098164009x3098164010 of ConstrainHelper<BoundedInt<0xb8aa3b29, 0xb8aa3b2a>, 0xb8aa3b2a> {
+    type LowT = BoundedInt<0xb8aa3b29, 0xb8aa3b29>;
+    type HighT = BoundedInt<0xb8aa3b2a, 0xb8aa3b2a>;
+}
+impl ExpPC3098164011x3098164012 of ConstrainHelper<BoundedInt<0xb8aa3b2b, 0xb8aa3b2c>, 0xb8aa3b2c> {
+    type LowT = BoundedInt<0xb8aa3b2b, 0xb8aa3b2b>;
+    type HighT = BoundedInt<0xb8aa3b2c, 0xb8aa3b2c>;
+}
+impl ExpPC3098164013x3098164016 of ConstrainHelper<BoundedInt<0xb8aa3b2d, 0xb8aa3b30>, 0xb8aa3b2f> {
+    type LowT = BoundedInt<0xb8aa3b2d, 0xb8aa3b2e>;
+    type HighT = BoundedInt<0xb8aa3b2f, 0xb8aa3b30>;
+}
+impl ExpPC3098164013x3098164014 of ConstrainHelper<BoundedInt<0xb8aa3b2d, 0xb8aa3b2e>, 0xb8aa3b2e> {
+    type LowT = BoundedInt<0xb8aa3b2d, 0xb8aa3b2d>;
+    type HighT = BoundedInt<0xb8aa3b2e, 0xb8aa3b2e>;
+}
+impl ExpPC3098164015x3098164016 of ConstrainHelper<BoundedInt<0xb8aa3b2f, 0xb8aa3b30>, 0xb8aa3b30> {
+    type LowT = BoundedInt<0xb8aa3b2f, 0xb8aa3b2f>;
+    type HighT = BoundedInt<0xb8aa3b30, 0xb8aa3b30>;
+}
+impl ExpPC3098164017x3098164024 of ConstrainHelper<BoundedInt<0xb8aa3b31, 0xb8aa3b38>, 0xb8aa3b35> {
+    type LowT = BoundedInt<0xb8aa3b31, 0xb8aa3b34>;
+    type HighT = BoundedInt<0xb8aa3b35, 0xb8aa3b38>;
+}
+impl ExpPC3098164017x3098164020 of ConstrainHelper<BoundedInt<0xb8aa3b31, 0xb8aa3b34>, 0xb8aa3b33> {
+    type LowT = BoundedInt<0xb8aa3b31, 0xb8aa3b32>;
+    type HighT = BoundedInt<0xb8aa3b33, 0xb8aa3b34>;
+}
+impl ExpPC3098164017x3098164018 of ConstrainHelper<BoundedInt<0xb8aa3b31, 0xb8aa3b32>, 0xb8aa3b32> {
+    type LowT = BoundedInt<0xb8aa3b31, 0xb8aa3b31>;
+    type HighT = BoundedInt<0xb8aa3b32, 0xb8aa3b32>;
+}
+impl ExpPC3098164019x3098164020 of ConstrainHelper<BoundedInt<0xb8aa3b33, 0xb8aa3b34>, 0xb8aa3b34> {
+    type LowT = BoundedInt<0xb8aa3b33, 0xb8aa3b33>;
+    type HighT = BoundedInt<0xb8aa3b34, 0xb8aa3b34>;
+}
+impl ExpPC3098164021x3098164024 of ConstrainHelper<BoundedInt<0xb8aa3b35, 0xb8aa3b38>, 0xb8aa3b37> {
+    type LowT = BoundedInt<0xb8aa3b35, 0xb8aa3b36>;
+    type HighT = BoundedInt<0xb8aa3b37, 0xb8aa3b38>;
+}
+impl ExpPC3098164021x3098164022 of ConstrainHelper<BoundedInt<0xb8aa3b35, 0xb8aa3b36>, 0xb8aa3b36> {
+    type LowT = BoundedInt<0xb8aa3b35, 0xb8aa3b35>;
+    type HighT = BoundedInt<0xb8aa3b36, 0xb8aa3b36>;
+}
+impl ExpPC3098164023x3098164024 of ConstrainHelper<BoundedInt<0xb8aa3b37, 0xb8aa3b38>, 0xb8aa3b38> {
+    type LowT = BoundedInt<0xb8aa3b37, 0xb8aa3b37>;
+    type HighT = BoundedInt<0xb8aa3b38, 0xb8aa3b38>;
+}
+impl ExpPC3098164025x3098164040 of ConstrainHelper<BoundedInt<0xb8aa3b39, 0xb8aa3b48>, 0xb8aa3b41> {
+    type LowT = BoundedInt<0xb8aa3b39, 0xb8aa3b40>;
+    type HighT = BoundedInt<0xb8aa3b41, 0xb8aa3b48>;
+}
+impl ExpPC3098164025x3098164032 of ConstrainHelper<BoundedInt<0xb8aa3b39, 0xb8aa3b40>, 0xb8aa3b3d> {
+    type LowT = BoundedInt<0xb8aa3b39, 0xb8aa3b3c>;
+    type HighT = BoundedInt<0xb8aa3b3d, 0xb8aa3b40>;
+}
+impl ExpPC3098164025x3098164028 of ConstrainHelper<BoundedInt<0xb8aa3b39, 0xb8aa3b3c>, 0xb8aa3b3b> {
+    type LowT = BoundedInt<0xb8aa3b39, 0xb8aa3b3a>;
+    type HighT = BoundedInt<0xb8aa3b3b, 0xb8aa3b3c>;
+}
+impl ExpPC3098164025x3098164026 of ConstrainHelper<BoundedInt<0xb8aa3b39, 0xb8aa3b3a>, 0xb8aa3b3a> {
+    type LowT = BoundedInt<0xb8aa3b39, 0xb8aa3b39>;
+    type HighT = BoundedInt<0xb8aa3b3a, 0xb8aa3b3a>;
+}
+impl ExpPC3098164027x3098164028 of ConstrainHelper<BoundedInt<0xb8aa3b3b, 0xb8aa3b3c>, 0xb8aa3b3c> {
+    type LowT = BoundedInt<0xb8aa3b3b, 0xb8aa3b3b>;
+    type HighT = BoundedInt<0xb8aa3b3c, 0xb8aa3b3c>;
+}
+impl ExpPC3098164029x3098164032 of ConstrainHelper<BoundedInt<0xb8aa3b3d, 0xb8aa3b40>, 0xb8aa3b3f> {
+    type LowT = BoundedInt<0xb8aa3b3d, 0xb8aa3b3e>;
+    type HighT = BoundedInt<0xb8aa3b3f, 0xb8aa3b40>;
+}
+impl ExpPC3098164029x3098164030 of ConstrainHelper<BoundedInt<0xb8aa3b3d, 0xb8aa3b3e>, 0xb8aa3b3e> {
+    type LowT = BoundedInt<0xb8aa3b3d, 0xb8aa3b3d>;
+    type HighT = BoundedInt<0xb8aa3b3e, 0xb8aa3b3e>;
+}
+impl ExpPC3098164031x3098164032 of ConstrainHelper<BoundedInt<0xb8aa3b3f, 0xb8aa3b40>, 0xb8aa3b40> {
+    type LowT = BoundedInt<0xb8aa3b3f, 0xb8aa3b3f>;
+    type HighT = BoundedInt<0xb8aa3b40, 0xb8aa3b40>;
+}
+impl ExpPC3098164033x3098164040 of ConstrainHelper<BoundedInt<0xb8aa3b41, 0xb8aa3b48>, 0xb8aa3b45> {
+    type LowT = BoundedInt<0xb8aa3b41, 0xb8aa3b44>;
+    type HighT = BoundedInt<0xb8aa3b45, 0xb8aa3b48>;
+}
+impl ExpPC3098164033x3098164036 of ConstrainHelper<BoundedInt<0xb8aa3b41, 0xb8aa3b44>, 0xb8aa3b43> {
+    type LowT = BoundedInt<0xb8aa3b41, 0xb8aa3b42>;
+    type HighT = BoundedInt<0xb8aa3b43, 0xb8aa3b44>;
+}
+impl ExpPC3098164033x3098164034 of ConstrainHelper<BoundedInt<0xb8aa3b41, 0xb8aa3b42>, 0xb8aa3b42> {
+    type LowT = BoundedInt<0xb8aa3b41, 0xb8aa3b41>;
+    type HighT = BoundedInt<0xb8aa3b42, 0xb8aa3b42>;
+}
+impl ExpPC3098164035x3098164036 of ConstrainHelper<BoundedInt<0xb8aa3b43, 0xb8aa3b44>, 0xb8aa3b44> {
+    type LowT = BoundedInt<0xb8aa3b43, 0xb8aa3b43>;
+    type HighT = BoundedInt<0xb8aa3b44, 0xb8aa3b44>;
+}
+impl ExpPC3098164037x3098164040 of ConstrainHelper<BoundedInt<0xb8aa3b45, 0xb8aa3b48>, 0xb8aa3b47> {
+    type LowT = BoundedInt<0xb8aa3b45, 0xb8aa3b46>;
+    type HighT = BoundedInt<0xb8aa3b47, 0xb8aa3b48>;
+}
+impl ExpPC3098164037x3098164038 of ConstrainHelper<BoundedInt<0xb8aa3b45, 0xb8aa3b46>, 0xb8aa3b46> {
+    type LowT = BoundedInt<0xb8aa3b45, 0xb8aa3b45>;
+    type HighT = BoundedInt<0xb8aa3b46, 0xb8aa3b46>;
+}
+impl ExpPC3098164039x3098164040 of ConstrainHelper<BoundedInt<0xb8aa3b47, 0xb8aa3b48>, 0xb8aa3b48> {
+    type LowT = BoundedInt<0xb8aa3b47, 0xb8aa3b47>;
+    type HighT = BoundedInt<0xb8aa3b48, 0xb8aa3b48>;
+}
+impl ExpPCLo of ConstrainHelper<ExpQuot, 0xb8aa3b09> {
+    type LowT = BoundedInt<0x0, 0xb8aa3b08>;
+    type HighT = BoundedInt<0xb8aa3b09, 0x171547653>;
+}
+impl ExpPCHi of ConstrainHelper<BoundedInt<0xb8aa3b09, 0x171547653>, 0xb8aa3b49> {
+    type LowT = BoundedInt<0xb8aa3b09, 0xb8aa3b48>;
+    type HighT = BoundedInt<0xb8aa3b49, 0x171547653>;
+}
+/// `2^(q - EXP_Q0 + 33)` as the `pow` of `exp_kernel`: `Some(0)` when `exp(x)` underflows
+/// to zero, `None` when it cannot fit Q32.32.
+#[inline(always)]
+pub fn exp_pow2(q: ExpQuot) -> Option<u64> {
+    match bounded_int::constrain::<ExpQuot, 0xb8aa3b09>(q) {
+        Ok(_) => Some(0),
+        Err(q) => match bounded_int::constrain::<
+            BoundedInt<0xb8aa3b09, 0x171547653>, 0xb8aa3b49,
+        >(q) {
+            Ok(q) => {
+                match bounded_int::constrain::<BoundedInt<0xb8aa3b09, 0xb8aa3b48>, 0xb8aa3b29>(q) {
+                    Ok(lo) => {
+                        match bounded_int::constrain::<
+                            BoundedInt<0xb8aa3b09, 0xb8aa3b28>, 0xb8aa3b19,
+                        >(lo) {
+                            Ok(lo) => {
+                                match bounded_int::constrain::<
+                                    BoundedInt<0xb8aa3b09, 0xb8aa3b18>, 0xb8aa3b11,
+                                >(lo) {
+                                    Ok(lo) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b09, 0xb8aa3b10>, 0xb8aa3b0d,
+                                        >(lo) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b09, 0xb8aa3b0c>, 0xb8aa3b0b,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b09, 0xb8aa3b0a>,
+                                                            0xb8aa3b0a,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x1) },
+                                                            Err(_hi) => { Some(0x2) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b0b, 0xb8aa3b0c>,
+                                                            0xb8aa3b0c,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x4) },
+                                                            Err(_hi) => { Some(0x8) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b0d, 0xb8aa3b10>, 0xb8aa3b0f,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b0d, 0xb8aa3b0e>,
+                                                            0xb8aa3b0e,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x10) },
+                                                            Err(_hi) => { Some(0x20) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b0f, 0xb8aa3b10>,
+                                                            0xb8aa3b10,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x40) },
+                                                            Err(_hi) => { Some(0x80) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                    Err(hi) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b11, 0xb8aa3b18>, 0xb8aa3b15,
+                                        >(hi) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b11, 0xb8aa3b14>, 0xb8aa3b13,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b11, 0xb8aa3b12>,
+                                                            0xb8aa3b12,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x100) },
+                                                            Err(_hi) => { Some(0x200) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b13, 0xb8aa3b14>,
+                                                            0xb8aa3b14,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x400) },
+                                                            Err(_hi) => { Some(0x800) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b15, 0xb8aa3b18>, 0xb8aa3b17,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b15, 0xb8aa3b16>,
+                                                            0xb8aa3b16,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x1000) },
+                                                            Err(_hi) => { Some(0x2000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b17, 0xb8aa3b18>,
+                                                            0xb8aa3b18,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x4000) },
+                                                            Err(_hi) => { Some(0x8000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                }
+                            },
+                            Err(hi) => {
+                                match bounded_int::constrain::<
+                                    BoundedInt<0xb8aa3b19, 0xb8aa3b28>, 0xb8aa3b21,
+                                >(hi) {
+                                    Ok(lo) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b19, 0xb8aa3b20>, 0xb8aa3b1d,
+                                        >(lo) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b19, 0xb8aa3b1c>, 0xb8aa3b1b,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b19, 0xb8aa3b1a>,
+                                                            0xb8aa3b1a,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x10000) },
+                                                            Err(_hi) => { Some(0x20000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b1b, 0xb8aa3b1c>,
+                                                            0xb8aa3b1c,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x40000) },
+                                                            Err(_hi) => { Some(0x80000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b1d, 0xb8aa3b20>, 0xb8aa3b1f,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b1d, 0xb8aa3b1e>,
+                                                            0xb8aa3b1e,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x100000) },
+                                                            Err(_hi) => { Some(0x200000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b1f, 0xb8aa3b20>,
+                                                            0xb8aa3b20,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x400000) },
+                                                            Err(_hi) => { Some(0x800000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                    Err(hi) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b21, 0xb8aa3b28>, 0xb8aa3b25,
+                                        >(hi) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b21, 0xb8aa3b24>, 0xb8aa3b23,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b21, 0xb8aa3b22>,
+                                                            0xb8aa3b22,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x1000000) },
+                                                            Err(_hi) => { Some(0x2000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b23, 0xb8aa3b24>,
+                                                            0xb8aa3b24,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x4000000) },
+                                                            Err(_hi) => { Some(0x8000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b25, 0xb8aa3b28>, 0xb8aa3b27,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b25, 0xb8aa3b26>,
+                                                            0xb8aa3b26,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x10000000) },
+                                                            Err(_hi) => { Some(0x20000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b27, 0xb8aa3b28>,
+                                                            0xb8aa3b28,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x40000000) },
+                                                            Err(_hi) => { Some(0x80000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                }
+                            },
+                        }
+                    },
+                    Err(hi) => {
+                        match bounded_int::constrain::<
+                            BoundedInt<0xb8aa3b29, 0xb8aa3b48>, 0xb8aa3b39,
+                        >(hi) {
+                            Ok(lo) => {
+                                match bounded_int::constrain::<
+                                    BoundedInt<0xb8aa3b29, 0xb8aa3b38>, 0xb8aa3b31,
+                                >(lo) {
+                                    Ok(lo) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b29, 0xb8aa3b30>, 0xb8aa3b2d,
+                                        >(lo) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b29, 0xb8aa3b2c>, 0xb8aa3b2b,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b29, 0xb8aa3b2a>,
+                                                            0xb8aa3b2a,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x100000000) },
+                                                            Err(_hi) => { Some(0x200000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b2b, 0xb8aa3b2c>,
+                                                            0xb8aa3b2c,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x400000000) },
+                                                            Err(_hi) => { Some(0x800000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b2d, 0xb8aa3b30>, 0xb8aa3b2f,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b2d, 0xb8aa3b2e>,
+                                                            0xb8aa3b2e,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x1000000000) },
+                                                            Err(_hi) => { Some(0x2000000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b2f, 0xb8aa3b30>,
+                                                            0xb8aa3b30,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x4000000000) },
+                                                            Err(_hi) => { Some(0x8000000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                    Err(hi) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b31, 0xb8aa3b38>, 0xb8aa3b35,
+                                        >(hi) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b31, 0xb8aa3b34>, 0xb8aa3b33,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b31, 0xb8aa3b32>,
+                                                            0xb8aa3b32,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x10000000000) },
+                                                            Err(_hi) => { Some(0x20000000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b33, 0xb8aa3b34>,
+                                                            0xb8aa3b34,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x40000000000) },
+                                                            Err(_hi) => { Some(0x80000000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b35, 0xb8aa3b38>, 0xb8aa3b37,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b35, 0xb8aa3b36>,
+                                                            0xb8aa3b36,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x100000000000) },
+                                                            Err(_hi) => { Some(0x200000000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b37, 0xb8aa3b38>,
+                                                            0xb8aa3b38,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x400000000000) },
+                                                            Err(_hi) => { Some(0x800000000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                }
+                            },
+                            Err(hi) => {
+                                match bounded_int::constrain::<
+                                    BoundedInt<0xb8aa3b39, 0xb8aa3b48>, 0xb8aa3b41,
+                                >(hi) {
+                                    Ok(lo) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b39, 0xb8aa3b40>, 0xb8aa3b3d,
+                                        >(lo) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b39, 0xb8aa3b3c>, 0xb8aa3b3b,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b39, 0xb8aa3b3a>,
+                                                            0xb8aa3b3a,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x1000000000000) },
+                                                            Err(_hi) => { Some(0x2000000000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b3b, 0xb8aa3b3c>,
+                                                            0xb8aa3b3c,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x4000000000000) },
+                                                            Err(_hi) => { Some(0x8000000000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b3d, 0xb8aa3b40>, 0xb8aa3b3f,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b3d, 0xb8aa3b3e>,
+                                                            0xb8aa3b3e,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x10000000000000) },
+                                                            Err(_hi) => { Some(0x20000000000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b3f, 0xb8aa3b40>,
+                                                            0xb8aa3b40,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x40000000000000) },
+                                                            Err(_hi) => { Some(0x80000000000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                    Err(hi) => {
+                                        match bounded_int::constrain::<
+                                            BoundedInt<0xb8aa3b41, 0xb8aa3b48>, 0xb8aa3b45,
+                                        >(hi) {
+                                            Ok(lo) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b41, 0xb8aa3b44>, 0xb8aa3b43,
+                                                >(lo) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b41, 0xb8aa3b42>,
+                                                            0xb8aa3b42,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x100000000000000) },
+                                                            Err(_hi) => { Some(0x200000000000000) },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b43, 0xb8aa3b44>,
+                                                            0xb8aa3b44,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x400000000000000) },
+                                                            Err(_hi) => { Some(0x800000000000000) },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                            Err(hi) => {
+                                                match bounded_int::constrain::<
+                                                    BoundedInt<0xb8aa3b45, 0xb8aa3b48>, 0xb8aa3b47,
+                                                >(hi) {
+                                                    Ok(lo) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b45, 0xb8aa3b46>,
+                                                            0xb8aa3b46,
+                                                        >(lo) {
+                                                            Ok(_lo) => { Some(0x1000000000000000) },
+                                                            Err(_hi) => {
+                                                                Some(0x2000000000000000)
+                                                            },
+                                                        }
+                                                    },
+                                                    Err(hi) => {
+                                                        match bounded_int::constrain::<
+                                                            BoundedInt<0xb8aa3b47, 0xb8aa3b48>,
+                                                            0xb8aa3b48,
+                                                        >(hi) {
+                                                            Ok(_lo) => { Some(0x4000000000000000) },
+                                                            Err(_hi) => {
+                                                                Some(0x8000000000000000)
+                                                            },
+                                                        }
+                                                    },
+                                                }
+                                            },
+                                        }
+                                    },
+                                }
+                            },
+                        }
+                    },
+                }
+            },
+            Err(_) => None,
+        },
+    }
+}
+
+impl LnLH146 of SubHelper<
+    BoundedInt<0x4000000000000000, 0x5a827999fcef3241>, UnitInt<0x4000000000000000>,
+> {
+    type Result = BoundedInt<0x0, 0x1a827999fcef3241>;
+}
+impl LnLH147 of AddHelper<
+    BoundedInt<0x4000000000000000, 0x5a827999fcef3241>, UnitInt<0x4000000000000000>,
+> {
+    type Result = BoundedInt<0x8000000000000000, 0x9a827999fcef3241>;
+}
+impl LnLH149 of MulHelper<BoundedInt<0x0, 0x1a827999fcef3241>, UnitInt<0x2000000000000000>> {
+    type Result = BoundedInt<0x0, 0x3504f333f9de6482000000000000000>;
+}
+impl LnLH150 of DivRemHelper<
+    BoundedInt<0x0, 0x3504f333f9de6482000000000000000>, BoundedInt<0x0, 0x9a827999fcef3241>,
+> {
+    type DivT = BoundedInt<0x0, 0x3504f333f9de6482000000000000000>;
+    type RemT = BoundedInt<0x0, 0x9a827999fcef3240>;
+}
+impl LnLH151 of MulHelper<BoundedInt<0x0, 0x57d86660310cdbf>, BoundedInt<0x0, 0x57d86660310cdbf>> {
+    type Result = BoundedInt<0x0, 0x1e24cc824c9a4e6b574e20d73b7481>;
+}
+impl LnLH152 of DivRemHelper<
+    BoundedInt<0x0, 0x1e24cc824c9a4e6b574e20d73b7481>, UnitInt<0x4000000000000000000000>,
+> {
+    type DivT = BoundedInt<0x0, 0x78933209>;
+    type RemT = BoundedInt<0x0, 0x3fffffffffffffffffffff>;
+}
+impl LnLH153 of MulHelper<BoundedInt<0x0, 0x78933209>, UnitInt<0x18c8c11e54d388fe>> {
+    type Result = BoundedInt<0x0, 0xbac5aa530f49451060b6cee>;
+}
+impl LnLH154 of AddHelper<
+    BoundedInt<0x0, 0xbac5aa530f49451060b6cee>, UnitInt<0x1c67ada017cf97647988c0584>,
+> {
+    type Result = BoundedInt<0x1c67ada017cf97647988c0584, 0x1d22734a6adee0a989e977272>;
+}
+impl LnLH155 of MulHelper<
+    BoundedInt<0x0, 0x78933209>,
+    BoundedInt<0x1c67ada017cf97647988c0584, 0x1d22734a6adee0a989e977272>,
+> {
+    type Result = BoundedInt<0x0, 0xdb8e684d68e6dc7c3b6a3cf34f234a02>;
+}
+impl LnLH156 of AddHelper<
+    BoundedInt<0x0, 0xdb8e684d68e6dc7c3b6a3cf34f234a02>,
+    UnitInt<0x2492647c9aff8db540a04789e18585d65a>,
+> {
+    type Result =
+        BoundedInt<0x2492647c9aff8db540a04789e18585d65a, 0x256df2e4e8687491bcdbb1c6d4d4a9205c>;
+}
+impl LnLH157 of MulHelper<
+    BoundedInt<0x0, 0x78933209>,
+    BoundedInt<0x2492647c9aff8db540a04789e18585d65a, 0x256df2e4e8687491bcdbb1c6d4d4a9205c>,
+> {
+    type Result = BoundedInt<0x0, 0x11a10f4e90b0aa0fd2a6fd7ed561faf34d37181b3c>;
+}
+impl LnLH158 of AddHelper<
+    BoundedInt<0x0, 0x11a10f4e90b0aa0fd2a6fd7ed561faf34d37181b3c>,
+    UnitInt<0x333333195f7e531c0342717132d7a245fbf2eb55668>,
+> {
+    type Result =
+        BoundedInt<
+            0x333333195f7e531c0342717132d7a245fbf2eb55668,
+            0x344d440e48895dbd006ce149202dc1f530c65cd71a4,
+        >;
+}
+impl LnLH159 of DivRemHelper<
+    BoundedInt<
+        0x333333195f7e531c0342717132d7a245fbf2eb55668,
+        0x344d440e48895dbd006ce149202dc1f530c65cd71a4,
+    >,
+    UnitInt<0x1000000000000000000000000000>,
+> {
+    type DivT = BoundedInt<0x333333195f7e531c, 0x344d440e48895dbd>;
+    type RemT = BoundedInt<0x0, 0xfffffffffffffffffffffffffff>;
+}
+impl LnLH160 of MulHelper<
+    BoundedInt<0x0, 0x78933209>, BoundedInt<0x333333195f7e531c, 0x344d440e48895dbd>,
+> {
+    type Result = BoundedInt<0x0, 0x18a24a7db436397cccaa35a5>;
+}
+impl LnLH161 of AddHelper<
+    BoundedInt<0x0, 0x18a24a7db436397cccaa35a5>, UnitInt<0x55555555593a59c4389183103>,
+> {
+    type Result = BoundedInt<0x55555555593a59c4389183103, 0x56df79fd347dbd5c055c266a8>;
+}
+impl LnLH162 of MulHelper<
+    BoundedInt<0x0, 0x78933209>,
+    BoundedInt<0x55555555593a59c4389183103, 0x56df79fd347dbd5c055c266a8>,
+> {
+    type Result = BoundedInt<0x0, 0x28eab47c70aed31e45c1e7342ae5a6be8>;
+}
+impl LnLH163 of AddHelper<
+    BoundedInt<0x0, 0x28eab47c70aed31e45c1e7342ae5a6be8>,
+    UnitInt<0x10000000000000000000000000000000000>,
+> {
+    type Result =
+        BoundedInt<0x10000000000000000000000000000000000, 0x1028eab47c70aed31e45c1e7342ae5a6be8>;
+}
+impl LnLH164 of DivRemHelper<
+    BoundedInt<0x10000000000000000000000000000000000, 0x1028eab47c70aed31e45c1e7342ae5a6be8>,
+    UnitInt<0x1000000000000000000>,
+> {
+    type DivT = BoundedInt<0x10000000000000000, 0x1028eab47c70aed31>;
+    type RemT = BoundedInt<0x0, 0xffffffffffffffffff>;
+}
+impl LnLH165 of MulHelper<
+    BoundedInt<0x0, 0x57d86660310cdbf>, BoundedInt<0x10000000000000000, 0x1028eab47c70aed31>,
+> {
+    type Result = BoundedInt<0x0, 0x58b90bfbe87dc7a7fdafdeda727348f>;
+}
+impl LnLH166 of MulHelper<BoundedInt<0x0, 0x3e>, UnitInt<0xb17217f7d1cf79abc9e3b39803f2f6b>> {
+    type Result = BoundedInt<0x0, 0x2af9a1ce04d03f779ae5257ed0f4d7bea>;
+}
+impl LnLH167 of AddHelper<
+    BoundedInt<0x0, 0x2af9a1ce04d03f779ae5257ed0f4d7bea>, UnitInt<0xc610ca86c3898cff81a12a0>,
+> {
+    type Result = BoundedInt<0xc610ca86c3898cff81a12a0, 0x2af9a1ce0596504221a8af0bd07678e8a>;
+}
+impl LnLH168 of AddHelper<
+    BoundedInt<0xc610ca86c3898cff81a12a0, 0x2af9a1ce0596504221a8af0bd07678e8a>,
+    BoundedInt<0x0, 0x58b90bfbe87dc7a7fdafdeda727348f>,
+> {
+    type Result = BoundedInt<0xc610ca86c3898cff81a12a0, 0x2b525ada017ece09c9a65eeaaae8ec319>;
+}
+impl LnLH169 of AddHelper<
+    BoundedInt<0xc610ca86c3898cff81a12a0, 0x2b525ada017ece09c9a65eeaaae8ec319>,
+    UnitInt<0x80000000000000000000000>,
+> {
+    type Result = BoundedInt<0x14610ca86c3898cff81a12a0, 0x2b525ada01fece09c9a65eeaaae8ec319>;
+}
+impl LnLH170 of DivRemHelper<
+    BoundedInt<0x14610ca86c3898cff81a12a0, 0x2b525ada01fece09c9a65eeaaae8ec319>,
+    UnitInt<0x100000000000000000000000>,
+> {
+    type DivT = BoundedInt<0x1, 0x2b525ada01>;
+    type RemT = BoundedInt<0x0, 0xfffffffffffffffffffffff>;
+}
+impl LnLH171 of SubHelper<BoundedInt<0x1, 0x2b525ada01>, UnitInt<0x162e42fefb>> {
+    type Result = BoundedInt<-0x162e42fefa, 0x152417db06>;
+}
+/// Mantissa in [1, sqrt 2), scale 2^62.
+pub type LnLower = BoundedInt<0x4000000000000000, 0x5a827999fcef3241>;
+/// `floor(log2(raw))` of a positive raw value.
+pub type LnExp = BoundedInt<0x0, 0x3e>;
+/// `ln(x)` in Q32.32.
+pub type LnOut = BoundedInt<-0x1800000000, 0x1800000000>;
+/// `ln` of a mantissa in [1, sqrt 2), degree 11.
+pub fn ln_lower(m: LnLower, e: LnExp) -> LnOut {
+    let v1: BoundedInt<0x0, 0x1a827999fcef3241> = bounded_int::sub::<
+        BoundedInt<0x4000000000000000, 0x5a827999fcef3241>, UnitInt<0x4000000000000000>,
+    >(m, 0x4000000000000000);
+    let v2: BoundedInt<0x8000000000000000, 0x9a827999fcef3241> = bounded_int::add::<
+        BoundedInt<0x4000000000000000, 0x5a827999fcef3241>, UnitInt<0x4000000000000000>,
+    >(m, 0x4000000000000000);
+    let v3: BoundedInt<0x0, 0x3504f333f9de6482000000000000000> = bounded_int::mul::<
+        BoundedInt<0x0, 0x1a827999fcef3241>, UnitInt<0x2000000000000000>,
+    >(v1, 0x2000000000000000);
+    let v4: BoundedInt<0x0, 0x9a827999fcef3241> = upcast(v2);
+    let v5: NonZero<BoundedInt<0x0, 0x9a827999fcef3241>> = match bounded_int_is_zero(v4) {
+        IsZero::Zero => core::panic_with_felt252('simba: unreachable'),
+        IsZero::NonZero(v) => v,
+    };
+    let (v6, _) = bounded_int::div_rem::<
+        BoundedInt<0x0, 0x3504f333f9de6482000000000000000>, BoundedInt<0x0, 0x9a827999fcef3241>,
+    >(v3, v5);
+    let v8: BoundedInt<0x0, 0x57d86660310cdbf> = downcast(v6).expect('simba: unreachable');
+    let v9: BoundedInt<0x0, 0x1e24cc824c9a4e6b574e20d73b7481> = bounded_int::mul::<
+        BoundedInt<0x0, 0x57d86660310cdbf>, BoundedInt<0x0, 0x57d86660310cdbf>,
+    >(v8, v8);
+    let (v10, _) = bounded_int::div_rem::<
+        BoundedInt<0x0, 0x1e24cc824c9a4e6b574e20d73b7481>, UnitInt<0x4000000000000000000000>,
+    >(v9, 0x4000000000000000000000);
+    let v12: BoundedInt<0x0, 0xbac5aa530f49451060b6cee> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>, UnitInt<0x18c8c11e54d388fe>,
+    >(v10, 0x18c8c11e54d388fe);
+    let v13: BoundedInt<0x1c67ada017cf97647988c0584, 0x1d22734a6adee0a989e977272> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0xbac5aa530f49451060b6cee>, UnitInt<0x1c67ada017cf97647988c0584>,
+    >(v12, 0x1c67ada017cf97647988c0584);
+    let v14: BoundedInt<0x0, 0xdb8e684d68e6dc7c3b6a3cf34f234a02> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>,
+        BoundedInt<0x1c67ada017cf97647988c0584, 0x1d22734a6adee0a989e977272>,
+    >(v10, v13);
+    let v15: BoundedInt<
+        0x2492647c9aff8db540a04789e18585d65a, 0x256df2e4e8687491bcdbb1c6d4d4a9205c,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0xdb8e684d68e6dc7c3b6a3cf34f234a02>,
+        UnitInt<0x2492647c9aff8db540a04789e18585d65a>,
+    >(v14, 0x2492647c9aff8db540a04789e18585d65a);
+    let v16: BoundedInt<0x0, 0x11a10f4e90b0aa0fd2a6fd7ed561faf34d37181b3c> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>,
+        BoundedInt<0x2492647c9aff8db540a04789e18585d65a, 0x256df2e4e8687491bcdbb1c6d4d4a9205c>,
+    >(v10, v15);
+    let v17: BoundedInt<
+        0x333333195f7e531c0342717132d7a245fbf2eb55668,
+        0x344d440e48895dbd006ce149202dc1f530c65cd71a4,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x11a10f4e90b0aa0fd2a6fd7ed561faf34d37181b3c>,
+        UnitInt<0x333333195f7e531c0342717132d7a245fbf2eb55668>,
+    >(v16, 0x333333195f7e531c0342717132d7a245fbf2eb55668);
+    let (v18, _) = bounded_int::div_rem::<
+        BoundedInt<
+            0x333333195f7e531c0342717132d7a245fbf2eb55668,
+            0x344d440e48895dbd006ce149202dc1f530c65cd71a4,
+        >,
+        UnitInt<0x1000000000000000000000000000>,
+    >(v17, 0x1000000000000000000000000000);
+    let v20: BoundedInt<0x0, 0x18a24a7db436397cccaa35a5> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>, BoundedInt<0x333333195f7e531c, 0x344d440e48895dbd>,
+    >(v10, v18);
+    let v21: BoundedInt<0x55555555593a59c4389183103, 0x56df79fd347dbd5c055c266a8> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x18a24a7db436397cccaa35a5>, UnitInt<0x55555555593a59c4389183103>,
+    >(v20, 0x55555555593a59c4389183103);
+    let v22: BoundedInt<0x0, 0x28eab47c70aed31e45c1e7342ae5a6be8> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>,
+        BoundedInt<0x55555555593a59c4389183103, 0x56df79fd347dbd5c055c266a8>,
+    >(v10, v21);
+    let v23: BoundedInt<
+        0x10000000000000000000000000000000000, 0x1028eab47c70aed31e45c1e7342ae5a6be8,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x28eab47c70aed31e45c1e7342ae5a6be8>,
+        UnitInt<0x10000000000000000000000000000000000>,
+    >(v22, 0x10000000000000000000000000000000000);
+    let (v24, _) = bounded_int::div_rem::<
+        BoundedInt<0x10000000000000000000000000000000000, 0x1028eab47c70aed31e45c1e7342ae5a6be8>,
+        UnitInt<0x1000000000000000000>,
+    >(v23, 0x1000000000000000000);
+    let v26: BoundedInt<0x0, 0x58b90bfbe87dc7a7fdafdeda727348f> = bounded_int::mul::<
+        BoundedInt<0x0, 0x57d86660310cdbf>, BoundedInt<0x10000000000000000, 0x1028eab47c70aed31>,
+    >(v8, v24);
+    let v27: BoundedInt<0x0, 0x2af9a1ce04d03f779ae5257ed0f4d7bea> = bounded_int::mul::<
+        BoundedInt<0x0, 0x3e>, UnitInt<0xb17217f7d1cf79abc9e3b39803f2f6b>,
+    >(e, 0xb17217f7d1cf79abc9e3b39803f2f6b);
+    let v28: BoundedInt<0xc610ca86c3898cff81a12a0, 0x2af9a1ce0596504221a8af0bd07678e8a> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x2af9a1ce04d03f779ae5257ed0f4d7bea>, UnitInt<0xc610ca86c3898cff81a12a0>,
+    >(v27, 0xc610ca86c3898cff81a12a0);
+    let v29: BoundedInt<0xc610ca86c3898cff81a12a0, 0x2b525ada017ece09c9a65eeaaae8ec319> =
+        bounded_int::add::<
+        BoundedInt<0xc610ca86c3898cff81a12a0, 0x2af9a1ce0596504221a8af0bd07678e8a>,
+        BoundedInt<0x0, 0x58b90bfbe87dc7a7fdafdeda727348f>,
+    >(v28, v26);
+    let v30: BoundedInt<0x14610ca86c3898cff81a12a0, 0x2b525ada01fece09c9a65eeaaae8ec319> =
+        bounded_int::add::<
+        BoundedInt<0xc610ca86c3898cff81a12a0, 0x2b525ada017ece09c9a65eeaaae8ec319>,
+        UnitInt<0x80000000000000000000000>,
+    >(v29, 0x80000000000000000000000);
+    let (v31, _) = bounded_int::div_rem::<
+        BoundedInt<0x14610ca86c3898cff81a12a0, 0x2b525ada01fece09c9a65eeaaae8ec319>,
+        UnitInt<0x100000000000000000000000>,
+    >(v30, 0x100000000000000000000000);
+    let v33: BoundedInt<-0x162e42fefa, 0x152417db06> = bounded_int::sub::<
+        BoundedInt<0x1, 0x2b525ada01>, UnitInt<0x162e42fefb>,
+    >(v31, 0x162e42fefb);
+    let v34: BoundedInt<-0x1800000000, 0x1800000000> = upcast(v33);
+    v34
+}
+
+impl LnUH174 of SubHelper<
+    UnitInt<0x8000000000000000>, BoundedInt<0x5a827999fcef3242, 0x7fffffffffffffff>,
+> {
+    type Result = BoundedInt<0x1, 0x257d86660310cdbe>;
+}
+impl LnUH175 of AddHelper<
+    BoundedInt<0x5a827999fcef3242, 0x7fffffffffffffff>, UnitInt<0x8000000000000000>,
+> {
+    type Result = BoundedInt<0xda827999fcef3242, 0xffffffffffffffff>;
+}
+impl LnUH176 of MulHelper<BoundedInt<0x1, 0x257d86660310cdbe>, UnitInt<0x2000000000000000>> {
+    type Result = BoundedInt<0x2000000000000000, 0x4afb0ccc06219b7c000000000000000>;
+}
+impl LnUH177 of DivRemHelper<
+    BoundedInt<0x2000000000000000, 0x4afb0ccc06219b7c000000000000000>,
+    BoundedInt<0x0, 0xffffffffffffffff>,
+> {
+    type DivT = BoundedInt<0x0, 0x4afb0ccc06219b7c000000000000000>;
+    type RemT = BoundedInt<0x0, 0xfffffffffffffffe>;
+}
+impl LnUH178 of AddHelper<
+    BoundedInt<0x0, 0x2af9a1ce04d03f779ae5257ed0f4d7bea>,
+    UnitInt<0x10a2b23f497e044328d6d4097859420b>,
+> {
+    type Result =
+        BoundedInt<0x10a2b23f497e044328d6d4097859420b, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5>;
+}
+impl LnUH179 of SubHelper<
+    BoundedInt<0x10a2b23f497e044328d6d4097859420b, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5>,
+    BoundedInt<0x0, 0x58b90bfbe87dc7a7fdafdeda727348f>,
+> {
+    type Result =
+        BoundedInt<0xb17217f8af627c8a8fbd61bd1320d7c, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5>;
+}
+impl LnUH180 of AddHelper<
+    BoundedInt<0xb17217f8af627c8a8fbd61bd1320d7c, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5>,
+    UnitInt<0x80000000000000000000000>,
+> {
+    type Result =
+        BoundedInt<0xb17217f92f627c8a8fbd61bd1320d7c, 0x2c03ccf1f9e81fbbcd7292bf687a6bdf5>;
+}
+impl LnUH181 of DivRemHelper<
+    BoundedInt<0xb17217f92f627c8a8fbd61bd1320d7c, 0x2c03ccf1f9e81fbbcd7292bf687a6bdf5>,
+    UnitInt<0x100000000000000000000000>,
+> {
+    type DivT = BoundedInt<0xb17217f9, 0x2c03ccf1f9>;
+    type RemT = BoundedInt<0x0, 0xfffffffffffffffffffffff>;
+}
+impl LnUH182 of SubHelper<BoundedInt<0xb17217f9, 0x2c03ccf1f9>, UnitInt<0x1686fc0af7>> {
+    type Result = BoundedInt<-0x15d589f2fe, 0x157cd0e702>;
+}
+/// Mantissa in [sqrt 2, 2), scale 2^62.
+pub type LnUpper = BoundedInt<0x5a827999fcef3242, 0x7fffffffffffffff>;
+/// `ln` of a mantissa in [sqrt 2, 2), degree 11.
+pub fn ln_upper(m: LnUpper, e: LnExp) -> LnOut {
+    let v1: BoundedInt<0x1, 0x257d86660310cdbe> = bounded_int::sub::<
+        UnitInt<0x8000000000000000>, BoundedInt<0x5a827999fcef3242, 0x7fffffffffffffff>,
+    >(0x8000000000000000, m);
+    let v2: BoundedInt<0xda827999fcef3242, 0xffffffffffffffff> = bounded_int::add::<
+        BoundedInt<0x5a827999fcef3242, 0x7fffffffffffffff>, UnitInt<0x8000000000000000>,
+    >(m, 0x8000000000000000);
+    let v3: BoundedInt<0x2000000000000000, 0x4afb0ccc06219b7c000000000000000> = bounded_int::mul::<
+        BoundedInt<0x1, 0x257d86660310cdbe>, UnitInt<0x2000000000000000>,
+    >(v1, 0x2000000000000000);
+    let v4: BoundedInt<0x0, 0xffffffffffffffff> = upcast(v2);
+    let v5: NonZero<BoundedInt<0x0, 0xffffffffffffffff>> = match bounded_int_is_zero(v4) {
+        IsZero::Zero => core::panic_with_felt252('simba: unreachable'),
+        IsZero::NonZero(v) => v,
+    };
+    let (v6, _) = bounded_int::div_rem::<
+        BoundedInt<0x2000000000000000, 0x4afb0ccc06219b7c000000000000000>,
+        BoundedInt<0x0, 0xffffffffffffffff>,
+    >(v3, v5);
+    let v8: BoundedInt<0x0, 0x57d86660310cdbf> = downcast(v6).expect('simba: unreachable');
+    let v9: BoundedInt<0x0, 0x1e24cc824c9a4e6b574e20d73b7481> = bounded_int::mul::<
+        BoundedInt<0x0, 0x57d86660310cdbf>, BoundedInt<0x0, 0x57d86660310cdbf>,
+    >(v8, v8);
+    let (v10, _) = bounded_int::div_rem::<
+        BoundedInt<0x0, 0x1e24cc824c9a4e6b574e20d73b7481>, UnitInt<0x4000000000000000000000>,
+    >(v9, 0x4000000000000000000000);
+    let v12: BoundedInt<0x0, 0xbac5aa530f49451060b6cee> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>, UnitInt<0x18c8c11e54d388fe>,
+    >(v10, 0x18c8c11e54d388fe);
+    let v13: BoundedInt<0x1c67ada017cf97647988c0584, 0x1d22734a6adee0a989e977272> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0xbac5aa530f49451060b6cee>, UnitInt<0x1c67ada017cf97647988c0584>,
+    >(v12, 0x1c67ada017cf97647988c0584);
+    let v14: BoundedInt<0x0, 0xdb8e684d68e6dc7c3b6a3cf34f234a02> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>,
+        BoundedInt<0x1c67ada017cf97647988c0584, 0x1d22734a6adee0a989e977272>,
+    >(v10, v13);
+    let v15: BoundedInt<
+        0x2492647c9aff8db540a04789e18585d65a, 0x256df2e4e8687491bcdbb1c6d4d4a9205c,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0xdb8e684d68e6dc7c3b6a3cf34f234a02>,
+        UnitInt<0x2492647c9aff8db540a04789e18585d65a>,
+    >(v14, 0x2492647c9aff8db540a04789e18585d65a);
+    let v16: BoundedInt<0x0, 0x11a10f4e90b0aa0fd2a6fd7ed561faf34d37181b3c> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>,
+        BoundedInt<0x2492647c9aff8db540a04789e18585d65a, 0x256df2e4e8687491bcdbb1c6d4d4a9205c>,
+    >(v10, v15);
+    let v17: BoundedInt<
+        0x333333195f7e531c0342717132d7a245fbf2eb55668,
+        0x344d440e48895dbd006ce149202dc1f530c65cd71a4,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x11a10f4e90b0aa0fd2a6fd7ed561faf34d37181b3c>,
+        UnitInt<0x333333195f7e531c0342717132d7a245fbf2eb55668>,
+    >(v16, 0x333333195f7e531c0342717132d7a245fbf2eb55668);
+    let (v18, _) = bounded_int::div_rem::<
+        BoundedInt<
+            0x333333195f7e531c0342717132d7a245fbf2eb55668,
+            0x344d440e48895dbd006ce149202dc1f530c65cd71a4,
+        >,
+        UnitInt<0x1000000000000000000000000000>,
+    >(v17, 0x1000000000000000000000000000);
+    let v20: BoundedInt<0x0, 0x18a24a7db436397cccaa35a5> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>, BoundedInt<0x333333195f7e531c, 0x344d440e48895dbd>,
+    >(v10, v18);
+    let v21: BoundedInt<0x55555555593a59c4389183103, 0x56df79fd347dbd5c055c266a8> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x18a24a7db436397cccaa35a5>, UnitInt<0x55555555593a59c4389183103>,
+    >(v20, 0x55555555593a59c4389183103);
+    let v22: BoundedInt<0x0, 0x28eab47c70aed31e45c1e7342ae5a6be8> = bounded_int::mul::<
+        BoundedInt<0x0, 0x78933209>,
+        BoundedInt<0x55555555593a59c4389183103, 0x56df79fd347dbd5c055c266a8>,
+    >(v10, v21);
+    let v23: BoundedInt<
+        0x10000000000000000000000000000000000, 0x1028eab47c70aed31e45c1e7342ae5a6be8,
+    > =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x28eab47c70aed31e45c1e7342ae5a6be8>,
+        UnitInt<0x10000000000000000000000000000000000>,
+    >(v22, 0x10000000000000000000000000000000000);
+    let (v24, _) = bounded_int::div_rem::<
+        BoundedInt<0x10000000000000000000000000000000000, 0x1028eab47c70aed31e45c1e7342ae5a6be8>,
+        UnitInt<0x1000000000000000000>,
+    >(v23, 0x1000000000000000000);
+    let v26: BoundedInt<0x0, 0x58b90bfbe87dc7a7fdafdeda727348f> = bounded_int::mul::<
+        BoundedInt<0x0, 0x57d86660310cdbf>, BoundedInt<0x10000000000000000, 0x1028eab47c70aed31>,
+    >(v8, v24);
+    let v27: BoundedInt<0x0, 0x2af9a1ce04d03f779ae5257ed0f4d7bea> = bounded_int::mul::<
+        BoundedInt<0x0, 0x3e>, UnitInt<0xb17217f7d1cf79abc9e3b39803f2f6b>,
+    >(e, 0xb17217f7d1cf79abc9e3b39803f2f6b);
+    let v28: BoundedInt<0x10a2b23f497e044328d6d4097859420b, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5> =
+        bounded_int::add::<
+        BoundedInt<0x0, 0x2af9a1ce04d03f779ae5257ed0f4d7bea>,
+        UnitInt<0x10a2b23f497e044328d6d4097859420b>,
+    >(v27, 0x10a2b23f497e044328d6d4097859420b);
+    let v29: BoundedInt<0xb17217f8af627c8a8fbd61bd1320d7c, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5> =
+        bounded_int::sub::<
+        BoundedInt<0x10a2b23f497e044328d6d4097859420b, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5>,
+        BoundedInt<0x0, 0x58b90bfbe87dc7a7fdafdeda727348f>,
+    >(v28, v26);
+    let v30: BoundedInt<0xb17217f92f627c8a8fbd61bd1320d7c, 0x2c03ccf1f9e81fbbcd7292bf687a6bdf5> =
+        bounded_int::add::<
+        BoundedInt<0xb17217f8af627c8a8fbd61bd1320d7c, 0x2c03ccf1f9681fbbcd7292bf687a6bdf5>,
+        UnitInt<0x80000000000000000000000>,
+    >(v29, 0x80000000000000000000000);
+    let (v31, _) = bounded_int::div_rem::<
+        BoundedInt<0xb17217f92f627c8a8fbd61bd1320d7c, 0x2c03ccf1f9e81fbbcd7292bf687a6bdf5>,
+        UnitInt<0x100000000000000000000000>,
+    >(v30, 0x100000000000000000000000);
+    let v33: BoundedInt<-0x15d589f2fe, 0x157cd0e702> = bounded_int::sub::<
+        BoundedInt<0xb17217f9, 0x2c03ccf1f9>, UnitInt<0x1686fc0af7>,
+    >(v31, 0x1686fc0af7);
+    let v34: BoundedInt<-0x1800000000, 0x1800000000> = upcast(v33);
+    v34
+}
+
+impl LnNC0x62 of ConstrainHelper<BoundedInt<0x1, 0x7fffffffffffffff>, 0x80000000> {
+    type LowT = BoundedInt<0x1, 0x7fffffff>;
+    type HighT = BoundedInt<0x80000000, 0x7fffffffffffffff>;
+}
+impl LnNC0x30 of ConstrainHelper<BoundedInt<0x1, 0x7fffffff>, 0x8000> {
+    type LowT = BoundedInt<0x1, 0x7fff>;
+    type HighT = BoundedInt<0x8000, 0x7fffffff>;
+}
+impl LnNC0x14 of ConstrainHelper<BoundedInt<0x1, 0x7fff>, 0x80> {
+    type LowT = BoundedInt<0x1, 0x7f>;
+    type HighT = BoundedInt<0x80, 0x7fff>;
+}
+impl LnNC0x6 of ConstrainHelper<BoundedInt<0x1, 0x7f>, 0x8> {
+    type LowT = BoundedInt<0x1, 0x7>;
+    type HighT = BoundedInt<0x8, 0x7f>;
+}
+impl LnNC0x2 of ConstrainHelper<BoundedInt<0x1, 0x7>, 0x2> {
+    type LowT = BoundedInt<0x1, 0x1>;
+    type HighT = BoundedInt<0x2, 0x7>;
+}
+impl LnNM0 of MulHelper<BoundedInt<0x1, 0x1>, UnitInt<0x4000000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x4000000000000000>;
+}
+impl LnNC1x2 of ConstrainHelper<BoundedInt<0x2, 0x7>, 0x4> {
+    type LowT = BoundedInt<0x2, 0x3>;
+    type HighT = BoundedInt<0x4, 0x7>;
+}
+impl LnNM1 of MulHelper<BoundedInt<0x2, 0x3>, UnitInt<0x2000000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x6000000000000000>;
+}
+impl LnNM2 of MulHelper<BoundedInt<0x4, 0x7>, UnitInt<0x1000000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7000000000000000>;
+}
+impl LnNC3x6 of ConstrainHelper<BoundedInt<0x8, 0x7f>, 0x20> {
+    type LowT = BoundedInt<0x8, 0x1f>;
+    type HighT = BoundedInt<0x20, 0x7f>;
+}
+impl LnNC3x4 of ConstrainHelper<BoundedInt<0x8, 0x1f>, 0x10> {
+    type LowT = BoundedInt<0x8, 0xf>;
+    type HighT = BoundedInt<0x10, 0x1f>;
+}
+impl LnNM3 of MulHelper<BoundedInt<0x8, 0xf>, UnitInt<0x800000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7800000000000000>;
+}
+impl LnNM4 of MulHelper<BoundedInt<0x10, 0x1f>, UnitInt<0x400000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7c00000000000000>;
+}
+impl LnNC5x6 of ConstrainHelper<BoundedInt<0x20, 0x7f>, 0x40> {
+    type LowT = BoundedInt<0x20, 0x3f>;
+    type HighT = BoundedInt<0x40, 0x7f>;
+}
+impl LnNM5 of MulHelper<BoundedInt<0x20, 0x3f>, UnitInt<0x200000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7e00000000000000>;
+}
+impl LnNM6 of MulHelper<BoundedInt<0x40, 0x7f>, UnitInt<0x100000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7f00000000000000>;
+}
+impl LnNC7x14 of ConstrainHelper<BoundedInt<0x80, 0x7fff>, 0x800> {
+    type LowT = BoundedInt<0x80, 0x7ff>;
+    type HighT = BoundedInt<0x800, 0x7fff>;
+}
+impl LnNC7x10 of ConstrainHelper<BoundedInt<0x80, 0x7ff>, 0x200> {
+    type LowT = BoundedInt<0x80, 0x1ff>;
+    type HighT = BoundedInt<0x200, 0x7ff>;
+}
+impl LnNC7x8 of ConstrainHelper<BoundedInt<0x80, 0x1ff>, 0x100> {
+    type LowT = BoundedInt<0x80, 0xff>;
+    type HighT = BoundedInt<0x100, 0x1ff>;
+}
+impl LnNM7 of MulHelper<BoundedInt<0x80, 0xff>, UnitInt<0x80000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7f80000000000000>;
+}
+impl LnNM8 of MulHelper<BoundedInt<0x100, 0x1ff>, UnitInt<0x40000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fc0000000000000>;
+}
+impl LnNC9x10 of ConstrainHelper<BoundedInt<0x200, 0x7ff>, 0x400> {
+    type LowT = BoundedInt<0x200, 0x3ff>;
+    type HighT = BoundedInt<0x400, 0x7ff>;
+}
+impl LnNM9 of MulHelper<BoundedInt<0x200, 0x3ff>, UnitInt<0x20000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fe0000000000000>;
+}
+impl LnNM10 of MulHelper<BoundedInt<0x400, 0x7ff>, UnitInt<0x10000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ff0000000000000>;
+}
+impl LnNC11x14 of ConstrainHelper<BoundedInt<0x800, 0x7fff>, 0x2000> {
+    type LowT = BoundedInt<0x800, 0x1fff>;
+    type HighT = BoundedInt<0x2000, 0x7fff>;
+}
+impl LnNC11x12 of ConstrainHelper<BoundedInt<0x800, 0x1fff>, 0x1000> {
+    type LowT = BoundedInt<0x800, 0xfff>;
+    type HighT = BoundedInt<0x1000, 0x1fff>;
+}
+impl LnNM11 of MulHelper<BoundedInt<0x800, 0xfff>, UnitInt<0x8000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ff8000000000000>;
+}
+impl LnNM12 of MulHelper<BoundedInt<0x1000, 0x1fff>, UnitInt<0x4000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffc000000000000>;
+}
+impl LnNC13x14 of ConstrainHelper<BoundedInt<0x2000, 0x7fff>, 0x4000> {
+    type LowT = BoundedInt<0x2000, 0x3fff>;
+    type HighT = BoundedInt<0x4000, 0x7fff>;
+}
+impl LnNM13 of MulHelper<BoundedInt<0x2000, 0x3fff>, UnitInt<0x2000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffe000000000000>;
+}
+impl LnNM14 of MulHelper<BoundedInt<0x4000, 0x7fff>, UnitInt<0x1000000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fff000000000000>;
+}
+impl LnNC15x30 of ConstrainHelper<BoundedInt<0x8000, 0x7fffffff>, 0x800000> {
+    type LowT = BoundedInt<0x8000, 0x7fffff>;
+    type HighT = BoundedInt<0x800000, 0x7fffffff>;
+}
+impl LnNC15x22 of ConstrainHelper<BoundedInt<0x8000, 0x7fffff>, 0x80000> {
+    type LowT = BoundedInt<0x8000, 0x7ffff>;
+    type HighT = BoundedInt<0x80000, 0x7fffff>;
+}
+impl LnNC15x18 of ConstrainHelper<BoundedInt<0x8000, 0x7ffff>, 0x20000> {
+    type LowT = BoundedInt<0x8000, 0x1ffff>;
+    type HighT = BoundedInt<0x20000, 0x7ffff>;
+}
+impl LnNC15x16 of ConstrainHelper<BoundedInt<0x8000, 0x1ffff>, 0x10000> {
+    type LowT = BoundedInt<0x8000, 0xffff>;
+    type HighT = BoundedInt<0x10000, 0x1ffff>;
+}
+impl LnNM15 of MulHelper<BoundedInt<0x8000, 0xffff>, UnitInt<0x800000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fff800000000000>;
+}
+impl LnNM16 of MulHelper<BoundedInt<0x10000, 0x1ffff>, UnitInt<0x400000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffc00000000000>;
+}
+impl LnNC17x18 of ConstrainHelper<BoundedInt<0x20000, 0x7ffff>, 0x40000> {
+    type LowT = BoundedInt<0x20000, 0x3ffff>;
+    type HighT = BoundedInt<0x40000, 0x7ffff>;
+}
+impl LnNM17 of MulHelper<BoundedInt<0x20000, 0x3ffff>, UnitInt<0x200000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffe00000000000>;
+}
+impl LnNM18 of MulHelper<BoundedInt<0x40000, 0x7ffff>, UnitInt<0x100000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffff00000000000>;
+}
+impl LnNC19x22 of ConstrainHelper<BoundedInt<0x80000, 0x7fffff>, 0x200000> {
+    type LowT = BoundedInt<0x80000, 0x1fffff>;
+    type HighT = BoundedInt<0x200000, 0x7fffff>;
+}
+impl LnNC19x20 of ConstrainHelper<BoundedInt<0x80000, 0x1fffff>, 0x100000> {
+    type LowT = BoundedInt<0x80000, 0xfffff>;
+    type HighT = BoundedInt<0x100000, 0x1fffff>;
+}
+impl LnNM19 of MulHelper<BoundedInt<0x80000, 0xfffff>, UnitInt<0x80000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffff80000000000>;
+}
+impl LnNM20 of MulHelper<BoundedInt<0x100000, 0x1fffff>, UnitInt<0x40000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffc0000000000>;
+}
+impl LnNC21x22 of ConstrainHelper<BoundedInt<0x200000, 0x7fffff>, 0x400000> {
+    type LowT = BoundedInt<0x200000, 0x3fffff>;
+    type HighT = BoundedInt<0x400000, 0x7fffff>;
+}
+impl LnNM21 of MulHelper<BoundedInt<0x200000, 0x3fffff>, UnitInt<0x20000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffe0000000000>;
+}
+impl LnNM22 of MulHelper<BoundedInt<0x400000, 0x7fffff>, UnitInt<0x10000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffff0000000000>;
+}
+impl LnNC23x30 of ConstrainHelper<BoundedInt<0x800000, 0x7fffffff>, 0x8000000> {
+    type LowT = BoundedInt<0x800000, 0x7ffffff>;
+    type HighT = BoundedInt<0x8000000, 0x7fffffff>;
+}
+impl LnNC23x26 of ConstrainHelper<BoundedInt<0x800000, 0x7ffffff>, 0x2000000> {
+    type LowT = BoundedInt<0x800000, 0x1ffffff>;
+    type HighT = BoundedInt<0x2000000, 0x7ffffff>;
+}
+impl LnNC23x24 of ConstrainHelper<BoundedInt<0x800000, 0x1ffffff>, 0x1000000> {
+    type LowT = BoundedInt<0x800000, 0xffffff>;
+    type HighT = BoundedInt<0x1000000, 0x1ffffff>;
+}
+impl LnNM23 of MulHelper<BoundedInt<0x800000, 0xffffff>, UnitInt<0x8000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffff8000000000>;
+}
+impl LnNM24 of MulHelper<BoundedInt<0x1000000, 0x1ffffff>, UnitInt<0x4000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffc000000000>;
+}
+impl LnNC25x26 of ConstrainHelper<BoundedInt<0x2000000, 0x7ffffff>, 0x4000000> {
+    type LowT = BoundedInt<0x2000000, 0x3ffffff>;
+    type HighT = BoundedInt<0x4000000, 0x7ffffff>;
+}
+impl LnNM25 of MulHelper<BoundedInt<0x2000000, 0x3ffffff>, UnitInt<0x2000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffe000000000>;
+}
+impl LnNM26 of MulHelper<BoundedInt<0x4000000, 0x7ffffff>, UnitInt<0x1000000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffff000000000>;
+}
+impl LnNC27x30 of ConstrainHelper<BoundedInt<0x8000000, 0x7fffffff>, 0x20000000> {
+    type LowT = BoundedInt<0x8000000, 0x1fffffff>;
+    type HighT = BoundedInt<0x20000000, 0x7fffffff>;
+}
+impl LnNC27x28 of ConstrainHelper<BoundedInt<0x8000000, 0x1fffffff>, 0x10000000> {
+    type LowT = BoundedInt<0x8000000, 0xfffffff>;
+    type HighT = BoundedInt<0x10000000, 0x1fffffff>;
+}
+impl LnNM27 of MulHelper<BoundedInt<0x8000000, 0xfffffff>, UnitInt<0x800000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffff800000000>;
+}
+impl LnNM28 of MulHelper<BoundedInt<0x10000000, 0x1fffffff>, UnitInt<0x400000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffc00000000>;
+}
+impl LnNC29x30 of ConstrainHelper<BoundedInt<0x20000000, 0x7fffffff>, 0x40000000> {
+    type LowT = BoundedInt<0x20000000, 0x3fffffff>;
+    type HighT = BoundedInt<0x40000000, 0x7fffffff>;
+}
+impl LnNM29 of MulHelper<BoundedInt<0x20000000, 0x3fffffff>, UnitInt<0x200000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffe00000000>;
+}
+impl LnNM30 of MulHelper<BoundedInt<0x40000000, 0x7fffffff>, UnitInt<0x100000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffff00000000>;
+}
+impl LnNC31x62 of ConstrainHelper<BoundedInt<0x80000000, 0x7fffffffffffffff>, 0x800000000000> {
+    type LowT = BoundedInt<0x80000000, 0x7fffffffffff>;
+    type HighT = BoundedInt<0x800000000000, 0x7fffffffffffffff>;
+}
+impl LnNC31x46 of ConstrainHelper<BoundedInt<0x80000000, 0x7fffffffffff>, 0x8000000000> {
+    type LowT = BoundedInt<0x80000000, 0x7fffffffff>;
+    type HighT = BoundedInt<0x8000000000, 0x7fffffffffff>;
+}
+impl LnNC31x38 of ConstrainHelper<BoundedInt<0x80000000, 0x7fffffffff>, 0x800000000> {
+    type LowT = BoundedInt<0x80000000, 0x7ffffffff>;
+    type HighT = BoundedInt<0x800000000, 0x7fffffffff>;
+}
+impl LnNC31x34 of ConstrainHelper<BoundedInt<0x80000000, 0x7ffffffff>, 0x200000000> {
+    type LowT = BoundedInt<0x80000000, 0x1ffffffff>;
+    type HighT = BoundedInt<0x200000000, 0x7ffffffff>;
+}
+impl LnNC31x32 of ConstrainHelper<BoundedInt<0x80000000, 0x1ffffffff>, 0x100000000> {
+    type LowT = BoundedInt<0x80000000, 0xffffffff>;
+    type HighT = BoundedInt<0x100000000, 0x1ffffffff>;
+}
+impl LnNM31 of MulHelper<BoundedInt<0x80000000, 0xffffffff>, UnitInt<0x80000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffff80000000>;
+}
+impl LnNM32 of MulHelper<BoundedInt<0x100000000, 0x1ffffffff>, UnitInt<0x40000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffc0000000>;
+}
+impl LnNC33x34 of ConstrainHelper<BoundedInt<0x200000000, 0x7ffffffff>, 0x400000000> {
+    type LowT = BoundedInt<0x200000000, 0x3ffffffff>;
+    type HighT = BoundedInt<0x400000000, 0x7ffffffff>;
+}
+impl LnNM33 of MulHelper<BoundedInt<0x200000000, 0x3ffffffff>, UnitInt<0x20000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffe0000000>;
+}
+impl LnNM34 of MulHelper<BoundedInt<0x400000000, 0x7ffffffff>, UnitInt<0x10000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffff0000000>;
+}
+impl LnNC35x38 of ConstrainHelper<BoundedInt<0x800000000, 0x7fffffffff>, 0x2000000000> {
+    type LowT = BoundedInt<0x800000000, 0x1fffffffff>;
+    type HighT = BoundedInt<0x2000000000, 0x7fffffffff>;
+}
+impl LnNC35x36 of ConstrainHelper<BoundedInt<0x800000000, 0x1fffffffff>, 0x1000000000> {
+    type LowT = BoundedInt<0x800000000, 0xfffffffff>;
+    type HighT = BoundedInt<0x1000000000, 0x1fffffffff>;
+}
+impl LnNM35 of MulHelper<BoundedInt<0x800000000, 0xfffffffff>, UnitInt<0x8000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffff8000000>;
+}
+impl LnNM36 of MulHelper<BoundedInt<0x1000000000, 0x1fffffffff>, UnitInt<0x4000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffc000000>;
+}
+impl LnNC37x38 of ConstrainHelper<BoundedInt<0x2000000000, 0x7fffffffff>, 0x4000000000> {
+    type LowT = BoundedInt<0x2000000000, 0x3fffffffff>;
+    type HighT = BoundedInt<0x4000000000, 0x7fffffffff>;
+}
+impl LnNM37 of MulHelper<BoundedInt<0x2000000000, 0x3fffffffff>, UnitInt<0x2000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffe000000>;
+}
+impl LnNM38 of MulHelper<BoundedInt<0x4000000000, 0x7fffffffff>, UnitInt<0x1000000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffff000000>;
+}
+impl LnNC39x46 of ConstrainHelper<BoundedInt<0x8000000000, 0x7fffffffffff>, 0x80000000000> {
+    type LowT = BoundedInt<0x8000000000, 0x7ffffffffff>;
+    type HighT = BoundedInt<0x80000000000, 0x7fffffffffff>;
+}
+impl LnNC39x42 of ConstrainHelper<BoundedInt<0x8000000000, 0x7ffffffffff>, 0x20000000000> {
+    type LowT = BoundedInt<0x8000000000, 0x1ffffffffff>;
+    type HighT = BoundedInt<0x20000000000, 0x7ffffffffff>;
+}
+impl LnNC39x40 of ConstrainHelper<BoundedInt<0x8000000000, 0x1ffffffffff>, 0x10000000000> {
+    type LowT = BoundedInt<0x8000000000, 0xffffffffff>;
+    type HighT = BoundedInt<0x10000000000, 0x1ffffffffff>;
+}
+impl LnNM39 of MulHelper<BoundedInt<0x8000000000, 0xffffffffff>, UnitInt<0x800000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffff800000>;
+}
+impl LnNM40 of MulHelper<BoundedInt<0x10000000000, 0x1ffffffffff>, UnitInt<0x400000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffc00000>;
+}
+impl LnNC41x42 of ConstrainHelper<BoundedInt<0x20000000000, 0x7ffffffffff>, 0x40000000000> {
+    type LowT = BoundedInt<0x20000000000, 0x3ffffffffff>;
+    type HighT = BoundedInt<0x40000000000, 0x7ffffffffff>;
+}
+impl LnNM41 of MulHelper<BoundedInt<0x20000000000, 0x3ffffffffff>, UnitInt<0x200000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffe00000>;
+}
+impl LnNM42 of MulHelper<BoundedInt<0x40000000000, 0x7ffffffffff>, UnitInt<0x100000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffff00000>;
+}
+impl LnNC43x46 of ConstrainHelper<BoundedInt<0x80000000000, 0x7fffffffffff>, 0x200000000000> {
+    type LowT = BoundedInt<0x80000000000, 0x1fffffffffff>;
+    type HighT = BoundedInt<0x200000000000, 0x7fffffffffff>;
+}
+impl LnNC43x44 of ConstrainHelper<BoundedInt<0x80000000000, 0x1fffffffffff>, 0x100000000000> {
+    type LowT = BoundedInt<0x80000000000, 0xfffffffffff>;
+    type HighT = BoundedInt<0x100000000000, 0x1fffffffffff>;
+}
+impl LnNM43 of MulHelper<BoundedInt<0x80000000000, 0xfffffffffff>, UnitInt<0x80000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffff80000>;
+}
+impl LnNM44 of MulHelper<BoundedInt<0x100000000000, 0x1fffffffffff>, UnitInt<0x40000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffc0000>;
+}
+impl LnNC45x46 of ConstrainHelper<BoundedInt<0x200000000000, 0x7fffffffffff>, 0x400000000000> {
+    type LowT = BoundedInt<0x200000000000, 0x3fffffffffff>;
+    type HighT = BoundedInt<0x400000000000, 0x7fffffffffff>;
+}
+impl LnNM45 of MulHelper<BoundedInt<0x200000000000, 0x3fffffffffff>, UnitInt<0x20000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffe0000>;
+}
+impl LnNM46 of MulHelper<BoundedInt<0x400000000000, 0x7fffffffffff>, UnitInt<0x10000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffff0000>;
+}
+impl LnNC47x62 of ConstrainHelper<
+    BoundedInt<0x800000000000, 0x7fffffffffffffff>, 0x80000000000000,
+> {
+    type LowT = BoundedInt<0x800000000000, 0x7fffffffffffff>;
+    type HighT = BoundedInt<0x80000000000000, 0x7fffffffffffffff>;
+}
+impl LnNC47x54 of ConstrainHelper<BoundedInt<0x800000000000, 0x7fffffffffffff>, 0x8000000000000> {
+    type LowT = BoundedInt<0x800000000000, 0x7ffffffffffff>;
+    type HighT = BoundedInt<0x8000000000000, 0x7fffffffffffff>;
+}
+impl LnNC47x50 of ConstrainHelper<BoundedInt<0x800000000000, 0x7ffffffffffff>, 0x2000000000000> {
+    type LowT = BoundedInt<0x800000000000, 0x1ffffffffffff>;
+    type HighT = BoundedInt<0x2000000000000, 0x7ffffffffffff>;
+}
+impl LnNC47x48 of ConstrainHelper<BoundedInt<0x800000000000, 0x1ffffffffffff>, 0x1000000000000> {
+    type LowT = BoundedInt<0x800000000000, 0xffffffffffff>;
+    type HighT = BoundedInt<0x1000000000000, 0x1ffffffffffff>;
+}
+impl LnNM47 of MulHelper<BoundedInt<0x800000000000, 0xffffffffffff>, UnitInt<0x8000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffff8000>;
+}
+impl LnNM48 of MulHelper<BoundedInt<0x1000000000000, 0x1ffffffffffff>, UnitInt<0x4000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffffc000>;
+}
+impl LnNC49x50 of ConstrainHelper<BoundedInt<0x2000000000000, 0x7ffffffffffff>, 0x4000000000000> {
+    type LowT = BoundedInt<0x2000000000000, 0x3ffffffffffff>;
+    type HighT = BoundedInt<0x4000000000000, 0x7ffffffffffff>;
+}
+impl LnNM49 of MulHelper<BoundedInt<0x2000000000000, 0x3ffffffffffff>, UnitInt<0x2000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffffe000>;
+}
+impl LnNM50 of MulHelper<BoundedInt<0x4000000000000, 0x7ffffffffffff>, UnitInt<0x1000>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffff000>;
+}
+impl LnNC51x54 of ConstrainHelper<BoundedInt<0x8000000000000, 0x7fffffffffffff>, 0x20000000000000> {
+    type LowT = BoundedInt<0x8000000000000, 0x1fffffffffffff>;
+    type HighT = BoundedInt<0x20000000000000, 0x7fffffffffffff>;
+}
+impl LnNC51x52 of ConstrainHelper<BoundedInt<0x8000000000000, 0x1fffffffffffff>, 0x10000000000000> {
+    type LowT = BoundedInt<0x8000000000000, 0xfffffffffffff>;
+    type HighT = BoundedInt<0x10000000000000, 0x1fffffffffffff>;
+}
+impl LnNM51 of MulHelper<BoundedInt<0x8000000000000, 0xfffffffffffff>, UnitInt<0x800>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffff800>;
+}
+impl LnNM52 of MulHelper<BoundedInt<0x10000000000000, 0x1fffffffffffff>, UnitInt<0x400>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffffc00>;
+}
+impl LnNC53x54 of ConstrainHelper<
+    BoundedInt<0x20000000000000, 0x7fffffffffffff>, 0x40000000000000,
+> {
+    type LowT = BoundedInt<0x20000000000000, 0x3fffffffffffff>;
+    type HighT = BoundedInt<0x40000000000000, 0x7fffffffffffff>;
+}
+impl LnNM53 of MulHelper<BoundedInt<0x20000000000000, 0x3fffffffffffff>, UnitInt<0x200>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffffe00>;
+}
+impl LnNM54 of MulHelper<BoundedInt<0x40000000000000, 0x7fffffffffffff>, UnitInt<0x100>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffffff00>;
+}
+impl LnNC55x62 of ConstrainHelper<
+    BoundedInt<0x80000000000000, 0x7fffffffffffffff>, 0x800000000000000,
+> {
+    type LowT = BoundedInt<0x80000000000000, 0x7ffffffffffffff>;
+    type HighT = BoundedInt<0x800000000000000, 0x7fffffffffffffff>;
+}
+impl LnNC55x58 of ConstrainHelper<
+    BoundedInt<0x80000000000000, 0x7ffffffffffffff>, 0x200000000000000,
+> {
+    type LowT = BoundedInt<0x80000000000000, 0x1ffffffffffffff>;
+    type HighT = BoundedInt<0x200000000000000, 0x7ffffffffffffff>;
+}
+impl LnNC55x56 of ConstrainHelper<
+    BoundedInt<0x80000000000000, 0x1ffffffffffffff>, 0x100000000000000,
+> {
+    type LowT = BoundedInt<0x80000000000000, 0xffffffffffffff>;
+    type HighT = BoundedInt<0x100000000000000, 0x1ffffffffffffff>;
+}
+impl LnNM55 of MulHelper<BoundedInt<0x80000000000000, 0xffffffffffffff>, UnitInt<0x80>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffffff80>;
+}
+impl LnNM56 of MulHelper<BoundedInt<0x100000000000000, 0x1ffffffffffffff>, UnitInt<0x40>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffffffc0>;
+}
+impl LnNC57x58 of ConstrainHelper<
+    BoundedInt<0x200000000000000, 0x7ffffffffffffff>, 0x400000000000000,
+> {
+    type LowT = BoundedInt<0x200000000000000, 0x3ffffffffffffff>;
+    type HighT = BoundedInt<0x400000000000000, 0x7ffffffffffffff>;
+}
+impl LnNM57 of MulHelper<BoundedInt<0x200000000000000, 0x3ffffffffffffff>, UnitInt<0x20>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7fffffffffffffe0>;
+}
+impl LnNM58 of MulHelper<BoundedInt<0x400000000000000, 0x7ffffffffffffff>, UnitInt<0x10>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffffff0>;
+}
+impl LnNC59x62 of ConstrainHelper<
+    BoundedInt<0x800000000000000, 0x7fffffffffffffff>, 0x2000000000000000,
+> {
+    type LowT = BoundedInt<0x800000000000000, 0x1fffffffffffffff>;
+    type HighT = BoundedInt<0x2000000000000000, 0x7fffffffffffffff>;
+}
+impl LnNC59x60 of ConstrainHelper<
+    BoundedInt<0x800000000000000, 0x1fffffffffffffff>, 0x1000000000000000,
+> {
+    type LowT = BoundedInt<0x800000000000000, 0xfffffffffffffff>;
+    type HighT = BoundedInt<0x1000000000000000, 0x1fffffffffffffff>;
+}
+impl LnNM59 of MulHelper<BoundedInt<0x800000000000000, 0xfffffffffffffff>, UnitInt<0x8>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffffff8>;
+}
+impl LnNM60 of MulHelper<BoundedInt<0x1000000000000000, 0x1fffffffffffffff>, UnitInt<0x4>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffffffc>;
+}
+impl LnNC61x62 of ConstrainHelper<
+    BoundedInt<0x2000000000000000, 0x7fffffffffffffff>, 0x4000000000000000,
+> {
+    type LowT = BoundedInt<0x2000000000000000, 0x3fffffffffffffff>;
+    type HighT = BoundedInt<0x4000000000000000, 0x7fffffffffffffff>;
+}
+impl LnNM61 of MulHelper<BoundedInt<0x2000000000000000, 0x3fffffffffffffff>, UnitInt<0x2>> {
+    type Result = BoundedInt<0x4000000000000000, 0x7ffffffffffffffe>;
+}
+/// Strictly positive Q32.32 raw value.
+pub type LnArg = BoundedInt<0x1, 0x7fffffffffffffff>;
+/// Normalised mantissa in [1, 2), scale 2^62.
+pub type LnMant = BoundedInt<0x4000000000000000, 0x7fffffffffffffff>;
+impl LnNSplit of ConstrainHelper<LnMant, 0x5a827999fcef3242> {
+    type LowT = BoundedInt<0x4000000000000000, 0x5a827999fcef3241>;
+    type HighT = BoundedInt<0x5a827999fcef3242, 0x7fffffffffffffff>;
+}
+/// `(raw * 2^(62 - e), e)` with `e = floor(log2(raw))`: a generated tree of 6 typed
+/// comparisons; every leaf multiplies by a constant, no range check.
+pub fn ln_normalize(raw: LnArg) -> (LnMant, LnExp) {
+    match bounded_int::constrain::<BoundedInt<0x1, 0x7fffffffffffffff>, 0x80000000>(raw) {
+        Ok(lo) => {
+            match bounded_int::constrain::<BoundedInt<0x1, 0x7fffffff>, 0x8000>(lo) {
+                Ok(lo) => {
+                    match bounded_int::constrain::<BoundedInt<0x1, 0x7fff>, 0x80>(lo) {
+                        Ok(lo) => {
+                            match bounded_int::constrain::<BoundedInt<0x1, 0x7f>, 0x8>(lo) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<BoundedInt<0x1, 0x7>, 0x2>(lo) {
+                                        Ok(lo) => {
+                                            (
+                                                upcast(
+                                                    bounded_int::mul::<
+                                                        BoundedInt<0x1, 0x1>,
+                                                        UnitInt<0x4000000000000000>,
+                                                    >(lo, 0x4000000000000000),
+                                                ),
+                                                upcast::<UnitInt<0x0>, LnExp>(0x0),
+                                            )
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x2, 0x7>, 0x4,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x2, 0x3>,
+                                                                UnitInt<0x2000000000000000>,
+                                                            >(lo, 0x2000000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x1>, LnExp>(0x1),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x4, 0x7>,
+                                                                UnitInt<0x1000000000000000>,
+                                                            >(hi, 0x1000000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x2>, LnExp>(0x2),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x8, 0x7f>, 0x20,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x8, 0x1f>, 0x10,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x8, 0xf>,
+                                                                UnitInt<0x800000000000000>,
+                                                            >(lo, 0x800000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x3>, LnExp>(0x3),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x10, 0x1f>,
+                                                                UnitInt<0x400000000000000>,
+                                                            >(hi, 0x400000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x4>, LnExp>(0x4),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x20, 0x7f>, 0x40,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x20, 0x3f>,
+                                                                UnitInt<0x200000000000000>,
+                                                            >(lo, 0x200000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x5>, LnExp>(0x5),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x40, 0x7f>,
+                                                                UnitInt<0x100000000000000>,
+                                                            >(hi, 0x100000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x6>, LnExp>(0x6),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                        Err(hi) => {
+                            match bounded_int::constrain::<BoundedInt<0x80, 0x7fff>, 0x800>(hi) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x80, 0x7ff>, 0x200,
+                                    >(lo) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x80, 0x1ff>, 0x100,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x80, 0xff>,
+                                                                UnitInt<0x80000000000000>,
+                                                            >(lo, 0x80000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x7>, LnExp>(0x7),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x100, 0x1ff>,
+                                                                UnitInt<0x40000000000000>,
+                                                            >(hi, 0x40000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x8>, LnExp>(0x8),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x200, 0x7ff>, 0x400,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x200, 0x3ff>,
+                                                                UnitInt<0x20000000000000>,
+                                                            >(lo, 0x20000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x9>, LnExp>(0x9),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x400, 0x7ff>,
+                                                                UnitInt<0x10000000000000>,
+                                                            >(hi, 0x10000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0xa>, LnExp>(0xa),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x800, 0x7fff>, 0x2000,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x800, 0x1fff>, 0x1000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x800, 0xfff>,
+                                                                UnitInt<0x8000000000000>,
+                                                            >(lo, 0x8000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0xb>, LnExp>(0xb),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x1000, 0x1fff>,
+                                                                UnitInt<0x4000000000000>,
+                                                            >(hi, 0x4000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0xc>, LnExp>(0xc),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x2000, 0x7fff>, 0x4000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x2000, 0x3fff>,
+                                                                UnitInt<0x2000000000000>,
+                                                            >(lo, 0x2000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0xd>, LnExp>(0xd),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x4000, 0x7fff>,
+                                                                UnitInt<0x1000000000000>,
+                                                            >(hi, 0x1000000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0xe>, LnExp>(0xe),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                    }
+                },
+                Err(hi) => {
+                    match bounded_int::constrain::<BoundedInt<0x8000, 0x7fffffff>, 0x800000>(hi) {
+                        Ok(lo) => {
+                            match bounded_int::constrain::<
+                                BoundedInt<0x8000, 0x7fffff>, 0x80000,
+                            >(lo) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x8000, 0x7ffff>, 0x20000,
+                                    >(lo) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x8000, 0x1ffff>, 0x10000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x8000, 0xffff>,
+                                                                UnitInt<0x800000000000>,
+                                                            >(lo, 0x800000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0xf>, LnExp>(0xf),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x10000, 0x1ffff>,
+                                                                UnitInt<0x400000000000>,
+                                                            >(hi, 0x400000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x10>, LnExp>(0x10),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x20000, 0x7ffff>, 0x40000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x20000, 0x3ffff>,
+                                                                UnitInt<0x200000000000>,
+                                                            >(lo, 0x200000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x11>, LnExp>(0x11),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x40000, 0x7ffff>,
+                                                                UnitInt<0x100000000000>,
+                                                            >(hi, 0x100000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x12>, LnExp>(0x12),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x80000, 0x7fffff>, 0x200000,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x80000, 0x1fffff>, 0x100000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x80000, 0xfffff>,
+                                                                UnitInt<0x80000000000>,
+                                                            >(lo, 0x80000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x13>, LnExp>(0x13),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x100000, 0x1fffff>,
+                                                                UnitInt<0x40000000000>,
+                                                            >(hi, 0x40000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x14>, LnExp>(0x14),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x200000, 0x7fffff>, 0x400000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x200000, 0x3fffff>,
+                                                                UnitInt<0x20000000000>,
+                                                            >(lo, 0x20000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x15>, LnExp>(0x15),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x400000, 0x7fffff>,
+                                                                UnitInt<0x10000000000>,
+                                                            >(hi, 0x10000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x16>, LnExp>(0x16),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                        Err(hi) => {
+                            match bounded_int::constrain::<
+                                BoundedInt<0x800000, 0x7fffffff>, 0x8000000,
+                            >(hi) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x800000, 0x7ffffff>, 0x2000000,
+                                    >(lo) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x800000, 0x1ffffff>, 0x1000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x800000, 0xffffff>,
+                                                                UnitInt<0x8000000000>,
+                                                            >(lo, 0x8000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x17>, LnExp>(0x17),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x1000000, 0x1ffffff>,
+                                                                UnitInt<0x4000000000>,
+                                                            >(hi, 0x4000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x18>, LnExp>(0x18),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x2000000, 0x7ffffff>, 0x4000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x2000000, 0x3ffffff>,
+                                                                UnitInt<0x2000000000>,
+                                                            >(lo, 0x2000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x19>, LnExp>(0x19),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x4000000, 0x7ffffff>,
+                                                                UnitInt<0x1000000000>,
+                                                            >(hi, 0x1000000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x1a>, LnExp>(0x1a),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x8000000, 0x7fffffff>, 0x20000000,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x8000000, 0x1fffffff>, 0x10000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x8000000, 0xfffffff>,
+                                                                UnitInt<0x800000000>,
+                                                            >(lo, 0x800000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x1b>, LnExp>(0x1b),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x10000000, 0x1fffffff>,
+                                                                UnitInt<0x400000000>,
+                                                            >(hi, 0x400000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x1c>, LnExp>(0x1c),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x20000000, 0x7fffffff>, 0x40000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x20000000, 0x3fffffff>,
+                                                                UnitInt<0x200000000>,
+                                                            >(lo, 0x200000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x1d>, LnExp>(0x1d),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x40000000, 0x7fffffff>,
+                                                                UnitInt<0x100000000>,
+                                                            >(hi, 0x100000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x1e>, LnExp>(0x1e),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                    }
+                },
+            }
+        },
+        Err(hi) => {
+            match bounded_int::constrain::<
+                BoundedInt<0x80000000, 0x7fffffffffffffff>, 0x800000000000,
+            >(hi) {
+                Ok(lo) => {
+                    match bounded_int::constrain::<
+                        BoundedInt<0x80000000, 0x7fffffffffff>, 0x8000000000,
+                    >(lo) {
+                        Ok(lo) => {
+                            match bounded_int::constrain::<
+                                BoundedInt<0x80000000, 0x7fffffffff>, 0x800000000,
+                            >(lo) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x80000000, 0x7ffffffff>, 0x200000000,
+                                    >(lo) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x80000000, 0x1ffffffff>, 0x100000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<0x80000000, 0xffffffff>,
+                                                                UnitInt<0x80000000>,
+                                                            >(lo, 0x80000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x1f>, LnExp>(0x1f),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x100000000, 0x1ffffffff,
+                                                                >,
+                                                                UnitInt<0x40000000>,
+                                                            >(hi, 0x40000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x20>, LnExp>(0x20),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x200000000, 0x7ffffffff>, 0x400000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x200000000, 0x3ffffffff,
+                                                                >,
+                                                                UnitInt<0x20000000>,
+                                                            >(lo, 0x20000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x21>, LnExp>(0x21),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x400000000, 0x7ffffffff,
+                                                                >,
+                                                                UnitInt<0x10000000>,
+                                                            >(hi, 0x10000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x22>, LnExp>(0x22),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x800000000, 0x7fffffffff>, 0x2000000000,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x800000000, 0x1fffffffff>, 0x1000000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x800000000, 0xfffffffff,
+                                                                >,
+                                                                UnitInt<0x8000000>,
+                                                            >(lo, 0x8000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x23>, LnExp>(0x23),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x1000000000, 0x1fffffffff,
+                                                                >,
+                                                                UnitInt<0x4000000>,
+                                                            >(hi, 0x4000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x24>, LnExp>(0x24),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x2000000000, 0x7fffffffff>,
+                                                0x4000000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x2000000000, 0x3fffffffff,
+                                                                >,
+                                                                UnitInt<0x2000000>,
+                                                            >(lo, 0x2000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x25>, LnExp>(0x25),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x4000000000, 0x7fffffffff,
+                                                                >,
+                                                                UnitInt<0x1000000>,
+                                                            >(hi, 0x1000000),
+                                                        ),
+                                                        upcast::<UnitInt<0x26>, LnExp>(0x26),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                        Err(hi) => {
+                            match bounded_int::constrain::<
+                                BoundedInt<0x8000000000, 0x7fffffffffff>, 0x80000000000,
+                            >(hi) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x8000000000, 0x7ffffffffff>, 0x20000000000,
+                                    >(lo) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x8000000000, 0x1ffffffffff>,
+                                                0x10000000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x8000000000, 0xffffffffff,
+                                                                >,
+                                                                UnitInt<0x800000>,
+                                                            >(lo, 0x800000),
+                                                        ),
+                                                        upcast::<UnitInt<0x27>, LnExp>(0x27),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x10000000000, 0x1ffffffffff,
+                                                                >,
+                                                                UnitInt<0x400000>,
+                                                            >(hi, 0x400000),
+                                                        ),
+                                                        upcast::<UnitInt<0x28>, LnExp>(0x28),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x20000000000, 0x7ffffffffff>,
+                                                0x40000000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x20000000000, 0x3ffffffffff,
+                                                                >,
+                                                                UnitInt<0x200000>,
+                                                            >(lo, 0x200000),
+                                                        ),
+                                                        upcast::<UnitInt<0x29>, LnExp>(0x29),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x40000000000, 0x7ffffffffff,
+                                                                >,
+                                                                UnitInt<0x100000>,
+                                                            >(hi, 0x100000),
+                                                        ),
+                                                        upcast::<UnitInt<0x2a>, LnExp>(0x2a),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x80000000000, 0x7fffffffffff>, 0x200000000000,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x80000000000, 0x1fffffffffff>,
+                                                0x100000000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x80000000000, 0xfffffffffff,
+                                                                >,
+                                                                UnitInt<0x80000>,
+                                                            >(lo, 0x80000),
+                                                        ),
+                                                        upcast::<UnitInt<0x2b>, LnExp>(0x2b),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x100000000000, 0x1fffffffffff,
+                                                                >,
+                                                                UnitInt<0x40000>,
+                                                            >(hi, 0x40000),
+                                                        ),
+                                                        upcast::<UnitInt<0x2c>, LnExp>(0x2c),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x200000000000, 0x7fffffffffff>,
+                                                0x400000000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x200000000000, 0x3fffffffffff,
+                                                                >,
+                                                                UnitInt<0x20000>,
+                                                            >(lo, 0x20000),
+                                                        ),
+                                                        upcast::<UnitInt<0x2d>, LnExp>(0x2d),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x400000000000, 0x7fffffffffff,
+                                                                >,
+                                                                UnitInt<0x10000>,
+                                                            >(hi, 0x10000),
+                                                        ),
+                                                        upcast::<UnitInt<0x2e>, LnExp>(0x2e),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                    }
+                },
+                Err(hi) => {
+                    match bounded_int::constrain::<
+                        BoundedInt<0x800000000000, 0x7fffffffffffffff>, 0x80000000000000,
+                    >(hi) {
+                        Ok(lo) => {
+                            match bounded_int::constrain::<
+                                BoundedInt<0x800000000000, 0x7fffffffffffff>, 0x8000000000000,
+                            >(lo) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x800000000000, 0x7ffffffffffff>,
+                                        0x2000000000000,
+                                    >(lo) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x800000000000, 0x1ffffffffffff>,
+                                                0x1000000000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x800000000000, 0xffffffffffff,
+                                                                >,
+                                                                UnitInt<0x8000>,
+                                                            >(lo, 0x8000),
+                                                        ),
+                                                        upcast::<UnitInt<0x2f>, LnExp>(0x2f),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x1000000000000,
+                                                                    0x1ffffffffffff,
+                                                                >,
+                                                                UnitInt<0x4000>,
+                                                            >(hi, 0x4000),
+                                                        ),
+                                                        upcast::<UnitInt<0x30>, LnExp>(0x30),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x2000000000000, 0x7ffffffffffff>,
+                                                0x4000000000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x2000000000000,
+                                                                    0x3ffffffffffff,
+                                                                >,
+                                                                UnitInt<0x2000>,
+                                                            >(lo, 0x2000),
+                                                        ),
+                                                        upcast::<UnitInt<0x31>, LnExp>(0x31),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x4000000000000,
+                                                                    0x7ffffffffffff,
+                                                                >,
+                                                                UnitInt<0x1000>,
+                                                            >(hi, 0x1000),
+                                                        ),
+                                                        upcast::<UnitInt<0x32>, LnExp>(0x32),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x8000000000000, 0x7fffffffffffff>,
+                                        0x20000000000000,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x8000000000000, 0x1fffffffffffff>,
+                                                0x10000000000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x8000000000000,
+                                                                    0xfffffffffffff,
+                                                                >,
+                                                                UnitInt<0x800>,
+                                                            >(lo, 0x800),
+                                                        ),
+                                                        upcast::<UnitInt<0x33>, LnExp>(0x33),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x10000000000000,
+                                                                    0x1fffffffffffff,
+                                                                >,
+                                                                UnitInt<0x400>,
+                                                            >(hi, 0x400),
+                                                        ),
+                                                        upcast::<UnitInt<0x34>, LnExp>(0x34),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x20000000000000, 0x7fffffffffffff>,
+                                                0x40000000000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x20000000000000,
+                                                                    0x3fffffffffffff,
+                                                                >,
+                                                                UnitInt<0x200>,
+                                                            >(lo, 0x200),
+                                                        ),
+                                                        upcast::<UnitInt<0x35>, LnExp>(0x35),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x40000000000000,
+                                                                    0x7fffffffffffff,
+                                                                >,
+                                                                UnitInt<0x100>,
+                                                            >(hi, 0x100),
+                                                        ),
+                                                        upcast::<UnitInt<0x36>, LnExp>(0x36),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                        Err(hi) => {
+                            match bounded_int::constrain::<
+                                BoundedInt<0x80000000000000, 0x7fffffffffffffff>, 0x800000000000000,
+                            >(hi) {
+                                Ok(lo) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x80000000000000, 0x7ffffffffffffff>,
+                                        0x200000000000000,
+                                    >(lo) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x80000000000000, 0x1ffffffffffffff>,
+                                                0x100000000000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x80000000000000,
+                                                                    0xffffffffffffff,
+                                                                >,
+                                                                UnitInt<0x80>,
+                                                            >(lo, 0x80),
+                                                        ),
+                                                        upcast::<UnitInt<0x37>, LnExp>(0x37),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x100000000000000,
+                                                                    0x1ffffffffffffff,
+                                                                >,
+                                                                UnitInt<0x40>,
+                                                            >(hi, 0x40),
+                                                        ),
+                                                        upcast::<UnitInt<0x38>, LnExp>(0x38),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x200000000000000, 0x7ffffffffffffff>,
+                                                0x400000000000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x200000000000000,
+                                                                    0x3ffffffffffffff,
+                                                                >,
+                                                                UnitInt<0x20>,
+                                                            >(lo, 0x20),
+                                                        ),
+                                                        upcast::<UnitInt<0x39>, LnExp>(0x39),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x400000000000000,
+                                                                    0x7ffffffffffffff,
+                                                                >,
+                                                                UnitInt<0x10>,
+                                                            >(hi, 0x10),
+                                                        ),
+                                                        upcast::<UnitInt<0x3a>, LnExp>(0x3a),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                                Err(hi) => {
+                                    match bounded_int::constrain::<
+                                        BoundedInt<0x800000000000000, 0x7fffffffffffffff>,
+                                        0x2000000000000000,
+                                    >(hi) {
+                                        Ok(lo) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x800000000000000, 0x1fffffffffffffff>,
+                                                0x1000000000000000,
+                                            >(lo) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x800000000000000,
+                                                                    0xfffffffffffffff,
+                                                                >,
+                                                                UnitInt<0x8>,
+                                                            >(lo, 0x8),
+                                                        ),
+                                                        upcast::<UnitInt<0x3b>, LnExp>(0x3b),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x1000000000000000,
+                                                                    0x1fffffffffffffff,
+                                                                >,
+                                                                UnitInt<0x4>,
+                                                            >(hi, 0x4),
+                                                        ),
+                                                        upcast::<UnitInt<0x3c>, LnExp>(0x3c),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                        Err(hi) => {
+                                            match bounded_int::constrain::<
+                                                BoundedInt<0x2000000000000000, 0x7fffffffffffffff>,
+                                                0x4000000000000000,
+                                            >(hi) {
+                                                Ok(lo) => {
+                                                    (
+                                                        upcast(
+                                                            bounded_int::mul::<
+                                                                BoundedInt<
+                                                                    0x2000000000000000,
+                                                                    0x3fffffffffffffff,
+                                                                >,
+                                                                UnitInt<0x2>,
+                                                            >(lo, 0x2),
+                                                        ),
+                                                        upcast::<UnitInt<0x3d>, LnExp>(0x3d),
+                                                    )
+                                                },
+                                                Err(hi) => {
+                                                    (
+                                                        upcast(hi),
+                                                        upcast::<UnitInt<0x3e>, LnExp>(0x3e),
+                                                    )
+                                                },
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        },
+                    }
+                },
+            }
+        },
+    }
+}
+
+/// Splits the mantissa at `sqrt 2` (`Ok`: lower half).
+#[inline(always)]
+pub fn ln_split(m: LnMant) -> Result<LnLower, LnUpper> {
+    bounded_int::constrain::<LnMant, 0x5a827999fcef3242>(m)
 }

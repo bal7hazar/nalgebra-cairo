@@ -82,6 +82,19 @@ def unit_operand(rng):
     return -v if rng.random() < 0.5 else v
 
 
+def exp_operand(rng):
+    """Operand for `exp`: mostly the representable window `[-22.9, 21.49]`, plus the tails
+    (which underflow to zero or overflow and are re-drawn by `rows_for`)."""
+    if rng.random() < 0.9:
+        return rng.randrange(-23 * ONE, 22 * ONE)
+    return operand(rng)
+
+
+def positive_operand(rng):
+    """Operand for `ln`: all magnitudes, log-uniform in bit length, never zero."""
+    return max(1, min(MAX, abs(operand(rng))))
+
+
 def ratio_operand(rng):
     """Integer numerators / denominators for `from_ratio`: small integers or anything."""
     return rng.randrange(-1000, 1001) if rng.random() < 0.5 else operand(rng)
@@ -183,6 +196,8 @@ KERNELS = [
     ("atan2", 2, m.atan2, "tr::atan2(f(a), f(b)) == f(e)", operand),
     ("asin", 1, m.asin, "tr::asin(f(a)) == f(e)", unit_operand),
     ("acos", 1, m.acos, "tr::acos(f(a)) == f(e)", unit_operand),
+    ("exp", 1, m.exp, "tr::exp(f(a)) == f(e)", exp_operand),
+    ("ln", 1, m.ln, "tr::ln(f(a)) == f(e)", positive_operand),
 ]  # fmt: skip
 
 NAMES = "abcdghijklmnopqr"  # `e` is the expected value, `f` the wrapper

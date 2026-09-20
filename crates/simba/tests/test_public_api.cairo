@@ -63,6 +63,9 @@ mod with_prelude {
         assert!(Real::<Fixed>::ONE.acos() == Real::ZERO);
         assert!(Real::<Fixed>::ONE.atan() == Real::FRAC_PI_4);
         assert!(Transcendental::atan2(Real::<Fixed>::ONE, Real::ZERO) == quarter_turn);
+        assert!(Real::<Fixed>::ZERO.exp() == Real::ONE);
+        assert!(Real::<Fixed>::ONE.ln() == Real::ZERO);
+        assert!(Real::<Fixed>::ONE.exp() == Real::E);
     }
 
     #[test]

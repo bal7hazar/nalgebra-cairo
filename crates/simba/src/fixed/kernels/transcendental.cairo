@@ -405,6 +405,35 @@ pub fn acos(x: i64) -> i64 {
     }
 }
 
+// ---------------------------------------------------------------------------------------------
+// exp / ln
+// ---------------------------------------------------------------------------------------------
+
+/// `exp(x)`: `x = q * ln2 + f` at scale 2^61, then `e^f` scaled by the power of two `2^(q - q0)`
+/// produced by a generated compare tree (no loop, no `pow`).
+///
+/// Returns 0 when the result is below half a raw unit (`x < -22.9`) and panics with
+/// `errors::OVERFLOW` when it does not fit Q32.32 (`x > 21.487`).
+pub fn exp(x: i64) -> i64 {
+    let (q, f) = poly::reduce_exp(x);
+    let pow = poly::exp_pow2(q).expect(errors::OVERFLOW);
+    downcast(poly::exp_kernel(f, pow)).expect(errors::OVERFLOW)
+}
+
+/// `ln(x)` for `x > 0`: normalise `raw = m * 2^(e - 62)` with a generated tree of six typed
+/// comparisons, then `(e - 32) ln2 + ln(m)` with `ln(m) = +-2 atanh((m -+ 1) / (m +- 1))`
+/// split at `sqrt 2`.
+///
+/// Panics with `errors::DOMAIN` for `x <= 0`.
+pub fn ln(x: i64) -> i64 {
+    let raw: poly::LnArg = downcast(x).expect(errors::DOMAIN);
+    let (m, e) = poly::ln_normalize(raw);
+    match poly::ln_split(m) {
+        Ok(lower) => upcast(poly::ln_lower(lower, e)),
+        Err(upper) => upcast(poly::ln_upper(upper, e)),
+    }
+}
+
 /// The same functions on the polynomial degrees that lost the accuracy / gas comparison
 /// (`kernels::poly_alternatives`, `polygen.py --report`), kept as evidence (AGENTS.md rule 8).
 /// Only the polynomial call differs; the folding is the code above.
@@ -551,6 +580,30 @@ pub mod alternatives {
     /// `asin` with the degree 19 polynomial (fit error 0.004 ulp).
     pub fn asin_deg19(x: i64) -> i64 {
         asin_with(x, 19)
+    }
+
+    /// `exp` with the degree 6 polynomial (22.7 relative ulp).
+    pub fn exp_deg6(x: i64) -> i64 {
+        let (q, f) = poly::reduce_exp(x);
+        let pow = poly::exp_pow2(q).expect(errors::OVERFLOW);
+        downcast(alt::exp_kernel_6(f, pow)).expect(errors::OVERFLOW)
+    }
+
+    /// `exp` with the degree 10 polynomial (0.47 relative ulp, like the shipped degree 8).
+    pub fn exp_deg10(x: i64) -> i64 {
+        let (q, f) = poly::reduce_exp(x);
+        let pow = poly::exp_pow2(q).expect(errors::OVERFLOW);
+        downcast(alt::exp_kernel_10(f, pow)).expect(errors::OVERFLOW)
+    }
+
+    /// `ln` with the degree 7 `atanh` polynomial (4.44 ulp).
+    pub fn ln_deg7(x: i64) -> i64 {
+        let raw: poly::LnArg = downcast(x).expect(errors::DOMAIN);
+        let (m, e) = poly::ln_normalize(raw);
+        match poly::ln_split(m) {
+            Ok(lower) => upcast(alt::ln_lower_7(lower, e)),
+            Err(upper) => upcast(alt::ln_upper_7(upper, e)),
+        }
     }
 
     /// `tan` from the Q32.32 sine and cosine instead of their 48-bit versions: one division less

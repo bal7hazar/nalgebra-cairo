@@ -163,11 +163,9 @@ pub trait Real<T> {
 /// The numeric specification of every function (error in ulp, exact values, symmetries, domain
 /// and panics) is documented on the implementation, `simba::fixed::transcendental`.
 ///
-/// `exp` / `ln` / `exp2` / `log2` / `powi` are **not** part of this trait: nothing in nalgebra's
-/// static surface needs them (they appear only in `ComplexField` helpers), and shipping them
-/// without the same accuracy budget as the trigonometry would be worse than not shipping them.
-/// They are the follow-up of this work package; the generator (`tools/polygen`) already carries
-/// the scales and constants of their range reductions.
+/// `exp2` / `log2` / `powi` are **not** part of this trait: nothing in nalgebra's static surface
+/// needs them, `exp2(x) = exp(x * LN_2)` and `log2(x) = ln(x) * (1 / LN_2)` compose from what is
+/// here, and `powi` with a runtime exponent needs a loop (AGENTS.md rule 1).
 pub trait Transcendental<T> {
     /// Sine.
     fn sin(self: T) -> T;
@@ -185,6 +183,10 @@ pub trait Transcendental<T> {
     fn atan(self: T) -> T;
     /// Four-quadrant arctangent of `y / x`, in `(-π, π]`.
     fn atan2(y: T, x: T) -> T;
+    /// Exponential.
+    fn exp(self: T) -> T;
+    /// Natural logarithm.
+    fn ln(self: T) -> T;
 }
 
 /// `Transcendental` for the Q32.32 `Fixed`: `#[inline(always)]` forwards to the free functions of
@@ -221,6 +223,14 @@ pub impl FixedTranscendental of Transcendental<Fixed> {
     #[inline(always)]
     fn atan2(y: Fixed, x: Fixed) -> Fixed {
         transcendental::atan2(y, x)
+    }
+    #[inline(always)]
+    fn exp(self: Fixed) -> Fixed {
+        transcendental::exp(self)
+    }
+    #[inline(always)]
+    fn ln(self: Fixed) -> Fixed {
+        transcendental::ln(self)
     }
 }
 

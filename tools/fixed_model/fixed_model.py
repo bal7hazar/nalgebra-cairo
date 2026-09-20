@@ -316,7 +316,7 @@ def sum_prod_n(pairs):
 # written here is the hand-written half, `simba::fixed::kernels::transcendental`: octant folding,
 # signs, reflections and domain checks.
 
-from poly_ops import A, run as _poly  # noqa: E402
+from poly_ops import A, EXP_K_MAX, EXP_K_MIN, EXP_Q0, LN_M, SQRT2_M, run as _poly  # noqa: E402
 
 FRAC_PI_2 = 6746518852  # floor(pi/2 * 2^32), the constant of `fixed::types`
 PI_RAW = 2 * FRAC_PI_2  # floor(pi * 2^32), exactly twice FRAC_PI_2
@@ -428,6 +428,28 @@ def acos(x):
     return PI_RAW - m if x < 0 else m
 
 
+def exp(x):
+    """exp(x) in [0, MAX]: 0 below x = -22.9, `Overflow` above x = 21.487."""
+    from poly_ops import LN2, OFF_LN2
+
+    q, f = divmod(x * (1 << (A - FRAC_BITS)) + OFF_LN2, LN2)
+    k = q - EXP_Q0
+    if k < EXP_K_MIN:
+        return 0  # underflow to zero, not an error
+    if k > EXP_K_MAX:
+        raise Overflow(x)
+    return check(_poly("exp_kernel", f, 1 << (k + 33)))
+
+
+def ln(x):
+    """ln(x), the natural logarithm. Raises `Domain` for x <= 0."""
+    if x <= 0:
+        raise Domain(x)
+    e = x.bit_length() - 1
+    mant = x << (LN_M - e)
+    return _poly("ln_lower" if mant < SQRT2_M else "ln_upper", mant, e)
+
+
 # --- constants --------------------------------------------------------------------------------------
 
 
@@ -486,6 +508,20 @@ def self_check_transcendental(dense=4000):
     assert atan2(0, ONE) == 0 and atan2(0, -ONE) == PI_RAW
     assert atan2(ONE, 0) == FRAC_PI_2 and atan2(-ONE, 0) == -FRAC_PI_2
     assert atan2(-1, -ONE) == -PI_RAW + 1 or atan2(-1, -ONE) < 0
+    assert exp(0) == ONE and ln(ONE) == 0
+    assert exp(MIN) == 0 and exp(-23 * ONE) == 0
+    for over in (22 * ONE, MAX):
+        try:
+            exp(over)
+            raise AssertionError(over)
+        except Overflow:
+            pass
+    for bad in (0, -1, MIN):
+        try:
+            ln(bad)
+            raise AssertionError(bad)
+        except Domain:
+            pass
 
     worst = {}
 
@@ -511,8 +547,19 @@ def self_check_transcendental(dense=4000):
         note("atan2", atan2(y, x), mpm.atan2(mpm.mpf(y) / ONE, mpm.mpf(x) / ONE))
         x = rng.randrange(-(1 << 63), 1 << 63)
         note("sin_big", sin(x), mpm.sin(mpm.mpf(x) / ONE))
+        # `exp` is relative, `ln` absolute.
+        x = rng.randrange(-22 * ONE, 21 * ONE)
+        want = mpm.e ** (mpm.mpf(x) / ONE)
+        worst["exp"] = max(
+            worst.get("exp", 0), abs(exp(x) - want * ONE) / max(want * ONE, ONE) * ONE
+        )
+        x = rng.randrange(1, MAX)
+        note("ln", ln(x), mpm.log(mpm.mpf(x) / ONE))
 
-    limits = {"sin": 3, "cos": 3, "atan": 3, "asin": 3, "acos": 3, "atan2": 3, "sin_big": 4}
+    limits = {
+        "sin": 3, "cos": 3, "atan": 3, "asin": 3, "acos": 3, "atan2": 3, "sin_big": 4,
+        "exp": 3, "ln": 3,
+    }
     for name, limit in limits.items():
         assert worst[name] <= limit, (name, float(worst[name]), limit)
     return {k: float(v) for k, v in worst.items()}

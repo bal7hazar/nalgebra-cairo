@@ -169,17 +169,22 @@ class Kernel:
         return q, r
 
     def nonzero(self, a):
-        """`NonZero<T>` view of a value whose interval excludes zero (no range check)."""
+        """`NonZero<T>` view of a value whose interval excludes zero.
+
+        `bounded_int_is_zero` only accepts a type that *contains* zero, so the value is first
+        widened to `[0, hi]`; the zero branch is then unreachable by construction.
+        """
         assert a.lo > 0, (self.name, a.lo)
         self.module.needs_is_zero = True
-        out = self._fresh(a.lo, a.hi)
+        wide = self.upcast(a, 0, a.hi)
+        out = self._fresh(0, a.hi)
         out.nz = True
         self.lines.append(
-            f"    let {out.expr}: NonZero<{a.ty}> = match bounded_int_is_zero({a.expr}) {{\n"
-            f"        IsZero::Zero => core::panic_with_felt252(errors::UNREACHABLE),\n"
+            f"    let {out.expr}: NonZero<{wide.ty}> = match bounded_int_is_zero({wide.expr}) {{\n"
+            f"        IsZero::Zero => core::panic_with_felt252('simba: unreachable'),\n"
             f"        IsZero::NonZero(v) => v,\n    }};"
         )
-        self.ops.append(("upcast", out.expr, a.expr, None))
+        self.ops.append(("upcast", out.expr, wide.expr, None))
         return out
 
     def shr_round(self, a, bits):
@@ -194,6 +199,19 @@ class Kernel:
         k = -(a.lo >> bits)  # smallest offset (in quotient units) making the numerator >= 0
         q, _ = self.div_rem(self.add(a, k << bits), 1 << bits)
         return self.sub(q, k)
+
+    def narrow(self, a, lo, hi):
+        """Range check down to `[lo, hi]`, for a bound the generator knows but the libfunc does
+        not (a `div_rem` by a `NonZero` type whose interval still contains 0 must declare the
+        widest quotient). The check cannot fire; it costs one range check."""
+        assert a.lo <= lo and hi <= a.hi and hi - lo < 1 << 128, (self.name, lo, hi)
+        assert a.hi - a.lo < 1 << 128, (self.name, "downcast source too wide")
+        out = self._fresh(lo, hi)
+        self.lines.append(
+            f"    let {out.expr}: {out.ty} = downcast({a.expr}).expect('simba: unreachable');"
+        )
+        self.ops.append(("upcast", out.expr, a.expr, None))
+        return out
 
     def upcast(self, a, lo, hi, ty=None):
         assert lo <= a.lo and a.hi <= hi
