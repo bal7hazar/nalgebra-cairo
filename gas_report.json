@@ -645,6 +645,451 @@
     "sym_matrix3_zeros": {
       "baseline": 18040,
       "const": 16840
+    },
+    "vector2_abs": {
+      "abs": 18500,
+      "baseline": 16640
+    },
+    "vector2_abs_diff_eq": {
+      "abs_diff_eq": 19940,
+      "baseline": 16750
+    },
+    "vector2_add": {
+      "add": 18820,
+      "add_assign": 18820,
+      "baseline": 17240
+    },
+    "vector2_cap_magnitude": {
+      "alt_normalize": 29410,
+      "baseline": 17040,
+      "capped": 26570,
+      "unchanged": 20620
+    },
+    "vector2_component_div": {
+      "baseline": 17240,
+      "component_div": 22900
+    },
+    "vector2_component_mul": {
+      "baseline": 17240,
+      "component_mul": 20840
+    },
+    "vector2_dot": {
+      "alt_unfused": 21080,
+      "baseline": 16740,
+      "fused": 18690
+    },
+    "vector2_fill": {
+      "baseline": 16840,
+      "from_element": 17040,
+      "repeat": 17040,
+      "x": 17040,
+      "y": 17040,
+      "zeros": 17040
+    },
+    "vector2_from": {
+      "array": 17440,
+      "baseline": 17240,
+      "tuple": 17440
+    },
+    "vector2_imin": {
+      "baseline": 16140,
+      "iamax": 18670,
+      "iamin": 18680,
+      "imax": 16920,
+      "imin": 16910
+    },
+    "vector2_inf": {
+      "baseline": 17240,
+      "inf": 19090,
+      "sup": 19090
+    },
+    "vector2_inf_sup": {
+      "baseline": 18240,
+      "inf_sup": 22040
+    },
+    "vector2_into": {
+      "array": 16140,
+      "baseline": 16140,
+      "tuple": 16140
+    },
+    "vector2_is_zero": {
+      "baseline": 16240,
+      "is_zero": 16540
+    },
+    "vector2_lerp": {
+      "baseline": 17640,
+      "lerp": 21840
+    },
+    "vector2_metric_distance": {
+      "baseline": 16740,
+      "metric_distance": 20240
+    },
+    "vector2_min": {
+      "amax": 18680,
+      "amin": 18670,
+      "baseline": 16140,
+      "max": 16910,
+      "min": 16920
+    },
+    "vector2_neg": {
+      "baseline": 16640,
+      "neg": 17240
+    },
+    "vector2_new": {
+      "baseline": 16840,
+      "new": 17040
+    },
+    "vector2_norm": {
+      "baseline": 16140,
+      "magnitude": 18160,
+      "norm": 18160
+    },
+    "vector2_norm_squared": {
+      "baseline": 16140,
+      "magnitude_squared": 18090,
+      "norm_squared": 18090
+    },
+    "vector2_normalize": {
+      "alt_inv_sqrt": 25220,
+      "alt_recip": 24650,
+      "baseline": 16640,
+      "unscale": 24340
+    },
+    "vector2_perp": {
+      "baseline": 16740,
+      "perp": 18690
+    },
+    "vector2_push": {
+      "baseline": 17540,
+      "push": 17840,
+      "to_homogeneous": 17540
+    },
+    "vector2_scale": {
+      "baseline": 17040,
+      "mul_assign": 20640,
+      "scale": 20640
+    },
+    "vector2_sub": {
+      "baseline": 17240,
+      "sub": 18820,
+      "sub_assign": 18820
+    },
+    "vector2_sum": {
+      "baseline": 16140,
+      "sum": 16780
+    },
+    "vector2_try_normalize": {
+      "baseline": 17340,
+      "none": 20400,
+      "some": 26010
+    },
+    "vector2_unscale": {
+      "alt_recip": 22930,
+      "baseline": 17040,
+      "div_assign": 22620,
+      "unscale": 22620
+    },
+    "vector3_abs": {
+      "abs": 20090,
+      "baseline": 17340
+    },
+    "vector3_abs_diff_eq": {
+      "abs_diff_eq": 21680,
+      "baseline": 17150
+    },
+    "vector3_add": {
+      "add": 20560,
+      "add_assign": 20560,
+      "baseline": 18140
+    },
+    "vector3_cap_magnitude": {
+      "alt_normalize": 35100,
+      "baseline": 17740,
+      "capped": 29420,
+      "unchanged": 21820
+    },
+    "vector3_component_div": {
+      "baseline": 18140,
+      "component_div": 26640
+    },
+    "vector3_component_mul": {
+      "baseline": 18140,
+      "component_mul": 23590
+    },
+    "vector3_cross": {
+      "baseline": 18140,
+      "cross": 24190
+    },
+    "vector3_dot": {
+      "alt_unfused": 24070,
+      "baseline": 17140,
+      "fused": 19290
+    },
+    "vector3_fill": {
+      "baseline": 17440,
+      "from_element": 17740,
+      "repeat": 17740,
+      "x": 17740,
+      "y": 17740,
+      "z": 17740,
+      "zeros": 17740
+    },
+    "vector3_from": {
+      "array": 18440,
+      "baseline": 18140,
+      "tuple": 18440
+    },
+    "vector3_imin": {
+      "baseline": 16340,
+      "iamax": 20630,
+      "iamin": 20650,
+      "imax": 18090,
+      "imin": 18090
+    },
+    "vector3_inf": {
+      "baseline": 18140,
+      "inf": 20970,
+      "sup": 20960
+    },
+    "vector3_inf_sup": {
+      "baseline": 19640,
+      "inf_sup": 25390
+    },
+    "vector3_into": {
+      "array": 16340,
+      "baseline": 16340,
+      "tuple": 16340
+    },
+    "vector3_is_zero": {
+      "baseline": 16440,
+      "is_zero": 16740
+    },
+    "vector3_lerp": {
+      "baseline": 18540,
+      "lerp": 24890
+    },
+    "vector3_metric_distance": {
+      "baseline": 17140,
+      "metric_distance": 21580
+    },
+    "vector3_min": {
+      "amax": 20550,
+      "amin": 20530,
+      "baseline": 16340,
+      "max": 17990,
+      "min": 17990
+    },
+    "vector3_neg": {
+      "baseline": 17340,
+      "neg": 18240
+    },
+    "vector3_new": {
+      "baseline": 17740,
+      "new": 18040
+    },
+    "vector3_norm": {
+      "baseline": 16340,
+      "magnitude": 18560,
+      "norm": 18560
+    },
+    "vector3_norm_squared": {
+      "baseline": 16340,
+      "magnitude_squared": 18490,
+      "norm_squared": 18490
+    },
+    "vector3_normalize": {
+      "alt_inv_sqrt": 27970,
+      "alt_recip": 27400,
+      "baseline": 17340,
+      "unscale": 28080
+    },
+    "vector3_orthonormal_basis_zneg": {
+      "alt_upstream": 36330,
+      "baseline": 18840,
+      "duff": 34450
+    },
+    "vector3_orthonormal_basis_zpos": {
+      "alt_upstream": 36330,
+      "baseline": 18840,
+      "duff": 34380
+    },
+    "vector3_push": {
+      "baseline": 18240,
+      "push": 18640,
+      "to_homogeneous": 18340
+    },
+    "vector3_scale": {
+      "baseline": 17740,
+      "mul_assign": 23190,
+      "scale": 23190
+    },
+    "vector3_sub": {
+      "baseline": 18140,
+      "sub": 20560,
+      "sub_assign": 20560
+    },
+    "vector3_sum": {
+      "baseline": 16340,
+      "sum": 17720
+    },
+    "vector3_try_normalize": {
+      "baseline": 18040,
+      "none": 21280,
+      "some": 29750
+    },
+    "vector3_unscale": {
+      "alt_recip": 25480,
+      "baseline": 17740,
+      "div_assign": 26160,
+      "unscale": 26160
+    },
+    "vector3_xy": {
+      "baseline": 16840,
+      "xy": 17040
+    },
+    "vector4_abs": {
+      "abs": 21860,
+      "baseline": 18040
+    },
+    "vector4_abs_diff_eq": {
+      "abs_diff_eq": 23420,
+      "baseline": 17550
+    },
+    "vector4_add": {
+      "add": 22300,
+      "add_assign": 22300,
+      "baseline": 19040
+    },
+    "vector4_cap_magnitude": {
+      "alt_normalize": 40790,
+      "baseline": 18440,
+      "capped": 32270,
+      "unchanged": 23020
+    },
+    "vector4_component_div": {
+      "baseline": 19040,
+      "component_div": 30380
+    },
+    "vector4_component_mul": {
+      "baseline": 19040,
+      "component_mul": 26340
+    },
+    "vector4_dot": {
+      "alt_unfused": 27060,
+      "baseline": 17540,
+      "fused": 19890
+    },
+    "vector4_fill": {
+      "baseline": 18040,
+      "from_element": 18440,
+      "repeat": 18440,
+      "w": 18440,
+      "x": 18440,
+      "y": 18440,
+      "z": 18440,
+      "zeros": 18440
+    },
+    "vector4_from": {
+      "array": 19440,
+      "baseline": 19040,
+      "tuple": 19440
+    },
+    "vector4_imin": {
+      "baseline": 16540,
+      "iamax": 22780,
+      "iamin": 22780,
+      "imax": 19270,
+      "imin": 19260
+    },
+    "vector4_inf": {
+      "baseline": 19040,
+      "inf": 22840,
+      "sup": 22840
+    },
+    "vector4_inf_sup": {
+      "baseline": 21040,
+      "inf_sup": 28740
+    },
+    "vector4_into": {
+      "array": 16540,
+      "baseline": 16540,
+      "tuple": 16540
+    },
+    "vector4_is_zero": {
+      "baseline": 16640,
+      "is_zero": 16940
+    },
+    "vector4_lerp": {
+      "baseline": 19440,
+      "lerp": 27940
+    },
+    "vector4_metric_distance": {
+      "baseline": 17540,
+      "metric_distance": 22920
+    },
+    "vector4_min": {
+      "amax": 22590,
+      "amin": 22580,
+      "baseline": 16540,
+      "max": 19060,
+      "min": 19060
+    },
+    "vector4_neg": {
+      "baseline": 18040,
+      "neg": 19240
+    },
+    "vector4_new": {
+      "baseline": 18640,
+      "new": 19040
+    },
+    "vector4_norm": {
+      "baseline": 16540,
+      "magnitude": 18960,
+      "norm": 18960
+    },
+    "vector4_norm_squared": {
+      "baseline": 16540,
+      "magnitude_squared": 18890,
+      "norm_squared": 18890
+    },
+    "vector4_normalize": {
+      "alt_inv_sqrt": 30720,
+      "alt_recip": 30150,
+      "baseline": 18040,
+      "unscale": 31820
+    },
+    "vector4_scale": {
+      "baseline": 18440,
+      "mul_assign": 25740,
+      "scale": 25740
+    },
+    "vector4_sub": {
+      "baseline": 19040,
+      "sub": 22300,
+      "sub_assign": 22300
+    },
+    "vector4_sum": {
+      "baseline": 16540,
+      "sum": 18660
+    },
+    "vector4_try_normalize": {
+      "baseline": 18740,
+      "none": 22160,
+      "some": 33490
+    },
+    "vector4_unscale": {
+      "alt_recip": 28030,
+      "baseline": 18440,
+      "div_assign": 29700,
+      "unscale": 29700
+    },
+    "vector4_xy": {
+      "baseline": 17040,
+      "xy": 17240
+    },
+    "vector4_xyz": {
+      "baseline": 17540,
+      "xyz": 17840
     }
   },
   "nalgebra_testing": {
