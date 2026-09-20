@@ -38,7 +38,7 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 2.4 | `Point2/3`, `Unit<V>` | 2.1 |
 | 2.5 | `Vector6`, `Matrix6` (blocks of 3), rectangular `Matrix3x2`-style blocks only where M4/M5 need them | 2.2 |
 
-## M3 — `nalgebra::geometry` (3.1-3.3 ✅, 3.4 in progress)
+## M3 — `nalgebra::geometry` ✅ (Similarity included; `Scale`, `Reflection`, `Transform` family deferred)
 
 | WP | Content | Depends on |
 |---|---|---|
