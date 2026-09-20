@@ -740,6 +740,78 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `mul_vec` | 25990 | 6650 | x1.00 |
 
+## nalgebra::geometry::similarity2::benches
+
+### similarity2_inv_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `direct` | 44720 | 25980 | x1.00 |
+| `alt_inverse_then_mul` | 53510 | 34770 | x1.34 |
+
+### similarity2_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `division` | 29000 | 11160 | x1.00 |
+| `alt_reciprocal` | 33610 | 15770 | x1.41 |
+
+### similarity2_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `division` | 27520 | 9680 | x1.00 |
+| `alt_reciprocal` | 32130 | 14290 | x1.48 |
+
+### similarity2_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scale_translate` | 25940 | 8100 | x1.00 |
+| `alt_rotate_scale_add` | 29550 | 11710 | x1.45 |
+
+### similarity2_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scale_after_rotate` | 25540 | 7700 | x1.00 |
+
+## nalgebra::geometry::similarity3::benches
+
+### similarity3_inv_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `direct` | 82820 | 61980 | x1.00 |
+| `alt_inverse_then_mul` | 119750 | 98910 | x1.60 |
+
+### similarity3_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `division` | 58450 | 39310 | x1.00 |
+| `alt_reciprocal` | 60670 | 41530 | x1.06 |
+
+### similarity3_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `division` | 51490 | 32350 | x1.00 |
+| `alt_reciprocal` | 56550 | 37410 | x1.16 |
+
+### similarity3_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scale_translate` | 51280 | 32140 | x1.00 |
+| `alt_rotate_scale_add` | 53170 | 34030 | x1.06 |
+
+### similarity3_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scale_after_rotate` | 47920 | 28780 | x1.00 |
+
 ## nalgebra::geometry::translation2::benches
 
 ### translation2_abs_diff_eq
