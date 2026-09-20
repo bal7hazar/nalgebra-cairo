@@ -54,7 +54,7 @@ def to_markdown(report):
             rows = net(report[package][group])
             if not rows:
                 continue
-            ranked = sorted(rows.items(), key=lambda kv: kv[1][1] if kv[1][1] is not None else kv[1][0])
+            ranked = sorted(rows.items(), key=lambda kv: (kv[1][1] if kv[1][1] is not None else kv[1][0], kv[0]))
             best = ranked[0][1][1] if ranked[0][1][1] is not None else ranked[0][1][0]
             out += [f"### {group}", "", "| variant | raw | net | vs best |", "|---|---:|---:|---:|"]
             for variant, (raw, delta) in ranked:
