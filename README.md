@@ -8,8 +8,8 @@ Part of a stack porting reputable Rust crates to Cairo — with
 [rapier.cairo](https://github.com/bal7hazar/rapier.cairo) — towards games whose whole physics
 is provable.
 
-> Status: foundations. The design is settled and measured; implementation follows the
-> [roadmap](docs/PLAN.md).
+> Status: M1-M4 complete (scalar, static 2/3/4/6 types, geometry, small decompositions) with
+> ~3,700 tests; see the [plan](docs/PLAN.md) for what remains.
 
 ## Packages
 
@@ -17,6 +17,7 @@ is provable.
 |---|---|
 | [`simba`](crates/simba) | Scalar abstraction, `Fixed` Q32.32 (`i64`), fused kernels, transcendentals |
 | [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions) |
+| [`simba_fixed`](crates/simba_fixed) | `Real` for glam.cairo's shared `fixed::Fixed`: use nalgebra types with the physics stack's scalar, bit-identically |
 
 ## Why it is fast
 

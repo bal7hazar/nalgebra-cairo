@@ -131,6 +131,9 @@ Scalar kernels additionally have a bit-exact Python integer model used to genera
 
 One scalar representation across the three repositories (Q32.32 `i64`, floor). Conversions follow
 `nalgebra/src/third_party/glam`: mind `Matrix3::new` (row-major) vs `from_cols`, and
-`Quaternion::new(w, i, j, k)` vs `from_xyzw`. Where the scalar type finally lives (here in `simba`
-or in glam.cairo) is an open coordination point; nalgebra being generic over `Real` keeps both
-options open.
+`Quaternion::new(w, i, j, k)` vs `from_xyzw`. Settled: glam.cairo owns the shared `fixed::Fixed`
+(rapier.cairo consumes it), nalgebra stays generic over `Real`, and `simba_fixed` bridges by
+implementing `Real` / `Transcendental` for `fixed::Fixed` through simba's own kernels (zero
+overhead, bit-identical wherever nalgebra goes through `Real`). Known gap: nalgebra still reaches
+`/` through the corelib operator, and `fixed::Fixed` truncates where simba floors — a
+`Real::div` / `Real::rem` routing would close it (WP 4.5).
