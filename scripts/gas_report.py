@@ -107,8 +107,10 @@ def main():
     args = parser.parse_args()
 
     report = parse(sys.stdin)
-    if not report:
+    if not report and not args.check:
         sys.exit("no benchmark found in input")
+    # With --check, an empty run is fine as long as the snapshot slice is empty too (a package with
+    # no bench yet); a missing run against a non-empty slice fails as "present -> absent".
 
     if args.update:
         for name, sub in split(report).items():
