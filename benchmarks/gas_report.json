@@ -1,11 +1,28 @@
 {
-  "harness": {
+  "harness::tests": {
     "harness": {
       "add_u64": 15910,
       "baseline": 15540
     }
   },
-  "layout": {
+  "layout::abstraction::tests": {
+    "call_add": {
+      "baseline": 18140,
+      "free_fn": 22590,
+      "free_fn_generic": 22590,
+      "operator": 22590,
+      "operator_inline_always": 20260,
+      "trait_method": 22590,
+      "trait_method_inline_always": 20260
+    },
+    "call_dot": {
+      "baseline": 17540,
+      "free_fn": 52170,
+      "free_fn_generic": 52170,
+      "trait_method": 52170
+    }
+  },
+  "layout::abstraction_gen": {
     "abs_vec3_add_fixed": {
       "baseline": 18740,
       "concrete_default": 23290,
@@ -41,41 +58,76 @@
       "generic_default": 52870,
       "generic_inline_always": 50860,
       "generic_inline_never": 52870
-    },
-    "access_dyn_index": {
-      "array_span": 18210,
-      "baseline": 16640,
-      "span": 17910,
-      "struct_match": 17350
-    },
-    "access_y": {
-      "array_destructure": 16240,
-      "array_span_index": 17910,
-      "baseline": 16240,
-      "span_index": 17410,
-      "struct_field": 16240,
-      "tuple_destructure": 16240
-    },
-    "call_add": {
-      "baseline": 18140,
-      "free_fn": 22590,
-      "free_fn_generic": 22590,
-      "operator": 22590,
-      "operator_inline_always": 20260,
-      "trait_method": 22590,
-      "trait_method_inline_always": 20260
-    },
-    "call_dot": {
-      "baseline": 17540,
-      "free_fn": 52170,
-      "free_fn_generic": 52170,
-      "trait_method": 52170
-    },
+    }
+  },
+  "layout::composite::tests": {
     "inertia_world": {
       "baseline": 20540,
       "scaled_symmetric": 311730,
       "two_mat_mat": 613300
     },
+    "iso_compose": {
+      "baseline": 21340,
+      "mat3": 428510,
+      "quat": 377230
+    },
+    "iso_transform_point": {
+      "baseline": 19740,
+      "mat3": 127200,
+      "quat": 198080
+    },
+    "m_mt": {
+      "baseline": 19340,
+      "symmetric_6_dots": 229720,
+      "transpose_then_mat_mat": 315870
+    },
+    "normalize": {
+      "baseline": 16740,
+      "norm_only": 59190,
+      "one_division_three_muls": 101170,
+      "three_divisions": 99660
+    },
+    "quat_mul": {
+      "baseline": 20840,
+      "hamilton": 196790
+    },
+    "quat_rotate": {
+      "baseline": 18540,
+      "expanded": 191730,
+      "sandwich": 372940,
+      "via_mat3": 226060
+    },
+    "quat_rotate_x4": {
+      "baseline": 24840,
+      "expanded": 717900,
+      "via_mat3_once": 533650
+    },
+    "quat_to_mat3": {
+      "baseline": 18540,
+      "convert": 124830
+    },
+    "skew_mul_mat": {
+      "baseline": 20540,
+      "cross_per_column": 220210,
+      "skew_then_mat_mat": 317570
+    },
+    "skew_mul_vec": {
+      "baseline": 18140,
+      "cross": 84630,
+      "skew_then_mat_vec": 119070
+    },
+    "sym3_inverse": {
+      "baseline": 18140,
+      "full9": 362470,
+      "sym6": 258970
+    },
+    "sym3_mul_vec": {
+      "baseline": 19340,
+      "full9": 119670,
+      "sym6": 119370
+    }
+  },
+  "layout::inline_gen": {
     "inline_mat3_inverse": {
       "baseline": 26140,
       "cols_malways": 380190,
@@ -138,17 +190,9 @@
       "vnever_malways": 52870,
       "vnever_mdefault": 52870,
       "vnever_mnever": 58360
-    },
-    "iso_compose": {
-      "baseline": 21340,
-      "mat3": 428510,
-      "quat": 377230
-    },
-    "iso_transform_point": {
-      "baseline": 19740,
-      "mat3": 127200,
-      "quat": 198080
-    },
+    }
+  },
+  "layout::lazy::tests": {
     "lazy_cross": {
       "baseline": 18140,
       "eager": 84630,
@@ -192,12 +236,9 @@
       "lazy_felt_floor": 38280,
       "lazy_i128": 106910,
       "lazy_wide_mul": 40560
-    },
-    "m_mt": {
-      "baseline": 19340,
-      "symmetric_6_dots": 229720,
-      "transpose_then_mat_mat": 315870
-    },
+    }
+  },
+  "layout::mat3_gen": {
     "mat3_add_felt": {
       "array3x3": 26540,
       "array9": 26540,
@@ -413,7 +454,9 @@
       "dyn_index": 88320,
       "dyn_seq": 76000,
       "fields": 26140
-    },
+    }
+  },
+  "layout::matn_gen": {
     "matmul_n2_felt": {
       "baseline": 18740,
       "dyn_index": 93420,
@@ -488,13 +531,9 @@
       "dyn_index": 1723680,
       "dyn_seq": 1081670,
       "static": 407740
-    },
-    "normalize": {
-      "baseline": 16740,
-      "norm_only": 59190,
-      "one_division_three_muls": 101170,
-      "three_divisions": 99660
-    },
+    }
+  },
+  "layout::passing::tests": {
     "pass_iso7": {
       "baseline": 18040,
       "box_x1": 19640,
@@ -538,65 +577,13 @@
       "value_x1": 17040,
       "value_x3": 18240
     },
-    "quat_mul": {
-      "baseline": 20840,
-      "hamilton": 196790
-    },
-    "quat_rotate": {
-      "baseline": 18540,
-      "expanded": 191730,
-      "sandwich": 372940,
-      "via_mat3": 226060
-    },
-    "quat_rotate_x4": {
-      "baseline": 24840,
-      "expanded": 717900,
-      "via_mat3_once": 533650
-    },
-    "quat_to_mat3": {
-      "baseline": 18540,
-      "convert": 124830
-    },
     "return_mat4": {
       "baseline": 15540,
       "boxed": 17940,
       "value": 17340
-    },
-    "skew_mul_mat": {
-      "baseline": 20540,
-      "cross_per_column": 220210,
-      "skew_then_mat_mat": 317570
-    },
-    "skew_mul_vec": {
-      "baseline": 18140,
-      "cross": 84630,
-      "skew_then_mat_vec": 119070
-    },
-    "sym3_inverse": {
-      "baseline": 18140,
-      "full9": 362470,
-      "sym6": 258970
-    },
-    "sym3_mul_vec": {
-      "baseline": 19340,
-      "full9": 119670,
-      "sym6": 119370
-    },
-    "vec2_add_fixed": {
-      "baseline": 17040,
-      "span_loop": 27300,
-      "struct": 18420
-    },
-    "vec2_dot_felt": {
-      "baseline": 16640,
-      "span_loop": 22580,
-      "struct": 16940
-    },
-    "vec2_dot_fixed": {
-      "baseline": 16740,
-      "span_loop": 45920,
-      "struct": 40090
-    },
+    }
+  },
+  "layout::vec3_gen": {
     "vec3_add_felt": {
       "array": 18740,
       "baseline": 18440,
@@ -839,6 +826,37 @@
       "span_loop": 32780,
       "struct": 23290,
       "tuple": 23290
+    }
+  },
+  "layout::vecn::tests": {
+    "access_dyn_index": {
+      "array_span": 18210,
+      "baseline": 16640,
+      "span": 17910,
+      "struct_match": 17350
+    },
+    "access_y": {
+      "array_destructure": 16240,
+      "array_span_index": 17910,
+      "baseline": 16240,
+      "span_index": 17410,
+      "struct_field": 16240,
+      "tuple_destructure": 16240
+    },
+    "vec2_add_fixed": {
+      "baseline": 17040,
+      "span_loop": 27300,
+      "struct": 18420
+    },
+    "vec2_dot_felt": {
+      "baseline": 16640,
+      "span_loop": 22580,
+      "struct": 16940
+    },
+    "vec2_dot_fixed": {
+      "baseline": 16740,
+      "span_loop": 45920,
+      "struct": 40090
     },
     "vec4_add_fixed": {
       "array": 24730,
@@ -859,7 +877,7 @@
       "struct": 64250
     }
   },
-  "primitives": {
+  "primitives::algo::tests": {
     "abs_i64": {
       "abs_bounded_constrain_to_u64": 16210,
       "abs_if_lt_zero_neg": 16610,
@@ -869,6 +887,53 @@
       "neg_zero_minus_x": 16280,
       "sign_branches": 16410
     },
+    "minmax_i64": {
+      "baseline": 15940,
+      "min_if": 16710
+    },
+    "minmax_u64": {
+      "baseline": 16340,
+      "clamp_corelib_min_max": 17880,
+      "clamp_if_chain": 17380,
+      "min_branchless_felt": 17950,
+      "min_corelib": 17010,
+      "min_if": 17110,
+      "min_overflowing_sub_match": 17110
+    },
+    "msb_u64": {
+      "baseline": 15540,
+      "binary_search_cmp_div": 29990,
+      "binary_search_mask_div": 34178,
+      "comparison_tree": 20360,
+      "loop_div2": 118440
+    },
+    "popcount_u64": {
+      "baseline": 15540,
+      "loop_divrem2": 140440,
+      "nibble_table_loop": 86230,
+      "nibble_table_unrolled": 58780,
+      "swar_bitwise": 30152
+    },
+    "pow_u64": {
+      "baseline": 15940,
+      "const_table_lookup": 17110,
+      "corelib_pow": 29750,
+      "loop_15_mul": 43710,
+      "square_and_multiply_loop": 30950
+    },
+    "sqrt_u128": {
+      "baseline": 15540,
+      "corelib": 16620,
+      "newton_loop": 342240
+    },
+    "sqrt_u64": {
+      "baseline": 15540,
+      "corelib": 16620,
+      "newton_loop": 150880,
+      "newton_unrolled_msb_seed": 39970
+    }
+  },
+  "primitives::arith::tests": {
     "arith_felt252": {
       "add": 15940,
       "baseline": 15840,
@@ -1157,95 +1222,6 @@
       "wrapping_mul": 17250,
       "wrapping_sub": 16610
     },
-    "array8": {
-      "array_at": 29620,
-      "baseline": 17540,
-      "span_get_unwrap": 29620,
-      "span_index": 29620,
-      "span_multi_pop_front": 24500,
-      "span_pop_front": 27030,
-      "span_try_into_fixed": 24330,
-      "sum_of_8_locals_reference": 21430
-    },
-    "bittest_u64": {
-      "and_mask": 18033,
-      "baseline": 15540,
-      "div_then_rem": 18260,
-      "rem_then_compare": 17720
-    },
-    "bitwise_u128": {
-      "and": 17523,
-      "and_or_xor_x3_assert": 19989,
-      "baseline": 15940,
-      "not": 16140,
-      "or": 17523,
-      "xor": 17523
-    },
-    "bitwise_u16": {
-      "and": 17523,
-      "and_or_xor_x3_assert": 19989,
-      "baseline": 15940,
-      "not": 16140,
-      "or": 17523,
-      "xor": 17523
-    },
-    "bitwise_u256": {
-      "and": 19006,
-      "and_or_xor_x3_assert": 23738,
-      "baseline": 16640,
-      "not": 17040,
-      "or": 19206,
-      "xor": 19206
-    },
-    "bitwise_u32": {
-      "and": 17523,
-      "and_or_xor_x3_assert": 19989,
-      "baseline": 15940,
-      "not": 16140,
-      "or": 17523,
-      "xor": 17523
-    },
-    "bitwise_u64": {
-      "and": 17523,
-      "and_or_xor_x3_assert": 19989,
-      "baseline": 15940,
-      "not": 16140,
-      "or": 17523,
-      "xor": 17523
-    },
-    "bitwise_u8": {
-      "and": 17523,
-      "and_or_xor_x3_assert": 19989,
-      "baseline": 15940,
-      "not": 16140,
-      "or": 17523,
-      "xor": 17523
-    },
-    "box_mat4": {
-      "baseline": 18940,
-      "box_black_box_unbox": 17940
-    },
-    "box_u64": {
-      "baseline": 15840,
-      "box_black_box_unbox": 16040
-    },
-    "branch_u64": {
-      "baseline": 16140,
-      "branchless_felt_arith": 16980,
-      "early_return": 16440,
-      "if_else": 16440,
-      "if_else_not_taken": 16540,
-      "match_bool": 16440,
-      "nested_4_conditions": 17310
-    },
-    "build8": {
-      "array_append_loop_through_black_box": 32150,
-      "array_append_through_black_box": 17440,
-      "array_macro_through_black_box": 17440,
-      "baseline": 15540,
-      "fixed_array_through_black_box": 17640,
-      "tuple_through_black_box": 17640
-    },
     "cmp_felt252": {
       "baseline": 15440,
       "eq": 16340,
@@ -1350,6 +1326,306 @@
       "lt": 16610,
       "ne": 16440
     },
+    "divrem_i128": {
+      "baseline": 16240,
+      "div_and_rem_separately": 25720,
+      "div_rem": 20930,
+      "div_rem_const": 18590
+    },
+    "divrem_i16": {
+      "baseline": 16240,
+      "div_and_rem_separately": 24780,
+      "div_rem": 20460,
+      "div_rem_const": 18120
+    },
+    "divrem_i32": {
+      "baseline": 16240,
+      "div_and_rem_separately": 24780,
+      "div_rem": 20460,
+      "div_rem_const": 18120
+    },
+    "divrem_i64": {
+      "baseline": 16240,
+      "div_and_rem_separately": 24780,
+      "div_rem": 20460,
+      "div_rem_const": 18120
+    },
+    "divrem_i8": {
+      "baseline": 16240,
+      "div_and_rem_separately": 24780,
+      "div_rem": 20460,
+      "div_rem_const": 18120
+    },
+    "divrem_u128": {
+      "baseline": 16240,
+      "div_and_rem_separately": 19100,
+      "div_rem": 17620,
+      "div_rem_const": 17620
+    },
+    "divrem_u16": {
+      "baseline": 16240,
+      "div_and_rem_separately": 18160,
+      "div_rem": 17150,
+      "div_rem_const": 17150
+    },
+    "divrem_u256": {
+      "baseline": 17040,
+      "div_and_rem_separately": 30640,
+      "div_rem": 23090,
+      "div_rem_const": 23090
+    },
+    "divrem_u32": {
+      "baseline": 16240,
+      "div_and_rem_separately": 18160,
+      "div_rem": 17150,
+      "div_rem_const": 17150
+    },
+    "divrem_u64": {
+      "baseline": 16240,
+      "div_and_rem_separately": 18160,
+      "div_rem": 17150,
+      "div_rem_const": 17150
+    },
+    "divrem_u8": {
+      "baseline": 16240,
+      "div_and_rem_separately": 17960,
+      "div_rem": 16950,
+      "div_rem_const": 16950
+    }
+  },
+  "primitives::bitops::tests": {
+    "bittest_u64": {
+      "and_mask": 18033,
+      "baseline": 15540,
+      "div_then_rem": 18260,
+      "rem_then_compare": 17720
+    },
+    "ispow2_u64": {
+      "baseline": 15540,
+      "bitwise_x_and_x_minus_1": 17433,
+      "loop_16_iterations": 51800,
+      "math_divides_2_pow_63": 16650
+    },
+    "lowbits_u128": {
+      "baseline": 15540,
+      "low64_and_mask": 17223,
+      "low64_bounded_div_rem": 16450,
+      "low64_rem_const": 16920
+    },
+    "lowbits_u256": {
+      "baseline": 16040,
+      "low64_and_mask": 18606,
+      "low64_low_limb_bounded": 16650,
+      "low64_rem_const": 21890
+    },
+    "lowbits_u64": {
+      "baseline": 15540,
+      "low32_and_mask": 17223,
+      "low32_bounded_div_rem": 16450,
+      "low32_rem_const": 16450,
+      "low8_and_mask": 17223,
+      "low8_bounded_div_rem": 16450,
+      "low8_rem_const": 16450
+    },
+    "parity_u64": {
+      "and_1": 17433,
+      "baseline": 15540,
+      "rem_2": 16750
+    },
+    "shift_u128": {
+      "baseline": 15540,
+      "shl64_bounded_downcast_mul": 15910,
+      "shl64_mul_const_checked": 18670,
+      "shr64_bounded_div_rem": 16450,
+      "shr64_div_const": 16920
+    },
+    "shift_u64": {
+      "baseline": 15540,
+      "shl8_mul_const_checked": 15910,
+      "shl8_rem_then_mul_wrapping": 16920,
+      "shl8_widemul_rem_wrapping": 17390,
+      "shr32_bounded_div_rem": 16450,
+      "shr32_div_const": 16450,
+      "shr8_bounded_div_rem": 16450,
+      "shr8_div_const": 16450
+    },
+    "shift_var_u64": {
+      "baseline": 15940,
+      "shl_lookup_mul": 18580,
+      "shr_lookup_div": 19120
+    },
+    "split_u64": {
+      "baseline": 16140,
+      "bounded_div_rem": 16750,
+      "div_const_and_mask": 18333,
+      "divrem_const": 16750
+    }
+  },
+  "primitives::bitwise::tests": {
+    "bitwise_u128": {
+      "and": 17523,
+      "and_or_xor_x3_assert": 19989,
+      "baseline": 15940,
+      "not": 16140,
+      "or": 17523,
+      "xor": 17523
+    },
+    "bitwise_u16": {
+      "and": 17523,
+      "and_or_xor_x3_assert": 19989,
+      "baseline": 15940,
+      "not": 16140,
+      "or": 17523,
+      "xor": 17523
+    },
+    "bitwise_u256": {
+      "and": 19006,
+      "and_or_xor_x3_assert": 23738,
+      "baseline": 16640,
+      "not": 17040,
+      "or": 19206,
+      "xor": 19206
+    },
+    "bitwise_u32": {
+      "and": 17523,
+      "and_or_xor_x3_assert": 19989,
+      "baseline": 15940,
+      "not": 16140,
+      "or": 17523,
+      "xor": 17523
+    },
+    "bitwise_u64": {
+      "and": 17523,
+      "and_or_xor_x3_assert": 19989,
+      "baseline": 15940,
+      "not": 16140,
+      "or": 17523,
+      "xor": 17523
+    },
+    "bitwise_u8": {
+      "and": 17523,
+      "and_or_xor_x3_assert": 19989,
+      "baseline": 15940,
+      "not": 16140,
+      "or": 17523,
+      "xor": 17523
+    }
+  },
+  "primitives::bounded::tests": {
+    "dot3_i64": {
+      "baseline": 16740,
+      "bounded_floor": 18990,
+      "naive_3_fpmul": 29320,
+      "native_wide_acc": 23000
+    },
+    "dot3_u64": {
+      "baseline": 16740,
+      "bounded": 18520,
+      "naive_3_fpmul": 26030,
+      "native_wide_acc": 19530
+    },
+    "fpmul_i64": {
+      "baseline": 15940,
+      "bounded_floor": 17790,
+      "bounded_floor_pos": 17790,
+      "bounded_trunc": 18290,
+      "bounded_trunc_pos": 17990,
+      "native_widemul_i128_div": 18930,
+      "native_widemul_i128_div_pos": 18730
+    },
+    "fpmul_signmag": {
+      "baseline": 16750,
+      "bounded": 19040,
+      "native": 19510
+    },
+    "fpmul_u128": {
+      "baseline": 15940,
+      "limbs": 26420,
+      "limbs_bounded": 20450,
+      "naive_u256_div": 27220
+    },
+    "fpmul_u64": {
+      "baseline": 15940,
+      "bounded": 17320,
+      "felt_mul_div": 18060,
+      "naive_u128_mul_div": 20820,
+      "naive_u256_mul_div": 36690,
+      "native_widemul_div": 17790
+    },
+    "sum4_u64": {
+      "baseline": 16740,
+      "bounded": 17310,
+      "native": 18050,
+      "via_felt252": 17480,
+      "via_u128": 18120
+    }
+  },
+  "primitives::control::tests": {
+    "branch_u64": {
+      "baseline": 16140,
+      "branchless_felt_arith": 16980,
+      "early_return": 16440,
+      "if_else": 16440,
+      "if_else_not_taken": 16540,
+      "match_bool": 16440,
+      "nested_4_conditions": 17310
+    },
+    "loop_fixed1": {
+      "baseline": 15940,
+      "destructure_unrolled": 16240,
+      "span_for_iter": 19480
+    },
+    "loop_fixed16": {
+      "baseline": 18940,
+      "destructure_unrolled": 29790,
+      "span_for_iter": 51980
+    },
+    "loop_fixed4": {
+      "baseline": 16540,
+      "destructure_unrolled": 18150,
+      "span_for_iter": 26300
+    },
+    "loop_sum1": {
+      "baseline": 16140,
+      "for_range_index": 20930,
+      "for_span_iter": 19180,
+      "for_span_iter_felt_acc": 19920,
+      "loop_pop_front": 19180,
+      "recursion": 20150,
+      "recursion_tail_acc": 19080,
+      "unrolled_multi_pop_front": 16510,
+      "unrolled_span_index": 16340,
+      "while_index": 20120,
+      "while_let_pop_front": 19180
+    },
+    "loop_sum16": {
+      "baseline": 19140,
+      "for_range_index": 64580,
+      "for_span_iter": 49780,
+      "for_span_iter_felt_acc": 43470,
+      "loop_pop_front": 49780,
+      "recursion": 58250,
+      "recursion_tail_acc": 49680,
+      "unrolled_multi_pop_front": 30260,
+      "unrolled_span_index": 41540,
+      "while_index": 72320,
+      "while_let_pop_front": 49780
+    },
+    "loop_sum4": {
+      "baseline": 16740,
+      "for_range_index": 29660,
+      "for_span_iter": 25300,
+      "for_span_iter_felt_acc": 24630,
+      "loop_pop_front": 25300,
+      "recursion": 27770,
+      "recursion_tail_acc": 25200,
+      "unrolled_multi_pop_front": 18820,
+      "unrolled_span_index": 23060,
+      "while_index": 30560,
+      "while_let_pop_front": 25300
+    }
+  },
+  "primitives::conversions::tests": {
     "conv_from_bool": {
       "baseline": 15140,
       "if_else_u64": 15640,
@@ -1430,6 +1706,34 @@
       "into_u32": 15540,
       "into_u64": 15540,
       "try_into_i8": 15810
+    }
+  },
+  "primitives::data::tests": {
+    "array8": {
+      "array_at": 29620,
+      "baseline": 17540,
+      "span_get_unwrap": 29620,
+      "span_index": 29620,
+      "span_multi_pop_front": 24500,
+      "span_pop_front": 27030,
+      "span_try_into_fixed": 24330,
+      "sum_of_8_locals_reference": 21430
+    },
+    "box_mat4": {
+      "baseline": 18940,
+      "box_black_box_unbox": 17940
+    },
+    "box_u64": {
+      "baseline": 15840,
+      "box_black_box_unbox": 16040
+    },
+    "build8": {
+      "array_append_loop_through_black_box": 32150,
+      "array_append_through_black_box": 17440,
+      "array_macro_through_black_box": 17440,
+      "baseline": 15540,
+      "fixed_array_through_black_box": 17640,
+      "tuple_through_black_box": 17640
     },
     "dict8": {
       "array_8_appends_8_reads": 28220,
@@ -1438,123 +1742,39 @@
       "dict_8_inserts": 67780,
       "dict_8_inserts_8_gets": 82980
     },
-    "divrem_i128": {
-      "baseline": 16240,
-      "div_and_rem_separately": 25720,
-      "div_rem": 20930,
-      "div_rem_const": 18590
-    },
-    "divrem_i16": {
-      "baseline": 16240,
-      "div_and_rem_separately": 24780,
-      "div_rem": 20460,
-      "div_rem_const": 18120
-    },
-    "divrem_i32": {
-      "baseline": 16240,
-      "div_and_rem_separately": 24780,
-      "div_rem": 20460,
-      "div_rem_const": 18120
-    },
-    "divrem_i64": {
-      "baseline": 16240,
-      "div_and_rem_separately": 24780,
-      "div_rem": 20460,
-      "div_rem_const": 18120
-    },
-    "divrem_i8": {
-      "baseline": 16240,
-      "div_and_rem_separately": 24780,
-      "div_rem": 20460,
-      "div_rem_const": 18120
-    },
-    "divrem_u128": {
-      "baseline": 16240,
-      "div_and_rem_separately": 19100,
-      "div_rem": 17620,
-      "div_rem_const": 17620
-    },
-    "divrem_u16": {
-      "baseline": 16240,
-      "div_and_rem_separately": 18160,
-      "div_rem": 17150,
-      "div_rem_const": 17150
-    },
-    "divrem_u256": {
-      "baseline": 17040,
-      "div_and_rem_separately": 30640,
-      "div_rem": 23090,
-      "div_rem_const": 23090
-    },
-    "divrem_u32": {
-      "baseline": 16240,
-      "div_and_rem_separately": 18160,
-      "div_rem": 17150,
-      "div_rem_const": 17150
-    },
-    "divrem_u64": {
-      "baseline": 16240,
-      "div_and_rem_separately": 18160,
-      "div_rem": 17150,
-      "div_rem_const": 17150
-    },
-    "divrem_u8": {
-      "baseline": 16240,
-      "div_and_rem_separately": 17960,
-      "div_rem": 16950,
-      "div_rem_const": 16950
-    },
-    "dot3_i64": {
-      "baseline": 16740,
-      "bounded_floor": 18990,
-      "naive_3_fpmul": 29320,
-      "native_wide_acc": 23000
-    },
-    "dot3_u64": {
-      "baseline": 16740,
-      "bounded": 18520,
-      "naive_3_fpmul": 26030,
-      "native_wide_acc": 19530
-    },
     "fixed8": {
       "baseline": 17340,
       "destructure": 22930,
       "span_index": 29920,
       "tuple_destructure": 22930
     },
-    "fpmul_i64": {
-      "baseline": 15940,
-      "bounded_floor": 17790,
-      "bounded_floor_pos": 17790,
-      "bounded_trunc": 18290,
-      "bounded_trunc_pos": 17990,
-      "native_widemul_i128_div": 18930,
-      "native_widemul_i128_div_pos": 18730
-    },
-    "fpmul_signmag": {
-      "baseline": 16750,
-      "bounded": 19040,
-      "native": 19510
-    },
-    "fpmul_u128": {
-      "baseline": 15940,
-      "limbs": 26420,
-      "limbs_bounded": 20450,
-      "naive_u256_div": 27220
-    },
-    "fpmul_u64": {
-      "baseline": 15940,
-      "bounded": 17320,
-      "felt_mul_div": 18060,
-      "naive_u128_mul_div": 20820,
-      "naive_u256_mul_div": 36690,
-      "native_widemul_div": 17790
-    },
     "index1": {
       "baseline": 18240,
       "fixed_array_span_index": 19410,
       "span_index": 18910
     },
+    "pass_mat4": {
+      "baseline": 16380,
+      "boxed_x4": 35630,
+      "by_snapshot_x4": 38130,
+      "by_value_x4": 38130,
+      "fixed_array_x4": 38130,
+      "four_scalars_x4": 33330,
+      "span_x4": 45870
+    },
+    "vec3": {
+      "baseline": 16340,
+      "call_make_then_sum": 20280,
+      "call_with_fields": 19480,
+      "call_with_struct_snapshot": 19480,
+      "call_with_struct_value": 19480,
+      "fixed_array_roundtrip_inlined": 17180,
+      "plain_locals": 17180,
+      "struct_roundtrip_inlined": 17180,
+      "tuple_roundtrip_inlined": 17180
+    }
+  },
+  "primitives::inlining::tests": {
     "inline_large_x1": {
       "baseline": 16340,
       "inline_always": 27800,
@@ -1592,13 +1812,9 @@
       "inline_always": 23760,
       "inline_default": 23760,
       "inline_never": 40560
-    },
-    "ispow2_u64": {
-      "baseline": 15540,
-      "bitwise_x_and_x_minus_1": 17433,
-      "loop_16_iterations": 51800,
-      "math_divides_2_pow_63": 16650
-    },
+    }
+  },
+  "primitives::lookup::tests": {
     "lookup_pow2": {
       "baseline": 17180,
       "bits_felt_mul": 51890,
@@ -1609,82 +1825,9 @@
       "loop_mul": 180160,
       "match_jump_table": 23990,
       "shared_span_index": 19990
-    },
-    "loop_fixed1": {
-      "baseline": 15940,
-      "destructure_unrolled": 16240,
-      "span_for_iter": 19480
-    },
-    "loop_fixed16": {
-      "baseline": 18940,
-      "destructure_unrolled": 29790,
-      "span_for_iter": 51980
-    },
-    "loop_fixed4": {
-      "baseline": 16540,
-      "destructure_unrolled": 18150,
-      "span_for_iter": 26300
-    },
-    "loop_sum1": {
-      "baseline": 16140,
-      "for_range_index": 20930,
-      "for_span_iter": 19180,
-      "for_span_iter_felt_acc": 19920,
-      "loop_pop_front": 19180,
-      "recursion": 20150,
-      "recursion_tail_acc": 19080,
-      "unrolled_multi_pop_front": 16510,
-      "unrolled_span_index": 16340,
-      "while_index": 20120,
-      "while_let_pop_front": 19180
-    },
-    "loop_sum16": {
-      "baseline": 19140,
-      "for_range_index": 64580,
-      "for_span_iter": 49780,
-      "for_span_iter_felt_acc": 43470,
-      "loop_pop_front": 49780,
-      "recursion": 58250,
-      "recursion_tail_acc": 49680,
-      "unrolled_multi_pop_front": 30260,
-      "unrolled_span_index": 41540,
-      "while_index": 72320,
-      "while_let_pop_front": 49780
-    },
-    "loop_sum4": {
-      "baseline": 16740,
-      "for_range_index": 29660,
-      "for_span_iter": 25300,
-      "for_span_iter_felt_acc": 24630,
-      "loop_pop_front": 25300,
-      "recursion": 27770,
-      "recursion_tail_acc": 25200,
-      "unrolled_multi_pop_front": 18820,
-      "unrolled_span_index": 23060,
-      "while_index": 30560,
-      "while_let_pop_front": 25300
-    },
-    "lowbits_u128": {
-      "baseline": 15540,
-      "low64_and_mask": 17223,
-      "low64_bounded_div_rem": 16450,
-      "low64_rem_const": 16920
-    },
-    "lowbits_u256": {
-      "baseline": 16040,
-      "low64_and_mask": 18606,
-      "low64_low_limb_bounded": 16650,
-      "low64_rem_const": 21890
-    },
-    "lowbits_u64": {
-      "baseline": 15540,
-      "low32_and_mask": 17223,
-      "low32_bounded_div_rem": 16450,
-      "low32_rem_const": 16450,
-      "low8_and_mask": 17223,
-      "low8_bounded_div_rem": 16450,
-      "low8_rem_const": 16450
-    },
+    }
+  },
+  "primitives::marginal::tests": {
     "marginal_felt252": {
       "add_x1": 15940,
       "add_x9": 16740,
@@ -1838,220 +1981,14 @@
       "sub_x9": 21470,
       "xor_x1": 17523,
       "xor_x9": 24687
-    },
-    "minmax_i64": {
-      "baseline": 15940,
-      "min_if": 16710
-    },
-    "minmax_u64": {
-      "baseline": 16340,
-      "clamp_corelib_min_max": 17880,
-      "clamp_if_chain": 17380,
-      "min_branchless_felt": 17950,
-      "min_corelib": 17010,
-      "min_if": 17110,
-      "min_overflowing_sub_match": 17110
-    },
-    "msb_u64": {
-      "baseline": 15540,
-      "binary_search_cmp_div": 29990,
-      "binary_search_mask_div": 34178,
-      "comparison_tree": 20360,
-      "loop_div2": 118440
-    },
-    "parity_u64": {
-      "and_1": 17433,
-      "baseline": 15540,
-      "rem_2": 16750
-    },
-    "pass_mat4": {
-      "baseline": 16380,
-      "boxed_x4": 35630,
-      "by_snapshot_x4": 38130,
-      "by_value_x4": 38130,
-      "fixed_array_x4": 38130,
-      "four_scalars_x4": 33330,
-      "span_x4": 45870
-    },
-    "popcount_u64": {
-      "baseline": 15540,
-      "loop_divrem2": 140440,
-      "nibble_table_loop": 86230,
-      "nibble_table_unrolled": 58780,
-      "swar_bitwise": 30152
-    },
-    "pow_u64": {
-      "baseline": 15940,
-      "const_table_lookup": 17110,
-      "corelib_pow": 29750,
-      "loop_15_mul": 43710,
-      "square_and_multiply_loop": 30950
-    },
-    "shift_u128": {
-      "baseline": 15540,
-      "shl64_bounded_downcast_mul": 15910,
-      "shl64_mul_const_checked": 18670,
-      "shr64_bounded_div_rem": 16450,
-      "shr64_div_const": 16920
-    },
-    "shift_u64": {
-      "baseline": 15540,
-      "shl8_mul_const_checked": 15910,
-      "shl8_rem_then_mul_wrapping": 16920,
-      "shl8_widemul_rem_wrapping": 17390,
-      "shr32_bounded_div_rem": 16450,
-      "shr32_div_const": 16450,
-      "shr8_bounded_div_rem": 16450,
-      "shr8_div_const": 16450
-    },
-    "shift_var_u64": {
-      "baseline": 15940,
-      "shl_lookup_mul": 18580,
-      "shr_lookup_div": 19120
-    },
-    "split_u64": {
-      "baseline": 16140,
-      "bounded_div_rem": 16750,
-      "div_const_and_mask": 18333,
-      "divrem_const": 16750
-    },
-    "sqrt_u128": {
-      "baseline": 15540,
-      "corelib": 16620,
-      "newton_loop": 342240
-    },
-    "sqrt_u64": {
-      "baseline": 15540,
-      "corelib": 16620,
-      "newton_loop": 150880,
-      "newton_unrolled_msb_seed": 39970
-    },
-    "sum4_u64": {
-      "baseline": 16740,
-      "bounded": 17310,
-      "native": 18050,
-      "via_felt252": 17480,
-      "via_u128": 18120
-    },
-    "vec3": {
-      "baseline": 16340,
-      "call_make_then_sum": 20280,
-      "call_with_fields": 19480,
-      "call_with_struct_snapshot": 19480,
-      "call_with_struct_value": 19480,
-      "fixed_array_roundtrip_inlined": 17180,
-      "plain_locals": 17180,
-      "struct_roundtrip_inlined": 17180,
-      "tuple_roundtrip_inlined": 17180
     }
   },
-  "scalar": {
-    "abs_felt": {
-      "baseline": 15840,
-      "felt_n": 17430,
-      "felt_p": 17750
-    },
-    "abs_i128": {
-      "baseline": 15940,
-      "native_n": 17010,
-      "native_p": 16830
-    },
-    "abs_i32": {
-      "baseline": 15940,
-      "native_n": 17010,
-      "native_p": 16830
-    },
-    "abs_i64": {
-      "baseline": 15940,
-      "bounded_bi_n": 17080,
-      "bounded_bi_p": 16650,
-      "bounded_n": 17010,
-      "bounded_p": 16830,
-      "native_n": 17010,
-      "native_p": 16830
-    },
-    "abs_sm32": {
-      "baseline": 16840,
-      "signmag_n": 16640,
-      "signmag_p": 16640
-    },
-    "abs_sm64": {
-      "baseline": 16840,
-      "signmag_n": 16640,
-      "signmag_p": 16640
-    },
+  "scalar::tests::algo": {
     "acos_algo": {
       "baseline": 15940,
       "sqrt_poly7_m0p3": 39310,
       "sqrt_poly9_typed_m0p3": 32450,
       "via_atan2_m0p3": 52130
-    },
-    "add4_felt": {
-      "baseline": 16240,
-      "felt_pn": 16640
-    },
-    "add4_i128": {
-      "baseline": 16340,
-      "native_pn": 18120
-    },
-    "add4_i32": {
-      "baseline": 16340,
-      "native_pn": 19200
-    },
-    "add4_i64": {
-      "baseline": 16340,
-      "bounded_pn": 19200,
-      "native_pn": 19200
-    },
-    "add4_sm32": {
-      "baseline": 17450,
-      "signmag_pn": 25060
-    },
-    "add4_sm64": {
-      "baseline": 17450,
-      "signmag_pn": 25060
-    },
-    "add_felt": {
-      "baseline": 16240,
-      "felt_nn": 16340,
-      "felt_pn": 16340,
-      "felt_pp": 16340
-    },
-    "add_i128": {
-      "baseline": 16340,
-      "native_nn": 16710,
-      "native_pn": 16710,
-      "native_pp": 16710
-    },
-    "add_i32": {
-      "baseline": 16340,
-      "native_nn": 16980,
-      "native_pn": 16980,
-      "native_pp": 16980
-    },
-    "add_i64": {
-      "baseline": 16340,
-      "bounded_bi_nn": 16980,
-      "bounded_bi_pn": 16980,
-      "bounded_bi_pp": 16980,
-      "bounded_nn": 16980,
-      "bounded_pn": 16980,
-      "bounded_pp": 16980,
-      "native_nn": 16980,
-      "native_pn": 16980,
-      "native_pp": 16980
-    },
-    "add_sm32": {
-      "baseline": 17440,
-      "signmag_nn": 19060,
-      "signmag_pn": 19880,
-      "signmag_pp": 19240
-    },
-    "add_sm64": {
-      "baseline": 17440,
-      "signmag_nn": 19060,
-      "signmag_pn": 19880,
-      "signmag_pp": 19240
     },
     "atan2_algo": {
       "baseline": 16340,
@@ -2069,375 +2006,11 @@
       "poly11_typed_m2p5": 28540,
       "poly9_fused_m2p5": 33170
     },
-    "cross3_felt": {
-      "baseline": 18640,
-      "felt_lazy_mix": 25800,
-      "felt_mix": 32160
-    },
-    "cross3_i128": {
-      "baseline": 18940,
-      "native_mix": 72790
-    },
-    "cross3_i32": {
-      "baseline": 18940,
-      "native_mix": 36760
-    },
-    "cross3_i64": {
-      "baseline": 18940,
-      "bounded_fused_mix": 25590,
-      "bounded_mix": 33060,
-      "native_mix": 39580
-    },
-    "cross3_sm32": {
-      "baseline": 22360,
-      "signmag_mix": 39500
-    },
-    "cross3_sm64": {
-      "baseline": 22360,
-      "signmag_mix": 42320
-    },
-    "div_felt": {
-      "baseline": 16240,
-      "felt_pn": 21160,
-      "felt_pp": 21090
-    },
-    "div_i128": {
-      "baseline": 16340,
-      "native_pn": 30100,
-      "native_pp": 29840
-    },
-    "div_i32": {
-      "baseline": 16340,
-      "native_pn": 21200,
-      "native_pp": 21200
-    },
-    "div_i64": {
-      "baseline": 16340,
-      "bounded_pn": 19980,
-      "bounded_pp": 19910,
-      "native_pn": 21670,
-      "native_pp": 21670
-    },
-    "div_sm32": {
-      "baseline": 17440,
-      "signmag_pn": 19230,
-      "signmag_pp": 19220
-    },
-    "div_sm64": {
-      "baseline": 17440,
-      "signmag_pn": 19700,
-      "signmag_pp": 19690
-    },
-    "dot3_felt": {
-      "baseline": 17840,
-      "felt_lazy_mix": 20360,
-      "felt_mix": 24600
-    },
-    "dot3_i128": {
-      "baseline": 17940,
-      "bounded_lazy_mix": 31100,
-      "native_mix": 44890
-    },
-    "dot3_i32": {
-      "baseline": 17940,
-      "native_mix": 27100
-    },
-    "dot3_i64": {
-      "baseline": 17940,
-      "bounded_fused_mix": 20190,
-      "bounded_mix": 25170,
-      "native_mix": 28510
-    },
-    "dot3_sm32": {
-      "baseline": 19850,
-      "signmag_mix": 28750
-    },
-    "dot3_sm64": {
-      "baseline": 19850,
-      "signmag_mix": 30160
-    },
-    "eq_felt": {
-      "baseline": 16350,
-      "felt_p": 16850
-    },
-    "eq_i128": {
-      "baseline": 16350,
-      "native_p": 16850
-    },
-    "eq_i32": {
-      "baseline": 16350,
-      "native_p": 16850
-    },
-    "eq_i64": {
-      "baseline": 16350,
-      "bounded_p": 16850,
-      "native_p": 16850
-    },
-    "eq_sm32": {
-      "baseline": 16750,
-      "signmag_p": 17650
-    },
-    "eq_sm64": {
-      "baseline": 16750,
-      "signmag_p": 17650
-    },
-    "from_int_felt": {
-      "baseline": 15840,
-      "felt_n": 15940
-    },
-    "from_int_i128": {
-      "baseline": 15940,
-      "native_n": 16310
-    },
-    "from_int_i32": {
-      "baseline": 15940,
-      "native_n": 16580
-    },
-    "from_int_i64": {
-      "baseline": 15940,
-      "bounded_n": 16040,
-      "native_n": 16580
-    },
-    "from_int_sm32": {
-      "baseline": 16450,
-      "signmag_n": 18860
-    },
-    "from_int_sm64": {
-      "baseline": 16450,
-      "signmag_n": 18860
-    },
     "inv_sqrt_algo": {
       "baseline": 15940,
       "newton_mul_only_1234": 64450,
       "sqrt_then_const_udiv_1234": 18870,
       "sqrt_then_signed_div_1234": 20350
-    },
-    "length3_felt": {
-      "baseline": 16640,
-      "felt_mix": 25220
-    },
-    "length3_i128": {
-      "baseline": 16740,
-      "native_mix": 51170
-    },
-    "length3_i32": {
-      "baseline": 16740,
-      "native_mix": 27660
-    },
-    "length3_i64": {
-      "baseline": 16740,
-      "bounded_fused_mix": 18960,
-      "bounded_mix": 25990,
-      "native_mix": 29070
-    },
-    "length3_sm32": {
-      "baseline": 18040,
-      "signmag_mix": 27460
-    },
-    "length3_sm64": {
-      "baseline": 18040,
-      "signmag_mix": 28870
-    },
-    "lerp_felt": {
-      "baseline": 16640,
-      "felt_lazy_mix": 19060,
-      "felt_mix": 18960
-    },
-    "lerp_i128": {
-      "baseline": 16740,
-      "native_mix": 26370
-    },
-    "lerp_i32": {
-      "baseline": 16740,
-      "native_mix": 20740
-    },
-    "lerp_i64": {
-      "baseline": 16740,
-      "bounded_fused_mix": 18890,
-      "bounded_mix": 20070,
-      "native_mix": 21210
-    },
-    "lerp_sm32": {
-      "baseline": 18040,
-      "signmag_mix": 24710
-    },
-    "lerp_sm64": {
-      "baseline": 18040,
-      "signmag_mix": 25180
-    },
-    "lt_felt": {
-      "baseline": 16350,
-      "felt_nn": 18140,
-      "felt_np": 18140,
-      "felt_pp": 18140
-    },
-    "lt_i128": {
-      "baseline": 16350,
-      "native_nn": 17220,
-      "native_np": 17220,
-      "native_pp": 17220
-    },
-    "lt_i32": {
-      "baseline": 16350,
-      "native_nn": 17220,
-      "native_np": 17220,
-      "native_pp": 17220
-    },
-    "lt_i64": {
-      "baseline": 16350,
-      "bounded_nn": 17220,
-      "bounded_np": 17220,
-      "bounded_pp": 17220,
-      "native_nn": 17220,
-      "native_np": 17220,
-      "native_pp": 17220
-    },
-    "lt_sm32": {
-      "baseline": 16850,
-      "signmag_nn": 18930,
-      "signmag_np": 17930,
-      "signmag_pp": 19030
-    },
-    "lt_sm64": {
-      "baseline": 16850,
-      "signmag_nn": 18930,
-      "signmag_np": 17930,
-      "signmag_pp": 19030
-    },
-    "mul4_felt": {
-      "baseline": 16240,
-      "felt_pn": 25020
-    },
-    "mul4_i128": {
-      "baseline": 16340,
-      "native_pn": 51960
-    },
-    "mul4_i32": {
-      "baseline": 16340,
-      "native_pn": 26560
-    },
-    "mul4_i64": {
-      "baseline": 16340,
-      "bounded_pn": 24040,
-      "native_pn": 28440
-    },
-    "mul4_sm32": {
-      "baseline": 17440,
-      "signmag_pn": 24260
-    },
-    "mul4_sm64": {
-      "baseline": 17440,
-      "signmag_pn": 26140
-    },
-    "mul_add_felt": {
-      "baseline": 16640,
-      "felt_lazy_mix": 18960,
-      "felt_mix": 18860
-    },
-    "mul_add_i128": {
-      "baseline": 16740,
-      "native_mix": 25900
-    },
-    "mul_add_i32": {
-      "baseline": 16740,
-      "native_mix": 20000
-    },
-    "mul_add_i64": {
-      "baseline": 16740,
-      "bounded_fused_mix": 18790,
-      "bounded_mix": 19330,
-      "native_mix": 20470
-    },
-    "mul_add_sm32": {
-      "baseline": 18050,
-      "signmag_mix": 22080
-    },
-    "mul_add_sm64": {
-      "baseline": 18050,
-      "signmag_mix": 22550
-    },
-    "mul_felt": {
-      "baseline": 16240,
-      "felt_nn": 18360,
-      "felt_plain_nn": 18830,
-      "felt_plain_pn": 18830,
-      "felt_plain_pp": 18830,
-      "felt_pn": 18360,
-      "felt_pp": 18360,
-      "felt_soft_nn": 17720,
-      "felt_soft_pn": 17720,
-      "felt_soft_pp": 17720
-    },
-    "mul_i128": {
-      "baseline": 16340,
-      "bounded_nn": 20840,
-      "bounded_pn": 20840,
-      "bounded_pp": 20840,
-      "native_nn": 25310,
-      "native_pn": 25030,
-      "native_pp": 24770
-    },
-    "mul_i32": {
-      "baseline": 16340,
-      "native_nn": 18780,
-      "native_pn": 18860,
-      "native_pp": 18780
-    },
-    "mul_i64": {
-      "baseline": 16340,
-      "bounded_nn": 18190,
-      "bounded_pn": 18190,
-      "bounded_pp": 18190,
-      "bounded_precheck_nn": 18090,
-      "bounded_precheck_pn": 18090,
-      "bounded_precheck_pp": 18090,
-      "bounded_trunc_nn": 18780,
-      "bounded_trunc_pn": 18860,
-      "bounded_trunc_pp": 18780,
-      "bounded_u128_nn": 18190,
-      "bounded_u128_pn": 18190,
-      "bounded_u128_pp": 18190,
-      "native_nn": 19250,
-      "native_pn": 19330,
-      "native_pp": 19250
-    },
-    "mul_sm32": {
-      "baseline": 17440,
-      "signmag_nn": 19320,
-      "signmag_pn": 19230,
-      "signmag_pp": 19220
-    },
-    "mul_sm64": {
-      "baseline": 17440,
-      "signmag_nn": 19790,
-      "signmag_pn": 19700,
-      "signmag_pp": 19690
-    },
-    "neg_felt": {
-      "baseline": 15840,
-      "felt_p": 15940
-    },
-    "neg_i128": {
-      "baseline": 15940,
-      "native_p": 16240
-    },
-    "neg_i32": {
-      "baseline": 15940,
-      "native_p": 16240
-    },
-    "neg_i64": {
-      "baseline": 15940,
-      "bounded_bi_p": 16310,
-      "bounded_p": 16240,
-      "native_p": 16240
-    },
-    "neg_sm32": {
-      "baseline": 16750,
-      "signmag_p": 17350
-    },
-    "neg_sm64": {
-      "baseline": 16750,
-      "signmag_p": 17350
     },
     "normalize3_algo": {
       "baseline": 17740,
@@ -2480,46 +2053,390 @@
       "newton_seeded_unrolled_1234": 47080,
       "via_inv_sqrt_newton_0p02": 66400,
       "via_inv_sqrt_newton_1234": 66400
+    }
+  },
+  "scalar::tests::rep_felt": {
+    "abs_felt": {
+      "baseline": 15840,
+      "felt_n": 17430,
+      "felt_p": 17750
+    },
+    "add4_felt": {
+      "baseline": 16240,
+      "felt_pn": 16640
+    },
+    "add_felt": {
+      "baseline": 16240,
+      "felt_nn": 16340,
+      "felt_pn": 16340,
+      "felt_pp": 16340
+    },
+    "cross3_felt": {
+      "baseline": 18640,
+      "felt_lazy_mix": 25800,
+      "felt_mix": 32160
+    },
+    "div_felt": {
+      "baseline": 16240,
+      "felt_pn": 21160,
+      "felt_pp": 21090
+    },
+    "dot3_felt": {
+      "baseline": 17840,
+      "felt_lazy_mix": 20360,
+      "felt_mix": 24600
+    },
+    "eq_felt": {
+      "baseline": 16350,
+      "felt_p": 16850
+    },
+    "from_int_felt": {
+      "baseline": 15840,
+      "felt_n": 15940
+    },
+    "length3_felt": {
+      "baseline": 16640,
+      "felt_mix": 25220
+    },
+    "lerp_felt": {
+      "baseline": 16640,
+      "felt_lazy_mix": 19060,
+      "felt_mix": 18960
+    },
+    "lt_felt": {
+      "baseline": 16350,
+      "felt_nn": 18140,
+      "felt_np": 18140,
+      "felt_pp": 18140
+    },
+    "mul4_felt": {
+      "baseline": 16240,
+      "felt_pn": 25020
+    },
+    "mul_add_felt": {
+      "baseline": 16640,
+      "felt_lazy_mix": 18960,
+      "felt_mix": 18860
+    },
+    "mul_felt": {
+      "baseline": 16240,
+      "felt_nn": 18360,
+      "felt_plain_nn": 18830,
+      "felt_plain_pn": 18830,
+      "felt_plain_pp": 18830,
+      "felt_pn": 18360,
+      "felt_pp": 18360,
+      "felt_soft_nn": 17720,
+      "felt_soft_pn": 17720,
+      "felt_soft_pp": 17720
+    },
+    "neg_felt": {
+      "baseline": 15840,
+      "felt_p": 15940
     },
     "sqrt_felt": {
       "baseline": 15840,
       "felt_p": 17560
-    },
-    "sqrt_i128": {
-      "baseline": 15940,
-      "native_p": 23300
-    },
-    "sqrt_i32": {
-      "baseline": 15940,
-      "native_p": 17760
-    },
-    "sqrt_i64": {
-      "baseline": 15940,
-      "bounded_p": 17860,
-      "native_p": 17760
-    },
-    "sqrt_sm32": {
-      "baseline": 16840,
-      "signmag_p": 18020
-    },
-    "sqrt_sm64": {
-      "baseline": 16840,
-      "signmag_p": 18020
     },
     "sub_felt": {
       "baseline": 16240,
       "felt_pn": 16340,
       "felt_pp": 16340
     },
+    "to_int_felt": {
+      "baseline": 15940,
+      "felt_n": 17590,
+      "felt_p": 17590
+    }
+  },
+  "scalar::tests::rep_i128": {
+    "abs_i128": {
+      "baseline": 15940,
+      "native_n": 17010,
+      "native_p": 16830
+    },
+    "add4_i128": {
+      "baseline": 16340,
+      "native_pn": 18120
+    },
+    "add_i128": {
+      "baseline": 16340,
+      "native_nn": 16710,
+      "native_pn": 16710,
+      "native_pp": 16710
+    },
+    "cross3_i128": {
+      "baseline": 18940,
+      "native_mix": 72790
+    },
+    "div_i128": {
+      "baseline": 16340,
+      "native_pn": 30100,
+      "native_pp": 29840
+    },
+    "dot3_i128": {
+      "baseline": 17940,
+      "bounded_lazy_mix": 31100,
+      "native_mix": 44890
+    },
+    "eq_i128": {
+      "baseline": 16350,
+      "native_p": 16850
+    },
+    "from_int_i128": {
+      "baseline": 15940,
+      "native_n": 16310
+    },
+    "length3_i128": {
+      "baseline": 16740,
+      "native_mix": 51170
+    },
+    "lerp_i128": {
+      "baseline": 16740,
+      "native_mix": 26370
+    },
+    "lt_i128": {
+      "baseline": 16350,
+      "native_nn": 17220,
+      "native_np": 17220,
+      "native_pp": 17220
+    },
+    "mul4_i128": {
+      "baseline": 16340,
+      "native_pn": 51960
+    },
+    "mul_add_i128": {
+      "baseline": 16740,
+      "native_mix": 25900
+    },
+    "mul_i128": {
+      "baseline": 16340,
+      "bounded_nn": 20840,
+      "bounded_pn": 20840,
+      "bounded_pp": 20840,
+      "native_nn": 25310,
+      "native_pn": 25030,
+      "native_pp": 24770
+    },
+    "neg_i128": {
+      "baseline": 15940,
+      "native_p": 16240
+    },
+    "sqrt_i128": {
+      "baseline": 15940,
+      "native_p": 23300
+    },
     "sub_i128": {
       "baseline": 16340,
       "native_pn": 16710,
       "native_pp": 16710
     },
+    "to_int_i128": {
+      "baseline": 15940,
+      "native_n": 20100,
+      "native_p": 19840
+    }
+  },
+  "scalar::tests::rep_i32": {
+    "abs_i32": {
+      "baseline": 15940,
+      "native_n": 17010,
+      "native_p": 16830
+    },
+    "add4_i32": {
+      "baseline": 16340,
+      "native_pn": 19200
+    },
+    "add_i32": {
+      "baseline": 16340,
+      "native_nn": 16980,
+      "native_pn": 16980,
+      "native_pp": 16980
+    },
+    "cross3_i32": {
+      "baseline": 18940,
+      "native_mix": 36760
+    },
+    "div_i32": {
+      "baseline": 16340,
+      "native_pn": 21200,
+      "native_pp": 21200
+    },
+    "dot3_i32": {
+      "baseline": 17940,
+      "native_mix": 27100
+    },
+    "eq_i32": {
+      "baseline": 16350,
+      "native_p": 16850
+    },
+    "from_int_i32": {
+      "baseline": 15940,
+      "native_n": 16580
+    },
+    "length3_i32": {
+      "baseline": 16740,
+      "native_mix": 27660
+    },
+    "lerp_i32": {
+      "baseline": 16740,
+      "native_mix": 20740
+    },
+    "lt_i32": {
+      "baseline": 16350,
+      "native_nn": 17220,
+      "native_np": 17220,
+      "native_pp": 17220
+    },
+    "mul4_i32": {
+      "baseline": 16340,
+      "native_pn": 26560
+    },
+    "mul_add_i32": {
+      "baseline": 16740,
+      "native_mix": 20000
+    },
+    "mul_i32": {
+      "baseline": 16340,
+      "native_nn": 18780,
+      "native_pn": 18860,
+      "native_pp": 18780
+    },
+    "neg_i32": {
+      "baseline": 15940,
+      "native_p": 16240
+    },
+    "sqrt_i32": {
+      "baseline": 15940,
+      "native_p": 17760
+    },
     "sub_i32": {
       "baseline": 16340,
       "native_pn": 16980,
       "native_pp": 16980
+    },
+    "to_int_i32": {
+      "baseline": 15940,
+      "native_n": 19630,
+      "native_p": 19370
+    }
+  },
+  "scalar::tests::rep_i64": {
+    "abs_i64": {
+      "baseline": 15940,
+      "bounded_bi_n": 17080,
+      "bounded_bi_p": 16650,
+      "bounded_n": 17010,
+      "bounded_p": 16830,
+      "native_n": 17010,
+      "native_p": 16830
+    },
+    "add4_i64": {
+      "baseline": 16340,
+      "bounded_pn": 19200,
+      "native_pn": 19200
+    },
+    "add_i64": {
+      "baseline": 16340,
+      "bounded_bi_nn": 16980,
+      "bounded_bi_pn": 16980,
+      "bounded_bi_pp": 16980,
+      "bounded_nn": 16980,
+      "bounded_pn": 16980,
+      "bounded_pp": 16980,
+      "native_nn": 16980,
+      "native_pn": 16980,
+      "native_pp": 16980
+    },
+    "cross3_i64": {
+      "baseline": 18940,
+      "bounded_fused_mix": 25590,
+      "bounded_mix": 33060,
+      "native_mix": 39580
+    },
+    "div_i64": {
+      "baseline": 16340,
+      "bounded_pn": 19980,
+      "bounded_pp": 19910,
+      "native_pn": 21670,
+      "native_pp": 21670
+    },
+    "dot3_i64": {
+      "baseline": 17940,
+      "bounded_fused_mix": 20190,
+      "bounded_mix": 25170,
+      "native_mix": 28510
+    },
+    "eq_i64": {
+      "baseline": 16350,
+      "bounded_p": 16850,
+      "native_p": 16850
+    },
+    "from_int_i64": {
+      "baseline": 15940,
+      "bounded_n": 16040,
+      "native_n": 16580
+    },
+    "length3_i64": {
+      "baseline": 16740,
+      "bounded_fused_mix": 18960,
+      "bounded_mix": 25990,
+      "native_mix": 29070
+    },
+    "lerp_i64": {
+      "baseline": 16740,
+      "bounded_fused_mix": 18890,
+      "bounded_mix": 20070,
+      "native_mix": 21210
+    },
+    "lt_i64": {
+      "baseline": 16350,
+      "bounded_nn": 17220,
+      "bounded_np": 17220,
+      "bounded_pp": 17220,
+      "native_nn": 17220,
+      "native_np": 17220,
+      "native_pp": 17220
+    },
+    "mul4_i64": {
+      "baseline": 16340,
+      "bounded_pn": 24040,
+      "native_pn": 28440
+    },
+    "mul_add_i64": {
+      "baseline": 16740,
+      "bounded_fused_mix": 18790,
+      "bounded_mix": 19330,
+      "native_mix": 20470
+    },
+    "mul_i64": {
+      "baseline": 16340,
+      "bounded_nn": 18190,
+      "bounded_pn": 18190,
+      "bounded_pp": 18190,
+      "bounded_precheck_nn": 18090,
+      "bounded_precheck_pn": 18090,
+      "bounded_precheck_pp": 18090,
+      "bounded_trunc_nn": 18780,
+      "bounded_trunc_pn": 18860,
+      "bounded_trunc_pp": 18780,
+      "bounded_u128_nn": 18190,
+      "bounded_u128_pn": 18190,
+      "bounded_u128_pp": 18190,
+      "native_nn": 19250,
+      "native_pn": 19330,
+      "native_pp": 19250
+    },
+    "neg_i64": {
+      "baseline": 15940,
+      "bounded_bi_p": 16310,
+      "bounded_p": 16240,
+      "native_p": 16240
+    },
+    "sqrt_i64": {
+      "baseline": 15940,
+      "bounded_p": 17860,
+      "native_p": 17760
     },
     "sub_i64": {
       "baseline": 16340,
@@ -2530,42 +2447,175 @@
       "native_pn": 16980,
       "native_pp": 16980
     },
-    "sub_sm32": {
-      "baseline": 17440,
-      "signmag_pn": 19640,
-      "signmag_pp": 20280
-    },
-    "sub_sm64": {
-      "baseline": 17440,
-      "signmag_pn": 19640,
-      "signmag_pp": 20280
-    },
-    "to_int_felt": {
-      "baseline": 15940,
-      "felt_n": 17590,
-      "felt_p": 17590
-    },
-    "to_int_i128": {
-      "baseline": 15940,
-      "native_n": 20100,
-      "native_p": 19840
-    },
-    "to_int_i32": {
-      "baseline": 15940,
-      "native_n": 19630,
-      "native_p": 19370
-    },
     "to_int_i64": {
       "baseline": 15940,
       "bounded_n": 17050,
       "bounded_p": 17050,
       "native_n": 19630,
       "native_p": 19370
+    }
+  },
+  "scalar::tests::rep_sm32": {
+    "abs_sm32": {
+      "baseline": 16840,
+      "signmag_n": 16640,
+      "signmag_p": 16640
+    },
+    "add4_sm32": {
+      "baseline": 17450,
+      "signmag_pn": 25060
+    },
+    "add_sm32": {
+      "baseline": 17440,
+      "signmag_nn": 19060,
+      "signmag_pn": 19880,
+      "signmag_pp": 19240
+    },
+    "cross3_sm32": {
+      "baseline": 22360,
+      "signmag_mix": 39500
+    },
+    "div_sm32": {
+      "baseline": 17440,
+      "signmag_pn": 19230,
+      "signmag_pp": 19220
+    },
+    "dot3_sm32": {
+      "baseline": 19850,
+      "signmag_mix": 28750
+    },
+    "eq_sm32": {
+      "baseline": 16750,
+      "signmag_p": 17650
+    },
+    "from_int_sm32": {
+      "baseline": 16450,
+      "signmag_n": 18860
+    },
+    "length3_sm32": {
+      "baseline": 18040,
+      "signmag_mix": 27460
+    },
+    "lerp_sm32": {
+      "baseline": 18040,
+      "signmag_mix": 24710
+    },
+    "lt_sm32": {
+      "baseline": 16850,
+      "signmag_nn": 18930,
+      "signmag_np": 17930,
+      "signmag_pp": 19030
+    },
+    "mul4_sm32": {
+      "baseline": 17440,
+      "signmag_pn": 24260
+    },
+    "mul_add_sm32": {
+      "baseline": 18050,
+      "signmag_mix": 22080
+    },
+    "mul_sm32": {
+      "baseline": 17440,
+      "signmag_nn": 19320,
+      "signmag_pn": 19230,
+      "signmag_pp": 19220
+    },
+    "neg_sm32": {
+      "baseline": 16750,
+      "signmag_p": 17350
+    },
+    "sqrt_sm32": {
+      "baseline": 16840,
+      "signmag_p": 18020
+    },
+    "sub_sm32": {
+      "baseline": 17440,
+      "signmag_pn": 19640,
+      "signmag_pp": 20280
     },
     "to_int_sm32": {
       "baseline": 15940,
       "signmag_n": 18590,
       "signmag_p": 18220
+    }
+  },
+  "scalar::tests::rep_sm64": {
+    "abs_sm64": {
+      "baseline": 16840,
+      "signmag_n": 16640,
+      "signmag_p": 16640
+    },
+    "add4_sm64": {
+      "baseline": 17450,
+      "signmag_pn": 25060
+    },
+    "add_sm64": {
+      "baseline": 17440,
+      "signmag_nn": 19060,
+      "signmag_pn": 19880,
+      "signmag_pp": 19240
+    },
+    "cross3_sm64": {
+      "baseline": 22360,
+      "signmag_mix": 42320
+    },
+    "div_sm64": {
+      "baseline": 17440,
+      "signmag_pn": 19700,
+      "signmag_pp": 19690
+    },
+    "dot3_sm64": {
+      "baseline": 19850,
+      "signmag_mix": 30160
+    },
+    "eq_sm64": {
+      "baseline": 16750,
+      "signmag_p": 17650
+    },
+    "from_int_sm64": {
+      "baseline": 16450,
+      "signmag_n": 18860
+    },
+    "length3_sm64": {
+      "baseline": 18040,
+      "signmag_mix": 28870
+    },
+    "lerp_sm64": {
+      "baseline": 18040,
+      "signmag_mix": 25180
+    },
+    "lt_sm64": {
+      "baseline": 16850,
+      "signmag_nn": 18930,
+      "signmag_np": 17930,
+      "signmag_pp": 19030
+    },
+    "mul4_sm64": {
+      "baseline": 17440,
+      "signmag_pn": 26140
+    },
+    "mul_add_sm64": {
+      "baseline": 18050,
+      "signmag_mix": 22550
+    },
+    "mul_sm64": {
+      "baseline": 17440,
+      "signmag_nn": 19790,
+      "signmag_pn": 19700,
+      "signmag_pp": 19690
+    },
+    "neg_sm64": {
+      "baseline": 16750,
+      "signmag_p": 17350
+    },
+    "sqrt_sm64": {
+      "baseline": 16840,
+      "signmag_p": 18020
+    },
+    "sub_sm64": {
+      "baseline": 17440,
+      "signmag_pn": 19640,
+      "signmag_pp": 20280
     },
     "to_int_sm64": {
       "baseline": 15940,
