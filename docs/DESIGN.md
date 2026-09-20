@@ -99,11 +99,14 @@ Built only once the static surface is complete, and scoped by what multibody dyn
 | atan, atan2 | division-free fast path for \|x\| ≤ 1, generated Horner | 13,600 / 15,400 — 1.12 ulp |
 | asin, acos | generated Horner; `acos = 2·asin(sqrt((1-x)/2))` above 1/2 | 11,420 / 11,430 — ~1 ulp |
 | exp, ln | reduction to a power of two by a generated comparison tree, then Horner | 14,290 / 12,580 — 0.5 ulp |
-| det / inverse ≤ 4 | closed forms (cofactors) on fused kernels; `try_inverse` returns `Option` | — |
-| Cholesky / LDLᵀ ≤ 6 | unrolled; LDLᵀ preferred (no sqrt) | — |
-| LU ≤ 6 | unrolled with partial pivoting | — |
-| symmetric eigen 2x2 / 3x3 | closed form 2x2; fixed-sweep cyclic Jacobi 3x3 (no convergence loop) | — |
-| SVD 2x2 / 3x3, polar | via symmetric eigen of `MᵀM` | — |
+| det / inverse ≤ 4 | closed forms (cofactors; 4x4 determinant from 2x2 minors) on fused kernels, integer pre-scaled inverse; `try_inverse` returns `Option` on an exactly zero determinant | det3 10,660 / inv3 88,940 |
+| Cholesky / LDLᵀ ≤ 6 | unrolled; LDLᵀ preferred (no sqrt, indefinite accepted) | new+solve 3x3: LDLᵀ 36,990 vs Cholesky 53,800; 6x6: 132,590 vs 165,330 |
+| LU ≤ 6 | unrolled with partial pivoting (unpivoted variant fails on a permuted identity) | new 3x3 33,260, solve 23,560; 6x6 new 239,410, solve 65,020 |
+| symmetric eigen 2x2 / 3x3 | closed form 2x2; 4-sweep cyclic Jacobi 3x3 (the fixed point: a 5th sweep changes nothing), residual ≤ 31 ulp·max(1, max\|m\|) | 24,530 / 550,770 (eigenvalues only 303,470) |
+| SVD 2x2 / 3x3, polar | symmetric eigen of `MᵀM`, renormalised eigenvectors, `σ = \|M·v\|`, `U` orthonormal by construction | 64,740 / 675,400 |
+| QR 2/3/4 | modified Gram-Schmidt (Householder is 2.7× dearer and further from upstream's factors) | new 26,710 / 66,580 / 134,840 |
+| rotations | `UnitComplex` / `UnitQuaternion` as raw pairs/quads (no `Unit` wrapper), Hamilton product on the `Wide` accumulator, algebraic `rotation_between`, quaternion transform for 1 vector and matrix for ≥ 2 | `q*q` 11,860, `uq.transform_vector` 23,230, `rotation_between` 49,440 |
+| isometries | `rotate_translate` fused kernel (translation folded into the accumulator), direct `inv_mul`, quaternion internally, `lerp_nlerp` (trig-free) | `Isometry3::transform_point` 24,430, `inv_mul` 41,310, `*` 36,790 |
 
 Polynomial coefficients and interval-typed Horner code are **generated** (`tools/polygen`), with
 bounds proven by the generator, so no overflow checks are needed inside the evaluation; the Python

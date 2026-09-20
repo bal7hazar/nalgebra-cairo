@@ -20,7 +20,7 @@ dynamic → SVD.
 
 Research reports, four benchmark suites, design decisions, CI, agent conventions.
 
-## M1 — `simba`: the scalar (blocking everything)
+## M1 — `simba`: the scalar ✅
 
 | WP | Content | Depends on |
 |---|---|---|
@@ -28,7 +28,7 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 1.2 | Transcendentals: sqrt, inv_sqrt, sin/cos/sin_cos/tan, atan2/atan, acos/asin, exp/ln/pow (low priority) + `tools/` polynomial generator | 1.1 (API only) |
 | 1.3 | `tools/oracle`: Rust generator of golden vectors from upstream nalgebra (f64, inputs quantised to Q32.32) | — |
 
-## M2 — `nalgebra::base`: static vectors and matrices
+## M2 — `nalgebra::base`: static vectors and matrices ✅
 
 | WP | Content | Depends on |
 |---|---|---|
@@ -38,16 +38,16 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 2.4 | `Point2/3`, `Unit<V>` | 2.1 |
 | 2.5 | `Vector6`, `Matrix6` (blocks of 3), rectangular `Matrix3x2`-style blocks only where M4/M5 need them | 2.2 |
 
-## M3 — `nalgebra::geometry`
+## M3 — `nalgebra::geometry` (3.1-3.3 ✅, 3.4 in progress)
 
 | WP | Content | Depends on |
 |---|---|---|
 | 3.1 | `UnitComplex`, `Rotation2` | 2.2, 2.4 |
 | 3.2 | `Quaternion`, `UnitQuaternion` (axis-angle, `from_rotation_matrix`, `append_axisangle_linearized`, `renormalize_fast`, nlerp/slerp, rotation between vectors), `Rotation3` (euler angles, look_at) | 2.2, 2.4 |
 | 3.3 | `Translation2/3`, `Isometry2/3` (`inv_mul`, `transform_point/vector`, inverse forms, lerp_slerp) | 3.1, 3.2 |
-| 3.4 | `Similarity2/3`, `Scale`, `Reflection`; `Transform`/`Projective`/`Perspective`/`Orthographic` (lowest priority, rendering-oriented) | 3.3 |
+| 3.4 | `Similarity2/3` (in progress); `Scale`, `Reflection`, `Transform`/`Projective`/`Perspective`/`Orthographic` are deferred (rendering-oriented, unused by the physics stack) | 3.3 |
 
-## M4 — `nalgebra::linalg`: small static decompositions
+## M4 — `nalgebra::linalg`: small static decompositions ✅
 
 | WP | Content | Depends on |
 |---|---|---|
@@ -56,7 +56,7 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 4.3 | `SymmetricEigen` 2x2 (closed form) and 3x3 (fixed-sweep Jacobi) | 2.3 |
 | 4.4 | `SVD` 2x2/3x3, polar decomposition, `pseudo_inverse`; `QR` 2/3/4 | 4.3 |
 
-## M5 — Dynamic algebra (scoped by multibody needs)
+## M5 — Dynamic algebra (scoped by multibody needs) — gated
 
 | WP | Content | Depends on |
 |---|---|---|
@@ -64,6 +64,12 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 5.2 | Dynamic `LU` / `Cholesky` solve | 5.1, M4 |
 
 Gate: confirm with rapier.cairo that multibody joints / IK are in scope before starting.
+
+## M4b — Consolidation
+
+| WP | Content | Depends on |
+|---|---|---|
+| 4.5 | Promote `base::matrix_test_utils` to `pub(crate)` and delete the duplicated builders in `linalg`/`geometry`; fused `conj_mul` quaternion kernel (saves the 3 negations of `Isometry3::inv_mul`); `Wide × Fixed` accumulator op in `simba` for exact triple products (4x4 / 6x6 determinants) | M3, M4 |
 
 ## M6 — Interop and release
 
