@@ -4,6 +4,946 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 ## nalgebra
 
+### matrix2_abs
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `componentwise` | 21680 | 3640 | x1.00 |
+
+### matrix2_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 23850 | 6300 | x1.00 |
+
+### matrix2_add
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 22300 | 3260 | x1.00 |
+| `operator` | 22300 | 3260 | x1.00 |
+
+### matrix2_adjugate
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `cofactors` | 18840 | 800 | x1.00 |
+
+### matrix2_column
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `second` | 17240 | 200 | x1.00 |
+
+### matrix2_component_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 26340 | 7300 | x1.00 |
+
+### matrix2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 18490 | 1950 | x1.00 |
+
+### matrix2_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17240 | 200 | x1.00 |
+
+### matrix2_from_columns
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18640 | 400 | x1.00 |
+
+### matrix2_from_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17440 | -200 | - |
+
+### matrix2_from_diagonal_element
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17240 | -200 | - |
+
+### matrix2_from_outer
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 25540 | 7300 | x1.00 |
+
+### matrix2_from_rows
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18640 | 400 | x1.00 |
+
+### matrix2_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16840 | -200 | - |
+
+### matrix2_is_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 22450 | 5900 | x1.00 |
+
+### matrix2_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 29300 | 10260 | x1.00 |
+| `fused` | 29300 | 10260 | x1.00 |
+
+### matrix2_mul_transpose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 25350 | 7810 | x1.00 |
+| `generic` | 28100 | 10560 | x1.35 |
+
+### matrix2_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21640 | 4000 | x1.00 |
+
+### matrix2_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `operator` | 19240 | 1200 | x1.00 |
+
+### matrix2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18040 | 0 | - |
+
+### matrix2_norm
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 18960 | 2420 | x1.00 |
+
+### matrix2_norm_squared
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 18890 | 2350 | x1.00 |
+
+### matrix2_row
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `second` | 17240 | 200 | x1.00 |
+
+### matrix2_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 25740 | 7300 | x1.00 |
+
+### matrix2_sub
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 22300 | 3260 | x1.00 |
+| `operator` | 22300 | 3260 | x1.00 |
+
+### matrix2_tr_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 29300 | 10260 | x1.00 |
+| `transpose_mul` | 29300 | 10260 | x1.00 |
+
+### matrix2_tr_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 21640 | 4000 | x1.00 |
+| `transpose_mul_vec` | 21640 | 4000 | x1.00 |
+
+### matrix2_trace
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum` | 17180 | 640 | x1.00 |
+
+### matrix2_transpose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18440 | 400 | x1.00 |
+
+### matrix2_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 32500 | 14460 | x1.00 |
+| `alt_div` | 34370 | 16330 | x1.13 |
+| `prescaled_det_ge_half` | 50880 | 32840 | x2.27 |
+| `prescaled_norm_gt_one` | 50880 | 32840 | x2.27 |
+| `prescaled_small` | 50880 | 32840 | x2.27 |
+
+### matrix2_try_inverse_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 49690 | 33140 | x1.00 |
+
+### matrix2_zeros
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16240 | -800 | - |
+
+### matrix3_abs
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `componentwise` | 30350 | 8810 | x1.00 |
+
+### matrix3_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 32600 | 13050 | x1.00 |
+
+### matrix3_add
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 31000 | 7460 | x1.00 |
+| `operator` | 31000 | 7460 | x1.00 |
+
+### matrix3_adjugate
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `cofactors` | 39890 | 18350 | x1.00 |
+
+### matrix3_column
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `second` | 18840 | 300 | x1.00 |
+
+### matrix3_component_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 40090 | 16550 | x1.00 |
+
+### matrix3_cross_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 20940 | 600 | x1.00 |
+
+### matrix3_cross_matrix_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 43250 | 20910 | x1.00 |
+| `materialised` | 46250 | 23910 | x1.14 |
+
+### matrix3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `cofactors` | 28200 | 10660 | x1.00 |
+| `alt_triple_products` | 33750 | 16210 | x1.52 |
+
+### matrix3_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18840 | 300 | x1.00 |
+
+### matrix3_from_columns
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 22840 | 900 | x1.00 |
+
+### matrix3_from_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 19440 | -900 | - |
+
+### matrix3_from_diagonal_element
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 19040 | -900 | - |
+
+### matrix3_from_outer
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 37690 | 16550 | x1.00 |
+
+### matrix3_from_rows
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 22840 | 900 | x1.00 |
+
+### matrix3_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 18640 | -900 | - |
+
+### matrix3_is_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 29700 | 12150 | x1.00 |
+
+### matrix3_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 46850 | 23310 | x1.00 |
+| `fused` | 46850 | 23310 | x1.00 |
+
+### matrix3_mul_cross_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 43250 | 20910 | x1.00 |
+| `materialised` | 46250 | 23910 | x1.14 |
+
+### matrix3_mul_transpose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 35700 | 15660 | x1.00 |
+| `generic` | 43950 | 23910 | x1.53 |
+
+### matrix3_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 25990 | 6650 | x1.00 |
+
+### matrix3_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `operator` | 24240 | 2700 | x1.00 |
+
+### matrix3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 21540 | 0 | - |
+
+### matrix3_norm
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wide` | 20960 | 3420 | x1.00 |
+
+### matrix3_norm_squared
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wide` | 20890 | 3350 | x1.00 |
+
+### matrix3_row
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `second` | 18840 | 300 | x1.00 |
+
+### matrix3_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 38490 | 16550 | x1.00 |
+
+### matrix3_sub
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 31000 | 7460 | x1.00 |
+| `operator` | 31000 | 7460 | x1.00 |
+
+### matrix3_tr_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 46850 | 23310 | x1.00 |
+| `transpose_mul` | 46850 | 23310 | x1.00 |
+
+### matrix3_tr_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 25990 | 6650 | x1.00 |
+| `transpose_mul_vec` | 25990 | 6650 | x1.00 |
+
+### matrix3_trace
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum` | 18920 | 1380 | x1.00 |
+
+### matrix3_transpose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 22440 | 900 | x1.00 |
+
+### matrix3_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 72310 | 50770 | x1.00 |
+| `alt_div` | 79030 | 57490 | x1.13 |
+| `prescaled_det_ge_half` | 110480 | 88940 | x1.75 |
+| `prescaled_norm_gt_one` | 110480 | 88940 | x1.75 |
+| `prescaled_small` | 110480 | 88940 | x1.75 |
+
+### matrix3_try_inverse_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 106790 | 89240 | x1.00 |
+
+### matrix3_zeros
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 17740 | -1800 | - |
+
+### matrix4_abs
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `componentwise` | 43840 | 15400 | x1.00 |
+
+### matrix4_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 44850 | 22500 | x1.00 |
+
+### matrix4_add
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 45180 | 13340 | x1.00 |
+| `operator` | 45180 | 13340 | x1.00 |
+
+### matrix4_adjugate
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `cofactors` | 97850 | 69410 | x1.00 |
+
+### matrix4_column
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `second` | 20840 | 400 | x1.00 |
+
+### matrix4_component_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 61340 | 29500 | x1.00 |
+
+### matrix4_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `minors2x2` | 49350 | 30410 | x1.00 |
+| `alt_row_cofactors` | 67190 | 48250 | x1.59 |
+
+### matrix4_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 20840 | 400 | x1.00 |
+
+### matrix4_from_columns
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 30640 | 1600 | x1.00 |
+
+### matrix4_from_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 24440 | -1600 | - |
+
+### matrix4_from_diagonal_element
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 23840 | -1600 | - |
+
+### matrix4_from_outer
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 56540 | 29500 | x1.00 |
+
+### matrix4_from_rows
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 30640 | 1600 | x1.00 |
+
+### matrix4_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 26640 | 1600 | x1.00 |
+
+### matrix4_is_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 39850 | 20900 | x1.00 |
+
+### matrix4_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 77100 | 45260 | x1.00 |
+| `fused` | 77100 | 45260 | x1.00 |
+
+### matrix4_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 31140 | 9700 | x1.00 |
+
+### matrix4_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `operator` | 33240 | 4800 | x1.00 |
+
+### matrix4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 30040 | 1600 | x1.00 |
+
+### matrix4_norm
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wide` | 23760 | 4820 | x1.00 |
+
+### matrix4_norm_squared
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wide` | 23690 | 4750 | x1.00 |
+
+### matrix4_row
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `second` | 20840 | 400 | x1.00 |
+
+### matrix4_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `products` | 58340 | 29500 | x1.00 |
+
+### matrix4_sub
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 45180 | 13340 | x1.00 |
+| `operator` | 45180 | 13340 | x1.00 |
+
+### matrix4_tr_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 77100 | 45260 | x1.00 |
+| `transpose_mul` | 77100 | 45260 | x1.00 |
+
+### matrix4_tr_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 31140 | 9700 | x1.00 |
+| `transpose_mul_vec` | 31140 | 9700 | x1.00 |
+
+### matrix4_trace
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum` | 21060 | 2120 | x1.00 |
+
+### matrix4_transpose
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 30040 | 1600 | x1.00 |
+
+### matrix4_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 163670 | 135230 | x1.00 |
+| `alt_div` | 177180 | 148740 | x1.10 |
+| `prescaled_det_ge_half` | 234680 | 206240 | x1.53 |
+| `prescaled_norm_gt_one` | 234680 | 206240 | x1.53 |
+| `prescaled_small` | 234680 | 206240 | x1.53 |
+
+### matrix4_try_inverse_singular
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `none` | 223890 | 204940 | x1.00 |
+
+### matrix4_zeros
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 19840 | -5200 | - |
+
+### sym_matrix2_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 21710 | 4560 | x1.00 |
+
+### sym_matrix2_add
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 20560 | 2420 | x1.00 |
+| `operator` | 20560 | 2420 | x1.00 |
+| `generic` | 21300 | 3160 | x1.31 |
+
+### sym_matrix2_add_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum` | 19420 | 1680 | x1.00 |
+
+### sym_matrix2_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `generic` | 18290 | 1950 | x1.00 |
+| `structured` | 18290 | 1950 | x1.00 |
+
+### sym_matrix2_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17040 | 200 | x1.00 |
+
+### sym_matrix2_from_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17140 | 0 | - |
+
+### sym_matrix2_from_diagonal_element
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 16940 | 0 | - |
+
+### sym_matrix2_from_matrix_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17840 | 300 | x1.00 |
+
+### sym_matrix2_from_outer_self
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 22590 | 5450 | x1.00 |
+| `generic` | 24340 | 7200 | x1.32 |
+
+### sym_matrix2_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16540 | 0 | - |
+
+### sym_matrix2_inverse_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 45680 | 28340 | x1.00 |
+
+### sym_matrix2_mul_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 29000 | 10160 | x1.00 |
+| `generic` | 29100 | 10260 | x1.01 |
+
+### sym_matrix2_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `generic` | 21440 | 4000 | x1.00 |
+| `structured` | 21440 | 4000 | x1.00 |
+
+### sym_matrix2_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `operator` | 18240 | 900 | x1.00 |
+
+### sym_matrix2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17340 | 0 | - |
+
+### sym_matrix2_norm
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 18760 | 2420 | x1.00 |
+
+### sym_matrix2_quadform
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 33550 | 15410 | x1.00 |
+| `generic` | 39060 | 20920 | x1.36 |
+
+### sym_matrix2_quadform_sym
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 34650 | 16310 | x1.00 |
+| `generic` | 39260 | 20920 | x1.28 |
+
+### sym_matrix2_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 23190 | 5450 | x1.00 |
+| `generic` | 24940 | 7200 | x1.32 |
+
+### sym_matrix2_sub
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 20560 | 2420 | x1.00 |
+| `operator` | 20560 | 2420 | x1.00 |
+
+### sym_matrix2_to_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18240 | 400 | x1.00 |
+
+### sym_matrix2_trace
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum` | 16980 | 640 | x1.00 |
+
+### sym_matrix2_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 46080 | 28740 | x1.00 |
+| `structured_prescaled` | 46080 | 28740 | x1.00 |
+| `generic` | 50480 | 33140 | x1.15 |
+
+### sym_matrix2_zeros
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 15940 | -600 | - |
+
+### sym_matrix3_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `all_compared` | 27350 | 9000 | x1.00 |
+
+### sym_matrix3_add
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 25780 | 4940 | x1.00 |
+| `operator` | 25780 | 4940 | x1.00 |
+| `generic` | 28000 | 7160 | x1.45 |
+
+### sym_matrix3_add_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum` | 22560 | 2720 | x1.00 |
+
+### sym_matrix3_adjugate
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 31640 | 12200 | x1.00 |
+| `generic` | 37490 | 18050 | x1.48 |
+
+### sym_matrix3_determinant
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 27300 | 10360 | x1.00 |
+| `generic` | 27600 | 10660 | x1.03 |
+
+### sym_matrix3_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18240 | 300 | x1.00 |
+
+### sym_matrix3_from_diagonal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18540 | -300 | - |
+
+### sym_matrix3_from_diagonal_element
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18140 | -300 | - |
+
+### sym_matrix3_from_matrix_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 20640 | 600 | x1.00 |
+
+### sym_matrix3_from_outer_self
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 29840 | 11000 | x1.00 |
+| `generic` | 35090 | 16250 | x1.48 |
+
+### sym_matrix3_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 17740 | -300 | - |
+
+### sym_matrix3_inverse_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 84580 | 65140 | x1.00 |
+
+### sym_matrix3_mul_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 45950 | 23010 | x1.00 |
+| `generic` | 46250 | 23310 | x1.01 |
+
+### sym_matrix3_mul_vec
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `generic` | 25390 | 6650 | x1.00 |
+| `structured` | 25390 | 6650 | x1.00 |
+
+### sym_matrix3_neg
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `operator` | 21240 | 1800 | x1.00 |
+
+### sym_matrix3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 19440 | 0 | - |
+
+### sym_matrix3_norm
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wide` | 20360 | 3420 | x1.00 |
+
+### sym_matrix3_quadform
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 53450 | 32610 | x1.00 |
+| `generic` | 68160 | 47320 | x1.45 |
+
+### sym_matrix3_quadform_sym
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 57950 | 36510 | x1.00 |
+| `generic` | 68760 | 47320 | x1.30 |
+
+### sym_matrix3_scale
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 30840 | 11000 | x1.00 |
+| `generic` | 36090 | 16250 | x1.48 |
+
+### sym_matrix3_sub
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `assign` | 25780 | 4940 | x1.00 |
+| `operator` | 25780 | 4940 | x1.00 |
+
+### sym_matrix3_to_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 21840 | 900 | x1.00 |
+
+### sym_matrix3_trace
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sum` | 18320 | 1380 | x1.00 |
+
+### sym_matrix3_try_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `structured` | 84980 | 65540 | x1.00 |
+| `structured_prescaled` | 84980 | 65540 | x1.00 |
+| `generic` | 108980 | 89540 | x1.37 |
+
+### sym_matrix3_zeros
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16840 | -1200 | - |
+
 ### vector2_abs
 
 | variant | raw | net | vs best |
