@@ -12,7 +12,7 @@ scarb build
 output=$(snforge test --workspace) || { echo "$output"; exit 1; }
 echo "$output" | tail -n 1
 if [[ "${1:-}" == "--update" ]]; then
-    echo "$output" | python3 scripts/gas_report.py --json gas_report.json --md GAS.md
+    echo "$output" | python3 scripts/gas_report.py --update gas/
 else
-    echo "$output" | python3 scripts/gas_report.py --check gas_report.json
+    echo "$output" | python3 scripts/gas_report.py --check gas/
 fi

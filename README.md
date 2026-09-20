@@ -9,7 +9,7 @@ Part of a stack porting reputable Rust crates to Cairo — with
 is provable.
 
 > Status: foundations. The design is settled and measured; implementation follows the
-> [roadmap](docs/ROADMAP.md).
+> [roadmap](docs/PLAN.md).
 
 ## Packages
 
@@ -37,7 +37,8 @@ and CI fails on any unreviewed gas change.
 
 - [Benchmark synthesis](docs/BENCHMARK.md) — what was measured and learned
 - [Design decisions](docs/DESIGN.md)
-- [Execution plan](docs/ROADMAP.md)
+- [Orchestration strategy](docs/ORCHESTRATOR.md) — how work is split between sub-agents
+- [Execution plan](docs/PLAN.md)
 - [Research reports](docs/research) — nalgebra, alexandria, starknet-agentic, origami, cubit, orion
 - [Design-time benchmarks](benchmarks) — ~2,100 reproducible gas measurements
 

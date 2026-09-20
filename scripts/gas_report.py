@@ -9,13 +9,19 @@ Reports are keyed by the module path of the test (`package::module::…::tests`)
 that runs only part of the workspace (`snforge test -p nalgebra nalgebra::base`) can check its
 slice of the snapshot with `--filter nalgebra::base`.
 
+Snapshots are split per CI shard (`simba`, `nalgebra::base`, ...) into `gas/<shard>.json` +
+`gas/<shard>.md`, so parallel PRs on different modules never touch a common file.
+
 Usage:
-    snforge test --workspace | python3 scripts/gas_report.py --json gas_report.json --md GAS.md
-    python3 scripts/gas_report.py --check gas_report.json [--filter <module prefix>] < output.txt
+    snforge test --workspace | python3 scripts/gas_report.py --update gas/
+    snforge test -p nalgebra nalgebra::base | python3 scripts/gas_report.py --check gas/ --filter nalgebra::base
+    snforge test -p simba | python3 scripts/gas_report.py            # print a report
 """
 
 import argparse
+import glob
 import json
+import os
 import re
 import sys
 from collections import defaultdict
@@ -69,6 +75,20 @@ def to_markdown(report):
     return "\n".join(out)
 
 
+def shard(module):
+    """CI shard of a module path: the package, or `nalgebra::<top module>` for the main crate."""
+    parts = module.split("::")
+    return "::".join(parts[:2]) if parts[0] == "nalgebra" and len(parts) > 1 else parts[0]
+
+
+def split(report):
+    """Return {shard: sub-report}."""
+    shards = defaultdict(dict)
+    for module, groups in report.items():
+        shards[shard(module)][module] = groups
+    return shards
+
+
 def flatten(report, prefix=""):
     return {
         f"{module}::{group}__{variant}": gas
@@ -81,9 +101,8 @@ def flatten(report, prefix=""):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument("--json", help="write the JSON snapshot to this path")
-    parser.add_argument("--md", help="write the markdown report to this path")
-    parser.add_argument("--check", help="compare against this JSON snapshot; exit 1 on any difference")
+    parser.add_argument("--update", metavar="DIR", help="write `<shard>.json` and `<shard>.md` snapshots into DIR")
+    parser.add_argument("--check", metavar="DIR", help="compare against the snapshots in DIR; exit 1 on any difference")
     parser.add_argument("--filter", default="", help="with --check: only compare modules with this prefix")
     args = parser.parse_args()
 
@@ -91,16 +110,19 @@ def main():
     if not report:
         sys.exit("no benchmark found in input")
 
-    if args.json:
-        with open(args.json, "w") as file:
-            json.dump(report, file, indent=2, sort_keys=True)
-            file.write("\n")
-    if args.md:
-        with open(args.md, "w") as file:
-            file.write(to_markdown(report) + "\n")
+    if args.update:
+        for name, sub in split(report).items():
+            base = os.path.join(args.update, name.replace("::", "-"))
+            with open(base + ".json", "w") as file:
+                json.dump(sub, file, indent=2, sort_keys=True)
+                file.write("\n")
+            with open(base + ".md", "w") as file:
+                file.write(to_markdown(sub) + "\n")
     if args.check:
-        with open(args.check) as file:
-            expected = flatten(json.load(file), args.filter)
+        expected = {}
+        for path in glob.glob(os.path.join(args.check, "*.json")):
+            with open(path) as file:
+                expected.update(flatten(json.load(file), args.filter))
         actual = flatten(report, args.filter)
         diffs = [
             f"{key}: {expected.get(key, 'absent')} -> {actual.get(key, 'absent')}"
@@ -108,8 +130,8 @@ def main():
             if expected.get(key) != actual.get(key)
         ]
         if diffs:
-            sys.exit("gas snapshot mismatch (regenerate it if intended):\n  " + "\n  ".join(diffs))
-    if not (args.json or args.md or args.check):
+            sys.exit("gas snapshot mismatch (regenerate with --update if intended):\n  " + "\n  ".join(diffs))
+    if not (args.update or args.check):
         print(to_markdown(report))
 
 

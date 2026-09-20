@@ -41,7 +41,7 @@ jobs:
         run: |
           shard="${{ matrix.shard }}"
           package="${shard%%::*}"
-          snforge test -p "$package" "$shard" | tee /dev/stderr | python3 scripts/gas_report.py --check gas_report.json --filter "$shard"
+          snforge test -p "$package" "$shard" | tee /dev/stderr | python3 scripts/gas_report.py --check gas/ --filter "$shard"
 
   benchmarks:
     name: Design benchmarks

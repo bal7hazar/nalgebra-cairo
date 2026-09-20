@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Canonical instructions for AI agents (and humans) working on nalgebra.cairo. Read
-[docs/DESIGN.md](docs/DESIGN.md) and [docs/ROADMAP.md](docs/ROADMAP.md) before writing code.
+[docs/DESIGN.md](docs/DESIGN.md) and [docs/PLAN.md](docs/PLAN.md) before writing code.
 
 ## Mission
 
@@ -46,8 +46,13 @@ proven, so gas is a first-class requirement, on par with correctness.
 - `test_<fn>_<scenario>` unit tests: exact cases, oracle vectors, identities, `#[should_panic]` cases.
 - `bench_<group>__<variant>` gas tests, all `#[inline(never)]`, inputs through
   `nalgebra_testing::black_box`, results asserted, one `bench_<group>__baseline` per group.
-- `gas_report.json` and `GAS.md` regenerated; the PR description explains any gas increase.
-- `./scripts/check.sh` green. Conventional commit messages. One work package per PR.
+- `gas/<module>.json` + `.md` regenerated (`./scripts/check.sh --update`); the PR explains any gas increase.
+- Gate run in the foreground, conventional commits with the trailer, push, PR following
+  `.github/PULL_REQUEST_TEMPLATE.md`, `gh pr checks --watch` until green, never merge. One work
+  package per PR, plus a `REPORT.md` (git-ignored) at the worktree root: summary, API, gas table,
+  deviations, deferred items, requested re-exports, escalations, PR URL.
+- Compile budget: keep generated test files small (a few hundred cases per op at most); oversized
+  test crates are the first cause of CI failures.
 
 ## Conventions
 
@@ -61,7 +66,11 @@ proven, so gas is a first-class requirement, on par with correctness.
 ## Boundaries
 
 - Agent-safe: `crates/**`, `tools/**`, `benchmarks/**`, docs.
-- Orchestrator only: workspace `Scarb.toml`, `.tool-versions`, `.github/**`, `scripts/**`,
-  merging PRs, toolchain bumps (always a dedicated PR that re-runs `benchmarks/`).
+- Orchestrator only (see `docs/ORCHESTRATOR.md`): workspace `Scarb.toml`, `.tool-versions`,
+  `.github/**`, `scripts/**`, `docs/**`, re-export lines of `lib.cairo` / module roots beyond
+  what a brief allows, gas snapshots of other modules, merging PRs, toolchain bumps (always a
+  dedicated PR that re-runs `benchmarks/`). Needs on those files go in the report's
+  "Escalations" section.
 - Never edit `benchmarks/libs/vendor/**` (pristine third-party code, see each `NOTICE`).
-- Sub-agents own a disjoint set of files per work package and do not run git commands unless told to.
+- Sub-agents own a disjoint set of files per work package (allowlist in the brief), commit on
+  their own `feat/<module>` branch in their own worktree, push and open the PR, never merge.
