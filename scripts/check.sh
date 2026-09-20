@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Local equivalent of the CI gate for the library workspace. Pass `--update` to refresh the snapshot.
+# Requires python3 with mpmath (`pip install mpmath`) for the generated-code freshness checks.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
