@@ -56,14 +56,15 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 4.3 | `SymmetricEigen` 2x2 (closed form) and 3x3 (fixed-sweep Jacobi) | 2.3 |
 | 4.4 | `SVD` 2x2/3x3, polar decomposition, `pseudo_inverse`; `QR` 2/3/4 | 4.3 |
 
-## M5 — Dynamic algebra (scoped by multibody needs) — gated
+## M5 — Dynamic algebra (scoped by multibody needs) — deferred
 
 | WP | Content | Depends on |
 |---|---|---|
 | 5.1 | `DVector`, `DMatrix`: construction, element-wise ops, `gemv`, `gemm`, `axpy`, `tr_mul`, `quadform`, static-kernel dispatch | M2 |
 | 5.2 | Dynamic `LU` / `Cholesky` solve | 5.1, M4 |
 
-Gate: confirm with rapier.cairo that multibody joints / IK are in scope before starting.
+Gate: rapier.cairo v1 explicitly cuts multibody joints, IK and soft bodies (confirmed 2026-09-20),
+so M5 stays deferred until a consumer exists.
 
 ## M4b — Consolidation
 
@@ -72,6 +73,11 @@ Gate: confirm with rapier.cairo that multibody joints / IK are in scope before s
 | 4.5 | Promote `base::matrix_test_utils` to `pub(crate)` and delete the duplicated builders in `linalg`/`geometry`; fused `conj_mul` quaternion kernel (saves the 3 negations of `Isometry3::inv_mul`); `Wide × Fixed` accumulator op in `simba` for exact triple products (4x4 / 6x6 determinants) | M3, M4 |
 
 ## M6 — Interop and release
+
+| WP | Content | Depends on |
+|---|---|---|
+| 6.1 | `simba_fixed`: `Real` + `Transcendental` for glam.cairo's shared `fixed::Fixed` (git-pinned), bit-for-bit conformance suite between the two scalars, integration tests on `Vector3`/`SymMatrix3`/`UnitQuaternion`/`Isometry3<fixed::Fixed>` | M3, M4 |
+| 6.2 | Conversions with glam.cairo types, `scarb doc`, publication on scarbs.xyz | 6.1 |
 
 Conversions with glam.cairo, conformance suite against the oracle, `scarb doc`, publication of
 `simba` and `nalgebra` on scarbs.xyz (tag-driven), upgrade policy (toolchain bumps are separate

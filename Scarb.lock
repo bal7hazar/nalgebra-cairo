@@ -2,6 +2,11 @@
 version = 1
 
 [[package]]
+name = "fixed"
+version = "0.1.0"
+source = "git+https://github.com/bal7hazar/glam.cairo?rev=edf13a2#edf13a2efdb2b3448a513961af1524a0f7b468f0"
+
+[[package]]
 name = "nalgebra"
 version = "0.1.0"
 dependencies = [
@@ -22,6 +27,17 @@ name = "simba"
 version = "0.1.0"
 dependencies = [
  "nalgebra_testing",
+ "snforge_std",
+]
+
+[[package]]
+name = "simba_fixed"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "simba",
  "snforge_std",
 ]
 
