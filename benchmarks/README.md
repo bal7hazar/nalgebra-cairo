@@ -14,8 +14,8 @@ Reproducible Sierra-gas micro-benchmarks that drove [the design](../docs/DESIGN.
 ```bash
 cd benchmarks
 snforge test -p scalar | python3 scripts/gas_report.py            # print a report
-snforge test --workspace | python3 scripts/gas_report.py --check gas_report.json
-cd libs && snforge test | python3 ../scripts/gas_report.py --check gas_report.json
+snforge test --workspace | python3 scripts/gas_report.py --check gas/      # or --update gas/
+cd libs && snforge test | python3 ../scripts/gas_report.py --check gas/
 ```
 
 Conventions: tests are named `bench_<group>__<variant>`, are `#[inline(never)]`, take their inputs

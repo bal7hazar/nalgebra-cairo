@@ -65,13 +65,13 @@ jobs:
         working-directory: benchmarks
         run: |
           scarb fmt --check
-          snforge test --workspace | python3 scripts/gas_report.py --check gas_report.json
+          snforge test --workspace | python3 scripts/gas_report.py --check gas/
       - name: Third-party library benchmarks
         if: steps.changes.outputs.benchmarks == 'true'
         working-directory: benchmarks/libs
         run: |
           scarb fmt --check
-          snforge test | python3 ../scripts/gas_report.py --check gas_report.json
+          snforge test | python3 ../scripts/gas_report.py --check gas/
 
   oracle:
     name: Oracle (golden vectors)
