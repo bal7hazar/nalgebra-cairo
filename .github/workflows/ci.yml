@@ -56,3 +56,23 @@ jobs:
         run: |
           scarb fmt --check
           snforge test | python3 ../scripts/gas_report.py --check gas_report.json
+
+  oracle:
+    name: Oracle (golden vectors)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: changes
+        with:
+          filters: |
+            oracle:
+              - 'tools/oracle/**'
+      - name: Format, lint, test and check that committed vectors are up to date
+        if: steps.changes.outputs.oracle == 'true'
+        working-directory: tools/oracle
+        run: |
+          cargo fmt --check
+          cargo clippy --all-targets -- -D warnings
+          cargo test
+          cargo run --release -- check
