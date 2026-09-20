@@ -2,6 +2,339 @@
 
 Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
+## nalgebra::geometry::isometry2::benches
+
+### isometry2_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `ulps` | 23430 | 5880 | x1.00 |
+
+### isometry2_append_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose_rotate` | 26740 | 8100 | x1.00 |
+
+### isometry2_append_rotation_wrt_center
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 23040 | 4200 | x1.00 |
+
+### isometry2_append_rotation_wrt_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `shift_rotate` | 31380 | 12140 | x1.00 |
+
+### isometry2_append_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `add` | 20620 | 1780 | x1.00 |
+
+### isometry2_from_parts
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wrap` | 18640 | 400 | x1.00 |
+
+### isometry2_from_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pure` | 17440 | -200 | - |
+
+### isometry2_from_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pure` | 17740 | 100 | x1.00 |
+
+### isometry2_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 17440 | -600 | - |
+
+### isometry2_inv_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `direct` | 30780 | 11740 | x1.00 |
+| `alt_inverse_then_mul` | 34400 | 15360 | x1.31 |
+
+### isometry2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `conjugate_rotate` | 23040 | 5000 | x1.00 |
+
+### isometry2_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `subtract_rotate` | 23120 | 5480 | x1.00 |
+
+### isometry2_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `conjugate_rotate` | 21640 | 4000 | x1.00 |
+
+### isometry2_lerp_nlerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `lerp_normalize` | 37960 | 18520 | x1.00 |
+
+### isometry2_lerp_slerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2_sin_cos` | 70130 | 50690 | x1.00 |
+
+### isometry2_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 29700 | 10660 | x1.00 |
+
+### isometry2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 35260 | 17220 | x1.00 |
+
+### isometry2_prepend_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 23040 | 4200 | x1.00 |
+
+### isometry2_prepend_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `rotate_add` | 23440 | 4600 | x1.00 |
+
+### isometry2_renormalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `exact` | 26140 | 7900 | x1.00 |
+
+### isometry2_renormalize_fast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `newton` | 26040 | 7800 | x1.00 |
+
+### isometry2_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 34060 | 16620 | x1.00 |
+
+### isometry2_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `matrix3` | 17040 | 500 | x1.00 |
+
+### isometry2_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 22040 | 4400 | x1.00 |
+| `alt_rotate_then_add` | 23320 | 5680 | x1.29 |
+
+### isometry2_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `rotate` | 21640 | 4000 | x1.00 |
+
+### isometry2_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pure` | 17740 | 100 | x1.00 |
+
+## nalgebra::geometry::isometry3::benches
+
+### isometry3_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `ulps` | 28680 | 9930 | x1.00 |
+
+### isometry3_append_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose_rotate` | 57030 | 35890 | x1.00 |
+
+### isometry3_append_rotation_wrt_center
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 34000 | 12560 | x1.00 |
+
+### isometry3_append_rotation_wrt_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `shift_rotate` | 62950 | 41010 | x1.00 |
+
+### isometry3_append_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `add` | 24160 | 2820 | x1.00 |
+
+### isometry3_face_towards
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `gram_schmidt` | 85350 | 64410 | x1.00 |
+
+### isometry3_from_parts
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wrap` | 21040 | 700 | x1.00 |
+
+### isometry3_from_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pure` | 19340 | -200 | - |
+
+### isometry3_from_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pure` | 19140 | -200 | - |
+
+### isometry3_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 18940 | -1200 | - |
+
+### isometry3_inv_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `direct` | 63050 | 41310 | x1.00 |
+| `alt_inverse_then_mul` | 85660 | 63920 | x1.55 |
+
+### isometry3_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `conjugate_rotate` | 47170 | 27030 | x1.00 |
+
+### isometry3_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `subtract_rotate` | 46890 | 27950 | x1.00 |
+
+### isometry3_inverse_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `conjugate_rotate` | 42770 | 23830 | x1.00 |
+
+### isometry3_lerp_nlerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `lerp_normalize` | 53750 | 31610 | x1.00 |
+
+### isometry3_lerp_slerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `acos_sin` | 113790 | 91650 | x1.00 |
+
+### isometry3_look_at_rh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `gram_schmidt` | 109880 | 88940 | x1.00 |
+
+### isometry3_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 58530 | 36790 | x1.00 |
+
+### isometry3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `from_scaled_axis` | 55760 | 35620 | x1.00 |
+
+### isometry3_prepend_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 34000 | 12560 | x1.00 |
+
+### isometry3_prepend_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `rotate_add` | 46170 | 24830 | x1.00 |
+
+### isometry3_renormalize
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `exact` | 34220 | 14080 | x1.00 |
+
+### isometry3_renormalize_fast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `newton` | 32140 | 12000 | x1.00 |
+
+### isometry3_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `from_scaled_axis` | 54060 | 34720 | x1.00 |
+
+### isometry3_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `matrix4` | 40970 | 23830 | x1.00 |
+
+### isometry3_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 43370 | 24430 | x1.00 |
+| `alt_rotate_then_add` | 44690 | 25750 | x1.05 |
+| `alt_rotation_matrix` | 54480 | 35540 | x1.45 |
+
+### isometry3_transform_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `rotate` | 42170 | 23230 | x1.00 |
+
+### isometry3_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `pure` | 19140 | -200 | - |
+
 ## nalgebra::geometry::quaternion::benches
 
 ### quaternion_abs_diff_eq
@@ -406,6 +739,110 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `mul_vec` | 25990 | 6650 | x1.00 |
+
+## nalgebra::geometry::translation2::benches
+
+### translation2_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `ulps` | 19950 | 3200 | x1.00 |
+
+### translation2_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16240 | -400 | - |
+
+### translation2_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `negate` | 17240 | 600 | x1.00 |
+
+### translation2_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `subtract` | 18820 | 1580 | x1.00 |
+| `alt_inverse_then_transform` | 19420 | 2180 | x1.38 |
+
+### translation2_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 18820 | 1580 | x1.00 |
+
+### translation2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `from_components` | 16640 | 0 | - |
+| `from_vector` | 16640 | 0 | - |
+
+### translation2_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `matrix3` | 16140 | 0 | - |
+
+### translation2_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `add` | 18820 | 1580 | x1.00 |
+
+## nalgebra::geometry::translation3::benches
+
+### translation3_abs_diff_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `ulps` | 21690 | 4540 | x1.00 |
+
+### translation3_identity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16740 | -600 | - |
+
+### translation3_inverse
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `negate` | 18240 | 900 | x1.00 |
+
+### translation3_inverse_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `subtract` | 20560 | 2420 | x1.00 |
+| `alt_inverse_then_transform` | 21460 | 3320 | x1.37 |
+
+### translation3_mul
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 20560 | 2420 | x1.00 |
+
+### translation3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `from_components` | 17340 | 0 | - |
+| `from_vector` | 17340 | 0 | - |
+
+### translation3_to_homogeneous
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `matrix4` | 16340 | 0 | - |
+
+### translation3_transform_point
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `add` | 20560 | 2420 | x1.00 |
 
 ## nalgebra::geometry::unit_complex::benches
 

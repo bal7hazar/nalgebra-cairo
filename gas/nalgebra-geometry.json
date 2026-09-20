@@ -1,4 +1,229 @@
 {
+  "nalgebra::geometry::isometry2::benches": {
+    "isometry2_abs_diff_eq": {
+      "baseline": 17550,
+      "ulps": 23430
+    },
+    "isometry2_append_rotation": {
+      "baseline": 18640,
+      "compose_rotate": 26740
+    },
+    "isometry2_append_rotation_wrt_center": {
+      "baseline": 18840,
+      "compose": 23040
+    },
+    "isometry2_append_rotation_wrt_point": {
+      "baseline": 19240,
+      "shift_rotate": 31380
+    },
+    "isometry2_append_translation": {
+      "add": 20620,
+      "baseline": 18840
+    },
+    "isometry2_from_parts": {
+      "baseline": 18240,
+      "wrap": 18640
+    },
+    "isometry2_from_rotation": {
+      "baseline": 17640,
+      "pure": 17440
+    },
+    "isometry2_from_translation": {
+      "baseline": 17640,
+      "pure": 17740
+    },
+    "isometry2_identity": {
+      "baseline": 18040,
+      "const": 17440
+    },
+    "isometry2_inv_mul": {
+      "alt_inverse_then_mul": 34400,
+      "baseline": 19040,
+      "direct": 30780
+    },
+    "isometry2_inverse": {
+      "baseline": 18040,
+      "conjugate_rotate": 23040
+    },
+    "isometry2_inverse_transform_point": {
+      "baseline": 17640,
+      "subtract_rotate": 23120
+    },
+    "isometry2_inverse_transform_vector": {
+      "baseline": 17640,
+      "conjugate_rotate": 21640
+    },
+    "isometry2_lerp_nlerp": {
+      "baseline": 19440,
+      "lerp_normalize": 37960
+    },
+    "isometry2_lerp_slerp": {
+      "atan2_sin_cos": 70130,
+      "baseline": 19440
+    },
+    "isometry2_mul": {
+      "baseline": 19040,
+      "compose": 29700
+    },
+    "isometry2_new": {
+      "baseline": 18040,
+      "sin_cos": 35260
+    },
+    "isometry2_prepend_rotation": {
+      "baseline": 18840,
+      "compose": 23040
+    },
+    "isometry2_prepend_translation": {
+      "baseline": 18840,
+      "rotate_add": 23440
+    },
+    "isometry2_renormalize": {
+      "baseline": 18240,
+      "exact": 26140
+    },
+    "isometry2_renormalize_fast": {
+      "baseline": 18240,
+      "newton": 26040
+    },
+    "isometry2_rotation": {
+      "baseline": 17440,
+      "sin_cos": 34060
+    },
+    "isometry2_to_homogeneous": {
+      "baseline": 16540,
+      "matrix3": 17040
+    },
+    "isometry2_transform_point": {
+      "alt_rotate_then_add": 23320,
+      "baseline": 17640,
+      "fused": 22040
+    },
+    "isometry2_transform_vector": {
+      "baseline": 17640,
+      "rotate": 21640
+    },
+    "isometry2_translation": {
+      "baseline": 17640,
+      "pure": 17740
+    }
+  },
+  "nalgebra::geometry::isometry3::benches": {
+    "isometry3_abs_diff_eq": {
+      "baseline": 18750,
+      "ulps": 28680
+    },
+    "isometry3_append_rotation": {
+      "baseline": 21140,
+      "compose_rotate": 57030
+    },
+    "isometry3_append_rotation_wrt_center": {
+      "baseline": 21440,
+      "compose": 34000
+    },
+    "isometry3_append_rotation_wrt_point": {
+      "baseline": 21940,
+      "shift_rotate": 62950
+    },
+    "isometry3_append_translation": {
+      "add": 24160,
+      "baseline": 21340
+    },
+    "isometry3_face_towards": {
+      "baseline": 20940,
+      "gram_schmidt": 85350
+    },
+    "isometry3_from_parts": {
+      "baseline": 20340,
+      "wrap": 21040
+    },
+    "isometry3_from_rotation": {
+      "baseline": 19540,
+      "pure": 19340
+    },
+    "isometry3_from_translation": {
+      "baseline": 19340,
+      "pure": 19140
+    },
+    "isometry3_identity": {
+      "baseline": 20140,
+      "const": 18940
+    },
+    "isometry3_inv_mul": {
+      "alt_inverse_then_mul": 85660,
+      "baseline": 21740,
+      "direct": 63050
+    },
+    "isometry3_inverse": {
+      "baseline": 20140,
+      "conjugate_rotate": 47170
+    },
+    "isometry3_inverse_transform_point": {
+      "baseline": 18940,
+      "subtract_rotate": 46890
+    },
+    "isometry3_inverse_transform_vector": {
+      "baseline": 18940,
+      "conjugate_rotate": 42770
+    },
+    "isometry3_lerp_nlerp": {
+      "baseline": 22140,
+      "lerp_normalize": 53750
+    },
+    "isometry3_lerp_slerp": {
+      "acos_sin": 113790,
+      "baseline": 22140
+    },
+    "isometry3_look_at_rh": {
+      "baseline": 20940,
+      "gram_schmidt": 109880
+    },
+    "isometry3_mul": {
+      "baseline": 21740,
+      "compose": 58530
+    },
+    "isometry3_new": {
+      "baseline": 20140,
+      "from_scaled_axis": 55760
+    },
+    "isometry3_prepend_rotation": {
+      "baseline": 21440,
+      "compose": 34000
+    },
+    "isometry3_prepend_translation": {
+      "baseline": 21340,
+      "rotate_add": 46170
+    },
+    "isometry3_renormalize": {
+      "baseline": 20140,
+      "exact": 34220
+    },
+    "isometry3_renormalize_fast": {
+      "baseline": 20140,
+      "newton": 32140
+    },
+    "isometry3_rotation": {
+      "baseline": 19340,
+      "from_scaled_axis": 54060
+    },
+    "isometry3_to_homogeneous": {
+      "baseline": 17140,
+      "matrix4": 40970
+    },
+    "isometry3_transform_point": {
+      "alt_rotate_then_add": 44690,
+      "alt_rotation_matrix": 54480,
+      "baseline": 18940,
+      "fused": 43370
+    },
+    "isometry3_transform_vector": {
+      "baseline": 18940,
+      "rotate": 42170
+    },
+    "isometry3_translation": {
+      "baseline": 19340,
+      "pure": 19140
+    }
+  },
   "nalgebra::geometry::quaternion::benches": {
     "quaternion_abs_diff_eq": {
       "baseline": 17640,
@@ -274,6 +499,78 @@
     "rotation3_transform_vector": {
       "baseline": 19340,
       "mul_vec": 25990
+    }
+  },
+  "nalgebra::geometry::translation2::benches": {
+    "translation2_abs_diff_eq": {
+      "baseline": 16750,
+      "ulps": 19950
+    },
+    "translation2_identity": {
+      "baseline": 16640,
+      "const": 16240
+    },
+    "translation2_inverse": {
+      "baseline": 16640,
+      "negate": 17240
+    },
+    "translation2_inverse_transform_point": {
+      "alt_inverse_then_transform": 19420,
+      "baseline": 17240,
+      "subtract": 18820
+    },
+    "translation2_mul": {
+      "baseline": 17240,
+      "compose": 18820
+    },
+    "translation2_new": {
+      "baseline": 16640,
+      "from_components": 16640,
+      "from_vector": 16640
+    },
+    "translation2_to_homogeneous": {
+      "baseline": 16140,
+      "matrix3": 16140
+    },
+    "translation2_transform_point": {
+      "add": 18820,
+      "baseline": 17240
+    }
+  },
+  "nalgebra::geometry::translation3::benches": {
+    "translation3_abs_diff_eq": {
+      "baseline": 17150,
+      "ulps": 21690
+    },
+    "translation3_identity": {
+      "baseline": 17340,
+      "const": 16740
+    },
+    "translation3_inverse": {
+      "baseline": 17340,
+      "negate": 18240
+    },
+    "translation3_inverse_transform_point": {
+      "alt_inverse_then_transform": 21460,
+      "baseline": 18140,
+      "subtract": 20560
+    },
+    "translation3_mul": {
+      "baseline": 18140,
+      "compose": 20560
+    },
+    "translation3_new": {
+      "baseline": 17340,
+      "from_components": 17340,
+      "from_vector": 17340
+    },
+    "translation3_to_homogeneous": {
+      "baseline": 16340,
+      "matrix4": 16340
+    },
+    "translation3_transform_point": {
+      "add": 20560,
+      "baseline": 18140
     }
   },
   "nalgebra::geometry::unit_complex::benches": {
