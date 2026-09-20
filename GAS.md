@@ -54,18 +54,18 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `repeat` | 17040 | 200 | x1.00 |
 | `from_element` | 17040 | 200 | x1.00 |
-| `zeros` | 17040 | 200 | x1.00 |
-| `y` | 17040 | 200 | x1.00 |
+| `repeat` | 17040 | 200 | x1.00 |
 | `x` | 17040 | 200 | x1.00 |
+| `y` | 17040 | 200 | x1.00 |
+| `zeros` | 17040 | 200 | x1.00 |
 
 ### vector2_from
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `tuple` | 17440 | 200 | x1.00 |
 | `array` | 17440 | 200 | x1.00 |
+| `tuple` | 17440 | 200 | x1.00 |
 
 ### vector2_imin
 
@@ -80,8 +80,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `sup` | 19090 | 1850 | x1.00 |
 | `inf` | 19090 | 1850 | x1.00 |
+| `sup` | 19090 | 1850 | x1.00 |
 
 ### vector2_inf_sup
 
@@ -221,8 +221,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `add_assign` | 20560 | 2420 | x1.00 |
 | `add` | 20560 | 2420 | x1.00 |
+| `add_assign` | 20560 | 2420 | x1.00 |
 
 ### vector3_cap_magnitude
 
@@ -261,19 +261,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
+| `from_element` | 17740 | 300 | x1.00 |
 | `repeat` | 17740 | 300 | x1.00 |
 | `x` | 17740 | 300 | x1.00 |
-| `from_element` | 17740 | 300 | x1.00 |
-| `z` | 17740 | 300 | x1.00 |
 | `y` | 17740 | 300 | x1.00 |
+| `z` | 17740 | 300 | x1.00 |
 | `zeros` | 17740 | 300 | x1.00 |
 
 ### vector3_from
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `tuple` | 18440 | 300 | x1.00 |
 | `array` | 18440 | 300 | x1.00 |
+| `tuple` | 18440 | 300 | x1.00 |
 
 ### vector3_imin
 
@@ -354,8 +354,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `norm_squared` | 18490 | 2150 | x1.00 |
 | `magnitude_squared` | 18490 | 2150 | x1.00 |
+| `norm_squared` | 18490 | 2150 | x1.00 |
 
 ### vector3_normalize
 
@@ -477,13 +477,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `w` | 18440 | 400 | x1.00 |
-| `x` | 18440 | 400 | x1.00 |
 | `from_element` | 18440 | 400 | x1.00 |
 | `repeat` | 18440 | 400 | x1.00 |
+| `w` | 18440 | 400 | x1.00 |
+| `x` | 18440 | 400 | x1.00 |
 | `y` | 18440 | 400 | x1.00 |
-| `zeros` | 18440 | 400 | x1.00 |
 | `z` | 18440 | 400 | x1.00 |
+| `zeros` | 18440 | 400 | x1.00 |
 
 ### vector4_from
 
@@ -543,8 +543,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `min` | 19060 | 2520 | x1.00 |
 | `max` | 19060 | 2520 | x1.00 |
+| `min` | 19060 | 2520 | x1.00 |
 | `amin` | 22580 | 6040 | x2.40 |
 | `amax` | 22590 | 6050 | x2.40 |
 
@@ -593,8 +593,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `sub_assign` | 22300 | 3260 | x1.00 |
 | `sub` | 22300 | 3260 | x1.00 |
+| `sub_assign` | 22300 | 3260 | x1.00 |
 
 ### vector4_sum
 
@@ -665,8 +665,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_native_pn` | 16980 | 640 | x1.00 |
 | `alt_checked_pn` | 16980 | 640 | x1.00 |
+| `alt_native_pn` | 16980 | 640 | x1.00 |
 | `fixed_nn` | 16980 | 640 | x1.00 |
 | `fixed_pn` | 16980 | 640 | x1.00 |
 | `fixed_pp` | 16980 | 640 | x1.00 |
@@ -681,12 +681,12 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fixed_p` | 17520 | 1580 | x1.00 |
 | `fixed_n` | 17520 | 1580 | x1.00 |
+| `fixed_p` | 17520 | 1580 | x1.00 |
 | `alt_neg_floor_n` | 17750 | 1810 | x1.15 |
 | `alt_neg_floor_p` | 17750 | 1810 | x1.15 |
-| `alt_branch_p` | 19400 | 3460 | x2.19 |
 | `alt_branch_n` | 19400 | 3460 | x2.19 |
+| `alt_branch_p` | 19400 | 3460 | x2.19 |
 
 ### clamp
 
@@ -707,8 +707,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fixed_pp` | 19080 | 2740 | x1.00 |
 | `fixed_np` | 19080 | 2740 | x1.00 |
+| `fixed_pp` | 19080 | 2740 | x1.00 |
 | `fixed_nn` | 19160 | 2820 | x1.03 |
 | `fixed_pn` | 19160 | 2820 | x1.03 |
 | `alt_trunc_peel_np` | 19680 | 3340 | x1.22 |
@@ -716,8 +716,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `alt_floor_peel_pp` | 19930 | 3590 | x1.31 |
 | `alt_floor_peel_np` | 20280 | 3940 | x1.44 |
 | `alt_floor_peel_pn` | 20280 | 3940 | x1.44 |
-| `alt_native_trunc_pp` | 29220 | 12880 | x4.70 |
 | `alt_native_trunc_np` | 29220 | 12880 | x4.70 |
+| `alt_native_trunc_pp` | 29220 | 12880 | x4.70 |
 
 ### div_assign
 
@@ -729,9 +729,9 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
+| `fixed_np` | 16940 | 500 | x1.00 |
 | `fixed_pn` | 16940 | 500 | x1.00 |
 | `fixed_pp` | 16940 | 500 | x1.00 |
-| `fixed_np` | 16940 | 500 | x1.00 |
 
 ### floor
 
@@ -739,8 +739,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fixed_n` | 17150 | 1210 | x1.00 |
 | `fixed_p` | 17150 | 1210 | x1.00 |
-| `alt_sub_rem_p` | 17420 | 1480 | x1.22 |
 | `alt_sub_rem_n` | 17420 | 1480 | x1.22 |
+| `alt_sub_rem_p` | 17420 | 1480 | x1.22 |
 | `alt_native_p` | 19410 | 3470 | x2.87 |
 | `alt_native_n` | 20270 | 4330 | x3.58 |
 
@@ -764,8 +764,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fixed_pp` | 19080 | 2740 | x1.00 |
 | `fixed_np` | 19080 | 2740 | x1.00 |
+| `fixed_pp` | 19080 | 2740 | x1.00 |
 
 ### from_raw
 
@@ -793,11 +793,11 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fixed_i32` | 16040 | 100 | x1.00 |
-| `fixed_u16` | 16040 | 100 | x1.00 |
-| `fixed_i8` | 16040 | 100 | x1.00 |
-| `fixed_u8` | 16040 | 100 | x1.00 |
 | `fixed_i16` | 16040 | 100 | x1.00 |
+| `fixed_i32` | 16040 | 100 | x1.00 |
+| `fixed_i8` | 16040 | 100 | x1.00 |
+| `fixed_u16` | 16040 | 100 | x1.00 |
+| `fixed_u8` | 16040 | 100 | x1.00 |
 
 ### inv_sqrt
 
@@ -883,9 +883,9 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_kernel_raw_pn` | 18090 | 1750 | x1.00 |
-| `fixed_pp` | 18090 | 1750 | x1.00 |
 | `fixed_nn` | 18090 | 1750 | x1.00 |
 | `fixed_pn` | 18090 | 1750 | x1.00 |
+| `fixed_pp` | 18090 | 1750 | x1.00 |
 | `alt_postcheck_pn` | 18190 | 1850 | x1.06 |
 | `alt_via_u128_pn` | 18190 | 1850 | x1.06 |
 | `alt_native_trunc_pp` | 26600 | 10260 | x5.86 |
@@ -915,12 +915,12 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_native_p` | 16240 | 300 | x1.00 |
 | `alt_native_n` | 16240 | 300 | x1.00 |
-| `fixed_p` | 16240 | 300 | x1.00 |
+| `alt_native_p` | 16240 | 300 | x1.00 |
 | `fixed_n` | 16240 | 300 | x1.00 |
-| `alt_downcast_p` | 16310 | 370 | x1.23 |
+| `fixed_p` | 16240 | 300 | x1.00 |
 | `alt_downcast_n` | 16310 | 370 | x1.23 |
+| `alt_downcast_p` | 16310 | 370 | x1.23 |
 
 ### norm2
 
@@ -1012,8 +1012,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_half_up_p` | 17520 | 1580 | x1.00 |
 | `alt_half_up_n` | 17520 | 1580 | x1.00 |
+| `alt_half_up_p` | 17520 | 1580 | x1.00 |
 | `fixed_n` | 17930 | 1990 | x1.26 |
 | `fixed_p` | 18090 | 2150 | x1.36 |
 
@@ -1085,16 +1085,16 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `wide_from_prod` | 23090 | 2750 | x1.00 |
 | `wide` | 23090 | 2750 | x1.00 |
+| `wide_from_prod` | 23090 | 2750 | x1.00 |
 
 ### sum_prod8
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_typed` | 25090 | 3150 | x1.00 |
-| `wide_from_prod` | 25090 | 3150 | x1.00 |
 | `wide` | 25090 | 3150 | x1.00 |
+| `wide_from_prod` | 25090 | 3150 | x1.00 |
 | `alt_typed_postcheck` | 25190 | 3250 | x1.03 |
 | `alt_chunked` | 27480 | 5540 | x1.76 |
 | `alt_native_trunc` | 87720 | 65780 | x20.88 |
