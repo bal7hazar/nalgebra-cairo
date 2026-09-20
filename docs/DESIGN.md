@@ -94,17 +94,20 @@ Built only once the static surface is complete, and scoped by what multibody dyn
 | sqrt | corelib `u128_sqrt` on the widened value (exact floor) | 1,820 |
 | norm | `u128_sqrt` of the *unscaled* sum of squares (no rescale, overflow tolerant) | 2,220 |
 | inv_sqrt | `isqrt(floor(2^96 / raw))`: exact floor, one rounding | 2,830 |
-| sin, cos, sin_cos | range reduction by one divmod + typed Horner, degree 11 | 12,500 / 4.7e-10 |
-| atan2 | one ratio, typed Horner degree 19 | 18,840 / 1.9e-9 |
-| acos, asin | `sqrt(1-\|x\|) · P9(\|x\|)` | 16,510 / 1.2e-9 |
+| sin, cos, sin_cos | octant reduction at scale 2^61 + generated interval-typed Horner (degree 11/10), fits of the form `1 + z·G(z)` so key values are exact | 12,800 / 16,820 (pair) — 0.53 ulp |
+| tan | sin/cos at 2^-48 then one division | 19,500 |
+| atan, atan2 | division-free fast path for \|x\| ≤ 1, generated Horner | 13,600 / 15,400 — 1.12 ulp |
+| asin, acos | generated Horner; `acos = 2·asin(sqrt((1-x)/2))` above 1/2 | 11,420 / 11,430 — ~1 ulp |
+| exp, ln | reduction to a power of two by a generated comparison tree, then Horner | 14,290 / 12,580 — 0.5 ulp |
 | det / inverse ≤ 4 | closed forms (cofactors) on fused kernels; `try_inverse` returns `Option` | — |
 | Cholesky / LDLᵀ ≤ 6 | unrolled; LDLᵀ preferred (no sqrt) | — |
 | LU ≤ 6 | unrolled with partial pivoting | — |
 | symmetric eigen 2x2 / 3x3 | closed form 2x2; fixed-sweep cyclic Jacobi 3x3 (no convergence loop) | — |
 | SVD 2x2 / 3x3, polar | via symmetric eigen of `MᵀM` | — |
 
-Polynomial coefficients and interval-typed Horner code are **generated** (`tools/`), with bounds
-proven by the generator, so no overflow checks are needed inside the evaluation.
+Polynomial coefficients and interval-typed Horner code are **generated** (`tools/polygen`), with
+bounds proven by the generator, so no overflow checks are needed inside the evaluation; the Python
+model replays the generated programs, so it cannot diverge from the Cairo (`polygen.py --check`).
 When the best implementation is ambiguous, ship the variants behind one trait
 (`one trait, one impl per algorithm`), benchmark them side by side, export the cheapest.
 
