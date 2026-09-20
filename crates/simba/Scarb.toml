@@ -1,0 +1,21 @@
+[package]
+name = "simba"
+description = "Scalar abstraction and Q32.32 fixed-point numbers for provable linear algebra."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+snforge_std.workspace = true
+assert_macros.workspace = true
+nalgebra_testing = { path = "../testing" }
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

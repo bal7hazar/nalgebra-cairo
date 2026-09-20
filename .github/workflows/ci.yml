@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash # enables pipefail
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  library:
+    name: Library (fmt, lint, build, test, gas)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+      - name: Format, lint, build, test and check the gas snapshot
+        run: ./scripts/check.sh
+
+  benchmarks:
+    name: Design benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: changes
+        with:
+          filters: |
+            benchmarks:
+              - 'benchmarks/**'
+              - 'scripts/gas_report.py'
+              - '.tool-versions'
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+        if: steps.changes.outputs.benchmarks == 'true'
+      - uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+        if: steps.changes.outputs.benchmarks == 'true'
+      - name: Workspace benchmarks
+        if: steps.changes.outputs.benchmarks == 'true'
+        working-directory: benchmarks
+        run: |
+          scarb fmt --check
+          snforge test --workspace | python3 scripts/gas_report.py --check gas_report.json
+      - name: Third-party library benchmarks
+        if: steps.changes.outputs.benchmarks == 'true'
+        working-directory: benchmarks/libs
+        run: |
+          scarb fmt --check
+          snforge test | python3 ../scripts/gas_report.py --check gas_report.json
