@@ -85,6 +85,10 @@
 //! | `tan` | `abs(tan x)` does not fit Q32.32 | `errors::OVERFLOW` |
 //! | `exp` | `x > 21.487` | `errors::OVERFLOW` |
 //!
+//! `tan` also carries an `errors::DIVISION_BY_ZERO` for a reduced cosine of exactly zero, which
+//! no `Fixed` can reach (`pi/2` is not representable at scale 2^61); it is there so the kernel
+//! is total rather than relying on that argument at run time.
+//!
 //! `exp` **underflows to `ZERO`** below `x = -22.9` instead of panicking: a positive result
 //! rounding to zero is not an error. `sin`, `cos`, `sin_cos`, `atan` and `atan2` are **total**:
 //! they cannot panic for any `Fixed`.

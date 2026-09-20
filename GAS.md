@@ -2243,13 +2243,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `alt_native_gt` | 19170 | 2420 | x1.38 |
 | `alt_native_lt` | 19270 | 2520 | x1.44 |
 
-### acos
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg15_large` | 27370 | 11430 | x1.00 |
-| `deg15_small` | 27370 | 11430 | x1.00 |
-
 ### add
 
 | variant | raw | net | vs best |
@@ -2265,33 +2258,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `fixed_pn` | 16980 | 640 | x1.00 |
-
-### asin
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg11_small` | 25950 | 10010 | x1.00 |
-| `deg15_large` | 27360 | 11420 | x1.14 |
-| `deg15_small_x` | 27360 | 11420 | x1.14 |
-| `deg19_small` | 27760 | 11820 | x1.18 |
-
-### atan
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `reciprocal_only` | 28470 | 12530 | x1.00 |
-| `above_one_with_division` | 29540 | 13600 | x1.09 |
-| `unit_no_division` | 29540 | 13600 | x1.09 |
-| `via_atan2` | 31340 | 15400 | x1.23 |
-
-### atan2
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg17` | 29730 | 13390 | x1.00 |
-| `deg21` | 31340 | 15000 | x1.12 |
-| `deg25` | 31740 | 15400 | x1.15 |
-| `deg29` | 33150 | 16810 | x1.26 |
 
 ### ceil
 
@@ -2311,12 +2277,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `fixed_below` | 17550 | 810 | x1.00 |
 | `fixed_inside` | 18080 | 1340 | x1.65 |
 | `fixed_above` | 18090 | 1350 | x1.67 |
-
-### cos
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg10` | 28840 | 12900 | x1.00 |
 
 ### diff_prod
 
@@ -2354,15 +2314,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `fixed_np` | 16940 | 500 | x1.00 |
 | `fixed_pn` | 16940 | 500 | x1.00 |
 | `fixed_pp` | 16940 | 500 | x1.00 |
-
-### exp
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg6_alt` | 28820 | 12880 | x1.00 |
-| `deg8` | 30230 | 14290 | x1.11 |
-| `deg8_negative` | 30230 | 14290 | x1.11 |
-| `deg10_alt` | 31640 | 15700 | x1.22 |
 
 ### floor
 
@@ -2482,14 +2433,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fixed` | 18790 | 2050 | x1.00 |
 | `unfused` | 19970 | 3230 | x1.58 |
-
-### ln
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg7_alt` | 27110 | 11170 | x1.00 |
-| `deg11` | 28520 | 12580 | x1.13 |
-| `deg11_tiny` | 28520 | 12580 | x1.13 |
 
 ### lt
 
@@ -2667,24 +2610,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `alt_native_z` | 17290 | 1350 | x2.01 |
 | `alt_native_n` | 17380 | 1440 | x2.15 |
 
-### sin
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `deg7_alt` | 27430 | 11490 | x1.00 |
-| `deg11` | 28740 | 12800 | x1.11 |
-| `deg11_huge_argument` | 28740 | 12800 | x1.11 |
-| `deg11_negative` | 28740 | 12800 | x1.11 |
-| `deg11_alt` | 28840 | 12900 | x1.12 |
-| `deg9_alt` | 28840 | 12900 | x1.12 |
-
-### sin_cos
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `shared` | 33060 | 16820 | x1.00 |
-| `two_calls` | 42040 | 25800 | x1.53 |
-
 ### sqr
 
 | variant | raw | net | vs best |
@@ -2755,13 +2680,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `alt_typed_postcheck` | 25190 | 3250 | x1.03 |
 | `alt_chunked` | 27480 | 5540 | x1.76 |
 | `alt_native_trunc` | 87720 | 65780 | x20.88 |
-
-### tan
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `wide_ratio` | 35440 | 19500 | x1.00 |
-| `q32_ratio` | 35880 | 19940 | x1.02 |
 
 ### to_int
 
