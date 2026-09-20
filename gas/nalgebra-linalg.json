@@ -403,6 +403,169 @@
       "try_inverse": 521570
     }
   },
+  "nalgebra::linalg::qr::qr2::tests": {
+    "qr2_determinant": {
+      "baseline": 42720,
+      "diagonal_product": 50350
+    },
+    "qr2_factors": {
+      "baseline": 42610,
+      "unpack": 43310
+    },
+    "qr2_is_invertible": {
+      "baseline": 42720,
+      "pivots": 43420
+    },
+    "qr2_new": {
+      "baseline": 16540,
+      "gram_schmidt": 43250
+    },
+    "qr2_solve": {
+      "baseline": 43320,
+      "substitution": 59510
+    },
+    "qr2_solve_singular": {
+      "baseline": 43320,
+      "none": 59410
+    },
+    "qr2_try_inverse": {
+      "baseline": 42720,
+      "substitution": 62700
+    }
+  },
+  "nalgebra::linalg::qr::qr3::tests": {
+    "qr3_determinant": {
+      "baseline": 82390,
+      "diagonal_product": 101680
+    },
+    "qr3_determinant_closed_form": {
+      "baseline": 17550,
+      "matrix3_cofactors": 28810
+    },
+    "qr3_factors": {
+      "baseline": 82390,
+      "unpack": 83090
+    },
+    "qr3_is_invertible": {
+      "baseline": 82390,
+      "pivots": 83190
+    },
+    "qr3_new": {
+      "alt_classical_gram_schmidt": 76280,
+      "alt_completed_basis": 109920,
+      "alt_householder": 195130,
+      "baseline": 17550,
+      "gram_schmidt": 84130
+    },
+    "qr3_solve": {
+      "baseline": 83190,
+      "substitution": 108400
+    },
+    "qr3_solve_singular": {
+      "baseline": 82990,
+      "none": 108100
+    },
+    "qr3_try_inverse": {
+      "baseline": 82390,
+      "substitution": 127070
+    }
+  },
+  "nalgebra::linalg::qr::qr4::tests": {
+    "qr4_determinant": {
+      "baseline": 151950,
+      "diagonal_product": 194340
+    },
+    "qr4_factors": {
+      "baseline": 151950,
+      "unpack": 152650
+    },
+    "qr4_is_invertible": {
+      "baseline": 151950,
+      "pivots": 152850
+    },
+    "qr4_new": {
+      "baseline": 18950,
+      "gram_schmidt": 153790
+    },
+    "qr4_solve": {
+      "baseline": 152950,
+      "substitution": 192380
+    },
+    "qr4_try_inverse": {
+      "baseline": 151950,
+      "substitution": 254870
+    }
+  },
+  "nalgebra::linalg::svd2::tests": {
+    "svd2_new": {
+      "alt_normalised_columns": 103090,
+      "baseline": 16550,
+      "eigen_of_gram": 81290
+    },
+    "svd2_pseudo_inverse": {
+      "baseline": 70390,
+      "reciprocals": 96760
+    },
+    "svd2_rank": {
+      "baseline": 70390,
+      "comparisons": 73030
+    },
+    "svd2_recompose": {
+      "baseline": 70390,
+      "scaled_product": 89550
+    },
+    "svd2_singular_values": {
+      "alt_sqrt_eigenvalues": 37320,
+      "baseline": 16550,
+      "from_left_vectors": 81290
+    },
+    "svd2_solve": {
+      "baseline": 70990,
+      "divisions": 89700
+    },
+    "svd2_to_polar": {
+      "baseline": 70390,
+      "quadform": 96960
+    }
+  },
+  "nalgebra::linalg::svd3::tests": {
+    "svd3_gram": {
+      "baseline": 17550,
+      "fused": 31050,
+      "transpose_mul_transpose": 33810
+    },
+    "svd3_new": {
+      "alt_normalised_columns": 746900,
+      "alt_one_sided_jacobi": 737370,
+      "baseline": 17550,
+      "eigen_of_gram": 692950
+    },
+    "svd3_pseudo_inverse": {
+      "baseline": 683370,
+      "reciprocals": 736160
+    },
+    "svd3_rank": {
+      "baseline": 683370,
+      "comparisons": 687180
+    },
+    "svd3_recompose": {
+      "baseline": 683370,
+      "scaled_product": 725430
+    },
+    "svd3_singular_values": {
+      "alt_sqrt_eigenvalues": 343420,
+      "baseline": 17550,
+      "from_left_vectors": 692950
+    },
+    "svd3_solve": {
+      "baseline": 684170,
+      "divisions": 712870
+    },
+    "svd3_to_polar": {
+      "baseline": 683370,
+      "quadform": 740190
+    }
+  },
   "nalgebra::linalg::symmetric_eigen2::tests": {
     "symmetric_eigen2_eigenvalues": {
       "baseline": 16340,
