@@ -25,8 +25,9 @@ scalar can be shared with glam.cairo / rapier.cairo without pulling linear algeb
 - add / sub / neg / comparisons: native checked `i64` ops.
 - mul and every sum of products: `core::internal::bounded_int` (feature `bounded-int-utils`):
   unscaled products in a typed wide accumulator, one biased floor `div_rem` by 2^32, one
-  `downcast` (the only overflow check). 1,850 gas per mul, 2,250 per dot3.
-- div: unsigned `div_rem` on magnitudes (3,570). Division is the expensive op: APIs take and store
+  range check (the only overflow check). 1,750 gas per mul, 2,150 per dot3 (as shipped in `simba`).
+- div: floor division, biased numerator, one branch on the divisor sign (2,740-2,820); `rem` is the
+  floored modulo (sign of the divisor, unlike Rust's truncated `%`). Division is the expensive op: APIs take and store
   reciprocals where upstream divides repeatedly (inverse mass, inverse inertia, `recip()`).
 - **Rounding: floor, once per output scalar.** Part of the numeric spec (observable in the last bit).
 - **Overflow: panic.** Never wrap: a wrapped value would still be a valid proof.
@@ -52,8 +53,8 @@ pub trait Real<T> {
 }
 ```
 
-Longer sums (6-term rows of `Matrix6`, dynamic dot products) use an explicit wide accumulator
-(`wmul` / `wadd` / `rescale`). Every sum-of-products in the library goes through a fused kernel:
+Longer sums (6-term rows of `Matrix6`, dynamic dot products) use the explicit `Wide` accumulator
+(`wide_add_prod` / `wide_sub_prod` / `wide_rescale`; +200 gas per extra product). Every sum-of-products in the library goes through a fused kernel:
 **never `a * b + c * d` with two rescales.**
 
 Approximate equality (`abs_diff_eq`, `relative_eq`) is defined on raw units (ulp), since
@@ -90,9 +91,9 @@ Built only once the static surface is complete, and scoped by what multibody dyn
 
 | Function | Algorithm | Cost / accuracy (benchmarks/scalar) |
 |---|---|---|
-| sqrt | corelib `u128_sqrt` on the widened value (exact floor) | 1,920 |
+| sqrt | corelib `u128_sqrt` on the widened value (exact floor) | 1,820 |
 | norm | `u128_sqrt` of the *unscaled* sum of squares (no rescale, overflow tolerant) | 2,220 |
-| inv_sqrt, normalize | sqrt + one unsigned `div_rem` with 64-bit fraction | 2,930 / 9,750 |
+| inv_sqrt | `isqrt(floor(2^96 / raw))`: exact floor, one rounding | 2,830 |
 | sin, cos, sin_cos | range reduction by one divmod + typed Horner, degree 11 | 12,500 / 4.7e-10 |
 | atan2 | one ratio, typed Horner degree 19 | 18,840 / 1.9e-9 |
 | acos, asin | `sqrt(1-\|x\|) · P9(\|x\|)` | 16,510 / 1.2e-9 |

@@ -4,5 +4,387 @@
       "add_u64": 15910,
       "baseline": 15540
     }
+  },
+  "simba": {
+    "abs": {
+      "alt_downcast_n": 17080,
+      "alt_downcast_p": 16650,
+      "alt_native_n": 17010,
+      "alt_native_p": 16830,
+      "alt_trim_first_n": 16810,
+      "alt_trim_first_p": 16820,
+      "baseline": 15940,
+      "fixed_n": 16810,
+      "fixed_p": 16630
+    },
+    "abs_diff_eq": {
+      "alt_native_gt": 19170,
+      "alt_native_lt": 19270,
+      "baseline": 16750,
+      "fixed_gt": 18590,
+      "fixed_lt": 18500
+    },
+    "add": {
+      "alt_checked_pn": 16980,
+      "alt_native_pn": 16980,
+      "baseline": 16340,
+      "fixed_nn": 16980,
+      "fixed_pn": 16980,
+      "fixed_pp": 16980
+    },
+    "add_assign": {
+      "baseline": 16340,
+      "fixed_pn": 16980
+    },
+    "ceil": {
+      "alt_branch_n": 19400,
+      "alt_branch_p": 19400,
+      "alt_neg_floor_n": 17750,
+      "alt_neg_floor_p": 17750,
+      "baseline": 15940,
+      "fixed_n": 17520,
+      "fixed_p": 17520
+    },
+    "clamp": {
+      "baseline": 16740,
+      "fixed_above": 18090,
+      "fixed_below": 17550,
+      "fixed_inside": 18080
+    },
+    "diff_prod": {
+      "baseline": 17140,
+      "fixed": 19090,
+      "unfused": 21480
+    },
+    "div": {
+      "alt_floor_peel_np": 20280,
+      "alt_floor_peel_pn": 20280,
+      "alt_floor_peel_pp": 19930,
+      "alt_native_trunc_np": 29220,
+      "alt_native_trunc_pp": 29220,
+      "alt_trunc_peel_np": 19680,
+      "alt_trunc_peel_pp": 19700,
+      "baseline": 16340,
+      "fixed_nn": 19160,
+      "fixed_np": 19080,
+      "fixed_pn": 19160,
+      "fixed_pp": 19080
+    },
+    "div_assign": {
+      "baseline": 16340,
+      "fixed_pn": 19160
+    },
+    "eq": {
+      "baseline": 16440,
+      "fixed_np": 16940,
+      "fixed_pn": 16940,
+      "fixed_pp": 16940
+    },
+    "floor": {
+      "alt_native_n": 20270,
+      "alt_native_p": 19410,
+      "alt_sub_rem_n": 17420,
+      "alt_sub_rem_p": 17420,
+      "baseline": 15940,
+      "fixed_n": 17150,
+      "fixed_p": 17150
+    },
+    "fract": {
+      "alt_sub_trunc_n": 18460,
+      "alt_sub_trunc_p": 18380,
+      "baseline": 15940,
+      "fixed_n": 17720,
+      "fixed_p": 17640
+    },
+    "from_int": {
+      "alt_native_n": 16580,
+      "baseline": 15940,
+      "fixed_n": 16040
+    },
+    "from_ratio": {
+      "baseline": 16340,
+      "fixed_np": 19080,
+      "fixed_pp": 19080
+    },
+    "from_raw": {
+      "baseline": 15940,
+      "fixed": 15940
+    },
+    "ge": {
+      "baseline": 16350,
+      "fixed_np": 17310,
+      "fixed_pn": 17230,
+      "fixed_pp": 17310
+    },
+    "gt": {
+      "baseline": 16350,
+      "fixed_np": 17320,
+      "fixed_pn": 17220,
+      "fixed_pp": 17320
+    },
+    "into": {
+      "baseline": 15940,
+      "fixed_i16": 16040,
+      "fixed_i32": 16040,
+      "fixed_i8": 16040,
+      "fixed_u16": 16040,
+      "fixed_u8": 16040
+    },
+    "inv_sqrt": {
+      "alt_constrain_p": 18870,
+      "alt_recip_p": 20050,
+      "alt_two_step_p": 19610,
+      "baseline": 15940,
+      "fixed_p": 18770
+    },
+    "is_negative": {
+      "alt_is_ok_n": 17220,
+      "alt_is_ok_p": 17220,
+      "alt_native_n": 16920,
+      "alt_native_p": 17020,
+      "baseline": 16040,
+      "fixed_n": 16720,
+      "fixed_p": 16820
+    },
+    "is_positive": {
+      "alt_native_n": 17020,
+      "alt_native_p": 16920,
+      "baseline": 15950,
+      "fixed_n": 16810,
+      "fixed_p": 16720
+    },
+    "is_zero": {
+      "baseline": 16040,
+      "fixed_is_non_one": 16740,
+      "fixed_is_non_zero": 16640,
+      "fixed_is_one": 16540,
+      "fixed_is_zero": 16340
+    },
+    "le": {
+      "baseline": 16440,
+      "fixed_np": 17230,
+      "fixed_pn": 17310,
+      "fixed_pp": 17230
+    },
+    "lerp": {
+      "baseline": 16740,
+      "fixed": 18790,
+      "unfused": 19970
+    },
+    "lt": {
+      "alt_constrain_np": 17220,
+      "alt_constrain_pn": 17320,
+      "baseline": 16440,
+      "fixed_np": 17220,
+      "fixed_pn": 17320,
+      "fixed_pp": 17220
+    },
+    "max": {
+      "baseline": 16340,
+      "fixed_np": 17120,
+      "fixed_pn": 17110
+    },
+    "min": {
+      "alt_constrain_np": 17110,
+      "alt_constrain_pn": 17120,
+      "baseline": 16340,
+      "fixed_np": 17110,
+      "fixed_pn": 17120
+    },
+    "mul": {
+      "alt_kernel_raw_pn": 18090,
+      "alt_native_trunc_pn": 26680,
+      "alt_native_trunc_pp": 26600,
+      "alt_postcheck_pn": 18190,
+      "alt_via_u128_pn": 18190,
+      "baseline": 16340,
+      "fixed_nn": 18090,
+      "fixed_pn": 18090,
+      "fixed_pp": 18090
+    },
+    "mul_add": {
+      "baseline": 16740,
+      "fixed": 18690,
+      "unfused": 19230
+    },
+    "mul_assign": {
+      "baseline": 16340,
+      "fixed_pn": 18090
+    },
+    "mul_sub": {
+      "baseline": 16740,
+      "fixed": 18690,
+      "unfused": 19230
+    },
+    "neg": {
+      "alt_downcast_n": 16310,
+      "alt_downcast_p": 16310,
+      "alt_native_n": 16240,
+      "alt_native_p": 16240,
+      "baseline": 15940,
+      "fixed_n": 16240,
+      "fixed_p": 16240
+    },
+    "norm2": {
+      "baseline": 16340,
+      "fixed": 18360,
+      "unfused": 22600
+    },
+    "norm3": {
+      "baseline": 16740,
+      "fixed": 18960,
+      "unfused": 25590
+    },
+    "norm4": {
+      "baseline": 17140,
+      "fixed": 19560
+    },
+    "norm_squared2": {
+      "baseline": 16340,
+      "fixed": 18290,
+      "unfused": 20680
+    },
+    "norm_squared3": {
+      "baseline": 16740,
+      "fixed": 18890,
+      "unfused": 23670
+    },
+    "norm_squared4": {
+      "baseline": 17140,
+      "fixed": 19490
+    },
+    "real_cross3": {
+      "baseline": 17140,
+      "generic": 23790
+    },
+    "real_dot3": {
+      "baseline": 17140,
+      "direct": 19290,
+      "generic": 19290,
+      "generic_wide": 19290
+    },
+    "real_norm3": {
+      "baseline": 16340,
+      "generic": 18560
+    },
+    "recip": {
+      "alt_div_n": 18760,
+      "alt_div_p": 18680,
+      "baseline": 15940,
+      "fixed_n": 18390,
+      "fixed_p": 18130
+    },
+    "rem": {
+      "alt_native_trunc_np": 20660,
+      "alt_native_trunc_pp": 20660,
+      "baseline": 16340,
+      "fixed_nn": 18420,
+      "fixed_np": 18350,
+      "fixed_pn": 18420,
+      "fixed_pp": 18350
+    },
+    "rem_assign": {
+      "baseline": 16340,
+      "fixed_pn": 18420
+    },
+    "round": {
+      "alt_half_up_n": 17520,
+      "alt_half_up_p": 17520,
+      "baseline": 15940,
+      "fixed_n": 17930,
+      "fixed_p": 18090
+    },
+    "signum": {
+      "alt_native_n": 17380,
+      "alt_native_p": 16940,
+      "alt_native_z": 17290,
+      "baseline": 15940,
+      "fixed_n": 16610,
+      "fixed_p": 16720,
+      "fixed_z": 16820
+    },
+    "sqr": {
+      "baseline": 15940,
+      "fixed": 17690,
+      "unfused": 17690
+    },
+    "sqrt": {
+      "alt_constrain_p": 17860,
+      "alt_native_p": 17760,
+      "baseline": 15940,
+      "fixed_p": 17760
+    },
+    "sub": {
+      "alt_native_pn": 16980,
+      "baseline": 16340,
+      "fixed_pn": 16980,
+      "fixed_pp": 16980
+    },
+    "sub_assign": {
+      "baseline": 16340,
+      "fixed_pn": 16980
+    },
+    "sum_prod2": {
+      "baseline": 17140,
+      "fixed": 19090,
+      "unfused": 21480
+    },
+    "sum_prod3": {
+      "baseline": 17940,
+      "fixed": 20090,
+      "unfused": 24870
+    },
+    "sum_prod4": {
+      "baseline": 18740,
+      "fixed": 21090,
+      "fused_kernel": 21090,
+      "unfused": 28260,
+      "wide": 21090,
+      "wide_from_prod": 21090
+    },
+    "sum_prod6": {
+      "baseline": 20340,
+      "wide": 23090,
+      "wide_from_prod": 23090
+    },
+    "sum_prod8": {
+      "alt_chunked": 27480,
+      "alt_native_trunc": 87720,
+      "alt_typed": 25090,
+      "alt_typed_postcheck": 25190,
+      "baseline": 21940,
+      "wide": 25090,
+      "wide_from_prod": 25090
+    },
+    "to_int": {
+      "alt_native_n": 19630,
+      "alt_native_p": 19370,
+      "baseline": 15940,
+      "fixed_n": 17050,
+      "fixed_p": 17050
+    },
+    "trunc": {
+      "alt_floor_fix_n": 19600,
+      "alt_floor_fix_p": 19100,
+      "baseline": 15940,
+      "fixed_n": 17720,
+      "fixed_p": 17640
+    },
+    "try_into": {
+      "baseline": 15940,
+      "fixed_i128": 16580,
+      "fixed_i64": 16580,
+      "fixed_u128": 16310,
+      "fixed_u32": 16310,
+      "fixed_u64": 16310
+    },
+    "wide_mixed": {
+      "baseline": 17940,
+      "wide": 20290
+    },
+    "wide_norm6": {
+      "baseline": 17940,
+      "wide": 20760
+    }
   }
 }
