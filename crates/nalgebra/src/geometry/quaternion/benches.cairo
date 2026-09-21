@@ -335,6 +335,34 @@ fn bench_quaternion_mul__alt_unfused() {
 
 #[test]
 #[inline(never)]
+fn bench_quaternion_conj_mul__baseline() {
+    let _x = black_box(a());
+    let _y = black_box(b());
+    let e = black_box(q(-19 * ONE_RAW, 22 * ONE_RAW, -7 * ONE_RAW, -6 * ONE_RAW));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_quaternion_conj_mul__fused() {
+    let x = black_box(a());
+    let y = black_box(b());
+    let e = black_box(q(-19 * ONE_RAW, 22 * ONE_RAW, -7 * ONE_RAW, -6 * ONE_RAW));
+    assert!(x.conj_mul(y) == e);
+}
+
+/// The formulation `conj_mul` replaces: three negations, then the Hamilton product.
+#[test]
+#[inline(never)]
+fn bench_quaternion_conj_mul__alt_conjugate_then_mul() {
+    let x = black_box(a());
+    let y = black_box(b());
+    let e = black_box(q(-19 * ONE_RAW, 22 * ONE_RAW, -7 * ONE_RAW, -6 * ONE_RAW));
+    assert!(x.conjugate() * y == e);
+}
+
+#[test]
+#[inline(never)]
 fn bench_quaternion_scale__baseline() {
     let _x = black_box(a());
     let _k = black_box(int(2));

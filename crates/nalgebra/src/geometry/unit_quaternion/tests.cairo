@@ -113,6 +113,37 @@ fn test_mul_identity_and_inverse() {
     assert!(third() * third() * third() == -id);
 }
 
+/// `conj_mul` is `inverse() * other` bit for bit on the oracle inputs, and `q.conj_mul(q)` is the
+/// identity up to the norm defect of `q` itself: exactly `(|q|², 0, 0, 0)` (the imaginary products
+/// cancel exactly in the accumulator), and `|q|²` of these rounded unit inputs floors up to 3 ulp
+/// away from 1.
+#[test]
+fn test_conj_mul_oracle_matches_inverse_then_mul() {
+    let id = UnitQuaternionTrait::<Fixed>::identity();
+    assert!(third().conj_mul(third()) == id);
+    assert!(half_x().conj_mul(third()) == half_x().inverse() * third());
+    let mut cases = oracle::unit_quaternion_mul_cases();
+    while let Some(case) = cases.pop_front() {
+        let (ra, rb, _expected, _tol) = *case;
+        assert!(uqt(ra).conj_mul(uqt(rb)) == uqt(ra).inverse() * uqt(rb));
+        assert!(uqt(rb).conj_mul(uqt(ra)) == uqt(rb).inverse() * uqt(ra));
+        let n2 = uqt(ra).quaternion.norm_squared();
+        assert!(uqt(ra).conj_mul(uqt(ra)).quaternion == QuaternionTrait::from_real(n2));
+        assert!(uqt(ra).conj_mul(uqt(ra)).quaternion.abs_diff_eq(id.quaternion, 3));
+    }
+}
+
+/// The sign-folded `inverse_transform_vector` is `transform_vector` of the conjugate bit for bit.
+#[test]
+fn test_inverse_transform_vector_oracle_matches_conjugate_then_transform() {
+    let mut cases = oracle::unit_quaternion_inverse_transform_vector_cases();
+    while let Some(case) = cases.pop_front() {
+        let (rq, rv, _expected, _tol) = *case;
+        let q = uqt(rq);
+        assert!(q.inverse_transform_vector(v3t(rv)) == q.conjugate().transform_vector(v3t(rv)));
+    }
+}
+
 /// The oracle expectation is the EXACT floor of the Hamilton product, which one rescale per
 /// component reproduces bit for bit.
 #[test]

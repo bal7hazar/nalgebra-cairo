@@ -106,6 +106,14 @@ fn alt_transform_vector_sandwich(q: UnitQuaternion<Fixed>, x: Vector3<Fixed>) ->
     Vector3 { x: r.i, y: r.j, z: r.k }
 }
 
+/// `inverse_transform_vector` as it was before the conjugate's signs were folded into the
+/// sandwich: three negations, then `transform_vector`. Bit for bit the same result.
+fn alt_inverse_transform_vector_conjugate(
+    q: UnitQuaternion<Fixed>, x: Vector3<Fixed>,
+) -> Vector3<Fixed> {
+    q.conjugate().transform_vector(x)
+}
+
 /// `transform_vector` through the rotation matrix: 24 + 9 products, but the matrix can be reused.
 fn alt_transform_vector_via_matrix(q: UnitQuaternion<Fixed>, x: Vector3<Fixed>) -> Vector3<Fixed> {
     q.to_rotation_matrix().transform_vector(x)
@@ -195,6 +203,22 @@ fn test_transform_vector_alts_agree() {
     let exact = a().transform_vector(v());
     assert!(alt_transform_vector_sandwich(a(), v()).abs_diff_eq(exact, 8));
     assert!(alt_transform_vector_via_matrix(a(), v()).abs_diff_eq(exact, 8));
+}
+
+/// Folding the conjugate's signs into the operand order of the cross products (`(-u) × v = v ×
+/// u`)
+/// changes no exact product, hence no bit: the fused `inverse_transform_vector` and `conj_mul`
+/// equal their conjugate-first formulations exactly.
+#[test]
+fn test_inverse_transform_vector_fused_matches_conjugate_then_transform() {
+    assert!(a().inverse_transform_vector(v()) == alt_inverse_transform_vector_conjugate(a(), v()));
+    assert!(b().inverse_transform_vector(w()) == alt_inverse_transform_vector_conjugate(b(), w()));
+    assert!(a().inverse_transform_vector(w()) == alt_inverse_transform_vector_conjugate(a(), w()));
+    let p = Point3 { x: v().x, y: v().y, z: v().z };
+    let c = a().conjugate().transform_point(p);
+    assert!(a().inverse_transform_point(p) == c);
+    assert!(a().conj_mul(b()) == a().conjugate() * b());
+    assert!(b().conj_mul(a()) == b().inverse() * a());
 }
 
 /// The reciprocal of the denominator costs one division instead of three but rounds the factor
@@ -346,6 +370,35 @@ fn bench_unit_quaternion_mul__hamilton() {
     let r = black_box(b());
     let e = black_box(uqt((3349370227, -932498320, -60712365, -2520956970)));
     assert!(q * r == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_conj_mul__baseline() {
+    let _q = black_box(a());
+    let _r = black_box(b());
+    let e = black_box(uqt((-2063404847, 251977103, -2575182929, 2737525330)));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_conj_mul__fused() {
+    let q = black_box(a());
+    let r = black_box(b());
+    let e = black_box(uqt((-2063404847, 251977103, -2575182929, 2737525330)));
+    assert!(q.conj_mul(r) == e);
+}
+
+/// The formulation `conj_mul` replaces: `self.inverse() * other` (three negations, then the
+/// Hamilton product).
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_conj_mul__alt_conjugate_then_mul() {
+    let q = black_box(a());
+    let r = black_box(b());
+    let e = black_box(uqt((-2063404847, 251977103, -2575182929, 2737525330)));
+    assert!(q.inverse() * r == e);
 }
 
 #[test]
@@ -718,11 +771,20 @@ fn bench_unit_quaternion_inverse_transform_vector__baseline() {
 
 #[test]
 #[inline(never)]
-fn bench_unit_quaternion_inverse_transform_vector__conjugate() {
+fn bench_unit_quaternion_inverse_transform_vector__folded() {
     let q = black_box(a());
     let x = black_box(v());
     let e = black_box(v3t((-18430159324, 6587686339, 3351234183)));
     assert!(q.inverse_transform_vector(x) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_inverse_transform_vector__alt_conjugate_then_transform() {
+    let q = black_box(a());
+    let x = black_box(v());
+    let e = black_box(v3t((-18430159324, 6587686339, 3351234183)));
+    assert!(alt_inverse_transform_vector_conjugate(q, x) == e);
 }
 
 #[test]

@@ -40,7 +40,7 @@ use simba::scalar::{Real, Transcendental};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::{Vector3, Vector3Trait};
-use super::quaternion::{Quaternion, QuaternionTrait};
+use super::quaternion::Quaternion;
 use super::rotation3::{Rotation3, Rotation3Trait};
 use super::translation3::{Translation3, Translation3Trait};
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
@@ -141,14 +141,18 @@ pub impl Isometry3Impl<
     /// `self⁻¹ * other`, the RELATIVE pose rapier computes for every contact and joint
     /// (docs/research/01, §3.3), WITHOUT materialising the inverse: the translation is
     /// `rotation⁻¹ · (other.translation - self.translation)` (one exact subtraction and one
-    /// conjugate rotation) and the rotation is `rotation⁻¹ · other.rotation` (one Hamilton
-    /// product on the conjugate, no division).
+    /// conjugate rotation, `UnitQuaternion::inverse_transform_vector`) and the rotation is
+    /// `rotation⁻¹ · other.rotation` (`UnitQuaternion::conj_mul`: one Hamilton product with the
+    /// conjugate's signs folded in, no negation, no division).
     ///
-    /// Measured 41 310 gas against 63 920 for `self.inverse() * other`, 1.55x: the inverse rotates
+    /// Measured 40 110 gas against 61 320 for `self.inverse() * other`, 1.53x: the inverse rotates
     /// its own translation for nothing, and the composition then rotates the other one
     /// (`bench_isometry3_inv_mul__alt_inverse_then_mul`). The two agree to a few ulp but NOT bit
     /// for bit — the loser rounds the intermediate `rotation⁻¹ · (-translation)`
-    /// (`test_inv_mul_alt_inverse_then_mul_differs_by_rounding`). Upstream: `inv_mul`.
+    /// (`test_inv_mul_alt_inverse_then_mul_differs_by_rounding`). Folding the conjugate's signs
+    /// into both kernels saves 1 200 gas over the conjugate-first formulation, for the same bits
+    /// (`bench_isometry3_inv_mul__alt_conjugate_then_mul`,
+    /// `test_inv_mul_fused_matches_conjugate_then_mul`). Upstream: `inv_mul`.
     fn inv_mul(self: Isometry3<T>, other: Isometry3<T>) -> Isometry3<T> {
         let d = Vector3 {
             x: other.translation.vector.x - self.translation.vector.x,
@@ -156,9 +160,7 @@ pub impl Isometry3Impl<
             z: other.translation.vector.z - self.translation.vector.z,
         };
         Isometry3 {
-            rotation: UnitQuaternion {
-                quaternion: self.rotation.quaternion.conjugate() * other.rotation.quaternion,
-            },
+            rotation: self.rotation.conj_mul(other.rotation),
             translation: Translation3 { vector: self.rotation.inverse_transform_vector(d) },
         }
     }
@@ -242,7 +244,8 @@ pub impl Isometry3Impl<
     }
 
     /// `rotation⁻¹ · v`: the inverse acting on a displacement, the conjugate applied directly
-    /// (as cheap as `transform_vector`: a conjugate is three negations). Upstream:
+    /// (`UnitQuaternion::inverse_transform_vector`, as cheap as `transform_vector`: the
+    /// conjugate's signs are folded into the sandwich). Upstream:
     /// `inverse_transform_vector`.
     #[inline(always)]
     fn inverse_transform_vector(self: Isometry3<T>, v: Vector3<T>) -> Vector3<T> {

@@ -60,7 +60,31 @@ fn alt_transform_point_rotate_then_add(i: Isometry3<Fixed>, q: Point3<Fixed>) ->
     Point3 { x: c.x + tr.x, y: c.y + tr.y, z: c.z + tr.z }
 }
 
+/// `inv_mul` as it was before `UnitQuaternion::conj_mul`: the rotation is
+/// `self.rotation.conjugate() * other.rotation` and the translation goes through
+/// `transform_vector` of the conjugate, i.e. six negations more for the same bits.
+fn alt_inv_mul_conjugate_then_mul(s: Isometry3<Fixed>, o: Isometry3<Fixed>) -> Isometry3<Fixed> {
+    let d = Vector3 {
+        x: o.translation.vector.x - s.translation.vector.x,
+        y: o.translation.vector.y - s.translation.vector.y,
+        z: o.translation.vector.z - s.translation.vector.z,
+    };
+    let c = s.rotation.conjugate();
+    Isometry3 {
+        rotation: UnitQuaternion { quaternion: c.quaternion * o.rotation.quaternion },
+        translation: Translation3 { vector: c.transform_vector(d) },
+    }
+}
+
 // --- why the alternatives lost
+
+/// The fused `inv_mul` (`conj_mul` and the sign-folded `inverse_transform_vector`) gives exactly
+/// the bits of the conjugate-first formulation.
+#[test]
+fn test_inv_mul_fused_matches_conjugate_then_mul() {
+    assert!(a().inv_mul(b()) == alt_inv_mul_conjugate_then_mul(a(), b()));
+    assert!(b().inv_mul(a()) == alt_inv_mul_conjugate_then_mul(b(), a()));
+}
 
 /// `inv_mul` and `self.inverse() * other` are the same transform, but the second rounds the
 /// intermediate `rotation⁻¹ · (-translation)` before adding the rotated translation of `other`:
@@ -267,6 +291,21 @@ fn bench_isometry3_inv_mul__direct() {
         ),
     );
     assert!(x.inv_mul(y) == e);
+}
+
+/// The previous formulation: conjugate first (six negations), same bits as `__direct`.
+#[test]
+#[inline(never)]
+fn bench_isometry3_inv_mul__alt_conjugate_then_mul() {
+    let x: Isometry3<Fixed> = black_box(a());
+    let y: Isometry3<Fixed> = black_box(b());
+    let e: Isometry3<Fixed> = black_box(
+        iso3(
+            (-10387824139, 10254455918, -11624179020),
+            (3549427458, -1252539985, 1386739257, 1535059155),
+        ),
+    );
+    assert!(alt_inv_mul_conjugate_then_mul(x, y) == e);
 }
 
 /// The loser: the inverse is materialised, so its translation is rotated once for nothing and

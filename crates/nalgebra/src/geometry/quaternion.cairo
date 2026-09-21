@@ -186,6 +186,39 @@ pub impl QuaternionImpl<
         R::sum_prod4(self.i, rhs.i, self.j, rhs.j, self.k, rhs.k, self.w, rhs.w)
     }
 
+    /// `self.conjugate() * other`, the Hamilton product with the conjugate on the LEFT, as ONE
+    /// fused kernel: the three minus signs of the conjugate are folded into the accumulation
+    /// (`Real::wide_add_prod` / `Real::wide_sub_prod` swapped where `self`'s imaginary part
+    /// enters), in the term order of `QuaternionMul`. Since `(-a)·b = -(a·b)` exactly in the wide
+    /// accumulator, the exact sums are the same and the result is bit-identical to
+    /// `self.conjugate() * other` — 16 products, 4 roundings, no negation: 11 860 gas against
+    /// 12 460 for `conjugate()` then `*` (`bench_quaternion_conj_mul__*`).
+    ///
+    /// The only behavioural difference: a component of `self` equal to the scalar's `MIN` no
+    /// longer panics (the conjugate would have negated it); only an overflow of a result
+    /// component panics (`simba: overflow`). Upstream has no direct equivalent: it replaces
+    /// `q.conjugate() * other` (and `q.try_inverse().unwrap() * other` for a unit `q`), the
+    /// rotation part of `Isometry3::inv_mul`.
+    fn conj_mul(self: Quaternion<T>, other: Quaternion<T>) -> Quaternion<T> {
+        // w = aw·bw + ai·bi + aj·bj + ak·bk
+        let w = R::wide_add_prod(R::wide_zero(), self.w, other.w);
+        let w = R::wide_add_prod(R::wide_add_prod(w, self.i, other.i), self.j, other.j);
+        let w = R::wide_rescale(R::wide_add_prod(w, self.k, other.k));
+        // i = aw·bi - ai·bw - aj·bk + ak·bj
+        let i = R::wide_add_prod(R::wide_zero(), self.w, other.i);
+        let i = R::wide_sub_prod(R::wide_sub_prod(i, self.i, other.w), self.j, other.k);
+        let i = R::wide_rescale(R::wide_add_prod(i, self.k, other.j));
+        // j = aw·bj + ai·bk - aj·bw - ak·bi
+        let j = R::wide_add_prod(R::wide_zero(), self.w, other.j);
+        let j = R::wide_sub_prod(R::wide_add_prod(j, self.i, other.k), self.j, other.w);
+        let j = R::wide_rescale(R::wide_sub_prod(j, self.k, other.i));
+        // k = aw·bk - ai·bj + aj·bi - ak·bw
+        let k = R::wide_add_prod(R::wide_zero(), self.w, other.k);
+        let k = R::wide_add_prod(R::wide_sub_prod(k, self.i, other.j), self.j, other.i);
+        let k = R::wide_rescale(R::wide_sub_prod(k, self.k, other.w));
+        Quaternion { i, j, k, w }
+    }
+
     /// `self / |self|`: the floored norm, then one exactly floored division per component, so the
     /// error is about `1 + 1 / |self|` ulp per component whatever the magnitude of `self` (see
     /// `Vector3Trait::normalize`). Panics with `simba: division by zero` on a zero quaternion.
