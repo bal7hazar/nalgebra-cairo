@@ -133,7 +133,8 @@ Measured on the merged code (snapshots in `gas/`), for the operations a physics 
 | `SymMatrix3::quadform` (R·diag(d)·Rᵀ) / `try_inverse` | 32,610 / 65,540 | vs 47,320 / 89,540 generic |
 | `Matrix6 * Matrix6` / `mul_vec` | 114,660 / 22,560 | one rescale per 6-term row |
 | `q * q` / `uq.transform_vector` / `append_axisangle_linearized` | 11,860 / 23,230 / 31,550 | |
-| `Isometry3::transform_point` / `inv_mul` / `*` | 24,430 / 41,310 / 36,790 | |
+| `Isometry3::transform_point` / `inv_mul` / `*` | 24,430 / 40,110 / 36,790 | `inv_mul` on the fused `conj_mul` |
+| `Isometry3::inverse_transform_point` / `inverse` | 25,750 / 25,130 | sign-folded conjugate (was 27,950 / 27,030) |
 | `Ldlt3::new` + `solve` / `Lu3::new` + `solve` | 36,990 / 56,820 | |
 | `SymmetricEigen3::new` / `Svd3::new` | 550,770 / 675,400 | 4 Jacobi sweeps |
 

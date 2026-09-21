@@ -108,7 +108,7 @@ Built only once the static surface is complete, and scoped by what multibody dyn
 | SVD 2x2 / 3x3, polar | symmetric eigen of `MᵀM`, renormalised eigenvectors, `σ = \|M·v\|`, `U` orthonormal by construction | 64,740 / 675,400 |
 | QR 2/3/4 | modified Gram-Schmidt (Householder is 2.7× dearer and further from upstream's factors) | new 26,710 / 66,580 / 134,840 |
 | rotations | `UnitComplex` / `UnitQuaternion` as raw pairs/quads (no `Unit` wrapper), Hamilton product on the `Wide` accumulator, algebraic `rotation_between`, quaternion transform for 1 vector and matrix for ≥ 2 | `q*q` 11,860, `uq.transform_vector` 23,230, `rotation_between` 49,440 |
-| isometries | `rotate_translate` fused kernel (translation folded into the accumulator), direct `inv_mul`, quaternion internally, `lerp_nlerp` (trig-free) | `Isometry3::transform_point` 24,430, `inv_mul` 41,310, `*` 36,790 |
+| isometries | `rotate_translate` fused kernel (translation folded into the accumulator), direct `inv_mul` on the fused `conj_mul` (conjugate signs folded into the accumulation, no negation), quaternion internally, `lerp_nlerp` (trig-free) | `Isometry3::transform_point` 24,430, `inv_mul` 40,110, `*` 36,790 |
 
 Polynomial coefficients and interval-typed Horner code are **generated** (`tools/polygen`), with
 bounds proven by the generator, so no overflow checks are needed inside the evaluation; the Python

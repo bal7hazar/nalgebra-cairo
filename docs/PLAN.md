@@ -70,7 +70,8 @@ so M5 stays deferred until a consumer exists.
 
 | WP | Content | Depends on |
 |---|---|---|
-| 4.5 (C ✅ #18, E ✅; A-B in progress; `Real::div`/`rem` split out as 4.6) | Promote `base::matrix_test_utils` to `pub(crate)` and delete the duplicated builders in `linalg`/`geometry`; fused `conj_mul` quaternion kernel (saves the 3 negations of `Isometry3::inv_mul`); `Wide × Fixed` accumulator op in `simba` for exact triple products (4x4 / 6x6 determinants); `Real::div` / `Real::rem` so that `normalize`/`unscale`/`new_normalize` no longer depend on the foreign scalar's `/` semantics (closes the one `simba_fixed` conformance gap); add `crates/simba_fixed/tools/gen_vectors.py --check` to the gate | M3, M4, 6.1 |
+| 4.5 ✅ (A-B #19, C #18, E; `Real::div`/`rem` split out as 4.6) | Promote `base::matrix_test_utils` to `pub(crate)` and delete the duplicated builders in `linalg`/`geometry`; fused `conj_mul` quaternion kernel (saves the 3 negations of `Isometry3::inv_mul`); `Wide × Fixed` accumulator op in `simba` for exact triple products (4x4 / 6x6 determinants); `Real::div` / `Real::rem` so that `normalize`/`unscale`/`new_normalize` no longer depend on the foreign scalar's `/` semantics (closes the one `simba_fixed` conformance gap); add `crates/simba_fixed/tools/gen_vectors.py --check` to the gate | M3, M4, 6.1 |
+| 4.6 | `Real::div` / `Real::rem`: nalgebra's generic code no longer reaches the scalar's `/` operator; `simba_fixed` integration tests become bit-identical (closes the D8 gap) | 4.5 |
 
 ## M6 — Interop and release
 
