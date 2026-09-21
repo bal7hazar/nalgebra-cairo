@@ -1,5 +1,10 @@
 {
   "simba_fixed::benches": {
+    "div": {
+      "alt_glam_operator": 19170,
+      "baseline": 16340,
+      "real_div": 19080
+    },
     "simba_fixed_convert": {
       "baseline": 15540,
       "roundtrip": 15540

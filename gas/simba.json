@@ -516,6 +516,11 @@
       "baseline": 17140,
       "generic": 23790
     },
+    "real_div": {
+      "alt_operator": 19080,
+      "baseline": 16340,
+      "fixed": 19080
+    },
     "real_dot3": {
       "baseline": 17140,
       "direct": 19290,
@@ -525,6 +530,11 @@
     "real_norm3": {
       "baseline": 16340,
       "generic": 18560
+    },
+    "real_rem": {
+      "alt_operator": 18350,
+      "baseline": 16340,
+      "fixed": 18350
     }
   }
 }
