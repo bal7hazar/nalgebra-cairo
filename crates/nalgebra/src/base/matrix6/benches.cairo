@@ -11,76 +11,11 @@ use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
+use crate::base::matrix_test_utils::{fx, int, m6i, v6i};
 use crate::base::vector3::Vector3;
 use crate::base::vector6::Vector6;
 use super::{Matrix6, Matrix6Trait};
 
-/// 2^32: the raw value of 1.
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-fn v6i(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 {
-        a: Vector3 { x: int(x), y: int(y), z: int(z) },
-        b: Vector3 { x: int(w), y: int(a), z: int(b) },
-    }
-}
-
-/// `Matrix6` from integer ROW-major rows.
-fn m6i(rows: [[i64; 6]; 6]) -> Matrix6<Fixed> {
-    let [r1, r2, r3, r4, r5, r6] = rows;
-    let [a11, a12, a13, a14, a15, a16] = r1;
-    let [a21, a22, a23, a24, a25, a26] = r2;
-    let [a31, a32, a33, a34, a35, a36] = r3;
-    let [a41, a42, a43, a44, a45, a46] = r4;
-    let [a51, a52, a53, a54, a55, a56] = r5;
-    let [a61, a62, a63, a64, a65, a66] = r6;
-    Matrix6Trait::new(
-        int(a11),
-        int(a12),
-        int(a13),
-        int(a14),
-        int(a15),
-        int(a16),
-        int(a21),
-        int(a22),
-        int(a23),
-        int(a24),
-        int(a25),
-        int(a26),
-        int(a31),
-        int(a32),
-        int(a33),
-        int(a34),
-        int(a35),
-        int(a36),
-        int(a41),
-        int(a42),
-        int(a43),
-        int(a44),
-        int(a45),
-        int(a46),
-        int(a51),
-        int(a52),
-        int(a53),
-        int(a54),
-        int(a55),
-        int(a56),
-        int(a61),
-        int(a62),
-        int(a63),
-        int(a64),
-        int(a65),
-        int(a66),
-    )
-}
 
 /// `[[1, .., 6], .., [31, .., 36]]`.
 fn a6() -> Matrix6<Fixed> {

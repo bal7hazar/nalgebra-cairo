@@ -304,7 +304,7 @@ mod tests {
     //! `tools/oracle` (upstream nalgebra 0.35 on the same raw inputs).
     //!
     //! Tolerance of the oracle assertions: the oracle's `tol` plus ONE relative ulp of the expected
-    //! value. `test_utils::lu_tol` states why, with the measurement.
+    //! value. `base::matrix_test_utils::oracle_tol` states why, with the measurement.
     //!
     //! Gas benchmarks of `Lu2` (`bench_lu2_<op>__<variant>`, net = raw - the `baseline` of the
     //! group), and the alternative implementations that lost, kept as evidence together with the
@@ -323,11 +323,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
-    use crate::base::vector2::Vector2;
-    use crate::linalg::lu::test_utils::{
-        abs_raw, fx, int, lu_tol, m2, max_abs_m2, max_abs_v2, max_ulp_diff_m2, max_ulp_diff_v2,
-        ulp_diff, v2, v2i,
+    use crate::base::matrix_test_utils::{
+        abs_raw, fx, int, m2, max_abs_m2, max_abs_v2, max_ulp_diff2, max_ulp_diff_v2, oracle_tol,
+        ulp_diff, v2it, v2t,
     };
+    use crate::base::vector2::Vector2;
     use crate::linalg::lu::{Perm2, PermTrait, oracle_lu2 as oracle};
     use super::{Lu2, Lu2Trait, Matrix2LuTrait};
 
@@ -339,7 +339,7 @@ mod tests {
 
     /// Its right-hand side.
     fn b_bench() -> Vector2<Fixed> {
-        v2((-5886581674, -6536196560))
+        v2t((-5886581674, -6536196560))
     }
 
     /// `a_bench()` already factored, so that the benchmarks of the derived operations do not pay
@@ -466,13 +466,13 @@ mod tests {
                 Lu2Trait::new(m2(a))
             };
             let got = if variant == 1 {
-                solve_recip(f, v2(b))
+                solve_recip(f, v2t(b))
             } else {
-                f.solve(v2(b))
+                f.solve(v2t(b))
             };
-            let e = v2(expected);
+            let e = v2t(expected);
             let err = max_ulp_diff_v2(got.unwrap(), e);
-            if err > lu_tol(max_abs_v2(e), tol) {
+            if err > oracle_tol(max_abs_v2(e), tol) {
                 failures += 1;
             }
             worst = core::cmp::max(worst, err);
@@ -498,7 +498,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _, _) = *case;
             let f = Lu2Trait::new(m2(a));
-            worst = core::cmp::max(worst, max_ulp_diff_m2(f.permute_rows(m2(a)), f.l() * f.u()));
+            worst = core::cmp::max(worst, max_ulp_diff2(f.permute_rows(m2(a)), f.l() * f.u()));
         }
         assert!(worst == 34, "reconstruction error {worst}");
     }
@@ -522,7 +522,7 @@ mod tests {
         assert!(u == m2([[12884901888, 4294967296], [0, 17179869184]]));
         let pa = f.permute_rows(a_exact());
         assert!(pa == m2([[12884901888, 4294967296], [-3221225472, 16106127360]]));
-        assert!(f.permute(v2i((1, 2))) == v2i((2, 1)));
+        assert!(f.permute(v2it((1, 2))) == v2it((2, 1)));
         // the identity factors without a single swap
         let id = Lu2Trait::new(Matrix2Trait::<Fixed>::identity());
         assert!(id.p() == PermTrait::identity2());
@@ -553,10 +553,10 @@ mod tests {
         let mut worst = 0;
         while let Some(case) = cases.pop_front() {
             let (a, b, expected, tol) = *case;
-            let x = Lu2Trait::new(m2(a)).solve(v2(b)).unwrap();
-            let e = v2(expected);
+            let x = Lu2Trait::new(m2(a)).solve(v2t(b)).unwrap();
+            let e = v2t(expected);
             let err = max_ulp_diff_v2(x, e);
-            assert!(err <= lu_tol(max_abs_v2(e), tol), "solve error {err}");
+            assert!(err <= oracle_tol(max_abs_v2(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 122);
@@ -570,8 +570,8 @@ mod tests {
             let (a, expected, tol) = *case;
             let inv = Lu2Trait::new(m2(a)).try_inverse().unwrap();
             let e = m2(expected);
-            let err = max_ulp_diff_m2(inv, e);
-            assert!(err <= lu_tol(max_abs_m2(e), tol), "inverse error {err}");
+            let err = max_ulp_diff2(inv, e);
+            assert!(err <= oracle_tol(max_abs_m2(e), tol), "inverse error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 393);
@@ -601,7 +601,7 @@ mod tests {
             assert!(f.try_inverse().unwrap() == try_inverse_solve_columns(f).unwrap());
             worst =
                 core::cmp::max(
-                    worst, max_ulp_diff_m2(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
+                    worst, max_ulp_diff2(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
@@ -623,7 +623,7 @@ mod tests {
             let (a, expected, tol) = *case;
             let det = Lu2Trait::new(m2(a)).determinant();
             let err = ulp_diff(det, fx(expected));
-            assert!(err <= lu_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
+            assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 166);
@@ -632,7 +632,7 @@ mod tests {
     #[test]
     fn test_determinant_exact_and_sign() {
         assert!(Lu2Trait::new(Matrix2Trait::<Fixed>::identity()).determinant() == int(1));
-        let d = Matrix2Trait::from_diagonal(v2i((2, -4)));
+        let d = Matrix2Trait::from_diagonal(v2it((2, -4)));
         assert!(Lu2Trait::new(d).determinant() == int(-8));
         // Swapping two rows flips the sign exactly (the factorisation is exact here,
         // and the sign is applied to the first pivot before any rounding).
@@ -735,7 +735,7 @@ mod tests {
     fn bench_lu2_permute__baseline() {
         let _f = black_box(f_bench());
         let _b = black_box(b_bench());
-        let e = black_box(v2((-6536196560, -5886581674)));
+        let e = black_box(v2t((-6536196560, -5886581674)));
         assert!(e == e);
     }
 
@@ -744,7 +744,7 @@ mod tests {
     fn bench_lu2_permute__transpositions() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(v2((-6536196560, -5886581674)));
+        let e = black_box(v2t((-6536196560, -5886581674)));
         assert!(f.permute(b) == e);
     }
 
@@ -787,7 +787,7 @@ mod tests {
     fn bench_lu2_solve__baseline() {
         let _f = black_box(f_bench());
         let _b = black_box(b_bench());
-        let e = black_box(Some(v2((-5305313723, -6129723447))));
+        let e = black_box(Some(v2t((-5305313723, -6129723447))));
         assert!(e == e);
     }
 
@@ -796,7 +796,7 @@ mod tests {
     fn bench_lu2_solve__substitution() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v2((-5305313723, -6129723447))));
+        let e = black_box(Some(v2t((-5305313723, -6129723447))));
         assert!(f.solve(b) == e);
     }
 
@@ -805,7 +805,7 @@ mod tests {
     fn bench_lu2_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v2((-5305313725, -6129723446))));
+        let e = black_box(Some(v2t((-5305313725, -6129723446))));
         assert!(solve_recip(f, b) == e);
     }
 

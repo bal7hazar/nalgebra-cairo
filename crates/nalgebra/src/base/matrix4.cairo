@@ -886,7 +886,7 @@ mod tests {
     use nalgebra_testing::black_box;
     use simba::fixed::Fixed;
     use simba::scalar::Real;
-    use crate::base::matrix_test_utils::{fx, int, m4, m4i, max_ulp_diff4, ulp_diff, v4, v4i};
+    use crate::base::matrix_test_utils::{fx, int, m4, m4i, max_ulp_diff4, ulp_diff, v4i, v4t};
     use crate::base::{oracle_matrix4, oracle_matrix4_inverse};
     use super::{Matrix4, Matrix4Trait};
 
@@ -1180,8 +1180,8 @@ mod tests {
         );
         // 0.5 ulp floors to 0, -0.5 ulp to -1 ulp, 1.5 ulp to 1 ulp, -1.5 ulp to -2 ulp.
         let h = Matrix4Trait::from_diagonal_element(Real::<Fixed>::HALF);
-        let e = Matrix4Trait::from_diagonal(v4((1, -1, 3, -3)));
-        assert!(e.component_mul(h) == Matrix4Trait::from_diagonal(v4((0, -1, 1, -2))));
+        let e = Matrix4Trait::from_diagonal(v4t((1, -1, 3, -3)));
+        assert!(e.component_mul(h) == Matrix4Trait::from_diagonal(v4t((0, -1, 1, -2))));
     }
 
     #[test]
@@ -1219,8 +1219,8 @@ mod tests {
         let mut cases = oracle_matrix4::matrix4_mul_vec_cases();
         while let Some(case) = cases.pop_front() {
             let (a, v, expected, _) = *case;
-            assert!(m4(a).mul_vec(v4(v)) == v4(expected));
-            assert!(m4(a).transpose().tr_mul_vec(v4(v)) == v4(expected));
+            assert!(m4(a).mul_vec(v4t(v)) == v4t(expected));
+            assert!(m4(a).transpose().tr_mul_vec(v4t(v)) == v4t(expected));
         }
     }
 
@@ -1246,7 +1246,7 @@ mod tests {
         let mut cases = oracle_matrix4::matrix4_outer_cases();
         while let Some(case) = cases.pop_front() {
             let (u, v, expected, _) = *case;
-            assert!(Matrix4Trait::from_outer(v4(u), v4(v)) == m4(expected));
+            assert!(Matrix4Trait::from_outer(v4t(u), v4t(v)) == m4(expected));
         }
     }
 
@@ -1334,7 +1334,7 @@ mod tests {
         let d = Matrix4Trait::from_diagonal(v4i(2, -4, 8, -16)).try_inverse().unwrap();
         assert!(
             d == Matrix4Trait::from_diagonal(
-                v4((0x80000000, -0x40000000, 0x20000000, -0x10000000)),
+                v4t((0x80000000, -0x40000000, 0x20000000, -0x10000000)),
             ),
         );
         assert!(
@@ -1551,7 +1551,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_diagonal__baseline() {
-        let _v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
+        let _v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
         let e = black_box(
             m4(
                 [
@@ -1566,7 +1566,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_diagonal__struct() {
-        let v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
+        let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
         let e = black_box(
             m4(
                 [
@@ -1611,10 +1611,10 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_columns__baseline() {
-        let _c1 = black_box(v4((6065401010, -4721681308, 7990534196, 4445892797)));
-        let _c2 = black_box(v4((-2161577173, -7621971610, 5603363342, 8226859758)));
-        let _c3 = black_box(v4((-4169889720, 2695648994, -7212805291, 6546834464)));
-        let _c4 = black_box(v4((-3730684931, 6053150518, -2184064506, 5336335505)));
+        let _c1 = black_box(v4t((6065401010, -4721681308, 7990534196, 4445892797)));
+        let _c2 = black_box(v4t((-2161577173, -7621971610, 5603363342, 8226859758)));
+        let _c3 = black_box(v4t((-4169889720, 2695648994, -7212805291, 6546834464)));
+        let _c4 = black_box(v4t((-3730684931, 6053150518, -2184064506, 5336335505)));
         let e = black_box(
             m4(
                 [
@@ -1631,10 +1631,10 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_columns__struct() {
-        let c1 = black_box(v4((6065401010, -4721681308, 7990534196, 4445892797)));
-        let c2 = black_box(v4((-2161577173, -7621971610, 5603363342, 8226859758)));
-        let c3 = black_box(v4((-4169889720, 2695648994, -7212805291, 6546834464)));
-        let c4 = black_box(v4((-3730684931, 6053150518, -2184064506, 5336335505)));
+        let c1 = black_box(v4t((6065401010, -4721681308, 7990534196, 4445892797)));
+        let c2 = black_box(v4t((-2161577173, -7621971610, 5603363342, 8226859758)));
+        let c3 = black_box(v4t((-4169889720, 2695648994, -7212805291, 6546834464)));
+        let c4 = black_box(v4t((-3730684931, 6053150518, -2184064506, 5336335505)));
         let e = black_box(
             m4(
                 [
@@ -1651,10 +1651,10 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_rows__baseline() {
-        let _r1 = black_box(v4((6065401010, -2161577173, -4169889720, -3730684931)));
-        let _r2 = black_box(v4((-4721681308, -7621971610, 2695648994, 6053150518)));
-        let _r3 = black_box(v4((7990534196, 5603363342, -7212805291, -2184064506)));
-        let _r4 = black_box(v4((4445892797, 8226859758, 6546834464, 5336335505)));
+        let _r1 = black_box(v4t((6065401010, -2161577173, -4169889720, -3730684931)));
+        let _r2 = black_box(v4t((-4721681308, -7621971610, 2695648994, 6053150518)));
+        let _r3 = black_box(v4t((7990534196, 5603363342, -7212805291, -2184064506)));
+        let _r4 = black_box(v4t((4445892797, 8226859758, 6546834464, 5336335505)));
         let e = black_box(
             m4(
                 [
@@ -1671,10 +1671,10 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_rows__struct() {
-        let r1 = black_box(v4((6065401010, -2161577173, -4169889720, -3730684931)));
-        let r2 = black_box(v4((-4721681308, -7621971610, 2695648994, 6053150518)));
-        let r3 = black_box(v4((7990534196, 5603363342, -7212805291, -2184064506)));
-        let r4 = black_box(v4((4445892797, 8226859758, 6546834464, 5336335505)));
+        let r1 = black_box(v4t((6065401010, -2161577173, -4169889720, -3730684931)));
+        let r2 = black_box(v4t((-4721681308, -7621971610, 2695648994, 6053150518)));
+        let r3 = black_box(v4t((7990534196, 5603363342, -7212805291, -2184064506)));
+        let r4 = black_box(v4t((4445892797, 8226859758, 6546834464, 5336335505)));
         let e = black_box(
             m4(
                 [
@@ -1691,8 +1691,8 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_outer__baseline() {
-        let _u = black_box(v4((-6975932915, 4075315203, -4507549853, -6978514818)));
-        let _v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
+        let _u = black_box(v4t((-6975932915, 4075315203, -4507549853, -6978514818)));
+        let _v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
         let e = black_box(
             m4(
                 [
@@ -1709,8 +1709,8 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix4_from_outer__products() {
-        let u = black_box(v4((-6975932915, 4075315203, -4507549853, -6978514818)));
-        let v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
+        let u = black_box(v4t((-6975932915, 4075315203, -4507549853, -6978514818)));
+        let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
         let e = black_box(
             m4(
                 [
@@ -1737,7 +1737,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v4((-2161577173, -7621971610, 5603363342, 8226859758)));
+        let e = black_box(v4t((-2161577173, -7621971610, 5603363342, 8226859758)));
         assert!(e == e);
     }
 
@@ -1754,7 +1754,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v4((-2161577173, -7621971610, 5603363342, 8226859758)));
+        let e = black_box(v4t((-2161577173, -7621971610, 5603363342, 8226859758)));
         assert!(a.column2() == e);
     }
 
@@ -1771,7 +1771,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v4((-4721681308, -7621971610, 2695648994, 6053150518)));
+        let e = black_box(v4t((-4721681308, -7621971610, 2695648994, 6053150518)));
         assert!(e == e);
     }
 
@@ -1788,7 +1788,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v4((-4721681308, -7621971610, 2695648994, 6053150518)));
+        let e = black_box(v4t((-4721681308, -7621971610, 2695648994, 6053150518)));
         assert!(a.row2() == e);
     }
 
@@ -1805,7 +1805,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v4((6065401010, -7621971610, -7212805291, 5336335505)));
+        let e = black_box(v4t((6065401010, -7621971610, -7212805291, 5336335505)));
         assert!(e == e);
     }
 
@@ -1822,7 +1822,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v4((6065401010, -7621971610, -7212805291, 5336335505)));
+        let e = black_box(v4t((6065401010, -7621971610, -7212805291, 5336335505)));
         assert!(a.diagonal() == e);
     }
 
@@ -2375,8 +2375,8 @@ mod tests {
                 ],
             ),
         );
-        let _v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
-        let e = black_box(v4((12125377576, -16750294840, 20631480820, -331180081)));
+        let _v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
+        let e = black_box(v4t((12125377576, -16750294840, 20631480820, -331180081)));
         assert!(e == e);
     }
 
@@ -2393,8 +2393,8 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
-        let e = black_box(v4((12125377576, -16750294840, 20631480820, -331180081)));
+        let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
+        let e = black_box(v4t((12125377576, -16750294840, 20631480820, -331180081)));
         assert!(a.mul_vec(v) == e);
     }
 
@@ -2411,8 +2411,8 @@ mod tests {
                 ],
             ),
         );
-        let _v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
-        let e = black_box(v4((-6954980908, -18276934794, -942863330, -2360400514)));
+        let _v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
+        let e = black_box(v4t((-6954980908, -18276934794, -942863330, -2360400514)));
         assert!(e == e);
     }
 
@@ -2429,8 +2429,8 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
-        let e = black_box(v4((-6954980908, -18276934794, -942863330, -2360400514)));
+        let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
+        let e = black_box(v4t((-6954980908, -18276934794, -942863330, -2360400514)));
         assert!(a.tr_mul_vec(v) == e);
     }
 
@@ -2447,8 +2447,8 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v4((4751241150, 2551995575, -4086721614, -3145554884)));
-        let e = black_box(v4((-6954980908, -18276934794, -942863330, -2360400514)));
+        let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
+        let e = black_box(v4t((-6954980908, -18276934794, -942863330, -2360400514)));
         assert!(a.transpose().mul_vec(v) == e);
     }
 

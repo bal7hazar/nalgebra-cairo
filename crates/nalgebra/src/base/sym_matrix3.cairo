@@ -409,7 +409,7 @@ mod tests {
     use simba::scalar::Real;
     use crate::base::matrix3::Matrix3Trait;
     use crate::base::matrix_test_utils::{
-        fx, int, m3, m3i, max_ulp_diff3, max_ulp_diff_s3, s3, s3i, v3, v3i,
+        fx, int, m3, m3i, max_ulp_diff3, max_ulp_diff_s3, s3, s3i, v3i, v3t,
     };
     use crate::base::{oracle_matrix3, oracle_sym_matrix};
     use super::SymMatrix3Trait;
@@ -474,7 +474,7 @@ mod tests {
         let mut cases = oracle_matrix3::matrix3_outer_cases();
         while let Some(case) = cases.pop_front() {
             let (u, _, _, _) = *case;
-            let v = v3(u);
+            let v = v3t(u);
             assert!(
                 SymMatrix3Trait::from_outer_self(v).to_matrix() == Matrix3Trait::from_outer(v, v),
             );
@@ -570,7 +570,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, v, _, _) = *case;
             let s = SymMatrix3Trait::from_matrix_unchecked(m3(a));
-            assert!(s.mul_vec(v3(v)) == s.to_matrix().mul_vec(v3(v)));
+            assert!(s.mul_vec(v3t(v)) == s.to_matrix().mul_vec(v3t(v)));
         }
         assert!(s3i((1, 2, 3, 4, 5, 6)).mul_vec(v3i(1, 0, 0)) == v3i(1, 2, 3));
         assert!(SymMatrix3Trait::<Fixed>::identity().mul_vec(v3i(3, -5, 7)) == v3i(3, -5, 7));
@@ -849,7 +849,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix3_from_diagonal__baseline() {
-        let _d = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _d = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(s3((6422282562, 0, 0, 6202159288, 0, 2324644860)));
         assert!(e == e);
     }
@@ -857,7 +857,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix3_from_diagonal__struct() {
-        let d = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let d = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(s3((6422282562, 0, 0, 6202159288, 0, 2324644860)));
         assert!(SymMatrix3Trait::from_diagonal(d) == e);
     }
@@ -915,7 +915,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix3_from_outer_self__baseline() {
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             s3((9603265977, 9274114724, 3476051182, 8956245107, 3356909777, 1258210680)),
         );
@@ -925,7 +925,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix3_from_outer_self__structured() {
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             s3((9603265977, 9274114724, 3476051182, 8956245107, 3356909777, 1258210680)),
         );
@@ -935,7 +935,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix3_from_outer_self__generic() {
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             s3((9603265977, 9274114724, 3476051182, 8956245107, 3356909777, 1258210680)),
         );
@@ -976,7 +976,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix3_diagonal__baseline() {
         let _a = black_box(s3((1841663783, 52948593, 34555536, 1861238670, 30362422, 1130131990)));
-        let e = black_box(v3((1841663783, 1861238670, 1130131990)));
+        let e = black_box(v3t((1841663783, 1861238670, 1130131990)));
         assert!(e == e);
     }
 
@@ -984,7 +984,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix3_diagonal__struct() {
         let a = black_box(s3((1841663783, 52948593, 34555536, 1861238670, 30362422, 1130131990)));
-        let e = black_box(v3((1841663783, 1861238670, 1130131990)));
+        let e = black_box(v3t((1841663783, 1861238670, 1130131990)));
         assert!(a.diagonal() == e);
     }
 
@@ -1178,8 +1178,8 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix3_mul_vec__baseline() {
         let _a = black_box(s3((1841663783, 52948593, 34555536, 1861238670, 30362422, 1130131990)));
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((2849011252, 2783334669, 707198287)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((2849011252, 2783334669, 707198287)));
         assert!(e == e);
     }
 
@@ -1187,8 +1187,8 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix3_mul_vec__structured() {
         let a = black_box(s3((1841663783, 52948593, 34555536, 1861238670, 30362422, 1130131990)));
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((2849011252, 2783334669, 707198287)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((2849011252, 2783334669, 707198287)));
         assert!(a.mul_vec(v) == e);
     }
 
@@ -1196,8 +1196,8 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix3_mul_vec__generic() {
         let a = black_box(s3((1841663783, 52948593, 34555536, 1861238670, 30362422, 1130131990)));
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((2849011252, 2783334669, 707198287)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((2849011252, 2783334669, 707198287)));
         assert!(a.to_matrix().mul_vec(v) == e);
     }
 
@@ -1281,7 +1281,7 @@ mod tests {
                 ],
             ),
         );
-        let _d = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _d = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             s3((34871941038, 3481951390, -4662719457, 38764687225, -20898872038, 20538935376)),
         );
@@ -1299,7 +1299,7 @@ mod tests {
                 ],
             ),
         );
-        let d = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let d = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             s3((34871941038, 3481951390, -4662719457, 38764687225, -20898872038, 20538935376)),
         );
@@ -1317,7 +1317,7 @@ mod tests {
                 ],
             ),
         );
-        let d = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let d = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             s3((34871941038, 3481951390, -4662719457, 38764687225, -20898872038, 20538935376)),
         );

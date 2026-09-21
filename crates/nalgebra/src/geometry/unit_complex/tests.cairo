@@ -12,42 +12,12 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
-use crate::base::matrix2::Matrix2;
-use crate::base::point2::Point2;
+use crate::base::matrix_test_utils::{ONE_RAW, fx, m2, max_ulp_diff_uc, p2t, r2, uct, ulp_diff, v2t};
 use crate::base::vector2::{Vector2, Vector2Trait};
-use crate::geometry::rotation2::{Rotation2, Rotation2Trait};
+use crate::geometry::rotation2::Rotation2Trait;
 use super::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait, oracle};
 
 /// The raw value of 1.
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn uc(t: (i64, i64)) -> UnitComplex<Fixed> {
-    let (re, im) = t;
-    UnitComplex { re: fx(re), im: fx(im) }
-}
-
-fn v2(t: (i64, i64)) -> Vector2<Fixed> {
-    let (x, y) = t;
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn p2(t: (i64, i64)) -> Point2<Fixed> {
-    let (x, y) = t;
-    Point2 { x: fx(x), y: fx(y) }
-}
-
-fn m2(rows: [[i64; 2]; 2]) -> Matrix2<Fixed> {
-    let [[m11, m12], [m21, m22]] = rows;
-    Matrix2 { m11: fx(m11), m21: fx(m21), m12: fx(m12), m22: fx(m22) }
-}
-
-fn r2(rows: [[i64; 2]; 2]) -> Rotation2<Fixed> {
-    Rotation2 { matrix: m2(rows) }
-}
 
 fn id() -> UnitComplex<Fixed> {
     UnitComplexTrait::<Fixed>::identity()
@@ -55,23 +25,7 @@ fn id() -> UnitComplex<Fixed> {
 
 /// The quarter turn `(0, 1)`, an exactly representable rotation.
 fn quarter() -> UnitComplex<Fixed> {
-    uc((0, ONE_RAW))
-}
-
-/// `|a - b|` in raw units.
-fn ulp_diff(a: Fixed, b: Fixed) -> u128 {
-    let d: i128 = a.raw.into() - b.raw.into();
-    let d = if d < 0 {
-        -d
-    } else {
-        d
-    };
-    d.try_into().unwrap()
-}
-
-/// Largest `|a - b|` over `(re, im)`, in raw units.
-fn max_ulp_diff(a: UnitComplex<Fixed>, b: UnitComplex<Fixed>) -> u128 {
-    core::cmp::max(ulp_diff(a.re, b.re), ulp_diff(a.im, b.im))
+    uct((0, ONE_RAW))
 }
 
 // --- constructors and accessors
@@ -95,11 +49,13 @@ fn test_new_cardinal_angles() {
     // sin_cos is accurate to 0.53 ulp (DESIGN D6): the components land within 1 ulp of the exact
     // (0, 1), (-1, 0), (0, -1).
     assert!(UnitComplexAngleTrait::<Fixed>::new(Real::ZERO) == id());
-    assert!(max_ulp_diff(UnitComplexAngleTrait::<Fixed>::new(Real::FRAC_PI_2), quarter()) <= 1);
-    assert!(max_ulp_diff(UnitComplexAngleTrait::<Fixed>::new(Real::PI), uc((-ONE_RAW, 0))) <= 1);
+    assert!(max_ulp_diff_uc(UnitComplexAngleTrait::<Fixed>::new(Real::FRAC_PI_2), quarter()) <= 1);
     assert!(
-        max_ulp_diff(
-            UnitComplexAngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_2), uc((0, -ONE_RAW)),
+        max_ulp_diff_uc(UnitComplexAngleTrait::<Fixed>::new(Real::PI), uct((-ONE_RAW, 0))) <= 1,
+    );
+    assert!(
+        max_ulp_diff_uc(
+            UnitComplexAngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_2), uct((0, -ONE_RAW)),
         ) <= 1,
     );
 }
@@ -120,18 +76,18 @@ fn test_from_angle_is_new() {
 
 #[test]
 fn test_accessors() {
-    let c = uc((0x80000000, -0x40000000));
+    let c = uct((0x80000000, -0x40000000));
     assert!(c.re() == fx(0x80000000) && c.im() == fx(-0x40000000));
     assert!(c.cos_angle() == c.re && c.sin_angle() == c.im);
-    assert!(c.complex() == v2((0x80000000, -0x40000000)));
+    assert!(c.complex() == v2t((0x80000000, -0x40000000)));
 }
 
 // --- conjugate, inverse, composition
 
 #[test]
 fn test_conjugate_and_inverse_agree_and_are_exact() {
-    let c = uc((0x80000000, -0x40000000));
-    assert!(c.conjugate() == uc((0x80000000, 0x40000000)));
+    let c = uct((0x80000000, -0x40000000));
+    assert!(c.conjugate() == uct((0x80000000, 0x40000000)));
     assert!(c.inverse() == c.conjugate());
     assert!(c.inverse().inverse() == c);
 }
@@ -144,7 +100,7 @@ fn test_inverse_of_min_imaginary_part_panics() {
 
 #[test]
 fn test_mul_identity_is_neutral_and_exact() {
-    let c = uc((0x80000000, -0x40000000));
+    let c = uct((0x80000000, -0x40000000));
     assert!(c * id() == c);
     assert!(id() * c == c);
 }
@@ -153,15 +109,15 @@ fn test_mul_identity_is_neutral_and_exact() {
 fn test_mul_quarter_turns_are_exact() {
     // i * i = -1, i * (-1) = -i, and four quarter turns are the identity, bit for bit.
     let i = quarter();
-    assert!(i * i == uc((-ONE_RAW, 0)));
-    assert!(i * i * i == uc((0, -ONE_RAW)));
+    assert!(i * i == uct((-ONE_RAW, 0)));
+    assert!(i * i * i == uct((0, -ONE_RAW)));
     assert!(i * i * i * i == id());
 }
 
 #[test]
 fn test_mul_is_commutative_bit_for_bit() {
     // The product of complex numbers is symmetric in its two operands, floors included.
-    let (a, b) = (uc((0x80000000, -0xdd6a9c1)), uc((-0x5a827999, 0xb504f334)));
+    let (a, b) = (uct((0x80000000, -0xdd6a9c1)), uct((-0x5a827999, 0xb504f334)));
     assert!(a * b == b * a);
 }
 
@@ -179,7 +135,7 @@ fn test_mul_inverse_is_identity_within_two_ulp() {
 fn test_mul_adds_angles() {
     let (a, b) = (fx(0x66666666), fx(-0x2aaaaaaa)); // 0.4 and -0.1666 rad
     let got = UnitComplexAngleTrait::<Fixed>::new(a) * UnitComplexAngleTrait::new(b);
-    assert!(max_ulp_diff(got, UnitComplexAngleTrait::<Fixed>::new(a + b)) <= 8);
+    assert!(max_ulp_diff_uc(got, UnitComplexAngleTrait::<Fixed>::new(a + b)) <= 8);
 }
 
 #[test]
@@ -199,36 +155,36 @@ fn test_rotation_to_and_angle_to() {
 #[test]
 fn test_transform_vector_quarter_turn_is_exact() {
     // (x, y) -> (-y, x), with no rounding at all.
-    let v = v2((0x300000000, -0x400000000));
-    assert!(quarter().transform_vector(v) == v2((0x400000000, 0x300000000)));
+    let v = v2t((0x300000000, -0x400000000));
+    assert!(quarter().transform_vector(v) == v2t((0x400000000, 0x300000000)));
     assert!(quarter().mul_vec(v) == quarter().transform_vector(v));
     assert!(id().transform_vector(v) == v);
 }
 
 #[test]
 fn test_transform_point_matches_transform_vector() {
-    let c = uc((0x80000000, -0xdd6a9c1));
-    let p = p2((0x300000000, -0x400000000));
+    let c = uct((0x80000000, -0xdd6a9c1));
+    let p = p2t((0x300000000, -0x400000000));
     let r = c.transform_point(p);
-    let v = c.transform_vector(v2((0x300000000, -0x400000000)));
+    let v = c.transform_vector(v2t((0x300000000, -0x400000000)));
     assert!(r.x == v.x && r.y == v.y);
 }
 
 #[test]
 fn test_inverse_transform_is_the_inverse_rotation() {
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
-    let v = v2((0x300000000, -0x400000000));
+    let v = v2t((0x300000000, -0x400000000));
     // Bit for bit the transform by the conjugate, and a round trip within a few ulp.
     assert!(c.inverse_transform_vector(v) == c.inverse().transform_vector(v));
     assert!(c.inverse_transform_vector(c.transform_vector(v)).abs_diff_eq(v, 4));
-    let p = p2((0x300000000, -0x400000000));
+    let p = p2t((0x300000000, -0x400000000));
     assert!(c.inverse_transform_point(p) == c.inverse().transform_point(p));
 }
 
 #[test]
 fn test_transform_vector_preserves_length() {
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
-    let v = v2((0x300000000, -0x400000000)); // norm 5
+    let v = v2t((0x300000000, -0x400000000)); // norm 5
     let r = c.transform_vector(v);
     assert!(ulp_diff(Real::norm2(r.x, r.y), fx(0x500000000)) <= 2);
 }
@@ -238,14 +194,14 @@ fn test_transform_vector_preserves_length() {
 fn test_transform_vector_overflow_panics() {
     // (1.6e9, 1.6e9) turned by -π/4 lands at (2.26e9, 0), past the 2.147e9 of Q32.32.
     let c = black_box(UnitComplexAngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_4));
-    let _ = c.transform_vector(black_box(v2((0x6000000000000000, 0x6000000000000000))));
+    let _ = c.transform_vector(black_box(v2t((0x6000000000000000, 0x6000000000000000))));
 }
 
 // --- matrix conversions
 
 #[test]
 fn test_to_rotation_matrix_and_back_is_exact() {
-    let c = uc((0x80000000, -0xdd6a9c1));
+    let c = uct((0x80000000, -0xdd6a9c1));
     let r = c.to_rotation_matrix();
     assert!(r.matrix == m2([[0x80000000, 0xdd6a9c1], [-0xdd6a9c1, 0x80000000]]));
     assert!(UnitComplexTrait::from_rotation_matrix(r) == c);
@@ -265,7 +221,7 @@ fn test_rotation_matrix_is_orthogonal() {
 
 #[test]
 fn test_to_homogeneous() {
-    let c = uc((0x80000000, -0xdd6a9c1));
+    let c = uct((0x80000000, -0xdd6a9c1));
     let h = c.to_homogeneous();
     assert!(h.m11 == c.re && h.m22 == c.re);
     assert!(h.m21 == c.im && h.m12 == -c.im);
@@ -281,27 +237,27 @@ fn test_to_homogeneous() {
 
 #[test]
 fn test_rotation_between_axes_is_exact() {
-    let (x, y) = (v2((0x300000000, 0)), v2((0, 0x500000000)));
+    let (x, y) = (v2t((0x300000000, 0)), v2t((0, 0x500000000)));
     assert!(UnitComplexTrait::rotation_between(x, y) == quarter());
-    assert!(UnitComplexTrait::rotation_between(y, x) == uc((0, -ONE_RAW)));
+    assert!(UnitComplexTrait::rotation_between(y, x) == uct((0, -ONE_RAW)));
     assert!(UnitComplexTrait::rotation_between(x, x) == id());
-    assert!(UnitComplexTrait::rotation_between(x, v2((-0x100000000, 0))) == uc((-ONE_RAW, 0)));
+    assert!(UnitComplexTrait::rotation_between(x, v2t((-0x100000000, 0))) == uct((-ONE_RAW, 0)));
 }
 
 #[test]
 fn test_rotation_between_maps_a_to_b() {
-    let (a, b) = (v2((0x300000000, -0x400000000)), v2((0x180000000, 0x200000000)));
+    let (a, b) = (v2t((0x300000000, -0x400000000)), v2t((0x180000000, 0x200000000)));
     // |a| = 5, |b| = 2.5: the rotation takes a to b scaled by |a| / |b|.
     let c = UnitComplexTrait::rotation_between(a, b);
     let got = c.transform_vector(a);
-    assert!(got.abs_diff_eq(v2((0x300000000, 0x400000000)), 4));
+    assert!(got.abs_diff_eq(v2t((0x300000000, 0x400000000)), 4));
 }
 
 #[test]
 fn test_rotation_between_zero_vector_is_identity() {
     let z = Vector2 { x: Real::<Fixed>::ZERO, y: Real::ZERO };
-    assert!(UnitComplexTrait::rotation_between(z, v2((0x300000000, 0))) == id());
-    assert!(UnitComplexTrait::rotation_between(v2((0x300000000, 0)), z) == id());
+    assert!(UnitComplexTrait::rotation_between(z, v2t((0x300000000, 0))) == id());
+    assert!(UnitComplexTrait::rotation_between(v2t((0x300000000, 0)), z) == id());
     assert!(UnitComplexTrait::rotation_between(z, z) == id());
 }
 
@@ -311,24 +267,24 @@ fn test_rotation_between_short_vectors_lose_precision() {
     // are floored at 2^-32 either way, then blown up by 1 / (|a|·|b|), which the shortening
     // multiplies by 2^16. Documented in `UnitComplexTrait::rotation_between`.
     let long = UnitComplexTrait::rotation_between(
-        v2((0x30ec4a100, -0x41d5b9200)), v2((0x40a3d7000, 0x2f1a9fc00)),
+        v2t((0x30ec4a100, -0x41d5b9200)), v2t((0x40a3d7000, 0x2f1a9fc00)),
     );
     let short = UnitComplexTrait::rotation_between(
-        v2((0x30ec4a1, -0x41d5b92)), v2((0x40a3d70, 0x2f1a9fc)),
+        v2t((0x30ec4a1, -0x41d5b92)), v2t((0x40a3d70, 0x2f1a9fc)),
     );
     assert!(short.abs_diff_eq(long, 8000));
     assert!(!short.abs_diff_eq(long, 200));
     // Directions whose dot and perp products are exact are exact at any length: (3, -4) to
     // (4, 3) is the quarter turn, bit for bit, even 256 times shorter.
-    let (a, b) = (v2((0x300000000, -0x400000000)), v2((0x400000000, 0x300000000)));
+    let (a, b) = (v2t((0x300000000, -0x400000000)), v2t((0x400000000, 0x300000000)));
     assert!(UnitComplexTrait::rotation_between(a, b) == quarter());
-    let (a, b) = (v2((0x3000000, -0x4000000)), v2((0x4000000, 0x3000000)));
+    let (a, b) = (v2t((0x3000000, -0x4000000)), v2t((0x4000000, 0x3000000)));
     assert!(UnitComplexTrait::rotation_between(a, b) == quarter());
 }
 
 #[test]
 fn test_scaled_rotation_between() {
-    let (x, y) = (v2((0x300000000, 0)), v2((0, 0x500000000)));
+    let (x, y) = (v2t((0x300000000, 0)), v2t((0, 0x500000000)));
     // Half of a quarter turn is an eighth of a turn.
     let c = UnitComplexAngleTrait::scaled_rotation_between(x, y, Real::HALF);
     assert!(c.abs_diff_eq(UnitComplexAngleTrait::<Fixed>::new(Real::FRAC_PI_4), 4));
@@ -346,8 +302,8 @@ fn test_angle_round_trip() {
     let a = fx(0x1f0a3d70a);
     assert!(ulp_diff(UnitComplexAngleTrait::<Fixed>::new(a).angle(), a) <= 12);
     assert!(quarter().angle() == Real::FRAC_PI_2);
-    assert!(uc((0, -ONE_RAW)).angle() == -Real::<Fixed>::FRAC_PI_2);
-    assert!(ulp_diff(uc((-ONE_RAW, 0)).angle(), Real::PI) <= 12);
+    assert!(uct((0, -ONE_RAW)).angle() == -Real::<Fixed>::FRAC_PI_2);
+    assert!(ulp_diff(uct((-ONE_RAW, 0)).angle(), Real::PI) <= 12);
 }
 
 #[test]
@@ -363,7 +319,7 @@ fn test_powf() {
 fn test_powf_takes_the_principal_angle() {
     // 3π/4 doubled is -π/2, not 3π/2: `angle()` lands in (-π, π] like upstream.
     let c = UnitComplexAngleTrait::<Fixed>::new(Real::FRAC_PI_4 + Real::FRAC_PI_2);
-    assert!(c.powf(Real::TWO).abs_diff_eq(uc((0, -ONE_RAW)), 16));
+    assert!(c.powf(Real::TWO).abs_diff_eq(uct((0, -ONE_RAW)), 16));
 }
 
 #[test]
@@ -384,7 +340,7 @@ fn test_slerp_takes_the_shortest_arc() {
     // From -3π/4 to 3π/4 the short way is through π, not through 0.
     let a = UnitComplexAngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_4 - Real::FRAC_PI_2);
     let b = UnitComplexAngleTrait::<Fixed>::new(Real::FRAC_PI_4 + Real::FRAC_PI_2);
-    assert!(a.slerp(b, Real::HALF).abs_diff_eq(uc((-ONE_RAW, 0)), 32));
+    assert!(a.slerp(b, Real::HALF).abs_diff_eq(uct((-ONE_RAW, 0)), 32));
 }
 
 // --- renormalization
@@ -490,7 +446,7 @@ fn test_append_axisangle_linearized_accumulates() {
 
 #[test]
 fn test_abs_diff_eq() {
-    let c = uc((0x80000000, -0xdd6a9c1));
+    let c = uct((0x80000000, -0xdd6a9c1));
     assert!(c.abs_diff_eq(c, 0));
     assert!(c.abs_diff_eq(UnitComplex { re: c.re + fx(3), im: c.im - fx(3) }, 3));
     assert!(!c.abs_diff_eq(UnitComplex { re: c.re + fx(4), im: c.im }, 3));
@@ -507,7 +463,7 @@ fn test_new_oracle() {
     while let Some(case) = cases.pop_front() {
         let (angle, expected, tol) = *case;
         let got = UnitComplexAngleTrait::<Fixed>::new(fx(angle));
-        assert!(got.abs_diff_eq(uc(expected), tol));
+        assert!(got.abs_diff_eq(uct(expected), tol));
     }
 }
 
@@ -517,7 +473,7 @@ fn test_angle_oracle() {
     assert!(cases.len() >= 9);
     while let Some(case) = cases.pop_front() {
         let (c, expected, tol) = *case;
-        assert!(Real::abs_diff_eq(uc(c).angle(), fx(expected), tol));
+        assert!(Real::abs_diff_eq(uct(c).angle(), fx(expected), tol));
     }
 }
 
@@ -527,7 +483,7 @@ fn test_mul_oracle() {
     assert!(cases.len() >= 6);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        assert!((uc(a) * uc(b)).abs_diff_eq(uc(expected), tol));
+        assert!((uct(a) * uct(b)).abs_diff_eq(uct(expected), tol));
     }
 }
 
@@ -537,8 +493,8 @@ fn test_inverse_oracle() {
     assert!(cases.len() >= 6);
     while let Some(case) = cases.pop_front() {
         let (c, expected, tol) = *case;
-        assert!(uc(c).inverse().abs_diff_eq(uc(expected), tol));
-        assert!(uc(c).conjugate().abs_diff_eq(uc(expected), tol));
+        assert!(uct(c).inverse().abs_diff_eq(uct(expected), tol));
+        assert!(uct(c).conjugate().abs_diff_eq(uct(expected), tol));
     }
 }
 
@@ -548,7 +504,7 @@ fn test_transform_vector_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (c, v, expected, tol) = *case;
-        assert!(uc(c).transform_vector(v2(v)).abs_diff_eq(v2(expected), tol));
+        assert!(uct(c).transform_vector(v2t(v)).abs_diff_eq(v2t(expected), tol));
     }
 }
 
@@ -558,7 +514,7 @@ fn test_inverse_transform_vector_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (c, v, expected, tol) = *case;
-        assert!(uc(c).inverse_transform_vector(v2(v)).abs_diff_eq(v2(expected), tol));
+        assert!(uct(c).inverse_transform_vector(v2t(v)).abs_diff_eq(v2t(expected), tol));
     }
 }
 
@@ -568,7 +524,7 @@ fn test_to_rotation_matrix_oracle() {
     assert!(cases.len() >= 6);
     while let Some(case) = cases.pop_front() {
         let (c, expected, tol) = *case;
-        assert!(uc(c).to_rotation_matrix().abs_diff_eq(r2(expected), tol));
+        assert!(uct(c).to_rotation_matrix().abs_diff_eq(r2(expected), tol));
     }
 }
 
@@ -578,7 +534,7 @@ fn test_from_rotation_matrix_oracle() {
     assert!(cases.len() >= 6);
     while let Some(case) = cases.pop_front() {
         let (r, expected, tol) = *case;
-        assert!(UnitComplexTrait::from_rotation_matrix(r2(r)).abs_diff_eq(uc(expected), tol));
+        assert!(UnitComplexTrait::from_rotation_matrix(r2(r)).abs_diff_eq(uct(expected), tol));
     }
 }
 
@@ -588,7 +544,7 @@ fn test_rotation_between_oracle() {
     assert!(cases.len() >= 18);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        assert!(UnitComplexTrait::rotation_between(v2(a), v2(b)).abs_diff_eq(uc(expected), tol));
+        assert!(UnitComplexTrait::rotation_between(v2t(a), v2t(b)).abs_diff_eq(uct(expected), tol));
     }
 }
 
@@ -598,7 +554,7 @@ fn test_angle_to_oracle() {
     assert!(cases.len() >= 6);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        assert!(Real::abs_diff_eq(uc(a).angle_to(uc(b)), fx(expected), tol));
+        assert!(Real::abs_diff_eq(uct(a).angle_to(uct(b)), fx(expected), tol));
     }
 }
 
@@ -608,6 +564,6 @@ fn test_slerp_oracle() {
     assert!(cases.len() >= 6);
     while let Some(case) = cases.pop_front() {
         let (a, b, t, expected, tol) = *case;
-        assert!(uc(a).slerp(uc(b), fx(t)).abs_diff_eq(uc(expected), tol));
+        assert!(uct(a).slerp(uct(b), fx(t)).abs_diff_eq(uct(expected), tol));
     }
 }

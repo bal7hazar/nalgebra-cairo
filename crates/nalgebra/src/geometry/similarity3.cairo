@@ -173,7 +173,8 @@ pub impl Similarity3Impl<
 
     /// `self⁻¹ * other` without materialising `self.inverse()`: the relative translation is
     /// `rotation⁻¹ · (other.t - self.t) / self.scaling`, the rotation is `self.r⁻¹ ·
-    /// other.r`, and the scale is `other.scaling / self.scaling`. Upstream: `inv_mul`.
+    /// other.r` (`UnitQuaternion::conj_mul`, no negation), and the scale is `other.scaling /
+    /// self.scaling`. Upstream: `inv_mul`.
     fn inv_mul(self: Similarity3<T>, other: Similarity3<T>) -> Similarity3<T> {
         let d = Vector3 {
             x: other.isometry.translation.vector.x - self.isometry.translation.vector.x,
@@ -183,7 +184,7 @@ pub impl Similarity3Impl<
         let r = self.isometry.rotation.inverse_transform_vector(d);
         Similarity3 {
             isometry: Isometry3 {
-                rotation: self.isometry.rotation.conjugate() * other.isometry.rotation,
+                rotation: self.isometry.rotation.conj_mul(other.isometry.rotation),
                 translation: Translation3 {
                     vector: Vector3 {
                         x: r.x / self.scaling, y: r.y / self.scaling, z: r.z / self.scaling,

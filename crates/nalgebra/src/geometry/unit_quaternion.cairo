@@ -147,6 +147,16 @@ pub impl UnitQuaternionImpl<
         UnitQuaternion { quaternion: self.quaternion.conjugate() }
     }
 
+    /// `self⁻¹ · other` (= `self.conjugate() * other`): the rotation `other` expressed in the
+    /// frame of `self`, as ONE fused Hamilton product with the conjugate's signs folded in
+    /// (`QuaternionTrait::conj_mul`) — bit-identical to `self.inverse() * other`, three negations
+    /// cheaper, and a component equal to the scalar's `MIN` no longer panics. Upstream has no
+    /// direct equivalent: it replaces `self.inverse() * other` (as in `Isometry3::inv_mul`).
+    #[inline(always)]
+    fn conj_mul(self: UnitQuaternion<T>, other: UnitQuaternion<T>) -> UnitQuaternion<T> {
+        UnitQuaternion { quaternion: self.quaternion.conj_mul(other.quaternion) }
+    }
+
     /// The rotation `r` such that `r · self = other`, i.e. `other · self⁻¹`: one Hamilton
     /// product on the conjugate, no division. Upstream: `rotation_to` (`other / self`).
     #[inline(always)]
@@ -403,17 +413,40 @@ pub impl UnitQuaternionImpl<
         Point3 { x: c.x, y: c.y, z: c.z }
     }
 
-    /// `q⁻¹ · v · q`: `transform_vector` of the conjugate, exactly as cheap (the conjugate is
-    /// three negations). Upstream: `inverse_transform_vector`.
-    #[inline(always)]
+    /// `q⁻¹ · v · q`: the sandwich of `transform_vector` on the conjugate, with the
+    /// conjugate's signs folded into the operand order instead of negating the imaginary part `u`:
+    /// `(-u) × v = v × u` and `(-u) × t = t × u` are the same exact products, so
+    /// `t = 2·(v × u)` and the result `v + w·t + t × u` are bit-identical to
+    /// `transform_vector(conjugate(self), v)` without its three negations
+    /// (`bench_unit_quaternion_inverse_transform_vector__alt_conjugate_then_transform`,
+    /// `test_inverse_transform_vector_fused_matches_conjugate_then_transform`). A component of
+    /// the quaternion equal to the scalar's `MIN` no longer panics on the negation. 15 products,
+    /// 9 roundings, like `transform_vector`: 23 230 gas against 23 830 with the negations.
+    /// Upstream: `inverse_transform_vector`.
     fn inverse_transform_vector(self: UnitQuaternion<T>, v: Vector3<T>) -> Vector3<T> {
-        Self::transform_vector(Self::conjugate(self), v)
+        let u = Self::imag(self);
+        let c = v.cross(u);
+        let t = Vector3 { x: c.x + c.x, y: c.y + c.y, z: c.z + c.z };
+        let txu = t.cross(u);
+        let w = self.quaternion.w;
+        Vector3 {
+            x: R::wide_rescale(
+                R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, t.x), txu.x), v.x),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, t.y), txu.y), v.y),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, t.z), txu.z), v.z),
+            ),
+        }
     }
 
     /// `inverse_transform_vector` of the point's coordinates. Upstream: `inverse_transform_point`.
     #[inline(always)]
     fn inverse_transform_point(self: UnitQuaternion<T>, p: Point3<T>) -> Point3<T> {
-        Self::transform_point(Self::conjugate(self), p)
+        let c = Self::inverse_transform_vector(self, Vector3 { x: p.x, y: p.y, z: p.z });
+        Point3 { x: c.x, y: c.y, z: c.z }
     }
 
     // --- rotation between two vectors -------------------------------------------------------

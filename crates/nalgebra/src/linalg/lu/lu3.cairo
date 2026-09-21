@@ -527,7 +527,7 @@ mod tests {
     //! `tools/oracle` (upstream nalgebra 0.35 on the same raw inputs).
     //!
     //! Tolerance of the oracle assertions: the oracle's `tol` plus ONE relative ulp of the expected
-    //! value. `test_utils::lu_tol` states why, with the measurement.
+    //! value. `base::matrix_test_utils::oracle_tol` states why, with the measurement.
     //!
     //! Gas benchmarks of `Lu3` (`bench_lu3_<op>__<variant>`, net = raw - the `baseline` of the
     //! group), and the alternative implementations that lost, kept as evidence together with the
@@ -546,11 +546,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
-    use crate::base::vector3::Vector3;
-    use crate::linalg::lu::test_utils::{
-        abs_raw, fx, int, lu_tol, m3, max_abs_m3, max_abs_v3, max_ulp_diff_m3, max_ulp_diff_v3,
-        ulp_diff, v3, v3i,
+    use crate::base::matrix_test_utils::{
+        abs_raw, fx, int, m3, max_abs_m3, max_abs_v3, max_ulp_diff3, max_ulp_diff_v3, oracle_tol,
+        ulp_diff, v3it, v3t,
     };
+    use crate::base::vector3::Vector3;
     use crate::linalg::lu::{
         Perm3, PermTrait, oracle_lu3 as oracle, oracle_matrix3_compare as compare,
     };
@@ -569,7 +569,7 @@ mod tests {
 
     /// Its right-hand side.
     fn b_bench() -> Vector3<Fixed> {
-        v3((7757329492, -3622378744, 4147284176))
+        v3t((7757329492, -3622378744, 4147284176))
     }
 
     /// `a_bench()` already factored, so that the benchmarks of the derived operations do not pay
@@ -853,13 +853,13 @@ mod tests {
                 Lu3Trait::new(m3(a))
             };
             let got = if variant == 1 {
-                solve_recip(f, v3(b))
+                solve_recip(f, v3t(b))
             } else {
-                f.solve(v3(b))
+                f.solve(v3t(b))
             };
-            let e = v3(expected);
+            let e = v3t(expected);
             let err = max_ulp_diff_v3(got.unwrap(), e);
-            if err > lu_tol(max_abs_v3(e), tol) {
+            if err > oracle_tol(max_abs_v3(e), tol) {
                 failures += 1;
             }
             worst = core::cmp::max(worst, err);
@@ -883,8 +883,8 @@ mod tests {
                 m3(a).try_inverse()
             };
             let e = m3(expected);
-            let err = max_ulp_diff_m3(got.unwrap(), e);
-            if err > lu_tol(max_abs_m3(e), tol) {
+            let err = max_ulp_diff3(got.unwrap(), e);
+            if err > oracle_tol(max_abs_m3(e), tol) {
                 failures += 1;
             }
             worst = core::cmp::max(worst, err);
@@ -906,7 +906,7 @@ mod tests {
                 m3(a).determinant()
             };
             let err = ulp_diff(got, fx(expected));
-            if err > lu_tol(abs_raw(fx(expected)), tol) {
+            if err > oracle_tol(abs_raw(fx(expected)), tol) {
                 failures += 1;
             }
             worst = core::cmp::max(worst, err);
@@ -939,7 +939,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _, _) = *case;
             let f = Lu3Trait::new(m3(a));
-            worst = core::cmp::max(worst, max_ulp_diff_m3(f.permute_rows(m3(a)), f.l() * f.u()));
+            worst = core::cmp::max(worst, max_ulp_diff3(f.permute_rows(m3(a)), f.l() * f.u()));
         }
         assert!(worst == 16, "reconstruction error {worst}");
     }
@@ -985,7 +985,7 @@ mod tests {
                 ],
             ),
         );
-        assert!(f.permute(v3i((1, 2, 3))) == v3i((3, 1, 2)));
+        assert!(f.permute(v3it((1, 2, 3))) == v3it((3, 1, 2)));
         // the identity factors without a single swap
         let id = Lu3Trait::new(Matrix3Trait::<Fixed>::identity());
         assert!(id.p() == PermTrait::identity3());
@@ -1016,10 +1016,10 @@ mod tests {
         let mut worst = 0;
         while let Some(case) = cases.pop_front() {
             let (a, b, expected, tol) = *case;
-            let x = Lu3Trait::new(m3(a)).solve(v3(b)).unwrap();
-            let e = v3(expected);
+            let x = Lu3Trait::new(m3(a)).solve(v3t(b)).unwrap();
+            let e = v3t(expected);
             let err = max_ulp_diff_v3(x, e);
-            assert!(err <= lu_tol(max_abs_v3(e), tol), "solve error {err}");
+            assert!(err <= oracle_tol(max_abs_v3(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 832);
@@ -1033,10 +1033,10 @@ mod tests {
         let mut worst = 0;
         while let Some(case) = cases.pop_front() {
             let (a, b, expected, tol) = *case;
-            let x = Lu3Trait::new(m3(a)).solve(v3(b)).unwrap();
-            let e = v3(expected);
+            let x = Lu3Trait::new(m3(a)).solve(v3t(b)).unwrap();
+            let e = v3t(expected);
             let err = max_ulp_diff_v3(x, e);
-            assert!(err <= lu_tol(max_abs_v3(e), tol), "solve error {err}");
+            assert!(err <= oracle_tol(max_abs_v3(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 17355912);
@@ -1050,8 +1050,8 @@ mod tests {
             let (a, expected, tol) = *case;
             let inv = Lu3Trait::new(m3(a)).try_inverse().unwrap();
             let e = m3(expected);
-            let err = max_ulp_diff_m3(inv, e);
-            assert!(err <= lu_tol(max_abs_m3(e), tol), "inverse error {err}");
+            let err = max_ulp_diff3(inv, e);
+            assert!(err <= oracle_tol(max_abs_m3(e), tol), "inverse error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 1639);
@@ -1081,7 +1081,7 @@ mod tests {
             assert!(f.try_inverse().unwrap() == try_inverse_solve_columns(f).unwrap());
             worst =
                 core::cmp::max(
-                    worst, max_ulp_diff_m3(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
+                    worst, max_ulp_diff3(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
@@ -1103,7 +1103,7 @@ mod tests {
             let (a, expected, tol) = *case;
             let det = Lu3Trait::new(m3(a)).determinant();
             let err = ulp_diff(det, fx(expected));
-            assert!(err <= lu_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
+            assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 466349);
@@ -1112,7 +1112,7 @@ mod tests {
     #[test]
     fn test_determinant_exact_and_sign() {
         assert!(Lu3Trait::new(Matrix3Trait::<Fixed>::identity()).determinant() == int(1));
-        let d = Matrix3Trait::from_diagonal(v3i((2, -4, 3)));
+        let d = Matrix3Trait::from_diagonal(v3it((2, -4, 3)));
         assert!(Lu3Trait::new(d).determinant() == int(-24));
         // Swapping two rows flips the sign exactly (the factorisation is exact here,
         // and the sign is applied to the first pivot before any rounding).
@@ -1274,7 +1274,7 @@ mod tests {
     fn bench_lu3_permute__baseline() {
         let _f = black_box(f_bench());
         let _b = black_box(b_bench());
-        let e = black_box(v3((-3622378744, 4147284176, 7757329492)));
+        let e = black_box(v3t((-3622378744, 4147284176, 7757329492)));
         assert!(e == e);
     }
 
@@ -1283,7 +1283,7 @@ mod tests {
     fn bench_lu3_permute__transpositions() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(v3((-3622378744, 4147284176, 7757329492)));
+        let e = black_box(v3t((-3622378744, 4147284176, 7757329492)));
         assert!(f.permute(b) == e);
     }
 
@@ -1340,7 +1340,7 @@ mod tests {
     fn bench_lu3_solve__baseline() {
         let _f = black_box(f_bench());
         let _b = black_box(b_bench());
-        let e = black_box(Some(v3((-1035334030, 24604680, 6703439320))));
+        let e = black_box(Some(v3t((-1035334030, 24604680, 6703439320))));
         assert!(e == e);
     }
 
@@ -1349,7 +1349,7 @@ mod tests {
     fn bench_lu3_solve__substitution() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v3((-1035334030, 24604680, 6703439320))));
+        let e = black_box(Some(v3t((-1035334030, 24604680, 6703439320))));
         assert!(f.solve(b) == e);
     }
 
@@ -1358,7 +1358,7 @@ mod tests {
     fn bench_lu3_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v3((-1035334029, 24604681, 6703439319))));
+        let e = black_box(Some(v3t((-1035334029, 24604681, 6703439319))));
         assert!(solve_recip(f, b) == e);
     }
 

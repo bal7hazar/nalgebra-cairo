@@ -643,7 +643,7 @@ mod tests {
     use nalgebra_testing::black_box;
     use simba::fixed::Fixed;
     use simba::scalar::Real;
-    use crate::base::matrix_test_utils::{fx, int, m3, m3i, max_ulp_diff3, s3, ulp_diff, v3, v3i};
+    use crate::base::matrix_test_utils::{fx, int, m3, m3i, max_ulp_diff3, s3, ulp_diff, v3i, v3t};
     use crate::base::sym_matrix3::SymMatrix3Trait;
     use crate::base::{oracle_matrix3, oracle_matrix3_inverse};
     use super::{Matrix3, Matrix3Trait};
@@ -872,8 +872,8 @@ mod tests {
         assert!(a.component_mul(b) == m3i([[2, -4, 6], [-12, 15, -18], [-7, 8, 0]]));
         // 0.5 ulp floors to 0, -0.5 ulp to -1 ulp, 1.5 ulp to 1 ulp, -1.5 ulp to -2 ulp.
         let h = Matrix3Trait::from_diagonal_element(Real::<Fixed>::HALF);
-        let e = Matrix3Trait::from_diagonal(v3((1, -1, 3)));
-        assert!(e.component_mul(h) == Matrix3Trait::from_diagonal(v3((0, -1, 1))));
+        let e = Matrix3Trait::from_diagonal(v3t((1, -1, 3)));
+        assert!(e.component_mul(h) == Matrix3Trait::from_diagonal(v3t((0, -1, 1))));
     }
 
     #[test]
@@ -909,8 +909,8 @@ mod tests {
         let mut cases = oracle_matrix3::matrix3_mul_vec_cases();
         while let Some(case) = cases.pop_front() {
             let (a, v, expected, _) = *case;
-            assert!(m3(a).mul_vec(v3(v)) == v3(expected));
-            assert!(m3(a).transpose().tr_mul_vec(v3(v)) == v3(expected));
+            assert!(m3(a).mul_vec(v3t(v)) == v3t(expected));
+            assert!(m3(a).transpose().tr_mul_vec(v3t(v)) == v3t(expected));
         }
     }
 
@@ -936,7 +936,7 @@ mod tests {
         let mut cases = oracle_matrix3::matrix3_outer_cases();
         while let Some(case) = cases.pop_front() {
             let (u, v, expected, _) = *case;
-            assert!(Matrix3Trait::from_outer(v3(u), v3(v)) == m3(expected));
+            assert!(Matrix3Trait::from_outer(v3t(u), v3t(v)) == m3(expected));
         }
     }
 
@@ -945,7 +945,7 @@ mod tests {
         let mut cases = oracle_matrix3::matrix3_cross_matrix_cases();
         while let Some(case) = cases.pop_front() {
             let (v, expected, _) = *case;
-            assert!(Matrix3Trait::cross_matrix(v3(v)) == m3(expected));
+            assert!(Matrix3Trait::cross_matrix(v3t(v)) == m3(expected));
         }
     }
 
@@ -954,9 +954,9 @@ mod tests {
         let mut cases = oracle_matrix3::matrix3_mul_vec_cases();
         while let Some(case) = cases.pop_front() {
             let (a, v, _, _) = *case;
-            let cm = Matrix3Trait::cross_matrix(v3(v));
-            assert!(Matrix3Trait::cross_matrix_mul(v3(v), m3(a)) == cm * m3(a));
-            assert!(m3(a).mul_cross_matrix(v3(v)) == m3(a) * cm);
+            let cm = Matrix3Trait::cross_matrix(v3t(v));
+            assert!(Matrix3Trait::cross_matrix_mul(v3t(v), m3(a)) == cm * m3(a));
+            assert!(m3(a).mul_cross_matrix(v3t(v)) == m3(a) * cm);
         }
         // [x]× * I = [x]× = I * [x]×
         let x = v3i(1, 2, 3);
@@ -1056,7 +1056,7 @@ mod tests {
         assert!(inv == m3i([[-24, 18, 5], [20, -15, -4], [-5, 4, 1]]));
         assert!(m * inv == Matrix3Trait::identity());
         let d = Matrix3Trait::from_diagonal(v3i(2, -4, 8)).try_inverse().unwrap();
-        assert!(d == Matrix3Trait::from_diagonal(v3((0x80000000, -0x40000000, 0x20000000))));
+        assert!(d == Matrix3Trait::from_diagonal(v3t((0x80000000, -0x40000000, 0x20000000))));
         assert!(
             Matrix3Trait::<Fixed>::identity().try_inverse().unwrap() == Matrix3Trait::identity(),
         );
@@ -1228,7 +1228,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_diagonal__baseline() {
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(m3([[6422282562, 0, 0], [0, 6202159288, 0], [0, 0, 2324644860]]));
         assert!(e == e);
     }
@@ -1236,7 +1236,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_diagonal__struct() {
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(m3([[6422282562, 0, 0], [0, 6202159288, 0], [0, 0, 2324644860]]));
         assert!(Matrix3Trait::from_diagonal(v) == e);
     }
@@ -1260,9 +1260,9 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_columns__baseline() {
-        let _c1 = black_box(v3((-8333418062, -6195210852, 2873393302)));
-        let _c2 = black_box(v3((-3562322882, 8037214559, -6638673079)));
-        let _c3 = black_box(v3((-7141719772, 5406550886, 4752733287)));
+        let _c1 = black_box(v3t((-8333418062, -6195210852, 2873393302)));
+        let _c2 = black_box(v3t((-3562322882, 8037214559, -6638673079)));
+        let _c3 = black_box(v3t((-7141719772, 5406550886, 4752733287)));
         let e = black_box(
             m3(
                 [
@@ -1277,9 +1277,9 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_columns__struct() {
-        let c1 = black_box(v3((-8333418062, -6195210852, 2873393302)));
-        let c2 = black_box(v3((-3562322882, 8037214559, -6638673079)));
-        let c3 = black_box(v3((-7141719772, 5406550886, 4752733287)));
+        let c1 = black_box(v3t((-8333418062, -6195210852, 2873393302)));
+        let c2 = black_box(v3t((-3562322882, 8037214559, -6638673079)));
+        let c3 = black_box(v3t((-7141719772, 5406550886, 4752733287)));
         let e = black_box(
             m3(
                 [
@@ -1294,9 +1294,9 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_rows__baseline() {
-        let _r1 = black_box(v3((-8333418062, -3562322882, -7141719772)));
-        let _r2 = black_box(v3((-6195210852, 8037214559, 5406550886)));
-        let _r3 = black_box(v3((2873393302, -6638673079, 4752733287)));
+        let _r1 = black_box(v3t((-8333418062, -3562322882, -7141719772)));
+        let _r2 = black_box(v3t((-6195210852, 8037214559, 5406550886)));
+        let _r3 = black_box(v3t((2873393302, -6638673079, 4752733287)));
         let e = black_box(
             m3(
                 [
@@ -1311,9 +1311,9 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_rows__struct() {
-        let r1 = black_box(v3((-8333418062, -3562322882, -7141719772)));
-        let r2 = black_box(v3((-6195210852, 8037214559, 5406550886)));
-        let r3 = black_box(v3((2873393302, -6638673079, 4752733287)));
+        let r1 = black_box(v3t((-8333418062, -3562322882, -7141719772)));
+        let r2 = black_box(v3t((-6195210852, 8037214559, 5406550886)));
+        let r3 = black_box(v3t((2873393302, -6638673079, 4752733287)));
         let e = black_box(
             m3(
                 [
@@ -1328,8 +1328,8 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_outer__baseline() {
-        let _u = black_box(v3((-2161644290, 7569327059, 4908735083)));
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _u = black_box(v3t((-2161644290, 7569327059, 4908735083)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             m3(
                 [
@@ -1344,8 +1344,8 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_from_outer__products() {
-        let u = black_box(v3((-2161644290, 7569327059, 4908735083)));
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let u = black_box(v3t((-2161644290, 7569327059, 4908735083)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             m3(
                 [
@@ -1360,7 +1360,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_cross_matrix__baseline() {
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             m3(
                 [
@@ -1375,7 +1375,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_cross_matrix__struct() {
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             m3(
                 [
@@ -1390,7 +1390,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_cross_matrix_mul__baseline() {
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let _a = black_box(
             m3(
                 [
@@ -1413,7 +1413,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_cross_matrix_mul__structured() {
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let a = black_box(
             m3(
                 [
@@ -1436,7 +1436,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_matrix3_cross_matrix_mul__materialised() {
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let a = black_box(
             m3(
                 [
@@ -1467,7 +1467,7 @@ mod tests {
                 ],
             ),
         );
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             m3(
                 [
@@ -1491,7 +1491,7 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             m3(
                 [
@@ -1515,7 +1515,7 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
         let e = black_box(
             m3(
                 [
@@ -1539,7 +1539,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v3((-3562322882, 8037214559, -6638673079)));
+        let e = black_box(v3t((-3562322882, 8037214559, -6638673079)));
         assert!(e == e);
     }
 
@@ -1554,7 +1554,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v3((-3562322882, 8037214559, -6638673079)));
+        let e = black_box(v3t((-3562322882, 8037214559, -6638673079)));
         assert!(a.column2() == e);
     }
 
@@ -1569,7 +1569,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v3((-6195210852, 8037214559, 5406550886)));
+        let e = black_box(v3t((-6195210852, 8037214559, 5406550886)));
         assert!(e == e);
     }
 
@@ -1584,7 +1584,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v3((-6195210852, 8037214559, 5406550886)));
+        let e = black_box(v3t((-6195210852, 8037214559, 5406550886)));
         assert!(a.row2() == e);
     }
 
@@ -1599,7 +1599,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v3((-8333418062, 8037214559, 4752733287)));
+        let e = black_box(v3t((-8333418062, 8037214559, 4752733287)));
         assert!(e == e);
     }
 
@@ -1614,7 +1614,7 @@ mod tests {
                 ],
             ),
         );
-        let e = black_box(v3((-8333418062, 8037214559, 4752733287)));
+        let e = black_box(v3t((-8333418062, 8037214559, 4752733287)));
         assert!(a.diagonal() == e);
     }
 
@@ -2083,8 +2083,8 @@ mod tests {
                 ],
             ),
         );
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((-21470622535, 5268724875, -2717586978)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((-21470622535, 5268724875, -2717586978)));
         assert!(e == e);
     }
 
@@ -2099,8 +2099,8 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((-21470622535, 5268724875, -2717586978)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((-21470622535, 5268724875, -2717586978)));
         assert!(a.mul_vec(v) == e);
     }
 
@@ -2115,8 +2115,8 @@ mod tests {
                 ],
             ),
         );
-        let _v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((-19851986100, 2686233155, -299288788)));
+        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((-19851986100, 2686233155, -299288788)));
         assert!(e == e);
     }
 
@@ -2131,8 +2131,8 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((-19851986100, 2686233155, -299288788)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((-19851986100, 2686233155, -299288788)));
         assert!(a.tr_mul_vec(v) == e);
     }
 
@@ -2147,8 +2147,8 @@ mod tests {
                 ],
             ),
         );
-        let v = black_box(v3((6422282562, 6202159288, 2324644860)));
-        let e = black_box(v3((-19851986100, 2686233155, -299288788)));
+        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
+        let e = black_box(v3t((-19851986100, 2686233155, -299288788)));
         assert!(a.transpose().mul_vec(v) == e);
     }
 

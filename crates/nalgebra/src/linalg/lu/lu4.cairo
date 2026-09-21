@@ -868,7 +868,7 @@ mod tests {
     //! `tools/oracle` (upstream nalgebra 0.35 on the same raw inputs).
     //!
     //! Tolerance of the oracle assertions: the oracle's `tol` plus ONE relative ulp of the expected
-    //! value. `test_utils::lu_tol` states why, with the measurement.
+    //! value. `base::matrix_test_utils::oracle_tol` states why, with the measurement.
     //!
     //! Gas benchmarks of `Lu4` (`bench_lu4_<op>__<variant>`, net = raw - the `baseline` of the
     //! group), and the alternative implementations that lost, kept as evidence together with the
@@ -887,11 +887,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix4::{Matrix4, Matrix4Trait};
-    use crate::base::vector4::Vector4;
-    use crate::linalg::lu::test_utils::{
-        abs_raw, fx, int, lu_tol, m4, max_abs_m4, max_abs_v4, max_ulp_diff_m4, max_ulp_diff_v4,
-        ulp_diff, v4, v4i,
+    use crate::base::matrix_test_utils::{
+        abs_raw, fx, int, m4, max_abs_m4, max_abs_v4, max_ulp_diff4, max_ulp_diff_v4, oracle_tol,
+        ulp_diff, v4it, v4t,
     };
+    use crate::base::vector4::Vector4;
     use crate::linalg::lu::{Perm4, PermTrait, oracle_lu4 as oracle};
     use super::{Lu4, Lu4Trait, Matrix4LuTrait};
 
@@ -910,7 +910,7 @@ mod tests {
 
     /// Its right-hand side.
     fn b_bench() -> Vector4<Fixed> {
-        v4((7470372587, 3697509183, 6158142748, 5116133854))
+        v4t((7470372587, 3697509183, 6158142748, 5116133854))
     }
 
     /// `a_bench()` already factored, so that the benchmarks of the derived operations do not pay
@@ -1403,13 +1403,13 @@ mod tests {
                 Lu4Trait::new(m4(a))
             };
             let got = if variant == 1 {
-                solve_recip(f, v4(b))
+                solve_recip(f, v4t(b))
             } else {
-                f.solve(v4(b))
+                f.solve(v4t(b))
             };
-            let e = v4(expected);
+            let e = v4t(expected);
             let err = max_ulp_diff_v4(got.unwrap(), e);
-            if err > lu_tol(max_abs_v4(e), tol) {
+            if err > oracle_tol(max_abs_v4(e), tol) {
                 failures += 1;
             }
             worst = core::cmp::max(worst, err);
@@ -1444,7 +1444,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _, _) = *case;
             let f = Lu4Trait::new(m4(a));
-            worst = core::cmp::max(worst, max_ulp_diff_m4(f.permute_rows(m4(a)), f.l() * f.u()));
+            worst = core::cmp::max(worst, max_ulp_diff4(f.permute_rows(m4(a)), f.l() * f.u()));
         }
         assert!(worst == 44, "reconstruction error {worst}");
     }
@@ -1493,7 +1493,7 @@ mod tests {
                 ],
             ),
         );
-        assert!(f.permute(v4i((1, 2, 3, 4))) == v4i((3, 4, 1, 2)));
+        assert!(f.permute(v4it((1, 2, 3, 4))) == v4it((3, 4, 1, 2)));
         // the identity factors without a single swap
         let id = Lu4Trait::new(Matrix4Trait::<Fixed>::identity());
         assert!(id.p() == PermTrait::identity4());
@@ -1524,10 +1524,10 @@ mod tests {
         let mut worst = 0;
         while let Some(case) = cases.pop_front() {
             let (a, b, expected, tol) = *case;
-            let x = Lu4Trait::new(m4(a)).solve(v4(b)).unwrap();
-            let e = v4(expected);
+            let x = Lu4Trait::new(m4(a)).solve(v4t(b)).unwrap();
+            let e = v4t(expected);
             let err = max_ulp_diff_v4(x, e);
-            assert!(err <= lu_tol(max_abs_v4(e), tol), "solve error {err}");
+            assert!(err <= oracle_tol(max_abs_v4(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 1451);
@@ -1541,8 +1541,8 @@ mod tests {
             let (a, expected, tol) = *case;
             let inv = Lu4Trait::new(m4(a)).try_inverse().unwrap();
             let e = m4(expected);
-            let err = max_ulp_diff_m4(inv, e);
-            assert!(err <= lu_tol(max_abs_m4(e), tol), "inverse error {err}");
+            let err = max_ulp_diff4(inv, e);
+            assert!(err <= oracle_tol(max_abs_m4(e), tol), "inverse error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 2618);
@@ -1572,7 +1572,7 @@ mod tests {
             assert!(f.try_inverse().unwrap() == try_inverse_solve_columns(f).unwrap());
             worst =
                 core::cmp::max(
-                    worst, max_ulp_diff_m4(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
+                    worst, max_ulp_diff4(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
@@ -1594,7 +1594,7 @@ mod tests {
             let (a, expected, tol) = *case;
             let det = Lu4Trait::new(m4(a)).determinant();
             let err = ulp_diff(det, fx(expected));
-            assert!(err <= lu_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
+            assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
         assert!(worst == 197808);
@@ -1603,7 +1603,7 @@ mod tests {
     #[test]
     fn test_determinant_exact_and_sign() {
         assert!(Lu4Trait::new(Matrix4Trait::<Fixed>::identity()).determinant() == int(1));
-        let d = Matrix4Trait::from_diagonal(v4i((2, -4, 3, -1)));
+        let d = Matrix4Trait::from_diagonal(v4it((2, -4, 3, -1)));
         assert!(Lu4Trait::new(d).determinant() == int(24));
         // Swapping two rows flips the sign exactly (the factorisation is exact here,
         // and the sign is applied to the first pivot before any rounding).
@@ -1769,7 +1769,7 @@ mod tests {
     fn bench_lu4_permute__baseline() {
         let _f = black_box(f_bench());
         let _b = black_box(b_bench());
-        let e = black_box(v4((3697509183, 7470372587, 5116133854, 6158142748)));
+        let e = black_box(v4t((3697509183, 7470372587, 5116133854, 6158142748)));
         assert!(e == e);
     }
 
@@ -1778,7 +1778,7 @@ mod tests {
     fn bench_lu4_permute__transpositions() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(v4((3697509183, 7470372587, 5116133854, 6158142748)));
+        let e = black_box(v4t((3697509183, 7470372587, 5116133854, 6158142748)));
         assert!(f.permute(b) == e);
     }
 
@@ -1839,7 +1839,7 @@ mod tests {
     fn bench_lu4_solve__baseline() {
         let _f = black_box(f_bench());
         let _b = black_box(b_bench());
-        let e = black_box(Some(v4((-6526739453, -3077920152, -5908376560, -6714764226))));
+        let e = black_box(Some(v4t((-6526739453, -3077920152, -5908376560, -6714764226))));
         assert!(e == e);
     }
 
@@ -1848,7 +1848,7 @@ mod tests {
     fn bench_lu4_solve__substitution() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v4((-6526739453, -3077920152, -5908376560, -6714764226))));
+        let e = black_box(Some(v4t((-6526739453, -3077920152, -5908376560, -6714764226))));
         assert!(f.solve(b) == e);
     }
 
@@ -1857,7 +1857,7 @@ mod tests {
     fn bench_lu4_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v4((-6526739454, -3077920151, -5908376561, -6714764228))));
+        let e = black_box(Some(v4t((-6526739454, -3077920151, -5908376561, -6714764228))));
         assert!(solve_recip(f, b) == e);
     }
 

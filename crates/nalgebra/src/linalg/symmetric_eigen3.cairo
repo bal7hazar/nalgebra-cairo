@@ -460,11 +460,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
+    use crate::base::matrix_test_utils::{
+        amax_s3, fx, int, m3, max_ulp_diff_s3, max_ulp_diff_v3, s3i, s3r, ulp_diff, v3i, v3t,
+    };
     use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
     use crate::base::vector3::{Vector3, Vector3Trait};
-    use crate::linalg::eigen_test_utils::{
-        amax_s3, fx, int, m3, max_ulp_diff_s3, max_ulp_diff_v3, s3, s3i, ulp_diff, v3, v3i,
-    };
     use crate::linalg::oracle_symmetric_eigen;
     use super::{Jacobi3, Jacobi3Impl, Jacobi3Trait, SymmetricEigen3, SymmetricEigen3Trait};
 
@@ -533,10 +533,10 @@ mod tests {
 
     #[test]
     fn test_new_diagonal_is_exact() {
-        let e = SymmetricEigen3Trait::new(s3i(-2, 0, 0, 1, 0, 7));
+        let e = SymmetricEigen3Trait::new(s3i((-2, 0, 0, 1, 0, 7)));
         assert!(e.eigenvalues == v3i(-2, 1, 7));
         assert!(e.eigenvectors == Matrix3Trait::identity());
-        assert!(e.recompose() == s3i(-2, 0, 0, 1, 0, 7));
+        assert!(e.recompose() == s3i((-2, 0, 0, 1, 0, 7)));
     }
 
     #[test]
@@ -547,7 +547,7 @@ mod tests {
             .span();
         while let Some(case) = cases.pop_front() {
             let (a, b, c) = *case;
-            let s = s3i(a, 0, 0, b, 0, c);
+            let s = s3i((a, 0, 0, b, 0, c));
             let e = SymmetricEigen3Trait::new(s);
             assert!(e.eigenvalues == v3i(-2, 1, 7));
             assert!(e.eigenvectors.determinant() == Real::ONE);
@@ -558,12 +558,12 @@ mod tests {
 
     #[test]
     fn test_new_isotropic_is_exact() {
-        let e = SymmetricEigen3Trait::new(s3i(3, 0, 0, 3, 0, 3));
+        let e = SymmetricEigen3Trait::new(s3i((3, 0, 0, 3, 0, 3)));
         assert!(e.eigenvalues == v3i(3, 3, 3));
         assert!(e.eigenvectors == Matrix3Trait::identity());
-        assert!(e.recompose() == s3i(3, 0, 0, 3, 0, 3));
+        assert!(e.recompose() == s3i((3, 0, 0, 3, 0, 3)));
         // Zero is isotropic too, and must not divide by zero.
-        let e = SymmetricEigen3Trait::new(s3i(0, 0, 0, 0, 0, 0));
+        let e = SymmetricEigen3Trait::new(s3i((0, 0, 0, 0, 0, 0)));
         assert!(e.eigenvalues == v3i(0, 0, 0));
         assert!(e.eigenvectors == Matrix3Trait::identity());
     }
@@ -571,7 +571,7 @@ mod tests {
     #[test]
     fn test_new_repeated_eigenvalues_is_exact() {
         // diag(5, 3, 3): the (2, 3) eigenspace is a plane, any orthonormal basis of it is valid.
-        let s = s3i(5, 0, 0, 3, 0, 3);
+        let s = s3i((5, 0, 0, 3, 0, 3));
         let e = SymmetricEigen3Trait::new(s);
         assert!(e.eigenvalues == v3i(3, 3, 5));
         assert!(e.eigenvectors.determinant() == Real::ONE);
@@ -582,7 +582,7 @@ mod tests {
     #[test]
     fn test_new_rank_one_matrix() {
         // The all-ones matrix: eigenvalues 0, 0, 3 with (1, 1, 1)/sqrt(3) for 3.
-        let s = s3i(1, 1, 1, 1, 1, 1);
+        let s = s3i((1, 1, 1, 1, 1, 1));
         let e = SymmetricEigen3Trait::new(s);
         assert!(max_ulp_diff_v3(e.eigenvalues, v3i(0, 0, 3)) <= 2);
         let third = Real::<Fixed>::from_int(3).inv_sqrt();
@@ -595,7 +595,7 @@ mod tests {
     #[test]
     fn test_new_block_diagonal_case_is_exact() {
         // [[5, 2, 0], [2, 2, 0], [0, 0, 4]]: the 2x2 block has eigenvalues 1 and 6.
-        let s = s3i(5, 2, 0, 2, 0, 4);
+        let s = s3i((5, 2, 0, 2, 0, 4));
         let e = SymmetricEigen3Trait::new(s);
         assert!(e.eigenvalues == v3i(1, 4, 6));
         // The eigenvectors of the block are irrational, so `det` is only +1 up to their rounding.
@@ -627,7 +627,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s3(a);
+            let s = s3r(a);
             assert!(
                 SymmetricEigen3Trait::eigenvalues(s) == SymmetricEigen3Trait::new(s).eigenvalues,
             );
@@ -642,7 +642,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let j = Jacobi3Impl::<Fixed>::start(s3(a)).sweep().sweep().sweep().sweep();
+            let j = Jacobi3Impl::<Fixed>::start(s3r(a)).sweep().sweep().sweep().sweep();
             assert!(off_diagonal_error(j) == 0, "four sweeps left a non-zero off-diagonal entry");
         }
     }
@@ -654,8 +654,8 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let j = Jacobi3Impl::<Fixed>::start(s3(a)).sweep().sweep().sweep();
-            worst = core::cmp::max(worst, off_diagonal_error(j) / amax_s3(s3(a)));
+            let j = Jacobi3Impl::<Fixed>::start(s3r(a)).sweep().sweep().sweep();
+            worst = core::cmp::max(worst, off_diagonal_error(j) / amax_s3(s3r(a)));
         }
         assert!(worst > 0, "three sweeps already converge: the fourth could be dropped");
     }
@@ -666,7 +666,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s3(a);
+            let s = s3r(a);
             let four = SymmetricEigen3Trait::new(s);
             assert!(eigen_sweeps5(s) == four, "a fifth sweep changed the result");
             assert!(eigen_sweeps6(s) == four, "a sixth sweep changed the result");
@@ -681,7 +681,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s3(a);
+            let s = s3r(a);
             let scale = amax_s3(s);
             let e3 = max_ulp_diff_s3(eigen_sweeps3(s).recompose(), s) / scale;
             let e4 = max_ulp_diff_s3(SymmetricEigen3Trait::new(s).recompose(), s) / scale;
@@ -699,7 +699,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s3(a);
+            let s = s3r(a);
             let j = Jacobi3Impl::<Fixed>::start(s).sweep().sweep().sweep().sweep();
             with = core::cmp::max(with, orthonormality_error(j.finish().eigenvectors));
             without =
@@ -719,8 +719,8 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen3Trait::new(s3(a)).eigenvalues;
-            let e = max_ulp_diff_v3(got, v3(expected));
+            let got = SymmetricEigen3Trait::new(s3r(a)).eigenvalues;
+            let e = max_ulp_diff_v3(got, v3t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
         }
@@ -734,8 +734,8 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_spd_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen3Trait::new(s3(a)).eigenvalues;
-            let e = max_ulp_diff_v3(got, v3(expected));
+            let got = SymmetricEigen3Trait::new(s3r(a)).eigenvalues;
+            let e = max_ulp_diff_v3(got, v3t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
         }
@@ -749,7 +749,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s3(a);
+            let s = s3r(a);
             let e = SymmetricEigen3Trait::new(s);
             assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
             let orth = orthonormality_error(e.eigenvectors);
@@ -769,7 +769,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_spd_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s3(a);
+            let s = s3r(a);
             let e = SymmetricEigen3Trait::new(s);
             assert!(max_ulp_diff_s3(e.recompose(), s) / amax_s3(s) <= 32);
             assert!(orthonormality_error(e.eigenvectors) <= 32);
@@ -782,7 +782,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            assert!(SymmetricEigen3Trait::from_matrix(m3(a)) == SymmetricEigen3Trait::new(s3(a)));
+            assert!(SymmetricEigen3Trait::from_matrix(m3(a)) == SymmetricEigen3Trait::new(s3r(a)));
         }
     }
 

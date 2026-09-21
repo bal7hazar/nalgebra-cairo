@@ -355,12 +355,12 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
+    use crate::base::matrix_test_utils::{
+        amax_m2, excess, int, m2, max_abs_v2, max_ulp_diff2, max_ulp_diff_v2, oracle_tol,
+        orthonormality_error_m2, v2t,
+    };
     use crate::base::sym_matrix2::SymMatrix2Trait;
     use crate::base::vector2::{Vector2, Vector2Trait};
-    use crate::linalg::decomp_test_utils::{
-        amax_m2, decomp_tol, excess, int, m2, max_abs_v2, max_ulp_diff_m2, max_ulp_diff_v2,
-        orthonormality_error_m2, v2,
-    };
     use crate::linalg::oracle_svd;
     use crate::linalg::symmetric_eigen2::SymmetricEigen2Trait;
     use super::{Matrix2SvdTrait, Svd2, Svd2Trait};
@@ -449,7 +449,7 @@ mod tests {
         // `V` is irrational here (the eigen direction is `(-36, 12)`), so `U` is only orthonormal
         // to the rounding of one normalisation.
         assert!(orthonormality_error_m2(f.u) <= 4);
-        assert!(max_ulp_diff_m2(f.recompose(), a_rank1()) <= 16);
+        assert!(max_ulp_diff2(f.recompose(), a_rank1()) <= 16);
         // The zero matrix: every singular value vanishes and nothing divides by zero.
         let z = Svd2Trait::new(Matrix2Trait::<Fixed>::zeros());
         assert!(z.singular_values == Vector2 { x: int(0), y: int(0) });
@@ -476,9 +476,9 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
             let got = Svd2Trait::new(m2(a)).singular_values;
-            let e = v2(expected);
+            let e = v2t(expected);
             let err = max_ulp_diff_v2(got, e);
-            worst_ex = core::cmp::max(worst_ex, excess(err, decomp_tol(max_abs_v2(e), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v2(e), tol)));
             assert!(got.x >= got.y && got.y >= Real::ZERO, "not sorted descending");
             worst = core::cmp::max(worst, err);
         }
@@ -492,7 +492,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let f = Svd2Trait::new(m2(a));
-            let rec = max_ulp_diff_m2(f.recompose(), m2(a)) / amax_m2(m2(a));
+            let rec = max_ulp_diff2(f.recompose(), m2(a)) / amax_m2(m2(a));
             let orth = core::cmp::max(orthonormality_error_m2(f.u), orthonormality_error_m2(f.v_t));
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
@@ -507,7 +507,7 @@ mod tests {
         let (mut worst_norm, mut worst_sqrt) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, expected, _) = *case;
-            let e = v2(expected);
+            let e = v2t(expected);
             worst_norm =
                 core::cmp::max(
                     worst_norm, max_ulp_diff_v2(Svd2Trait::new(m2(a)).singular_values, e),
@@ -540,7 +540,7 @@ mod tests {
         // On a non-singular matrix the least-squares solution IS the solution.
         let mut cases = oracle_svd::svd2_singular_values_cases();
         let mut worst = 0;
-        let b = v2((-5886581674, -6536196560));
+        let b = v2t((-5886581674, -6536196560));
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let x = Svd2Trait::new(m2(a)).solve(b, Real::EPSILON).unwrap();
@@ -559,7 +559,7 @@ mod tests {
             let (a, _, _) = *case;
             let p = Svd2Trait::new(m2(a)).pseudo_inverse(Real::EPSILON).unwrap();
             let e = m2(a).try_inverse().unwrap();
-            worst = core::cmp::max(worst, max_ulp_diff_m2(p, e));
+            worst = core::cmp::max(worst, max_ulp_diff2(p, e));
         }
         assert!(worst == 1941, "regressed: {worst}");
     }
@@ -568,7 +568,7 @@ mod tests {
     fn test_pseudo_inverse_of_a_rank_one_matrix() {
         // The pseudo-inverse drops the null direction: `A A⁺ A = A`.
         let p = Svd2Trait::new(a_rank1()).pseudo_inverse(Real::EPSILON).unwrap();
-        assert!(max_ulp_diff_m2(a_rank1() * p * a_rank1(), a_rank1()) <= 64);
+        assert!(max_ulp_diff2(a_rank1() * p * a_rank1(), a_rank1()) <= 64);
         assert!(Svd2Trait::new(a_rank1()).pseudo_inverse(Real::NEG_ONE).is_none());
         assert!(
             Svd2Trait::new(a_rank1())
@@ -588,8 +588,7 @@ mod tests {
             // of the singular values.
             assert!(!p.determinant().is_negative(), "P is not positive semi-definite");
             worst_orth = core::cmp::max(worst_orth, orthonormality_error_m2(r));
-            worst =
-                core::cmp::max(worst, max_ulp_diff_m2(r * p.to_matrix(), m2(a)) / amax_m2(m2(a)));
+            worst = core::cmp::max(worst, max_ulp_diff2(r * p.to_matrix(), m2(a)) / amax_m2(m2(a)));
         }
         // Measured: `|M - R P| <= worst ulp * max(1, max |m_ij|)`, `|RᵀR - I| <= worst_orth ulp`.
         assert!((worst, worst_orth) == (7, 25), "regressed: {worst} {worst_orth}");
@@ -600,8 +599,8 @@ mod tests {
         // `M = R` exactly: the stretch is the identity.
         let r = Matrix2Trait::new(int(0), int(-1), int(1), int(0));
         let (q, p) = r.polar_decomposition();
-        assert!(max_ulp_diff_m2(q, r) <= 2);
-        assert!(max_ulp_diff_m2(p.to_matrix(), Matrix2Trait::identity()) <= 2);
+        assert!(max_ulp_diff2(q, r) <= 2);
+        assert!(max_ulp_diff2(p.to_matrix(), Matrix2Trait::identity()) <= 2);
     }
 
     #[test]

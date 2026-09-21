@@ -23,112 +23,29 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix3::Matrix3Trait;
+use crate::base::matrix_test_utils::{
+    ONE_RAW, fx, int, m3, max_ulp_diff_q, r3, r3i, u3t, uqt, v3i, v3t,
+};
 use crate::base::point3::Point3;
-use crate::base::unit::{Unit, Unit3Trait};
-use crate::base::vector3::{Vector3, Vector3Trait};
-use crate::geometry::quaternion::{Quaternion, QuaternionTrait};
-use crate::geometry::rotation3::{Rotation3, Rotation3Trait};
+use crate::base::unit::Unit3Trait;
+use crate::base::vector3::Vector3Trait;
+use crate::geometry::quaternion::QuaternionTrait;
+use crate::geometry::rotation3::Rotation3Trait;
 use super::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait, oracle};
 
-const ONE_RAW: i64 = 0x100000000;
 /// 1/2 in raw units.
 const HALF_RAW: i64 = 0x80000000;
 
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-fn v3(t: (i64, i64, i64)) -> Vector3<Fixed> {
-    let (x, y, z) = t;
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn v3i(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: int(x), y: int(y), z: int(z) }
-}
-
-fn u3(t: (i64, i64, i64)) -> Unit<Vector3<Fixed>> {
-    Unit { value: v3(t) }
-}
-
-/// Unit quaternion from raw components, in the `(w, i, j, k)` order of the oracle.
-fn uq(t: (i64, i64, i64, i64)) -> UnitQuaternion<Fixed> {
-    let (w, i, j, k) = t;
-    UnitQuaternion { quaternion: Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) } }
-}
-
-/// `Matrix3` from raw ROW-major rows (oracle layout).
-fn m3(rows: [[i64; 3]; 3]) -> Matrix3<Fixed> {
-    let [[m11, m12, m13], [m21, m22, m23], [m31, m32, m33]] = rows;
-    Matrix3 {
-        m11: fx(m11),
-        m21: fx(m21),
-        m31: fx(m31),
-        m12: fx(m12),
-        m22: fx(m22),
-        m32: fx(m32),
-        m13: fx(m13),
-        m23: fx(m23),
-        m33: fx(m33),
-    }
-}
-
-/// `Rotation3` from raw ROW-major rows (oracle layout).
-fn r3(rows: [[i64; 3]; 3]) -> Rotation3<Fixed> {
-    Rotation3 { matrix: m3(rows) }
-}
-
-/// `Rotation3` from integer ROW-major rows.
-fn r3i(rows: [[i64; 3]; 3]) -> Rotation3<Fixed> {
-    let [[m11, m12, m13], [m21, m22, m23], [m31, m32, m33]] = rows;
-    Rotation3 {
-        matrix: Matrix3 {
-            m11: int(m11),
-            m21: int(m21),
-            m31: int(m31),
-            m12: int(m12),
-            m22: int(m22),
-            m32: int(m32),
-            m13: int(m13),
-            m23: int(m23),
-            m33: int(m33),
-        },
-    }
-}
-
 /// The half turn about `x`: `(0, 1, 0, 0)`, an exact unit quaternion.
 fn half_x() -> UnitQuaternion<Fixed> {
-    uq((0, ONE_RAW, 0, 0))
+    uqt((0, ONE_RAW, 0, 0))
 }
 
 /// The 120° rotation about `(1, 1, 1) / sqrt(3)`: `(1, 1, 1, 1) / 2`, exact, and its matrix is the
 /// cyclic permutation `(x, y, z) -> (z, x, y)`.
 fn third() -> UnitQuaternion<Fixed> {
-    uq((HALF_RAW, HALF_RAW, HALF_RAW, HALF_RAW))
-}
-
-/// `|a - b|` in raw units.
-fn ulp(a: Fixed, b: Fixed) -> u128 {
-    let d: i128 = a.raw.into() - b.raw.into();
-    let d = if d < 0 {
-        -d
-    } else {
-        d
-    };
-    d.try_into().unwrap()
-}
-
-/// Largest component-wise distance between two quaternions, in raw units.
-fn max_ulp_q(a: Quaternion<Fixed>, b: Quaternion<Fixed>) -> u128 {
-    let mut e = ulp(a.i, b.i);
-    e = core::cmp::max(e, ulp(a.j, b.j));
-    e = core::cmp::max(e, ulp(a.k, b.k));
-    core::cmp::max(e, ulp(a.w, b.w))
+    uqt((HALF_RAW, HALF_RAW, HALF_RAW, HALF_RAW))
 }
 
 // --- constructors, parts, identity
@@ -156,7 +73,7 @@ fn test_new_normalize_makes_a_unit_quaternion() {
 
 #[test]
 fn test_imag_and_quaternion_accessors() {
-    assert!(third().imag() == v3((HALF_RAW, HALF_RAW, HALF_RAW)));
+    assert!(third().imag() == v3t((HALF_RAW, HALF_RAW, HALF_RAW)));
     assert!(third().quaternion().scalar() == fx(HALF_RAW));
     assert!(third().into_inner() == third().quaternion);
     assert!(UnitQuaternionTrait::try_new(third().quaternion, Real::ZERO) == Some(third()));
@@ -167,10 +84,10 @@ fn test_imag_and_quaternion_accessors() {
 
 #[test]
 fn test_inverse_is_the_conjugate_and_exact() {
-    assert!(third().inverse() == uq((HALF_RAW, -HALF_RAW, -HALF_RAW, -HALF_RAW)));
+    assert!(third().inverse() == uqt((HALF_RAW, -HALF_RAW, -HALF_RAW, -HALF_RAW)));
     assert!(third().inverse() == third().conjugate());
     assert!(third().inverse().inverse() == third());
-    assert!(half_x().inverse() == uq((0, -ONE_RAW, 0, 0)));
+    assert!(half_x().inverse() == uqt((0, -ONE_RAW, 0, 0)));
 }
 
 #[test]
@@ -180,7 +97,7 @@ fn test_inverse_oracle_is_exact() {
     while let Some(case) = cases.pop_front() {
         let (rq, expected, tol) = *case;
         assert!(tol == 0);
-        assert!(uq(rq).inverse() == uq(expected));
+        assert!(uqt(rq).inverse() == uqt(expected));
     }
 }
 
@@ -196,6 +113,37 @@ fn test_mul_identity_and_inverse() {
     assert!(third() * third() * third() == -id);
 }
 
+/// `conj_mul` is `inverse() * other` bit for bit on the oracle inputs, and `q.conj_mul(q)` is the
+/// identity up to the norm defect of `q` itself: exactly `(|q|², 0, 0, 0)` (the imaginary products
+/// cancel exactly in the accumulator), and `|q|²` of these rounded unit inputs floors up to 3 ulp
+/// away from 1.
+#[test]
+fn test_conj_mul_oracle_matches_inverse_then_mul() {
+    let id = UnitQuaternionTrait::<Fixed>::identity();
+    assert!(third().conj_mul(third()) == id);
+    assert!(half_x().conj_mul(third()) == half_x().inverse() * third());
+    let mut cases = oracle::unit_quaternion_mul_cases();
+    while let Some(case) = cases.pop_front() {
+        let (ra, rb, _expected, _tol) = *case;
+        assert!(uqt(ra).conj_mul(uqt(rb)) == uqt(ra).inverse() * uqt(rb));
+        assert!(uqt(rb).conj_mul(uqt(ra)) == uqt(rb).inverse() * uqt(ra));
+        let n2 = uqt(ra).quaternion.norm_squared();
+        assert!(uqt(ra).conj_mul(uqt(ra)).quaternion == QuaternionTrait::from_real(n2));
+        assert!(uqt(ra).conj_mul(uqt(ra)).quaternion.abs_diff_eq(id.quaternion, 3));
+    }
+}
+
+/// The sign-folded `inverse_transform_vector` is `transform_vector` of the conjugate bit for bit.
+#[test]
+fn test_inverse_transform_vector_oracle_matches_conjugate_then_transform() {
+    let mut cases = oracle::unit_quaternion_inverse_transform_vector_cases();
+    while let Some(case) = cases.pop_front() {
+        let (rq, rv, _expected, _tol) = *case;
+        let q = uqt(rq);
+        assert!(q.inverse_transform_vector(v3t(rv)) == q.conjugate().transform_vector(v3t(rv)));
+    }
+}
+
 /// The oracle expectation is the EXACT floor of the Hamilton product, which one rescale per
 /// component reproduces bit for bit.
 #[test]
@@ -203,9 +151,9 @@ fn test_mul_oracle_is_bit_exact() {
     let mut cases = oracle::unit_quaternion_mul_cases();
     while let Some(case) = cases.pop_front() {
         let (ra, rb, expected, _tol) = *case;
-        assert!(uq(ra) * uq(rb) == uq(expected));
+        assert!(uqt(ra) * uqt(rb) == uqt(expected));
         // The product of two unit quaternions is a unit quaternion.
-        assert!((uq(ra) * uq(rb)).quaternion.norm().abs_diff_eq(Real::ONE, 2));
+        assert!((uqt(ra) * uqt(rb)).quaternion.norm().abs_diff_eq(Real::ONE, 2));
     }
 }
 
@@ -251,7 +199,7 @@ fn test_transform_vector_oracle() {
     assert!(cases.len() == 32);
     while let Some(case) = cases.pop_front() {
         let (rq, rv, expected, tol) = *case;
-        assert!(uq(rq).transform_vector(v3(rv)).abs_diff_eq(v3(expected), tol));
+        assert!(uqt(rq).transform_vector(v3t(rv)).abs_diff_eq(v3t(expected), tol));
     }
 }
 
@@ -260,7 +208,7 @@ fn test_inverse_transform_vector_oracle() {
     let mut cases = oracle::unit_quaternion_inverse_transform_vector_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, rv, expected, tol) = *case;
-        assert!(uq(rq).inverse_transform_vector(v3(rv)).abs_diff_eq(v3(expected), tol));
+        assert!(uqt(rq).inverse_transform_vector(v3t(rv)).abs_diff_eq(v3t(expected), tol));
     }
 }
 
@@ -271,7 +219,7 @@ fn test_transform_vector_round_trip() {
     let v = v3i(1, -2, 3);
     while let Some(case) = cases.pop_front() {
         let (rq, _, _) = *case;
-        let q = uq(rq);
+        let q = uqt(rq);
         let r = q.transform_vector(v);
         assert!(r.norm().abs_diff_eq(v.norm(), 8));
         assert!(q.inverse_transform_vector(r).abs_diff_eq(v, 16));
@@ -283,9 +231,9 @@ fn test_transform_vector_matches_the_rotation_matrix() {
     let mut cases = oracle::unit_quaternion_transform_vector_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, rv, _, tol) = *case;
-        let q = uq(rq);
-        let direct = q.transform_vector(v3(rv));
-        let through_matrix = q.to_rotation_matrix().transform_vector(v3(rv));
+        let q = uqt(rq);
+        let direct = q.transform_vector(v3t(rv));
+        let through_matrix = q.to_rotation_matrix().transform_vector(v3t(rv));
         assert!(direct.abs_diff_eq(through_matrix, tol));
     }
 }
@@ -308,7 +256,7 @@ fn test_to_rotation_matrix_oracle() {
     let mut cases = oracle::unit_quaternion_to_rotation_matrix_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, expected, tol) = *case;
-        assert!(uq(rq).to_rotation_matrix().matrix.abs_diff_eq(m3(expected), tol));
+        assert!(uqt(rq).to_rotation_matrix().matrix.abs_diff_eq(m3(expected), tol));
     }
 }
 
@@ -318,7 +266,7 @@ fn test_to_rotation_matrix_is_orthonormal() {
     let mut cases = oracle::unit_quaternion_to_rotation_matrix_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, _, _) = *case;
-        let m = uq(rq).to_rotation_matrix().matrix;
+        let m = uqt(rq).to_rotation_matrix().matrix;
         assert!((m * m.transpose()).is_identity(8));
         assert!(m.determinant().abs_diff_eq(Real::ONE, 8));
     }
@@ -345,12 +293,12 @@ fn test_from_rotation_matrix_exact() {
     assert!(
         UnitQuaternionTrait::from_rotation_matrix(
             r3i([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]),
-        ) == uq((0, 0, ONE_RAW, 0)),
+        ) == uqt((0, 0, ONE_RAW, 0)),
     );
     assert!(
         UnitQuaternionTrait::from_rotation_matrix(
             r3i([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]),
-        ) == uq((0, 0, 0, ONE_RAW)),
+        ) == uqt((0, 0, 0, ONE_RAW)),
     );
 }
 
@@ -361,7 +309,7 @@ fn test_from_rotation_matrix_oracle() {
         let (rr, expected, tol) = *case;
         let got = UnitQuaternionTrait::from_rotation_matrix(r3(rr));
         // The sign is upstream's: the branch selection matches, so the bits do too.
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
     }
 }
@@ -374,10 +322,11 @@ fn test_rotation_matrix_round_trip() {
     let mut worst: u128 = 0;
     while let Some(case) = cases.pop_front() {
         let (rq, _, _) = *case;
-        let q = uq(rq);
+        let q = uqt(rq);
         let back = UnitQuaternionTrait::from_rotation_matrix(q.to_rotation_matrix());
         let e = core::cmp::min(
-            max_ulp_q(back.quaternion, q.quaternion), max_ulp_q(back.quaternion, (-q).quaternion),
+            max_ulp_diff_q(back.quaternion, q.quaternion),
+            max_ulp_diff_q(back.quaternion, (-q).quaternion),
         );
         worst = core::cmp::max(worst, e);
     }
@@ -412,7 +361,7 @@ fn test_axis_angle_exact_cases() {
     // 120° about (1, 1, 1) / sqrt(3): the axis components are 1 / sqrt(3) = 0.5773502691.
     let (axis, angle) = third().axis_angle().unwrap();
     let inv_sqrt3 = 2479700524;
-    assert!(axis.value.abs_diff_eq(v3((inv_sqrt3, inv_sqrt3, inv_sqrt3)), 2));
+    assert!(axis.value.abs_diff_eq(v3t((inv_sqrt3, inv_sqrt3, inv_sqrt3)), 2));
     // 2 pi / 3 = 2.0943951023 (8 995 358 469 raw); `atan2` is accurate to about 12 ulp.
     assert!(angle.abs_diff_eq(fx(8995358469), 16));
     // Half turn about x: the axis is exact and the angle is pi.
@@ -447,7 +396,7 @@ fn test_angle_oracle() {
     let mut cases = oracle::unit_quaternion_angle_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, expected, tol) = *case;
-        assert!(Real::abs_diff_eq(uq(rq).angle(), fx(expected), tol));
+        assert!(Real::abs_diff_eq(uqt(rq).angle(), fx(expected), tol));
     }
 }
 
@@ -456,7 +405,7 @@ fn test_angle_to_oracle() {
     let mut cases = oracle::unit_quaternion_angle_to_cases();
     while let Some(case) = cases.pop_front() {
         let (ra, rb, expected, tol) = *case;
-        assert!(Real::abs_diff_eq(uq(ra).angle_to(uq(rb)), fx(expected), tol));
+        assert!(Real::abs_diff_eq(uqt(ra).angle_to(uqt(rb)), fx(expected), tol));
     }
 }
 
@@ -475,7 +424,7 @@ fn test_scaled_axis_oracle() {
     let mut cases = oracle::unit_quaternion_scaled_axis_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, expected, tol) = *case;
-        assert!(uq(rq).scaled_axis().abs_diff_eq(v3(expected), tol));
+        assert!(uqt(rq).scaled_axis().abs_diff_eq(v3t(expected), tol));
     }
 }
 
@@ -509,8 +458,8 @@ fn test_from_axis_angle_oracle() {
     let mut cases = oracle::unit_quaternion_from_axis_angle_cases();
     while let Some(case) = cases.pop_front() {
         let (raxis, rangle, expected, tol) = *case;
-        let got = UnitQuaternionAngleTrait::from_axis_angle(u3(raxis), fx(rangle));
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        let got = UnitQuaternionAngleTrait::from_axis_angle(u3t(raxis), fx(rangle));
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
     }
 }
@@ -525,14 +474,14 @@ fn test_from_scaled_axis_exact_and_oracle() {
     );
     // Same rotation as from_axis_angle(axis, |v|).
     let axis = Unit3Trait::<Fixed>::y_axis();
-    let scaled = UnitQuaternionAngleTrait::from_scaled_axis(v3((0, ONE_RAW, 0)));
+    let scaled = UnitQuaternionAngleTrait::from_scaled_axis(v3t((0, ONE_RAW, 0)));
     let direct = UnitQuaternionAngleTrait::from_axis_angle(axis, Real::ONE);
     assert!(scaled.quaternion.abs_diff_eq(direct.quaternion, 2));
     let mut cases = oracle::unit_quaternion_from_scaled_axis_cases();
     while let Some(case) = cases.pop_front() {
         let (rv, expected, tol) = *case;
-        let got = UnitQuaternionAngleTrait::from_scaled_axis(v3(rv));
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        let got = UnitQuaternionAngleTrait::from_scaled_axis(v3t(rv));
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
     }
 }
@@ -543,8 +492,8 @@ fn test_scaled_axis_round_trip() {
     let mut cases = oracle::unit_quaternion_from_scaled_axis_cases();
     while let Some(case) = cases.pop_front() {
         let (rv, _, _) = *case;
-        let back = UnitQuaternionAngleTrait::from_scaled_axis(v3(rv)).scaled_axis();
-        assert!(back.abs_diff_eq(v3(rv), 64));
+        let back = UnitQuaternionAngleTrait::from_scaled_axis(v3t(rv)).scaled_axis();
+        assert!(back.abs_diff_eq(v3t(rv), 64));
     }
 }
 
@@ -555,7 +504,7 @@ fn test_from_euler_angles_oracle() {
         let (reuler, expected, tol) = *case;
         let (roll, pitch, yaw) = reuler;
         let got = UnitQuaternionAngleTrait::from_euler_angles(fx(roll), fx(pitch), fx(yaw));
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
     }
 }
@@ -565,7 +514,7 @@ fn test_euler_angles_oracle() {
     let mut cases = oracle::unit_quaternion_euler_angles_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, expected, tol) = *case;
-        let (roll, pitch, yaw) = uq(rq).euler_angles();
+        let (roll, pitch, yaw) = uqt(rq).euler_angles();
         let (eroll, epitch, eyaw) = expected;
         assert!(Real::abs_diff_eq(roll, fx(eroll), tol));
         assert!(Real::abs_diff_eq(pitch, fx(epitch), tol));
@@ -579,7 +528,7 @@ fn test_euler_angles_round_trip() {
     let mut cases = oracle::unit_quaternion_euler_angles_cases();
     while let Some(case) = cases.pop_front() {
         let (rq, _, _) = *case;
-        let q = uq(rq);
+        let q = uqt(rq);
         let (roll, pitch, yaw) = q.euler_angles();
         let back = UnitQuaternionAngleTrait::from_euler_angles(roll, pitch, yaw);
         assert!(back.angle_to(q).abs_diff_eq(Real::ZERO, 256));
@@ -664,8 +613,8 @@ fn test_rotation_between_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (ra, rb, expected, tol) = *case;
-        let got = UnitQuaternionTrait::rotation_between(v3(ra), v3(rb)).unwrap();
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        let got = UnitQuaternionTrait::rotation_between(v3t(ra), v3t(rb)).unwrap();
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
     }
 }
@@ -676,9 +625,9 @@ fn test_rotation_between_maps_a_to_b() {
     let mut cases = oracle::unit_quaternion_rotation_between_cases();
     while let Some(case) = cases.pop_front() {
         let (ra, rb, _, tol) = *case;
-        let q = UnitQuaternionTrait::rotation_between(v3(ra), v3(rb)).unwrap();
-        let ua = v3(ra).normalize();
-        let ub = v3(rb).normalize();
+        let q = UnitQuaternionTrait::rotation_between(v3t(ra), v3t(rb)).unwrap();
+        let ua = v3t(ra).normalize();
+        let ub = v3t(rb).normalize();
         assert!(q.transform_vector(ua).abs_diff_eq(ub, tol * 4 + 8));
     }
 }
@@ -728,8 +677,8 @@ fn test_nlerp_endpoints_and_oracle() {
     let mut cases = oracle::unit_quaternion_nlerp_cases();
     while let Some(case) = cases.pop_front() {
         let (ra, rb, t, expected, tol) = *case;
-        let got = uq(ra).nlerp(uq(rb), fx(t));
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        let got = uqt(ra).nlerp(uqt(rb), fx(t));
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 2));
     }
 }
@@ -752,8 +701,8 @@ fn test_slerp_endpoints_and_oracle() {
     let mut cases = oracle::unit_quaternion_slerp_cases();
     while let Some(case) = cases.pop_front() {
         let (ra, rb, t, expected, tol) = *case;
-        let got = uq(ra).slerp(uq(rb), fx(t));
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        let got = uqt(ra).slerp(uqt(rb), fx(t));
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 2));
     }
 }
@@ -844,8 +793,8 @@ fn test_append_axisangle_linearized_oracle() {
     assert!(cases.len() == 8);
     while let Some(case) = cases.pop_front() {
         let (rq, rv, expected, tol) = *case;
-        let got = uq(rq).append_axisangle_linearized(v3(rv));
-        assert!(got.quaternion.abs_diff_eq(uq(expected).quaternion, tol));
+        let got = uqt(rq).append_axisangle_linearized(v3t(rv));
+        assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
         assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 2));
     }
 }
@@ -867,12 +816,12 @@ fn test_append_axisangle_linearized_zero_is_a_no_op() {
 fn test_append_axisangle_linearized_matches_the_exact_update() {
     let q = third();
     // |omega| = 2^-8: the second-order error is about |omega|² / 8 = 2e-6 (8 400 ulp).
-    let w = v3((0x1000000, -0x800000, 0x400000));
+    let w = v3t((0x1000000, -0x800000, 0x400000));
     let got = q.append_axisangle_linearized(w);
     let exact = UnitQuaternionAngleTrait::from_scaled_axis(w) * q;
     assert!(got.quaternion.abs_diff_eq(exact.quaternion, 8400));
     // At 2^-16 the difference is under 1 ulp per component.
-    let w = v3((0x10000, -0x8000, 0x4000));
+    let w = v3t((0x10000, -0x8000, 0x4000));
     let got = q.append_axisangle_linearized(w);
     let exact = UnitQuaternionAngleTrait::from_scaled_axis(w) * q;
     assert!(got.quaternion.abs_diff_eq(exact.quaternion, 4));
@@ -883,7 +832,7 @@ fn test_append_axisangle_linearized_matches_the_exact_update() {
 #[test]
 fn test_append_axisangle_linearized_is_stable() {
     // 1 024 steps of 2 pi / 1 024 about z: a full turn.
-    let step = v3((0, 0, 26353589));
+    let step = v3t((0, 0, 26353589));
     let mut q = UnitQuaternionTrait::<Fixed>::identity();
     for _ in 0_u32..1024 {
         q = q.append_axisangle_linearized(step);
@@ -918,7 +867,7 @@ fn test_renormalize_fast_on_a_drifted_rotation() {
 fn test_renormalize_fast_fixes_a_scaled_quaternion() {
     // The 120° rotation scaled by 1 + 1e-3.
     let s = fx(HALF_RAW + 2147483);
-    let drifted = uq((s.raw, s.raw, s.raw, s.raw));
+    let drifted = uqt((s.raw, s.raw, s.raw, s.raw));
     assert!(!drifted.quaternion.norm().abs_diff_eq(Real::ONE, 1000));
     let once = drifted.renormalize_fast();
     assert!(once.quaternion.norm().abs_diff_eq(Real::ONE, 8000));

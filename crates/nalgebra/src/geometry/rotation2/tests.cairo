@@ -13,41 +13,12 @@ use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
-use crate::base::point2::Point2;
+use crate::base::matrix_test_utils::{ONE_RAW, fx, m2, p2t, r2, uct, ulp_diff, v2t};
 use crate::base::vector2::{Vector2, Vector2Trait};
 use crate::geometry::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 use super::{Rotation2, Rotation2AngleTrait, Rotation2Trait, oracle};
 
 /// The raw value of 1.
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn m2(rows: [[i64; 2]; 2]) -> Matrix2<Fixed> {
-    let [[m11, m12], [m21, m22]] = rows;
-    Matrix2 { m11: fx(m11), m21: fx(m21), m12: fx(m12), m22: fx(m22) }
-}
-
-fn r2(rows: [[i64; 2]; 2]) -> Rotation2<Fixed> {
-    Rotation2 { matrix: m2(rows) }
-}
-
-fn uc(t: (i64, i64)) -> UnitComplex<Fixed> {
-    let (re, im) = t;
-    UnitComplex { re: fx(re), im: fx(im) }
-}
-
-fn v2(t: (i64, i64)) -> Vector2<Fixed> {
-    let (x, y) = t;
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn p2(t: (i64, i64)) -> Point2<Fixed> {
-    let (x, y) = t;
-    Point2 { x: fx(x), y: fx(y) }
-}
 
 fn id() -> Rotation2<Fixed> {
     Rotation2Trait::<Fixed>::identity()
@@ -56,17 +27,6 @@ fn id() -> Rotation2<Fixed> {
 /// The quarter turn `[[0, -1], [1, 0]]`, an exactly representable rotation.
 fn quarter() -> Rotation2<Fixed> {
     r2([[0, -ONE_RAW], [ONE_RAW, 0]])
-}
-
-/// `|a - b|` in raw units.
-fn ulp_diff(a: Fixed, b: Fixed) -> u128 {
-    let d: i128 = a.raw.into() - b.raw.into();
-    let d = if d < 0 {
-        -d
-    } else {
-        d
-    };
-    d.try_into().unwrap()
 }
 
 // --- constructors and accessors
@@ -185,8 +145,8 @@ fn test_mul_matches_the_unit_complex_product_up_to_one_ulp() {
 
 #[test]
 fn test_transform_vector_quarter_turn_is_exact() {
-    let v = v2((0x300000000, -0x400000000));
-    assert!(quarter().transform_vector(v) == v2((0x400000000, 0x300000000)));
+    let v = v2t((0x300000000, -0x400000000));
+    assert!(quarter().transform_vector(v) == v2t((0x400000000, 0x300000000)));
     assert!(quarter().mul_vec(v) == quarter().transform_vector(v));
     assert!(id().transform_vector(v) == v);
 }
@@ -195,10 +155,10 @@ fn test_transform_vector_quarter_turn_is_exact() {
 fn test_transform_matches_the_unit_complex_bit_for_bit() {
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let r = c.to_rotation_matrix();
-    let v = v2((0x300000000, -0x400000000));
+    let v = v2t((0x300000000, -0x400000000));
     assert!(r.transform_vector(v) == c.transform_vector(v));
     assert!(r.inverse_transform_vector(v) == c.inverse_transform_vector(v));
-    let p = p2((0x300000000, -0x400000000));
+    let p = p2t((0x300000000, -0x400000000));
     assert!(r.transform_point(p) == c.transform_point(p));
     assert!(r.inverse_transform_point(p) == c.inverse_transform_point(p));
 }
@@ -206,7 +166,7 @@ fn test_transform_matches_the_unit_complex_bit_for_bit() {
 #[test]
 fn test_inverse_transform_is_the_transposed_product() {
     let r = Rotation2AngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
-    let v = v2((0x300000000, -0x400000000));
+    let v = v2t((0x300000000, -0x400000000));
     assert!(r.inverse_transform_vector(v) == r.inverse().transform_vector(v));
     assert!(r.inverse_transform_vector(r.transform_vector(v)).abs_diff_eq(v, 4));
 }
@@ -215,14 +175,14 @@ fn test_inverse_transform_is_the_transposed_product() {
 #[should_panic(expected: 'simba: overflow')]
 fn test_transform_vector_overflow_panics() {
     let r = black_box(Rotation2AngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_4));
-    let _ = r.transform_vector(black_box(v2((0x6000000000000000, 0x6000000000000000))));
+    let _ = r.transform_vector(black_box(v2t((0x6000000000000000, 0x6000000000000000))));
 }
 
 // --- conversions
 
 #[test]
 fn test_unit_complex_round_trip_is_exact() {
-    let c = uc((0x80000000, -0xdd6a9c1));
+    let c = uct((0x80000000, -0xdd6a9c1));
     let r: Rotation2<Fixed> = c.into();
     assert!(r == c.to_rotation_matrix());
     assert!(r.to_unit_complex() == c);
@@ -246,13 +206,13 @@ fn test_to_homogeneous() {
 
 #[test]
 fn test_rotation_between_axes_is_exact() {
-    let (x, y) = (v2((0x300000000, 0)), v2((0, 0x500000000)));
+    let (x, y) = (v2t((0x300000000, 0)), v2t((0, 0x500000000)));
     assert!(Rotation2Trait::rotation_between(x, y) == quarter());
     assert!(Rotation2Trait::rotation_between(x, x) == id());
     let z = Vector2 { x: Real::<Fixed>::ZERO, y: Real::ZERO };
     assert!(Rotation2Trait::rotation_between(z, x) == id());
     // Same rotation as the unit complex form, expanded.
-    let (a, b) = (v2((0x30ec4a100, -0x41d5b9200)), v2((0x40a3d7000, 0x2f1a9fc00)));
+    let (a, b) = (v2t((0x30ec4a100, -0x41d5b9200)), v2t((0x40a3d7000, 0x2f1a9fc00)));
     assert!(
         Rotation2Trait::rotation_between(a, b) == UnitComplexTrait::rotation_between(a, b)
             .to_rotation_matrix(),
@@ -261,7 +221,7 @@ fn test_rotation_between_axes_is_exact() {
 
 #[test]
 fn test_scaled_rotation_between() {
-    let (x, y) = (v2((0x300000000, 0)), v2((0, 0x500000000)));
+    let (x, y) = (v2t((0x300000000, 0)), v2t((0, 0x500000000)));
     let r = Rotation2AngleTrait::scaled_rotation_between(x, y, Real::HALF);
     assert!(r.abs_diff_eq(Rotation2AngleTrait::<Fixed>::new(Real::FRAC_PI_4), 4));
     let z = Vector2 { x: Real::<Fixed>::ZERO, y: Real::ZERO };
@@ -380,6 +340,6 @@ fn test_transform_vector_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (r, v, expected, tol) = *case;
-        assert!(r2(r).transform_vector(v2(v)).abs_diff_eq(v2(expected), tol));
+        assert!(r2(r).transform_vector(v2t(v)).abs_diff_eq(v2t(expected), tol));
     }
 }

@@ -11,42 +11,13 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::matrix_test_utils::{fx, int, v3, v6, v6i, v6t};
 use crate::base::oracle_dim6_vector as oracle;
 use crate::base::vector3::Vector3;
 use super::{Vector6, Vector6Trait};
 
 const MAX: i64 = 0x7fffffffffffffff;
 const MIN: i64 = -0x8000000000000000;
-/// 2^32: the raw value of 1.
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-fn v3(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-/// A `Vector6` from six raw components, in upstream order `(x, y, z, w, a, b)`.
-fn v6(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 { a: v3(x, y, z), b: v3(w, a, b) }
-}
-
-/// A `Vector6` from six integer components.
-fn v6i(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    v6(x * ONE_RAW, y * ONE_RAW, z * ONE_RAW, w * ONE_RAW, a * ONE_RAW, b * ONE_RAW)
-}
-
-/// A `Vector6` from an oracle tuple of raws.
-fn vt(t: (i64, i64, i64, i64, i64, i64)) -> Vector6<Fixed> {
-    let (x, y, z, w, a, b) = t;
-    v6(x, y, z, w, a, b)
-}
 
 /// (1.5, -2.25, 3.75, -4.5, 0.25, 2)
 fn a() -> Vector6<Fixed> {
@@ -379,11 +350,11 @@ fn test_add_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a + b).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v6t(a), v6t(b));
+        assert!((a + b).abs_diff_eq(v6t(expected), tol));
         let mut acc = a;
         acc += b;
-        assert!(acc == vt(expected));
+        assert!(acc == v6t(expected));
     }
 }
 
@@ -393,11 +364,11 @@ fn test_sub_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a - b).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v6t(a), v6t(b));
+        assert!((a - b).abs_diff_eq(v6t(expected), tol));
         let mut acc = a;
         acc -= b;
-        assert!(acc == vt(expected));
+        assert!(acc == v6t(expected));
     }
 }
 
@@ -407,7 +378,7 @@ fn test_neg_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        assert!((-vt(a)).abs_diff_eq(vt(expected), tol));
+        assert!((-v6t(a)).abs_diff_eq(v6t(expected), tol));
     }
 }
 
@@ -417,7 +388,7 @@ fn test_scale_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, k, expected, tol) = *case;
-        assert!(vt(a).scale(fx(k)).abs_diff_eq(vt(expected), tol));
+        assert!(v6t(a).scale(fx(k)).abs_diff_eq(v6t(expected), tol));
     }
 }
 
@@ -429,7 +400,7 @@ fn test_dot_oracle() {
         let (a, b, expected, tol) = *case;
         // The oracle tolerance is 0: the wide accumulator reproduces the exact floor bit for bit.
         assert!(tol == 0);
-        assert!(vt(a).dot(vt(b)) == fx(expected));
+        assert!(v6t(a).dot(v6t(b)) == fx(expected));
     }
 }
 
@@ -440,7 +411,7 @@ fn test_norm_squared_oracle() {
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
         assert!(tol == 0);
-        assert!(vt(a).norm_squared() == fx(expected));
+        assert!(v6t(a).norm_squared() == fx(expected));
     }
 }
 
@@ -450,6 +421,6 @@ fn test_norm_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        assert!(vt(a).norm().abs_diff_eq(fx(expected), tol));
+        assert!(v6t(a).norm().abs_diff_eq(fx(expected), tol));
     }
 }

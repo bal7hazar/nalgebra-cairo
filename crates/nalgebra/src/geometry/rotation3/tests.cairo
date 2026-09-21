@@ -18,83 +18,16 @@ use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix_test_utils::{ONE_RAW, fx, int, m3, r3, r3i, u3t, uqt, v3i, v3t};
 use crate::base::point3::Point3;
-use crate::base::unit::{Unit, Unit3Trait};
-use crate::base::vector3::{Vector3, Vector3Trait};
-use crate::geometry::quaternion::Quaternion;
+use crate::base::unit::Unit3Trait;
+use crate::base::vector3::Vector3Trait;
 use crate::geometry::unit_quaternion::{
     UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
 };
 use super::{Rotation3, Rotation3AngleTrait, Rotation3Trait, oracle};
 
-const ONE_RAW: i64 = 0x100000000;
 const HALF_RAW: i64 = 0x80000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-fn v3(t: (i64, i64, i64)) -> Vector3<Fixed> {
-    let (x, y, z) = t;
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn v3i(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: int(x), y: int(y), z: int(z) }
-}
-
-fn u3(t: (i64, i64, i64)) -> Unit<Vector3<Fixed>> {
-    Unit { value: v3(t) }
-}
-
-/// `Matrix3` from raw ROW-major rows (oracle layout).
-fn m3(rows: [[i64; 3]; 3]) -> Matrix3<Fixed> {
-    let [[m11, m12, m13], [m21, m22, m23], [m31, m32, m33]] = rows;
-    Matrix3 {
-        m11: fx(m11),
-        m21: fx(m21),
-        m31: fx(m31),
-        m12: fx(m12),
-        m22: fx(m22),
-        m32: fx(m32),
-        m13: fx(m13),
-        m23: fx(m23),
-        m33: fx(m33),
-    }
-}
-
-/// `Rotation3` from raw ROW-major rows (oracle layout).
-fn r3(rows: [[i64; 3]; 3]) -> Rotation3<Fixed> {
-    Rotation3 { matrix: m3(rows) }
-}
-
-/// `Rotation3` from integer ROW-major rows.
-fn r3i(rows: [[i64; 3]; 3]) -> Rotation3<Fixed> {
-    let [[m11, m12, m13], [m21, m22, m23], [m31, m32, m33]] = rows;
-    Rotation3 {
-        matrix: Matrix3 {
-            m11: int(m11),
-            m21: int(m21),
-            m31: int(m31),
-            m12: int(m12),
-            m22: int(m22),
-            m32: int(m32),
-            m13: int(m13),
-            m23: int(m23),
-            m33: int(m33),
-        },
-    }
-}
-
-/// Unit quaternion from raw components, in the `(w, i, j, k)` order.
-fn uq(t: (i64, i64, i64, i64)) -> UnitQuaternion<Fixed> {
-    let (w, i, j, k) = t;
-    UnitQuaternion { quaternion: Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) } }
-}
 
 /// The half turn about `x`: `diag(1, -1, -1)`, exact.
 fn half_x() -> Rotation3<Fixed> {
@@ -204,7 +137,7 @@ fn test_transform_vector_oracle_is_bit_exact() {
         let (rr, rv, expected, tol) = *case;
         // The expectation is the exact floor of the matrix-vector product.
         assert!(tol == 0);
-        assert!(r3(rr).transform_vector(v3(rv)) == v3(expected));
+        assert!(r3(rr).transform_vector(v3t(rv)) == v3t(expected));
     }
 }
 
@@ -214,7 +147,7 @@ fn test_inverse_transform_vector_round_trip() {
     while let Some(case) = cases.pop_front() {
         let (rr, rv, _, _) = *case;
         let r = r3(rr);
-        let v = v3(rv);
+        let v = v3t(rv);
         // The inverse transform undoes it to within the rounding of both products, which is
         // relative: the oracle matrices are orthonormal to about 2 ulp only, so the error grows
         // with |v| (up to 4e4 in the `large` distribution).
@@ -229,7 +162,7 @@ fn test_inverse_transform_vector_round_trip() {
 
 #[test]
 fn test_unit_quaternion_conversions_exact() {
-    let q = uq((HALF_RAW, HALF_RAW, HALF_RAW, HALF_RAW));
+    let q = uqt((HALF_RAW, HALF_RAW, HALF_RAW, HALF_RAW));
     assert!(Rotation3Trait::from_unit_quaternion(q) == third());
     assert!(third().to_unit_quaternion() == q);
     // `Into` both ways.
@@ -278,7 +211,7 @@ fn test_from_axis_angle_oracle() {
     let mut cases = oracle::rotation3_from_axis_angle_cases();
     while let Some(case) = cases.pop_front() {
         let (raxis, rangle, expected, tol) = *case;
-        let got = Rotation3AngleTrait::from_axis_angle(u3(raxis), fx(rangle));
+        let got = Rotation3AngleTrait::from_axis_angle(u3t(raxis), fx(rangle));
         assert!(got.matrix.abs_diff_eq(m3(expected), tol));
         assert!((got.matrix * got.matrix.transpose()).is_identity(16));
     }
@@ -296,7 +229,7 @@ fn test_from_scaled_axis_oracle_and_zero() {
     while let Some(case) = cases.pop_front() {
         let (rv, expected, tol) = *case;
         assert!(
-            Rotation3AngleTrait::from_scaled_axis(v3(rv)).matrix.abs_diff_eq(m3(expected), tol),
+            Rotation3AngleTrait::from_scaled_axis(v3t(rv)).matrix.abs_diff_eq(m3(expected), tol),
         );
     }
 }
@@ -333,11 +266,11 @@ fn test_axis_and_scaled_axis() {
     // 1)).
     let axis = third().axis().unwrap();
     let inv_sqrt3 = 2479700524;
-    assert!(axis.value.abs_diff_eq(v3((inv_sqrt3, inv_sqrt3, inv_sqrt3)), 2));
+    assert!(axis.value.abs_diff_eq(v3t((inv_sqrt3, inv_sqrt3, inv_sqrt3)), 2));
     // axis · angle = 1.2091995 per component (5 193 472 632 raw); `acos` near the middle of its
     // range is accurate to a few ulp, and the axis is exact here.
     let c = 5193472632;
-    assert!(third().scaled_axis().abs_diff_eq(v3((c, c, c)), 64));
+    assert!(third().scaled_axis().abs_diff_eq(v3t((c, c, c)), 64));
 }
 
 #[test]
@@ -345,7 +278,7 @@ fn test_scaled_axis_oracle() {
     let mut cases = oracle::rotation3_scaled_axis_cases();
     while let Some(case) = cases.pop_front() {
         let (rr, expected, tol) = *case;
-        assert!(r3(rr).scaled_axis().abs_diff_eq(v3(expected), tol));
+        assert!(r3(rr).scaled_axis().abs_diff_eq(v3t(expected), tol));
     }
 }
 
@@ -355,8 +288,8 @@ fn test_scaled_axis_round_trip() {
     let mut cases = oracle::rotation3_from_scaled_axis_cases();
     while let Some(case) = cases.pop_front() {
         let (rv, _, _) = *case;
-        let back = Rotation3AngleTrait::from_scaled_axis(v3(rv)).scaled_axis();
-        assert!(back.abs_diff_eq(v3(rv), 2048));
+        let back = Rotation3AngleTrait::from_scaled_axis(v3t(rv)).scaled_axis();
+        assert!(back.abs_diff_eq(v3t(rv), 2048));
     }
 }
 
@@ -440,11 +373,11 @@ fn test_rotation_between_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (ra, rb, expected, tol) = *case;
-        let got = Rotation3Trait::rotation_between(v3(ra), v3(rb)).unwrap();
+        let got = Rotation3Trait::rotation_between(v3t(ra), v3t(rb)).unwrap();
         assert!(got.matrix.abs_diff_eq(m3(expected), tol));
         // It maps the direction of a onto the direction of b.
         assert!(
-            got.transform_vector(v3(ra).normalize()).abs_diff_eq(v3(rb).normalize(), tol * 4 + 8),
+            got.transform_vector(v3t(ra).normalize()).abs_diff_eq(v3t(rb).normalize(), tol * 4 + 8),
         );
     }
 }
@@ -469,13 +402,13 @@ fn test_face_towards_and_look_at_rh_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (rdir, rup, expected, tol) = *case;
-        let got = Rotation3Trait::face_towards(v3(rdir), v3(rup));
+        let got = Rotation3Trait::face_towards(v3t(rdir), v3t(rup));
         assert!(got.matrix.abs_diff_eq(m3(expected), tol));
     }
     let mut cases = oracle::rotation3_look_at_rh_cases();
     while let Some(case) = cases.pop_front() {
         let (rdir, rup, expected, tol) = *case;
-        let got = Rotation3Trait::look_at_rh(v3(rdir), v3(rup));
+        let got = Rotation3Trait::look_at_rh(v3t(rdir), v3t(rup));
         assert!(got.matrix.abs_diff_eq(m3(expected), tol));
     }
 }

@@ -7,25 +7,10 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
+use crate::base::matrix_test_utils::{fx, v2, v3, v4};
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
 use super::{Vector4, Vector4AngleTrait, Vector4Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v2(x: i64, y: i64) -> Vector2<Fixed> {
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn v3(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn v4(x: i64, y: i64, z: i64, w: i64) -> Vector4<Fixed> {
-    Vector4 { x: fx(x), y: fx(y), z: fx(z), w: fx(w) }
-}
 
 // --- alternative implementations (losers)
 

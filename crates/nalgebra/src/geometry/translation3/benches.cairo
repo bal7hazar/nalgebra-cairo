@@ -11,21 +11,10 @@
 
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
+use crate::base::matrix_test_utils::{fx, p3, t3};
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::{Translation3, Translation3Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn t3(x: i64, y: i64, z: i64) -> Translation3<Fixed> {
-    Translation3 { vector: Vector3 { x: fx(x), y: fx(y), z: fx(z) } }
-}
-
-fn p3(x: i64, y: i64, z: i64) -> Point3<Fixed> {
-    Point3 { x: fx(x), y: fx(y), z: fx(z) }
-}
 
 /// `(1.25, -0.375, 2.5)`.
 fn a() -> Translation3<Fixed> {

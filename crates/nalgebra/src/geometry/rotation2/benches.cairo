@@ -10,27 +10,11 @@ use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
+use crate::base::matrix_test_utils::{fx, p2, r2, v2};
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;
 use crate::geometry::unit_complex::{UnitComplex, UnitComplexTrait};
 use super::{Rotation2, Rotation2AngleTrait, Rotation2Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn r2(rows: [[i64; 2]; 2]) -> Rotation2<Fixed> {
-    let [[m11, m12], [m21, m22]] = rows;
-    Rotation2 { matrix: Matrix2 { m11: fx(m11), m21: fx(m21), m12: fx(m12), m22: fx(m22) } }
-}
-
-fn v2(x: i64, y: i64) -> Vector2<Fixed> {
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn p2(x: i64, y: i64) -> Point2<Fixed> {
-    Point2 { x: fx(x), y: fx(y) }
-}
 
 /// `new(0.4)`.
 fn r() -> Rotation2<Fixed> {

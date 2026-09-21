@@ -204,11 +204,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
-    use crate::base::vector2::Vector2;
-    use crate::linalg::decomp_test_utils::{
-        amax_m2, decomp_tol, excess, int, m2, max_abs_m2, max_abs_v2, max_ulp_diff_m2,
-        max_ulp_diff_v2, orthonormality_error_m2, ulp_diff, v2,
+    use crate::base::matrix_test_utils::{
+        amax_m2, excess, int, m2, max_abs_m2, max_abs_v2, max_ulp_diff2, max_ulp_diff_v2,
+        oracle_tol, orthonormality_error_m2, ulp_diff, v2t,
     };
+    use crate::base::vector2::Vector2;
     use crate::linalg::qr::oracle_qr2 as oracle;
     use super::{Matrix2QrTrait, Qr2, Qr2Trait};
 
@@ -219,7 +219,7 @@ mod tests {
 
     /// Its right-hand side, from `qr2_solve`.
     fn b_bench() -> Vector2<Fixed> {
-        v2((-5886581674, -6536196560))
+        v2t((-5886581674, -6536196560))
     }
 
     /// `a_bench()` already factored, so the benchmarks of the derived operations do not pay for
@@ -322,9 +322,9 @@ mod tests {
             let (a, q, r, tol) = *case;
             let f = Qr2Trait::new(m2(a));
             let (eq, er) = (m2(q), m2(r));
-            let (dq, dr) = (max_ulp_diff_m2(f.q(), eq), max_ulp_diff_m2(f.r(), er));
-            worst_ex = core::cmp::max(worst_ex, excess(dq, decomp_tol(max_abs_m2(eq), tol)));
-            worst_ex = core::cmp::max(worst_ex, excess(dr, decomp_tol(max_abs_m2(er), tol)));
+            let (dq, dr) = (max_ulp_diff2(f.q(), eq), max_ulp_diff2(f.r(), er));
+            worst_ex = core::cmp::max(worst_ex, excess(dq, oracle_tol(max_abs_m2(eq), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(dr, oracle_tol(max_abs_m2(er), tol)));
             worst_q = core::cmp::max(worst_q, dq);
             worst_r = core::cmp::max(worst_r, dr);
         }
@@ -344,7 +344,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _, _) = *case;
             let f = Qr2Trait::new(m2(a));
-            let rec = max_ulp_diff_m2(f.q() * f.r(), m2(a)) / amax_m2(m2(a));
+            let rec = max_ulp_diff2(f.q() * f.r(), m2(a)) / amax_m2(m2(a));
             let orth = orthonormality_error_m2(f.q());
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
@@ -360,10 +360,10 @@ mod tests {
         let (mut worst, mut worst_ex) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, b, expected, tol) = *case;
-            let x = Qr2Trait::new(m2(a)).solve(v2(b)).unwrap();
-            let e = v2(expected);
+            let x = Qr2Trait::new(m2(a)).solve(v2t(b)).unwrap();
+            let e = v2t(expected);
             let err = max_ulp_diff_v2(x, e);
-            worst_ex = core::cmp::max(worst_ex, excess(err, decomp_tol(max_abs_v2(e), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v2(e), tol)));
             worst = core::cmp::max(worst, err);
         }
         assert!((worst, worst_ex) == (709, 7), "regressed: {worst} {worst_ex}");
@@ -376,9 +376,9 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _, _) = *case;
             let inv = Qr2Trait::new(m2(a)).try_inverse().unwrap();
-            let e = max_ulp_diff_m2(m2(a) * inv, Matrix2Trait::identity());
+            let e = max_ulp_diff2(m2(a) * inv, Matrix2Trait::identity());
             worst = core::cmp::max(worst, e);
-            worst = core::cmp::max(worst, max_ulp_diff_m2(inv * m2(a), Matrix2Trait::identity()));
+            worst = core::cmp::max(worst, max_ulp_diff2(inv * m2(a), Matrix2Trait::identity()));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
         assert!(worst == 99, "regressed: {worst}");

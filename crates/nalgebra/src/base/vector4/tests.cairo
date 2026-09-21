@@ -10,28 +10,11 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
-use crate::base::vector2::Vector2;
-use crate::base::vector3::Vector3;
+use crate::base::matrix_test_utils::{fx, v2, v3, v4, v4t};
 use super::{Vector4, Vector4AngleTrait, Vector4Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;
 const MIN: i64 = -0x8000000000000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v2(x: i64, y: i64) -> Vector2<Fixed> {
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn v3(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn v4(x: i64, y: i64, z: i64, w: i64) -> Vector4<Fixed> {
-    Vector4 { x: fx(x), y: fx(y), z: fx(z), w: fx(w) }
-}
 
 /// (1.5, -2.25, 3.75, -0.5)
 fn a() -> Vector4<Fixed> {
@@ -46,12 +29,6 @@ fn b() -> Vector4<Fixed> {
 /// (1, -2, 2, 4), of norm 5
 fn p() -> Vector4<Fixed> {
     v4(0x100000000, -0x200000000, 0x200000000, 0x400000000)
-}
-
-/// A vector from an oracle tuple of raws.
-fn vt(t: (i64, i64, i64, i64)) -> Vector4<Fixed> {
-    let (x, y, z, w) = t;
-    v4(x, y, z, w)
 }
 
 // --- constructors, resizing, conversions
@@ -751,7 +728,7 @@ fn test_angle_oracle() {
     assert!(cases.len() >= 12);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        assert!(Real::abs_diff_eq(vt(a).angle(vt(b)), fx(expected), tol));
+        assert!(Real::abs_diff_eq(v4t(a).angle(v4t(b)), fx(expected), tol));
     }
 }
 
@@ -763,8 +740,8 @@ fn test_add_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a + b).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v4t(a), v4t(b));
+        assert!((a + b).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -774,8 +751,8 @@ fn test_sub_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a - b).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v4t(a), v4t(b));
+        assert!((a - b).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -785,8 +762,8 @@ fn test_neg_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let a = vt(a);
-        assert!((-a).abs_diff_eq(vt(expected), tol));
+        let a = v4t(a);
+        assert!((-a).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -796,8 +773,8 @@ fn test_scale_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, k, expected, tol) = *case;
-        let a = vt(a);
-        assert!((a.scale(fx(k))).abs_diff_eq(vt(expected), tol));
+        let a = v4t(a);
+        assert!((a.scale(fx(k))).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -807,7 +784,7 @@ fn test_dot_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
+        let (a, b) = (v4t(a), v4t(b));
         assert!((a.dot(b)).abs_diff_eq(fx(expected), tol));
     }
 }
@@ -818,7 +795,7 @@ fn test_norm_squared_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let a = vt(a);
+        let a = v4t(a);
         assert!((a.norm_squared()).abs_diff_eq(fx(expected), tol));
     }
 }
@@ -829,7 +806,7 @@ fn test_norm_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let a = vt(a);
+        let a = v4t(a);
         assert!((a.norm()).abs_diff_eq(fx(expected), tol));
     }
 }
@@ -840,8 +817,8 @@ fn test_normalize_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let a = vt(a);
-        assert!((a.normalize()).abs_diff_eq(vt(expected), tol));
+        let a = v4t(a);
+        assert!((a.normalize()).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -851,8 +828,8 @@ fn test_lerp_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, t, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a.lerp(b, fx(t))).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v4t(a), v4t(b));
+        assert!((a.lerp(b, fx(t))).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -862,8 +839,8 @@ fn test_component_mul_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a.component_mul(b)).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v4t(a), v4t(b));
+        assert!((a.component_mul(b)).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -873,8 +850,8 @@ fn test_component_div_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a.component_div(b)).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v4t(a), v4t(b));
+        assert!((a.component_div(b)).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -884,8 +861,8 @@ fn test_abs_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let a = vt(a);
-        assert!((a.abs()).abs_diff_eq(vt(expected), tol));
+        let a = v4t(a);
+        assert!((a.abs()).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -895,7 +872,7 @@ fn test_min_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let a = vt(a);
+        let a = v4t(a);
         assert!((a.min()).abs_diff_eq(fx(expected), tol));
     }
 }
@@ -906,7 +883,7 @@ fn test_max_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let a = vt(a);
+        let a = v4t(a);
         assert!((a.max()).abs_diff_eq(fx(expected), tol));
     }
 }
@@ -917,8 +894,8 @@ fn test_inf_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a.inf(b)).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v4t(a), v4t(b));
+        assert!((a.inf(b)).abs_diff_eq(v4t(expected), tol));
     }
 }
 
@@ -928,7 +905,7 @@ fn test_sup_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let (a, b) = (vt(a), vt(b));
-        assert!((a.sup(b)).abs_diff_eq(vt(expected), tol));
+        let (a, b) = (v4t(a), v4t(b));
+        assert!((a.sup(b)).abs_diff_eq(v4t(expected), tol));
     }
 }

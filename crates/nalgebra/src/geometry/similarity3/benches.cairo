@@ -4,43 +4,15 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::matrix_test_utils::{p3, sim3, v3};
 use crate::base::point3::{Point3, Point3Trait};
 use crate::base::vector3::{Vector3, Vector3Trait};
-use crate::geometry::isometry3::{Isometry3, Isometry3Trait};
-use crate::geometry::quaternion::Quaternion;
-use crate::geometry::translation3::Translation3;
-use crate::geometry::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
+use crate::geometry::isometry3::Isometry3Trait;
+use crate::geometry::unit_quaternion::UnitQuaternionTrait;
 use super::{Similarity3, Similarity3Trait};
 
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v3(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn p3(x: i64, y: i64, z: i64) -> Point3<Fixed> {
-    Point3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn uq(w: i64, i: i64, j: i64, k: i64) -> UnitQuaternion<Fixed> {
-    UnitQuaternion { quaternion: Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) } }
-}
-
-fn sim(t: (i64, i64, i64), r: (i64, i64, i64, i64), scaling: i64) -> Similarity3<Fixed> {
-    let (tx, ty, tz) = t;
-    let (w, i, j, k) = r;
-    Similarity3 {
-        isometry: Isometry3 {
-            rotation: uq(w, i, j, k), translation: Translation3 { vector: v3(tx, ty, tz) },
-        },
-        scaling: fx(scaling),
-    }
-}
-
 fn x() -> Similarity3<Fixed> {
-    sim((0x100000000, -0x200000000, 0x100000000), (0, 0, 0x100000000, 0), 0x300000000)
+    sim3((0x100000000, -0x200000000, 0x100000000), (0, 0, 0x100000000, 0), 0x300000000)
 }
 
 fn p() -> Point3<Fixed> {

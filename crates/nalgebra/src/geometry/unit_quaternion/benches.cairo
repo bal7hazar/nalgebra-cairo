@@ -11,6 +11,7 @@ use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix_test_utils::{fx, int, m3, u3t, uqt, v3t};
 use crate::base::point3::Point3;
 use crate::base::unit::Unit;
 use crate::base::vector3::{Vector3, Vector3Trait};
@@ -18,68 +19,30 @@ use crate::geometry::quaternion::{Quaternion, QuaternionTrait};
 use crate::geometry::rotation3::{Rotation3, Rotation3Trait};
 use super::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * 0x100000000 }
-}
-
-fn v3(t: (i64, i64, i64)) -> Vector3<Fixed> {
-    let (x, y, z) = t;
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn u3(t: (i64, i64, i64)) -> Unit<Vector3<Fixed>> {
-    Unit { value: v3(t) }
-}
-
-/// Unit quaternion from raw components, in the `(w, i, j, k)` order.
-fn uq(t: (i64, i64, i64, i64)) -> UnitQuaternion<Fixed> {
-    let (w, i, j, k) = t;
-    UnitQuaternion { quaternion: Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) } }
-}
-
-fn m3(rows: [[i64; 3]; 3]) -> Matrix3<Fixed> {
-    let [[m11, m12, m13], [m21, m22, m23], [m31, m32, m33]] = rows;
-    Matrix3 {
-        m11: fx(m11),
-        m21: fx(m21),
-        m31: fx(m31),
-        m12: fx(m12),
-        m22: fx(m22),
-        m32: fx(m32),
-        m13: fx(m13),
-        m23: fx(m23),
-        m33: fx(m33),
-    }
-}
-
 /// A unit quaternion of negative real part (so the sign conventions of `axis` and `angle` are
 /// exercised).
 fn a() -> UnitQuaternion<Fixed> {
-    uq((-1509276477, -2563574020, -2263667719, 2114881862))
+    uqt((-1509276477, -2563574020, -2263667719, 2114881862))
 }
 
 /// Another unit quaternion.
 fn b() -> UnitQuaternion<Fixed> {
-    uq((-1829744033, 968283947, 3750500405, -308145672))
+    uqt((-1829744033, 968283947, 3750500405, -308145672))
 }
 
 /// `(1.5, -2.25, 3.75)`.
 fn v() -> Vector3<Fixed> {
-    v3((0x180000000, -0x240000000, 0x3c0000000))
+    v3t((0x180000000, -0x240000000, 0x3c0000000))
 }
 
 /// A small rotation vector `(0.25, -0.1875, 0.125)`.
 fn w() -> Vector3<Fixed> {
-    v3((0x40000000, -0x30000000, 0x20000000))
+    v3t((0x40000000, -0x30000000, 0x20000000))
 }
 
 /// A unit vector: `(1.5, -2.25, 3.75)` normalized.
 fn axis() -> Unit<Vector3<Fixed>> {
-    u3((1393471396, -2090207096, 3483678492))
+    u3t((1393471396, -2090207096, 3483678492))
 }
 
 /// The rotation matrix of `a`.
@@ -141,6 +104,14 @@ fn alt_transform_vector_sandwich(q: UnitQuaternion<Fixed>, x: Vector3<Fixed>) ->
     let p = QuaternionTrait::from_imag(x);
     let r = q.quaternion * p * q.quaternion.conjugate();
     Vector3 { x: r.i, y: r.j, z: r.k }
+}
+
+/// `inverse_transform_vector` as it was before the conjugate's signs were folded into the
+/// sandwich: three negations, then `transform_vector`. Bit for bit the same result.
+fn alt_inverse_transform_vector_conjugate(
+    q: UnitQuaternion<Fixed>, x: Vector3<Fixed>,
+) -> Vector3<Fixed> {
+    q.conjugate().transform_vector(x)
 }
 
 /// `transform_vector` through the rotation matrix: 24 + 9 products, but the matrix can be reused.
@@ -234,6 +205,22 @@ fn test_transform_vector_alts_agree() {
     assert!(alt_transform_vector_via_matrix(a(), v()).abs_diff_eq(exact, 8));
 }
 
+/// Folding the conjugate's signs into the operand order of the cross products (`(-u) × v = v ×
+/// u`)
+/// changes no exact product, hence no bit: the fused `inverse_transform_vector` and `conj_mul`
+/// equal their conjugate-first formulations exactly.
+#[test]
+fn test_inverse_transform_vector_fused_matches_conjugate_then_transform() {
+    assert!(a().inverse_transform_vector(v()) == alt_inverse_transform_vector_conjugate(a(), v()));
+    assert!(b().inverse_transform_vector(w()) == alt_inverse_transform_vector_conjugate(b(), w()));
+    assert!(a().inverse_transform_vector(w()) == alt_inverse_transform_vector_conjugate(a(), w()));
+    let p = Point3 { x: v().x, y: v().y, z: v().z };
+    let c = a().conjugate().transform_point(p);
+    assert!(a().inverse_transform_point(p) == c);
+    assert!(a().conj_mul(b()) == a().conjugate() * b());
+    assert!(b().conj_mul(a()) == b().inverse() * a());
+}
+
 /// The reciprocal of the denominator costs one division instead of three but rounds the factor
 /// first: the components come out within a few ulp of the exactly divided ones. `denom >= 2` here,
 /// so the loss stays small — the three divisions are kept because they are exact and the branch
@@ -259,7 +246,7 @@ fn test_from_scaled_axis_alt_unit_axis_is_barely_more_accurate() {
     assert!(alt.abs_diff_eq(exact, 1));
     assert!(alt.quaternion.norm().abs_diff_eq(Real::ONE, 4));
     // A larger rotation vector (|v| = 3): still within 2 ulp.
-    let big = v3((0x200000000, -0x180000000, 0x100000000));
+    let big = v3t((0x200000000, -0x180000000, 0x100000000));
     assert!(
         alt_from_scaled_axis_unit_axis(big)
             .abs_diff_eq(UnitQuaternionAngleTrait::from_scaled_axis(big), 2),
@@ -290,14 +277,14 @@ fn test_scaled_axis_alt_factor_is_less_accurate() {
 #[test]
 #[inline(never)]
 fn bench_unit_quaternion_identity__baseline() {
-    let e = black_box(uq((0x100000000, 0, 0, 0)));
+    let e = black_box(uqt((0x100000000, 0, 0, 0)));
     assert!(e == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_unit_quaternion_identity__const() {
-    let e = black_box(uq((0x100000000, 0, 0, 0)));
+    let e = black_box(uqt((0x100000000, 0, 0, 0)));
     assert!(UnitQuaternionTrait::<Fixed>::identity() == e);
 }
 
@@ -321,7 +308,7 @@ fn bench_unit_quaternion_new_unchecked__struct() {
 #[inline(never)]
 fn bench_unit_quaternion_new_normalize__baseline() {
     let _q = black_box(QuaternionTrait::new(int(1), int(2), int(-3), int(4)));
-    let e = black_box(uq((784150157, 1568300314, -2352450472, 3136600629)));
+    let e = black_box(uqt((784150157, 1568300314, -2352450472, 3136600629)));
     assert!(e == e);
 }
 
@@ -329,7 +316,7 @@ fn bench_unit_quaternion_new_normalize__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_new_normalize__divisions() {
     let q = black_box(QuaternionTrait::new(int(1), int(2), int(-3), int(4)));
-    let e = black_box(uq((784150157, 1568300314, -2352450472, 3136600629)));
+    let e = black_box(uqt((784150157, 1568300314, -2352450472, 3136600629)));
     assert!(UnitQuaternionTrait::new_normalize(q) == e);
 }
 
@@ -337,7 +324,7 @@ fn bench_unit_quaternion_new_normalize__divisions() {
 #[inline(never)]
 fn bench_unit_quaternion_imag__baseline() {
     let _q = black_box(a());
-    let e = black_box(v3((-2563574020, -2263667719, 2114881862)));
+    let e = black_box(v3t((-2563574020, -2263667719, 2114881862)));
     assert!(e == e);
 }
 
@@ -345,7 +332,7 @@ fn bench_unit_quaternion_imag__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_imag__struct() {
     let q = black_box(a());
-    let e = black_box(v3((-2563574020, -2263667719, 2114881862)));
+    let e = black_box(v3t((-2563574020, -2263667719, 2114881862)));
     assert!(q.imag() == e);
 }
 
@@ -355,7 +342,7 @@ fn bench_unit_quaternion_imag__struct() {
 #[inline(never)]
 fn bench_unit_quaternion_inverse__baseline() {
     let _q = black_box(a());
-    let e = black_box(uq((-1509276477, 2563574020, 2263667719, -2114881862)));
+    let e = black_box(uqt((-1509276477, 2563574020, 2263667719, -2114881862)));
     assert!(e == e);
 }
 
@@ -363,7 +350,7 @@ fn bench_unit_quaternion_inverse__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_inverse__conjugate() {
     let q = black_box(a());
-    let e = black_box(uq((-1509276477, 2563574020, 2263667719, -2114881862)));
+    let e = black_box(uqt((-1509276477, 2563574020, 2263667719, -2114881862)));
     assert!(q.inverse() == e);
 }
 
@@ -372,7 +359,7 @@ fn bench_unit_quaternion_inverse__conjugate() {
 fn bench_unit_quaternion_mul__baseline() {
     let _q = black_box(a());
     let _r = black_box(b());
-    let e = black_box(uq((3349370227, -932498320, -60712365, -2520956970)));
+    let e = black_box(uqt((3349370227, -932498320, -60712365, -2520956970)));
     assert!(e == e);
 }
 
@@ -381,8 +368,37 @@ fn bench_unit_quaternion_mul__baseline() {
 fn bench_unit_quaternion_mul__hamilton() {
     let q = black_box(a());
     let r = black_box(b());
-    let e = black_box(uq((3349370227, -932498320, -60712365, -2520956970)));
+    let e = black_box(uqt((3349370227, -932498320, -60712365, -2520956970)));
     assert!(q * r == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_conj_mul__baseline() {
+    let _q = black_box(a());
+    let _r = black_box(b());
+    let e = black_box(uqt((-2063404847, 251977103, -2575182929, 2737525330)));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_conj_mul__fused() {
+    let q = black_box(a());
+    let r = black_box(b());
+    let e = black_box(uqt((-2063404847, 251977103, -2575182929, 2737525330)));
+    assert!(q.conj_mul(r) == e);
+}
+
+/// The formulation `conj_mul` replaces: `self.inverse() * other` (three negations, then the
+/// Hamilton product).
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_conj_mul__alt_conjugate_then_mul() {
+    let q = black_box(a());
+    let r = black_box(b());
+    let e = black_box(uqt((-2063404847, 251977103, -2575182929, 2737525330)));
+    assert!(q.inverse() * r == e);
 }
 
 #[test]
@@ -390,7 +406,7 @@ fn bench_unit_quaternion_mul__hamilton() {
 fn bench_unit_quaternion_rotation_to__baseline() {
     let _q = black_box(a());
     let _r = black_box(b());
-    let e = black_box(uq((-2063404847, -3116768394, -1989449985, -718990994)));
+    let e = black_box(uqt((-2063404847, -3116768394, -1989449985, -718990994)));
     assert!(e == e);
 }
 
@@ -399,7 +415,7 @@ fn bench_unit_quaternion_rotation_to__baseline() {
 fn bench_unit_quaternion_rotation_to__conjugate_product() {
     let q = black_box(a());
     let r = black_box(b());
-    let e = black_box(uq((-2063404847, -3116768394, -1989449985, -718990994)));
+    let e = black_box(uqt((-2063404847, -3116768394, -1989449985, -718990994)));
     assert!(q.rotation_to(r) == e);
 }
 
@@ -427,7 +443,7 @@ fn bench_unit_quaternion_dot__fused() {
 #[inline(never)]
 fn bench_unit_quaternion_renormalize__baseline() {
     let _q = black_box(a());
-    let e = black_box(uq((-1509276478, -2563574021, -2263667720, 2114881862)));
+    let e = black_box(uqt((-1509276478, -2563574021, -2263667720, 2114881862)));
     assert!(e == e);
 }
 
@@ -435,7 +451,7 @@ fn bench_unit_quaternion_renormalize__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_renormalize__exact() {
     let q = black_box(a());
-    let e = black_box(uq((-1509276478, -2563574021, -2263667720, 2114881862)));
+    let e = black_box(uqt((-1509276478, -2563574021, -2263667720, 2114881862)));
     assert!(q.renormalize() == e);
 }
 
@@ -459,7 +475,7 @@ fn bench_unit_quaternion_renormalize_fast__newton() {
 #[inline(never)]
 fn bench_unit_quaternion_renormalize_fast__alt_exact() {
     let q = black_box(a());
-    let e = black_box(uq((-1509276478, -2563574021, -2263667720, 2114881862)));
+    let e = black_box(uqt((-1509276478, -2563574021, -2263667720, 2114881862)));
     assert!(q.renormalize() == e);
 }
 
@@ -487,7 +503,7 @@ fn bench_unit_quaternion_abs_diff_eq__components() {
 #[inline(never)]
 fn bench_unit_quaternion_axis__baseline() {
     let _q = black_box(a());
-    let e = black_box(u3((2738208059, 2417871746, -2258950401)));
+    let e = black_box(u3t((2738208059, 2417871746, -2258950401)));
     assert!(Some(e) == Some(e));
 }
 
@@ -495,7 +511,7 @@ fn bench_unit_quaternion_axis__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_axis__try_new() {
     let q = black_box(a());
-    let e = black_box(u3((2738208059, 2417871746, -2258950401)));
+    let e = black_box(u3t((2738208059, 2417871746, -2258950401)));
     assert!(q.axis() == Some(e));
 }
 
@@ -545,7 +561,7 @@ fn bench_unit_quaternion_angle_to__product_and_atan2() {
 #[inline(never)]
 fn bench_unit_quaternion_scaled_axis__baseline() {
     let _q = black_box(a());
-    let e = black_box(v3((6635905205, 5859586765, -5474449130)));
+    let e = black_box(v3t((6635905205, 5859586765, -5474449130)));
     assert!(e == e);
 }
 
@@ -553,7 +569,7 @@ fn bench_unit_quaternion_scaled_axis__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_scaled_axis__divisions() {
     let q = black_box(a());
-    let e = black_box(v3((6635905205, 5859586765, -5474449130)));
+    let e = black_box(v3t((6635905205, 5859586765, -5474449130)));
     assert!(q.scaled_axis() == e);
 }
 
@@ -561,7 +577,7 @@ fn bench_unit_quaternion_scaled_axis__divisions() {
 #[inline(never)]
 fn bench_unit_quaternion_scaled_axis__alt_factor() {
     let q = black_box(a());
-    let e = black_box(v3((6635905207, 5859586766, -5474449129)));
+    let e = black_box(v3t((6635905207, 5859586766, -5474449129)));
     assert!(alt_scaled_axis_factor(q) == e);
 }
 
@@ -604,7 +620,7 @@ fn bench_unit_quaternion_to_rotation_matrix__alt_one_minus() {
 #[inline(never)]
 fn bench_unit_quaternion_from_rotation_matrix__baseline() {
     let _r = black_box(rot());
-    let e = black_box(uq((1509276477, 2563574020, 2263667718, -2114881863)));
+    let e = black_box(uqt((1509276477, 2563574020, 2263667718, -2114881863)));
     assert!(e == e);
 }
 
@@ -612,7 +628,7 @@ fn bench_unit_quaternion_from_rotation_matrix__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_from_rotation_matrix__shepperd() {
     let r = black_box(rot());
-    let e = black_box(uq((1509276477, 2563574020, 2263667718, -2114881863)));
+    let e = black_box(uqt((1509276477, 2563574020, 2263667718, -2114881863)));
     assert!(UnitQuaternionTrait::from_rotation_matrix(r) == e);
 }
 
@@ -641,7 +657,7 @@ fn bench_unit_quaternion_to_homogeneous__matrix4() {
 fn bench_unit_quaternion_transform_vector__baseline() {
     let _q = black_box(a());
     let _x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226564, -9529255125)));
+    let e = black_box(v3t((-13186805408, -11384226564, -9529255125)));
     assert!(e == e);
 }
 
@@ -650,7 +666,7 @@ fn bench_unit_quaternion_transform_vector__baseline() {
 fn bench_unit_quaternion_transform_vector__expanded() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226564, -9529255125)));
+    let e = black_box(v3t((-13186805408, -11384226564, -9529255125)));
     assert!(q.transform_vector(x) == e);
 }
 
@@ -659,7 +675,7 @@ fn bench_unit_quaternion_transform_vector__expanded() {
 fn bench_unit_quaternion_transform_vector__alt_via_matrix() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226561, -9529255127)));
+    let e = black_box(v3t((-13186805408, -11384226561, -9529255127)));
     assert!(alt_transform_vector_via_matrix(q, x) == e);
 }
 
@@ -668,7 +684,7 @@ fn bench_unit_quaternion_transform_vector__alt_via_matrix() {
 fn bench_unit_quaternion_transform_vector__alt_sandwich() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226564, -9529255125)));
+    let e = black_box(v3t((-13186805408, -11384226564, -9529255125)));
     assert!(alt_transform_vector_sandwich(q, x) == e);
 }
 
@@ -678,7 +694,7 @@ fn bench_unit_quaternion_transform_vector__alt_sandwich() {
 fn bench_unit_quaternion_transform_vector_x2__baseline() {
     let _q = black_box(a());
     let _x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226564, -9529255125)));
+    let e = black_box(v3t((-13186805408, -11384226564, -9529255125)));
     assert!(e == e);
 }
 
@@ -687,7 +703,7 @@ fn bench_unit_quaternion_transform_vector_x2__baseline() {
 fn bench_unit_quaternion_transform_vector_x2__expanded() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226564, -9529255125)));
+    let e = black_box(v3t((-13186805408, -11384226564, -9529255125)));
     let r1 = q.transform_vector(x);
     let r2 = q.transform_vector(Vector3 { x: x.y, y: x.z, z: x.x });
     assert!(r1 == e);
@@ -699,7 +715,7 @@ fn bench_unit_quaternion_transform_vector_x2__expanded() {
 fn bench_unit_quaternion_transform_vector_x2__via_matrix() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226561, -9529255127)));
+    let e = black_box(v3t((-13186805408, -11384226561, -9529255127)));
     let m = q.to_rotation_matrix();
     let r1 = m.transform_vector(x);
     let r2 = m.transform_vector(Vector3 { x: x.y, y: x.z, z: x.x });
@@ -713,7 +729,7 @@ fn bench_unit_quaternion_transform_vector_x2__via_matrix() {
 fn bench_unit_quaternion_transform_vector_x3__baseline() {
     let _q = black_box(a());
     let _x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226564, -9529255125)));
+    let e = black_box(v3t((-13186805408, -11384226564, -9529255125)));
     assert!(e == e);
 }
 
@@ -722,7 +738,7 @@ fn bench_unit_quaternion_transform_vector_x3__baseline() {
 fn bench_unit_quaternion_transform_vector_x3__expanded() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226564, -9529255125)));
+    let e = black_box(v3t((-13186805408, -11384226564, -9529255125)));
     let r1 = q.transform_vector(x);
     let r2 = q.transform_vector(Vector3 { x: x.y, y: x.z, z: x.x });
     let r3 = q.transform_vector(Vector3 { x: x.z, y: x.x, z: x.y });
@@ -735,7 +751,7 @@ fn bench_unit_quaternion_transform_vector_x3__expanded() {
 fn bench_unit_quaternion_transform_vector_x3__via_matrix() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226561, -9529255127)));
+    let e = black_box(v3t((-13186805408, -11384226561, -9529255127)));
     let m = q.to_rotation_matrix();
     let r1 = m.transform_vector(x);
     let r2 = m.transform_vector(Vector3 { x: x.y, y: x.z, z: x.x });
@@ -749,17 +765,26 @@ fn bench_unit_quaternion_transform_vector_x3__via_matrix() {
 fn bench_unit_quaternion_inverse_transform_vector__baseline() {
     let _q = black_box(a());
     let _x = black_box(v());
-    let e = black_box(v3((-18430159324, 6587686339, 3351234183)));
+    let e = black_box(v3t((-18430159324, 6587686339, 3351234183)));
     assert!(e == e);
 }
 
 #[test]
 #[inline(never)]
-fn bench_unit_quaternion_inverse_transform_vector__conjugate() {
+fn bench_unit_quaternion_inverse_transform_vector__folded() {
     let q = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-18430159324, 6587686339, 3351234183)));
+    let e = black_box(v3t((-18430159324, 6587686339, 3351234183)));
     assert!(q.inverse_transform_vector(x) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_unit_quaternion_inverse_transform_vector__alt_conjugate_then_transform() {
+    let q = black_box(a());
+    let x = black_box(v());
+    let e = black_box(v3t((-18430159324, 6587686339, 3351234183)));
+    assert!(alt_inverse_transform_vector_conjugate(q, x) == e);
 }
 
 #[test]
@@ -787,7 +812,7 @@ fn bench_unit_quaternion_transform_point__expanded() {
 fn bench_unit_quaternion_rotation_between__baseline() {
     let _x = black_box(v());
     let _y = black_box(w());
-    let e = black_box(uq((4089636155, 611444112, 1087011755, 407629408)));
+    let e = black_box(uqt((4089636155, 611444112, 1087011755, 407629408)));
     assert!(Some(e) == Some(e));
 }
 
@@ -796,7 +821,7 @@ fn bench_unit_quaternion_rotation_between__baseline() {
 fn bench_unit_quaternion_rotation_between__algebraic() {
     let x = black_box(v());
     let y = black_box(w());
-    let e = black_box(uq((4089636155, 611444112, 1087011755, 407629408)));
+    let e = black_box(uqt((4089636155, 611444112, 1087011755, 407629408)));
     assert!(UnitQuaternionTrait::rotation_between(x, y) == Some(e));
 }
 
@@ -808,7 +833,7 @@ fn bench_unit_quaternion_rotation_between__algebraic() {
 fn bench_unit_quaternion_rotation_between__alt_axis_angle() {
     let x = black_box(v());
     let y = black_box(w());
-    let e = black_box(uq((4089636155, 611444112, 1087011755, 407629408)));
+    let e = black_box(uqt((4089636155, 611444112, 1087011755, 407629408)));
     assert!(UnitQuaternionAngleTrait::scaled_rotation_between(x, y, Real::ONE) == Some(e));
 }
 
@@ -817,7 +842,7 @@ fn bench_unit_quaternion_rotation_between__alt_axis_angle() {
 fn bench_unit_quaternion_scaled_rotation_between__baseline() {
     let _x = black_box(v());
     let _y = black_box(w());
-    let e = black_box(uq((4243324028, 309442838, 550120601, 206295225)));
+    let e = black_box(uqt((4243324028, 309442838, 550120601, 206295225)));
     assert!(Some(e) == Some(e));
 }
 
@@ -826,7 +851,7 @@ fn bench_unit_quaternion_scaled_rotation_between__baseline() {
 fn bench_unit_quaternion_scaled_rotation_between__acos() {
     let x = black_box(v());
     let y = black_box(w());
-    let e = black_box(uq((4243324028, 309442838, 550120601, 206295225)));
+    let e = black_box(uqt((4243324028, 309442838, 550120601, 206295225)));
     assert!(UnitQuaternionAngleTrait::scaled_rotation_between(x, y, Real::HALF) == Some(e));
 }
 
@@ -837,7 +862,7 @@ fn bench_unit_quaternion_scaled_rotation_between__acos() {
 fn bench_unit_quaternion_from_axis_angle__baseline() {
     let _u = black_box(axis());
     let _t = black_box(fx(0x180000000));
-    let e = black_box(uq((3142579763, 949844114, -1424766174, 2374610287)));
+    let e = black_box(uqt((3142579763, 949844114, -1424766174, 2374610287)));
     assert!(e == e);
 }
 
@@ -846,7 +871,7 @@ fn bench_unit_quaternion_from_axis_angle__baseline() {
 fn bench_unit_quaternion_from_axis_angle__sin_cos() {
     let u = black_box(axis());
     let t = black_box(fx(0x180000000));
-    let e = black_box(uq((3142579763, 949844114, -1424766174, 2374610287)));
+    let e = black_box(uqt((3142579763, 949844114, -1424766174, 2374610287)));
     assert!(UnitQuaternionAngleTrait::from_axis_angle(u, t) == e);
 }
 
@@ -854,7 +879,7 @@ fn bench_unit_quaternion_from_axis_angle__sin_cos() {
 #[inline(never)]
 fn bench_unit_quaternion_from_scaled_axis__baseline() {
     let _x = black_box(w());
-    let e = black_box(uq((4234293283, 534340439, -400755330, 267170219)));
+    let e = black_box(uqt((4234293283, 534340439, -400755330, 267170219)));
     assert!(e == e);
 }
 
@@ -862,7 +887,7 @@ fn bench_unit_quaternion_from_scaled_axis__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_from_scaled_axis__one_division() {
     let x = black_box(w());
-    let e = black_box(uq((4234293283, 534340439, -400755330, 267170219)));
+    let e = black_box(uqt((4234293283, 534340439, -400755330, 267170219)));
     assert!(UnitQuaternionAngleTrait::from_scaled_axis(x) == e);
 }
 
@@ -870,7 +895,7 @@ fn bench_unit_quaternion_from_scaled_axis__one_division() {
 #[inline(never)]
 fn bench_unit_quaternion_from_scaled_axis__alt_unit_axis() {
     let x = black_box(w());
-    let e = black_box(uq((4234293283, 534340439, -400755330, 267170219)));
+    let e = black_box(uqt((4234293283, 534340439, -400755330, 267170219)));
     assert!(alt_from_scaled_axis_unit_axis(x) == e);
 }
 
@@ -880,7 +905,7 @@ fn bench_unit_quaternion_from_euler_angles__baseline() {
     let _r = black_box(fx(0x40000000));
     let _p = black_box(fx(-0x30000000));
     let _y = black_box(fx(0x20000000));
-    let e = black_box(uq((4231328319, 556998235, -364849220, 315028144)));
+    let e = black_box(uqt((4231328319, 556998235, -364849220, 315028144)));
     assert!(e == e);
 }
 
@@ -890,7 +915,7 @@ fn bench_unit_quaternion_from_euler_angles__three_sin_cos() {
     let r = black_box(fx(0x40000000));
     let p = black_box(fx(-0x30000000));
     let y = black_box(fx(0x20000000));
-    let e = black_box(uq((4231328319, 556998235, -364849220, 315028144)));
+    let e = black_box(uqt((4231328319, 556998235, -364849220, 315028144)));
     assert!(UnitQuaternionAngleTrait::from_euler_angles(r, p, y) == e);
 }
 
@@ -921,7 +946,7 @@ fn bench_unit_quaternion_nlerp__baseline() {
     let _q = black_box(a());
     let _r = black_box(b());
     let _t = black_box(fx(0x40000000));
-    let e = black_box(uq((-2383027037, -2519790274, -1139680148, 2262678139)));
+    let e = black_box(uqt((-2383027037, -2519790274, -1139680148, 2262678139)));
     assert!(e == e);
 }
 
@@ -931,7 +956,7 @@ fn bench_unit_quaternion_nlerp__lerp_normalize() {
     let q = black_box(a());
     let r = black_box(b());
     let t = black_box(fx(0x40000000));
-    let e = black_box(uq((-2383027037, -2519790274, -1139680148, 2262678139)));
+    let e = black_box(uqt((-2383027037, -2519790274, -1139680148, 2262678139)));
     assert!(q.nlerp(r, t) == e);
 }
 
@@ -941,7 +966,7 @@ fn bench_unit_quaternion_slerp__baseline() {
     let _q = black_box(a());
     let _r = black_box(b());
     let _t = black_box(fx(0x40000000));
-    let e = black_box(uq((-685896197, -2393123540, -2985529559, 1826434633)));
+    let e = black_box(uqt((-685896197, -2393123540, -2985529559, 1826434633)));
     assert!(e == e);
 }
 
@@ -951,7 +976,7 @@ fn bench_unit_quaternion_slerp__acos_sin() {
     let q = black_box(a());
     let r = black_box(b());
     let t = black_box(fx(0x40000000));
-    let e = black_box(uq((-685896197, -2393123540, -2985529559, 1826434633)));
+    let e = black_box(uqt((-685896197, -2393123540, -2985529559, 1826434633)));
     assert!(q.slerp(r, t) == e);
 }
 
@@ -960,7 +985,7 @@ fn bench_unit_quaternion_slerp__acos_sin() {
 fn bench_unit_quaternion_powf__baseline() {
     let _q = black_box(a());
     let _n = black_box(Real::<Fixed>::HALF);
-    let e = black_box(uq((3530512512, 1559329776, 1376907571, -1286406493)));
+    let e = black_box(uqt((3530512512, 1559329776, 1376907571, -1286406493)));
     assert!(e == e);
 }
 
@@ -969,7 +994,7 @@ fn bench_unit_quaternion_powf__baseline() {
 fn bench_unit_quaternion_powf__axis_angle() {
     let q = black_box(a());
     let n = black_box(Real::<Fixed>::HALF);
-    let e = black_box(uq((3530512512, 1559329776, 1376907571, -1286406493)));
+    let e = black_box(uqt((3530512512, 1559329776, 1376907571, -1286406493)));
     assert!(q.powf(n) == e);
 }
 
@@ -978,7 +1003,7 @@ fn bench_unit_quaternion_powf__axis_angle() {
 fn bench_unit_quaternion_append_axisangle_linearized__baseline() {
     let _q = black_box(a());
     let _x = black_box(w());
-    let e = black_box(uq((-1511968454, -2770073696, -2511442522, 1476497089)));
+    let e = black_box(uqt((-1511968454, -2770073696, -2511442522, 1476497089)));
     assert!(e == e);
 }
 
@@ -987,7 +1012,7 @@ fn bench_unit_quaternion_append_axisangle_linearized__baseline() {
 fn bench_unit_quaternion_append_axisangle_linearized__reduced_product() {
     let q = black_box(a());
     let x = black_box(w());
-    let e = black_box(uq((-1511968454, -2770073696, -2511442522, 1476497089)));
+    let e = black_box(uqt((-1511968454, -2770073696, -2511442522, 1476497089)));
     assert!(q.append_axisangle_linearized(x) == e);
 }
 
@@ -998,6 +1023,6 @@ fn bench_unit_quaternion_append_axisangle_linearized__reduced_product() {
 fn bench_unit_quaternion_append_axisangle_linearized__alt_exact() {
     let q = black_box(a());
     let x = black_box(w());
-    let e = black_box(uq((-1511794594, -2771652604, -2513444042, 1470293193)));
+    let e = black_box(uqt((-1511794594, -2771652604, -2513444042, 1470293193)));
     assert!(UnitQuaternionAngleTrait::from_scaled_axis(x) * q == e);
 }

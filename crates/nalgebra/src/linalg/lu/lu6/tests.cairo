@@ -3,16 +3,16 @@
 //! `tools/oracle` (upstream nalgebra 0.35 on the same raw inputs).
 //!
 //! Tolerance of the oracle assertions: the oracle's `tol` plus ONE relative ulp of the expected
-//! value. `test_utils::lu_tol` states why, with the measurement.
+//! value. `base::matrix_test_utils::oracle_tol` states why, with the measurement.
 
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use crate::base::matrix6::{Matrix6, Matrix6Trait};
-use crate::base::vector6::Vector6;
-use crate::linalg::lu::test_utils::{
-    abs_raw, fx, int, lu_tol, m6, max_abs_m6, max_abs_v6, max_ulp_diff_m6, max_ulp_diff_v6,
-    ulp_diff, v6, v6i,
+use crate::base::matrix_test_utils::{
+    abs_raw, fx, int, m6, max_abs_m6, max_abs_v6, max_ulp_diff6, max_ulp_diff_v6, oracle_tol,
+    ulp_diff, v6it, v6t,
 };
+use crate::base::vector6::Vector6;
 use crate::linalg::lu::{Perm6, PermTrait, oracle_lu6 as oracle};
 use super::benches::{new_no_pivot, solve_recip, try_inverse_recip, try_inverse_solve_columns};
 use super::{Lu6, Lu6Trait, Matrix6LuTrait};
@@ -34,7 +34,7 @@ fn a_bench() -> Matrix6<Fixed> {
 
 /// Its right-hand side.
 fn b_bench() -> Vector6<Fixed> {
-    v6((3579353502, 7767965432, 6840630971, -6086016248, -4735434050, -2809324573))
+    v6t((3579353502, 7767965432, 6840630971, -6086016248, -4735434050, -2809324573))
 }
 
 /// `a_bench()` already factored, so that the benchmarks of the derived operations do not pay for
@@ -119,13 +119,13 @@ fn solve_failures(variant: u8) -> (u32, u128) {
             Lu6Trait::new(m6(a))
         };
         let got = if variant == 1 {
-            solve_recip(f, v6(b))
+            solve_recip(f, v6t(b))
         } else {
-            f.solve(v6(b))
+            f.solve(v6t(b))
         };
-        let e = v6(expected);
+        let e = v6t(expected);
         let err = max_ulp_diff_v6(got.unwrap(), e);
-        if err > lu_tol(max_abs_v6(e), tol) {
+        if err > oracle_tol(max_abs_v6(e), tol) {
             failures += 1;
         }
         worst = core::cmp::max(worst, err);
@@ -162,7 +162,7 @@ fn test_new_reconstruction_oracle() {
     while let Some(case) = cases.pop_front() {
         let (a, _, _, _) = *case;
         let f = Lu6Trait::new(m6(a));
-        worst = core::cmp::max(worst, max_ulp_diff_m6(f.permute_rows(m6(a)), f.l() * f.u()));
+        worst = core::cmp::max(worst, max_ulp_diff6(f.permute_rows(m6(a)), f.l() * f.u()));
     }
     assert!(worst == 40, "reconstruction error {worst}");
 }
@@ -217,7 +217,7 @@ fn test_factors_permutation_and_accessors() {
             ],
         ),
     );
-    assert!(f.permute(v6i((1, 2, 3, 4, 5, 6))) == v6i((6, 5, 1, 2, 3, 4)));
+    assert!(f.permute(v6it((1, 2, 3, 4, 5, 6))) == v6it((6, 5, 1, 2, 3, 4)));
     // the identity factors without a single swap
     let id = Lu6Trait::new(Matrix6Trait::<Fixed>::identity());
     assert!(id.p() == PermTrait::identity6());
@@ -248,10 +248,10 @@ fn test_solve_oracle() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let x = Lu6Trait::new(m6(a)).solve(v6(b)).unwrap();
-        let e = v6(expected);
+        let x = Lu6Trait::new(m6(a)).solve(v6t(b)).unwrap();
+        let e = v6t(expected);
         let err = max_ulp_diff_v6(x, e);
-        assert!(err <= lu_tol(max_abs_v6(e), tol), "solve error {err}");
+        assert!(err <= oracle_tol(max_abs_v6(e), tol), "solve error {err}");
         worst = core::cmp::max(worst, err);
     }
     assert!(worst == 8238);
@@ -265,10 +265,10 @@ fn test_solve_near_singular_oracle() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let x = Lu6Trait::new(m6(a)).solve(v6(b)).unwrap();
-        let e = v6(expected);
+        let x = Lu6Trait::new(m6(a)).solve(v6t(b)).unwrap();
+        let e = v6t(expected);
         let err = max_ulp_diff_v6(x, e);
-        assert!(err <= lu_tol(max_abs_v6(e), tol), "solve error {err}");
+        assert!(err <= oracle_tol(max_abs_v6(e), tol), "solve error {err}");
         worst = core::cmp::max(worst, err);
     }
     assert!(worst == 460827);
@@ -282,8 +282,8 @@ fn test_try_inverse_oracle() {
         let (a, expected, tol) = *case;
         let inv = Lu6Trait::new(m6(a)).try_inverse().unwrap();
         let e = m6(expected);
-        let err = max_ulp_diff_m6(inv, e);
-        assert!(err <= lu_tol(max_abs_m6(e), tol), "inverse error {err}");
+        let err = max_ulp_diff6(inv, e);
+        assert!(err <= oracle_tol(max_abs_m6(e), tol), "inverse error {err}");
         worst = core::cmp::max(worst, err);
     }
     assert!(worst == 1013);
@@ -313,7 +313,7 @@ fn test_try_inverse_candidates() {
         assert!(f.try_inverse().unwrap() == try_inverse_solve_columns(f).unwrap());
         worst =
             core::cmp::max(
-                worst, max_ulp_diff_m6(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
+                worst, max_ulp_diff6(f.try_inverse().unwrap(), try_inverse_recip(f).unwrap()),
             );
     }
     // ... and the reciprocal variant drifts by at most this many ulp from it.
@@ -335,7 +335,7 @@ fn test_determinant_oracle() {
         let (a, expected, tol) = *case;
         let det = Lu6Trait::new(m6(a)).determinant();
         let err = ulp_diff(det, fx(expected));
-        assert!(err <= lu_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
+        assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
         worst = core::cmp::max(worst, err);
     }
     assert!(worst == 93);
@@ -344,7 +344,7 @@ fn test_determinant_oracle() {
 #[test]
 fn test_determinant_exact_and_sign() {
     assert!(Lu6Trait::new(Matrix6Trait::<Fixed>::identity()).determinant() == int(1));
-    let d = Matrix6Trait::from_diagonal(v6i((2, -4, 3, -1, 5, -2)));
+    let d = Matrix6Trait::from_diagonal(v6it((2, -4, 3, -1, 5, -2)));
     assert!(Lu6Trait::new(d).determinant() == int(-240));
     // Swapping two rows flips the sign exactly (the factorisation is exact here,
     // and the sign is applied to the first pivot before any rounding).

@@ -38,8 +38,6 @@ mod oracle_lu4;
 mod oracle_lu6;
 #[cfg(test)]
 mod oracle_matrix3_compare;
-#[cfg(test)]
-mod test_utils;
 
 pub use lu2::{Lu2, Lu2Trait, Matrix2LuTrait};
 pub use lu3::{Lu3, Lu3Trait, Matrix3LuTrait};

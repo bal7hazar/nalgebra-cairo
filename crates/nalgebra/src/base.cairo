@@ -5,7 +5,7 @@ pub mod matrix3;
 pub mod matrix4;
 pub mod matrix6;
 #[cfg(test)]
-mod matrix_test_utils;
+pub(crate) mod matrix_test_utils;
 #[cfg(test)]
 mod oracle_dim6_matrix;
 #[cfg(test)]

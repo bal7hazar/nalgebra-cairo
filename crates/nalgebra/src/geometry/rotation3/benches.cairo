@@ -11,6 +11,7 @@ use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix_test_utils::{fx, r3, u3t, v3t};
 use crate::base::point3::Point3;
 use crate::base::unit::{Unit, Unit3Trait, UnitTrait};
 use crate::base::vector3::{Vector3, Vector3Trait};
@@ -19,38 +20,6 @@ use crate::geometry::unit_quaternion::{
     UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
 };
 use super::{Rotation3, Rotation3AngleTrait, Rotation3Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v3(t: (i64, i64, i64)) -> Vector3<Fixed> {
-    let (x, y, z) = t;
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn u3(t: (i64, i64, i64)) -> Unit<Vector3<Fixed>> {
-    Unit { value: v3(t) }
-}
-
-fn m3(rows: [[i64; 3]; 3]) -> Matrix3<Fixed> {
-    let [[m11, m12, m13], [m21, m22, m23], [m31, m32, m33]] = rows;
-    Matrix3 {
-        m11: fx(m11),
-        m21: fx(m21),
-        m31: fx(m31),
-        m12: fx(m12),
-        m22: fx(m22),
-        m32: fx(m32),
-        m13: fx(m13),
-        m23: fx(m23),
-        m33: fx(m33),
-    }
-}
-
-fn r3(rows: [[i64; 3]; 3]) -> Rotation3<Fixed> {
-    Rotation3 { matrix: m3(rows) }
-}
 
 /// The rotation matrix of the unit quaternion `q` below.
 fn a() -> Rotation3<Fixed> {
@@ -83,17 +52,17 @@ fn q() -> UnitQuaternion<Fixed> {
 
 /// `(1.5, -2.25, 3.75)`.
 fn v() -> Vector3<Fixed> {
-    v3((0x180000000, -0x240000000, 0x3c0000000))
+    v3t((0x180000000, -0x240000000, 0x3c0000000))
 }
 
 /// A small rotation vector `(0.25, -0.1875, 0.125)`.
 fn w() -> Vector3<Fixed> {
-    v3((0x40000000, -0x30000000, 0x20000000))
+    v3t((0x40000000, -0x30000000, 0x20000000))
 }
 
 /// A unit vector: `(1.5, -2.25, 3.75)` normalized.
 fn axis() -> Unit<Vector3<Fixed>> {
-    u3((1393471396, -2090207096, 3483678492))
+    u3t((1393471396, -2090207096, 3483678492))
 }
 
 // --- alternative implementations (losers)
@@ -345,7 +314,7 @@ fn bench_rotation3_mul__matrix_product() {
 fn bench_rotation3_transform_vector__baseline() {
     let _r = black_box(a());
     let _x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226561, -9529255127)));
+    let e = black_box(v3t((-13186805408, -11384226561, -9529255127)));
     assert!(e == e);
 }
 
@@ -354,7 +323,7 @@ fn bench_rotation3_transform_vector__baseline() {
 fn bench_rotation3_transform_vector__mul_vec() {
     let r = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-13186805408, -11384226561, -9529255127)));
+    let e = black_box(v3t((-13186805408, -11384226561, -9529255127)));
     assert!(r.transform_vector(x) == e);
 }
 
@@ -363,7 +332,7 @@ fn bench_rotation3_transform_vector__mul_vec() {
 fn bench_rotation3_inverse_transform_vector__baseline() {
     let _r = black_box(a());
     let _x = black_box(v());
-    let e = black_box(v3((-18430159324, 6587686340, 3351234180)));
+    let e = black_box(v3t((-18430159324, 6587686340, 3351234180)));
     assert!(e == e);
 }
 
@@ -372,7 +341,7 @@ fn bench_rotation3_inverse_transform_vector__baseline() {
 fn bench_rotation3_inverse_transform_vector__tr_mul_vec() {
     let r = black_box(a());
     let x = black_box(v());
-    let e = black_box(v3((-18430159324, 6587686340, 3351234180)));
+    let e = black_box(v3t((-18430159324, 6587686340, 3351234180)));
     assert!(r.inverse_transform_vector(x) == e);
 }
 
@@ -446,7 +415,7 @@ fn bench_rotation3_from_unit_quaternion__fused() {
 #[inline(never)]
 fn bench_rotation3_axis__baseline() {
     let _r = black_box(a());
-    let e = black_box(u3((2738208059, 2417871746, -2258950401)));
+    let e = black_box(u3t((2738208059, 2417871746, -2258950401)));
     assert!(Some(e) == Some(e));
 }
 
@@ -454,7 +423,7 @@ fn bench_rotation3_axis__baseline() {
 #[inline(never)]
 fn bench_rotation3_axis__antisymmetric_part() {
     let r = black_box(a());
-    let e = black_box(u3((2738208059, 2417871746, -2258950401)));
+    let e = black_box(u3t((2738208059, 2417871746, -2258950401)));
     assert!(r.axis() == Some(e));
 }
 
@@ -486,7 +455,7 @@ fn bench_rotation3_angle__alt_quaternion() {
 #[inline(never)]
 fn bench_rotation3_scaled_axis__baseline() {
     let _r = black_box(a());
-    let e = black_box(v3((6635905205, 5859586766, -5474449130)));
+    let e = black_box(v3t((6635905205, 5859586766, -5474449130)));
     assert!(e == e);
 }
 
@@ -494,7 +463,7 @@ fn bench_rotation3_scaled_axis__baseline() {
 #[inline(never)]
 fn bench_rotation3_scaled_axis__axis_times_angle() {
     let r = black_box(a());
-    let e = black_box(v3((6635905205, 5859586766, -5474449130)));
+    let e = black_box(v3t((6635905205, 5859586766, -5474449130)));
     assert!(r.scaled_axis() == e);
 }
 

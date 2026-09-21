@@ -7,24 +7,11 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::matrix_test_utils::{ONE_RAW, fx, int, q};
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
 use super::{Quaternion, QuaternionTrait};
 
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-/// Quaternion from raw components, in the `(w, i, j, k)` order.
-fn q(w: i64, i: i64, j: i64, k: i64) -> Quaternion<Fixed> {
-    Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) }
-}
 
 /// `1 + 2i - 3j + 4k`, of squared norm 30 (norm 5.477).
 fn a() -> Quaternion<Fixed> {
@@ -344,6 +331,34 @@ fn bench_quaternion_mul__alt_unfused() {
     let y = black_box(b());
     let e = black_box(q(15 * ONE_RAW, -20 * ONE_RAW, 17 * ONE_RAW, 4 * ONE_RAW));
     assert!(alt_mul_unfused(x, y) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_quaternion_conj_mul__baseline() {
+    let _x = black_box(a());
+    let _y = black_box(b());
+    let e = black_box(q(-19 * ONE_RAW, 22 * ONE_RAW, -7 * ONE_RAW, -6 * ONE_RAW));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_quaternion_conj_mul__fused() {
+    let x = black_box(a());
+    let y = black_box(b());
+    let e = black_box(q(-19 * ONE_RAW, 22 * ONE_RAW, -7 * ONE_RAW, -6 * ONE_RAW));
+    assert!(x.conj_mul(y) == e);
+}
+
+/// The formulation `conj_mul` replaces: three negations, then the Hamilton product.
+#[test]
+#[inline(never)]
+fn bench_quaternion_conj_mul__alt_conjugate_then_mul() {
+    let x = black_box(a());
+    let y = black_box(b());
+    let e = black_box(q(-19 * ONE_RAW, 22 * ONE_RAW, -7 * ONE_RAW, -6 * ONE_RAW));
+    assert!(x.conjugate() * y == e);
 }
 
 #[test]

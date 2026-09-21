@@ -149,21 +149,22 @@
       "const": 18940
     },
     "isometry3_inv_mul": {
-      "alt_inverse_then_mul": 85660,
+      "alt_conjugate_then_mul": 62450,
+      "alt_inverse_then_mul": 83060,
       "baseline": 21740,
-      "direct": 63050
+      "direct": 61850
     },
     "isometry3_inverse": {
       "baseline": 20140,
-      "conjugate_rotate": 47170
+      "conjugate_rotate": 45270
     },
     "isometry3_inverse_transform_point": {
       "baseline": 18940,
-      "subtract_rotate": 46890
+      "subtract_rotate": 44690
     },
     "isometry3_inverse_transform_vector": {
       "baseline": 18940,
-      "conjugate_rotate": 42770
+      "conjugate_rotate": 42170
     },
     "isometry3_lerp_nlerp": {
       "baseline": 22140,
@@ -236,6 +237,11 @@
     "quaternion_as_vector": {
       "baseline": 18040,
       "struct": 18440
+    },
+    "quaternion_conj_mul": {
+      "alt_conjugate_then_mul": 31500,
+      "baseline": 19040,
+      "fused": 30900
     },
     "quaternion_conjugate": {
       "baseline": 18040,
@@ -529,19 +535,19 @@
   },
   "nalgebra::geometry::similarity3::benches": {
     "similarity3_inv_mul": {
-      "alt_inverse_then_mul": 119750,
+      "alt_inverse_then_mul": 117150,
       "baseline": 20840,
-      "direct": 82820
+      "direct": 81620
     },
     "similarity3_inverse_transform_point": {
-      "alt_reciprocal": 60670,
+      "alt_reciprocal": 58170,
       "baseline": 19140,
-      "division": 58450
+      "division": 55950
     },
     "similarity3_inverse_transform_vector": {
-      "alt_reciprocal": 56550,
+      "alt_reciprocal": 55950,
       "baseline": 19140,
-      "division": 51490
+      "division": 50890
     },
     "similarity3_transform_point": {
       "alt_rotate_scale_add": 53170,
@@ -753,6 +759,11 @@
       "baseline": 17540,
       "try_new": 32760
     },
+    "unit_quaternion_conj_mul": {
+      "alt_conjugate_then_mul": 31500,
+      "baseline": 19040,
+      "fused": 30900
+    },
     "unit_quaternion_dot": {
       "baseline": 17540,
       "fused": 19890
@@ -791,8 +802,9 @@
       "conjugate": 19040
     },
     "unit_quaternion_inverse_transform_vector": {
+      "alt_conjugate_then_transform": 42170,
       "baseline": 18340,
-      "conjugate": 42170
+      "folded": 41570
     },
     "unit_quaternion_mul": {
       "baseline": 19040,

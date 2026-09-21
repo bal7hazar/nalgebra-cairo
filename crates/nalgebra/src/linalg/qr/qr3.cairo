@@ -285,11 +285,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
-    use crate::base::vector3::{Vector3, Vector3Trait};
-    use crate::linalg::decomp_test_utils::{
-        amax_m3, decomp_tol, excess, int, m3, max_abs_m3, max_abs_v3, max_ulp_diff_m3,
-        max_ulp_diff_v3, orthonormality_error_m3, ulp_diff, v3,
+    use crate::base::matrix_test_utils::{
+        amax_m3, excess, int, m3, max_abs_m3, max_abs_v3, max_ulp_diff3, max_ulp_diff_v3,
+        oracle_tol, orthonormality_error_m3, ulp_diff, v3t,
     };
+    use crate::base::vector3::{Vector3, Vector3Trait};
     use crate::linalg::qr::oracle_qr3 as oracle;
     use super::{Matrix3QrTrait, Qr3, Qr3Trait};
 
@@ -305,7 +305,7 @@ mod tests {
 
     /// A right-hand side, from `qr3_solve`.
     fn b_bench() -> Vector3<Fixed> {
-        v3((-1811584373, 4204441265, -4234532070))
+        v3t((-1811584373, 4204441265, -4234532070))
     }
 
     /// `a_bench()` already factored, so the benchmarks of the derived operations do not pay for
@@ -563,9 +563,9 @@ mod tests {
             let (a, q, r, tol) = *case;
             let f = Qr3Trait::new(m3(a));
             let (eq, er) = (m3(q), m3(r));
-            let (dq, dr) = (max_ulp_diff_m3(f.q(), eq), max_ulp_diff_m3(f.r(), er));
-            worst_ex = core::cmp::max(worst_ex, excess(dq, decomp_tol(max_abs_m3(eq), tol)));
-            worst_ex = core::cmp::max(worst_ex, excess(dr, decomp_tol(max_abs_m3(er), tol)));
+            let (dq, dr) = (max_ulp_diff3(f.q(), eq), max_ulp_diff3(f.r(), er));
+            worst_ex = core::cmp::max(worst_ex, excess(dq, oracle_tol(max_abs_m3(eq), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(dr, oracle_tol(max_abs_m3(er), tol)));
             worst_q = core::cmp::max(worst_q, dq);
             worst_r = core::cmp::max(worst_r, dr);
         }
@@ -584,7 +584,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _, _) = *case;
             let f = Qr3Trait::new(m3(a));
-            let rec = max_ulp_diff_m3(f.q() * f.r(), m3(a)) / amax_m3(m3(a));
+            let rec = max_ulp_diff3(f.q() * f.r(), m3(a)) / amax_m3(m3(a));
             let orth = orthonormality_error_m3(f.q());
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
@@ -601,8 +601,8 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, q, r, _) = *case;
             let h = new_householder(m3(a));
-            worst_gap = core::cmp::max(worst_gap, max_ulp_diff_m3(h.q, m3(q)));
-            worst_gap = core::cmp::max(worst_gap, max_ulp_diff_m3(h.r, m3(r)));
+            worst_gap = core::cmp::max(worst_gap, max_ulp_diff3(h.q, m3(q)));
+            worst_gap = core::cmp::max(worst_gap, max_ulp_diff3(h.r, m3(r)));
             worst_orth = core::cmp::max(worst_orth, orthonormality_error_m3(h.q));
         }
         // Householder: 402 ulp from the oracle factors and 29 ulp of orthonormality, against 121
@@ -630,7 +630,7 @@ mod tests {
         // What the extra gas buys: an orthonormal `Q` even at rank 2. `Q R = A` holds either way.
         let f = new_completed(a_rank2());
         assert!(orthonormality_error_m3(f.q) <= 4);
-        assert!(max_ulp_diff_m3(f.q * f.r, a_rank2()) == 0);
+        assert!(max_ulp_diff3(f.q * f.r, a_rank2()) == 0);
         assert!(orthonormality_error_m3(Qr3Trait::new(a_rank2()).q) == 0x100000000);
     }
 
@@ -640,10 +640,10 @@ mod tests {
         let (mut worst, mut worst_ex) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, b, expected, tol) = *case;
-            let x = Qr3Trait::new(m3(a)).solve(v3(b)).unwrap();
-            let e = v3(expected);
+            let x = Qr3Trait::new(m3(a)).solve(v3t(b)).unwrap();
+            let e = v3t(expected);
             let err = max_ulp_diff_v3(x, e);
-            worst_ex = core::cmp::max(worst_ex, excess(err, decomp_tol(max_abs_v3(e), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v3(e), tol)));
             worst = core::cmp::max(worst, err);
         }
         assert!((worst, worst_ex) == (551, 10), "regressed: {worst} {worst_ex}");
@@ -657,8 +657,8 @@ mod tests {
             let (a, _, _, _) = *case;
             let inv = Qr3Trait::new(m3(a)).try_inverse().unwrap();
             let id = Matrix3Trait::identity();
-            worst = core::cmp::max(worst, max_ulp_diff_m3(m3(a) * inv, id));
-            worst = core::cmp::max(worst, max_ulp_diff_m3(inv * m3(a), id));
+            worst = core::cmp::max(worst, max_ulp_diff3(m3(a) * inv, id));
+            worst = core::cmp::max(worst, max_ulp_diff3(inv * m3(a), id));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
         assert!(worst == 200, "regressed: {worst}");
