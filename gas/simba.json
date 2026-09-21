@@ -223,6 +223,13 @@
     "trunc": {
       "alt_floor_fix_n": 19600,
       "alt_floor_fix_p": 19100
+    },
+    "wide_mul_scalar": {
+      "alt_corelib_divrem": 19160,
+      "alt_kernel_raw": 18320,
+      "alt_native_trunc": 20120,
+      "alt_sign_split_n": 19290,
+      "alt_sign_split_p": 19030
     }
   },
   "simba::fixed::math::tests": {
@@ -485,9 +492,19 @@
       "wide": 25090,
       "wide_from_prod": 25090
     },
+    "triple_product": {
+      "alt_diff_prod_then_mul": 21340,
+      "baseline": 17540,
+      "wide_mul_scalar": 19320
+    },
     "wide_mixed": {
       "baseline": 17940,
       "wide": 20290
+    },
+    "wide_mul_scalar": {
+      "alt_rescale_then_mul": 20340,
+      "baseline": 16740,
+      "fused": 18320
     },
     "wide_norm6": {
       "baseline": 17940,

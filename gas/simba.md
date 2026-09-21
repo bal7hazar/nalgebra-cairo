@@ -340,6 +340,16 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `alt_floor_fix_p` | 19100 | - | x1.00 |
 | `alt_floor_fix_n` | 19600 | - | x1.03 |
 
+### wide_mul_scalar
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_kernel_raw` | 18320 | - | x1.00 |
+| `alt_sign_split_p` | 19030 | - | x1.04 |
+| `alt_corelib_divrem` | 19160 | - | x1.05 |
+| `alt_sign_split_n` | 19290 | - | x1.05 |
+| `alt_native_trunc` | 20120 | - | x1.10 |
+
 ## simba::fixed::math::tests
 
 ### abs
@@ -693,11 +703,25 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `wide` | 25090 | 3150 | x1.00 |
 | `wide_from_prod` | 25090 | 3150 | x1.00 |
 
+### triple_product
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `wide_mul_scalar` | 19320 | 1780 | x1.00 |
+| `alt_diff_prod_then_mul` | 21340 | 3800 | x2.13 |
+
 ### wide_mixed
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `wide` | 20290 | 2350 | x1.00 |
+
+### wide_mul_scalar
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 18320 | 1580 | x1.00 |
+| `alt_rescale_then_mul` | 20340 | 3600 | x2.28 |
 
 ### wide_norm6
 
