@@ -562,6 +562,70 @@ pub fn sum_prod8_native_trunc(a: [i64; 8], b: [i64; 8]) -> i64 {
     (s / 0x100000000).try_into().expect(errors::OVERFLOW)
 }
 
+// --- wide_mul_rescale
+// ------------------------------------------------------------------------------
+// Not candidates, because the compiler rejects them: a `downcast` from `felt252` to the 2^128-wide
+// biased interval (`downcast<felt252, BoundedInt>` is only specialized for intervals narrower
+// than ~2^120), and a typed `bounded_int::mul` of the accumulator (it would first need such a
+// downcast of the `felt252`, i.e. two range checks instead of one).
+
+/// Biased `felt252 -> u128` as in the exported kernel, then the corelib `u128` `DivRem`
+/// (`u128_safe_divmod`) instead of the bounded one, and a checked `u128 -> u64` narrowing.
+#[inline(always)]
+pub fn wide_mul_rescale_corelib_divrem(wide: felt252, s: i64) -> i64 {
+    let biased: u128 = (wide * s.into() + 0x80000000000000000000000000000000)
+        .try_into()
+        .expect(errors::OVERFLOW);
+    let (q, _r) = DivRem::div_rem(biased, 0x10000000000000000);
+    let q: U64Like = downcast(q).expect(errors::OVERFLOW);
+    upcast(bounded_int::sub::<U64Like, UnitInt<TWO63>>(q, 0x8000000000000000))
+}
+
+type I128Neg = BoundedInt<-0x80000000000000000000000000000000, -1>;
+type U127 = BoundedInt<0, 0x7fffffffffffffffffffffffffffffff>;
+type U63 = BoundedInt<0, 0x7fffffffffffffff>;
+
+impl SubMinusOneI128Neg of SubHelper<UnitInt<-1>, I128Neg> {
+    type Result = U127;
+}
+impl DivU127Two64 of DivRemHelper<U127, UnitInt<0x10000000000000000>> {
+    type DivT = U63;
+    type RemT = U64Like;
+}
+impl SubMinusOneU63 of SubHelper<UnitInt<-1>, U63> {
+    type Result = BoundedInt<-0x8000000000000000, -1>;
+}
+
+/// Sign split: checked `felt252 -> i128` (the overflow check), then `constrain` on the sign and
+/// an unsigned `div_rem` on each half (`floor(p / 2^64) = -1 - floor((-1 - p) / 2^64)` for
+/// `p < 0`). Same semantic, one more branch.
+#[inline(always)]
+pub fn wide_mul_rescale_sign_split(wide: felt252, s: i64) -> i64 {
+    let p: i128 = (wide * s.into()).try_into().expect(errors::OVERFLOW);
+    match bounded_int::constrain::<i128, 0>(p) {
+        Ok(neg) => {
+            let m: U127 = bounded_int::sub::<UnitInt<-1>, I128Neg>(-1, neg);
+            let (q, _r) = bounded_int::div_rem::<
+                U127, UnitInt<0x10000000000000000>,
+            >(m, 0x10000000000000000);
+            upcast(bounded_int::sub::<UnitInt<-1>, U63>(-1, q))
+        },
+        Err(pos) => {
+            let (q, _r) = bounded_int::div_rem::<
+                U127, UnitInt<0x10000000000000000>,
+            >(pos, 0x10000000000000000);
+            upcast(q)
+        },
+    }
+}
+
+/// Corelib path: checked `felt252 -> i128`, signed division. TRUNCATES toward zero.
+#[inline(always)]
+pub fn wide_mul_rescale_native_trunc(wide: felt252, s: i64) -> i64 {
+    let p: i128 = (wide * s.into()).try_into().expect(errors::OVERFLOW);
+    (p / 0x10000000000000000).try_into().expect(errors::OVERFLOW)
+}
+
 #[cfg(test)]
 mod tests {
     use nalgebra_testing::black_box;
@@ -732,6 +796,40 @@ mod tests {
     fn test_sum_prod8_typed_postcheck_largest_accumulation_panics() {
         let a: [i64; 8] = black_box([MIN; 8]);
         sum_prod8_typed_postcheck(a, a);
+    }
+
+    #[test]
+    fn test_wide_mul_rescale_candidates_agree_on_floor() {
+        // 2^127 - 1 and -2^127 (unscaled) times 1 ulp: MAX and MIN; -(0.5 ulp) * 3 = -1.5 ulp.
+        let top = super::super::wide_prod(MIN, MIN) * 2 - 1;
+        let bottom = -super::super::wide_prod(MIN, MIN) * 2;
+        let neg = -super::super::wide_prod(1, HALF);
+        let big = super::super::wide_prod(0x1a2b3c4d5, -0x2345678ab);
+        assert!(super::super::wide_mul_rescale(top, 1) == MAX);
+        assert!(wide_mul_rescale_corelib_divrem(top, 1) == MAX);
+        assert!(wide_mul_rescale_sign_split(top, 1) == MAX);
+        assert!(super::super::wide_mul_rescale(bottom, 1) == MIN);
+        assert!(wide_mul_rescale_corelib_divrem(bottom, 1) == MIN);
+        assert!(wide_mul_rescale_sign_split(bottom, 1) == MIN);
+        assert!(super::super::wide_mul_rescale(neg, THREE) == -2);
+        assert!(wide_mul_rescale_corelib_divrem(neg, THREE) == -2);
+        assert!(wide_mul_rescale_sign_split(neg, THREE) == -2);
+        assert!(wide_mul_rescale_sign_split(big, -0x2c3d4e5f7) == 0x9f814b225);
+        assert!(wide_mul_rescale_corelib_divrem(big, -0x2c3d4e5f7) == 0x9f814b225);
+        // Truncation: -1.5 ulp -> -1 ulp.
+        assert!(wide_mul_rescale_native_trunc(neg, THREE) == -1);
+    }
+
+    #[test]
+    #[should_panic(expected: 'simba: overflow')]
+    fn test_wide_mul_rescale_corelib_divrem_overflow_panics() {
+        wide_mul_rescale_corelib_divrem(black_box(super::super::wide_prod(MIN, MIN) * 2), 1);
+    }
+
+    #[test]
+    #[should_panic(expected: 'simba: overflow')]
+    fn test_wide_mul_rescale_sign_split_underflow_panics() {
+        wide_mul_rescale_sign_split(black_box(-super::super::wide_prod(MIN, MIN) * 2 - 1), 1);
     }
 
     // --- gas benchmarks: variants of the groups whose baseline lives with the exported op --------
@@ -1396,5 +1494,57 @@ mod tests {
         let a = black_box(0x200000000_i64);
         let e = black_box(3037000499_i64);
         assert!(inv_sqrt_constrain(a) == e);
+    }
+
+    // `bench_wide_mul_scalar__{baseline,fused,alt_rescale_then_mul}` live in `fixed::wide`.
+
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__alt_kernel_raw() {
+        let a = black_box(0x1a2b3c4d5_i64);
+        let b = black_box(-0x2345678ab_i64);
+        let s = black_box(-0x2c3d4e5f7_i64);
+        let e = black_box(0x9f814b225_i64);
+        assert!(super::super::wide_mul_rescale(super::super::wide_prod(a, b), s) == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__alt_corelib_divrem() {
+        let a = black_box(0x1a2b3c4d5_i64);
+        let b = black_box(-0x2345678ab_i64);
+        let s = black_box(-0x2c3d4e5f7_i64);
+        let e = black_box(0x9f814b225_i64);
+        assert!(wide_mul_rescale_corelib_divrem(super::super::wide_prod(a, b), s) == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__alt_sign_split_p() {
+        let a = black_box(0x1a2b3c4d5_i64);
+        let b = black_box(-0x2345678ab_i64);
+        let s = black_box(-0x2c3d4e5f7_i64);
+        let e = black_box(0x9f814b225_i64);
+        assert!(wide_mul_rescale_sign_split(super::super::wide_prod(a, b), s) == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__alt_sign_split_n() {
+        let a = black_box(0x1a2b3c4d5_i64);
+        let b = black_box(0x2345678ab_i64);
+        let s = black_box(-0x2c3d4e5f7_i64);
+        let e = black_box(-0x9f814b226_i64);
+        assert!(wide_mul_rescale_sign_split(super::super::wide_prod(a, b), s) == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__alt_native_trunc() {
+        let a = black_box(0x1a2b3c4d5_i64);
+        let b = black_box(-0x2345678ab_i64);
+        let s = black_box(-0x2c3d4e5f7_i64);
+        let e = black_box(0x9f814b225_i64);
+        assert!(wide_mul_rescale_native_trunc(super::super::wide_prod(a, b), s) == e);
     }
 }

@@ -195,6 +195,36 @@ pub fn wide_from(c: i64) -> felt252 {
     upcast(bounded_int::mul::<i64, UnitInt<TWO32>>(c, 0x100000000))
 }
 
+const TWO127: felt252 = 0x80000000000000000000000000000000;
+
+impl DivU128Two64 of DivRemHelper<u128, UnitInt<TWO64>> {
+    type DivT = U64Like;
+    type RemT = U64Like;
+}
+
+/// `floor(wide * s / 2^64)`: an unscaled accumulator (scale 2^64) times a Q32.32 raw (scale
+/// 2^32), rescaled ONCE to a Q32.32 raw. The terminal kernel of `Wide::mul_scalar`, for exact
+/// triple products `(a * b - c * d) * e` with a single rounding.
+///
+/// One felt multiplication, then the `rescale` idiom one level wider: the result fits `i64` iff
+/// `wide * s` is in `[-2^127, 2^127)`, i.e. iff `wide * s + 2^127` is in `[0, 2^128)`; that single
+/// range check (the downcast to `u128`) is the overflow check, followed by one biased unsigned
+/// `div_rem` by the constant 2^64 (floor, sign-agnostic, no branch). Panics with
+/// `errors::OVERFLOW` otherwise.
+///
+/// Precondition (guaranteed by `Wide`): `wide` represents an integer of magnitude `<= 2^187`
+/// (`2^61` accumulated terms of `<= 2^126`), negatives as `P - |x|`. Then `|wide * s| <= 2^250`
+/// is also exact modulo `P > 2^251`, and `wide * s + 2^127` can only land in `[0, 2^128)` when the
+/// exact product is in `[-2^127, 2^127)` (a negative product aliases to `>= P - 2^250 + 2^127`,
+/// a positive one out of range is `>= 2^128`). Measured against the candidates in
+/// `kernels::alternatives` (`bench_wide_mul_scalar__alt_*`).
+#[inline(always)]
+pub fn wide_mul_rescale(wide: felt252, s: i64) -> i64 {
+    let biased: u128 = (wide * s.into() + TWO127).try_into().expect(errors::OVERFLOW);
+    let (q, _r) = bounded_int::div_rem::<u128, UnitInt<TWO64>>(biased, 0x10000000000000000);
+    upcast(bounded_int::sub::<U64Like, UnitInt<TWO63>>(q, 0x8000000000000000))
+}
+
 // ---------------------------------------------------------------------------------------------
 // Additive kernels.
 // ---------------------------------------------------------------------------------------------

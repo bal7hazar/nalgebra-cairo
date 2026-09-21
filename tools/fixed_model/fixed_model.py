@@ -239,6 +239,12 @@ def wide_sqrt(wide):
     return check(isqrt(wide))
 
 
+def wide_mul_scalar(wide, s):
+    """floor(wide * s / 2^64): an unscaled accumulator (scale 2^64) times a raw scalar (scale
+    2^32), rounded once to a raw result (scale 2^32), checked. Exact triple products."""
+    return check((wide * s) >> (2 * FRAC_BITS))
+
+
 def norm2(x, y):
     return wide_sqrt(x * x + y * y)
 
@@ -303,6 +309,9 @@ class Wide:
 
     def sqrt(self):
         return wide_sqrt(self.value)
+
+    def mul_scalar(self, s):
+        return wide_mul_scalar(self.value, s)
 
 
 def sum_prod_n(pairs):
@@ -596,6 +605,7 @@ def _self_check():
             (lambda: mul_add(a, b, c), fl((fa * fb + fc) * ONE)),
             (lambda: mul_sub(a, b, c), fl((fa * fb - fc) * ONE)),
             (lambda: lerp(a, b, c), fl((fa + (fb - fa) * fc) * ONE)),
+            (lambda: wide_mul_scalar(a * b - c * d, a), fl((fa * fb - fc * fd) * fa * ONE)),
             (lambda: floor(a), fl(fa) * ONE),
             (lambda: ceil(a), math.ceil(fa) * ONE),
             (lambda: trunc(a), math.trunc(fa) * ONE),

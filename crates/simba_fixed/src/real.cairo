@@ -248,4 +248,8 @@ pub impl FixedReal of Real<Glam> {
     fn wide_sqrt(w: Wide) -> Glam {
         from_simba(Real::<types::Fixed>::wide_sqrt(w))
     }
+    #[inline(always)]
+    fn wide_mul_scalar(w: Wide, s: Glam) -> Glam {
+        from_simba(Real::<types::Fixed>::wide_mul_scalar(w, to_simba(s)))
+    }
 }
