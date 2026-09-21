@@ -126,6 +126,7 @@ Measured on the merged code (snapshots in `gas/`), for the operations a physics 
 | operation | gas | note |
 |---|---:|---|
 | `Fixed` add / mul / div / sqrt | 640 / 1,750 / 2,740 / 1,820 | |
+| `Wide::mul_scalar` (exact triple product, one rounding) | 1,580 | vs 3,600 for rescale-then-mul (two roundings) |
 | `sin_cos` / `atan2` / `acos` | 16,820 / 15,400 / 11,430 | ≤ 1.2 ulp |
 | `Vector3` dot / cross / norm / normalize | 2,150 / 6,050 / 2,220 / 10,740 | |
 | `Matrix3 * Matrix3` / `try_inverse` / `determinant` | ~26,000 / 88,940 / 10,660 | fused rows |

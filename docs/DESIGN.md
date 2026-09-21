@@ -54,7 +54,9 @@ pub trait Real<T> {
 ```
 
 Longer sums (6-term rows of `Matrix6`, dynamic dot products) use the explicit `Wide` accumulator
-(`wide_add_prod` / `wide_sub_prod` / `wide_rescale`; +200 gas per extra product). Every sum-of-products in the library goes through a fused kernel:
+(`wide_add_prod` / `wide_sub_prod` / `wide_rescale`; +200 gas per extra product). `wide_mul_scalar(w, s)` is the terminal
+`Wide × T` op, `floor(w·s / 2^64)`: exact triple products `(a·b − c·d)·e` with ONE rounding (1,580 net, cheaper than a
+plain `mul`; reserved for the 4x4 / 6x6 cofactor determinants). Every sum-of-products in the library goes through a fused kernel:
 **never `a * b + c * d` with two rescales.**
 
 Approximate equality (`abs_diff_eq`, `relative_eq`) is defined on raw units (ulp), since
