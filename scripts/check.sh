@@ -7,6 +7,7 @@ cd "$(dirname "$0")/.."
 scarb fmt --check
 python3 tools/polygen/polygen.py --check
 python3 tools/fixed_model/gen_vectors.py --check
+python3 crates/simba_fixed/tools/gen_vectors.py --check
 scarb lint --deny-warnings
 scarb build
 output=$(snforge test --workspace) || { echo "$output"; exit 1; }

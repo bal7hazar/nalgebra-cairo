@@ -37,6 +37,7 @@ jobs:
           scarb build
           python3 tools/polygen/polygen.py --check
           python3 tools/fixed_model/gen_vectors.py --check
+          python3 crates/simba_fixed/tools/gen_vectors.py --check
       - name: Test the shard and check its slice of the gas snapshot
         run: |
           shard="${{ matrix.shard }}"

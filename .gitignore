@@ -5,3 +5,4 @@ coverage/
 profile/
 .DS_Store
 REPORT.md
+.orchestrator/
