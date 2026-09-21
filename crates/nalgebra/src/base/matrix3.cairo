@@ -38,7 +38,6 @@ pub impl Matrix3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -479,7 +478,7 @@ pub impl Matrix3Impl<
             if f == R::ZERO {
                 return None;
             }
-            let k = R::floor(R::TWO / f);
+            let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let b = Self::scale(self, k);
                 let adj_b = Self::adjugate(b);
@@ -487,7 +486,7 @@ pub impl Matrix3Impl<
                 if det_b == R::ZERO {
                     return None;
                 }
-                return Some(Self::scale(adj_b, k / det_b));
+                return Some(Self::scale(adj_b, R::div(k, det_b)));
             }
             if det == R::ZERO {
                 return None;
@@ -495,15 +494,15 @@ pub impl Matrix3Impl<
         }
         Some(
             Matrix3 {
-                m11: adj.m11 / det,
-                m21: adj.m21 / det,
-                m31: adj.m31 / det,
-                m12: adj.m12 / det,
-                m22: adj.m22 / det,
-                m32: adj.m32 / det,
-                m13: adj.m13 / det,
-                m23: adj.m23 / det,
-                m33: adj.m33 / det,
+                m11: R::div(adj.m11, det),
+                m21: R::div(adj.m21, det),
+                m31: R::div(adj.m31, det),
+                m12: R::div(adj.m12, det),
+                m22: R::div(adj.m22, det),
+                m32: R::div(adj.m32, det),
+                m13: R::div(adj.m13, det),
+                m23: R::div(adj.m23, det),
+                m33: R::div(adj.m33, det),
             },
         )
     }

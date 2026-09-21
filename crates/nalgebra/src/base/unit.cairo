@@ -56,7 +56,7 @@ pub trait Normalizable<V, T> {
 }
 
 pub impl Vector2Normalizable<
-    T, impl R: Real<T>, +Div<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
 > of Normalizable<Vector2<T>, T> {
     #[inline(always)]
     fn norm(self: Vector2<T>) -> T {
@@ -75,7 +75,7 @@ pub impl Vector2Normalizable<
 
     #[inline(always)]
     fn unscale(self: Vector2<T>, k: T) -> Vector2<T> {
-        Vector2 { x: self.x / k, y: self.y / k }
+        Vector2 { x: R::div(self.x, k), y: R::div(self.y, k) }
     }
 
     #[inline(always)]
@@ -90,7 +90,7 @@ pub impl Vector2Normalizable<
 }
 
 pub impl Vector3Normalizable<
-    T, impl R: Real<T>, +Div<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
 > of Normalizable<Vector3<T>, T> {
     #[inline(always)]
     fn norm(self: Vector3<T>) -> T {
@@ -109,7 +109,7 @@ pub impl Vector3Normalizable<
 
     #[inline(always)]
     fn unscale(self: Vector3<T>, k: T) -> Vector3<T> {
-        Vector3 { x: self.x / k, y: self.y / k, z: self.z / k }
+        Vector3 { x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k) }
     }
 
     #[inline(always)]
@@ -126,7 +126,7 @@ pub impl Vector3Normalizable<
 }
 
 pub impl Vector4Normalizable<
-    T, impl R: Real<T>, +Div<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
 > of Normalizable<Vector4<T>, T> {
     #[inline(always)]
     fn norm(self: Vector4<T>) -> T {
@@ -145,7 +145,9 @@ pub impl Vector4Normalizable<
 
     #[inline(always)]
     fn unscale(self: Vector4<T>, k: T) -> Vector4<T> {
-        Vector4 { x: self.x / k, y: self.y / k, z: self.z / k, w: self.w / k }
+        Vector4 {
+            x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k), w: R::div(self.w, k),
+        }
     }
 
     #[inline(always)]
@@ -371,7 +373,6 @@ pub impl Unit3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

@@ -140,16 +140,7 @@ pub trait Rotation2AngleTrait<T> {
 }
 
 pub impl Rotation2Impl<
-    T,
-    impl R: Real<T>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Div<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +Copy<T>,
-    +Drop<T>,
+    T, impl R: Real<T>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
 > of Rotation2Trait<T> {
     #[inline(always)]
     fn identity() -> Rotation2<T> {
@@ -164,7 +155,7 @@ pub impl Rotation2Impl<
     #[inline(always)]
     fn from_matrix(m: Matrix2<T>) -> Rotation2<T> {
         let n = R::norm2(m.m11, m.m21);
-        let (re, im) = (m.m11 / n, m.m21 / n);
+        let (re, im) = (R::div(m.m11, n), R::div(m.m21, n));
         Rotation2 { matrix: Matrix2 { m11: re, m21: im, m12: -im, m22: re } }
     }
 
@@ -211,7 +202,7 @@ pub impl Rotation2Impl<
                 matrix: Matrix2 { m11: R::ONE, m21: R::ZERO, m12: R::ZERO, m22: R::ONE },
             };
         }
-        let (re, im) = (dot / n, perp / n);
+        let (re, im) = (R::div(dot, n), R::div(perp, n));
         Rotation2 { matrix: Matrix2 { m11: re, m21: im, m12: -im, m22: re } }
     }
 
@@ -278,7 +269,7 @@ pub impl Rotation2Impl<
     #[inline(always)]
     fn renormalize(self: Rotation2<T>) -> Rotation2<T> {
         let n = R::norm2(self.matrix.m11, self.matrix.m21);
-        let (re, im) = (self.matrix.m11 / n, self.matrix.m21 / n);
+        let (re, im) = (R::div(self.matrix.m11, n), R::div(self.matrix.m21, n));
         Rotation2 { matrix: Matrix2 { m11: re, m21: im, m12: -im, m22: re } }
     }
 

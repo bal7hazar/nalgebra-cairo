@@ -48,7 +48,6 @@ pub impl Similarity3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -161,13 +160,13 @@ pub impl Similarity3Impl<
                 rotation: inv_iso.rotation,
                 translation: Translation3 {
                     vector: Vector3 {
-                        x: inv_iso.translation.vector.x / self.scaling,
-                        y: inv_iso.translation.vector.y / self.scaling,
-                        z: inv_iso.translation.vector.z / self.scaling,
+                        x: R::div(inv_iso.translation.vector.x, self.scaling),
+                        y: R::div(inv_iso.translation.vector.y, self.scaling),
+                        z: R::div(inv_iso.translation.vector.z, self.scaling),
                     },
                 },
             },
-            scaling: R::ONE / self.scaling,
+            scaling: R::div(R::ONE, self.scaling),
         }
     }
 
@@ -187,11 +186,13 @@ pub impl Similarity3Impl<
                 rotation: self.isometry.rotation.conj_mul(other.isometry.rotation),
                 translation: Translation3 {
                     vector: Vector3 {
-                        x: r.x / self.scaling, y: r.y / self.scaling, z: r.z / self.scaling,
+                        x: R::div(r.x, self.scaling),
+                        y: R::div(r.y, self.scaling),
+                        z: R::div(r.z, self.scaling),
                     },
                 },
             },
-            scaling: other.scaling / self.scaling,
+            scaling: R::div(other.scaling, self.scaling),
         }
     }
 
@@ -220,7 +221,11 @@ pub impl Similarity3Impl<
     /// `inverse_transform_point`.
     fn inverse_transform_point(self: Similarity3<T>, p: Point3<T>) -> Point3<T> {
         let c = self.isometry.inverse_transform_point(p);
-        Point3 { x: c.x / self.scaling, y: c.y / self.scaling, z: c.z / self.scaling }
+        Point3 {
+            x: R::div(c.x, self.scaling),
+            y: R::div(c.y, self.scaling),
+            z: R::div(c.z, self.scaling),
+        }
     }
 
     /// `rotation⁻¹ · v / scaling`, one exact quotient per component. Upstream:
@@ -228,7 +233,11 @@ pub impl Similarity3Impl<
     #[inline(always)]
     fn inverse_transform_vector(self: Similarity3<T>, v: Vector3<T>) -> Vector3<T> {
         let c = self.isometry.inverse_transform_vector(v);
-        Vector3 { x: c.x / self.scaling, y: c.y / self.scaling, z: c.z / self.scaling }
+        Vector3 {
+            x: R::div(c.x, self.scaling),
+            y: R::div(c.y, self.scaling),
+            z: R::div(c.z, self.scaling),
+        }
     }
 
     /// `Translation(t) ∘ self`: the translation shifts exactly; scale and rotation are unchanged.
@@ -332,7 +341,6 @@ pub impl Similarity3AngleImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -370,7 +378,6 @@ pub impl Similarity3Mul<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

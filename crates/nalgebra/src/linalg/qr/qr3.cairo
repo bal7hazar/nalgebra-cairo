@@ -32,7 +32,6 @@ pub impl Qr3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -81,7 +80,7 @@ pub impl Qr3Impl<
         let (q11, q21, q31) = if r11 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (matrix.m11 / r11, matrix.m21 / r11, matrix.m31 / r11)
+            (R::div(matrix.m11, r11), R::div(matrix.m21, r11), R::div(matrix.m31, r11))
         };
         let r12 = R::sum_prod3(q11, matrix.m12, q21, matrix.m22, q31, matrix.m32);
         let r13 = R::sum_prod3(q11, matrix.m13, q21, matrix.m23, q31, matrix.m33);
@@ -95,7 +94,7 @@ pub impl Qr3Impl<
         let (q12, q22, q32) = if r22 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (b21 / r22, b22 / r22, b23 / r22)
+            (R::div(b21, r22), R::div(b22, r22), R::div(b23, r22))
         };
         let r23 = R::sum_prod3(q12, b31, q22, b32, q32, b33);
         let c31 = R::mul_add(-r23, q12, b31);
@@ -105,7 +104,7 @@ pub impl Qr3Impl<
         let (q13, q23, q33) = if r33 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (c31 / r33, c32 / r33, c33 / r33)
+            (R::div(c31, r33), R::div(c32, r33), R::div(c33, r33))
         };
         Qr3 {
             q: Matrix3 {
@@ -171,10 +170,10 @@ pub impl Qr3Impl<
             return None;
         }
         let y = self.q.tr_mul_vec(b);
-        let x3 = y.z / self.r.m33;
-        let x2 = R::mul_add(-self.r.m23, x3, y.y) / self.r.m22;
+        let x3 = R::div(y.z, self.r.m33);
+        let x2 = R::div(R::mul_add(-self.r.m23, x3, y.y), self.r.m22);
         let w = R::wide_sub_prod(R::wide_add(R::wide_zero(), y.x), self.r.m12, x2);
-        let x1 = R::wide_rescale(R::wide_sub_prod(w, self.r.m13, x3)) / self.r.m11;
+        let x1 = R::div(R::wide_rescale(R::wide_sub_prod(w, self.r.m13, x3)), self.r.m11);
         Some(Vector3 { x: x1, y: x2, z: x3 })
     }
 
@@ -203,10 +202,10 @@ pub impl Qr3Impl<
     /// guarantees a nonzero diagonal. No upstream equivalent (upstream substitutes in place).
     #[inline(always)]
     fn back_substitute(self: Qr3<T>, y: Vector3<T>) -> Vector3<T> {
-        let x3 = y.z / self.r.m33;
-        let x2 = R::mul_add(-self.r.m23, x3, y.y) / self.r.m22;
+        let x3 = R::div(y.z, self.r.m33);
+        let x2 = R::div(R::mul_add(-self.r.m23, x3, y.y), self.r.m22);
         let w = R::wide_sub_prod(R::wide_add(R::wide_zero(), y.x), self.r.m12, x2);
-        let x1 = R::wide_rescale(R::wide_sub_prod(w, self.r.m13, x3)) / self.r.m11;
+        let x1 = R::div(R::wide_rescale(R::wide_sub_prod(w, self.r.m13, x3)), self.r.m11);
         Vector3 { x: x1, y: x2, z: x3 }
     }
 
@@ -248,7 +247,6 @@ pub impl Matrix3QrImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

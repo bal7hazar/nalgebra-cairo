@@ -120,7 +120,6 @@ pub impl Point3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -162,7 +161,7 @@ pub impl Point3Impl<
         if v.w == R::ZERO {
             None
         } else {
-            Some(Point3 { x: v.x / v.w, y: v.y / v.w, z: v.z / v.w })
+            Some(Point3 { x: R::div(v.x, v.w), y: R::div(v.y, v.w), z: R::div(v.z, v.w) })
         }
     }
 
@@ -188,7 +187,7 @@ pub impl Point3Impl<
 
     #[inline(always)]
     fn unscale(self: Point3<T>, k: T) -> Point3<T> {
-        Point3 { x: self.x / k, y: self.y / k, z: self.z / k }
+        Point3 { x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k) }
     }
 
     #[inline(always)]
@@ -282,10 +281,10 @@ pub impl Point3MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Point3<T>,
 }
 
 /// `p /= k` for a scalar `k`: `unscale` in place. Upstream: `DivAssign<T>`.
-pub impl Point3DivAssign<T, +Div<T>, +Copy<T>, +Drop<T>> of DivAssign<Point3<T>, T> {
+pub impl Point3DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Point3<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Point3<T>, rhs: T) {
-        self = Point3 { x: self.x / rhs, y: self.y / rhs, z: self.z / rhs };
+        self = Point3 { x: R::div(self.x, rhs), y: R::div(self.y, rhs), z: R::div(self.z, rhs) };
     }
 }
 

@@ -68,7 +68,6 @@ pub impl Svd2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -127,7 +126,7 @@ pub impl Svd2Impl<
         // renormalise both.
         let c1 = eigen.eigenvectors.column1();
         let nv = R::norm2(c1.x, c1.y);
-        let v1 = Vector2 { x: c1.x / nv, y: c1.y / nv };
+        let v1 = Vector2 { x: R::div(c1.x, nv), y: R::div(c1.y, nv) };
         let v2 = Vector2 { x: -v1.y, y: v1.x };
         let (w1, w2) = (matrix.mul_vec(v1), matrix.mul_vec(v2));
         let s1 = R::norm2(w1.x, w1.y);
@@ -145,7 +144,7 @@ pub impl Svd2Impl<
         let u1 = if s1 == R::ZERO {
             Vector2 { x: R::ONE, y: R::ZERO }
         } else {
-            Vector2 { x: w1.x / s1, y: w1.y / s1 }
+            Vector2 { x: R::div(w1.x, s1), y: R::div(w1.y, s1) }
         };
         // `<perp(u1), w2>` with perp(u1) = (-u1.y, u1.x): one rounding, and its sign orients u2.
         let along = R::diff_prod(u1.x, w2.y, u1.y, w2.x);
@@ -263,12 +262,12 @@ pub impl Svd2Impl<
         }
         let y = self.u.tr_mul_vec(b);
         let y1 = if self.singular_values.x > eps {
-            y.x / self.singular_values.x
+            R::div(y.x, self.singular_values.x)
         } else {
             R::ZERO
         };
         let y2 = if self.singular_values.y > eps {
-            y.y / self.singular_values.y
+            R::div(y.y, self.singular_values.y)
         } else {
             R::ZERO
         };
@@ -303,7 +302,6 @@ pub impl Matrix2SvdImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

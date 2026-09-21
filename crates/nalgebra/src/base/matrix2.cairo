@@ -33,7 +33,6 @@ pub impl Matrix2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -262,14 +261,14 @@ pub impl Matrix2Impl<
             if f == R::ZERO {
                 return None;
             }
-            let k = R::floor(R::TWO / f);
+            let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let (b11, b21, b12, b22) = (self.m11 * k, self.m21 * k, self.m12 * k, self.m22 * k);
                 let det_b = R::diff_prod(b11, b22, b12, b21);
                 if det_b == R::ZERO {
                     return None;
                 }
-                let t = k / det_b;
+                let t = R::div(k, det_b);
                 return Some(
                     Matrix2 { m11: b22 * t, m21: (-b21) * t, m12: (-b12) * t, m22: b11 * t },
                 );
@@ -280,10 +279,10 @@ pub impl Matrix2Impl<
         }
         Some(
             Matrix2 {
-                m11: self.m22 / det,
-                m21: (-self.m21) / det,
-                m12: (-self.m12) / det,
-                m22: self.m11 / det,
+                m11: R::div(self.m22, det),
+                m21: R::div(-self.m21, det),
+                m12: R::div(-self.m12, det),
+                m22: R::div(self.m11, det),
             },
         )
     }

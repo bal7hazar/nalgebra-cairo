@@ -24,12 +24,15 @@
 //! Three documented differences remain, each asserted case by case in `crate::conformance` and
 //! listed here because they are observable:
 //!
-//! 1. **`/` and `%`.** nalgebra's generic code uses the corelib `Div` / `Rem` operators, which
-//!    resolve to glam.cairo's own impls: `fixed::Fixed` divides toward ZERO and takes the
-//!    truncated remainder (sign of the dividend), where `simba::fixed::Fixed` floors both. The two
-//!    agree on exact quotients and on non-negative operands, and differ by one ulp otherwise. This
-//!    package cannot override an operator impl of a foreign type; `Real::recip` (used by
-//!    `normalize`, `try_inverse`, …) is simba's and is unaffected.
+//! 1. **The foreign operators `/` and `%`.** glam.cairo's own `Div` / `Rem` impls on
+//!    `fixed::Fixed` divide toward ZERO and take the truncated remainder (sign of the dividend),
+//!    where `simba::fixed::Fixed` floors both; the two agree on exact quotients and on
+//!    non-negative operands and differ by one ulp otherwise. This is a property of the SCALAR's
+//!    operators only: nalgebra's generic code never reaches them, it divides through `Real::div` /
+//!    `Real::rem`, which this impl routes to simba's floor kernels. So `normalize`, `unscale`,
+//!    `new_normalize`, the matrix inverses and the decompositions are bit-identical with both
+//!    scalars, and a division by zero inside nalgebra panics with `'simba: division by zero'`.
+//!    Likewise `Real::recip` is simba's (floor), not `fixed::FixedTrait::recip` (truncating).
 //! 2. **Constants.** `Real::<fixed::Fixed>::PI` and friends are simba's floored constants, so that
 //!    a formula built from `Real::PI` gives the same result with both scalars; `fixed::PI` is
 //!    rounded to nearest and is one ulp higher. Seven of the twenty constants differ by one ulp.

@@ -188,7 +188,6 @@ pub impl Vector3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -252,7 +251,7 @@ pub impl Vector3Impl<
 
     #[inline(always)]
     fn unscale(self: Vector3<T>, k: T) -> Vector3<T> {
-        Vector3 { x: self.x / k, y: self.y / k, z: self.z / k }
+        Vector3 { x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k) }
     }
 
     #[inline(always)]
@@ -262,7 +261,7 @@ pub impl Vector3Impl<
 
     #[inline(always)]
     fn component_div(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T> {
-        Vector3 { x: self.x / rhs.x, y: self.y / rhs.y, z: self.z / rhs.z }
+        Vector3 { x: R::div(self.x, rhs.x), y: R::div(self.y, rhs.y), z: R::div(self.z, rhs.z) }
     }
 
     #[inline(always)]
@@ -424,7 +423,7 @@ pub impl Vector3Impl<
         if n <= max {
             self
         } else {
-            Self::scale(self, max / n)
+            Self::scale(self, R::div(max, n))
         }
     }
 
@@ -443,8 +442,8 @@ pub impl Vector3Impl<
         //   z >= 0: u = (1 - p, -q, -x), w = (-q, 1 - r, -y);
         //   z <  0: u = (1 - p, -q,  x), w = ( q, r - 1, -y).
         let d = R::ONE + R::abs(self.z);
-        let xd = self.x / d;
-        let yd = self.y / d;
+        let xd = R::div(self.x, d);
+        let yd = R::div(self.y, d);
         let q = xd * self.y;
         let ux = R::diff_prod(R::ONE, R::ONE, xd, self.x);
         let wy = R::diff_prod(R::ONE, R::ONE, yd, self.y);
@@ -462,7 +461,6 @@ pub impl Vector3AngleImpl<
     impl Tr: Transcendental<T>,
     +Add<T>,
     +Sub<T>,
-    +Div<T>,
     +PartialEq<T>,
     +Copy<T>,
     +Drop<T>,
@@ -473,8 +471,8 @@ pub impl Vector3AngleImpl<
         if n1 == R::ZERO || n2 == R::ZERO {
             return R::ZERO;
         }
-        let u = Vector3 { x: self.x / n1, y: self.y / n1, z: self.z / n1 };
-        let v = Vector3 { x: other.x / n2, y: other.y / n2, z: other.z / n2 };
+        let u = Vector3 { x: R::div(self.x, n1), y: R::div(self.y, n1), z: R::div(self.z, n1) };
+        let v = Vector3 { x: R::div(other.x, n2), y: R::div(other.y, n2), z: R::div(other.z, n2) };
         let d = R::norm3(u.x - v.x, u.y - v.y, u.z - v.z);
         let s = R::norm3(u.x + v.x, u.y + v.y, u.z + v.z);
         let half = Tr::atan2(d, s);
@@ -532,10 +530,10 @@ pub impl Vector3MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector3<T
 }
 
 /// `self /= k` for a scalar `k`: `unscale` in place. Upstream: `DivAssign<T>`.
-pub impl Vector3DivAssign<T, +Div<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector3<T>, T> {
+pub impl Vector3DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector3<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector3<T>, rhs: T) {
-        self = Vector3 { x: self.x / rhs, y: self.y / rhs, z: self.z / rhs };
+        self = Vector3 { x: R::div(self.x, rhs), y: R::div(self.y, rhs), z: R::div(self.z, rhs) };
     }
 }
 

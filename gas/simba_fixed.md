@@ -4,6 +4,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 ## simba_fixed::benches
 
+### div
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `real_div` | 19080 | 2740 | x1.00 |
+| `alt_glam_operator` | 19170 | 2830 | x1.03 |
+
 ### simba_fixed_convert
 
 | variant | raw | net | vs best |

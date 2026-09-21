@@ -48,7 +48,6 @@ pub impl Lu3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -116,12 +115,12 @@ pub impl Lu3Impl<
             a33 = t;
         }
         if piv != R::ZERO {
-            let l = a21 / a11;
+            let l = R::div(a21, a11);
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
             a23 = R::mul_add(nl, a13, a23);
             a21 = l;
-            let l = a31 / a11;
+            let l = R::div(a31, a11);
             let nl = -l;
             a32 = R::mul_add(nl, a12, a32);
             a33 = R::mul_add(nl, a13, a33);
@@ -147,7 +146,7 @@ pub impl Lu3Impl<
             a33 = t;
         }
         if piv != R::ZERO {
-            let l = a32 / a22;
+            let l = R::div(a32, a22);
             let nl = -l;
             a33 = R::mul_add(nl, a23, a33);
             a32 = l;
@@ -334,14 +333,18 @@ pub impl Lu3Impl<
                 y2,
             ),
         );
-        let x3 = y3 / self.lu.m33;
-        let x2 = R::mul_add(-self.lu.m23, x3, y2) / self.lu.m22;
-        let x1 = R::wide_rescale(
-            R::wide_sub_prod(
-                R::wide_sub_prod(R::wide_add(R::wide_zero(), y1), self.lu.m12, x2), self.lu.m13, x3,
+        let x3 = R::div(y3, self.lu.m33);
+        let x2 = R::div(R::mul_add(-self.lu.m23, x3, y2), self.lu.m22);
+        let x1 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y1), self.lu.m12, x2),
+                    self.lu.m13,
+                    x3,
+                ),
             ),
-        )
-            / self.lu.m11;
+            self.lu.m11,
+        );
         Some(Vector3 { x: x1, y: x2, z: x3 })
     }
 
@@ -377,29 +380,41 @@ pub impl Lu3Impl<
         let y31 = R::wide_rescale(
             R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m31), self.lu.m32, y21),
         );
-        let x31 = y31 / self.lu.m33;
-        let x21 = R::mul_add(-self.lu.m23, x31, y21) / self.lu.m22;
-        let x11 = R::wide_rescale(
-            R::wide_sub_prod(
-                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12, x21),
-                self.lu.m13,
-                x31,
+        let x31 = R::div(y31, self.lu.m33);
+        let x21 = R::div(R::mul_add(-self.lu.m23, x31, y21), self.lu.m22);
+        let x11 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12, x21),
+                    self.lu.m13,
+                    x31,
+                ),
             ),
-        )
-            / self.lu.m11;
+            self.lu.m11,
+        );
         let y32 = -self.lu.m32;
-        let x32 = y32 / self.lu.m33;
-        let x22 = R::mul_add(-self.lu.m23, x32, R::ONE) / self.lu.m22;
-        let x12 = R::wide_rescale(
-            R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22), self.lu.m13, x32),
-        )
-            / self.lu.m11;
-        let x33 = R::ONE / self.lu.m33;
-        let x23 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m23, x33)) / self.lu.m22;
-        let x13 = R::wide_rescale(
-            R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x23), self.lu.m13, x33),
-        )
-            / self.lu.m11;
+        let x32 = R::div(y32, self.lu.m33);
+        let x22 = R::div(R::mul_add(-self.lu.m23, x32, R::ONE), self.lu.m22);
+        let x12 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22), self.lu.m13, x32,
+                ),
+            ),
+            self.lu.m11,
+        );
+        let x33 = R::div(R::ONE, self.lu.m33);
+        let x23 = R::div(
+            R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m23, x33)), self.lu.m22,
+        );
+        let x13 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12, x23), self.lu.m13, x33,
+                ),
+            ),
+            self.lu.m11,
+        );
         let mut c11 = x11;
         let mut c12 = x12;
         let mut c13 = x13;
@@ -508,7 +523,6 @@ pub impl Matrix3LuImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

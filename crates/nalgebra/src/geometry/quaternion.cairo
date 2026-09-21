@@ -62,7 +62,6 @@ pub impl QuaternionImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -157,7 +156,9 @@ pub impl QuaternionImpl<
     /// rounded reciprocal of `k` is cheaper but costs up to `|self|` ulp instead of 1.
     #[inline(always)]
     fn unscale(self: Quaternion<T>, k: T) -> Quaternion<T> {
-        Quaternion { i: self.i / k, j: self.j / k, k: self.k / k, w: self.w / k }
+        Quaternion {
+            i: R::div(self.i, k), j: R::div(self.j, k), k: R::div(self.k, k), w: R::div(self.w, k),
+        }
     }
 
     /// `(w, -i, -j, -k)`. Exact; panics on overflow (`-MIN`). Upstream: `conjugate`.
@@ -238,7 +239,14 @@ pub impl QuaternionImpl<
         if n2 == R::ZERO {
             None
         } else {
-            Some(Quaternion { i: -self.i / n2, j: -self.j / n2, k: -self.k / n2, w: self.w / n2 })
+            Some(
+                Quaternion {
+                    i: R::div(-self.i, n2),
+                    j: R::div(-self.j, n2),
+                    k: R::div(-self.k, n2),
+                    w: R::div(self.w, n2),
+                },
+            )
         }
     }
 
