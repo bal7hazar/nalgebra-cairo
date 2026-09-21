@@ -43,7 +43,7 @@ Measured case by case in `src/conformance.cairo`, asserted rather than tolerated
 
 | operation | difference |
 |---|---|
-| `/`, `%`, `FixedTrait::recip` | glam.cairo truncates toward zero, simba floors: one ulp apart on negative inexact results. nalgebra reaches `/` through the corelib operator, which no impl here can intercept, so `normalize`, `new_normalize` and `unscale` differ by one ulp per negative component — and panic with `'Fixed: division by zero'` rather than `'simba: division by zero'`. Everything routed through `Real` (every fused kernel, `recip`, `sqrt`, `inv_sqrt`) is bit-identical. |
+| glam.cairo's own `/`, `%`, `FixedTrait::recip` | glam.cairo truncates toward zero, simba floors: one ulp apart on negative inexact results. This concerns the scalar's operators only: nalgebra divides through `Real::div` / `Real::rem`, which are simba's floor kernels here, so `normalize`, `new_normalize`, `unscale`, the inverses and the decompositions are bit-identical and panic with `'simba: division by zero'`. Everything routed through `Real` (every fused kernel, `div`, `rem`, `recip`, `sqrt`, `inv_sqrt`) is bit-identical. |
 | `FixedTrait::signum(0)` | glam.cairo gives `+1`, simba `0`. `Real::signum` is simba's. |
 | constants | `Real::<Fixed>::PI` and friends are simba's floored values so that formulas match; `fixed::PI` rounds to nearest. Seven of the twenty differ by one ulp. |
 | trigonometry | two different generated polynomials, a few ulp apart; both inside the oracle tolerances. glam.cairo's `sin_cos` costs 31,400 gas against simba's 17,220. `asin` / `acos` out of domain panic with `'Fixed: asin domain'` / `'Fixed: acos domain'`. |

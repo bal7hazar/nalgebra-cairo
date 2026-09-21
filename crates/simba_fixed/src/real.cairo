@@ -146,6 +146,19 @@ pub impl FixedReal of Real<Glam> {
         math::abs_diff_eq(to_simba(self), to_simba(other), ulps)
     }
 
+    /// SIMBA's floor division (`simba::fixed::ops::FixedDiv`), not glam.cairo's truncating `/`:
+    /// this is what makes nalgebra's `normalize` / `unscale` / `new_normalize`, which divide
+    /// through `Real::div`, bit-identical with both scalars (`'simba: ...'` panic messages too).
+    #[inline(always)]
+    fn div(a: Glam, b: Glam) -> Glam {
+        from_simba(to_simba(a) / to_simba(b))
+    }
+    /// SIMBA's floored modulo (sign of the divisor), not glam.cairo's truncated `%`.
+    #[inline(always)]
+    fn rem(a: Glam, b: Glam) -> Glam {
+        from_simba(to_simba(a) % to_simba(b))
+    }
+
     #[inline(always)]
     fn sqr(self: Glam) -> Glam {
         from_simba(fused::sqr(to_simba(self)))

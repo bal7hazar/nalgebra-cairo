@@ -15,9 +15,10 @@
 //! | `wide::dot3` / `sum_prod3`, `mul_add`, `mul_sub` / `diff_prod`, `norm3`, `norm_squared3` |
 //! identical |
 //! | `exp`, `ln` | identical (glam.cairo has neither; `Transcendental` forwards to simba) |
-//! | `/` | **differs**: glam truncates toward zero, simba floors |
-//! | `%` | **differs**: glam is the truncated remainder, simba the floored modulo |
-//! | `recip` | **differs**: same truncate-vs-floor split |
+//! | `Real::div`, `Real::rem`, `Real::recip` (what nalgebra calls) | identical: simba's floor |
+//! | glam's own `/` operator | **differs**: glam truncates toward zero, simba floors |
+//! | glam's own `%` operator | **differs**: truncated remainder vs simba's floored modulo |
+//! | `FixedTrait::recip` | **differs**: same truncate-vs-floor split |
 //! | `signum(0)` | **differs**: glam gives `+1`, simba `0` |
 //! | 7 of the 20 `Real` constants | **differ** by 1 ulp: glam rounds to nearest, simba floors |
 //! | `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2` | **differ** by a few ulp: two different
@@ -98,9 +99,9 @@ fn test_conformance_mul() {
 /// non-negative; otherwise glam's is simba's plus one ulp. Exhaustive: the test asserts one of the
 /// two, chosen by the sign and the exactness of the quotient, never "close enough".
 ///
-/// This is the difference with the widest blast radius, because nalgebra's generic code reaches
-/// `/` through the corelib `Div` operator, which no impl in this package can intercept (see the
-/// crate doc and `crate::tests` in `tests/test_nalgebra_types.cairo`).
+/// Only glam's OWN operator differs: nalgebra's generic code divides through `Real::div`, which
+/// is simba's floor on every operand (`test_conformance_real_div_rem_are_simbas`), hence the
+/// bit-identical `normalize` / `unscale` of `tests/test_nalgebra_types.cairo`.
 #[test]
 fn test_conformance_div_truncates_where_simba_floors() {
     let mut differences: u32 = 0;
@@ -140,6 +141,18 @@ fn test_conformance_rem_truncated_vs_floored() {
         }
     }
     assert!(differences > 0);
+}
+
+/// `Real::<fixed::Fixed>::div` / `rem` are SIMBA's floor division and floored modulo, bit for
+/// bit, on every operand pair — including the negative inexact quotients where glam's own `/`
+/// and `%` differ. This is what closes the `normalize` / `unscale` / `new_normalize` gap.
+#[test]
+fn test_conformance_real_div_rem_are_simbas() {
+    for case in vectors::binary_cases() {
+        let (a, b) = *case;
+        assert!(Real::div(g(a), g(b)).raw == (s(a) / s(b)).raw, "Real::div {} {}", a, b);
+        assert!(Real::rem(g(a), g(b)).raw == (s(a) % s(b)).raw, "Real::rem {} {}", a, b);
+    }
 }
 
 /// The four comparisons are raw `i64` comparisons on both sides.
@@ -518,6 +531,21 @@ fn test_conformance_kernel_overflow_panics_as_simba() {
 #[should_panic(expected: 'simba: division by zero')]
 fn test_conformance_recip_of_zero_panics_as_simba() {
     let _ = Real::recip(nalgebra_testing::black_box(Real::<Glam>::ZERO));
+}
+
+/// ... and so does a division by zero reached through `Real::div` (glam's own `/` would panic
+/// with `'Fixed: division by zero'`).
+#[test]
+#[should_panic(expected: 'simba: division by zero')]
+fn test_conformance_real_div_by_zero_panics_as_simba() {
+    let _ = Real::div(Real::<Glam>::ONE, nalgebra_testing::black_box(Real::<Glam>::ZERO));
+}
+
+/// ... and an out-of-range quotient.
+#[test]
+#[should_panic(expected: 'simba: overflow')]
+fn test_conformance_real_div_overflow_panics_as_simba() {
+    let _ = Real::div(nalgebra_testing::black_box(Real::<Glam>::MAX), Real::<Glam>::HALF);
 }
 
 /// ... and a negative square root.

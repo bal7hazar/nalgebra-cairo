@@ -2,16 +2,17 @@
 //! `simba::fixed::Fixed`.
 //!
 //! Every test builds both objects from the SAME raw Q32.32 values and compares the results raw by
-//! raw. The rule the package promises — everything that goes through `Real` is bit-identical, the
-//! corelib `/` operator is not — is checked here on real types, not on scalars: see
-//! `test_vector3_normalize_differs_by_the_division` for the one operation of this file that
-//! diverges, and `simba_fixed::conformance` for the scalar-level statement.
+//! raw, with tolerance 0. The rule the package promises — nalgebra goes through `Real` for every
+//! rounding operation, divisions included (`Real::div`), so everything is bit-identical — is
+//! checked here on real types, not on scalars; `simba_fixed::conformance` has the scalar-level
+//! statement. The `*_negative_inexact_is_bit_identical` tests pin the cases that differed by one
+//! ulp while nalgebra still divided through the scalar's own (truncating) `/` operator.
 
 use fixed::Fixed as Glam;
 use nalgebra::base::vector3::Vector3Trait;
 use nalgebra::{
-    Isometry3, Isometry3Trait, Matrix3Trait, Point3, Quaternion, SymMatrix3, SymMatrix3Trait,
-    Translation3, UnitQuaternion, UnitQuaternionTrait, Vector3,
+    Isometry3, Isometry3Trait, Matrix3Trait, Point3, Quaternion, QuaternionTrait, SymMatrix3,
+    SymMatrix3Trait, Translation3, UnitQuaternion, UnitQuaternionTrait, Vector3,
 };
 use simba::fixed::Fixed as Simba;
 use simba_fixed::prelude::*;
@@ -94,23 +95,49 @@ fn test_vector3_dot_cross_norm_match_simba() {
 
 const HALF_RAW: i64 = 0x8000_0000;
 
-/// DIVERGENCE, and the only one in this file. `normalize` is `unscale`, i.e. one `/` per
-/// component, and the corelib `Div` impl of `fixed::Fixed` truncates toward zero where simba's
-/// floors (`simba_fixed::conformance::test_conformance_div_truncates_where_simba_floors`). No impl
-/// in this package can intercept an operator of a foreign type, so the two differ by one ulp on
-/// exactly the components whose quotient is negative and inexact — here `y`.
-///
-/// Asserted as the documented difference it is, not smoothed over with a tolerance.
+/// Regression (WP 4.6). `normalize` is `unscale` by the norm, one `Real::div` per component, and
+/// `Real::<fixed::Fixed>::div` is simba's floor: bit-identical, including `y`, whose quotient is
+/// negative and inexact — the component on which glam's own truncating `/` gives one ulp more
+/// (asserted too, so that the case keeps exercising the difference).
 #[test]
-fn test_vector3_normalize_differs_by_the_division() {
+fn test_normalize_negative_inexact_is_bit_identical() {
     let a = gv(AX, AY, AZ).normalize();
     let b = sv(AX, AY, AZ).normalize();
-    assert!(a.x.raw == b.x.raw, "x is non-negative: floor = trunc");
-    assert!(a.z.raw == b.z.raw, "z is non-negative: floor = trunc");
-    assert!(a.y.raw == b.y.raw + 1, "y is negative and inexact: trunc = floor + 1");
-    // The norms of both remain 1 to within the same rounding.
-    assert!(a.norm().abs_diff_eq(Real::ONE, 2));
-    assert!(b.norm().abs_diff_eq(Real::ONE, 2));
+    assert_same_vector(a, b, "normalize");
+    let n = gv(AX, AY, AZ).norm();
+    assert!((g(AY) / n).raw == b.y.raw + 1, "glam's own `/` truncates y");
+    let t = gv(AX, AY, AZ).try_normalize(Real::ZERO).unwrap();
+    assert_same_vector(t, b, "try_normalize");
+}
+
+/// Regression (WP 4.6). `unscale` by a positive inexact divisor: bit-identical on the negative
+/// components, where glam's own `/` truncates.
+#[test]
+fn test_unscale_negative_inexact_is_bit_identical() {
+    let k = 0x7_0000_0000; // 7: -2.25 / 7 and -0.375 / 7 are inexact
+    let a = gv(AX, AY, BX).unscale(g(k));
+    let b = sv(AX, AY, BX).unscale(s(k));
+    assert_same_vector(a, b, "unscale");
+    assert!((g(AY) / g(k)).raw == b.y.raw + 1, "glam's own `/` truncates y");
+    assert!((g(BX) / g(k)).raw == b.z.raw + 1, "glam's own `/` truncates z");
+    let mut c = gv(AX, AY, BX);
+    c /= g(k);
+    assert_same_vector(c, b, "/=");
+}
+
+/// Regression (WP 4.6). `UnitQuaternion::new_normalize` on a non-unit quaternion with negative
+/// components: bit-identical, where glam's own `/` used to round the negative ones up.
+#[test]
+fn test_new_normalize_negative_inexact_is_bit_identical() {
+    let gq: UnitQuaternion<Glam> = UnitQuaternionTrait::new_normalize(
+        Quaternion { i: g(AX), j: g(AY), k: g(BX), w: g(BY) },
+    );
+    let sq: UnitQuaternion<Simba> = UnitQuaternionTrait::new_normalize(
+        Quaternion { i: s(AX), j: s(AY), k: s(BX), w: s(BY) },
+    );
+    assert_same_quaternion(gq.quaternion, sq.quaternion, "new_normalize");
+    let n = Quaternion { i: g(AX), j: g(AY), k: g(BX), w: g(BY) }.norm();
+    assert!((g(AY) / n).raw == sq.quaternion.j.raw + 1, "glam's own `/` truncates j");
 }
 
 // --- SymMatrix3 ----------------------------------------------------------------------------
@@ -212,13 +239,12 @@ fn test_overflow_in_a_kernel_panics_as_simba_reference() {
     let _ = huge.dot(huge);
 }
 
-/// DIVERGENCE. Where the panic comes from the corelib `/` rather than from a `Real` kernel, the
-/// MESSAGE is glam.cairo's (`'Fixed: division by zero'`) and not simba's. Same cause as
-/// `test_vector3_normalize_differs_by_the_division`; a downstream `#[should_panic]` on
-/// `normalize` therefore has to match on the scalar it instantiates.
+/// The division of `normalize` is `Real::div`, simba's kernel, so normalising a zero vector
+/// panics with SIMBA's message on glam's scalar too (it was glam.cairo's `'Fixed: division by
+/// zero'` while nalgebra used the scalar's own `/`): one `#[should_panic]` fits both scalars.
 #[test]
-#[should_panic(expected: 'Fixed: division by zero')]
-fn test_zero_normalize_panics_as_glam() {
+#[should_panic(expected: 'simba: division by zero')]
+fn test_zero_normalize_panics_as_simba() {
     let _ = nalgebra_testing::black_box(gv(0, 0, 0)).normalize();
 }
 
@@ -229,25 +255,11 @@ fn test_zero_normalize_panics_as_simba_reference() {
     let _ = nalgebra_testing::black_box(sv(0, 0, 0)).normalize();
 }
 
-/// `append_axisangle_linearized` renormalises exactly (`new_normalize`), so it inherits the
-/// division: the components agree or are one ulp apart, with glam's on the truncation side.
-/// Measured component by component rather than bounded by a tolerance.
+/// `append_axisangle_linearized` renormalises exactly (`new_normalize`, i.e. `Real::div`):
+/// bit-identical, component by component.
 #[test]
-fn test_append_axisangle_linearized_inherits_the_division() {
+fn test_append_axisangle_linearized_matches_simba() {
     let a = glam_quaternion().append_axisangle_linearized(gv(BX, BY, BZ)).quaternion;
     let b = simba_quaternion().append_axisangle_linearized(sv(BX, BY, BZ)).quaternion;
-    assert_trunc_of(a.w.raw, b.w.raw, "w");
-    assert_trunc_of(a.i.raw, b.i.raw, "i");
-    assert_trunc_of(a.j.raw, b.j.raw, "j");
-    assert_trunc_of(a.k.raw, b.k.raw, "k");
-}
-
-/// `glam == simba` for a non-negative component, `glam == simba + 1` for a negative one rounded
-/// up by the truncating division.
-fn assert_trunc_of(glam: i64, simba: i64, what: ByteArray) {
-    if simba >= 0 {
-        assert!(glam == simba, "{}: {} vs {}", what, glam, simba);
-    } else {
-        assert!(glam == simba || glam == simba + 1, "{}: {} vs {}", what, glam, simba);
-    }
+    assert_same_quaternion(a, b, "append_axisangle_linearized");
 }

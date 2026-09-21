@@ -188,3 +188,35 @@ fn bench_simba_fixed_sin_cos__via_glam_native() {
     let (s, c) = TrigTrait::sin_cos(a);
     assert!(s.raw != 0 && c.raw != 0);
 }
+
+// --- div --------------------------------------------------------------------------------------
+// -1 / 3: negative and inexact, the case where the two scalars' own operators disagree.
+
+#[test]
+#[inline(never)]
+fn bench_div__baseline() {
+    let _a = black_box(Glam { raw: -0x1_0000_0000 });
+    let _b = black_box(Glam { raw: 0x3_0000_0000 });
+    let e = black_box(-0x5555_5556_i64);
+    assert!(e == e);
+}
+
+/// `Real::div`, what nalgebra calls: simba's floor kernel on the relabelled operands.
+#[test]
+#[inline(never)]
+fn bench_div__real_div() {
+    let a = black_box(Glam { raw: -0x1_0000_0000 });
+    let b = black_box(Glam { raw: 0x3_0000_0000 });
+    let e = black_box(-0x5555_5556_i64);
+    assert!(Real::div(a, b).raw == e);
+}
+
+/// glam.cairo's own `/` (truncates toward zero: one ulp above the floor here).
+#[test]
+#[inline(never)]
+fn bench_div__alt_glam_operator() {
+    let a = black_box(Glam { raw: -0x1_0000_0000 });
+    let b = black_box(Glam { raw: 0x3_0000_0000 });
+    let e = black_box(-0x5555_5555_i64);
+    assert!((a / b).raw == e);
+}
