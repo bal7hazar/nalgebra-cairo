@@ -17,135 +17,10 @@ use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix_test_utils::{fx, int, m6, m6i, v6, v6i, v6t};
 use crate::base::oracle_dim6_matrix as oracle;
-use crate::base::vector3::Vector3;
-use crate::base::vector6::Vector6;
 use super::{Matrix6, Matrix6Trait};
 
-/// 2^32: the raw value of 1.
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-fn v6(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 {
-        a: Vector3 { x: fx(x), y: fx(y), z: fx(z) }, b: Vector3 { x: fx(w), y: fx(a), z: fx(b) },
-    }
-}
-
-fn v6i(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    v6(x * ONE_RAW, y * ONE_RAW, z * ONE_RAW, w * ONE_RAW, a * ONE_RAW, b * ONE_RAW)
-}
-
-/// A `Vector6` from an oracle tuple of raws.
-fn vt(t: (i64, i64, i64, i64, i64, i64)) -> Vector6<Fixed> {
-    let (x, y, z, w, a, b) = t;
-    v6(x, y, z, w, a, b)
-}
-
-/// `Matrix6` from raw ROW-major rows (oracle layout).
-fn m6(rows: [[i64; 6]; 6]) -> Matrix6<Fixed> {
-    let [r1, r2, r3, r4, r5, r6] = rows;
-    let [a11, a12, a13, a14, a15, a16] = r1;
-    let [a21, a22, a23, a24, a25, a26] = r2;
-    let [a31, a32, a33, a34, a35, a36] = r3;
-    let [a41, a42, a43, a44, a45, a46] = r4;
-    let [a51, a52, a53, a54, a55, a56] = r5;
-    let [a61, a62, a63, a64, a65, a66] = r6;
-    Matrix6Trait::new(
-        fx(a11),
-        fx(a12),
-        fx(a13),
-        fx(a14),
-        fx(a15),
-        fx(a16),
-        fx(a21),
-        fx(a22),
-        fx(a23),
-        fx(a24),
-        fx(a25),
-        fx(a26),
-        fx(a31),
-        fx(a32),
-        fx(a33),
-        fx(a34),
-        fx(a35),
-        fx(a36),
-        fx(a41),
-        fx(a42),
-        fx(a43),
-        fx(a44),
-        fx(a45),
-        fx(a46),
-        fx(a51),
-        fx(a52),
-        fx(a53),
-        fx(a54),
-        fx(a55),
-        fx(a56),
-        fx(a61),
-        fx(a62),
-        fx(a63),
-        fx(a64),
-        fx(a65),
-        fx(a66),
-    )
-}
-
-/// `Matrix6` from integer ROW-major rows.
-fn m6i(rows: [[i64; 6]; 6]) -> Matrix6<Fixed> {
-    let [r1, r2, r3, r4, r5, r6] = rows;
-    let [a11, a12, a13, a14, a15, a16] = r1;
-    let [a21, a22, a23, a24, a25, a26] = r2;
-    let [a31, a32, a33, a34, a35, a36] = r3;
-    let [a41, a42, a43, a44, a45, a46] = r4;
-    let [a51, a52, a53, a54, a55, a56] = r5;
-    let [a61, a62, a63, a64, a65, a66] = r6;
-    Matrix6Trait::new(
-        int(a11),
-        int(a12),
-        int(a13),
-        int(a14),
-        int(a15),
-        int(a16),
-        int(a21),
-        int(a22),
-        int(a23),
-        int(a24),
-        int(a25),
-        int(a26),
-        int(a31),
-        int(a32),
-        int(a33),
-        int(a34),
-        int(a35),
-        int(a36),
-        int(a41),
-        int(a42),
-        int(a43),
-        int(a44),
-        int(a45),
-        int(a46),
-        int(a51),
-        int(a52),
-        int(a53),
-        int(a54),
-        int(a55),
-        int(a56),
-        int(a61),
-        int(a62),
-        int(a63),
-        int(a64),
-        int(a65),
-        int(a66),
-    )
-}
 
 /// `[[1, .., 6], [7, .., 12], .., [31, .., 36]]`: every component distinct, so a layout mistake
 /// cannot hide.
@@ -543,8 +418,8 @@ fn test_mul_vec_oracle() {
     while let Some(case) = cases.pop_front() {
         let (a, v, expected, tol) = *case;
         assert!(tol == 0);
-        assert!(m6(a).mul_vec(vt(v)) == vt(expected));
-        assert!(m6(a).transpose().tr_mul_vec(vt(v)) == vt(expected));
+        assert!(m6(a).mul_vec(v6t(v)) == v6t(expected));
+        assert!(m6(a).transpose().tr_mul_vec(v6t(v)) == v6t(expected));
     }
 }
 
@@ -562,7 +437,7 @@ fn test_mul_vec_matches_mul_by_a_one_column_matrix() {
             ],
         );
         let p = m6(a) * col;
-        let e = vt(expected);
+        let e = v6t(expected);
         assert!(p.m11.m11 == e.a.x && p.m11.m21 == e.a.y && p.m11.m31 == e.a.z);
         assert!(p.m21.m11 == e.b.x && p.m21.m21 == e.b.y && p.m21.m31 == e.b.z);
     }

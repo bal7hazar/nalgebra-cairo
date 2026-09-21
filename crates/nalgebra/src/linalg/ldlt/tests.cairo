@@ -16,16 +16,16 @@ use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix4::Matrix4Trait;
 use crate::base::matrix6::Matrix6Trait;
+use crate::base::matrix_test_utils::{
+    int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
+    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2ir, s2r,
+    s3ir, s3r, ulp_diff, v2it, v2t, v3it, v3t, v4it, v4t, v6it, v6t,
+};
 use crate::base::sym_matrix2::SymMatrix2Trait;
 use crate::base::sym_matrix3::SymMatrix3Trait;
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
 use crate::linalg::cholesky::Cholesky6Trait;
-use crate::linalg::factor_test_utils::{
-    int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
-    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2, s2i, s3,
-    s3i, ulp_diff, v2, v2i, v3, v3i, v4, v4i, v6, v6i,
-};
 use crate::linalg::{oracle_cholesky, oracle_udu};
 use super::{Ldlt2Trait, Ldlt3Trait, Ldlt4Trait, Ldlt6Trait};
 
@@ -77,23 +77,23 @@ fn rev_v3(v: Vector3<Fixed>) -> Vector3<Fixed> {
 /// `d = (1, .., 1)`, so factor, solve, inverse and determinant are all exact.
 #[test]
 fn test_ldlt2_min_matrix_is_exact() {
-    let f = Ldlt2Trait::new(s2i([[1, 1], [1, 2]])).unwrap();
+    let f = Ldlt2Trait::new(s2ir([[1, 1], [1, 2]])).unwrap();
     assert!(f.l() == m2i([[1, 0], [1, 1]]));
-    assert!(f.d() == v2i((1, 1)));
+    assert!(f.d() == v2it((1, 1)));
     assert!(
         f.l() * Matrix2Trait::from_diagonal(f.d()) * f.l().transpose() == m2i([[1, 1], [1, 2]]),
     );
     assert!(f.determinant() == int(1));
-    assert!(f.inverse() == s2i([[2, -1], [-1, 1]]));
-    assert!(f.solve(v2i((1, -2))) == v2i((4, -3)));
+    assert!(f.inverse() == s2ir([[2, -1], [-1, 1]]));
+    assert!(f.solve(v2it((1, -2))) == v2it((4, -3)));
 }
 
 /// A diagonal matrix: `l` is the identity and `d` is the diagonal, with no square root taken.
 #[test]
 fn test_ldlt2_diagonal_is_exact() {
-    let f = Ldlt2Trait::new(s2i([[4, 0], [0, 9]])).unwrap();
+    let f = Ldlt2Trait::new(s2ir([[4, 0], [0, 9]])).unwrap();
     assert!(f.l() == Matrix2Trait::identity());
-    assert!(f.d() == v2i((4, 9)));
+    assert!(f.d() == v2it((4, 9)));
     assert!(f.determinant() == int(36));
 }
 
@@ -101,17 +101,17 @@ fn test_ldlt2_diagonal_is_exact() {
 /// pivots are all negative. Cholesky rejects it.
 #[test]
 fn test_ldlt2_accepts_indefinite_input() {
-    let f = Ldlt2Trait::new(s2i([[-1, 0], [0, -1]])).unwrap();
+    let f = Ldlt2Trait::new(s2ir([[-1, 0], [0, -1]])).unwrap();
     assert!(f.l() == Matrix2Trait::identity());
-    assert!(f.d() == v2i((-1, -1)));
-    assert!(f.solve(v2i((1, -2))) == v2i((-1, 2)));
+    assert!(f.d() == v2it((-1, -1)));
+    assert!(f.solve(v2it((1, -2))) == v2it((-1, 2)));
 }
 
 /// And it accepts the matrix `Cholesky2` loses to the flooring of `sqrt`, since it takes none.
 #[test]
 fn test_ldlt2_accepts_the_pivot_cholesky_loses() {
     assert!(
-        Ldlt2Trait::new(s2([[128976042375, 81791155117], [81791155117, 51868493809]])).is_some(),
+        Ldlt2Trait::new(s2r([[128976042375, 81791155117], [81791155117, 51868493809]])).is_some(),
     );
 }
 
@@ -120,8 +120,8 @@ fn test_ldlt2_accepts_the_pivot_cholesky_loses() {
 /// invertible.
 #[test]
 fn test_ldlt2_rejects_a_zero_pivot() {
-    assert!(Ldlt2Trait::new(s2i([[0, 0], [0, 0]])).is_none());
-    assert!(Ldlt2Trait::new(s2i([[1, 1], [1, 1]])).is_none());
+    assert!(Ldlt2Trait::new(s2ir([[0, 0], [0, 0]])).is_none());
+    assert!(Ldlt2Trait::new(s2ir([[1, 1], [1, 1]])).is_none());
 }
 
 /// The factors against the oracle's `ldlt2_l_d` (derived from upstream's Cholesky).
@@ -143,13 +143,13 @@ fn test_ldlt2_l_d_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, l, d, tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
         let el = max_ulp_diff2(f.l(), m2(l));
         if el > tol.into() {
             fail += 1;
         }
         worst_l = core::cmp::max(worst_l, el);
-        worst_d = core::cmp::max(worst_d, max_ulp_diff_v2(f.d(), v2(d)));
+        worst_d = core::cmp::max(worst_d, max_ulp_diff_v2(f.d(), v2t(d)));
     }
     assert!(
         fail == 0 && worst_l <= 0 && worst_d <= 34,
@@ -170,7 +170,7 @@ fn test_ldlt2_reconstruction() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _l, _d, _tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
         let r = f.l() * Matrix2Trait::from_diagonal(f.d()) * f.l().transpose();
         worst = core::cmp::max(worst, max_ulp_diff2(r, m2(a)));
     }
@@ -185,8 +185,8 @@ fn test_ldlt2_solve_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
-        let e = max_ulp_diff_v2(f.solve(v2(b)), v2(expected));
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
+        let e = max_ulp_diff_v2(f.solve(v2t(b)), v2t(expected));
         if e > tol.into() {
             fail += 1;
         }
@@ -203,7 +203,7 @@ fn test_ldlt2_inverse_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
         let e = max_ulp_diff2(f.inverse().to_matrix(), m2(expected));
         if e > tol.into() {
             fail += 1;
@@ -220,7 +220,7 @@ fn test_ldlt2_inverse_is_a_right_inverse() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
         worst =
             core::cmp::max(
                 worst, max_ulp_diff2(m2(a) * f.inverse().to_matrix(), Matrix2Trait::identity()),
@@ -237,8 +237,8 @@ fn test_ldlt2_determinant_matches_the_closed_form() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _l, _d, _tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
-        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s2(a).determinant()));
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
+        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s2r(a).determinant()));
     }
     assert!(worst <= 2, "ldlt2_det worst {}", worst);
 }
@@ -253,9 +253,9 @@ fn test_ldlt2_maps_to_upstream_udu_on_the_reversed_matrix() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, u, d, tol) = *case;
-        let f = Ldlt2Trait::new(s2(rev2(a))).unwrap();
+        let f = Ldlt2Trait::new(s2r(rev2(a))).unwrap();
         let e = core::cmp::max(
-            max_ulp_diff2(rev_m2(f.l()), m2(u)), max_ulp_diff_v2(rev_v2(f.d()), v2(d)),
+            max_ulp_diff2(rev_m2(f.l()), m2(u)), max_ulp_diff_v2(rev_v2(f.d()), v2t(d)),
         );
         if e > tol.into() {
             fail += 1;
@@ -271,25 +271,25 @@ fn test_ldlt2_maps_to_upstream_udu_on_the_reversed_matrix() {
 /// `d = (1, .., 1)`, so factor, solve, inverse and determinant are all exact.
 #[test]
 fn test_ldlt3_min_matrix_is_exact() {
-    let f = Ldlt3Trait::new(s3i([[1, 1, 1], [1, 2, 2], [1, 2, 3]])).unwrap();
+    let f = Ldlt3Trait::new(s3ir([[1, 1, 1], [1, 2, 2], [1, 2, 3]])).unwrap();
     assert!(f.l() == m3i([[1, 0, 0], [1, 1, 0], [1, 1, 1]]));
-    assert!(f.d() == v3i((1, 1, 1)));
+    assert!(f.d() == v3it((1, 1, 1)));
     assert!(
         f.l()
             * Matrix3Trait::from_diagonal(f.d())
             * f.l().transpose() == m3i([[1, 1, 1], [1, 2, 2], [1, 2, 3]]),
     );
     assert!(f.determinant() == int(1));
-    assert!(f.inverse() == s3i([[2, -1, 0], [-1, 2, -1], [0, -1, 1]]));
-    assert!(f.solve(v3i((1, -2, 3))) == v3i((4, -8, 5)));
+    assert!(f.inverse() == s3ir([[2, -1, 0], [-1, 2, -1], [0, -1, 1]]));
+    assert!(f.solve(v3it((1, -2, 3))) == v3it((4, -8, 5)));
 }
 
 /// A diagonal matrix: `l` is the identity and `d` is the diagonal, with no square root taken.
 #[test]
 fn test_ldlt3_diagonal_is_exact() {
-    let f = Ldlt3Trait::new(s3i([[4, 0, 0], [0, 9, 0], [0, 0, 16]])).unwrap();
+    let f = Ldlt3Trait::new(s3ir([[4, 0, 0], [0, 9, 0], [0, 0, 16]])).unwrap();
     assert!(f.l() == Matrix3Trait::identity());
-    assert!(f.d() == v3i((4, 9, 16)));
+    assert!(f.d() == v3it((4, 9, 16)));
     assert!(f.determinant() == int(576));
 }
 
@@ -297,10 +297,10 @@ fn test_ldlt3_diagonal_is_exact() {
 /// pivots are all negative. Cholesky rejects it.
 #[test]
 fn test_ldlt3_accepts_indefinite_input() {
-    let f = Ldlt3Trait::new(s3i([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])).unwrap();
+    let f = Ldlt3Trait::new(s3ir([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])).unwrap();
     assert!(f.l() == Matrix3Trait::identity());
-    assert!(f.d() == v3i((-1, -1, -1)));
-    assert!(f.solve(v3i((1, -2, 3))) == v3i((-1, 2, -3)));
+    assert!(f.d() == v3it((-1, -1, -1)));
+    assert!(f.solve(v3it((1, -2, 3))) == v3it((-1, 2, -3)));
 }
 
 /// And it accepts the matrix `Cholesky3` loses to the flooring of `sqrt`, since it takes none.
@@ -308,7 +308,9 @@ fn test_ldlt3_accepts_indefinite_input() {
 fn test_ldlt3_accepts_the_pivot_cholesky_loses() {
     assert!(
         Ldlt3Trait::new(
-            s3([[128976042375, 81791155117, 0], [81791155117, 51868493809, 0], [0, 0, 4294967296]]),
+            s3r(
+                [[128976042375, 81791155117, 0], [81791155117, 51868493809, 0], [0, 0, 4294967296]],
+            ),
         )
             .is_some(),
     );
@@ -319,8 +321,8 @@ fn test_ldlt3_accepts_the_pivot_cholesky_loses() {
 /// invertible.
 #[test]
 fn test_ldlt3_rejects_a_zero_pivot() {
-    assert!(Ldlt3Trait::new(s3i([[0, 0, 0], [0, 0, 0], [0, 0, 0]])).is_none());
-    assert!(Ldlt3Trait::new(s3i([[1, 1, 1], [1, 1, 1], [1, 1, 1]])).is_none());
+    assert!(Ldlt3Trait::new(s3ir([[0, 0, 0], [0, 0, 0], [0, 0, 0]])).is_none());
+    assert!(Ldlt3Trait::new(s3ir([[1, 1, 1], [1, 1, 1], [1, 1, 1]])).is_none());
 }
 
 /// The factors against the oracle's `ldlt3_l_d` (derived from upstream's Cholesky).
@@ -342,13 +344,13 @@ fn test_ldlt3_l_d_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, l, d, tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
         let el = max_ulp_diff3(f.l(), m3(l));
         if el > tol.into() {
             fail += 1;
         }
         worst_l = core::cmp::max(worst_l, el);
-        worst_d = core::cmp::max(worst_d, max_ulp_diff_v3(f.d(), v3(d)));
+        worst_d = core::cmp::max(worst_d, max_ulp_diff_v3(f.d(), v3t(d)));
     }
     assert!(
         fail == 0 && worst_l <= 30 && worst_d <= 13,
@@ -369,7 +371,7 @@ fn test_ldlt3_reconstruction() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _l, _d, _tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
         let r = f.l() * Matrix3Trait::from_diagonal(f.d()) * f.l().transpose();
         worst = core::cmp::max(worst, max_ulp_diff3(r, m3(a)));
     }
@@ -384,8 +386,8 @@ fn test_ldlt3_solve_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
-        let e = max_ulp_diff_v3(f.solve(v3(b)), v3(expected));
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
+        let e = max_ulp_diff_v3(f.solve(v3t(b)), v3t(expected));
         if e > tol.into() {
             fail += 1;
         }
@@ -402,7 +404,7 @@ fn test_ldlt3_inverse_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
         let e = max_ulp_diff3(f.inverse().to_matrix(), m3(expected));
         if e > tol.into() {
             fail += 1;
@@ -419,7 +421,7 @@ fn test_ldlt3_inverse_is_a_right_inverse() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
         worst =
             core::cmp::max(
                 worst, max_ulp_diff3(m3(a) * f.inverse().to_matrix(), Matrix3Trait::identity()),
@@ -436,8 +438,8 @@ fn test_ldlt3_determinant_matches_the_closed_form() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _l, _d, _tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
-        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s3(a).determinant()));
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
+        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s3r(a).determinant()));
     }
     assert!(worst <= 2, "ldlt3_det worst {}", worst);
 }
@@ -452,9 +454,9 @@ fn test_ldlt3_maps_to_upstream_udu_on_the_reversed_matrix() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, u, d, tol) = *case;
-        let f = Ldlt3Trait::new(s3(rev3(a))).unwrap();
+        let f = Ldlt3Trait::new(s3r(rev3(a))).unwrap();
         let e = core::cmp::max(
-            max_ulp_diff3(rev_m3(f.l()), m3(u)), max_ulp_diff_v3(rev_v3(f.d()), v3(d)),
+            max_ulp_diff3(rev_m3(f.l()), m3(u)), max_ulp_diff_v3(rev_v3(f.d()), v3t(d)),
         );
         if e > tol.into() {
             fail += 1;
@@ -472,7 +474,7 @@ fn test_ldlt3_maps_to_upstream_udu_on_the_reversed_matrix() {
 fn test_ldlt4_min_matrix_is_exact() {
     let f = Ldlt4Trait::new(m4i([[1, 1, 1, 1], [1, 2, 2, 2], [1, 2, 3, 3], [1, 2, 3, 4]])).unwrap();
     assert!(f.l() == m4i([[1, 0, 0, 0], [1, 1, 0, 0], [1, 1, 1, 0], [1, 1, 1, 1]]));
-    assert!(f.d() == v4i((1, 1, 1, 1)));
+    assert!(f.d() == v4it((1, 1, 1, 1)));
     assert!(
         f.l()
             * Matrix4Trait::from_diagonal(f.d())
@@ -480,7 +482,7 @@ fn test_ldlt4_min_matrix_is_exact() {
     );
     assert!(f.determinant() == int(1));
     assert!(f.inverse() == m4i([[2, -1, 0, 0], [-1, 2, -1, 0], [0, -1, 2, -1], [0, 0, -1, 1]]));
-    assert!(f.solve(v4i((1, -2, 3, -4))) == v4i((4, -8, 12, -7)));
+    assert!(f.solve(v4it((1, -2, 3, -4))) == v4it((4, -8, 12, -7)));
 }
 
 /// A diagonal matrix: `l` is the identity and `d` is the diagonal, with no square root taken.
@@ -489,7 +491,7 @@ fn test_ldlt4_diagonal_is_exact() {
     let f = Ldlt4Trait::new(m4i([[4, 0, 0, 0], [0, 9, 0, 0], [0, 0, 16, 0], [0, 0, 0, 25]]))
         .unwrap();
     assert!(f.l() == Matrix4Trait::identity());
-    assert!(f.d() == v4i((4, 9, 16, 25)));
+    assert!(f.d() == v4it((4, 9, 16, 25)));
     assert!(f.determinant() == int(14400));
 }
 
@@ -500,8 +502,8 @@ fn test_ldlt4_accepts_indefinite_input() {
     let f = Ldlt4Trait::new(m4i([[-1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, -1]]))
         .unwrap();
     assert!(f.l() == Matrix4Trait::identity());
-    assert!(f.d() == v4i((-1, -1, -1, -1)));
-    assert!(f.solve(v4i((1, -2, 3, -4))) == v4i((-1, 2, -3, 4)));
+    assert!(f.d() == v4it((-1, -1, -1, -1)));
+    assert!(f.solve(v4it((1, -2, 3, -4))) == v4it((-1, 2, -3, 4)));
 }
 
 /// And it accepts the matrix `Cholesky4` loses to the flooring of `sqrt`, since it takes none.
@@ -558,7 +560,7 @@ fn test_ldlt4_l_d_oracle() {
             fail += 1;
         }
         worst_l = core::cmp::max(worst_l, el);
-        worst_d = core::cmp::max(worst_d, max_ulp_diff_v4(f.d(), v4(d)));
+        worst_d = core::cmp::max(worst_d, max_ulp_diff_v4(f.d(), v4t(d)));
     }
     assert!(
         fail == 0 && worst_l <= 8 && worst_d <= 42,
@@ -595,7 +597,7 @@ fn test_ldlt4_solve_oracle() {
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
         let f = Ldlt4Trait::new(m4(a)).unwrap();
-        let e = max_ulp_diff_v4(f.solve(v4(b)), v4(expected));
+        let e = max_ulp_diff_v4(f.solve(v4t(b)), v4t(expected));
         if e > tol.into() {
             fail += 1;
         }
@@ -673,7 +675,7 @@ fn test_ldlt6_min_matrix_is_exact() {
                 ],
             ),
     );
-    assert!(f.d() == v6i((1, 1, 1, 1, 1, 1)));
+    assert!(f.d() == v6it((1, 1, 1, 1, 1, 1)));
     assert!(
         f.l()
             * Matrix6Trait::from_diagonal(f.d())
@@ -696,7 +698,7 @@ fn test_ldlt6_min_matrix_is_exact() {
                 ],
             ),
     );
-    assert!(f.solve(v6i((1, -2, 3, -4, 5, -6))) == v6i((4, -8, 12, -16, 20, -11)));
+    assert!(f.solve(v6it((1, -2, 3, -4, 5, -6))) == v6it((4, -8, 12, -16, 20, -11)));
 }
 
 /// A diagonal matrix: `l` is the identity and `d` is the diagonal, with no square root taken.
@@ -712,7 +714,7 @@ fn test_ldlt6_diagonal_is_exact() {
     )
         .unwrap();
     assert!(f.l() == Matrix6Trait::identity());
-    assert!(f.d() == v6i((4, 9, 16, 25, 36, 49)));
+    assert!(f.d() == v6it((4, 9, 16, 25, 36, 49)));
     assert!(f.determinant() == int(25401600));
 }
 
@@ -730,8 +732,8 @@ fn test_ldlt6_accepts_indefinite_input() {
     )
         .unwrap();
     assert!(f.l() == Matrix6Trait::identity());
-    assert!(f.d() == v6i((-1, -1, -1, -1, -1, -1)));
-    assert!(f.solve(v6i((1, -2, 3, -4, 5, -6))) == v6i((-1, 2, -3, 4, -5, 6)));
+    assert!(f.d() == v6it((-1, -1, -1, -1, -1, -1)));
+    assert!(f.solve(v6it((1, -2, 3, -4, 5, -6))) == v6it((-1, 2, -3, 4, -5, 6)));
 }
 
 /// And it accepts the matrix `Cholesky6` loses to the flooring of `sqrt`, since it takes none.
@@ -805,7 +807,7 @@ fn test_ldlt6_l_d_oracle() {
             fail += 1;
         }
         worst_l = core::cmp::max(worst_l, el);
-        worst_d = core::cmp::max(worst_d, max_ulp_diff_v6(f.d(), v6(d)));
+        worst_d = core::cmp::max(worst_d, max_ulp_diff_v6(f.d(), v6t(d)));
     }
     assert!(
         fail == 0 && worst_l <= 36 && worst_d <= 14,
@@ -842,7 +844,7 @@ fn test_ldlt6_solve_oracle() {
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
         let f = Ldlt6Trait::new(m6(a)).unwrap();
-        let e = max_ulp_diff_v6(f.solve(v6(b)), v6(expected));
+        let e = max_ulp_diff_v6(f.solve(v6t(b)), v6t(expected));
         if e > tol.into() {
             fail += 1;
         }

@@ -17,7 +17,8 @@
 
 use simba::fixed::Fixed;
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix3::Matrix3Trait;
+use crate::base::matrix_test_utils::{ONE_RAW, fx, iso2t, m3, p2t, uct, v2t};
 use crate::base::point2::{Point2, Point2Trait};
 use crate::base::vector2::{Vector2, Vector2Trait};
 use crate::geometry::translation2::{Translation2, Translation2Trait};
@@ -25,47 +26,6 @@ use crate::geometry::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComp
 use super::{Isometry2, Isometry2AngleTrait, Isometry2Trait, oracle};
 
 /// The raw value of 1.
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v2(t: (i64, i64)) -> Vector2<Fixed> {
-    let (x, y) = t;
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn p2(t: (i64, i64)) -> Point2<Fixed> {
-    let (x, y) = t;
-    Point2 { x: fx(x), y: fx(y) }
-}
-
-fn uc(t: (i64, i64)) -> UnitComplex<Fixed> {
-    let (re, im) = t;
-    UnitComplex { re: fx(re), im: fx(im) }
-}
-
-fn m3(rows: [[i64; 3]; 3]) -> Matrix3<Fixed> {
-    let [[m11, m12, m13], [m21, m22, m23], [m31, m32, m33]] = rows;
-    Matrix3 {
-        m11: fx(m11),
-        m21: fx(m21),
-        m31: fx(m31),
-        m12: fx(m12),
-        m22: fx(m22),
-        m32: fx(m32),
-        m13: fx(m13),
-        m23: fx(m23),
-        m33: fx(m33),
-    }
-}
-
-/// An oracle isometry `((tx, ty), (re, im))`.
-fn iso(t: ((i64, i64), (i64, i64))) -> Isometry2<Fixed> {
-    let (tr, rot) = t;
-    Isometry2 { rotation: uc(rot), translation: Translation2 { vector: v2(tr) } }
-}
 
 fn id() -> Isometry2<Fixed> {
     Isometry2Trait::<Fixed>::identity()
@@ -73,17 +33,17 @@ fn id() -> Isometry2<Fixed> {
 
 /// `new((1.5, -2.25), 0.4 rad)`.
 fn a() -> Isometry2<Fixed> {
-    Isometry2AngleTrait::new(v2((0x180000000, -0x240000000)), fx(0x66666666))
+    Isometry2AngleTrait::new(v2t((0x180000000, -0x240000000)), fx(0x66666666))
 }
 
 /// `new((-0.75, 0.5), -1/6 rad)`.
 fn b() -> Isometry2<Fixed> {
-    Isometry2AngleTrait::new(v2((-0xc0000000, 0x80000000)), fx(-0x2aaaaaaa))
+    Isometry2AngleTrait::new(v2t((-0xc0000000, 0x80000000)), fx(-0x2aaaaaaa))
 }
 
 /// The quarter turn, exactly representable.
 fn quarter() -> UnitComplex<Fixed> {
-    uc((0, ONE_RAW))
+    uct((0, ONE_RAW))
 }
 
 // --- construction
@@ -93,7 +53,7 @@ fn test_identity_is_exact() {
     let i = id();
     assert!(i.rotation == UnitComplexTrait::<Fixed>::identity());
     assert!(i.translation == Translation2Trait::<Fixed>::identity());
-    assert!(i.transform_point(p2((0x123, -0x456))) == p2((0x123, -0x456)));
+    assert!(i.transform_point(p2t((0x123, -0x456))) == p2t((0x123, -0x456)));
 }
 
 #[test]
@@ -116,17 +76,19 @@ fn test_pure_translation_moves_points_exactly() {
     let t = Isometry2Trait::translation(fx(0x140000000), fx(-0x60000000));
     assert!(t.rotation == UnitComplexTrait::<Fixed>::identity());
     // The rotation is the exact identity, so the point comes out bit for bit shifted.
-    assert!(t.transform_point(p2((-0x280000000, 0x3c0000000))) == p2((-0x140000000, 0x360000000)));
-    assert!(t.transform_vector(v2((7, -9))) == v2((7, -9)));
+    assert!(
+        t.transform_point(p2t((-0x280000000, 0x3c0000000))) == p2t((-0x140000000, 0x360000000)),
+    );
+    assert!(t.transform_vector(v2t((7, -9))) == v2t((7, -9)));
 }
 
 #[test]
 fn test_quarter_turn_is_exact() {
     let i = Isometry2Trait::from_parts(Translation2Trait::new(fx(ONE_RAW), Real::ZERO), quarter());
     // (1, 0) turns into (0, 1), then the translation adds (1, 0).
-    assert!(i.transform_point(p2((ONE_RAW, 0))) == p2((ONE_RAW, ONE_RAW)));
-    assert!(i.transform_vector(v2((0, ONE_RAW))) == v2((-ONE_RAW, 0)));
-    assert!(i.inverse_transform_point(p2((ONE_RAW, ONE_RAW))) == p2((ONE_RAW, 0)));
+    assert!(i.transform_point(p2t((ONE_RAW, 0))) == p2t((ONE_RAW, ONE_RAW)));
+    assert!(i.transform_vector(v2t((0, ONE_RAW))) == v2t((-ONE_RAW, 0)));
+    assert!(i.inverse_transform_point(p2t((ONE_RAW, ONE_RAW))) == p2t((ONE_RAW, 0)));
 }
 
 // --- inverse, composition, inv_mul
@@ -147,7 +109,7 @@ fn test_inverse_of_a_pure_translation_is_exact() {
 
 #[test]
 fn test_inverse_transform_point_undoes_transform_point() {
-    let (i, p) = (a(), p2((-0x280000000, 0x3c0000000)));
+    let (i, p) = (a(), p2t((-0x280000000, 0x3c0000000)));
     assert!(i.inverse_transform_point(i.transform_point(p)).abs_diff_eq(p, 4));
     // and it agrees with the materialised inverse, within the extra rounding the latter pays.
     assert!(i.inverse_transform_point(p).abs_diff_eq(i.inverse().transform_point(p), 4));
@@ -155,14 +117,14 @@ fn test_inverse_transform_point_undoes_transform_point() {
 
 #[test]
 fn test_inverse_transform_vector_is_the_conjugate_rotation() {
-    let (i, v) = (a(), v2((-0x280000000, 0x3c0000000)));
+    let (i, v) = (a(), v2t((-0x280000000, 0x3c0000000)));
     assert!(i.inverse_transform_vector(v) == i.rotation.inverse_transform_vector(v));
     assert!(i.inverse_transform_vector(i.transform_vector(v)).abs_diff_eq(v, 4));
 }
 
 #[test]
 fn test_mul_is_the_composition_of_the_actions() {
-    let (x, y, p) = (a(), b(), p2((-0x280000000, 0x3c0000000)));
+    let (x, y, p) = (a(), b(), p2t((-0x280000000, 0x3c0000000)));
     assert!((x * y).transform_point(p).abs_diff_eq(x.transform_point(y.transform_point(p)), 4));
     assert!(x * id() == x);
     assert!((id() * x) == x);
@@ -175,7 +137,7 @@ fn test_inv_mul_is_the_inverse_times_other_within_two_ulp() {
     assert!(x.inv_mul(y).abs_diff_eq(x.inverse() * y, 2));
     assert!(x.inv_mul(x).abs_diff_eq(id(), 2));
     // The relative pose maps `y`'s frame into `x`'s.
-    let p = p2((-0x280000000, 0x3c0000000));
+    let p = p2t((-0x280000000, 0x3c0000000));
     assert!(
         x
             .inv_mul(y)
@@ -204,7 +166,7 @@ fn test_append_and_prepend_rotation_match_the_composition() {
 
 #[test]
 fn test_append_rotation_wrt_point_fixes_that_point() {
-    let (i, r, p) = (a(), quarter(), p2((0x180000000, -0x80000000)));
+    let (i, r, p) = (a(), quarter(), p2t((0x180000000, -0x80000000)));
     let j = i.append_rotation_wrt_point(r, p);
     // T(p) · R(r) · T(-p) · self, the definition.
     let shift: Isometry2<Fixed> = Translation2Trait::new(p.x, p.y).into();
@@ -242,7 +204,7 @@ fn test_to_homogeneous_layout() {
 /// since adding an integral translation commutes with the floor.
 #[test]
 fn test_to_homogeneous_acts_like_transform_point_bit_for_bit() {
-    let (i, p) = (a(), p2((-0x280000000, 0x3c0000000)));
+    let (i, p) = (a(), p2t((-0x280000000, 0x3c0000000)));
     let h = i.to_homogeneous().mul_vec(p.to_homogeneous());
     let got = i.transform_point(p);
     assert!(h.x == got.x && h.y == got.y && h.z == Real::ONE);
@@ -327,7 +289,7 @@ fn test_mul_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (x, y, expected, tol) = *case;
-        assert!((iso(x) * iso(y)).abs_diff_eq(iso(expected), tol));
+        assert!((iso2t(x) * iso2t(y)).abs_diff_eq(iso2t(expected), tol));
     }
 }
 
@@ -337,7 +299,7 @@ fn test_inverse_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (x, expected, tol) = *case;
-        assert!(iso(x).inverse().abs_diff_eq(iso(expected), tol));
+        assert!(iso2t(x).inverse().abs_diff_eq(iso2t(expected), tol));
     }
 }
 
@@ -347,7 +309,7 @@ fn test_inv_mul_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (x, y, expected, tol) = *case;
-        assert!(iso(x).inv_mul(iso(y)).abs_diff_eq(iso(expected), tol));
+        assert!(iso2t(x).inv_mul(iso2t(y)).abs_diff_eq(iso2t(expected), tol));
     }
 }
 
@@ -357,7 +319,7 @@ fn test_transform_point_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (x, p, expected, tol) = *case;
-        assert!(iso(x).transform_point(p2(p)).abs_diff_eq(p2(expected), tol));
+        assert!(iso2t(x).transform_point(p2t(p)).abs_diff_eq(p2t(expected), tol));
     }
 }
 
@@ -367,7 +329,7 @@ fn test_transform_vector_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (x, v, expected, tol) = *case;
-        assert!(iso(x).transform_vector(v2(v)).abs_diff_eq(v2(expected), tol));
+        assert!(iso2t(x).transform_vector(v2t(v)).abs_diff_eq(v2t(expected), tol));
     }
 }
 
@@ -377,7 +339,7 @@ fn test_inverse_transform_point_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (x, p, expected, tol) = *case;
-        assert!(iso(x).inverse_transform_point(p2(p)).abs_diff_eq(p2(expected), tol));
+        assert!(iso2t(x).inverse_transform_point(p2t(p)).abs_diff_eq(p2t(expected), tol));
     }
 }
 
@@ -387,7 +349,7 @@ fn test_inverse_transform_vector_oracle() {
     assert!(cases.len() >= 24);
     while let Some(case) = cases.pop_front() {
         let (x, v, expected, tol) = *case;
-        assert!(iso(x).inverse_transform_vector(v2(v)).abs_diff_eq(v2(expected), tol));
+        assert!(iso2t(x).inverse_transform_vector(v2t(v)).abs_diff_eq(v2t(expected), tol));
     }
 }
 
@@ -398,6 +360,6 @@ fn test_to_homogeneous_oracle() {
     while let Some(case) = cases.pop_front() {
         let (x, expected, tol) = *case;
         assert!(tol == 0);
-        assert!(iso(x).to_homogeneous() == m3(expected));
+        assert!(iso2t(x).to_homogeneous() == m3(expected));
     }
 }

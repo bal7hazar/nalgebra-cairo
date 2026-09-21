@@ -7,26 +7,11 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
+use crate::base::matrix_test_utils::{fx, p2, uc, v2};
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;
 use crate::geometry::rotation2::Rotation2;
 use super::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn uc(re: i64, im: i64) -> UnitComplex<Fixed> {
-    UnitComplex { re: fx(re), im: fx(im) }
-}
-
-fn v2(x: i64, y: i64) -> Vector2<Fixed> {
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn p2(x: i64, y: i64) -> Point2<Fixed> {
-    Point2 { x: fx(x), y: fx(y) }
-}
 
 /// `new(0.4)`.
 fn c() -> UnitComplex<Fixed> {

@@ -26,12 +26,6 @@
 //!   `MᵀM` (DESIGN D6).
 
 pub mod cholesky;
-#[cfg(test)]
-mod decomp_test_utils;
-#[cfg(test)]
-mod eigen_test_utils;
-#[cfg(test)]
-mod factor_test_utils;
 pub mod ldlt;
 pub mod lu;
 #[cfg(test)]

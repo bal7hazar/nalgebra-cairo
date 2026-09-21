@@ -11,41 +11,21 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use crate::base::matrix3::Matrix3Trait;
+use crate::base::matrix_test_utils::{fx, iso2, p2, uc, v2};
 use crate::base::point2::{Point2, Point2Trait};
 use crate::base::vector2::Vector2;
 use crate::geometry::translation2::Translation2;
 use crate::geometry::unit_complex::{UnitComplex, UnitComplexTrait};
 use super::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
 
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v2(x: i64, y: i64) -> Vector2<Fixed> {
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn p2(x: i64, y: i64) -> Point2<Fixed> {
-    Point2 { x: fx(x), y: fx(y) }
-}
-
-fn uc(re: i64, im: i64) -> UnitComplex<Fixed> {
-    UnitComplex { re: fx(re), im: fx(im) }
-}
-
-/// An isometry from raw components, `((tx, ty), (re, im))` like the oracle.
-fn iso(tx: i64, ty: i64, re: i64, im: i64) -> Isometry2<Fixed> {
-    Isometry2 { rotation: uc(re, im), translation: Translation2 { vector: v2(tx, ty) } }
-}
-
 /// `new((1.5, -2.25), 0.4 rad)`.
 fn a() -> Isometry2<Fixed> {
-    iso(6442450944, -9663676416, 3955926847, 1672539044)
+    iso2(6442450944, -9663676416, 3955926847, 1672539044)
 }
 
 /// `new((-0.75, 0.5), -1/6 rad)`.
 fn b() -> Isometry2<Fixed> {
-    iso(-3221225472, 2147483648, 4235452929, -712518464)
+    iso2(-3221225472, 2147483648, 4235452929, -712518464)
 }
 
 /// `(-2.5, 3.75)`, as a point and as a vector.
@@ -111,7 +91,7 @@ fn test_transform_point_fused_and_composed_agree_bit_for_bit() {
 #[inline(never)]
 fn bench_isometry2_identity__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
-    let e: Isometry2<Fixed> = black_box(iso(0, 0, 0x100000000, 0));
+    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 0x100000000, 0));
     assert!(e == e);
 }
 
@@ -119,7 +99,7 @@ fn bench_isometry2_identity__baseline() {
 #[inline(never)]
 fn bench_isometry2_identity__const() {
     let _x: Isometry2<Fixed> = black_box(a());
-    let e: Isometry2<Fixed> = black_box(iso(0, 0, 0x100000000, 0));
+    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 0x100000000, 0));
     assert!(Isometry2Trait::<Fixed>::identity() == e);
 }
 
@@ -145,7 +125,7 @@ fn bench_isometry2_from_parts__wrap() {
 #[inline(never)]
 fn bench_isometry2_translation__baseline() {
     let _v: Vector2<Fixed> = black_box(t().vector);
-    let e: Isometry2<Fixed> = black_box(iso(0x140000000, -0x60000000, 0x100000000, 0));
+    let e: Isometry2<Fixed> = black_box(iso2(0x140000000, -0x60000000, 0x100000000, 0));
     assert!(e == e);
 }
 
@@ -153,7 +133,7 @@ fn bench_isometry2_translation__baseline() {
 #[inline(never)]
 fn bench_isometry2_translation__pure() {
     let v: Vector2<Fixed> = black_box(t().vector);
-    let e: Isometry2<Fixed> = black_box(iso(0x140000000, -0x60000000, 0x100000000, 0));
+    let e: Isometry2<Fixed> = black_box(iso2(0x140000000, -0x60000000, 0x100000000, 0));
     assert!(Isometry2Trait::translation(v.x, v.y) == e);
 }
 
@@ -161,7 +141,7 @@ fn bench_isometry2_translation__pure() {
 #[inline(never)]
 fn bench_isometry2_from_translation__baseline() {
     let _u: Translation2<Fixed> = black_box(t());
-    let e: Isometry2<Fixed> = black_box(iso(0x140000000, -0x60000000, 0x100000000, 0));
+    let e: Isometry2<Fixed> = black_box(iso2(0x140000000, -0x60000000, 0x100000000, 0));
     assert!(e == e);
 }
 
@@ -170,7 +150,7 @@ fn bench_isometry2_from_translation__baseline() {
 #[inline(never)]
 fn bench_isometry2_from_translation__pure() {
     let u: Translation2<Fixed> = black_box(t());
-    let e: Isometry2<Fixed> = black_box(iso(0x140000000, -0x60000000, 0x100000000, 0));
+    let e: Isometry2<Fixed> = black_box(iso2(0x140000000, -0x60000000, 0x100000000, 0));
     assert!(Isometry2Trait::from_translation(u) == e);
 }
 
@@ -178,7 +158,7 @@ fn bench_isometry2_from_translation__pure() {
 #[inline(never)]
 fn bench_isometry2_from_rotation__baseline() {
     let _q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(0, 0, 4273510349, 428781260));
+    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 4273510349, 428781260));
     assert!(e == e);
 }
 
@@ -187,7 +167,7 @@ fn bench_isometry2_from_rotation__baseline() {
 #[inline(never)]
 fn bench_isometry2_from_rotation__pure() {
     let q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(0, 0, 4273510349, 428781260));
+    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 4273510349, 428781260));
     assert!(Isometry2Trait::from_rotation(q) == e);
 }
 
@@ -213,7 +193,7 @@ fn bench_isometry2_new__sin_cos() {
 #[inline(never)]
 fn bench_isometry2_rotation__baseline() {
     let _angle: Fixed = black_box(fx(0x66666666));
-    let e: Isometry2<Fixed> = black_box(iso(0, 0, 3955926847, 1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 3955926847, 1672539044));
     assert!(e == e);
 }
 
@@ -221,7 +201,7 @@ fn bench_isometry2_rotation__baseline() {
 #[inline(never)]
 fn bench_isometry2_rotation__sin_cos() {
     let angle: Fixed = black_box(fx(0x66666666));
-    let e: Isometry2<Fixed> = black_box(iso(0, 0, 3955926847, 1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 3955926847, 1672539044));
     assert!(Isometry2AngleTrait::rotation(angle) == e);
 }
 
@@ -229,7 +209,7 @@ fn bench_isometry2_rotation__sin_cos() {
 #[inline(never)]
 fn bench_isometry2_inverse__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
-    let e: Isometry2<Fixed> = black_box(iso(-2170677422, 11409643971, 3955926847, -1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(-2170677422, 11409643971, 3955926847, -1672539044));
     assert!(e == e);
 }
 
@@ -237,7 +217,7 @@ fn bench_isometry2_inverse__baseline() {
 #[inline(never)]
 fn bench_isometry2_inverse__conjugate_rotate() {
     let x: Isometry2<Fixed> = black_box(a());
-    let e: Isometry2<Fixed> = black_box(iso(-2170677422, 11409643971, 3955926847, -1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(-2170677422, 11409643971, 3955926847, -1672539044));
     assert!(x.inverse() == e);
 }
 
@@ -246,7 +226,7 @@ fn bench_isometry2_inverse__conjugate_rotate() {
 fn bench_isometry2_inv_mul__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _y: Isometry2<Fixed> = black_box(b());
-    let e: Isometry2<Fixed> = black_box(iso(-4301353035, 14642011678, 3623642725, -2305636023));
+    let e: Isometry2<Fixed> = black_box(iso2(-4301353035, 14642011678, 3623642725, -2305636023));
     assert!(e == e);
 }
 
@@ -255,7 +235,7 @@ fn bench_isometry2_inv_mul__baseline() {
 fn bench_isometry2_inv_mul__direct() {
     let x: Isometry2<Fixed> = black_box(a());
     let y: Isometry2<Fixed> = black_box(b());
-    let e: Isometry2<Fixed> = black_box(iso(-4301353035, 14642011678, 3623642725, -2305636023));
+    let e: Isometry2<Fixed> = black_box(iso2(-4301353035, 14642011678, 3623642725, -2305636023));
     assert!(x.inv_mul(y) == e);
 }
 
@@ -266,7 +246,7 @@ fn bench_isometry2_inv_mul__direct() {
 fn bench_isometry2_inv_mul__alt_inverse_then_mul() {
     let x: Isometry2<Fixed> = black_box(a());
     let y: Isometry2<Fixed> = black_box(b());
-    let e: Isometry2<Fixed> = black_box(iso(-4301353036, 14642011677, 3623642725, -2305636023));
+    let e: Isometry2<Fixed> = black_box(iso2(-4301353036, 14642011677, 3623642725, -2305636023));
     assert!(x.inverse() * y == e);
 }
 
@@ -275,7 +255,7 @@ fn bench_isometry2_inv_mul__alt_inverse_then_mul() {
 fn bench_isometry2_mul__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _y: Isometry2<Fixed> = black_box(b());
-    let e: Isometry2<Fixed> = black_box(iso(2639236286, -8940117276, 4178578243, 993090093));
+    let e: Isometry2<Fixed> = black_box(iso2(2639236286, -8940117276, 4178578243, 993090093));
     assert!(e == e);
 }
 
@@ -284,7 +264,7 @@ fn bench_isometry2_mul__baseline() {
 fn bench_isometry2_mul__compose() {
     let x: Isometry2<Fixed> = black_box(a());
     let y: Isometry2<Fixed> = black_box(b());
-    let e: Isometry2<Fixed> = black_box(iso(2639236286, -8940117276, 4178578243, 993090093));
+    let e: Isometry2<Fixed> = black_box(iso2(2639236286, -8940117276, 4178578243, 993090093));
     assert!(x * y == e);
 }
 
@@ -376,7 +356,7 @@ fn bench_isometry2_inverse_transform_vector__conjugate_rotate() {
 fn bench_isometry2_append_translation__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _u: Translation2<Fixed> = black_box(t());
-    let e: Isometry2<Fixed> = black_box(iso(11811160064, -11274289152, 3955926847, 1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(11811160064, -11274289152, 3955926847, 1672539044));
     assert!(e == e);
 }
 
@@ -385,7 +365,7 @@ fn bench_isometry2_append_translation__baseline() {
 fn bench_isometry2_append_translation__add() {
     let x: Isometry2<Fixed> = black_box(a());
     let u: Translation2<Fixed> = black_box(t());
-    let e: Isometry2<Fixed> = black_box(iso(11811160064, -11274289152, 3955926847, 1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(11811160064, -11274289152, 3955926847, 1672539044));
     assert!(x.append_translation(u) == e);
 }
 
@@ -394,7 +374,7 @@ fn bench_isometry2_append_translation__add() {
 fn bench_isometry2_prepend_translation__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _u: Translation2<Fixed> = black_box(t());
-    let e: Isometry2<Fixed> = black_box(iso(12014561644, -9056475179, 3955926847, 1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(12014561644, -9056475179, 3955926847, 1672539044));
     assert!(e == e);
 }
 
@@ -403,7 +383,7 @@ fn bench_isometry2_prepend_translation__baseline() {
 fn bench_isometry2_prepend_translation__rotate_add() {
     let x: Isometry2<Fixed> = black_box(a());
     let u: Translation2<Fixed> = black_box(t());
-    let e: Isometry2<Fixed> = black_box(iso(12014561644, -9056475179, 3955926847, 1672539044));
+    let e: Isometry2<Fixed> = black_box(iso2(12014561644, -9056475179, 3955926847, 1672539044));
     assert!(x.prepend_translation(u) == e);
 }
 
@@ -412,7 +392,7 @@ fn bench_isometry2_prepend_translation__rotate_add() {
 fn bench_isometry2_append_rotation__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(7375023358, -8972226396, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(7375023358, -8972226396, 3769188402, 2059117008));
     assert!(e == e);
 }
 
@@ -421,7 +401,7 @@ fn bench_isometry2_append_rotation__baseline() {
 fn bench_isometry2_append_rotation__compose_rotate() {
     let x: Isometry2<Fixed> = black_box(a());
     let q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(7375023358, -8972226396, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(7375023358, -8972226396, 3769188402, 2059117008));
     assert!(x.append_rotation(q) == e);
 }
 
@@ -430,7 +410,7 @@ fn bench_isometry2_append_rotation__compose_rotate() {
 fn bench_isometry2_prepend_rotation__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3769188402, 2059117008));
     assert!(e == e);
 }
 
@@ -439,7 +419,7 @@ fn bench_isometry2_prepend_rotation__baseline() {
 fn bench_isometry2_prepend_rotation__compose() {
     let x: Isometry2<Fixed> = black_box(a());
     let q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3769188402, 2059117008));
     assert!(x.prepend_rotation(q) == e);
 }
 
@@ -449,7 +429,7 @@ fn bench_isometry2_append_rotation_wrt_point__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _q: UnitComplex<Fixed> = black_box(r());
     let _c: Point2<Fixed> = black_box(p());
-    let e: Isometry2<Fixed> = black_box(iso(8929310716, -7819809694, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(8929310716, -7819809694, 3769188402, 2059117008));
     assert!(e == e);
 }
 
@@ -459,7 +439,7 @@ fn bench_isometry2_append_rotation_wrt_point__shift_rotate() {
     let x: Isometry2<Fixed> = black_box(a());
     let q: UnitComplex<Fixed> = black_box(r());
     let c: Point2<Fixed> = black_box(p());
-    let e: Isometry2<Fixed> = black_box(iso(8929310716, -7819809694, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(8929310716, -7819809694, 3769188402, 2059117008));
     assert!(x.append_rotation_wrt_point(q, c) == e);
 }
 
@@ -468,7 +448,7 @@ fn bench_isometry2_append_rotation_wrt_point__shift_rotate() {
 fn bench_isometry2_append_rotation_wrt_center__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3769188402, 2059117008));
     assert!(e == e);
 }
 
@@ -477,7 +457,7 @@ fn bench_isometry2_append_rotation_wrt_center__baseline() {
 fn bench_isometry2_append_rotation_wrt_center__compose() {
     let x: Isometry2<Fixed> = black_box(a());
     let q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3769188402, 2059117008));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3769188402, 2059117008));
     assert!(x.append_rotation_wrt_center(q) == e);
 }
 
@@ -501,32 +481,32 @@ fn bench_isometry2_to_homogeneous__matrix3() {
 #[test]
 #[inline(never)]
 fn bench_isometry2_renormalize__baseline() {
-    let _x: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926850, 1672539042));
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926849, 1672539041));
+    let _x: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926850, 1672539042));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926849, 1672539041));
     assert!(e == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_isometry2_renormalize__exact() {
-    let x: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926850, 1672539042));
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926849, 1672539041));
+    let x: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926850, 1672539042));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926849, 1672539041));
     assert!(x.renormalize() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_isometry2_renormalize_fast__baseline() {
-    let _x: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926850, 1672539042));
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926848, 1672539041));
+    let _x: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926850, 1672539042));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926848, 1672539041));
     assert!(e == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_isometry2_renormalize_fast__newton() {
-    let x: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926850, 1672539042));
-    let e: Isometry2<Fixed> = black_box(iso(6442450944, -9663676416, 3955926848, 1672539041));
+    let x: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926850, 1672539042));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926848, 1672539041));
     assert!(x.renormalize_fast() == e);
 }
 
@@ -536,7 +516,7 @@ fn bench_isometry2_lerp_slerp__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _y: Isometry2<Fixed> = black_box(b());
     let _s: Fixed = black_box(fx(0x40000000));
-    let e: Isometry2<Fixed> = black_box(iso(4026531840, -6710886400, 4152447840, 1097233342));
+    let e: Isometry2<Fixed> = black_box(iso2(4026531840, -6710886400, 4152447840, 1097233342));
     assert!(e == e);
 }
 
@@ -546,7 +526,7 @@ fn bench_isometry2_lerp_slerp__atan2_sin_cos() {
     let x: Isometry2<Fixed> = black_box(a());
     let y: Isometry2<Fixed> = black_box(b());
     let s: Fixed = black_box(fx(0x40000000));
-    let e: Isometry2<Fixed> = black_box(iso(4026531840, -6710886400, 4152447840, 1097233342));
+    let e: Isometry2<Fixed> = black_box(iso2(4026531840, -6710886400, 4152447840, 1097233342));
     assert!(x.lerp_slerp(y, s) == e);
 }
 
@@ -556,7 +536,7 @@ fn bench_isometry2_lerp_nlerp__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
     let _y: Isometry2<Fixed> = black_box(b());
     let _s: Fixed = black_box(fx(0x40000000));
-    let e: Isometry2<Fixed> = black_box(iso(4026531840, -6710886400, 4149247214, 1109275270));
+    let e: Isometry2<Fixed> = black_box(iso2(4026531840, -6710886400, 4149247214, 1109275270));
     assert!(e == e);
 }
 
@@ -567,7 +547,7 @@ fn bench_isometry2_lerp_nlerp__lerp_normalize() {
     let x: Isometry2<Fixed> = black_box(a());
     let y: Isometry2<Fixed> = black_box(b());
     let s: Fixed = black_box(fx(0x40000000));
-    let e: Isometry2<Fixed> = black_box(iso(4026531840, -6710886400, 4149247214, 1109275270));
+    let e: Isometry2<Fixed> = black_box(iso2(4026531840, -6710886400, 4149247214, 1109275270));
     assert!(x.lerp_nlerp(y, s) == e);
 }
 
@@ -575,7 +555,7 @@ fn bench_isometry2_lerp_nlerp__lerp_normalize() {
 #[inline(never)]
 fn bench_isometry2_abs_diff_eq__baseline() {
     let _x: Isometry2<Fixed> = black_box(a());
-    let _y: Isometry2<Fixed> = black_box(iso(6442450946, -9663676415, 3955926848, 1672539044));
+    let _y: Isometry2<Fixed> = black_box(iso2(6442450946, -9663676415, 3955926848, 1672539044));
     let e: bool = black_box(true);
     assert!(e == e);
 }
@@ -584,7 +564,7 @@ fn bench_isometry2_abs_diff_eq__baseline() {
 #[inline(never)]
 fn bench_isometry2_abs_diff_eq__ulps() {
     let x: Isometry2<Fixed> = black_box(a());
-    let y: Isometry2<Fixed> = black_box(iso(6442450946, -9663676415, 3955926848, 1672539044));
+    let y: Isometry2<Fixed> = black_box(iso2(6442450946, -9663676415, 3955926848, 1672539044));
     let e: bool = black_box(true);
     assert!(x.abs_diff_eq(y, 2) == e);
 }

@@ -18,7 +18,8 @@
 
 use simba::fixed::Fixed;
 use simba::scalar::Real;
-use crate::base::matrix4::{Matrix4, Matrix4Trait};
+use crate::base::matrix4::Matrix4Trait;
+use crate::base::matrix_test_utils::{ONE_RAW, fx, int, iso3t, m4, p3t, uqt, v3t};
 use crate::base::point3::{Point3, Point3Trait};
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::geometry::quaternion::Quaternion;
@@ -29,60 +30,6 @@ use crate::geometry::unit_quaternion::{
 use super::{Isometry3, Isometry3AngleTrait, Isometry3Trait, oracle};
 
 /// The raw value of 1.
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-fn v3(t: (i64, i64, i64)) -> Vector3<Fixed> {
-    let (x, y, z) = t;
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn p3(t: (i64, i64, i64)) -> Point3<Fixed> {
-    let (x, y, z) = t;
-    Point3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-/// A unit quaternion from raw components, in the oracle's `(w, i, j, k)` order.
-fn uq(t: (i64, i64, i64, i64)) -> UnitQuaternion<Fixed> {
-    let (w, i, j, k) = t;
-    UnitQuaternion { quaternion: Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) } }
-}
-
-fn m4(rows: [[i64; 4]; 4]) -> Matrix4<Fixed> {
-    let [[m11, m12, m13, m14], [m21, m22, m23, m24], [m31, m32, m33, m34], [m41, m42, m43, m44]] =
-        rows;
-    Matrix4 {
-        m11: fx(m11),
-        m21: fx(m21),
-        m31: fx(m31),
-        m41: fx(m41),
-        m12: fx(m12),
-        m22: fx(m22),
-        m32: fx(m32),
-        m42: fx(m42),
-        m13: fx(m13),
-        m23: fx(m23),
-        m33: fx(m33),
-        m43: fx(m43),
-        m14: fx(m14),
-        m24: fx(m24),
-        m34: fx(m34),
-        m44: fx(m44),
-    }
-}
-
-/// An oracle isometry `((tx, ty, tz), (w, i, j, k))`.
-fn iso(t: ((i64, i64, i64), (i64, i64, i64, i64))) -> Isometry3<Fixed> {
-    let (tr, rot) = t;
-    Isometry3 { rotation: uq(rot), translation: Translation3 { vector: v3(tr) } }
-}
 
 fn id() -> Isometry3<Fixed> {
     Isometry3Trait::<Fixed>::identity()
@@ -91,20 +38,20 @@ fn id() -> Isometry3<Fixed> {
 /// `new((1.5, -2.25, 3.75), (0.25, -0.1875, 0.125))`.
 fn a() -> Isometry3<Fixed> {
     Isometry3AngleTrait::new(
-        v3((0x180000000, -0x240000000, 0x3c0000000)), v3((0x40000000, -0x30000000, 0x20000000)),
+        v3t((0x180000000, -0x240000000, 0x3c0000000)), v3t((0x40000000, -0x30000000, 0x20000000)),
     )
 }
 
 /// `new((-0.75, 0.5, 1.25), (-0.5, 0.375, 0.875))`.
 fn b() -> Isometry3<Fixed> {
     Isometry3AngleTrait::new(
-        v3((-0xc0000000, 0x80000000, 0x140000000)), v3((-0x80000000, 0x60000000, 0xe0000000)),
+        v3t((-0xc0000000, 0x80000000, 0x140000000)), v3t((-0x80000000, 0x60000000, 0xe0000000)),
     )
 }
 
 /// The half turn about `y`, exactly representable: `(w, i, j, k) = (0, 0, 1, 0)`.
 fn half_turn_y() -> UnitQuaternion<Fixed> {
-    uq((0, 0, ONE_RAW, 0))
+    uqt((0, 0, ONE_RAW, 0))
 }
 
 // --- construction
@@ -114,14 +61,14 @@ fn test_identity_is_exact() {
     let i = id();
     assert!(i.rotation == UnitQuaternionTrait::<Fixed>::identity());
     assert!(i.translation == Translation3Trait::<Fixed>::identity());
-    assert!(i.transform_point(p3((0x123, -0x456, 0x789))) == p3((0x123, -0x456, 0x789)));
+    assert!(i.transform_point(p3t((0x123, -0x456, 0x789))) == p3t((0x123, -0x456, 0x789)));
 }
 
 #[test]
 fn test_from_parts_and_the_constructors_agree() {
     let t = Translation3Trait::new(fx(0x180000000), fx(-0x240000000), fx(0x3c0000000));
     let r: UnitQuaternion<Fixed> = UnitQuaternionAngleTrait::from_scaled_axis(
-        v3((0x40000000, -0x30000000, 0x20000000)),
+        v3t((0x40000000, -0x30000000, 0x20000000)),
     );
     let i = Isometry3Trait::from_parts(t, r);
     assert!(i == a());
@@ -132,7 +79,9 @@ fn test_from_parts_and_the_constructors_agree() {
     assert!(Isometry3Trait::from_translation(t) == pure_t);
     assert!(Isometry3Trait::from_rotation(r) == pure_r);
     assert!(
-        Isometry3AngleTrait::<Fixed>::rotation(v3((0x40000000, -0x30000000, 0x20000000))) == pure_r,
+        Isometry3AngleTrait::<
+            Fixed,
+        >::rotation(v3t((0x40000000, -0x30000000, 0x20000000))) == pure_r,
     );
 }
 
@@ -141,9 +90,9 @@ fn test_pure_translation_moves_points_exactly() {
     let t = Isometry3Trait::translation(fx(0x140000000), fx(-0x60000000), fx(0x280000000));
     assert!(t.rotation == UnitQuaternionTrait::<Fixed>::identity());
     // The rotation is the exact identity, so the point comes out bit for bit shifted.
-    let p = p3((-0x280000000, 0x3c0000000, 0xc0000000));
-    assert!(t.transform_point(p) == p3((-0x140000000, 0x360000000, 0x340000000)));
-    assert!(t.transform_vector(v3((7, -9, 11))) == v3((7, -9, 11)));
+    let p = p3t((-0x280000000, 0x3c0000000, 0xc0000000));
+    assert!(t.transform_point(p) == p3t((-0x140000000, 0x360000000, 0x340000000)));
+    assert!(t.transform_vector(v3t((7, -9, 11))) == v3t((7, -9, 11)));
 }
 
 #[test]
@@ -155,20 +104,20 @@ fn test_half_turn_is_exact() {
     assert!(
         i
             .transform_point(
-                p3((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)),
-            ) == p3((0, 2 * ONE_RAW, -3 * ONE_RAW)),
+                p3t((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)),
+            ) == p3t((0, 2 * ONE_RAW, -3 * ONE_RAW)),
     );
     assert!(
         i
             .transform_vector(
-                v3((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)),
-            ) == v3((-ONE_RAW, 2 * ONE_RAW, -3 * ONE_RAW)),
+                v3t((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)),
+            ) == v3t((-ONE_RAW, 2 * ONE_RAW, -3 * ONE_RAW)),
     );
     assert!(
         i
             .inverse_transform_point(
-                p3((0, 2 * ONE_RAW, -3 * ONE_RAW)),
-            ) == p3((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)),
+                p3t((0, 2 * ONE_RAW, -3 * ONE_RAW)),
+            ) == p3t((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)),
     );
 }
 
@@ -193,21 +142,21 @@ fn test_inverse_of_a_pure_translation_is_exact() {
 
 #[test]
 fn test_inverse_transform_point_undoes_transform_point() {
-    let (i, p) = (a(), p3((-0x280000000, 0x3c0000000, 0xc0000000)));
+    let (i, p) = (a(), p3t((-0x280000000, 0x3c0000000, 0xc0000000)));
     assert!(i.inverse_transform_point(i.transform_point(p)).abs_diff_eq(p, 8));
     assert!(i.inverse_transform_point(p).abs_diff_eq(i.inverse().transform_point(p), 8));
 }
 
 #[test]
 fn test_inverse_transform_vector_is_the_conjugate_rotation() {
-    let (i, v) = (a(), v3((-0x280000000, 0x3c0000000, 0xc0000000)));
+    let (i, v) = (a(), v3t((-0x280000000, 0x3c0000000, 0xc0000000)));
     assert!(i.inverse_transform_vector(v) == i.rotation.inverse_transform_vector(v));
     assert!(i.inverse_transform_vector(i.transform_vector(v)).abs_diff_eq(v, 8));
 }
 
 #[test]
 fn test_mul_is_the_composition_of_the_actions() {
-    let (x, y, p) = (a(), b(), p3((-0x280000000, 0x3c0000000, 0xc0000000)));
+    let (x, y, p) = (a(), b(), p3t((-0x280000000, 0x3c0000000, 0xc0000000)));
     assert!((x * y).transform_point(p).abs_diff_eq(x.transform_point(y.transform_point(p)), 32));
     assert!(x * id() == x);
     assert!(id() * x == x);
@@ -219,7 +168,7 @@ fn test_inv_mul_is_the_inverse_times_other_within_four_ulp() {
     // Same transform, but `inv_mul` rounds one intermediate less (see `benches.cairo`).
     assert!(x.inv_mul(y).abs_diff_eq(x.inverse() * y, 4));
     assert!(x.inv_mul(x).abs_diff_eq(id(), 4));
-    let p = p3((-0x280000000, 0x3c0000000, 0xc0000000));
+    let p = p3t((-0x280000000, 0x3c0000000, 0xc0000000));
     assert!(
         x
             .inv_mul(y)
@@ -248,7 +197,7 @@ fn test_append_and_prepend_rotation_match_the_composition() {
 
 #[test]
 fn test_append_rotation_wrt_point_fixes_that_point() {
-    let (i, r, p) = (a(), half_turn_y(), p3((0x180000000, -0x80000000, 0x40000000)));
+    let (i, r, p) = (a(), half_turn_y(), p3t((0x180000000, -0x80000000, 0x40000000)));
     let j = i.append_rotation_wrt_point(r, p);
     let shift: Isometry3<Fixed> = Translation3Trait::new(p.x, p.y, p.z).into();
     let back: Isometry3<Fixed> = Translation3Trait::new(-p.x, -p.y, -p.z).into();
@@ -273,28 +222,28 @@ fn test_append_rotation_wrt_center_keeps_the_translation() {
 
 #[test]
 fn test_face_towards_looking_down_z_is_the_identity_rotation() {
-    let eye = p3((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW));
-    let target = p3((ONE_RAW, 2 * ONE_RAW, 4 * ONE_RAW));
-    let up = v3((0, ONE_RAW, 0));
+    let eye = p3t((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW));
+    let target = p3t((ONE_RAW, 2 * ONE_RAW, 4 * ONE_RAW));
+    let up = v3t((0, ONE_RAW, 0));
     let i = Isometry3Trait::face_towards(eye, target, up);
     assert!(i.rotation.abs_diff_eq(UnitQuaternionTrait::<Fixed>::identity(), 1));
-    assert!(i.translation.vector == v3((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)));
+    assert!(i.translation.vector == v3t((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW)));
     // The observer's local `z` axis points at the target.
-    assert!(i.transform_vector(v3((0, 0, ONE_RAW))).abs_diff_eq(v3((0, 0, ONE_RAW)), 2));
+    assert!(i.transform_vector(v3t((0, 0, ONE_RAW))).abs_diff_eq(v3t((0, 0, ONE_RAW)), 2));
 }
 
 #[test]
 fn test_look_at_rh_is_the_inverse_frame() {
-    let eye = p3((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW));
-    let target = p3((ONE_RAW, 2 * ONE_RAW, 4 * ONE_RAW));
-    let up = v3((0, ONE_RAW, 0));
+    let eye = p3t((ONE_RAW, 2 * ONE_RAW, 3 * ONE_RAW));
+    let target = p3t((ONE_RAW, 2 * ONE_RAW, 4 * ONE_RAW));
+    let up = v3t((0, ONE_RAW, 0));
     let i = Isometry3Trait::look_at_rh(eye, target, up);
     // A half turn about `y`: the view direction is mapped onto the NEGATIVE `z` axis.
     assert!(i.rotation.abs_diff_eq(half_turn_y(), 1));
-    assert!(i.translation.vector.abs_diff_eq(v3((ONE_RAW, -2 * ONE_RAW, 3 * ONE_RAW)), 1));
+    assert!(i.translation.vector.abs_diff_eq(v3t((ONE_RAW, -2 * ONE_RAW, 3 * ONE_RAW)), 1));
     // The eye goes to the origin of the camera frame and the target onto `-z`.
-    assert!(i.transform_point(eye).abs_diff_eq(p3((0, 0, 0)), 2));
-    assert!(i.transform_point(target).abs_diff_eq(p3((0, 0, -ONE_RAW)), 2));
+    assert!(i.transform_point(eye).abs_diff_eq(p3t((0, 0, 0)), 2));
+    assert!(i.transform_point(target).abs_diff_eq(p3t((0, 0, -ONE_RAW)), 2));
 }
 
 // --- homogeneous form
@@ -317,7 +266,7 @@ fn test_to_homogeneous_layout() {
 /// entries are floored once each, then the product floors again; the quaternion form floors once).
 #[test]
 fn test_to_homogeneous_acts_like_transform_point() {
-    let (i, p) = (a(), p3((-0x280000000, 0x3c0000000, 0xc0000000)));
+    let (i, p) = (a(), p3t((-0x280000000, 0x3c0000000, 0xc0000000)));
     let h = i.to_homogeneous().mul_vec(p.to_homogeneous());
     let got = i.transform_point(p);
     assert!(Real::abs_diff_eq(h.x, got.x, 16));
@@ -433,7 +382,7 @@ fn test_mul_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, y, expected, tol) = *case;
-        assert!((iso(x) * iso(y)).abs_diff_eq(iso(expected), tol));
+        assert!((iso3t(x) * iso3t(y)).abs_diff_eq(iso3t(expected), tol));
     }
 }
 
@@ -443,7 +392,7 @@ fn test_inverse_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, expected, tol) = *case;
-        assert!(iso(x).inverse().abs_diff_eq(iso(expected), tol));
+        assert!(iso3t(x).inverse().abs_diff_eq(iso3t(expected), tol));
     }
 }
 
@@ -453,7 +402,7 @@ fn test_inv_mul_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, y, expected, tol) = *case;
-        assert!(iso(x).inv_mul(iso(y)).abs_diff_eq(iso(expected), tol));
+        assert!(iso3t(x).inv_mul(iso3t(y)).abs_diff_eq(iso3t(expected), tol));
     }
 }
 
@@ -463,7 +412,7 @@ fn test_transform_point_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, p, expected, tol) = *case;
-        assert!(iso(x).transform_point(p3(p)).abs_diff_eq(p3(expected), tol));
+        assert!(iso3t(x).transform_point(p3t(p)).abs_diff_eq(p3t(expected), tol));
     }
 }
 
@@ -473,7 +422,7 @@ fn test_transform_vector_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, v, expected, tol) = *case;
-        assert!(iso(x).transform_vector(v3(v)).abs_diff_eq(v3(expected), tol));
+        assert!(iso3t(x).transform_vector(v3t(v)).abs_diff_eq(v3t(expected), tol));
     }
 }
 
@@ -483,7 +432,7 @@ fn test_inverse_transform_point_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, p, expected, tol) = *case;
-        assert!(iso(x).inverse_transform_point(p3(p)).abs_diff_eq(p3(expected), tol));
+        assert!(iso3t(x).inverse_transform_point(p3t(p)).abs_diff_eq(p3t(expected), tol));
     }
 }
 
@@ -493,7 +442,7 @@ fn test_inverse_transform_vector_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, v, expected, tol) = *case;
-        assert!(iso(x).inverse_transform_vector(v3(v)).abs_diff_eq(v3(expected), tol));
+        assert!(iso3t(x).inverse_transform_vector(v3t(v)).abs_diff_eq(v3t(expected), tol));
     }
 }
 
@@ -503,7 +452,7 @@ fn test_to_homogeneous_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, expected, tol) = *case;
-        assert!(iso(x).to_homogeneous().abs_diff_eq(m4(expected), tol));
+        assert!(iso3t(x).to_homogeneous().abs_diff_eq(m4(expected), tol));
     }
 }
 
@@ -513,6 +462,6 @@ fn test_lerp_slerp_oracle() {
     assert!(cases.len() >= 20);
     while let Some(case) = cases.pop_front() {
         let (x, y, t, expected, tol) = *case;
-        assert!(iso(x).lerp_slerp(iso(y), fx(t)).abs_diff_eq(iso(expected), tol));
+        assert!(iso3t(x).lerp_slerp(iso3t(y), fx(t)).abs_diff_eq(iso3t(expected), tol));
     }
 }

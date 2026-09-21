@@ -23,17 +23,17 @@ use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
 use crate::base::matrix6::Matrix6;
+use crate::base::matrix_test_utils::{
+    fx, int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
+    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2ir, s2r,
+    s3ir, s3r, ulp_diff, v2it, v2t, v3it, v3t, v4it, v4t, v6it, v6t,
+};
 use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
 use crate::base::vector6::Vector6;
-use crate::linalg::factor_test_utils::{
-    fx, int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
-    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2, s2i, s3,
-    s3i, ulp_diff, v2, v2i, v3, v3i, v4, v4i, v6, v6i,
-};
 use crate::linalg::oracle_cholesky;
 use super::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
@@ -44,7 +44,7 @@ use super::{
 
 /// The benchmark input `a_ij = min(i, j)`.
 fn a2() -> SymMatrix2<Fixed> {
-    s2i([[1, 1], [1, 2]])
+    s2ir([[1, 1], [1, 2]])
 }
 
 /// Its Cholesky factor: the all-ones lower triangle.
@@ -54,17 +54,17 @@ fn f2() -> Cholesky2<Fixed> {
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b2() -> Vector2<Fixed> {
-    v2i((1, -2))
+    v2it((1, -2))
 }
 
 /// `a2()⁻¹ · b2()`, exactly.
 fn x2() -> Vector2<Fixed> {
-    v2i((4, -3))
+    v2it((4, -3))
 }
 
 /// `a2()⁻¹`: tridiagonal, exactly.
 fn inv2() -> SymMatrix2<Fixed> {
-    s2i([[2, -1], [-1, 1]])
+    s2ir([[2, -1], [-1, 1]])
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
@@ -112,13 +112,13 @@ fn solve2_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, _tol) = *case;
-        let f = Cholesky2Trait::new(s2(a)).unwrap();
+        let f = Cholesky2Trait::new(s2r(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v2(b))
+            f.solve(v2t(b))
         } else {
-            solve2_recip(f, v2(b))
+            solve2_recip(f, v2t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v2(got, v2(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v2(got, v2t(expected)));
     }
     worst
 }
@@ -129,7 +129,7 @@ fn inverse2_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, _tol) = *case;
-        let f = Cholesky2Trait::new(s2(a)).unwrap();
+        let f = Cholesky2Trait::new(s2r(a)).unwrap();
         let got = if variant == 0 {
             f.inverse()
         } else {
@@ -258,7 +258,7 @@ fn bench_cholesky2_determinant__diagonal_product() {
 
 /// The benchmark input `a_ij = min(i, j)`.
 fn a3() -> SymMatrix3<Fixed> {
-    s3i([[1, 1, 1], [1, 2, 2], [1, 2, 3]])
+    s3ir([[1, 1, 1], [1, 2, 2], [1, 2, 3]])
 }
 
 /// Its Cholesky factor: the all-ones lower triangle.
@@ -268,17 +268,17 @@ fn f3() -> Cholesky3<Fixed> {
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b3() -> Vector3<Fixed> {
-    v3i((1, -2, 3))
+    v3it((1, -2, 3))
 }
 
 /// `a3()⁻¹ · b3()`, exactly.
 fn x3() -> Vector3<Fixed> {
-    v3i((4, -8, 5))
+    v3it((4, -8, 5))
 }
 
 /// `a3()⁻¹`: tridiagonal, exactly.
 fn inv3() -> SymMatrix3<Fixed> {
-    s3i([[2, -1, 0], [-1, 2, -1], [0, -1, 1]])
+    s3ir([[2, -1, 0], [-1, 2, -1], [0, -1, 1]])
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
@@ -357,13 +357,13 @@ fn solve3_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, _tol) = *case;
-        let f = Cholesky3Trait::new(s3(a)).unwrap();
+        let f = Cholesky3Trait::new(s3r(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v3(b))
+            f.solve(v3t(b))
         } else {
-            solve3_recip(f, v3(b))
+            solve3_recip(f, v3t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v3(got, v3(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v3(got, v3t(expected)));
     }
     worst
 }
@@ -374,7 +374,7 @@ fn inverse3_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, _tol) = *case;
-        let f = Cholesky3Trait::new(s3(a)).unwrap();
+        let f = Cholesky3Trait::new(s3r(a)).unwrap();
         let got = if variant == 0 {
             f.inverse()
         } else {
@@ -524,12 +524,12 @@ fn f4() -> Cholesky4<Fixed> {
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b4() -> Vector4<Fixed> {
-    v4i((1, -2, 3, -4))
+    v4it((1, -2, 3, -4))
 }
 
 /// `a4()⁻¹ · b4()`, exactly.
 fn x4() -> Vector4<Fixed> {
-    v4i((4, -8, 12, -7))
+    v4it((4, -8, 12, -7))
 }
 
 /// `a4()⁻¹`: tridiagonal, exactly.
@@ -677,11 +677,11 @@ fn solve4_worst(variant: u8) -> u128 {
         let (a, b, expected, _tol) = *case;
         let f = Cholesky4Trait::new(m4(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v4(b))
+            f.solve(v4t(b))
         } else {
-            solve4_recip(f, v4(b))
+            solve4_recip(f, v4t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v4(got, v4(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v4(got, v4t(expected)));
     }
     worst
 }
@@ -858,12 +858,12 @@ fn f6() -> Cholesky6<Fixed> {
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b6() -> Vector6<Fixed> {
-    v6i((1, -2, 3, -4, 5, -6))
+    v6it((1, -2, 3, -4, 5, -6))
 }
 
 /// `a6()⁻¹ · b6()`, exactly.
 fn x6() -> Vector6<Fixed> {
-    v6i((4, -8, 12, -16, 20, -11))
+    v6it((4, -8, 12, -16, 20, -11))
 }
 
 /// `a6()⁻¹`: tridiagonal, exactly.
@@ -1184,11 +1184,11 @@ fn solve6_worst(variant: u8) -> u128 {
         let (a, b, expected, _tol) = *case;
         let f = Cholesky6Trait::new(m6(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v6(b))
+            f.solve(v6t(b))
         } else {
-            solve6_recip(f, v6(b))
+            solve6_recip(f, v6t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v6(got, v6(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v6(got, v6t(expected)));
     }
     worst
 }

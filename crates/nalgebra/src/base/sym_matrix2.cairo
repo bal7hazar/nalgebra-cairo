@@ -286,7 +286,7 @@ mod tests {
     use simba::scalar::Real;
     use crate::base::matrix2::Matrix2Trait;
     use crate::base::matrix_test_utils::{
-        fx, int, m2, m2i, max_ulp_diff2, max_ulp_diff_s2, s2, s2i, v2, v2i,
+        fx, int, m2, m2i, max_ulp_diff2, max_ulp_diff_s2, s2, s2i, v2i, v2t,
     };
     use crate::base::{oracle_matrix2, oracle_sym_matrix};
     use super::SymMatrix2Trait;
@@ -351,7 +351,7 @@ mod tests {
         let mut cases = oracle_matrix2::matrix2_outer_cases();
         while let Some(case) = cases.pop_front() {
             let (u, _, _, _) = *case;
-            let v = v2(u);
+            let v = v2t(u);
             assert!(
                 SymMatrix2Trait::from_outer_self(v).to_matrix() == Matrix2Trait::from_outer(v, v),
             );
@@ -437,7 +437,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, v, _, _) = *case;
             let s = SymMatrix2Trait::from_matrix_unchecked(m2(a));
-            assert!(s.mul_vec(v2(v)) == s.to_matrix().mul_vec(v2(v)));
+            assert!(s.mul_vec(v2t(v)) == s.to_matrix().mul_vec(v2t(v)));
         }
         assert!(s2i((1, 2, 4)).mul_vec(v2i(1, 0)) == v2i(1, 2));
         assert!(SymMatrix2Trait::<Fixed>::identity().mul_vec(v2i(3, -5)) == v2i(3, -5));
@@ -692,7 +692,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix2_from_diagonal__baseline() {
-        let _d = black_box(v2((-7543252641, 4885438966)));
+        let _d = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((-7543252641, 0, 4885438966)));
         assert!(e == e);
     }
@@ -700,7 +700,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix2_from_diagonal__struct() {
-        let d = black_box(v2((-7543252641, 4885438966)));
+        let d = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((-7543252641, 0, 4885438966)));
         assert!(SymMatrix2Trait::from_diagonal(d) == e);
     }
@@ -740,7 +740,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix2_from_outer_self__baseline() {
-        let _v = black_box(v2((-7543252641, 4885438966)));
+        let _v = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((13248217386, -8580298253, 5557088621)));
         assert!(e == e);
     }
@@ -748,7 +748,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix2_from_outer_self__structured() {
-        let v = black_box(v2((-7543252641, 4885438966)));
+        let v = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((13248217386, -8580298253, 5557088621)));
         assert!(SymMatrix2Trait::from_outer_self(v) == e);
     }
@@ -756,7 +756,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_sym_matrix2_from_outer_self__generic() {
-        let v = black_box(v2((-7543252641, 4885438966)));
+        let v = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((13248217386, -8580298253, 5557088621)));
         assert!(SymMatrix2Trait::from_matrix_unchecked(Matrix2Trait::from_outer(v, v)) == e);
     }
@@ -781,7 +781,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_diagonal__baseline() {
         let _a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(v2((1400100946, 1577459800)));
+        let e = black_box(v2t((1400100946, 1577459800)));
         assert!(e == e);
     }
 
@@ -789,7 +789,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_diagonal__struct() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(v2((1400100946, 1577459800)));
+        let e = black_box(v2t((1400100946, 1577459800)));
         assert!(a.diagonal() == e);
     }
 
@@ -941,8 +941,8 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_mul_vec__baseline() {
         let _a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let _v = black_box(v2((-7543252641, 4885438966)));
-        let e = black_box(v2((-2171927111, 1351083734)));
+        let _v = black_box(v2t((-7543252641, 4885438966)));
+        let e = black_box(v2t((-2171927111, 1351083734)));
         assert!(e == e);
     }
 
@@ -950,8 +950,8 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_mul_vec__structured() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let v = black_box(v2((-7543252641, 4885438966)));
-        let e = black_box(v2((-2171927111, 1351083734)));
+        let v = black_box(v2t((-7543252641, 4885438966)));
+        let e = black_box(v2t((-2171927111, 1351083734)));
         assert!(a.mul_vec(v) == e);
     }
 
@@ -959,8 +959,8 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_mul_vec__generic() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let v = black_box(v2((-7543252641, 4885438966)));
-        let e = black_box(v2((-2171927111, 1351083734)));
+        let v = black_box(v2t((-7543252641, 4885438966)));
+        let e = black_box(v2t((-2171927111, 1351083734)));
         assert!(a.to_matrix().mul_vec(v) == e);
     }
 
@@ -995,7 +995,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_quadform__baseline() {
         let _r = black_box(m2([[5594399379, 2839048663], [-7444297509, 5944454799]]));
-        let _d = black_box(v2((-7543252641, 4885438966)));
+        let _d = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((-10663446698, 21499658486, -13302844783)));
         assert!(e == e);
     }
@@ -1004,7 +1004,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_quadform__structured() {
         let r = black_box(m2([[5594399379, 2839048663], [-7444297509, 5944454799]]));
-        let d = black_box(v2((-7543252641, 4885438966)));
+        let d = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((-10663446698, 21499658486, -13302844783)));
         assert!(SymMatrix2Trait::quadform(r, d) == e);
     }
@@ -1013,7 +1013,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_quadform__generic() {
         let r = black_box(m2([[5594399379, 2839048663], [-7444297509, 5944454799]]));
-        let d = black_box(v2((-7543252641, 4885438966)));
+        let d = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(s2((-10663446698, 21499658486, -13302844783)));
         let m = (r * Matrix2Trait::from_diagonal(d)) * r.transpose();
         assert!(SymMatrix2Trait::from_matrix_unchecked(m) == e);

@@ -425,12 +425,12 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
+    use crate::base::matrix_test_utils::{
+        amax_m3, excess, int, m3, max_abs_v3, max_ulp_diff3, max_ulp_diff_v3, oracle_tol,
+        orthonormality_error_m3, v3t,
+    };
     use crate::base::sym_matrix3::SymMatrix3Trait;
     use crate::base::vector3::{Vector3, Vector3Trait};
-    use crate::linalg::decomp_test_utils::{
-        amax_m3, decomp_tol, excess, int, m3, max_abs_v3, max_ulp_diff_m3, max_ulp_diff_v3,
-        orthonormality_error_m3, v3,
-    };
     use crate::linalg::oracle_svd;
     use crate::linalg::symmetric_eigen3::SymmetricEigen3Trait;
     use super::{Matrix3SvdTrait, Svd3, Svd3Trait};
@@ -657,12 +657,12 @@ mod tests {
         assert!(f.rank(Real::ZERO) == 1);
         assert!(f.singular_values.x == int(2));
         assert!(orthonormality_error_m3(f.u) <= 4);
-        assert!(max_ulp_diff_m3(f.recompose(), a_rank1()) <= 4);
+        assert!(max_ulp_diff3(f.recompose(), a_rank1()) <= 4);
         let f = Svd3Trait::new(a_rank2());
         assert!(f.rank(Real::ZERO) == 2);
         assert!(f.singular_values == Vector3 { x: int(4), y: int(2), z: int(0) });
         assert!(orthonormality_error_m3(f.u) <= 4);
-        assert!(max_ulp_diff_m3(f.recompose(), a_rank2()) <= 4);
+        assert!(max_ulp_diff3(f.recompose(), a_rank2()) <= 4);
         // The zero matrix: every singular value vanishes and nothing divides by zero.
         let z = Svd3Trait::new(Matrix3Trait::<Fixed>::zeros());
         assert!(z.singular_values == Vector3Trait::zeros());
@@ -689,9 +689,9 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
             let got = Svd3Trait::new(m3(a)).singular_values;
-            let e = v3(expected);
+            let e = v3t(expected);
             let err = max_ulp_diff_v3(got, e);
-            worst_ex = core::cmp::max(worst_ex, excess(err, decomp_tol(max_abs_v3(e), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v3(e), tol)));
             assert!(got.x >= got.y && got.y >= got.z && got.z >= Real::ZERO, "not descending");
             worst = core::cmp::max(worst, err);
         }
@@ -705,7 +705,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let f = Svd3Trait::new(m3(a));
-            let rec = max_ulp_diff_m3(f.recompose(), m3(a)) / amax_m3(m3(a));
+            let rec = max_ulp_diff3(f.recompose(), m3(a)) / amax_m3(m3(a));
             let orth = core::cmp::max(orthonormality_error_m3(f.u), orthonormality_error_m3(f.v_t));
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
@@ -720,7 +720,7 @@ mod tests {
         let (mut worst_norm, mut worst_sqrt) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, expected, _) = *case;
-            let e = v3(expected);
+            let e = v3t(expected);
             worst_norm =
                 core::cmp::max(
                     worst_norm, max_ulp_diff_v3(Svd3Trait::new(m3(a)).singular_values, e),
@@ -757,9 +757,9 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, expected, _) = *case;
             let f = new_one_sided_jacobi(m3(a));
-            worst_sv = core::cmp::max(worst_sv, max_ulp_diff_v3(f.singular_values, v3(expected)));
+            worst_sv = core::cmp::max(worst_sv, max_ulp_diff_v3(f.singular_values, v3t(expected)));
             worst_rec =
-                core::cmp::max(worst_rec, max_ulp_diff_m3(f.recompose(), m3(a)) / amax_m3(m3(a)));
+                core::cmp::max(worst_rec, max_ulp_diff3(f.recompose(), m3(a)) / amax_m3(m3(a)));
             worst_orth = core::cmp::max(worst_orth, orthonormality_error_m3(f.u));
         }
         assert!(
@@ -772,7 +772,7 @@ mod tests {
     fn test_solve_matches_the_inverse_oracle() {
         let mut cases = oracle_svd::svd3_singular_values_cases();
         let mut worst = 0;
-        let b = v3((-1811584373, 4204441265, -4234532070));
+        let b = v3t((-1811584373, 4204441265, -4234532070));
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let x = Svd3Trait::new(m3(a)).solve(b, Real::EPSILON).unwrap();
@@ -790,7 +790,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let p = Svd3Trait::new(m3(a)).pseudo_inverse(Real::EPSILON).unwrap();
-            worst = core::cmp::max(worst, max_ulp_diff_m3(p, m3(a).try_inverse().unwrap()));
+            worst = core::cmp::max(worst, max_ulp_diff3(p, m3(a).try_inverse().unwrap()));
         }
         assert!(worst == 77568, "regressed: {worst}");
     }
@@ -799,7 +799,7 @@ mod tests {
     fn test_pseudo_inverse_of_a_rank_deficient_matrix() {
         // The pseudo-inverse drops the null directions: `A A⁺ A = A`.
         let p = Svd3Trait::new(a_rank2()).pseudo_inverse(Real::EPSILON).unwrap();
-        assert!(max_ulp_diff_m3(a_rank2() * p * a_rank2(), a_rank2()) <= 64);
+        assert!(max_ulp_diff3(a_rank2() * p * a_rank2(), a_rank2()) <= 64);
         assert!(Svd3Trait::new(a_rank2()).pseudo_inverse(Real::NEG_ONE).is_none());
         assert!(Svd3Trait::new(a_rank2()).solve(Vector3Trait::zeros(), Real::NEG_ONE).is_none());
     }
@@ -813,8 +813,7 @@ mod tests {
             let (r, p) = Svd3Trait::new(m3(a)).to_polar();
             assert!(!p.determinant().is_negative(), "P is not positive semi-definite");
             worst_orth = core::cmp::max(worst_orth, orthonormality_error_m3(r));
-            worst =
-                core::cmp::max(worst, max_ulp_diff_m3(r * p.to_matrix(), m3(a)) / amax_m3(m3(a)));
+            worst = core::cmp::max(worst, max_ulp_diff3(r * p.to_matrix(), m3(a)) / amax_m3(m3(a)));
         }
         // Measured: `|M - R P| <= worst ulp * max(1, max |m_ij|)`, `|RᵀR - I| <= worst_orth ulp`.
         assert!((worst, worst_orth) == (66, 65), "regressed: {worst} {worst_orth}");
@@ -826,8 +825,8 @@ mod tests {
             int(0), int(0), int(1), int(1), int(0), int(0), int(0), int(1), int(0),
         );
         let (q, p) = r.polar_decomposition();
-        assert!(max_ulp_diff_m3(q, r) <= 4);
-        assert!(max_ulp_diff_m3(p.to_matrix(), Matrix3Trait::identity()) <= 4);
+        assert!(max_ulp_diff3(q, r) <= 4);
+        assert!(max_ulp_diff3(p.to_matrix(), Matrix3Trait::identity()) <= 4);
     }
 
     #[test]
@@ -952,7 +951,7 @@ mod tests {
     #[inline(never)]
     fn bench_svd3_solve__baseline() {
         let _f = black_box(f_bench());
-        let _b = black_box(v3((1, 2, 3)));
+        let _b = black_box(v3t((1, 2, 3)));
         let e = black_box(true);
         assert!(e == e);
     }
@@ -961,7 +960,7 @@ mod tests {
     #[inline(never)]
     fn bench_svd3_solve__divisions() {
         let f = black_box(f_bench());
-        let b = black_box(v3((0x100000000, 0x200000000, 0x300000000)));
+        let b = black_box(v3t((0x100000000, 0x200000000, 0x300000000)));
         let e = black_box(true);
         assert!(f.solve(b, Real::EPSILON).is_some() == e);
     }

@@ -4,40 +4,15 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::matrix_test_utils::{p2, sim2, v2};
 use crate::base::point2::{Point2, Point2Trait};
 use crate::base::vector2::{Vector2, Vector2Trait};
-use crate::geometry::isometry2::{Isometry2, Isometry2Trait};
-use crate::geometry::translation2::Translation2;
-use crate::geometry::unit_complex::{UnitComplex, UnitComplexTrait};
+use crate::geometry::isometry2::Isometry2Trait;
+use crate::geometry::unit_complex::UnitComplexTrait;
 use super::{Similarity2, Similarity2Trait};
 
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v2(x: i64, y: i64) -> Vector2<Fixed> {
-    Vector2 { x: fx(x), y: fx(y) }
-}
-
-fn p2(x: i64, y: i64) -> Point2<Fixed> {
-    Point2 { x: fx(x), y: fx(y) }
-}
-
-fn uc(re: i64, im: i64) -> UnitComplex<Fixed> {
-    UnitComplex { re: fx(re), im: fx(im) }
-}
-
-fn sim(tx: i64, ty: i64, re: i64, im: i64, scaling: i64) -> Similarity2<Fixed> {
-    Similarity2 {
-        isometry: Isometry2 {
-            rotation: uc(re, im), translation: Translation2 { vector: v2(tx, ty) },
-        },
-        scaling: fx(scaling),
-    }
-}
-
 fn x() -> Similarity2<Fixed> {
-    sim(0x100000000, -0x200000000, 0, 0x100000000, 0x300000000)
+    sim2(0x100000000, -0x200000000, 0, 0x100000000, 0x300000000)
 }
 
 fn p() -> Point2<Fixed> {

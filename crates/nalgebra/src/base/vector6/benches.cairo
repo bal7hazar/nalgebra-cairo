@@ -5,20 +5,9 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::matrix_test_utils::{fx, v3, v6};
 use crate::base::vector3::{Vector3, Vector3Trait};
 use super::{Vector6, Vector6Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v3(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn v6(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 { a: v3(x, y, z), b: v3(w, a, b) }
-}
 
 // --- alternative implementations (losers)
 

@@ -7,24 +7,11 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::matrix_test_utils::{ONE_RAW, fx, int, q};
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
 use super::{Quaternion, QuaternionTrait};
 
-const ONE_RAW: i64 = 0x100000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn int(v: i64) -> Fixed {
-    Fixed { raw: v * ONE_RAW }
-}
-
-/// Quaternion from raw components, in the `(w, i, j, k)` order.
-fn q(w: i64, i: i64, j: i64, k: i64) -> Quaternion<Fixed> {
-    Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) }
-}
 
 /// `1 + 2i - 3j + 4k`, of squared norm 30 (norm 5.477).
 fn a() -> Quaternion<Fixed> {

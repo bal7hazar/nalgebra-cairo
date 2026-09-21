@@ -162,11 +162,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
+    use crate::base::matrix_test_utils::{
+        amax_s2, fx, int, max_ulp_diff_s2, max_ulp_diff_v2, s2i, s2r, ulp_diff, v2i, v2t,
+    };
     use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
     use crate::base::vector2::{Vector2, Vector2Trait};
-    use crate::linalg::eigen_test_utils::{
-        amax_s2, fx, int, max_ulp_diff_s2, max_ulp_diff_v2, s2, s2i, ulp_diff, v2, v2i,
-    };
     use crate::linalg::oracle_symmetric_eigen;
     use super::{SymmetricEigen2, SymmetricEigen2Trait};
 
@@ -193,25 +193,25 @@ mod tests {
     #[test]
     fn test_new_diagonal_is_exact() {
         // Already ordered: columns are the axes, in order.
-        let e = SymmetricEigen2Trait::new(s2i(2, 0, 7));
+        let e = SymmetricEigen2Trait::new(s2i((2, 0, 7)));
         assert!(e.eigenvalues == v2i(2, 7));
         assert!(e.eigenvectors == Matrix2Trait::identity());
         // Reversed: the permutation that sorts ascending must keep `det = +1`.
-        let e = SymmetricEigen2Trait::new(s2i(7, 0, 2));
+        let e = SymmetricEigen2Trait::new(s2i((7, 0, 2)));
         assert!(e.eigenvalues == v2i(2, 7));
         assert!(e.eigenvectors == Matrix2Trait::new(int(0), int(-1), int(1), int(0)));
         assert!(e.eigenvectors.determinant() == Real::ONE);
-        assert!(e.recompose() == s2i(7, 0, 2));
+        assert!(e.recompose() == s2i((7, 0, 2)));
     }
 
     #[test]
     fn test_new_isotropic_is_exact() {
-        let e = SymmetricEigen2Trait::new(s2i(3, 0, 3));
+        let e = SymmetricEigen2Trait::new(s2i((3, 0, 3)));
         assert!(e.eigenvalues == v2i(3, 3));
         assert!(e.eigenvectors == Matrix2Trait::identity());
-        assert!(e.recompose() == s2i(3, 0, 3));
+        assert!(e.recompose() == s2i((3, 0, 3)));
         // Zero is isotropic too, and must not divide by zero.
-        let e = SymmetricEigen2Trait::new(s2i(0, 0, 0));
+        let e = SymmetricEigen2Trait::new(s2i((0, 0, 0)));
         assert!(e.eigenvalues == v2i(0, 0));
         assert!(e.eigenvectors == Matrix2Trait::identity());
     }
@@ -219,7 +219,7 @@ mod tests {
     #[test]
     fn test_new_anti_diagonal_is_exact() {
         // [[0, 1], [1, 0]]: eigenvalues -1, 1 for (1, -1)/sqrt(2), (1, 1)/sqrt(2).
-        let e = SymmetricEigen2Trait::new(s2i(0, 1, 0));
+        let e = SymmetricEigen2Trait::new(s2i((0, 1, 0)));
         assert!(e.eigenvalues == v2i(-1, 1));
         // `1/sqrt(2)` reached through a floored `norm2` and a floored division: 2 ulp of the
         // rounded constant.
@@ -232,10 +232,10 @@ mod tests {
     #[test]
     fn test_new_integer_case_is_exact() {
         // [[5, 2], [2, 2]]: mean 3.5, d 1.5, r = sqrt(2.25 + 4) = 2.5 -> eigenvalues 1 and 6.
-        let e = SymmetricEigen2Trait::new(s2i(5, 2, 2));
+        let e = SymmetricEigen2Trait::new(s2i((5, 2, 2)));
         assert!(e.eigenvalues == v2i(1, 6));
         // The eigenvectors are (-1, 2)/sqrt(5) and (2, 1)/sqrt(5), irrational: 4 ulp of residual.
-        assert!(residual_error(s2i(5, 2, 2), e) <= 4);
+        assert!(residual_error(s2i((5, 2, 2)), e) <= 4);
     }
 
     #[test]
@@ -244,8 +244,8 @@ mod tests {
         // on the dominant component (here `y`), so the columns mirror in `x` and the result is
         // reproducible rather than merely "some" basis. Floor rounding is not sign-symmetric
         // (`floor(-x) != -floor(x)`), so the mirrored component is only equal to 1 ulp.
-        let a = SymmetricEigen2Trait::new(s2i(5, 2, 2));
-        let b = SymmetricEigen2Trait::new(s2i(5, -2, 2));
+        let a = SymmetricEigen2Trait::new(s2i((5, 2, 2)));
+        let b = SymmetricEigen2Trait::new(s2i((5, -2, 2)));
         assert!(a.eigenvalues == b.eigenvalues);
         assert!(ulp_diff(a.eigenvectors.column1().x, -b.eigenvectors.column1().x) <= 1);
         assert!(a.eigenvectors.column1().y == b.eigenvectors.column1().y);
@@ -272,7 +272,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen2_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s2(a);
+            let s = s2r(a);
             assert!(
                 SymmetricEigen2Trait::eigenvalues(s) == SymmetricEigen2Trait::new(s).eigenvalues,
             );
@@ -287,8 +287,8 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen2_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen2Trait::new(s2(a)).eigenvalues;
-            let e = max_ulp_diff_v2(got, v2(expected));
+            let got = SymmetricEigen2Trait::new(s2r(a)).eigenvalues;
+            let e = max_ulp_diff_v2(got, v2t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
         }
@@ -302,8 +302,8 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen2_eigenvalues_spd_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen2Trait::new(s2(a)).eigenvalues;
-            let e = max_ulp_diff_v2(got, v2(expected));
+            let got = SymmetricEigen2Trait::new(s2r(a)).eigenvalues;
+            let e = max_ulp_diff_v2(got, v2t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
         }
@@ -317,7 +317,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen2_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s2(a);
+            let s = s2r(a);
             let e = SymmetricEigen2Trait::new(s);
             // `det = +1` only up to the rounding of the normalised column.
             assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
@@ -345,7 +345,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen2_eigenvalues_spd_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            let s = s2(a);
+            let s = s2r(a);
             let e = SymmetricEigen2Trait::new(s);
             assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 128);
             let orth = orthonormality_error(e.eigenvectors);

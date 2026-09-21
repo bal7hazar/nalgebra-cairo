@@ -16,10 +16,10 @@ use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix6::Matrix6;
+use crate::base::matrix_test_utils::{fx, int, m6, v6t};
 use crate::base::vector3::Vector3;
 use crate::base::vector6::Vector6;
 use crate::linalg::lu::Perm6;
-use crate::linalg::lu::test_utils::{fx, int, m6, v6};
 use super::{Lu6, Lu6Trait, Matrix6LuTrait};
 
 /// The oracle's first `unit` 6x6 case whose factorisation actually swaps rows (all the benchmarks
@@ -39,7 +39,7 @@ fn a_bench() -> Matrix6<Fixed> {
 
 /// Its right-hand side.
 fn b_bench() -> Vector6<Fixed> {
-    v6((3579353502, 7767965432, 6840630971, -6086016248, -4735434050, -2809324573))
+    v6t((3579353502, 7767965432, 6840630971, -6086016248, -4735434050, -2809324573))
 }
 
 /// `a_bench()` already factored, so that the benchmarks of the derived operations do not pay for
@@ -1541,7 +1541,7 @@ fn bench_lu6_permute__baseline() {
     let _f = black_box(f_bench());
     let _b = black_box(b_bench());
     let e = black_box(
-        v6((6840630971, 3579353502, -6086016248, -4735434050, 7767965432, -2809324573)),
+        v6t((6840630971, 3579353502, -6086016248, -4735434050, 7767965432, -2809324573)),
     );
     assert!(e == e);
 }
@@ -1552,7 +1552,7 @@ fn bench_lu6_permute__transpositions() {
     let f = black_box(f_bench());
     let b = black_box(b_bench());
     let e = black_box(
-        v6((6840630971, 3579353502, -6086016248, -4735434050, 7767965432, -2809324573)),
+        v6t((6840630971, 3579353502, -6086016248, -4735434050, 7767965432, -2809324573)),
     );
     assert!(f.permute(b) == e);
 }
@@ -1619,7 +1619,7 @@ fn bench_lu6_solve__baseline() {
     let _f = black_box(f_bench());
     let _b = black_box(b_bench());
     let e = black_box(
-        Some(v6((-11208158819, -7248812508, 3383102672, 4212967580, 4206763123, -9649832809))),
+        Some(v6t((-11208158819, -7248812508, 3383102672, 4212967580, 4206763123, -9649832809))),
     );
     assert!(e == e);
 }
@@ -1630,7 +1630,7 @@ fn bench_lu6_solve__substitution() {
     let f = black_box(f_bench());
     let b = black_box(b_bench());
     let e = black_box(
-        Some(v6((-11208158819, -7248812508, 3383102672, 4212967580, 4206763123, -9649832809))),
+        Some(v6t((-11208158819, -7248812508, 3383102672, 4212967580, 4206763123, -9649832809))),
     );
     assert!(f.solve(b) == e);
 }
@@ -1641,7 +1641,7 @@ fn bench_lu6_solve__alt_recip() {
     let f = black_box(f_bench());
     let b = black_box(b_bench());
     let e = black_box(
-        Some(v6((-11208158820, -7248812506, 3383102673, 4212967579, 4206763122, -9649832809))),
+        Some(v6t((-11208158820, -7248812506, 3383102673, 4212967579, 4206763122, -9649832809))),
     );
     assert!(solve_recip(f, b) == e);
 }
@@ -1807,7 +1807,7 @@ fn bench_matrix6_lu__solve() {
     let a = black_box(a_bench());
     let b = black_box(b_bench());
     let e = black_box(
-        Some(v6((-11208158819, -7248812508, 3383102672, 4212967580, 4206763123, -9649832809))),
+        Some(v6t((-11208158819, -7248812508, 3383102672, 4212967580, 4206763123, -9649832809))),
     );
     assert!(a.solve(b) == e);
 }

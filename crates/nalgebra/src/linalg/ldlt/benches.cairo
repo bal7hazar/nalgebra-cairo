@@ -30,17 +30,17 @@ use crate::base::matrix2::Matrix2Trait;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix4::{Matrix4, Matrix4Trait};
 use crate::base::matrix6::{Matrix6, Matrix6Trait};
+use crate::base::matrix_test_utils::{
+    fx, int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
+    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2ir, s2r,
+    s3ir, s3r, ulp_diff, v2it, v2t, v3it, v3t, v4it, v4t, v6it, v6t,
+};
 use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
 use crate::base::vector6::Vector6;
-use crate::linalg::factor_test_utils::{
-    fx, int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
-    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2, s2i, s3,
-    s3i, ulp_diff, v2, v2i, v3, v3i, v4, v4i, v6, v6i,
-};
 use crate::linalg::oracle_udu;
 use super::{Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait, Ldlt6, Ldlt6Trait};
 
@@ -48,27 +48,27 @@ use super::{Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait, Ldlt6, Ldlt
 
 /// The benchmark input `a_ij = min(i, j)`.
 fn a2() -> SymMatrix2<Fixed> {
-    s2i([[1, 1], [1, 2]])
+    s2ir([[1, 1], [1, 2]])
 }
 
 /// Its `LDLᵀ` factor: the all-ones unit lower triangle, `d = (1, .., 1)`.
 fn f2() -> Ldlt2<Fixed> {
-    Ldlt2 { l21: int(1), d: v2i((1, 1)) }
+    Ldlt2 { l21: int(1), d: v2it((1, 1)) }
 }
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b2() -> Vector2<Fixed> {
-    v2i((1, -2))
+    v2it((1, -2))
 }
 
 /// `a2()⁻¹ · b2()`, exactly.
 fn x2() -> Vector2<Fixed> {
-    v2i((4, -3))
+    v2it((4, -3))
 }
 
 /// `a2()⁻¹`: tridiagonal, exactly.
 fn inv2() -> SymMatrix2<Fixed> {
-    s2i([[2, -1], [-1, 1]])
+    s2ir([[2, -1], [-1, 1]])
 }
 
 /// LOSER. `new` recomputing `l_jk · d_k` as an explicit rounded product instead of reusing the
@@ -131,11 +131,11 @@ fn new2_worst(variant: u8) -> (u128, u128) {
     while let Some(case) = cases.pop_front() {
         let (a, l, d, _tol) = *case;
         let f = if variant == 0 {
-            Ldlt2Trait::new(s2(a)).unwrap()
+            Ldlt2Trait::new(s2r(a)).unwrap()
         } else {
-            new2_products(s2(a)).unwrap()
+            new2_products(s2r(a)).unwrap()
         };
-        let e = core::cmp::max(max_ulp_diff2(f.l(), m2(l)), max_ulp_diff_v2(f.d(), v2(d)));
+        let e = core::cmp::max(max_ulp_diff2(f.l(), m2(l)), max_ulp_diff_v2(f.d(), v2t(d)));
         factors = core::cmp::max(factors, e);
         let r = f.l() * Matrix2Trait::from_diagonal(f.d()) * f.l().transpose();
         backward = core::cmp::max(backward, max_ulp_diff2(r, m2(a)));
@@ -149,13 +149,13 @@ fn solve2_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, _tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v2(b))
+            f.solve(v2t(b))
         } else {
-            solve2_recip(f, v2(b))
+            solve2_recip(f, v2t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v2(got, v2(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v2(got, v2t(expected)));
     }
     worst
 }
@@ -166,7 +166,7 @@ fn inverse2_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, _tol) = *case;
-        let f = Ldlt2Trait::new(s2(a)).unwrap();
+        let f = Ldlt2Trait::new(s2r(a)).unwrap();
         let got = if variant == 0 {
             f.inverse()
         } else {
@@ -251,7 +251,7 @@ fn bench_ldlt2_l__expand() {
 #[inline(never)]
 fn bench_ldlt2_d__baseline() {
     let _f = black_box(f2());
-    let e = black_box(v2i((1, 1)));
+    let e = black_box(v2it((1, 1)));
     assert!(e == e);
 }
 
@@ -259,7 +259,7 @@ fn bench_ldlt2_d__baseline() {
 #[inline(never)]
 fn bench_ldlt2_d__accessor() {
     let f = black_box(f2());
-    let e = black_box(v2i((1, 1)));
+    let e = black_box(v2it((1, 1)));
     assert!(f.d() == e);
 }
 
@@ -334,27 +334,27 @@ fn bench_ldlt2_determinant__diagonal_product() {
 
 /// The benchmark input `a_ij = min(i, j)`.
 fn a3() -> SymMatrix3<Fixed> {
-    s3i([[1, 1, 1], [1, 2, 2], [1, 2, 3]])
+    s3ir([[1, 1, 1], [1, 2, 2], [1, 2, 3]])
 }
 
 /// Its `LDLᵀ` factor: the all-ones unit lower triangle, `d = (1, .., 1)`.
 fn f3() -> Ldlt3<Fixed> {
-    Ldlt3 { l21: int(1), l31: int(1), l32: int(1), d: v3i((1, 1, 1)) }
+    Ldlt3 { l21: int(1), l31: int(1), l32: int(1), d: v3it((1, 1, 1)) }
 }
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b3() -> Vector3<Fixed> {
-    v3i((1, -2, 3))
+    v3it((1, -2, 3))
 }
 
 /// `a3()⁻¹ · b3()`, exactly.
 fn x3() -> Vector3<Fixed> {
-    v3i((4, -8, 5))
+    v3it((4, -8, 5))
 }
 
 /// `a3()⁻¹`: tridiagonal, exactly.
 fn inv3() -> SymMatrix3<Fixed> {
-    s3i([[2, -1, 0], [-1, 2, -1], [0, -1, 1]])
+    s3ir([[2, -1, 0], [-1, 2, -1], [0, -1, 1]])
 }
 
 /// LOSER. `new` recomputing `l_jk · d_k` as an explicit rounded product instead of reusing the
@@ -458,11 +458,11 @@ fn new3_worst(variant: u8) -> (u128, u128) {
     while let Some(case) = cases.pop_front() {
         let (a, l, d, _tol) = *case;
         let f = if variant == 0 {
-            Ldlt3Trait::new(s3(a)).unwrap()
+            Ldlt3Trait::new(s3r(a)).unwrap()
         } else {
-            new3_products(s3(a)).unwrap()
+            new3_products(s3r(a)).unwrap()
         };
-        let e = core::cmp::max(max_ulp_diff3(f.l(), m3(l)), max_ulp_diff_v3(f.d(), v3(d)));
+        let e = core::cmp::max(max_ulp_diff3(f.l(), m3(l)), max_ulp_diff_v3(f.d(), v3t(d)));
         factors = core::cmp::max(factors, e);
         let r = f.l() * Matrix3Trait::from_diagonal(f.d()) * f.l().transpose();
         backward = core::cmp::max(backward, max_ulp_diff3(r, m3(a)));
@@ -476,13 +476,13 @@ fn solve3_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, _tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v3(b))
+            f.solve(v3t(b))
         } else {
-            solve3_recip(f, v3(b))
+            solve3_recip(f, v3t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v3(got, v3(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v3(got, v3t(expected)));
     }
     worst
 }
@@ -493,7 +493,7 @@ fn inverse3_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, _tol) = *case;
-        let f = Ldlt3Trait::new(s3(a)).unwrap();
+        let f = Ldlt3Trait::new(s3r(a)).unwrap();
         let got = if variant == 0 {
             f.inverse()
         } else {
@@ -578,7 +578,7 @@ fn bench_ldlt3_l__expand() {
 #[inline(never)]
 fn bench_ldlt3_d__baseline() {
     let _f = black_box(f3());
-    let e = black_box(v3i((1, 1, 1)));
+    let e = black_box(v3it((1, 1, 1)));
     assert!(e == e);
 }
 
@@ -586,7 +586,7 @@ fn bench_ldlt3_d__baseline() {
 #[inline(never)]
 fn bench_ldlt3_d__accessor() {
     let f = black_box(f3());
-    let e = black_box(v3i((1, 1, 1)));
+    let e = black_box(v3it((1, 1, 1)));
     assert!(f.d() == e);
 }
 
@@ -673,18 +673,18 @@ fn f4() -> Ldlt4<Fixed> {
         l32: int(1),
         l42: int(1),
         l43: int(1),
-        d: v4i((1, 1, 1, 1)),
+        d: v4it((1, 1, 1, 1)),
     }
 }
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b4() -> Vector4<Fixed> {
-    v4i((1, -2, 3, -4))
+    v4it((1, -2, 3, -4))
 }
 
 /// `a4()⁻¹ · b4()`, exactly.
 fn x4() -> Vector4<Fixed> {
-    v4i((4, -8, 12, -7))
+    v4it((4, -8, 12, -7))
 }
 
 /// `a4()⁻¹`: tridiagonal, exactly.
@@ -875,7 +875,7 @@ fn new4_worst(variant: u8) -> (u128, u128) {
         } else {
             new4_products(m4(a)).unwrap()
         };
-        let e = core::cmp::max(max_ulp_diff4(f.l(), m4(l)), max_ulp_diff_v4(f.d(), v4(d)));
+        let e = core::cmp::max(max_ulp_diff4(f.l(), m4(l)), max_ulp_diff_v4(f.d(), v4t(d)));
         factors = core::cmp::max(factors, e);
         let r = f.l() * Matrix4Trait::from_diagonal(f.d()) * f.l().transpose();
         backward = core::cmp::max(backward, max_ulp_diff4(r, m4(a)));
@@ -891,11 +891,11 @@ fn solve4_worst(variant: u8) -> u128 {
         let (a, b, expected, _tol) = *case;
         let f = Ldlt4Trait::new(m4(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v4(b))
+            f.solve(v4t(b))
         } else {
-            solve4_recip(f, v4(b))
+            solve4_recip(f, v4t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v4(got, v4(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v4(got, v4t(expected)));
     }
     worst
 }
@@ -991,7 +991,7 @@ fn bench_ldlt4_l__expand() {
 #[inline(never)]
 fn bench_ldlt4_d__baseline() {
     let _f = black_box(f4());
-    let e = black_box(v4i((1, 1, 1, 1)));
+    let e = black_box(v4it((1, 1, 1, 1)));
     assert!(e == e);
 }
 
@@ -999,7 +999,7 @@ fn bench_ldlt4_d__baseline() {
 #[inline(never)]
 fn bench_ldlt4_d__accessor() {
     let f = black_box(f4());
-    let e = black_box(v4i((1, 1, 1, 1)));
+    let e = black_box(v4it((1, 1, 1, 1)));
     assert!(f.d() == e);
 }
 
@@ -1100,18 +1100,18 @@ fn f6() -> Ldlt6<Fixed> {
         l54: int(1),
         l64: int(1),
         l65: int(1),
-        d: v6i((1, 1, 1, 1, 1, 1)),
+        d: v6it((1, 1, 1, 1, 1, 1)),
     }
 }
 
 /// The right-hand side of the benchmarked `solve`, and its exact solution.
 fn b6() -> Vector6<Fixed> {
-    v6i((1, -2, 3, -4, 5, -6))
+    v6it((1, -2, 3, -4, 5, -6))
 }
 
 /// `a6()⁻¹ · b6()`, exactly.
 fn x6() -> Vector6<Fixed> {
-    v6i((4, -8, 12, -16, 20, -11))
+    v6it((4, -8, 12, -16, 20, -11))
 }
 
 /// `a6()⁻¹`: tridiagonal, exactly.
@@ -1548,7 +1548,7 @@ fn new6_worst(variant: u8) -> (u128, u128) {
         } else {
             new6_products(m6(a)).unwrap()
         };
-        let e = core::cmp::max(max_ulp_diff6(f.l(), m6(l)), max_ulp_diff_v6(f.d(), v6(d)));
+        let e = core::cmp::max(max_ulp_diff6(f.l(), m6(l)), max_ulp_diff_v6(f.d(), v6t(d)));
         factors = core::cmp::max(factors, e);
         let r = f.l() * Matrix6Trait::from_diagonal(f.d()) * f.l().transpose();
         backward = core::cmp::max(backward, max_ulp_diff6(r, m6(a)));
@@ -1564,11 +1564,11 @@ fn solve6_worst(variant: u8) -> u128 {
         let (a, b, expected, _tol) = *case;
         let f = Ldlt6Trait::new(m6(a)).unwrap();
         let got = if variant == 0 {
-            f.solve(v6(b))
+            f.solve(v6t(b))
         } else {
-            solve6_recip(f, v6(b))
+            solve6_recip(f, v6t(b))
         };
-        worst = core::cmp::max(worst, max_ulp_diff_v6(got, v6(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff_v6(got, v6t(expected)));
     }
     worst
 }
@@ -1678,7 +1678,7 @@ fn bench_ldlt6_l__expand() {
 #[inline(never)]
 fn bench_ldlt6_d__baseline() {
     let _f = black_box(f6());
-    let e = black_box(v6i((1, 1, 1, 1, 1, 1)));
+    let e = black_box(v6it((1, 1, 1, 1, 1, 1)));
     assert!(e == e);
 }
 
@@ -1686,7 +1686,7 @@ fn bench_ldlt6_d__baseline() {
 #[inline(never)]
 fn bench_ldlt6_d__accessor() {
     let f = black_box(f6());
-    let e = black_box(v6i((1, 1, 1, 1, 1, 1)));
+    let e = black_box(v6it((1, 1, 1, 1, 1, 1)));
     assert!(f.d() == e);
 }
 
@@ -1764,7 +1764,7 @@ fn bench_ldlt6_determinant__diagonal_product() {
 /// the candidate.
 #[test]
 fn test_ldlt2_inverse_alt_recip_loses_low_bits() {
-    let f = Ldlt2 { l21: int(5), d: v2i((1, 3)) };
+    let f = Ldlt2 { l21: int(5), d: v2it((1, 3)) };
     let exact = fx(40086361429);
     let shipped = f.inverse();
     let alt = inverse2_recip(f);

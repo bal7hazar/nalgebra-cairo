@@ -244,11 +244,11 @@ mod tests {
     use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix4::{Matrix4, Matrix4Trait};
-    use crate::base::vector4::{Vector4, Vector4Trait};
-    use crate::linalg::decomp_test_utils::{
-        amax_m4, decomp_tol, excess, int, m4, max_abs_m4, max_abs_v4, max_ulp_diff_m4,
-        max_ulp_diff_v4, orthonormality_error_m4, v4,
+    use crate::base::matrix_test_utils::{
+        amax_m4, excess, int, m4, max_abs_m4, max_abs_v4, max_ulp_diff4, max_ulp_diff_v4,
+        oracle_tol, orthonormality_error_m4, v4t,
     };
+    use crate::base::vector4::{Vector4, Vector4Trait};
     use crate::linalg::qr::oracle_qr4 as oracle;
     use super::{Matrix4QrTrait, Qr4, Qr4Trait};
 
@@ -266,7 +266,7 @@ mod tests {
 
     /// Its right-hand side, from `qr4_solve`.
     fn b_bench() -> Vector4<Fixed> {
-        v4((2614746463, 2804691241, -3498193820, 3365132750))
+        v4t((2614746463, 2804691241, -3498193820, 3365132750))
     }
 
     /// `a_bench()` already factored.
@@ -337,9 +337,9 @@ mod tests {
             let (a, q, r, tol) = *case;
             let f = Qr4Trait::new(m4(a));
             let (eq, er) = (m4(q), m4(r));
-            let (dq, dr) = (max_ulp_diff_m4(f.q(), eq), max_ulp_diff_m4(f.r(), er));
-            worst_ex = core::cmp::max(worst_ex, excess(dq, decomp_tol(max_abs_m4(eq), tol)));
-            worst_ex = core::cmp::max(worst_ex, excess(dr, decomp_tol(max_abs_m4(er), tol)));
+            let (dq, dr) = (max_ulp_diff4(f.q(), eq), max_ulp_diff4(f.r(), er));
+            worst_ex = core::cmp::max(worst_ex, excess(dq, oracle_tol(max_abs_m4(eq), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(dr, oracle_tol(max_abs_m4(er), tol)));
             worst_q = core::cmp::max(worst_q, dq);
             worst_r = core::cmp::max(worst_r, dr);
         }
@@ -356,7 +356,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _, _) = *case;
             let f = Qr4Trait::new(m4(a));
-            let rec = max_ulp_diff_m4(f.q() * f.r(), m4(a)) / amax_m4(m4(a));
+            let rec = max_ulp_diff4(f.q() * f.r(), m4(a)) / amax_m4(m4(a));
             let orth = orthonormality_error_m4(f.q());
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
@@ -371,10 +371,10 @@ mod tests {
         let (mut worst, mut worst_ex) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, b, expected, tol) = *case;
-            let x = Qr4Trait::new(m4(a)).solve(v4(b)).unwrap();
-            let e = v4(expected);
+            let x = Qr4Trait::new(m4(a)).solve(v4t(b)).unwrap();
+            let e = v4t(expected);
             let err = max_ulp_diff_v4(x, e);
-            worst_ex = core::cmp::max(worst_ex, excess(err, decomp_tol(max_abs_v4(e), tol)));
+            worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v4(e), tol)));
             worst = core::cmp::max(worst, err);
         }
         assert!((worst, worst_ex) == (3134, 0), "regressed: {worst} {worst_ex}");
@@ -388,8 +388,8 @@ mod tests {
             let (a, _, _, _) = *case;
             let inv = Qr4Trait::new(m4(a)).try_inverse().unwrap();
             let id = Matrix4Trait::identity();
-            worst = core::cmp::max(worst, max_ulp_diff_m4(m4(a) * inv, id));
-            worst = core::cmp::max(worst, max_ulp_diff_m4(inv * m4(a), id));
+            worst = core::cmp::max(worst, max_ulp_diff4(m4(a) * inv, id));
+            worst = core::cmp::max(worst, max_ulp_diff4(inv * m4(a), id));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
         assert!(worst == 149, "regressed: {worst}");

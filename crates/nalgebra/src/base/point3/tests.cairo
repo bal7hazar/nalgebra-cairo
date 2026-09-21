@@ -11,33 +11,12 @@
 use nalgebra_testing::black_box;
 use simba::fixed::Fixed;
 use simba::scalar::Real;
-use crate::base::point2::Point2;
+use crate::base::matrix_test_utils::{fx, p2, p3, p3t, v3, v3t, v4};
 use crate::base::vector3::{Vector3, Vector3Trait};
-use crate::base::vector4::Vector4;
 use super::{Point3, Point3Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;
 const MIN: i64 = -0x8000000000000000;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
-
-fn v3(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
-    Vector3 { x: fx(x), y: fx(y), z: fx(z) }
-}
-
-fn v4(x: i64, y: i64, z: i64, w: i64) -> Vector4<Fixed> {
-    Vector4 { x: fx(x), y: fx(y), z: fx(z), w: fx(w) }
-}
-
-fn p2(x: i64, y: i64) -> Point2<Fixed> {
-    Point2 { x: fx(x), y: fx(y) }
-}
-
-fn p3(x: i64, y: i64, z: i64) -> Point3<Fixed> {
-    Point3 { x: fx(x), y: fx(y), z: fx(z) }
-}
 
 /// (1.5, -2.25, 3.75)
 fn a() -> Point3<Fixed> {
@@ -52,18 +31,6 @@ fn b() -> Point3<Fixed> {
 /// (3, -4, 12), at distance 13 from the origin
 fn p() -> Point3<Fixed> {
     p3(0x300000000, -0x400000000, 0xc00000000)
-}
-
-/// A point from an oracle tuple of raws.
-fn pt(t: (i64, i64, i64)) -> Point3<Fixed> {
-    let (x, y, z) = t;
-    p3(x, y, z)
-}
-
-/// A vector from an oracle tuple of raws.
-fn vt(t: (i64, i64, i64)) -> Vector3<Fixed> {
-    let (x, y, z) = t;
-    v3(x, y, z)
 }
 
 // --- constructors and conversions
@@ -422,7 +389,7 @@ fn test_sub_point_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (p, q, expected, tol) = *case;
-        assert!(pt(p).sub_point(pt(q)).abs_diff_eq(vt(expected), tol));
+        assert!(p3t(p).sub_point(p3t(q)).abs_diff_eq(v3t(expected), tol));
     }
 }
 
@@ -432,7 +399,7 @@ fn test_add_vector_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (p, v, expected, tol) = *case;
-        assert!(pt(p).add_vector(vt(v)).abs_diff_eq(pt(expected), tol));
+        assert!(p3t(p).add_vector(v3t(v)).abs_diff_eq(p3t(expected), tol));
     }
 }
 
@@ -442,7 +409,7 @@ fn test_sub_vector_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (p, v, expected, tol) = *case;
-        assert!(pt(p).sub_vector(vt(v)).abs_diff_eq(pt(expected), tol));
+        assert!(p3t(p).sub_vector(v3t(v)).abs_diff_eq(p3t(expected), tol));
     }
 }
 
@@ -452,7 +419,7 @@ fn test_scale_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (p, k, expected, tol) = *case;
-        assert!(pt(p).scale(fx(k)).abs_diff_eq(pt(expected), tol));
+        assert!(p3t(p).scale(fx(k)).abs_diff_eq(p3t(expected), tol));
     }
 }
 
@@ -462,7 +429,7 @@ fn test_distance_squared_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (p, q, expected, tol) = *case;
-        assert!((pt(p).distance_squared(pt(q))).abs_diff_eq(fx(expected), tol));
+        assert!((p3t(p).distance_squared(p3t(q))).abs_diff_eq(fx(expected), tol));
     }
 }
 
@@ -472,7 +439,7 @@ fn test_distance_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (p, q, expected, tol) = *case;
-        assert!((pt(p).distance(pt(q))).abs_diff_eq(fx(expected), tol));
+        assert!((p3t(p).distance(p3t(q))).abs_diff_eq(fx(expected), tol));
     }
 }
 
@@ -482,6 +449,6 @@ fn test_center_oracle() {
     assert!(cases.len() >= 16);
     while let Some(case) = cases.pop_front() {
         let (p, q, expected, tol) = *case;
-        assert!(pt(p).center(pt(q)).abs_diff_eq(pt(expected), tol));
+        assert!(p3t(p).center(p3t(q)).abs_diff_eq(p3t(expected), tol));
     }
 }
