@@ -136,6 +136,8 @@ One scalar representation across the three repositories (Q32.32 `i64`, floor). C
 `Quaternion::new(w, i, j, k)` vs `from_xyzw`. Settled: glam.cairo owns the shared `fixed::Fixed`
 (rapier.cairo consumes it), nalgebra stays generic over `Real`, and `simba_fixed` bridges by
 implementing `Real` / `Transcendental` for `fixed::Fixed` through simba's own kernels (zero
-overhead, bit-identical wherever nalgebra goes through `Real`). Known gap: nalgebra still reaches
-`/` through the corelib operator, and `fixed::Fixed` truncates where simba floors — a
-`Real::div` / `Real::rem` routing would close it (WP 4.5).
+overhead, bit-identical wherever nalgebra goes through `Real`). Generic nalgebra code never uses the
+scalar's own `/` or `%`: every division goes through `Real::div` (floor) / `Real::rem` (floored
+modulo), so `fixed::Fixed` — whose operators truncate toward zero — gives bit-identical nalgebra
+results (`normalize`, `unscale`, inverses, decompositions; WP 4.6). The foreign operators themselves
+still differ and are documented as such in `simba_fixed::conformance`.
