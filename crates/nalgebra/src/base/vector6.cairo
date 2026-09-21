@@ -115,7 +115,6 @@ pub impl Vector6Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -290,13 +289,17 @@ pub impl Vector6MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector6<T
 }
 
 /// `self /= k` for a scalar `k`: `unscale` in place. Upstream: `DivAssign<T>`.
-pub impl Vector6DivAssign<T, +Div<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector6<T>, T> {
+pub impl Vector6DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector6<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector6<T>, rhs: T) {
         self =
             Vector6 {
-                a: Vector3 { x: self.a.x / rhs, y: self.a.y / rhs, z: self.a.z / rhs },
-                b: Vector3 { x: self.b.x / rhs, y: self.b.y / rhs, z: self.b.z / rhs },
+                a: Vector3 {
+                    x: R::div(self.a.x, rhs), y: R::div(self.a.y, rhs), z: R::div(self.a.z, rhs),
+                },
+                b: Vector3 {
+                    x: R::div(self.b.x, rhs), y: R::div(self.b.y, rhs), z: R::div(self.b.z, rhs),
+                },
             };
     }
 }

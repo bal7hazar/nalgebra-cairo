@@ -174,7 +174,6 @@ pub impl Vector2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -228,7 +227,7 @@ pub impl Vector2Impl<
 
     #[inline(always)]
     fn unscale(self: Vector2<T>, k: T) -> Vector2<T> {
-        Vector2 { x: self.x / k, y: self.y / k }
+        Vector2 { x: R::div(self.x, k), y: R::div(self.y, k) }
     }
 
     #[inline(always)]
@@ -238,7 +237,7 @@ pub impl Vector2Impl<
 
     #[inline(always)]
     fn component_div(self: Vector2<T>, rhs: Vector2<T>) -> Vector2<T> {
-        Vector2 { x: self.x / rhs.x, y: self.y / rhs.y }
+        Vector2 { x: R::div(self.x, rhs.x), y: R::div(self.y, rhs.y) }
     }
 
     #[inline(always)]
@@ -380,7 +379,7 @@ pub impl Vector2Impl<
         if n <= max {
             self
         } else {
-            Self::scale(self, max / n)
+            Self::scale(self, R::div(max, n))
         }
     }
 
@@ -396,7 +395,6 @@ pub impl Vector2AngleImpl<
     impl Tr: Transcendental<T>,
     +Add<T>,
     +Sub<T>,
-    +Div<T>,
     +PartialEq<T>,
     +Copy<T>,
     +Drop<T>,
@@ -407,8 +405,8 @@ pub impl Vector2AngleImpl<
         if n1 == R::ZERO || n2 == R::ZERO {
             return R::ZERO;
         }
-        let u = Vector2 { x: self.x / n1, y: self.y / n1 };
-        let v = Vector2 { x: other.x / n2, y: other.y / n2 };
+        let u = Vector2 { x: R::div(self.x, n1), y: R::div(self.y, n1) };
+        let v = Vector2 { x: R::div(other.x, n2), y: R::div(other.y, n2) };
         let d = R::norm2(u.x - v.x, u.y - v.y);
         let s = R::norm2(u.x + v.x, u.y + v.y);
         let half = Tr::atan2(d, s);
@@ -466,10 +464,10 @@ pub impl Vector2MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector2<T
 }
 
 /// `self /= k` for a scalar `k`: `unscale` in place. Upstream: `DivAssign<T>`.
-pub impl Vector2DivAssign<T, +Div<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector2<T>, T> {
+pub impl Vector2DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector2<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector2<T>, rhs: T) {
-        self = Vector2 { x: self.x / rhs, y: self.y / rhs };
+        self = Vector2 { x: R::div(self.x, rhs), y: R::div(self.y, rhs) };
     }
 }
 

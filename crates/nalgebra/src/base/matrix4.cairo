@@ -108,7 +108,6 @@ pub impl Matrix4Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -643,13 +642,13 @@ pub impl Matrix4Impl<
             if f == R::ZERO {
                 return None;
             }
-            let k = R::floor(R::TWO / f);
+            let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let (adj_b, det_b) = Matrix4Kernels::adjugate_determinant(Self::scale(self, k));
                 if det_b == R::ZERO {
                     return None;
                 }
-                return Some(Self::scale(adj_b, k / det_b));
+                return Some(Self::scale(adj_b, R::div(k, det_b)));
             }
             if det == R::ZERO {
                 return None;
@@ -657,22 +656,22 @@ pub impl Matrix4Impl<
         }
         Some(
             Matrix4 {
-                m11: adj.m11 / det,
-                m21: adj.m21 / det,
-                m31: adj.m31 / det,
-                m41: adj.m41 / det,
-                m12: adj.m12 / det,
-                m22: adj.m22 / det,
-                m32: adj.m32 / det,
-                m42: adj.m42 / det,
-                m13: adj.m13 / det,
-                m23: adj.m23 / det,
-                m33: adj.m33 / det,
-                m43: adj.m43 / det,
-                m14: adj.m14 / det,
-                m24: adj.m24 / det,
-                m34: adj.m34 / det,
-                m44: adj.m44 / det,
+                m11: R::div(adj.m11, det),
+                m21: R::div(adj.m21, det),
+                m31: R::div(adj.m31, det),
+                m41: R::div(adj.m41, det),
+                m12: R::div(adj.m12, det),
+                m22: R::div(adj.m22, det),
+                m32: R::div(adj.m32, det),
+                m42: R::div(adj.m42, det),
+                m13: R::div(adj.m13, det),
+                m23: R::div(adj.m23, det),
+                m33: R::div(adj.m33, det),
+                m43: R::div(adj.m43, det),
+                m14: R::div(adj.m14, det),
+                m24: R::div(adj.m24, det),
+                m34: R::div(adj.m34, det),
+                m44: R::div(adj.m44, det),
             },
         )
     }

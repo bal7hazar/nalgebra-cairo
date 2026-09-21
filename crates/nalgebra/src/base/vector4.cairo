@@ -178,7 +178,6 @@ pub impl Vector4Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -242,7 +241,9 @@ pub impl Vector4Impl<
 
     #[inline(always)]
     fn unscale(self: Vector4<T>, k: T) -> Vector4<T> {
-        Vector4 { x: self.x / k, y: self.y / k, z: self.z / k, w: self.w / k }
+        Vector4 {
+            x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k), w: R::div(self.w, k),
+        }
     }
 
     #[inline(always)]
@@ -252,7 +253,12 @@ pub impl Vector4Impl<
 
     #[inline(always)]
     fn component_div(self: Vector4<T>, rhs: Vector4<T>) -> Vector4<T> {
-        Vector4 { x: self.x / rhs.x, y: self.y / rhs.y, z: self.z / rhs.z, w: self.w / rhs.w }
+        Vector4 {
+            x: R::div(self.x, rhs.x),
+            y: R::div(self.y, rhs.y),
+            z: R::div(self.z, rhs.z),
+            w: R::div(self.w, rhs.w),
+        }
     }
 
     #[inline(always)]
@@ -422,7 +428,7 @@ pub impl Vector4Impl<
         if n <= max {
             self
         } else {
-            Self::scale(self, max / n)
+            Self::scale(self, R::div(max, n))
         }
     }
 
@@ -443,7 +449,6 @@ pub impl Vector4AngleImpl<
     impl Tr: Transcendental<T>,
     +Add<T>,
     +Sub<T>,
-    +Div<T>,
     +PartialEq<T>,
     +Copy<T>,
     +Drop<T>,
@@ -454,8 +459,18 @@ pub impl Vector4AngleImpl<
         if n1 == R::ZERO || n2 == R::ZERO {
             return R::ZERO;
         }
-        let u = Vector4 { x: self.x / n1, y: self.y / n1, z: self.z / n1, w: self.w / n1 };
-        let v = Vector4 { x: other.x / n2, y: other.y / n2, z: other.z / n2, w: other.w / n2 };
+        let u = Vector4 {
+            x: R::div(self.x, n1),
+            y: R::div(self.y, n1),
+            z: R::div(self.z, n1),
+            w: R::div(self.w, n1),
+        };
+        let v = Vector4 {
+            x: R::div(other.x, n2),
+            y: R::div(other.y, n2),
+            z: R::div(other.z, n2),
+            w: R::div(other.w, n2),
+        };
         let d = R::norm4(u.x - v.x, u.y - v.y, u.z - v.z, u.w - v.w);
         let s = R::norm4(u.x + v.x, u.y + v.y, u.z + v.z, u.w + v.w);
         let half = Tr::atan2(d, s);
@@ -515,10 +530,16 @@ pub impl Vector4MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector4<T
 }
 
 /// `self /= k` for a scalar `k`: `unscale` in place. Upstream: `DivAssign<T>`.
-pub impl Vector4DivAssign<T, +Div<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector4<T>, T> {
+pub impl Vector4DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector4<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector4<T>, rhs: T) {
-        self = Vector4 { x: self.x / rhs, y: self.y / rhs, z: self.z / rhs, w: self.w / rhs };
+        self =
+            Vector4 {
+                x: R::div(self.x, rhs),
+                y: R::div(self.y, rhs),
+                z: R::div(self.z, rhs),
+                w: R::div(self.w, rhs),
+            };
     }
 }
 

@@ -32,7 +32,6 @@ pub impl Qr2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -67,7 +66,7 @@ pub impl Qr2Impl<
         let (q11, q21) = if r11 == R::ZERO {
             (R::ZERO, R::ZERO)
         } else {
-            (matrix.m11 / r11, matrix.m21 / r11)
+            (R::div(matrix.m11, r11), R::div(matrix.m21, r11))
         };
         let r12 = R::sum_prod2(q11, matrix.m12, q21, matrix.m22);
         let w1 = R::mul_add(-r12, q11, matrix.m12);
@@ -76,7 +75,7 @@ pub impl Qr2Impl<
         let (q12, q22) = if r22 == R::ZERO {
             (R::ZERO, R::ZERO)
         } else {
-            (w1 / r22, w2 / r22)
+            (R::div(w1, r22), R::div(w2, r22))
         };
         Qr2 {
             q: Matrix2 { m11: q11, m21: q21, m12: q12, m22: q22 },
@@ -121,8 +120,8 @@ pub impl Qr2Impl<
             return None;
         }
         let y = self.q.tr_mul_vec(b);
-        let x2 = y.y / self.r.m22;
-        let x1 = R::mul_add(-self.r.m12, x2, y.x) / self.r.m11;
+        let x2 = R::div(y.y, self.r.m22);
+        let x1 = R::div(R::mul_add(-self.r.m12, x2, y.x), self.r.m11);
         Some(Vector2 { x: x1, y: x2 })
     }
 
@@ -139,10 +138,10 @@ pub impl Qr2Impl<
             return None;
         }
         // Column j of the result solves `R x = (Qᵀ)_j`, and `(Qᵀ)_j` is row j of `Q`.
-        let x21 = self.q.m12 / self.r.m22;
-        let x22 = self.q.m22 / self.r.m22;
-        let x11 = R::mul_add(-self.r.m12, x21, self.q.m11) / self.r.m11;
-        let x12 = R::mul_add(-self.r.m12, x22, self.q.m21) / self.r.m11;
+        let x21 = R::div(self.q.m12, self.r.m22);
+        let x22 = R::div(self.q.m22, self.r.m22);
+        let x11 = R::div(R::mul_add(-self.r.m12, x21, self.q.m11), self.r.m11);
+        let x12 = R::div(R::mul_add(-self.r.m12, x22, self.q.m21), self.r.m11);
         Some(Matrix2 { m11: x11, m21: x21, m12: x12, m22: x22 })
     }
 
@@ -182,7 +181,6 @@ pub impl Matrix2QrImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

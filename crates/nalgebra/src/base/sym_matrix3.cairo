@@ -33,7 +33,6 @@ pub impl SymMatrix3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -278,7 +277,7 @@ pub impl SymMatrix3Impl<
             if f == R::ZERO {
                 return None;
             }
-            let k = R::floor(R::TWO / f);
+            let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let b = Self::scale(self, k);
                 let adj_b = Self::adjugate(b);
@@ -286,7 +285,7 @@ pub impl SymMatrix3Impl<
                 if det_b == R::ZERO {
                     return None;
                 }
-                return Some(Self::scale(adj_b, k / det_b));
+                return Some(Self::scale(adj_b, R::div(k, det_b)));
             }
             if det == R::ZERO {
                 return None;
@@ -294,12 +293,12 @@ pub impl SymMatrix3Impl<
         }
         Some(
             SymMatrix3 {
-                m11: adj.m11 / det,
-                m12: adj.m12 / det,
-                m13: adj.m13 / det,
-                m22: adj.m22 / det,
-                m23: adj.m23 / det,
-                m33: adj.m33 / det,
+                m11: R::div(adj.m11, det),
+                m12: R::div(adj.m12, det),
+                m13: R::div(adj.m13, det),
+                m22: R::div(adj.m22, det),
+                m23: R::div(adj.m23, det),
+                m33: R::div(adj.m33, det),
             },
         )
     }
@@ -311,21 +310,21 @@ pub impl SymMatrix3Impl<
         let adj = Self::adjugate(self);
         let det = R::sum_prod3(self.m11, adj.m11, self.m12, adj.m12, self.m13, adj.m13);
         if det < R::HALF && det > -R::HALF {
-            let k = R::floor(R::TWO / Self::norm(self));
+            let k = R::floor(R::div(R::TWO, Self::norm(self)));
             if k >= R::TWO {
                 let b = Self::scale(self, k);
                 let adj_b = Self::adjugate(b);
                 let det_b = R::sum_prod3(b.m11, adj_b.m11, b.m12, adj_b.m12, b.m13, adj_b.m13);
-                return Self::scale(adj_b, k / det_b);
+                return Self::scale(adj_b, R::div(k, det_b));
             }
         }
         SymMatrix3 {
-            m11: adj.m11 / det,
-            m12: adj.m12 / det,
-            m13: adj.m13 / det,
-            m22: adj.m22 / det,
-            m23: adj.m23 / det,
-            m33: adj.m33 / det,
+            m11: R::div(adj.m11, det),
+            m12: R::div(adj.m12, det),
+            m13: R::div(adj.m13, det),
+            m22: R::div(adj.m22, det),
+            m23: R::div(adj.m23, det),
+            m33: R::div(adj.m33, det),
         }
     }
 

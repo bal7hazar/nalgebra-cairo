@@ -218,16 +218,7 @@ pub trait UnitComplexAngleTrait<T> {
 }
 
 pub impl UnitComplexImpl<
-    T,
-    impl R: Real<T>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Div<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +Copy<T>,
-    +Drop<T>,
+    T, impl R: Real<T>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
 > of UnitComplexTrait<T> {
     #[inline(always)]
     fn identity() -> UnitComplex<T> {
@@ -252,7 +243,7 @@ pub impl UnitComplexImpl<
         if n == R::ZERO {
             return UnitComplex { re: R::ONE, im: R::ZERO };
         }
-        UnitComplex { re: dot / n, im: perp / n }
+        UnitComplex { re: R::div(dot, n), im: R::div(perp, n) }
     }
 
     #[inline(always)]
@@ -362,7 +353,7 @@ pub impl UnitComplexImpl<
     #[inline(always)]
     fn renormalize(self: UnitComplex<T>) -> UnitComplex<T> {
         let n = R::norm2(self.re, self.im);
-        UnitComplex { re: self.re / n, im: self.im / n }
+        UnitComplex { re: R::div(self.re, n), im: R::div(self.im, n) }
     }
 
     #[inline(always)]
@@ -378,7 +369,7 @@ pub impl UnitComplexImpl<
         let re = R::mul_add(-self.im, angle, self.re);
         let im = R::mul_add(self.re, angle, self.im);
         let n = R::norm2(re, im);
-        UnitComplex { re: re / n, im: im / n }
+        UnitComplex { re: R::div(re, n), im: R::div(im, n) }
     }
 
     #[inline(always)]

@@ -29,7 +29,6 @@ pub impl SymMatrix2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -190,21 +189,25 @@ pub impl SymMatrix2Impl<
             if f == R::ZERO {
                 return None;
             }
-            let k = R::floor(R::TWO / f);
+            let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let (b11, b12, b22) = (self.m11 * k, self.m12 * k, self.m22 * k);
                 let det_b = R::diff_prod(b11, b22, b12, b12);
                 if det_b == R::ZERO {
                     return None;
                 }
-                let t = k / det_b;
+                let t = R::div(k, det_b);
                 return Some(SymMatrix2 { m11: b22 * t, m12: (-b12) * t, m22: b11 * t });
             }
             if det == R::ZERO {
                 return None;
             }
         }
-        Some(SymMatrix2 { m11: self.m22 / det, m12: (-self.m12) / det, m22: self.m11 / det })
+        Some(
+            SymMatrix2 {
+                m11: R::div(self.m22, det), m12: R::div(-self.m12, det), m22: R::div(self.m11, det),
+            },
+        )
     }
 
     /// The inverse without the singularity checks: same result as `try_inverse` on an invertible
@@ -213,14 +216,16 @@ pub impl SymMatrix2Impl<
     fn inverse_unchecked(self: SymMatrix2<T>) -> SymMatrix2<T> {
         let det = R::diff_prod(self.m11, self.m22, self.m12, self.m12);
         if det < R::HALF && det > -R::HALF {
-            let k = R::floor(R::TWO / R::norm4(self.m11, self.m12, self.m12, self.m22));
+            let k = R::floor(R::div(R::TWO, R::norm4(self.m11, self.m12, self.m12, self.m22)));
             if k >= R::TWO {
                 let (b11, b12, b22) = (self.m11 * k, self.m12 * k, self.m22 * k);
-                let t = k / R::diff_prod(b11, b22, b12, b12);
+                let t = R::div(k, R::diff_prod(b11, b22, b12, b12));
                 return SymMatrix2 { m11: b22 * t, m12: (-b12) * t, m22: b11 * t };
             }
         }
-        SymMatrix2 { m11: self.m22 / det, m12: (-self.m12) / det, m22: self.m11 / det }
+        SymMatrix2 {
+            m11: R::div(self.m22, det), m12: R::div(-self.m12, det), m22: R::div(self.m11, det),
+        }
     }
 
     // --- approximate equality ------------------------------------------------------------------

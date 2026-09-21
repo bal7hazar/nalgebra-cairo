@@ -184,7 +184,6 @@ pub impl Cholesky2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -215,7 +214,7 @@ pub impl Cholesky2Impl<
             return None;
         }
         let l11 = R::sqrt(p1);
-        let l21 = a.m12 / l11;
+        let l21 = R::div(a.m12, l11);
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
@@ -244,16 +243,16 @@ pub impl Cholesky2Impl<
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
     fn solve(self: Cholesky2<T>, b: Vector2<T>) -> Vector2<T> {
-        let y1 = b.x / self.l11;
+        let y1 = R::div(b.x, self.l11);
         let w = R::wide_add(R::wide_zero(), b.y);
         let w = R::wide_sub_prod(w, self.l21, y1);
         let f2 = R::wide_rescale(w);
-        let y2 = f2 / self.l22;
-        let x2 = y2 / self.l22;
+        let y2 = R::div(f2, self.l22);
+        let x2 = R::div(y2, self.l22);
         let w = R::wide_add(R::wide_zero(), y1);
         let w = R::wide_sub_prod(w, self.l21, x2);
         let g1 = R::wide_rescale(w);
-        let x1 = g1 / self.l11;
+        let x1 = R::div(g1, self.l11);
         Vector2 { x: x1, y: x2 }
     }
 
@@ -278,7 +277,7 @@ pub impl Cholesky2Impl<
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l21, q11);
         let t21 = R::wide_rescale(w);
-        let q21 = t21 / self.l22;
+        let q21 = R::div(t21, self.l22);
         let w = R::wide_zero();
         let w = R::wide_add_prod(w, q11, q11);
         let w = R::wide_add_prod(w, q21, q21);
@@ -313,7 +312,6 @@ pub impl Cholesky3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -344,8 +342,8 @@ pub impl Cholesky3Impl<
             return None;
         }
         let l11 = R::sqrt(p1);
-        let l21 = a.m12 / l11;
-        let l31 = a.m13 / l11;
+        let l21 = R::div(a.m12, l11);
+        let l31 = R::div(a.m13, l11);
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
@@ -356,7 +354,7 @@ pub impl Cholesky3Impl<
         let w = R::wide_add(R::wide_zero(), a.m23);
         let w = R::wide_sub_prod(w, l31, l21);
         let n32 = R::wide_rescale(w);
-        let l32 = n32 / l22;
+        let l32 = R::div(n32, l22);
         let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
@@ -396,26 +394,26 @@ pub impl Cholesky3Impl<
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
     fn solve(self: Cholesky3<T>, b: Vector3<T>) -> Vector3<T> {
-        let y1 = b.x / self.l11;
+        let y1 = R::div(b.x, self.l11);
         let w = R::wide_add(R::wide_zero(), b.y);
         let w = R::wide_sub_prod(w, self.l21, y1);
         let f2 = R::wide_rescale(w);
-        let y2 = f2 / self.l22;
+        let y2 = R::div(f2, self.l22);
         let w = R::wide_add(R::wide_zero(), b.z);
         let w = R::wide_sub_prod(w, self.l31, y1);
         let w = R::wide_sub_prod(w, self.l32, y2);
         let f3 = R::wide_rescale(w);
-        let y3 = f3 / self.l33;
-        let x3 = y3 / self.l33;
+        let y3 = R::div(f3, self.l33);
+        let x3 = R::div(y3, self.l33);
         let w = R::wide_add(R::wide_zero(), y2);
         let w = R::wide_sub_prod(w, self.l32, x3);
         let g2 = R::wide_rescale(w);
-        let x2 = g2 / self.l22;
+        let x2 = R::div(g2, self.l22);
         let w = R::wide_add(R::wide_zero(), y1);
         let w = R::wide_sub_prod(w, self.l21, x2);
         let w = R::wide_sub_prod(w, self.l31, x3);
         let g1 = R::wide_rescale(w);
-        let x1 = g1 / self.l11;
+        let x1 = R::div(g1, self.l11);
         Vector3 { x: x1, y: x2, z: x3 }
     }
 
@@ -441,16 +439,16 @@ pub impl Cholesky3Impl<
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l21, q11);
         let t21 = R::wide_rescale(w);
-        let q21 = t21 / self.l22;
+        let q21 = R::div(t21, self.l22);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l31, q11);
         let w = R::wide_sub_prod(w, self.l32, q21);
         let t31 = R::wide_rescale(w);
-        let q31 = t31 / self.l33;
+        let q31 = R::div(t31, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l32, q22);
         let t32 = R::wide_rescale(w);
-        let q32 = t32 / self.l33;
+        let q32 = R::div(t32, self.l33);
         let w = R::wide_zero();
         let w = R::wide_add_prod(w, q11, q11);
         let w = R::wide_add_prod(w, q21, q21);
@@ -495,7 +493,6 @@ pub impl Cholesky4Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -528,9 +525,9 @@ pub impl Cholesky4Impl<
             return None;
         }
         let l11 = R::sqrt(p1);
-        let l21 = a.m21 / l11;
-        let l31 = a.m31 / l11;
-        let l41 = a.m41 / l11;
+        let l21 = R::div(a.m21, l11);
+        let l31 = R::div(a.m31, l11);
+        let l41 = R::div(a.m41, l11);
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
@@ -541,11 +538,11 @@ pub impl Cholesky4Impl<
         let w = R::wide_add(R::wide_zero(), a.m32);
         let w = R::wide_sub_prod(w, l31, l21);
         let n32 = R::wide_rescale(w);
-        let l32 = n32 / l22;
+        let l32 = R::div(n32, l22);
         let w = R::wide_add(R::wide_zero(), a.m42);
         let w = R::wide_sub_prod(w, l41, l21);
         let n42 = R::wide_rescale(w);
-        let l42 = n42 / l22;
+        let l42 = R::div(n42, l22);
         let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
@@ -558,7 +555,7 @@ pub impl Cholesky4Impl<
         let w = R::wide_sub_prod(w, l41, l31);
         let w = R::wide_sub_prod(w, l42, l32);
         let n43 = R::wide_rescale(w);
-        let l43 = n43 / l33;
+        let l43 = R::div(n43, l33);
         let w = R::wide_add(R::wide_zero(), a.m44);
         let w = R::wide_sub_prod(w, l41, l41);
         let w = R::wide_sub_prod(w, l42, l42);
@@ -606,38 +603,38 @@ pub impl Cholesky4Impl<
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
     fn solve(self: Cholesky4<T>, b: Vector4<T>) -> Vector4<T> {
-        let y1 = b.x / self.l11;
+        let y1 = R::div(b.x, self.l11);
         let w = R::wide_add(R::wide_zero(), b.y);
         let w = R::wide_sub_prod(w, self.l21, y1);
         let f2 = R::wide_rescale(w);
-        let y2 = f2 / self.l22;
+        let y2 = R::div(f2, self.l22);
         let w = R::wide_add(R::wide_zero(), b.z);
         let w = R::wide_sub_prod(w, self.l31, y1);
         let w = R::wide_sub_prod(w, self.l32, y2);
         let f3 = R::wide_rescale(w);
-        let y3 = f3 / self.l33;
+        let y3 = R::div(f3, self.l33);
         let w = R::wide_add(R::wide_zero(), b.w);
         let w = R::wide_sub_prod(w, self.l41, y1);
         let w = R::wide_sub_prod(w, self.l42, y2);
         let w = R::wide_sub_prod(w, self.l43, y3);
         let f4 = R::wide_rescale(w);
-        let y4 = f4 / self.l44;
-        let x4 = y4 / self.l44;
+        let y4 = R::div(f4, self.l44);
+        let x4 = R::div(y4, self.l44);
         let w = R::wide_add(R::wide_zero(), y3);
         let w = R::wide_sub_prod(w, self.l43, x4);
         let g3 = R::wide_rescale(w);
-        let x3 = g3 / self.l33;
+        let x3 = R::div(g3, self.l33);
         let w = R::wide_add(R::wide_zero(), y2);
         let w = R::wide_sub_prod(w, self.l32, x3);
         let w = R::wide_sub_prod(w, self.l42, x4);
         let g2 = R::wide_rescale(w);
-        let x2 = g2 / self.l22;
+        let x2 = R::div(g2, self.l22);
         let w = R::wide_add(R::wide_zero(), y1);
         let w = R::wide_sub_prod(w, self.l21, x2);
         let w = R::wide_sub_prod(w, self.l31, x3);
         let w = R::wide_sub_prod(w, self.l41, x4);
         let g1 = R::wide_rescale(w);
-        let x1 = g1 / self.l11;
+        let x1 = R::div(g1, self.l11);
         Vector4 { x: x1, y: x2, z: x3, w: x4 }
     }
 
@@ -663,31 +660,31 @@ pub impl Cholesky4Impl<
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l21, q11);
         let t21 = R::wide_rescale(w);
-        let q21 = t21 / self.l22;
+        let q21 = R::div(t21, self.l22);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l31, q11);
         let w = R::wide_sub_prod(w, self.l32, q21);
         let t31 = R::wide_rescale(w);
-        let q31 = t31 / self.l33;
+        let q31 = R::div(t31, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l41, q11);
         let w = R::wide_sub_prod(w, self.l42, q21);
         let w = R::wide_sub_prod(w, self.l43, q31);
         let t41 = R::wide_rescale(w);
-        let q41 = t41 / self.l44;
+        let q41 = R::div(t41, self.l44);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l32, q22);
         let t32 = R::wide_rescale(w);
-        let q32 = t32 / self.l33;
+        let q32 = R::div(t32, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l42, q22);
         let w = R::wide_sub_prod(w, self.l43, q32);
         let t42 = R::wide_rescale(w);
-        let q42 = t42 / self.l44;
+        let q42 = R::div(t42, self.l44);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l43, q33);
         let t43 = R::wide_rescale(w);
-        let q43 = t43 / self.l44;
+        let q43 = R::div(t43, self.l44);
         let w = R::wide_zero();
         let w = R::wide_add_prod(w, q11, q11);
         let w = R::wide_add_prod(w, q21, q21);
@@ -765,7 +762,6 @@ pub impl Cholesky6Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -798,11 +794,11 @@ pub impl Cholesky6Impl<
             return None;
         }
         let l11 = R::sqrt(p1);
-        let l21 = a.m11.m21 / l11;
-        let l31 = a.m11.m31 / l11;
-        let l41 = a.m21.m11 / l11;
-        let l51 = a.m21.m21 / l11;
-        let l61 = a.m21.m31 / l11;
+        let l21 = R::div(a.m11.m21, l11);
+        let l31 = R::div(a.m11.m31, l11);
+        let l41 = R::div(a.m21.m11, l11);
+        let l51 = R::div(a.m21.m21, l11);
+        let l61 = R::div(a.m21.m31, l11);
         let w = R::wide_add(R::wide_zero(), a.m11.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
@@ -813,19 +809,19 @@ pub impl Cholesky6Impl<
         let w = R::wide_add(R::wide_zero(), a.m11.m32);
         let w = R::wide_sub_prod(w, l31, l21);
         let n32 = R::wide_rescale(w);
-        let l32 = n32 / l22;
+        let l32 = R::div(n32, l22);
         let w = R::wide_add(R::wide_zero(), a.m21.m12);
         let w = R::wide_sub_prod(w, l41, l21);
         let n42 = R::wide_rescale(w);
-        let l42 = n42 / l22;
+        let l42 = R::div(n42, l22);
         let w = R::wide_add(R::wide_zero(), a.m21.m22);
         let w = R::wide_sub_prod(w, l51, l21);
         let n52 = R::wide_rescale(w);
-        let l52 = n52 / l22;
+        let l52 = R::div(n52, l22);
         let w = R::wide_add(R::wide_zero(), a.m21.m32);
         let w = R::wide_sub_prod(w, l61, l21);
         let n62 = R::wide_rescale(w);
-        let l62 = n62 / l22;
+        let l62 = R::div(n62, l22);
         let w = R::wide_add(R::wide_zero(), a.m11.m33);
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
@@ -838,17 +834,17 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l41, l31);
         let w = R::wide_sub_prod(w, l42, l32);
         let n43 = R::wide_rescale(w);
-        let l43 = n43 / l33;
+        let l43 = R::div(n43, l33);
         let w = R::wide_add(R::wide_zero(), a.m21.m23);
         let w = R::wide_sub_prod(w, l51, l31);
         let w = R::wide_sub_prod(w, l52, l32);
         let n53 = R::wide_rescale(w);
-        let l53 = n53 / l33;
+        let l53 = R::div(n53, l33);
         let w = R::wide_add(R::wide_zero(), a.m21.m33);
         let w = R::wide_sub_prod(w, l61, l31);
         let w = R::wide_sub_prod(w, l62, l32);
         let n63 = R::wide_rescale(w);
-        let l63 = n63 / l33;
+        let l63 = R::div(n63, l33);
         let w = R::wide_add(R::wide_zero(), a.m22.m11);
         let w = R::wide_sub_prod(w, l41, l41);
         let w = R::wide_sub_prod(w, l42, l42);
@@ -863,13 +859,13 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l52, l42);
         let w = R::wide_sub_prod(w, l53, l43);
         let n54 = R::wide_rescale(w);
-        let l54 = n54 / l44;
+        let l54 = R::div(n54, l44);
         let w = R::wide_add(R::wide_zero(), a.m22.m31);
         let w = R::wide_sub_prod(w, l61, l41);
         let w = R::wide_sub_prod(w, l62, l42);
         let w = R::wide_sub_prod(w, l63, l43);
         let n64 = R::wide_rescale(w);
-        let l64 = n64 / l44;
+        let l64 = R::div(n64, l44);
         let w = R::wide_add(R::wide_zero(), a.m22.m22);
         let w = R::wide_sub_prod(w, l51, l51);
         let w = R::wide_sub_prod(w, l52, l52);
@@ -886,7 +882,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l63, l53);
         let w = R::wide_sub_prod(w, l64, l54);
         let n65 = R::wide_rescale(w);
-        let l65 = n65 / l55;
+        let l65 = R::div(n65, l55);
         let w = R::wide_add(R::wide_zero(), a.m22.m33);
         let w = R::wide_sub_prod(w, l61, l61);
         let w = R::wide_sub_prod(w, l62, l62);
@@ -988,29 +984,29 @@ pub impl Cholesky6Impl<
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
     fn solve(self: Cholesky6<T>, b: Vector6<T>) -> Vector6<T> {
-        let y1 = b.a.x / self.l11;
+        let y1 = R::div(b.a.x, self.l11);
         let w = R::wide_add(R::wide_zero(), b.a.y);
         let w = R::wide_sub_prod(w, self.l21, y1);
         let f2 = R::wide_rescale(w);
-        let y2 = f2 / self.l22;
+        let y2 = R::div(f2, self.l22);
         let w = R::wide_add(R::wide_zero(), b.a.z);
         let w = R::wide_sub_prod(w, self.l31, y1);
         let w = R::wide_sub_prod(w, self.l32, y2);
         let f3 = R::wide_rescale(w);
-        let y3 = f3 / self.l33;
+        let y3 = R::div(f3, self.l33);
         let w = R::wide_add(R::wide_zero(), b.b.x);
         let w = R::wide_sub_prod(w, self.l41, y1);
         let w = R::wide_sub_prod(w, self.l42, y2);
         let w = R::wide_sub_prod(w, self.l43, y3);
         let f4 = R::wide_rescale(w);
-        let y4 = f4 / self.l44;
+        let y4 = R::div(f4, self.l44);
         let w = R::wide_add(R::wide_zero(), b.b.y);
         let w = R::wide_sub_prod(w, self.l51, y1);
         let w = R::wide_sub_prod(w, self.l52, y2);
         let w = R::wide_sub_prod(w, self.l53, y3);
         let w = R::wide_sub_prod(w, self.l54, y4);
         let f5 = R::wide_rescale(w);
-        let y5 = f5 / self.l55;
+        let y5 = R::div(f5, self.l55);
         let w = R::wide_add(R::wide_zero(), b.b.z);
         let w = R::wide_sub_prod(w, self.l61, y1);
         let w = R::wide_sub_prod(w, self.l62, y2);
@@ -1018,30 +1014,30 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, self.l64, y4);
         let w = R::wide_sub_prod(w, self.l65, y5);
         let f6 = R::wide_rescale(w);
-        let y6 = f6 / self.l66;
-        let x6 = y6 / self.l66;
+        let y6 = R::div(f6, self.l66);
+        let x6 = R::div(y6, self.l66);
         let w = R::wide_add(R::wide_zero(), y5);
         let w = R::wide_sub_prod(w, self.l65, x6);
         let g5 = R::wide_rescale(w);
-        let x5 = g5 / self.l55;
+        let x5 = R::div(g5, self.l55);
         let w = R::wide_add(R::wide_zero(), y4);
         let w = R::wide_sub_prod(w, self.l54, x5);
         let w = R::wide_sub_prod(w, self.l64, x6);
         let g4 = R::wide_rescale(w);
-        let x4 = g4 / self.l44;
+        let x4 = R::div(g4, self.l44);
         let w = R::wide_add(R::wide_zero(), y3);
         let w = R::wide_sub_prod(w, self.l43, x4);
         let w = R::wide_sub_prod(w, self.l53, x5);
         let w = R::wide_sub_prod(w, self.l63, x6);
         let g3 = R::wide_rescale(w);
-        let x3 = g3 / self.l33;
+        let x3 = R::div(g3, self.l33);
         let w = R::wide_add(R::wide_zero(), y2);
         let w = R::wide_sub_prod(w, self.l32, x3);
         let w = R::wide_sub_prod(w, self.l42, x4);
         let w = R::wide_sub_prod(w, self.l52, x5);
         let w = R::wide_sub_prod(w, self.l62, x6);
         let g2 = R::wide_rescale(w);
-        let x2 = g2 / self.l22;
+        let x2 = R::div(g2, self.l22);
         let w = R::wide_add(R::wide_zero(), y1);
         let w = R::wide_sub_prod(w, self.l21, x2);
         let w = R::wide_sub_prod(w, self.l31, x3);
@@ -1049,7 +1045,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, self.l51, x5);
         let w = R::wide_sub_prod(w, self.l61, x6);
         let g1 = R::wide_rescale(w);
-        let x1 = g1 / self.l11;
+        let x1 = R::div(g1, self.l11);
         Vector6 { a: Vector3 { x: x1, y: x2, z: x3 }, b: Vector3 { x: x4, y: x5, z: x6 } }
     }
 
@@ -1077,25 +1073,25 @@ pub impl Cholesky6Impl<
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l21, q11);
         let t21 = R::wide_rescale(w);
-        let q21 = t21 / self.l22;
+        let q21 = R::div(t21, self.l22);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l31, q11);
         let w = R::wide_sub_prod(w, self.l32, q21);
         let t31 = R::wide_rescale(w);
-        let q31 = t31 / self.l33;
+        let q31 = R::div(t31, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l41, q11);
         let w = R::wide_sub_prod(w, self.l42, q21);
         let w = R::wide_sub_prod(w, self.l43, q31);
         let t41 = R::wide_rescale(w);
-        let q41 = t41 / self.l44;
+        let q41 = R::div(t41, self.l44);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l51, q11);
         let w = R::wide_sub_prod(w, self.l52, q21);
         let w = R::wide_sub_prod(w, self.l53, q31);
         let w = R::wide_sub_prod(w, self.l54, q41);
         let t51 = R::wide_rescale(w);
-        let q51 = t51 / self.l55;
+        let q51 = R::div(t51, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l61, q11);
         let w = R::wide_sub_prod(w, self.l62, q21);
@@ -1103,57 +1099,57 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, self.l64, q41);
         let w = R::wide_sub_prod(w, self.l65, q51);
         let t61 = R::wide_rescale(w);
-        let q61 = t61 / self.l66;
+        let q61 = R::div(t61, self.l66);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l32, q22);
         let t32 = R::wide_rescale(w);
-        let q32 = t32 / self.l33;
+        let q32 = R::div(t32, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l42, q22);
         let w = R::wide_sub_prod(w, self.l43, q32);
         let t42 = R::wide_rescale(w);
-        let q42 = t42 / self.l44;
+        let q42 = R::div(t42, self.l44);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l52, q22);
         let w = R::wide_sub_prod(w, self.l53, q32);
         let w = R::wide_sub_prod(w, self.l54, q42);
         let t52 = R::wide_rescale(w);
-        let q52 = t52 / self.l55;
+        let q52 = R::div(t52, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l62, q22);
         let w = R::wide_sub_prod(w, self.l63, q32);
         let w = R::wide_sub_prod(w, self.l64, q42);
         let w = R::wide_sub_prod(w, self.l65, q52);
         let t62 = R::wide_rescale(w);
-        let q62 = t62 / self.l66;
+        let q62 = R::div(t62, self.l66);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l43, q33);
         let t43 = R::wide_rescale(w);
-        let q43 = t43 / self.l44;
+        let q43 = R::div(t43, self.l44);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l53, q33);
         let w = R::wide_sub_prod(w, self.l54, q43);
         let t53 = R::wide_rescale(w);
-        let q53 = t53 / self.l55;
+        let q53 = R::div(t53, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l63, q33);
         let w = R::wide_sub_prod(w, self.l64, q43);
         let w = R::wide_sub_prod(w, self.l65, q53);
         let t63 = R::wide_rescale(w);
-        let q63 = t63 / self.l66;
+        let q63 = R::div(t63, self.l66);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l54, q44);
         let t54 = R::wide_rescale(w);
-        let q54 = t54 / self.l55;
+        let q54 = R::div(t54, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l64, q44);
         let w = R::wide_sub_prod(w, self.l65, q54);
         let t64 = R::wide_rescale(w);
-        let q64 = t64 / self.l66;
+        let q64 = R::div(t64, self.l66);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l65, q55);
         let t65 = R::wide_rescale(w);
-        let q65 = t65 / self.l66;
+        let q65 = R::div(t65, self.l66);
         let w = R::wide_zero();
         let w = R::wide_add_prod(w, q11, q11);
         let w = R::wide_add_prod(w, q21, q21);

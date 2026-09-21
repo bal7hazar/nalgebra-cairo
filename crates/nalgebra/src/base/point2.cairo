@@ -120,7 +120,6 @@ pub impl Point2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -162,7 +161,7 @@ pub impl Point2Impl<
         if v.z == R::ZERO {
             None
         } else {
-            Some(Point2 { x: v.x / v.z, y: v.y / v.z })
+            Some(Point2 { x: R::div(v.x, v.z), y: R::div(v.y, v.z) })
         }
     }
 
@@ -188,7 +187,7 @@ pub impl Point2Impl<
 
     #[inline(always)]
     fn unscale(self: Point2<T>, k: T) -> Point2<T> {
-        Point2 { x: self.x / k, y: self.y / k }
+        Point2 { x: R::div(self.x, k), y: R::div(self.y, k) }
     }
 
     #[inline(always)]
@@ -271,10 +270,10 @@ pub impl Point2MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Point2<T>,
 }
 
 /// `p /= k` for a scalar `k`: `unscale` in place. Upstream: `DivAssign<T>`.
-pub impl Point2DivAssign<T, +Div<T>, +Copy<T>, +Drop<T>> of DivAssign<Point2<T>, T> {
+pub impl Point2DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Point2<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Point2<T>, rhs: T) {
-        self = Point2 { x: self.x / rhs, y: self.y / rhs };
+        self = Point2 { x: R::div(self.x, rhs), y: R::div(self.y, rhs) };
     }
 }
 

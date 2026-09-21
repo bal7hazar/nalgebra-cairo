@@ -48,7 +48,6 @@ pub impl Lu2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -93,7 +92,7 @@ pub impl Lu2Impl<
             a22 = t;
         }
         if piv != R::ZERO {
-            let l = a21 / a11;
+            let l = R::div(a21, a11);
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
             a21 = l;
@@ -191,8 +190,8 @@ pub impl Lu2Impl<
         let pb = Self::permute(self, b);
         let y1 = pb.x;
         let y2 = R::mul_add(-self.lu.m21, y1, pb.y);
-        let x2 = y2 / self.lu.m22;
-        let x1 = R::mul_add(-self.lu.m12, x2, y1) / self.lu.m11;
+        let x2 = R::div(y2, self.lu.m22);
+        let x1 = R::div(R::mul_add(-self.lu.m12, x2, y1), self.lu.m11);
         Some(Vector2 { x: x1, y: x2 })
     }
 
@@ -218,10 +217,12 @@ pub impl Lu2Impl<
             return None;
         }
         let y21 = -self.lu.m21;
-        let x21 = y21 / self.lu.m22;
-        let x11 = R::mul_add(-self.lu.m12, x21, R::ONE) / self.lu.m11;
-        let x22 = R::ONE / self.lu.m22;
-        let x12 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22)) / self.lu.m11;
+        let x21 = R::div(y21, self.lu.m22);
+        let x11 = R::div(R::mul_add(-self.lu.m12, x21, R::ONE), self.lu.m11);
+        let x22 = R::div(R::ONE, self.lu.m22);
+        let x12 = R::div(
+            R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22)), self.lu.m11,
+        );
         let mut c11 = x11;
         let mut c12 = x12;
         let mut c21 = x21;
@@ -285,7 +286,6 @@ pub impl Matrix2LuImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

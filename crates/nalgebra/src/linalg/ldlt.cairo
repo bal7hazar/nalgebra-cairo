@@ -170,7 +170,6 @@ pub impl Ldlt2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -209,7 +208,7 @@ pub impl Ldlt2Impl<
             return None;
         }
         let n21 = a.m12;
-        let l21 = n21 / d1;
+        let l21 = R::div(n21, d1);
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
@@ -248,8 +247,8 @@ pub impl Ldlt2Impl<
         let w = R::wide_add(R::wide_zero(), b.y);
         let w = R::wide_sub_prod(w, self.l21, y1);
         let y2 = R::wide_rescale(w);
-        let z1 = y1 / self.d.x;
-        let z2 = y2 / self.d.y;
+        let z1 = R::div(y1, self.d.x);
+        let z2 = R::div(y2, self.d.y);
         let x2 = z2;
         let w = R::wide_add(R::wide_zero(), z1);
         let w = R::wide_sub_prod(w, self.l21, x2);
@@ -271,7 +270,7 @@ pub impl Ldlt2Impl<
     fn inverse(self: Ldlt2<T>) -> SymMatrix2<T> {
         let q21 = -self.l21;
         let s11 = R::recip(self.d.x);
-        let s21 = q21 / self.d.y;
+        let s21 = R::div(q21, self.d.y);
         let s22 = R::recip(self.d.y);
         let w = R::wide_zero();
         let w = R::wide_add(w, s11);
@@ -304,7 +303,6 @@ pub impl Ldlt3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -343,9 +341,9 @@ pub impl Ldlt3Impl<
             return None;
         }
         let n21 = a.m12;
-        let l21 = n21 / d1;
+        let l21 = R::div(n21, d1);
         let n31 = a.m13;
-        let l31 = n31 / d1;
+        let l31 = R::div(n31, d1);
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
@@ -355,7 +353,7 @@ pub impl Ldlt3Impl<
         let w = R::wide_add(R::wide_zero(), a.m23);
         let w = R::wide_sub_prod(w, l31, n21);
         let n32 = R::wide_rescale(w);
-        let l32 = n32 / d2;
+        let l32 = R::div(n32, d2);
         let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, n31);
         let w = R::wide_sub_prod(w, l32, n32);
@@ -409,9 +407,9 @@ pub impl Ldlt3Impl<
         let w = R::wide_sub_prod(w, self.l31, y1);
         let w = R::wide_sub_prod(w, self.l32, y2);
         let y3 = R::wide_rescale(w);
-        let z1 = y1 / self.d.x;
-        let z2 = y2 / self.d.y;
-        let z3 = y3 / self.d.z;
+        let z1 = R::div(y1, self.d.x);
+        let z2 = R::div(y2, self.d.y);
+        let z3 = R::div(y3, self.d.z);
         let x3 = z3;
         let w = R::wide_add(R::wide_zero(), z2);
         let w = R::wide_sub_prod(w, self.l32, x3);
@@ -441,10 +439,10 @@ pub impl Ldlt3Impl<
         let q31 = R::wide_rescale(w);
         let q32 = -self.l32;
         let s11 = R::recip(self.d.x);
-        let s21 = q21 / self.d.y;
-        let s31 = q31 / self.d.z;
+        let s21 = R::div(q21, self.d.y);
+        let s31 = R::div(q31, self.d.z);
         let s22 = R::recip(self.d.y);
-        let s32 = q32 / self.d.z;
+        let s32 = R::div(q32, self.d.z);
         let s33 = R::recip(self.d.z);
         let w = R::wide_zero();
         let w = R::wide_add(w, s11);
@@ -487,7 +485,6 @@ pub impl Ldlt4Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -528,11 +525,11 @@ pub impl Ldlt4Impl<
             return None;
         }
         let n21 = a.m21;
-        let l21 = n21 / d1;
+        let l21 = R::div(n21, d1);
         let n31 = a.m31;
-        let l31 = n31 / d1;
+        let l31 = R::div(n31, d1);
         let n41 = a.m41;
-        let l41 = n41 / d1;
+        let l41 = R::div(n41, d1);
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
@@ -542,11 +539,11 @@ pub impl Ldlt4Impl<
         let w = R::wide_add(R::wide_zero(), a.m32);
         let w = R::wide_sub_prod(w, l31, n21);
         let n32 = R::wide_rescale(w);
-        let l32 = n32 / d2;
+        let l32 = R::div(n32, d2);
         let w = R::wide_add(R::wide_zero(), a.m42);
         let w = R::wide_sub_prod(w, l41, n21);
         let n42 = R::wide_rescale(w);
-        let l42 = n42 / d2;
+        let l42 = R::div(n42, d2);
         let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, n31);
         let w = R::wide_sub_prod(w, l32, n32);
@@ -558,7 +555,7 @@ pub impl Ldlt4Impl<
         let w = R::wide_sub_prod(w, l41, n31);
         let w = R::wide_sub_prod(w, l42, n32);
         let n43 = R::wide_rescale(w);
-        let l43 = n43 / d3;
+        let l43 = R::div(n43, d3);
         let w = R::wide_add(R::wide_zero(), a.m44);
         let w = R::wide_sub_prod(w, l41, n41);
         let w = R::wide_sub_prod(w, l42, n42);
@@ -625,10 +622,10 @@ pub impl Ldlt4Impl<
         let w = R::wide_sub_prod(w, self.l42, y2);
         let w = R::wide_sub_prod(w, self.l43, y3);
         let y4 = R::wide_rescale(w);
-        let z1 = y1 / self.d.x;
-        let z2 = y2 / self.d.y;
-        let z3 = y3 / self.d.z;
-        let z4 = y4 / self.d.w;
+        let z1 = R::div(y1, self.d.x);
+        let z2 = R::div(y2, self.d.y);
+        let z3 = R::div(y3, self.d.z);
+        let z4 = R::div(y4, self.d.w);
         let x4 = z4;
         let w = R::wide_add(R::wide_zero(), z3);
         let w = R::wide_sub_prod(w, self.l43, x4);
@@ -671,14 +668,14 @@ pub impl Ldlt4Impl<
         let q42 = R::wide_rescale(w);
         let q43 = -self.l43;
         let s11 = R::recip(self.d.x);
-        let s21 = q21 / self.d.y;
-        let s31 = q31 / self.d.z;
-        let s41 = q41 / self.d.w;
+        let s21 = R::div(q21, self.d.y);
+        let s31 = R::div(q31, self.d.z);
+        let s41 = R::div(q41, self.d.w);
         let s22 = R::recip(self.d.y);
-        let s32 = q32 / self.d.z;
-        let s42 = q42 / self.d.w;
+        let s32 = R::div(q32, self.d.z);
+        let s42 = R::div(q42, self.d.w);
         let s33 = R::recip(self.d.z);
-        let s43 = q43 / self.d.w;
+        let s43 = R::div(q43, self.d.w);
         let s44 = R::recip(self.d.w);
         let w = R::wide_zero();
         let w = R::wide_add(w, s11);
@@ -754,7 +751,6 @@ pub impl Ldlt6Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -795,15 +791,15 @@ pub impl Ldlt6Impl<
             return None;
         }
         let n21 = a.m11.m21;
-        let l21 = n21 / d1;
+        let l21 = R::div(n21, d1);
         let n31 = a.m11.m31;
-        let l31 = n31 / d1;
+        let l31 = R::div(n31, d1);
         let n41 = a.m21.m11;
-        let l41 = n41 / d1;
+        let l41 = R::div(n41, d1);
         let n51 = a.m21.m21;
-        let l51 = n51 / d1;
+        let l51 = R::div(n51, d1);
         let n61 = a.m21.m31;
-        let l61 = n61 / d1;
+        let l61 = R::div(n61, d1);
         let w = R::wide_add(R::wide_zero(), a.m11.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
@@ -813,19 +809,19 @@ pub impl Ldlt6Impl<
         let w = R::wide_add(R::wide_zero(), a.m11.m32);
         let w = R::wide_sub_prod(w, l31, n21);
         let n32 = R::wide_rescale(w);
-        let l32 = n32 / d2;
+        let l32 = R::div(n32, d2);
         let w = R::wide_add(R::wide_zero(), a.m21.m12);
         let w = R::wide_sub_prod(w, l41, n21);
         let n42 = R::wide_rescale(w);
-        let l42 = n42 / d2;
+        let l42 = R::div(n42, d2);
         let w = R::wide_add(R::wide_zero(), a.m21.m22);
         let w = R::wide_sub_prod(w, l51, n21);
         let n52 = R::wide_rescale(w);
-        let l52 = n52 / d2;
+        let l52 = R::div(n52, d2);
         let w = R::wide_add(R::wide_zero(), a.m21.m32);
         let w = R::wide_sub_prod(w, l61, n21);
         let n62 = R::wide_rescale(w);
-        let l62 = n62 / d2;
+        let l62 = R::div(n62, d2);
         let w = R::wide_add(R::wide_zero(), a.m11.m33);
         let w = R::wide_sub_prod(w, l31, n31);
         let w = R::wide_sub_prod(w, l32, n32);
@@ -837,17 +833,17 @@ pub impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, l41, n31);
         let w = R::wide_sub_prod(w, l42, n32);
         let n43 = R::wide_rescale(w);
-        let l43 = n43 / d3;
+        let l43 = R::div(n43, d3);
         let w = R::wide_add(R::wide_zero(), a.m21.m23);
         let w = R::wide_sub_prod(w, l51, n31);
         let w = R::wide_sub_prod(w, l52, n32);
         let n53 = R::wide_rescale(w);
-        let l53 = n53 / d3;
+        let l53 = R::div(n53, d3);
         let w = R::wide_add(R::wide_zero(), a.m21.m33);
         let w = R::wide_sub_prod(w, l61, n31);
         let w = R::wide_sub_prod(w, l62, n32);
         let n63 = R::wide_rescale(w);
-        let l63 = n63 / d3;
+        let l63 = R::div(n63, d3);
         let w = R::wide_add(R::wide_zero(), a.m22.m11);
         let w = R::wide_sub_prod(w, l41, n41);
         let w = R::wide_sub_prod(w, l42, n42);
@@ -861,13 +857,13 @@ pub impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, l52, n42);
         let w = R::wide_sub_prod(w, l53, n43);
         let n54 = R::wide_rescale(w);
-        let l54 = n54 / d4;
+        let l54 = R::div(n54, d4);
         let w = R::wide_add(R::wide_zero(), a.m22.m31);
         let w = R::wide_sub_prod(w, l61, n41);
         let w = R::wide_sub_prod(w, l62, n42);
         let w = R::wide_sub_prod(w, l63, n43);
         let n64 = R::wide_rescale(w);
-        let l64 = n64 / d4;
+        let l64 = R::div(n64, d4);
         let w = R::wide_add(R::wide_zero(), a.m22.m22);
         let w = R::wide_sub_prod(w, l51, n51);
         let w = R::wide_sub_prod(w, l52, n52);
@@ -883,7 +879,7 @@ pub impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, l63, n53);
         let w = R::wide_sub_prod(w, l64, n54);
         let n65 = R::wide_rescale(w);
-        let l65 = n65 / d5;
+        let l65 = R::div(n65, d5);
         let w = R::wide_add(R::wide_zero(), a.m22.m33);
         let w = R::wide_sub_prod(w, l61, n61);
         let w = R::wide_sub_prod(w, l62, n62);
@@ -1014,12 +1010,12 @@ pub impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, self.l64, y4);
         let w = R::wide_sub_prod(w, self.l65, y5);
         let y6 = R::wide_rescale(w);
-        let z1 = y1 / self.d.a.x;
-        let z2 = y2 / self.d.a.y;
-        let z3 = y3 / self.d.a.z;
-        let z4 = y4 / self.d.b.x;
-        let z5 = y5 / self.d.b.y;
-        let z6 = y6 / self.d.b.z;
+        let z1 = R::div(y1, self.d.a.x);
+        let z2 = R::div(y2, self.d.a.y);
+        let z3 = R::div(y3, self.d.a.z);
+        let z4 = R::div(y4, self.d.b.x);
+        let z5 = R::div(y5, self.d.b.y);
+        let z6 = R::div(y6, self.d.b.z);
         let x6 = z6;
         let w = R::wide_add(R::wide_zero(), z5);
         let w = R::wide_sub_prod(w, self.l65, x6);
@@ -1107,25 +1103,25 @@ pub impl Ldlt6Impl<
         let q64 = R::wide_rescale(w);
         let q65 = -self.l65;
         let s11 = R::recip(self.d.a.x);
-        let s21 = q21 / self.d.a.y;
-        let s31 = q31 / self.d.a.z;
-        let s41 = q41 / self.d.b.x;
-        let s51 = q51 / self.d.b.y;
-        let s61 = q61 / self.d.b.z;
+        let s21 = R::div(q21, self.d.a.y);
+        let s31 = R::div(q31, self.d.a.z);
+        let s41 = R::div(q41, self.d.b.x);
+        let s51 = R::div(q51, self.d.b.y);
+        let s61 = R::div(q61, self.d.b.z);
         let s22 = R::recip(self.d.a.y);
-        let s32 = q32 / self.d.a.z;
-        let s42 = q42 / self.d.b.x;
-        let s52 = q52 / self.d.b.y;
-        let s62 = q62 / self.d.b.z;
+        let s32 = R::div(q32, self.d.a.z);
+        let s42 = R::div(q42, self.d.b.x);
+        let s52 = R::div(q52, self.d.b.y);
+        let s62 = R::div(q62, self.d.b.z);
         let s33 = R::recip(self.d.a.z);
-        let s43 = q43 / self.d.b.x;
-        let s53 = q53 / self.d.b.y;
-        let s63 = q63 / self.d.b.z;
+        let s43 = R::div(q43, self.d.b.x);
+        let s53 = R::div(q53, self.d.b.y);
+        let s63 = R::div(q63, self.d.b.z);
         let s44 = R::recip(self.d.b.x);
-        let s54 = q54 / self.d.b.y;
-        let s64 = q64 / self.d.b.z;
+        let s54 = R::div(q54, self.d.b.y);
+        let s64 = R::div(q64, self.d.b.z);
         let s55 = R::recip(self.d.b.y);
-        let s65 = q65 / self.d.b.z;
+        let s65 = R::div(q65, self.d.b.z);
         let s66 = R::recip(self.d.b.z);
         let w = R::wide_zero();
         let w = R::wide_add(w, s11);

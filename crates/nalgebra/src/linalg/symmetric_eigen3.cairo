@@ -69,7 +69,6 @@ impl Jacobi3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -106,7 +105,7 @@ impl Jacobi3Impl<
         } else {
             g
         };
-        let t = num / (h.abs() + R::norm2(h, g));
+        let t = R::div(num, h.abs() + R::norm2(h, g));
         let c = R::mul_add(t, t, R::ONE).inv_sqrt();
         (t, c, t * c)
     }
@@ -374,7 +373,6 @@ pub impl SymmetricEigen3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

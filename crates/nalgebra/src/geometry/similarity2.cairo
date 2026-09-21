@@ -48,7 +48,6 @@ pub impl Similarity2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
 > of Similarity2Trait<T> {
@@ -160,12 +159,12 @@ pub impl Similarity2Impl<
                 rotation: inv_iso.rotation,
                 translation: Translation2 {
                     vector: Vector2 {
-                        x: inv_iso.translation.vector.x / self.scaling,
-                        y: inv_iso.translation.vector.y / self.scaling,
+                        x: R::div(inv_iso.translation.vector.x, self.scaling),
+                        y: R::div(inv_iso.translation.vector.y, self.scaling),
                     },
                 },
             },
-            scaling: R::ONE / self.scaling,
+            scaling: R::div(R::ONE, self.scaling),
         }
     }
 
@@ -182,10 +181,10 @@ pub impl Similarity2Impl<
             isometry: Isometry2 {
                 rotation: self.isometry.rotation.rotation_to(other.isometry.rotation),
                 translation: Translation2 {
-                    vector: Vector2 { x: r.x / self.scaling, y: r.y / self.scaling },
+                    vector: Vector2 { x: R::div(r.x, self.scaling), y: R::div(r.y, self.scaling) },
                 },
             },
-            scaling: other.scaling / self.scaling,
+            scaling: R::div(other.scaling, self.scaling),
         }
     }
 
@@ -216,7 +215,7 @@ pub impl Similarity2Impl<
     #[inline(always)]
     fn inverse_transform_point(self: Similarity2<T>, p: Point2<T>) -> Point2<T> {
         let c = self.isometry.inverse_transform_point(p);
-        Point2 { x: c.x / self.scaling, y: c.y / self.scaling }
+        Point2 { x: R::div(c.x, self.scaling), y: R::div(c.y, self.scaling) }
     }
 
     /// `rotation⁻¹ · v / scaling`, one exact quotient per component. Upstream:
@@ -224,7 +223,7 @@ pub impl Similarity2Impl<
     #[inline(always)]
     fn inverse_transform_vector(self: Similarity2<T>, v: Vector2<T>) -> Vector2<T> {
         let c = self.isometry.inverse_transform_vector(v);
-        Vector2 { x: c.x / self.scaling, y: c.y / self.scaling }
+        Vector2 { x: R::div(c.x, self.scaling), y: R::div(c.y, self.scaling) }
     }
 
     /// `Translation(t) ∘ self`: the translation shifts exactly; scale and rotation are unchanged.
@@ -324,7 +323,6 @@ pub impl Similarity2AngleImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
 > of Similarity2AngleTrait<T> {
@@ -359,7 +357,6 @@ pub impl Similarity2Mul<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
 > of Mul<Similarity2<T>> {

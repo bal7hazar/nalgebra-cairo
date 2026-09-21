@@ -33,7 +33,6 @@ pub impl Qr4Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -111,7 +110,7 @@ pub impl Qr4Impl<
         if n == R::ZERO {
             Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO }
         } else {
-            Vector4 { x: v.x / n, y: v.y / n, z: v.z / n, w: v.w / n }
+            Vector4 { x: R::div(v.x, n), y: R::div(v.y, n), z: R::div(v.z, n), w: R::div(v.w, n) }
         }
     }
 
@@ -186,13 +185,13 @@ pub impl Qr4Impl<
     /// guarantees a nonzero diagonal. Two roundings per component: the numerator, accumulated
     /// exactly in `Real::Wide`, then the floor division. No upstream equivalent.
     fn back_substitute(self: Qr4<T>, y: Vector4<T>) -> Vector4<T> {
-        let x4 = y.w / self.r.m44;
-        let x3 = R::mul_add(-self.r.m34, x4, y.z) / self.r.m33;
+        let x4 = R::div(y.w, self.r.m44);
+        let x3 = R::div(R::mul_add(-self.r.m34, x4, y.z), self.r.m33);
         let w = R::wide_sub_prod(R::wide_add(R::wide_zero(), y.y), self.r.m23, x3);
-        let x2 = R::wide_rescale(R::wide_sub_prod(w, self.r.m24, x4)) / self.r.m22;
+        let x2 = R::div(R::wide_rescale(R::wide_sub_prod(w, self.r.m24, x4)), self.r.m22);
         let w = R::wide_sub_prod(R::wide_add(R::wide_zero(), y.x), self.r.m12, x2);
         let w = R::wide_sub_prod(w, self.r.m13, x3);
-        let x1 = R::wide_rescale(R::wide_sub_prod(w, self.r.m14, x4)) / self.r.m11;
+        let x1 = R::div(R::wide_rescale(R::wide_sub_prod(w, self.r.m14, x4)), self.r.m11);
         Vector4 { x: x1, y: x2, z: x3, w: x4 }
     }
 
@@ -224,7 +223,6 @@ pub impl Matrix4QrImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,

@@ -64,7 +64,6 @@ pub impl UnitQuaternionImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -322,9 +321,9 @@ pub impl UnitQuaternionImpl<
             let denom = d + d;
             UnitQuaternion {
                 quaternion: Quaternion {
-                    i: (m.m32 - m.m23) / denom,
-                    j: (m.m13 - m.m31) / denom,
-                    k: (m.m21 - m.m12) / denom,
+                    i: R::div(m.m32 - m.m23, denom),
+                    j: R::div(m.m13 - m.m31, denom),
+                    k: R::div(m.m21 - m.m12, denom),
                     w: d * R::HALF,
                 },
             }
@@ -334,9 +333,9 @@ pub impl UnitQuaternionImpl<
             UnitQuaternion {
                 quaternion: Quaternion {
                     i: d * R::HALF,
-                    j: (m.m12 + m.m21) / denom,
-                    k: (m.m13 + m.m31) / denom,
-                    w: (m.m32 - m.m23) / denom,
+                    j: R::div(m.m12 + m.m21, denom),
+                    k: R::div(m.m13 + m.m31, denom),
+                    w: R::div(m.m32 - m.m23, denom),
                 },
             }
         } else if m.m22 > m.m33 {
@@ -344,10 +343,10 @@ pub impl UnitQuaternionImpl<
             let denom = d + d;
             UnitQuaternion {
                 quaternion: Quaternion {
-                    i: (m.m12 + m.m21) / denom,
+                    i: R::div(m.m12 + m.m21, denom),
                     j: d * R::HALF,
-                    k: (m.m23 + m.m32) / denom,
-                    w: (m.m13 - m.m31) / denom,
+                    k: R::div(m.m23 + m.m32, denom),
+                    w: R::div(m.m13 - m.m31, denom),
                 },
             }
         } else {
@@ -355,10 +354,10 @@ pub impl UnitQuaternionImpl<
             let denom = d + d;
             UnitQuaternion {
                 quaternion: Quaternion {
-                    i: (m.m13 + m.m31) / denom,
-                    j: (m.m23 + m.m32) / denom,
+                    i: R::div(m.m13 + m.m31, denom),
+                    j: R::div(m.m23 + m.m32, denom),
                     k: d * R::HALF,
-                    w: (m.m21 - m.m12) / denom,
+                    w: R::div(m.m21 - m.m12, denom),
                 },
             }
         }
@@ -553,7 +552,6 @@ pub impl UnitQuaternionAngleImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -590,7 +588,7 @@ pub impl UnitQuaternionAngleImpl<
             return UnitQuaternionTrait::identity();
         }
         let (s, c) = Tr::sin_cos(n);
-        let f = s / n;
+        let f = R::div(s, n);
         UnitQuaternion { quaternion: Quaternion { i: h.x * f, j: h.y * f, k: h.z * f, w: c } }
     }
 
@@ -663,9 +661,13 @@ pub impl UnitQuaternionAngleImpl<
         let angle = half + half;
         // axis = imag / |imag| (sign-corrected), then scaled by the angle, as upstream.
         if R::is_negative(q.w) {
-            Vector3 { x: -q.i / n * angle, y: -q.j / n * angle, z: -q.k / n * angle }
+            Vector3 {
+                x: R::div(-q.i, n) * angle, y: R::div(-q.j, n) * angle, z: R::div(-q.k, n) * angle,
+            }
         } else {
-            Vector3 { x: q.i / n * angle, y: q.j / n * angle, z: q.k / n * angle }
+            Vector3 {
+                x: R::div(q.i, n) * angle, y: R::div(q.j, n) * angle, z: R::div(q.k, n) * angle,
+            }
         }
     }
 
@@ -791,8 +793,8 @@ pub impl UnitQuaternionAngleImpl<
         if shang <= epsilon {
             return None;
         }
-        let ta = Tr::sin((R::ONE - t) * hang) / shang;
-        let tb = Tr::sin(t * hang) / shang;
+        let ta = R::div(Tr::sin((R::ONE - t) * hang), shang);
+        let tb = R::div(Tr::sin(t * hang), shang);
         let s = self.quaternion;
         let q = Quaternion {
             i: R::sum_prod2(s.i, ta, o.i, tb),

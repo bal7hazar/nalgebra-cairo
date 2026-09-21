@@ -67,7 +67,6 @@ pub impl Isometry2Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
 > of Isometry2Trait<T> {
@@ -357,7 +356,7 @@ pub impl Isometry2Impl<
         let im = R::lerp(self.rotation.im, other.rotation.im, t);
         let n = R::norm2(re, im);
         Isometry2 {
-            rotation: UnitComplex { re: re / n, im: im / n },
+            rotation: UnitComplex { re: R::div(re, n), im: R::div(im, n) },
             translation: Translation2 {
                 vector: Vector2 {
                     x: R::lerp(self.translation.vector.x, other.translation.vector.x, t),
@@ -384,7 +383,6 @@ pub impl Isometry2AngleImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
 > of Isometry2AngleTrait<T> {
@@ -444,7 +442,6 @@ pub impl Isometry2Mul<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
 > of Mul<Isometry2<T>> {

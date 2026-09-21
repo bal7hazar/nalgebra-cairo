@@ -75,7 +75,6 @@ pub impl Svd3Impl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
@@ -126,8 +125,8 @@ pub impl Svd3Impl<
         let (c1, c2) = (ev.column1(), ev.column2());
         let n1 = R::norm3(c1.x, c1.y, c1.z);
         let n2 = R::norm3(c2.x, c2.y, c2.z);
-        let v1 = Vector3 { x: c1.x / n1, y: c1.y / n1, z: c1.z / n1 };
-        let v2 = Vector3 { x: c2.x / n2, y: c2.y / n2, z: c2.z / n2 };
+        let v1 = Vector3 { x: R::div(c1.x, n1), y: R::div(c1.y, n1), z: R::div(c1.z, n1) };
+        let v2 = Vector3 { x: R::div(c2.x, n2), y: R::div(c2.y, n2), z: R::div(c2.z, n2) };
         let v3 = v1.cross(v2);
         let (w1, w2, w3) = (matrix.mul_vec(v1), matrix.mul_vec(v2), matrix.mul_vec(v3));
         let s1 = R::norm3(w1.x, w1.y, w1.z);
@@ -172,7 +171,7 @@ pub impl Svd3Impl<
         let u1 = if s1 == R::ZERO {
             Vector3 { x: R::ONE, y: R::ZERO, z: R::ZERO }
         } else {
-            Vector3 { x: w1.x / s1, y: w1.y / s1, z: w1.z / s1 }
+            Vector3 { x: R::div(w1.x, s1), y: R::div(w1.y, s1), z: R::div(w1.z, s1) }
         };
         // `w2` stripped of its `u1` component: one fused dot and one fused `mul_add` per
         // component, so `u2` is orthogonal to `u1` to within the final normalisation alone.
@@ -187,7 +186,7 @@ pub impl Svd3Impl<
             let (basis, _) = u1.orthonormal_basis();
             basis
         } else {
-            Vector3 { x: g.x / n, y: g.y / n, z: g.z / n }
+            Vector3 { x: R::div(g.x, n), y: R::div(g.y, n), z: R::div(g.z, n) }
         };
         let c = u1.cross(u2);
         let along = R::sum_prod3(c.x, w3.x, c.y, w3.y, c.z, w3.z);
@@ -335,7 +334,7 @@ pub impl Svd3Impl<
     #[inline(always)]
     fn divided(y: T, s: T, eps: T) -> T {
         if s > eps {
-            y / s
+            R::div(y, s)
         } else {
             R::ZERO
         }
@@ -369,7 +368,6 @@ pub impl Matrix3SvdImpl<
     +Add<T>,
     +Sub<T>,
     +Mul<T>,
-    +Div<T>,
     +Neg<T>,
     +PartialEq<T>,
     +PartialOrd<T>,
