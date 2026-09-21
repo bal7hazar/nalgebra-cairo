@@ -24,7 +24,11 @@ framing='You are a sub-agent of an orchestrator, executing ONE work package of n
 case "$cli" in
   claude)
     if [[ -n "$resume" ]]; then
-      exec claude --continue -p "$resume" --dangerously-skip-permissions > "$log" 2>&1
+      exec claude --continue -p "$resume" \
+        --model "$model" \
+        --dangerously-skip-permissions \
+        --append-system-prompt "$framing" \
+        >> "$log" 2>&1
     fi
     exec claude -p "$(cat "$brief")" \
       --model "$model" \
