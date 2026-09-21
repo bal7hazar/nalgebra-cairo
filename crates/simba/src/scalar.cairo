@@ -155,6 +155,11 @@ pub trait Real<T> {
     fn wide_rescale(w: Self::Wide) -> T;
     /// Square root of the accumulated value (norm of a long vector).
     fn wide_sqrt(w: Self::Wide) -> T;
+    /// The accumulated value times `s`, as a scalar: the single rounding / overflow check of an
+    /// exact triple product `(a*b - c*d) * e` (cofactor expansions of 4x4 / 6x6 determinants),
+    /// where `diff_prod(a, b, c, d) * e` or `wide_rescale(w) * s` would round twice. Terminal:
+    /// consumes the accumulator.
+    fn wide_mul_scalar(w: Self::Wide, s: T) -> T;
 }
 
 /// Transcendental functions (generated typed Horner polynomials, DESIGN D6). Declared separately
@@ -425,6 +430,10 @@ pub impl FixedReal of Real<Fixed> {
     fn wide_sqrt(w: Wide) -> Fixed {
         w.sqrt()
     }
+    #[inline(always)]
+    fn wide_mul_scalar(w: Wide, s: Fixed) -> Fixed {
+        w.mul_scalar(s)
+    }
 }
 
 #[cfg(test)]
@@ -610,6 +619,12 @@ mod tests {
             let r: u64 = v.sqrt();
             r.try_into().expect('overflow')
         }
+        /// Exact integer product, checked. Restriction: the `i128` product itself must not
+        /// overflow (`|w * s| < 2^127`), otherwise the corelib panics with 'i128_mul Overflow'
+        /// before the 'overflow' check of the result; the tests stay far inside that range.
+        fn wide_mul_scalar(w: i128, s: i64) -> i64 {
+            Self::wide_rescale(w * s.into())
+        }
     }
 
     // --- generic code written against `Real` only (what `nalgebra` does)
@@ -747,6 +762,27 @@ mod tests {
         let w = Real::wide_sub(Real::wide_add(w, a), d);
         assert!(Real::wide_rescale(w) == fx(-0x4f0000000));
         assert!(Real::wide_sqrt(WideTrait::from_prod(four, four)) == four);
+        let w = Real::wide_sub_prod(Real::wide_add_prod(Real::<Fixed>::wide_zero(), a, b), c, d);
+        assert!(Real::wide_mul_scalar(w, three) == fx(-0x1290000000));
+    }
+
+    #[test]
+    fn test_real_wide_mul_scalar_on_integers() {
+        // (3 * 4 - 2 * 5) * -7 = -14
+        let w = Real::wide_sub_prod(Real::wide_add_prod(Real::<i64>::wide_zero(), 3, 4), 2, 5);
+        assert!(Real::wide_mul_scalar(w, -7_i64) == -14);
+        // An accumulator beyond i64, brought back by a zero / unit scalar.
+        let big = Real::wide_add_prod(Real::<i64>::wide_zero(), 0x7fffffffffffffff, 4);
+        assert!(Real::wide_mul_scalar(big, 0_i64) == 0);
+        let back = Real::wide_sub_prod(big, 0x7fffffffffffffff, 4);
+        assert!(Real::wide_mul_scalar(Real::wide_add(back, 5), -1_i64) == -5);
+    }
+
+    #[test]
+    #[should_panic(expected: 'overflow')]
+    fn test_real_wide_mul_scalar_on_integers_overflow_panics() {
+        let w = Real::wide_add_prod(Real::<i64>::wide_zero(), black_box(0x100000000), 0x100000000);
+        Real::wide_mul_scalar(w, 0x80000000_i64);
     }
 
     // --- gas benchmarks: generic code over `Real` is zero-cost

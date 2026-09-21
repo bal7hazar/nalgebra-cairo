@@ -352,7 +352,126 @@ def generate():
         )
         out.append("    }")
         out.append("}")
+    emit_wide_mul_scalar(out)
     return "\n".join(out) + "\n"
+
+
+# --- wide_mul_scalar: appended last, on its own RNG, so that no earlier vector moves -----------
+
+WMS_SEED = 0x57_4D_53  # "WMS"
+WMS_EXPR = (
+    "WideTrait::from_prod(f(a), f(b)).add_prod(f(c), f(d)).add_prod(f(g), f(h)).mul_scalar(f(i))"
+    " == f(e)"
+)
+WMS_RANDOM_TESTS = 1
+WMS_RANDOM_ROWS = 24
+
+
+def wms(a, b, c, d, g, h, s):
+    return m.wide_mul_scalar(a * b + c * d + g * h, s)
+
+
+def wms_decompose(w):
+    """`[a, b, c, d, g, h]` in i64 with `a*b + c*d + g*h == w`, for `|w| <= 2^127 + 2^63`: two
+    near-extreme products and an exact remainder (`h` in 1..7)."""
+    clamp = lambda v: max(MIN, min(MAX, v))  # noqa: E731
+    for b, d in ((MIN, MIN), (MAX, MAX), (MIN, MAX)):
+        a0 = clamp(w // 2 // b)
+        c0 = clamp((w - a0 * b) // d)
+        for da in range(-2, 3):  # near the extremes, leave room for the remainder
+            for dc in range(-2, 3):
+                a, c = a0 + da, c0 + dc
+                rest = w - a * b - c * d
+                for h in range(1, 8):
+                    if MIN <= a <= MAX and MIN <= c <= MAX and rest % h == 0 \
+                            and MIN <= rest // h <= MAX:
+                        return [a, b, c, d, rest // h, h]
+    raise ValueError(w)
+
+
+def wms_scalar(rng, w):
+    """A scalar that mostly brings `w * s / 2^64` back into range (re-drawn when it does not)."""
+    if rng.random() < 0.15:
+        return operand(rng)
+    room = max(0, 127 - abs(w).bit_length())
+    mag = rng.getrandbits(rng.randrange(0, min(room, 63) + 1) or 1)
+    return -mag if rng.random() < 0.5 else mag
+
+
+def wms_random_rows(rng, count):
+    rows = []
+    while len(rows) < count:
+        # Mixed magnitudes: the sum of 3 products reaches ~2^127.6, far beyond the Fixed range.
+        args = [operand(rng) if rng.random() < 0.5 else small_operand(rng) for _ in range(6)]
+        w = args[0] * args[1] + args[2] * args[3] + args[4] * args[5]
+        s = wms_scalar(rng, w)
+        try:
+            rows.append(args + [s, wms(*args, s)])
+        except m.FixedError:
+            continue
+    return rows
+
+
+def wms_edge_rows(rng):
+    """Boundaries (result MIN / MAX, their neighbours MIN - 1 / MAX + 1 are the should_panic
+    tests), negative inexact products (floor != trunc), zero scalar, zero accumulator, huge
+    accumulators brought back by tiny scalars, and `s = 1.0` (== `rescale`)."""
+    rows = []
+
+    def add(w, s):
+        args = wms_decompose(w)
+        rows.append(args + [s, wms(*args, s)])
+
+    for s in [1, -1, 3, HALF + 1, -(5 * ONE + 7), ONE, MIN]:
+        for t in (MIN, MAX):
+            # the smallest and largest accumulators whose product floors exactly to t: one step
+            # further is the overflow of the should_panic tests
+            ends = {f(x, s) for x in (t << 64, ((t + 1) << 64) - 1) for f in (_floordiv, _ceildiv)}
+            ok = sorted(w for w in ends if _ok(w, s) and m.wide_mul_scalar(w, s) == t)
+            add(ok[0], s)
+            if ok[-1] != ok[0]:
+                add(ok[-1], s)
+    for s in [-1, 1, 3, -(ONE + 1)]:  # negative, inexact: floor is one below truncation
+        w = -(rng.getrandbits(90) | 1) if s > 0 else rng.getrandbits(90) | 1
+        assert (w * s) % (1 << 64) != 0 and w * s < 0
+        add(w, s)
+    for w in [0, 1, -1, (1 << 127), -(1 << 127) - (1 << 62)]:  # zero scalar
+        add(w, 0)
+    for s in [MIN, MAX, -1, 1]:  # zero accumulator
+        add(0, s)
+    for w, s in [((1 << 127) - 1, 1), (-(1 << 127), 1), ((1 << 126) - 12345, 2), (-(3 << 125), -1)]:
+        add(w, s)  # far beyond the Fixed range (2^95), back in range after the product
+    for _ in range(2):  # s = 1.0: identical to `rescale`
+        w = rng.randrange(-(1 << 95), 1 << 95)
+        add(w, ONE)
+        assert rows[-1][-1] == m.rescale(w)
+    return rows
+
+
+def _floordiv(x, s):
+    return x // s
+
+
+def _ceildiv(x, s):
+    return -(-x // s)
+
+
+def _ok(w, s):
+    try:
+        m.wide_mul_scalar(w, s)
+        return True
+    except m.FixedError:
+        return False
+
+
+def emit_wide_mul_scalar(out):
+    rng = random.Random(WMS_SEED)
+    out.append("")
+    out.append("// `Wide::mul_scalar`: the accumulator is `a*b + c*d + g*h` (up to ~2^127.6, far beyond")
+    out.append("// the Fixed range), the scalar `i`. Generated after the other kernels, on its own seed.")
+    for index in range(WMS_RANDOM_TESTS):
+        emit_kernel(out, "wide_mul_scalar", 7, WMS_EXPR, wms_random_rows(rng, WMS_RANDOM_ROWS), index)
+    emit_kernel(out, "wide_mul_scalar_edge", 7, WMS_EXPR, wms_edge_rows(rng), 0)
 
 
 def scarb_fmt(path):

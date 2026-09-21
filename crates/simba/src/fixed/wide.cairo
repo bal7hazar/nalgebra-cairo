@@ -5,17 +5,24 @@ use super::types::Fixed;
 
 /// Exact accumulator of unscaled products (scale 2^64), e.g. for the 6-term rows of `Matrix6`
 /// or dynamic dot products: accumulate with `add_prod` / `sub_prod` / `add` / `sub`, then round
-/// and check ONCE with `rescale` (or `sqrt` for a norm).
+/// and check ONCE with `rescale` (or `sqrt` for a norm, `mul_scalar` for a triple product).
 ///
 /// Representation: a `felt252` holding the signed sum (negatives as `P - |x|`). Accumulating
 /// costs one felt multiplication and one felt addition per product, without any range check;
 /// `rescale` costs the same as a plain `Fixed` multiplication's.
 ///
-/// Safety (no silent wrap-around): the field is private and the only operations add ONE term
-/// of magnitude `<= 2^126` each (there is deliberately no `Wide + Wide`, no scaling, no `Serde`).
-/// After `n` operations the magnitude is `<= n * 2^126`; aliasing modulo `P ~ 2^251` would need
-/// `n >= 2^124` operations, which no execution can perform. `rescale` and `sqrt` then range-check
-/// the exact value, so an out-of-range sum always panics.
+/// Safety (no silent wrap-around): the field is private and the only operations that return a
+/// `Wide` add ONE term of magnitude `<= 2^126` each (there is deliberately no `Wide + Wide`, no
+/// `Wide`-returning scaling, no `Serde`). After `n` operations the magnitude is `<= n * 2^126`;
+/// aliasing modulo `P ~ 2^251` would need `n >= 2^124` operations, which no execution can
+/// perform. The terminal operations then range-check the exact value, so an out-of-range result
+/// always panics:
+/// - `rescale` accepts the exact sum in `[-2^95, 2^95)`, `sqrt` in `[0, 2^126)`;
+/// - `mul_scalar(s)` multiplies the felt by `|s| <= 2^63` first: `|sum * s| <= n * 2^189`, still
+///   exact (no alias modulo `P > 2^251`) for any `n <= 2^61`, a bound no execution can reach
+///   either. It accepts the exact product iff `sum * s` is in `[-2^127, 2^127)`, the interval
+///   whose floor by `2^64` fits `i64`; anything else lands outside `[0, 2^128)` after the bias
+///   (below `2^250 + 2^127` if positive, above `P - 2^250 + 2^127` if negative) and panics.
 #[derive(Copy, Drop)]
 pub struct Wide {
     sum: felt252,
@@ -70,6 +77,21 @@ pub impl WideImpl of WideTrait {
     #[inline(always)]
     fn rescale(self: Wide) -> Fixed {
         Fixed { raw: kernels::rescale(self.sum) }
+    }
+
+    /// `floor(self * s)` as a `Fixed`: the exact accumulated value times a scalar, rounded ONCE.
+    /// Terminal: it consumes the accumulator and returns a `Fixed` (no `Wide` is ever scaled).
+    ///
+    /// Use case: exact triple products `(a * b - c * d) * e` with a single rounding, e.g. the
+    /// cofactor expansions of 4x4 / 6x6 determinants, where `diff_prod(a, b, c, d) * e` would
+    /// round twice (and `self.rescale() * s` too). Also covers accumulators far beyond the `Fixed`
+    /// range that come back in range after the multiplication by a small scalar: only the final
+    /// result is checked (see the safety paragraph of `Wide`). Panics with `errors::OVERFLOW` iff
+    /// the floored result does not fit `Fixed`. No upstream equivalent (upstream floats round at
+    /// every operation).
+    #[inline(always)]
+    fn mul_scalar(self: Wide, s: Fixed) -> Fixed {
+        Fixed { raw: kernels::wide_mul_rescale(self.sum, s.raw) }
     }
 
     /// `floor(sqrt(self))`: integer square root of the unscaled sum (no rescale), for norms of
@@ -205,6 +227,79 @@ mod tests {
             w = w.add_prod(MIN, MAX);
         }
         w.rescale();
+    }
+
+    #[test]
+    fn test_wide_mul_scalar_single_product_times_one_is_mul() {
+        let (a, b) = (fx(-0x380000000), fx(0x240000001));
+        assert!(WideTrait::from_prod(a, b).mul_scalar(ONE) == a * b);
+        assert!(WideTrait::from_prod(-EPSILON, HALF).mul_scalar(ONE) == -EPSILON);
+        assert!(WideTrait::from_prod(MAX, EPSILON).mul_scalar(ONE) == MAX * EPSILON);
+        assert!(WideTrait::from_fixed(MIN).mul_scalar(ONE) == MIN);
+        assert!(WideTrait::from_fixed(MAX).mul_scalar(ONE) == MAX);
+    }
+
+    #[test]
+    fn test_wide_mul_scalar_rounds_once() {
+        // (0.5 ulp) * 3 = 1.5 ulp floors to 1 ulp; rescaling first floors 0.5 ulp to 0.
+        let w = WideTrait::from_prod(EPSILON, HALF);
+        assert!(w.mul_scalar(THREE) == EPSILON);
+        assert!(w.rescale() * THREE == ZERO);
+        // (-0.5 ulp) * 3 = -1.5 ulp floors to -2 ulp; rescaling first gives -3 ulp.
+        let w = WideTrait::zero().sub_prod(EPSILON, HALF);
+        assert!(w.mul_scalar(THREE) == fx(-2));
+        assert!(w.rescale() * THREE == fx(-3));
+        // Triple product: one ulp away from `diff_prod(a, b, c, d) * e` (Python model).
+        let (a, b, c, d) = (fx(0x1a2b3c4d5), fx(-0x2345678ab), fx(0x3456789), fx(0x7fedcba98));
+        let e = fx(-0x2c3d4e5f7);
+        assert!(WideTrait::from_prod(a, b).sub_prod(c, d).mul_scalar(e) == fx(0xa40659288));
+        assert!(fused::diff_prod(a, b, c, d) * e == fx(0xa40659289));
+    }
+
+    #[test]
+    fn test_wide_mul_scalar_far_beyond_the_fixed_range() {
+        // MIN^2 = 2^126 (unscaled), times 1 ulp: 2^62 raw.
+        assert!(WideTrait::from_prod(MIN, MIN).mul_scalar(EPSILON) == fx(0x4000000000000000));
+        // 2 * MIN^2 = 2^127, times -1 ulp: exactly MIN.
+        let w = WideTrait::from_prod(MIN, MIN).add_prod(MIN, MIN);
+        assert!(w.mul_scalar(-EPSILON) == MIN);
+        // 2^127 - 1, times 1 ulp: exactly MAX.
+        assert!(w.sub_prod(EPSILON, EPSILON).mul_scalar(EPSILON) == MAX);
+        // 64 * MIN^2 = 2^132 times 0.
+        let mut w = WideTrait::zero();
+        for _ in 0..64_u8 {
+            w = w.add_prod(MIN, MIN);
+        }
+        assert!(w.mul_scalar(ZERO) == ZERO);
+        assert!(WideTrait::zero().mul_scalar(MIN) == ZERO);
+    }
+
+    #[test]
+    #[should_panic(expected: 'simba: overflow')]
+    fn test_wide_mul_scalar_overflow_panics() {
+        // 2^127 * 1 ulp = MAX + 1 ulp.
+        black_box(WideTrait::from_prod(MIN, MIN)).add_prod(MIN, MIN).mul_scalar(EPSILON);
+    }
+
+    #[test]
+    #[should_panic(expected: 'simba: overflow')]
+    fn test_wide_mul_scalar_underflow_panics() {
+        // -(2^127 + 1) * 1 ulp floors to MIN - 1 ulp.
+        let w = black_box(WideTrait::from_prod(MIN, MIN))
+            .add_prod(MIN, MIN)
+            .add_prod(EPSILON, EPSILON);
+        w.mul_scalar(-EPSILON);
+    }
+
+    #[test]
+    #[should_panic(expected: 'simba: overflow')]
+    fn test_wide_mul_scalar_large_accumulator_panics() {
+        // 64 * MIN^2 = 2^132 times -1 ulp: far below MIN, well inside the aliasing-free domain.
+        let mut w: Wide = black_box(WideTrait::zero());
+        for _ in 0..64_u8 {
+            w = w.add_prod(MIN, MIN);
+        }
+        w.mul_scalar(-EPSILON);
     }
 
     #[test]
@@ -559,5 +654,75 @@ mod tests {
         let l = black_box(fx(-0x80000000));
         let e = black_box(fx(-0x1f0000000));
         assert!(WideTrait::from_prod(a, b).sub_prod(c, d).add(k).sub(l).rescale() == e);
+    }
+
+
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__baseline() {
+        let _a = black_box(fx(0x1a2b3c4d5));
+        let _b = black_box(fx(-0x2345678ab));
+        let _s = black_box(fx(-0x2c3d4e5f7));
+        let e = black_box(fx(0x9f814b225));
+        assert!(e == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__fused() {
+        let a = black_box(fx(0x1a2b3c4d5));
+        let b = black_box(fx(-0x2345678ab));
+        let s = black_box(fx(-0x2c3d4e5f7));
+        let e = black_box(fx(0x9f814b225));
+        assert!(WideTrait::from_prod(a, b).mul_scalar(s) == e);
+    }
+
+    /// Two roundings: 2 ulp away here.
+    #[test]
+    #[inline(never)]
+    fn bench_wide_mul_scalar__alt_rescale_then_mul() {
+        let a = black_box(fx(0x1a2b3c4d5));
+        let b = black_box(fx(-0x2345678ab));
+        let s = black_box(fx(-0x2c3d4e5f7));
+        let e = black_box(fx(0x9f814b227));
+        assert!(WideTrait::from_prod(a, b).rescale() * s == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_triple_product__baseline() {
+        let _a = black_box(fx(0x1a2b3c4d5));
+        let _b = black_box(fx(-0x2345678ab));
+        let _c = black_box(fx(0x3456789));
+        let _d = black_box(fx(0x7fedcba98));
+        let _s = black_box(fx(-0x2c3d4e5f7));
+        let e = black_box(fx(0xa40659288));
+        assert!(e == e);
+    }
+
+    /// `(a * b - c * d) * s`, one rounding.
+    #[test]
+    #[inline(never)]
+    fn bench_triple_product__wide_mul_scalar() {
+        let a = black_box(fx(0x1a2b3c4d5));
+        let b = black_box(fx(-0x2345678ab));
+        let c = black_box(fx(0x3456789));
+        let d = black_box(fx(0x7fedcba98));
+        let s = black_box(fx(-0x2c3d4e5f7));
+        let e = black_box(fx(0xa40659288));
+        assert!(WideTrait::from_prod(a, b).sub_prod(c, d).mul_scalar(s) == e);
+    }
+
+    /// Two roundings: 1 ulp away here.
+    #[test]
+    #[inline(never)]
+    fn bench_triple_product__alt_diff_prod_then_mul() {
+        let a = black_box(fx(0x1a2b3c4d5));
+        let b = black_box(fx(-0x2345678ab));
+        let c = black_box(fx(0x3456789));
+        let d = black_box(fx(0x7fedcba98));
+        let s = black_box(fx(-0x2c3d4e5f7));
+        let e = black_box(fx(0xa40659289));
+        assert!(fused::diff_prod(a, b, c, d) * s == e);
     }
 }
