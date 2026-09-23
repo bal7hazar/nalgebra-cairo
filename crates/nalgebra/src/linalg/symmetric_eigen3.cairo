@@ -93,11 +93,14 @@ impl Jacobi3Impl<
     ///
     /// `sqrt(h² + g²)` is `Real::norm2`, whose sum of squares is accumulated unscaled: neither
     /// the square nor the ratio can overflow, and `|t| <= 1` always (`h = 0` gives `t = ±1`
-    /// exactly, the 45° rotation). `c = 1 / sqrt(1 + t²)` is `Real::inv_norm2(1, t)`: the
-    /// normalisation path of the scalar (for `fixed::Fixed`, the floor of the exact norm, then
-    /// one reciprocal rounded to nearest). Four roundings in total: `h`, `t`, `c`, `s`. The tangent
-    /// is returned as well, because the diagonal update uses it directly. No upstream equivalent
-    /// (`GivensRotation::new` solves a different problem).
+    /// exactly, the 45° rotation). `c = 1 / sqrt(1 + t²)` is `recip(sqrt(mul_add(t, t, 1)))`:
+    /// `1 + t² <= 2` is exact to its last bit before the floored root, then one reciprocal
+    /// rounded to nearest. Measured against `Real::inv_norm2(1, t)` (the floored norm and a
+    /// 96-bit reciprocal, 3 020 gas cheaper per rotation): same eigen records, better SVD records
+    /// (worst singular value 71 ulp instead of 83), so the dearer and more accurate form is kept.
+    /// Five roundings in total: `h`, `t`, the root, `c`, `s`. The tangent is returned as well,
+    /// because the diagonal update uses it directly. No upstream equivalent (`GivensRotation::new`
+    /// solves a different problem).
     #[inline(always)]
     fn rotation(app: T, g: T, aqq: T) -> (T, T, T) {
         let h = R::diff_prod(aqq, R::HALF, app, R::HALF);
@@ -107,7 +110,7 @@ impl Jacobi3Impl<
             g
         };
         let t = R::div(num, h.abs() + R::norm2(h, g));
-        let c = R::inv_norm2(R::ONE, t);
+        let c = R::recip(R::sqrt(R::mul_add(t, t, R::ONE)));
         (t, c, t * c)
     }
 

@@ -636,3 +636,30 @@ fn bench_real_shared_div4__prepared() {
     let (x, y, z, w) = Real::div4(a.x, a.y, a.z, b.x, d);
     assert!(x != e && y != e && z != e && w != e);
 }
+
+// --- Jacobi rotation `c = 1 / sqrt(1 + t^2)`: `recip(sqrt(mul_add))` (shipped in nalgebra's
+// `SymmetricEigen3` / `Svd3`, better SVD records) vs `inv_norm2(1, t)` (cheaper) -------------
+
+#[test]
+#[inline(never)]
+fn bench_real_jacobi_c__baseline() {
+    let _t = black_box(fx(-Q));
+    let e = black_box(fx(0));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_jacobi_c__recip_sqrt() {
+    let t = black_box(fx(-Q));
+    let e = black_box(fx(0));
+    assert!(Real::recip(Real::sqrt(Real::mul_add(t, t, Real::ONE))) != e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_jacobi_c__alt_inv_norm2() {
+    let t = black_box(fx(-Q));
+    let e = black_box(fx(0));
+    assert!(Real::inv_norm2(Real::ONE, t) != e);
+}

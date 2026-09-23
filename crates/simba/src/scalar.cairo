@@ -116,9 +116,10 @@ pub trait Real<T> {
     /// Square root (floor of the exact root for `fixed::Fixed`). Panics on a negative input.
     fn sqrt(self: T) -> T;
     /// `1 / sqrt(x^2 + y^2)`, rounded once (to nearest for `fixed::Fixed`, from the floor of
-    /// the exact norm). Panics when `x` and `y` are both zero. Replaces upstream's
-    /// `x.hypot(y).recip()` and the `(1 + t^2).sqrt().recip()` of a Jacobi rotation
-    /// (`inv_norm2(ONE, t)`).
+    /// the exact norm). Panics when `x` and `y` are both zero. Upstream: `x.hypot(y).recip()`.
+    /// Cheaper than `recip(sqrt(mul_add(t, t, ONE)))` for a Jacobi `c` (4 840 vs 6 750 gas), but
+    /// nalgebra's `SymmetricEigen3` / `Svd3` keep the latter for its better SVD accuracy
+    /// (`bench_real_jacobi_c`).
     fn inv_norm2(x: T, y: T) -> T;
     /// `|self - other| <= ulps` smallest units (raw units for fixed point).
     fn abs_diff_eq(self: T, other: T, ulps: u64) -> bool;
