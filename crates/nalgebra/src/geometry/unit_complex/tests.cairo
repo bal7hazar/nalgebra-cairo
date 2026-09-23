@@ -93,7 +93,7 @@ fn test_conjugate_and_inverse_agree_and_are_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_inverse_of_min_imaginary_part_panics() {
     let _ = black_box(UnitComplex { re: Real::<Fixed>::ZERO, im: Real::MIN }).inverse();
 }
@@ -190,7 +190,7 @@ fn test_transform_vector_preserves_length() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_transform_vector_overflow_panics() {
     // (1.6e9, 1.6e9) turned by -π/4 lands at (2.26e9, 0), past the 2.147e9 of Q32.32.
     let c = black_box(UnitComplexAngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_4));
@@ -399,7 +399,7 @@ fn test_renormalize_fast_of_zero_stays_zero() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_of_zero_panics() {
     let z = UnitComplex { re: Real::<Fixed>::ZERO, im: Real::ZERO };
     let _ = black_box(z).renormalize();

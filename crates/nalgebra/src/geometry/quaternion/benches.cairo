@@ -97,7 +97,7 @@ fn test_mul_alt_sum_prod4_cannot_take_min() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_mul_alt_sum_prod4_of_min_panics() {
     let m = q(0, -0x8000000000000000, 0, 0);
     let _ = alt_mul_sum_prod4(black_box(m), black_box(QuaternionTrait::<Fixed>::identity()));
@@ -113,7 +113,7 @@ fn test_mul_alt_unfused_is_less_accurate() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_mul_alt_unfused_overflows_on_intermediates() {
     // |i| = 50 000: i·i does not fit, although the result (0) does.
     let t = q(0, 50000 * ONE_RAW, 0, 0);
@@ -134,8 +134,9 @@ fn test_normalize_alt_recip_is_less_accurate() {
 fn test_try_inverse_alt_recip_is_less_accurate() {
     let exact = a().try_inverse().unwrap();
     let approx = alt_try_inverse_recip(a()).unwrap();
-    assert!(!approx.abs_diff_eq(exact, 2));
-    assert!(approx.abs_diff_eq(exact, 3));
+    // 2 ulp apart with `fixed`'s truncating division and reciprocal (3 with the former floor).
+    assert!(!approx.abs_diff_eq(exact, 1));
+    assert!(approx.abs_diff_eq(exact, 2));
     assert!(alt_try_inverse_recip(QuaternionTrait::<Fixed>::zero()) == None);
 }
 
@@ -479,7 +480,7 @@ fn bench_quaternion_normalize__baseline() {
 #[inline(never)]
 fn bench_quaternion_normalize__divisions() {
     let x = black_box(a());
-    let e = black_box(q(784150157, 1568300314, -2352450472, 3136600629));
+    let e = black_box(q(784150157, 1568300314, -2352450471, 3136600629));
     assert!(x.normalize() == e);
 }
 
@@ -503,7 +504,7 @@ fn bench_quaternion_try_inverse__baseline() {
 #[inline(never)]
 fn bench_quaternion_try_inverse__divisions() {
     let x = black_box(a());
-    let e = black_box(q(143165576, -286331154, 429496729, -572662307));
+    let e = black_box(q(143165576, -286331153, 429496729, -572662306));
     assert!(x.try_inverse() == Some(e));
 }
 

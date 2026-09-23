@@ -428,7 +428,7 @@ fn test_face_towards_geometry() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_face_towards_with_a_parallel_up_panics() {
     let _ = Rotation3Trait::face_towards(black_box(v3i(0, 0, 1)), black_box(v3i(0, 0, 2)));
 }
@@ -470,7 +470,7 @@ fn test_renormalize_handles_a_scaled_matrix() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_of_a_singular_matrix_panics() {
     let _ = black_box(Rotation3 { matrix: Matrix3Trait::<Fixed>::zeros() }).renormalize();
 }

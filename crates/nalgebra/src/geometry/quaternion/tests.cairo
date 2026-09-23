@@ -97,14 +97,14 @@ fn test_add_sub_neg_are_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_add_overflow_panics() {
     let big = qt((0x7fffffffffffffff, 0, 0, 0));
     let _ = black_box(big) + black_box(qt((1, 0, 0, 0)));
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_neg_min_panics() {
     let _ = -black_box(qt((MIN, 0, 0, 0)));
 }
@@ -149,7 +149,7 @@ fn test_mul_oracle_is_bit_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_mul_overflow_panics() {
     // 50 000² > 2^31: the real part does not fit.
     let big = qt((50000 * ONE_RAW, 0, 0, 0));
@@ -232,7 +232,7 @@ fn test_conj_mul_min_component_does_not_panic() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_conj_mul_overflow_panics() {
     // 50 000² > 2^31: the real part does not fit.
     let big = qt((50000 * ONE_RAW, 0, 0, 0));
@@ -264,7 +264,7 @@ fn test_norm_huge_does_not_overflow() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_norm_squared_overflow_panics() {
     let _ = black_box(qt((0x186a000000000, 0, 0, 0))).norm_squared();
 }
@@ -286,11 +286,11 @@ fn test_scale_and_unscale() {
     assert!(a().scale(Real::ZERO) == QuaternionTrait::zero());
     assert!(a().unscale(int(2)) == qt((ONE_RAW / 2, ONE_RAW, -3 * ONE_RAW / 2, 2 * ONE_RAW)));
     // Floor division: -1 / 2 = -0.5 exactly, -1 / 3 rounds down.
-    assert!(qi(-1, 0, 0, 0).unscale(int(3)) == qt((-1431655766, 0, 0, 0)));
+    assert!(qi(-1, 0, 0, 0).unscale(int(3)) == qt((-1431655765, 0, 0, 0)));
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero_panics() {
     let _ = black_box(a()).unscale(Real::ZERO);
 }
@@ -309,7 +309,7 @@ fn test_normalize_exact_and_oracle() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_normalize_zero_panics() {
     let _ = black_box(QuaternionTrait::<Fixed>::zero()).normalize();
 }

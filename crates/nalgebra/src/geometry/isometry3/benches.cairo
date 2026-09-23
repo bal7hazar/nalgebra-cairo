@@ -748,7 +748,7 @@ fn bench_isometry3_lerp_nlerp__lerp_normalize() {
     let s: Fixed = black_box(fx(0x40000000));
     let e: Isometry3<Fixed> = black_box(
         iso3(
-            (4026531840, -6710886400, 13421772800), (4238238332, 150031943, -112523959, 670006486),
+            (4026531840, -6710886400, 13421772800), (4238238332, 150031943, -112523958, 670006486),
         ),
     );
     assert!(x.lerp_nlerp(y, s) == e);

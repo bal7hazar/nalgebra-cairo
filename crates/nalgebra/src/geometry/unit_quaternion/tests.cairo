@@ -684,7 +684,7 @@ fn test_nlerp_endpoints_and_oracle() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_nlerp_of_opposite_quaternions_panics() {
     let a = black_box(third());
     let _ = a.nlerp(black_box(-a), Real::HALF);

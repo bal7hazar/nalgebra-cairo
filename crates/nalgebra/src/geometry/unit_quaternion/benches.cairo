@@ -316,7 +316,7 @@ fn bench_unit_quaternion_new_normalize__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_new_normalize__divisions() {
     let q = black_box(QuaternionTrait::new(int(1), int(2), int(-3), int(4)));
-    let e = black_box(uqt((784150157, 1568300314, -2352450472, 3136600629)));
+    let e = black_box(uqt((784150157, 1568300314, -2352450471, 3136600629)));
     assert!(UnitQuaternionTrait::new_normalize(q) == e);
 }
 
@@ -451,7 +451,7 @@ fn bench_unit_quaternion_renormalize__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_renormalize__exact() {
     let q = black_box(a());
-    let e = black_box(uqt((-1509276478, -2563574021, -2263667720, 2114881862)));
+    let e = black_box(uqt((-1509276477, -2563574020, -2263667719, 2114881862)));
     assert!(q.renormalize() == e);
 }
 
@@ -475,7 +475,7 @@ fn bench_unit_quaternion_renormalize_fast__newton() {
 #[inline(never)]
 fn bench_unit_quaternion_renormalize_fast__alt_exact() {
     let q = black_box(a());
-    let e = black_box(uqt((-1509276478, -2563574021, -2263667720, 2114881862)));
+    let e = black_box(uqt((-1509276477, -2563574020, -2263667719, 2114881862)));
     assert!(q.renormalize() == e);
 }
 
@@ -511,7 +511,7 @@ fn bench_unit_quaternion_axis__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_axis__try_new() {
     let q = black_box(a());
-    let e = black_box(u3t((2738208059, 2417871746, -2258950401)));
+    let e = black_box(u3t((2738208059, 2417871746, -2258950400)));
     assert!(q.axis() == Some(e));
 }
 
@@ -535,7 +535,7 @@ fn bench_unit_quaternion_angle__atan2() {
 #[inline(never)]
 fn bench_unit_quaternion_angle__alt_acos() {
     let q = black_box(a());
-    let e = black_box(fx(10408630470));
+    let e = black_box(fx(10408630472));
     assert!(alt_angle_acos(q) == e);
 }
 
@@ -553,7 +553,7 @@ fn bench_unit_quaternion_angle_to__baseline() {
 fn bench_unit_quaternion_angle_to__product_and_atan2() {
     let q = black_box(a());
     let r = black_box(b());
-    let e = black_box(fx(9188295436));
+    let e = black_box(fx(9188295438));
     assert!(q.angle_to(r) == e);
 }
 
@@ -569,7 +569,7 @@ fn bench_unit_quaternion_scaled_axis__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_scaled_axis__divisions() {
     let q = black_box(a());
-    let e = black_box(v3t((6635905205, 5859586765, -5474449130)));
+    let e = black_box(v3t((6635905205, 5859586765, -5474449127)));
     assert!(q.scaled_axis() == e);
 }
 
@@ -628,7 +628,7 @@ fn bench_unit_quaternion_from_rotation_matrix__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_from_rotation_matrix__shepperd() {
     let r = black_box(rot());
-    let e = black_box(uqt((1509276477, 2563574020, 2263667718, -2114881863)));
+    let e = black_box(uqt((1509276477, 2563574020, 2263667718, -2114881862)));
     assert!(UnitQuaternionTrait::from_rotation_matrix(r) == e);
 }
 
@@ -833,7 +833,7 @@ fn bench_unit_quaternion_rotation_between__algebraic() {
 fn bench_unit_quaternion_rotation_between__alt_axis_angle() {
     let x = black_box(v());
     let y = black_box(w());
-    let e = black_box(uqt((4089636155, 611444112, 1087011755, 407629408)));
+    let e = black_box(uqt((4089636155, 611444111, 1087011755, 407629408)));
     assert!(UnitQuaternionAngleTrait::scaled_rotation_between(x, y, Real::ONE) == Some(e));
 }
 
@@ -931,10 +931,10 @@ fn bench_unit_quaternion_euler_angles__baseline() {
 #[inline(never)]
 fn bench_unit_quaternion_euler_angles__five_entries() {
     let q = black_box(a());
-    let e = black_box(fx(-11965891172));
+    let e = black_box(fx(-11965891174));
     let (roll, pitch, yaw) = q.euler_angles();
     assert!(roll == e);
-    assert!(pitch == fx(5500842971));
+    assert!(pitch == fx(5500842972));
     assert!(yaw == fx(7356808382));
 }
 
@@ -956,7 +956,7 @@ fn bench_unit_quaternion_nlerp__lerp_normalize() {
     let q = black_box(a());
     let r = black_box(b());
     let t = black_box(fx(0x40000000));
-    let e = black_box(uqt((-2383027037, -2519790274, -1139680148, 2262678139)));
+    let e = black_box(uqt((-2383027036, -2519790273, -1139680147, 2262678139)));
     assert!(q.nlerp(r, t) == e);
 }
 
@@ -976,7 +976,7 @@ fn bench_unit_quaternion_slerp__acos_sin() {
     let q = black_box(a());
     let r = black_box(b());
     let t = black_box(fx(0x40000000));
-    let e = black_box(uqt((-685896197, -2393123540, -2985529559, 1826434633)));
+    let e = black_box(uqt((-685896195, -2393123539, -2985529557, 1826434633)));
     assert!(q.slerp(r, t) == e);
 }
 
@@ -994,7 +994,7 @@ fn bench_unit_quaternion_powf__baseline() {
 fn bench_unit_quaternion_powf__axis_angle() {
     let q = black_box(a());
     let n = black_box(Real::<Fixed>::HALF);
-    let e = black_box(uqt((3530512512, 1559329776, 1376907571, -1286406493)));
+    let e = black_box(uqt((3530512512, 1559329776, 1376907571, -1286406492)));
     assert!(q.powf(n) == e);
 }
 
@@ -1012,7 +1012,7 @@ fn bench_unit_quaternion_append_axisangle_linearized__baseline() {
 fn bench_unit_quaternion_append_axisangle_linearized__reduced_product() {
     let q = black_box(a());
     let x = black_box(w());
-    let e = black_box(uqt((-1511968454, -2770073696, -2511442522, 1476497089)));
+    let e = black_box(uqt((-1511968453, -2770073695, -2511442521, 1476497089)));
     assert!(q.append_axisangle_linearized(x) == e);
 }
 
