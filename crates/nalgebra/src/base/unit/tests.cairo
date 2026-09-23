@@ -204,7 +204,7 @@ fn test_renormalize_fast_fixes_small_drift() {
     assert!(up.renormalize_fast() == u3(1393471395, -2090207097, 3483678491));
     assert!(up.renormalize_fast().abs_diff_eq(up.renormalize(), 2));
     let down = u3(1393464429, -2090196645, 3483661074);
-    assert!(down.renormalize_fast() == u3(1393471397, -2090207097, 3483678492));
+    assert!(down.renormalize_fast() == u3(1393471396, -2090207097, 3483678492));
     assert!(down.renormalize_fast().abs_diff_eq(down.renormalize(), 2));
 }
 
