@@ -23,7 +23,6 @@
 //! - `div`, `recip` and `from_ratio` are correctly rounded: to NEAREST, ties to even, like Rust's
 //!   `f64 /` (exact whenever the quotient is representable); `rem` is the exact truncated
 //!   remainder (sign of the dividend), like Rust's float `%`;
-//! - `inv_norm2` goes through `fixed::wide::RecipTrait::mul`, which rounds to nearest;
 //! - the transcendental functions of `fixed::trig` round their final rescale to nearest;
 //! - constants are rounded to nearest;
 //! - overflow panics with `'Fixed: overflow'` (or the corelib's `'i64_add Overflow'`-style
@@ -32,7 +31,7 @@
 
 use fixed::exp::ExpTrait;
 use fixed::trig::TrigTrait;
-use fixed::wide::{self, Acc, AccTrait, NormTrait, RecipNearestTrait, RecipTrait};
+use fixed::wide::{self, Acc, AccTrait, RecipNearestTrait};
 use fixed::{Fixed, FixedTrait, fixed as consts};
 
 /// Real scalar: constants, conversions, helpers, fused kernels and wide accumulation.
@@ -115,12 +114,6 @@ pub trait Real<T> {
     fn recip(self: T) -> T;
     /// Square root (floor of the exact root for `fixed::Fixed`). Panics on a negative input.
     fn sqrt(self: T) -> T;
-    /// `1 / sqrt(x^2 + y^2)`, rounded once (to nearest for `fixed::Fixed`, from the floor of
-    /// the exact norm). Panics when `x` and `y` are both zero. Upstream: `x.hypot(y).recip()`.
-    /// Cheaper than `recip(sqrt(mul_add(t, t, ONE)))` for a Jacobi `c` (4 840 vs 6 750 gas), but
-    /// nalgebra's `SymmetricEigen3` / `Svd3` keep the latter for its better SVD accuracy
-    /// (`bench_real_jacobi_c`).
-    fn inv_norm2(x: T, y: T) -> T;
     /// `|self - other| <= ulps` smallest units (raw units for fixed point).
     fn abs_diff_eq(self: T, other: T, ulps: u64) -> bool;
 
@@ -373,12 +366,6 @@ pub impl FixedReal of Real<Fixed> {
     #[inline(always)]
     fn sqrt(self: Fixed) -> Fixed {
         FixedTrait::sqrt(self)
-    }
-    /// `fixed::wide::norm2_wide(x, y).recip().mul(ONE)`: the normalisation path of `fixed`
-    /// (`normalize2` computes `x * this`), one rounding to nearest. `fixed` has no `inv_sqrt`.
-    #[inline(always)]
-    fn inv_norm2(x: Fixed, y: Fixed) -> Fixed {
-        wide::norm2_wide(x, y).recip().mul(consts::ONE)
     }
     /// `fixed::FixedTrait::abs_diff_eq` with a tolerance of `ulps` raw units. A tolerance beyond
     /// `MAX` raw (`2^63 - 1`) is clamped to it: the only pairs this misjudges are more than

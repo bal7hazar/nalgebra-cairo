@@ -5,7 +5,7 @@
 
 use fixed::exp::ExpTrait;
 use fixed::trig::TrigTrait;
-use fixed::wide::{self, AccTrait, NormTrait, RecipTrait};
+use fixed::wide::{self, AccTrait};
 use fixed::{Fixed, FixedTrait};
 use nalgebra_testing::black_box;
 use super::{Real, Transcendental};
@@ -92,17 +92,6 @@ fn test_real_recip_rounds_to_nearest() {
     assert!(Real::recip(fx(-0x1_8000_0000)) == fx(-2863311531));
     assert!(Real::recip(fx(0x1_8000_0000)) == Real::div(Real::ONE, fx(0x1_8000_0000)));
     assert!(Real::recip(fx(A)) == FixedTrait::recip(fx(A)));
-}
-
-#[test]
-fn test_real_inv_norm2_rounds_to_nearest() {
-    // 1/5 = 858993459.2 raw.
-    assert!(Real::inv_norm2(Real::from_int(3), Real::from_int(-4)) == fx(858993459));
-    // 1 / floor(sqrt(2)) = 3037000500.45 raw (the exact 1/sqrt(2) is 3037000499.98 raw).
-    assert!(Real::inv_norm2(Real::<Fixed>::ONE, Real::ONE) == fx(3037000500));
-    let (a, b) = (fx(A), fx(B));
-    assert!(Real::inv_norm2(a, b) == wide::norm2_wide(a, b).recip().mul(fixed::ONE));
-    assert!(Real::inv_norm2(Real::<Fixed>::ONE, Real::ZERO) == Real::ONE);
 }
 
 #[test]
@@ -258,12 +247,6 @@ fn test_real_rem_by_zero_panics() {
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_real_recip_of_zero_panics() {
     let _ = Real::recip(black_box(Real::<Fixed>::ZERO));
-}
-
-#[test]
-#[should_panic(expected: 'Fixed: division by zero')]
-fn test_real_inv_norm2_of_zero_panics() {
-    let _ = Real::inv_norm2(black_box(Real::<Fixed>::ZERO), Real::ZERO);
 }
 
 #[test]
