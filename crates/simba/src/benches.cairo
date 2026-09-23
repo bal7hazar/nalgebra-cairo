@@ -538,7 +538,7 @@ fn bench_real_scalar__sin_cos() {
     let (_a, _b) = (black_box(fx(ANGLE)), black_box(fx(Q)));
     let a = black_box(fx(ANGLE));
     let e = black_box(fx(0));
-    let (s, _) = a.sin_cos();
+    let (s, _) = Transcendental::sin_cos(a);
     assert!(s != e);
 }
 

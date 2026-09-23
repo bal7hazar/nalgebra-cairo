@@ -138,7 +138,7 @@ fn bench_unit3_new_normalize__new_normalize() {
     let v: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
     let _min_norm: Fixed = black_box(fx(0x10000));
     let _n: Fixed = black_box(fx(0x49f9146ee));
-    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
+    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960777, 0xcfa4b71c));
     assert!(UnitTrait::new_normalize(v) == e);
 }
 
@@ -148,7 +148,7 @@ fn bench_unit3_new_normalize__new_and_get() {
     let v: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
     let _min_norm: Fixed = black_box(fx(0x10000));
     let n: Fixed = black_box(fx(0x49f9146ee));
-    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
+    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960777, 0xcfa4b71c));
     let (u, m) = UnitTrait::new_and_get(v);
     assert!(u == e && m == n);
 }
@@ -159,7 +159,7 @@ fn bench_unit3_new_normalize__try_new() {
     let v: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
     let min_norm: Fixed = black_box(fx(0x10000));
     let _n: Fixed = black_box(fx(0x49f9146ee));
-    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
+    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960777, 0xcfa4b71c));
     assert!(UnitTrait::try_new(v, min_norm) == Some(e));
 }
 
@@ -169,7 +169,7 @@ fn bench_unit3_new_normalize__try_new_and_get() {
     let v: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
     let min_norm: Fixed = black_box(fx(0x10000));
     let n: Fixed = black_box(fx(0x49f9146ee));
-    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
+    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960777, 0xcfa4b71c));
     assert!(UnitTrait::try_new_and_get(v, min_norm) == Some((e, n)));
 }
 
@@ -225,7 +225,7 @@ fn bench_unit3_renormalize_fast__alt_lerp() {
 #[inline(never)]
 fn bench_unit3_renormalize_fast__alt_exact() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530ebff8, -0x7c961ff7, 0xcfa4dfef));
-    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa3, -0x7c960779, 0xcfa4b71c));
+    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa3, -0x7c960778, 0xcfa4b71c));
     assert!(u.renormalize() == e);
 }
 
@@ -241,7 +241,7 @@ fn bench_unit3_renormalize__baseline() {
 #[inline(never)]
 fn bench_unit3_renormalize__renormalize() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530ebff8, -0x7c961ff7, 0xcfa4dfef));
-    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa3, -0x7c960779, 0xcfa4b71c));
+    let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa3, -0x7c960778, 0xcfa4b71c));
     assert!(u.renormalize() == e);
 }
 
@@ -390,7 +390,7 @@ fn bench_unit3_axes__z_axis() {
 fn bench_unit3_orthonormal_basis__baseline() {
     let _u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
     let e: (Unit<Vector3<Fixed>>, Unit<Vector3<Fixed>>) = black_box(
-        (u3(0xf11efd44, 0x1651841a, -0x530eafa4), u3(0x1651841a, 0xde85b9d7, 0x7c960778)),
+        (u3(0xf11efd44, 0x1651841a, -0x530eafa4), u3(0x1651841a, 0xde85b9d8, 0x7c960778)),
     );
     assert!(e == e);
 }
@@ -400,7 +400,7 @@ fn bench_unit3_orthonormal_basis__baseline() {
 fn bench_unit3_orthonormal_basis__orthonormal_basis() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
     let e: (Unit<Vector3<Fixed>>, Unit<Vector3<Fixed>>) = black_box(
-        (u3(0xf11efd44, 0x1651841a, -0x530eafa4), u3(0x1651841a, 0xde85b9d7, 0x7c960778)),
+        (u3(0xf11efd44, 0x1651841a, -0x530eafa4), u3(0x1651841a, 0xde85b9d8, 0x7c960778)),
     );
     assert!(u.orthonormal_basis() == e);
 }
@@ -445,7 +445,7 @@ fn bench_unit2_new_normalize__new_normalize() {
     let v: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let _min_norm: Fixed = black_box(fx(0x10000));
     let _n: Fixed = black_box(fx(0x2b4440e69));
-    let e: Unit<Vector2<Fixed>> = black_box(u2(0x8e00d501, -0xd5013f83));
+    let e: Unit<Vector2<Fixed>> = black_box(u2(0x8e00d501, -0xd5013f82));
     assert!(UnitTrait::new_normalize(v) == e);
 }
 
@@ -528,7 +528,7 @@ fn bench_unit4_new_normalize__new_normalize() {
     let v: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, 0x40000000));
     let _min_norm: Fixed = black_box(fx(0x10000));
     let _n: Fixed = black_box(fx(0x4a14bed26));
-    let e: Unit<Vector4<Fixed>> = black_box(u4(0x52efab16, -0x7c6780a3, 0xcf572bb9, 0xdd29c83));
+    let e: Unit<Vector4<Fixed>> = black_box(u4(0x52efab16, -0x7c6780a2, 0xcf572bb9, 0xdd29c83));
     assert!(UnitTrait::new_normalize(v) == e);
 }
 

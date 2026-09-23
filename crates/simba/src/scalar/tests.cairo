@@ -56,9 +56,13 @@ fn test_real_from_int_and_ratio() {
 #[test]
 fn test_real_helpers_forward_to_fixed() {
     let (a, b, c, d) = (fx(A), fx(B), fx(C), fx(D));
-    assert!(a.abs() == FixedTrait::abs(a) && a.abs() == fx(-A));
-    assert!(a.is_negative() && !b.is_negative() && !Real::<Fixed>::ZERO.is_negative());
-    assert!(b.is_positive() && !a.is_positive() && !Real::<Fixed>::ZERO.is_positive());
+    assert!(Real::abs(a) == FixedTrait::abs(a) && Real::abs(a) == fx(-A));
+    assert!(
+        Real::is_negative(a) && !Real::is_negative(b) && !Real::is_negative(Real::<Fixed>::ZERO),
+    );
+    assert!(
+        Real::is_positive(b) && !Real::is_positive(a) && !Real::is_positive(Real::<Fixed>::ZERO),
+    );
     assert!(Real::min(a, b) == a && Real::max(a, b) == b);
     assert!(Real::clamp(c, a, b) == b && Real::clamp(d, a, b) == d);
     assert!(Real::floor(a) == FixedTrait::floor(a) && Real::floor(a) == fx(-0x2_0000_0000));
@@ -69,16 +73,16 @@ fn test_real_helpers_forward_to_fixed() {
 
 #[test]
 fn test_real_signum_of_zero_is_one() {
-    assert!(Real::<Fixed>::ZERO.signum() == Real::ONE);
-    assert!(fx(D).signum() == Real::NEG_ONE && fx(B).signum() == Real::ONE);
-    assert!(fx(A).signum() == FixedTrait::signum(fx(A)));
+    assert!(Real::signum(Real::<Fixed>::ZERO) == Real::ONE);
+    assert!(Real::signum(fx(D)) == Real::NEG_ONE && Real::signum(fx(B)) == Real::ONE);
+    assert!(Real::signum(fx(A)) == FixedTrait::signum(fx(A)));
 }
 
 #[test]
 fn test_real_recip_truncates() {
-    // 2^64 / 3 = 6148914691236517205.33: toward zero on both signs.
-    assert!(Real::recip(fx(0x3_0000_0000)) == fx(6148914691236517205));
-    assert!(Real::recip(fx(-0x3_0000_0000)) == fx(-6148914691236517205));
+    // 2^32 / 3 = 1431655765.33: toward zero on both signs.
+    assert!(Real::recip(fx(0x3_0000_0000)) == fx(1431655765));
+    assert!(Real::recip(fx(-0x3_0000_0000)) == fx(-1431655765));
     assert!(Real::recip(fx(A)) == FixedTrait::recip(fx(A)));
 }
 
@@ -96,11 +100,11 @@ fn test_real_inv_norm2_rounds_to_nearest() {
 #[test]
 fn test_real_abs_diff_eq_counts_ulps() {
     let (a, d) = (fx(A), fx(D));
-    assert!(a.abs_diff_eq(a + fx(3), 3) && !a.abs_diff_eq(a + fx(4), 3));
-    assert!(d.abs_diff_eq(fx(0), 7) && !d.abs_diff_eq(fx(1), 7));
+    assert!(Real::abs_diff_eq(a, a + fx(3), 3) && !Real::abs_diff_eq(a, a + fx(4), 3));
+    assert!(Real::abs_diff_eq(d, fx(0), 7) && !Real::abs_diff_eq(d, fx(1), 7));
     // Tolerances beyond `MAX` raw are clamped to it.
-    assert!(Real::<Fixed>::MIN.abs_diff_eq(Real::ZERO, 0xffffffffffffffff) == false);
-    assert!(Real::<Fixed>::MAX.abs_diff_eq(Real::ZERO, 0xffffffffffffffff));
+    assert!(Real::abs_diff_eq(Real::<Fixed>::MIN, Real::ZERO, 0xffffffffffffffff) == false);
+    assert!(Real::abs_diff_eq(Real::<Fixed>::MAX, Real::ZERO, 0xffffffffffffffff));
 }
 
 // --- division -------------------------------------------------------------------------------
@@ -112,15 +116,15 @@ fn test_real_div_truncates_toward_zero() {
     // -1 ulp / 2 = -0.5 ulp: 0 toward zero (the former floor gave -1 ulp).
     assert!(Real::div(fx(-1), Real::TWO) == Real::ZERO);
     assert!(Real::div(fx(-3), Real::TWO) == fx(-1));
-    assert!(Real::div(Real::from_int(-7), Real::from_int(2)) == Real::from_ratio(-7, 2));
+    assert!(Real::div(Real::<Fixed>::from_int(-7), Real::from_int(2)) == Real::from_ratio(-7, 2));
 }
 
 #[test]
 fn test_real_rem_has_the_sign_of_the_dividend() {
     let (a, b) = (fx(A), fx(B));
     assert!(Real::rem(a, b) == a % b);
-    assert!(Real::rem(Real::from_int(-7), Real::from_int(2)) == Real::NEG_ONE);
-    assert!(Real::rem(Real::from_int(7), Real::from_int(-2)) == Real::ONE);
+    assert!(Real::rem(Real::<Fixed>::from_int(-7), Real::from_int(2)) == Real::NEG_ONE);
+    assert!(Real::rem(Real::<Fixed>::from_int(7), Real::from_int(-2)) == Real::ONE);
     assert!(Real::rem(fx(D), fx(3)) == fx(-1));
 }
 
@@ -150,7 +154,9 @@ fn test_real_fused_kernels_round_once_by_floor() {
     assert!(Real::sum_prod2(fx(-1), Real::HALF, Real::ZERO, Real::ZERO) == fx(-1));
     assert!(Real::diff_prod(fx(A), fx(B), fx(A), fx(B)) == Real::ZERO);
     assert!(
-        Real::norm3(Real::from_int(2), Real::from_int(-3), Real::from_int(6)) == Real::from_int(7),
+        Real::norm3(
+            Real::<Fixed>::from_int(2), Real::from_int(-3), Real::from_int(6),
+        ) == Real::from_int(7),
     );
     assert!(Real::lerp(fx(A), fx(C), Real::ONE) == fx(C));
 }
@@ -177,14 +183,25 @@ fn test_real_wide_accumulator_forwards_to_acc() {
 #[test]
 fn test_transcendental_forwards_to_fixed() {
     let (a, b) = (fx(A), fx(B));
-    assert!(a.sin() == TrigTrait::sin(a) && a.cos() == TrigTrait::cos(a));
-    assert!(a.sin_cos() == TrigTrait::sin_cos(a) && b.tan() == TrigTrait::tan(b));
-    assert!(b.asin() == TrigTrait::asin(b) && b.acos() == TrigTrait::acos(b));
-    assert!(a.atan() == TrigTrait::atan(a));
+    assert!(
+        Transcendental::sin(a) == TrigTrait::sin(a) && Transcendental::cos(a) == TrigTrait::cos(a),
+    );
+    assert!(
+        Transcendental::sin_cos(a) == TrigTrait::sin_cos(a)
+            && Transcendental::tan(b) == TrigTrait::tan(b),
+    );
+    assert!(
+        Transcendental::asin(b) == TrigTrait::asin(b)
+            && Transcendental::acos(b) == TrigTrait::acos(b),
+    );
+    assert!(Transcendental::atan(a) == TrigTrait::atan(a));
     assert!(Transcendental::atan2(a, b) == TrigTrait::atan2(a, b));
-    assert!(a.exp() == ExpTrait::exp(a) && b.ln() == ExpTrait::ln(b));
+    assert!(Transcendental::exp(a) == ExpTrait::exp(a) && Transcendental::ln(b) == ExpTrait::ln(b));
     let quarter_turn = Real::<Fixed>::FRAC_PI_2;
-    assert!(quarter_turn.sin() == Real::ONE && Real::<Fixed>::ZERO.exp() == Real::ONE);
+    assert!(
+        Transcendental::sin(quarter_turn) == Real::ONE
+            && Transcendental::exp(Real::<Fixed>::ZERO) == Real::ONE,
+    );
     assert!(Transcendental::atan2(Real::<Fixed>::ONE, Real::ZERO) == quarter_turn);
 }
 
@@ -201,7 +218,9 @@ fn test_real_sum_prod3_overflow_panics() {
 #[should_panic(expected: 'Fixed: overflow')]
 fn test_real_wide_rescale_overflow_panics() {
     let huge = black_box(fx(0x40_0000_0000_0000));
-    let _ = Real::<Fixed>::wide_rescale(Real::wide_add_prod(Real::wide_zero(), huge, huge));
+    let _ = Real::<
+        Fixed,
+    >::wide_rescale(Real::wide_add_prod(Real::<Fixed>::wide_zero(), huge, huge));
 }
 
 #[test]
@@ -245,13 +264,13 @@ fn test_real_sqrt_negative_panics() {
 fn test_real_wide_sqrt_negative_panics() {
     let _ = Real::<
         Fixed,
-    >::wide_sqrt(Real::wide_sub_prod(Real::wide_zero(), black_box(fx(A)), fx(A)));
+    >::wide_sqrt(Real::wide_sub_prod(Real::<Fixed>::wide_zero(), black_box(fx(A)), fx(A)));
 }
 
 #[test]
 #[should_panic(expected: 'Fixed: acos domain')]
 fn test_transcendental_acos_domain_panics() {
-    let _ = black_box(Real::<Fixed>::TWO).acos();
+    let _ = Transcendental::acos(black_box(Real::<Fixed>::TWO));
 }
 
 // --- generic code written against `Real` only (what `nalgebra` does) -------------------------

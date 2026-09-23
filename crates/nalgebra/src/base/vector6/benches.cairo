@@ -59,7 +59,7 @@ fn test_norm_squared_alt_two_blocks_rounds_twice() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_norm_alt_via_norm_squared_overflows_on_huge() {
     // Six components of 1e6, norm 2 449 489.7: the squared norm (6e12) does not fit Q32.32, the
     // norm does.
@@ -313,7 +313,7 @@ fn bench_vector6_unscale__unscale() {
         v6(0x200000000, -0x200000000, 0x200000000, -0x200000000, 0x200000000, 0x400000000),
     );
     let k = black_box(fx(0x600000000));
-    let e = black_box(v6(1431655765, -1431655766, 1431655765, -1431655766, 1431655765, 2863311530));
+    let e = black_box(v6(1431655765, -1431655765, 1431655765, -1431655765, 1431655765, 2863311530));
     assert!(a.unscale(k) == e);
 }
 
@@ -324,7 +324,7 @@ fn bench_vector6_unscale__div_assign() {
         v6(0x200000000, -0x200000000, 0x200000000, -0x200000000, 0x200000000, 0x400000000),
     );
     let k = black_box(fx(0x600000000));
-    let e = black_box(v6(1431655765, -1431655766, 1431655765, -1431655766, 1431655765, 2863311530));
+    let e = black_box(v6(1431655765, -1431655765, 1431655765, -1431655765, 1431655765, 2863311530));
     let mut acc = a;
     acc /= k;
     assert!(acc == e);
@@ -577,7 +577,7 @@ fn bench_vector6_normalize__unscale_by_norm() {
     let a = black_box(
         v6(0x200000000, -0x200000000, 0x200000000, -0x200000000, 0x200000000, 0x400000000),
     );
-    let e = black_box(v6(1431655765, -1431655766, 1431655765, -1431655766, 1431655765, 2863311530));
+    let e = black_box(v6(1431655765, -1431655765, 1431655765, -1431655765, 1431655765, 2863311530));
     assert!(a.normalize() == e);
 }
 

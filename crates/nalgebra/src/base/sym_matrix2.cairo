@@ -399,14 +399,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
         let s = black_box(SymMatrix2Trait::from_diagonal_element(Real::<Fixed>::MAX));
         let _ = s + s;
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
         let _ = -black_box(SymMatrix2Trait::from_diagonal_element(Real::<Fixed>::MIN));
     }
@@ -503,7 +503,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_quadform_overflow_panics() {
         let r = black_box(Matrix2Trait::from_diagonal_element(int(65536)));
         let _ = SymMatrix2Trait::quadform(r, black_box(v2i(1, 1)));
@@ -530,7 +530,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_determinant_overflow_panics() {
         black_box(SymMatrix2Trait::from_diagonal_element(int(65536))).determinant();
     }
@@ -619,13 +619,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: division by zero')]
+    #[should_panic(expected: 'Fixed: division by zero')]
     fn test_inverse_unchecked_singular_panics() {
         let _ = black_box(s2i((1, 2, 4))).inverse_unchecked();
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_tiny_norm_panics() {
         let _ = black_box(SymMatrix2Trait::from_diagonal_element(fx(1))).try_inverse();
     }

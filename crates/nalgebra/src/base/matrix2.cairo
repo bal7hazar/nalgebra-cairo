@@ -523,14 +523,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
         let m = black_box(Matrix2Trait::from_diagonal_element(Real::<Fixed>::MAX));
         let _ = m + m;
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
         let _ = -black_box(Matrix2Trait::from_diagonal_element(Real::<Fixed>::MIN));
     }
@@ -605,7 +605,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_mul_overflow_panics() {
         let m = black_box(Matrix2Trait::from_diagonal_element(int(65536)));
         let _ = m * m;
@@ -674,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_norm_squared_overflow_panics() {
         black_box(Matrix2Trait::from_diagonal_element(int(0x20000000))).norm_squared();
     }
@@ -700,7 +700,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_determinant_overflow_panics() {
         black_box(Matrix2Trait::from_diagonal_element(int(65536))).determinant();
     }
@@ -743,7 +743,7 @@ mod tests {
         // (cases above the oracle tolerance, worst error in ulp) of the shipped algorithm, of
         // `adjugate / det` without pre-scaling and of `adjugate * (1 / det)`.
         assert!(inverse_failures(0) == (0, 8));
-        assert!(inverse_failures(1) == (1, 1111));
+        assert!(inverse_failures(1) == (1, 1112));
         assert!(inverse_failures(2) == (6, 1111));
     }
 
@@ -794,7 +794,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_tiny_norm_panics() {
         let _ = black_box(Matrix2Trait::from_diagonal_element(fx(1))).try_inverse();
     }
@@ -1353,7 +1353,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__prescaled_det_ge_half() {
         let a = black_box(m2([[-5146602846, 2781339837], [533542917, 1900613592]]));
-        let e = black_box(m2([[-3112122077, 4554249819], [873639280, 8427202879]]));
+        let e = black_box(m2([[-3112122076, 4554249819], [873639280, 8427202879]]));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1361,7 +1361,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__prescaled_norm_gt_one() {
         let a = black_box(m2([[-4407632017, -216812900], [-2360417318, -1480186601]]));
-        let e = black_box(m2([[-4541423616, 665212901], [7242097005, -13523243703]]));
+        let e = black_box(m2([[-4541423615, 665212901], [7242097005, -13523243702]]));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1369,7 +1369,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__prescaled_small() {
         let a = black_box(m2([[-30484050, -320085972], [-224450602, -21365614]]));
-        let e = black_box(m2([[5536085856, -82938099629], [-58157832642, 7898781568]]));
+        let e = black_box(m2([[5536085856, -82938099627], [-58157832641, 7898781568]]));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1377,7 +1377,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__alt_div() {
         let a = black_box(m2([[-5146602846, 2781339837], [533542917, 1900613592]]));
-        let e = black_box(m2([[-3112122077, 4554249819], [873639280, 8427202879]]));
+        let e = black_box(m2([[-3112122076, 4554249819], [873639280, 8427202879]]));
         assert!(try_inverse_div(a).unwrap() == e);
     }
 
@@ -1385,7 +1385,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__alt_recip() {
         let a = black_box(m2([[-5146602846, 2781339837], [533542917, 1900613592]]));
-        let e = black_box(m2([[-3112122077, 4554249819], [873639280, 8427202880]]));
+        let e = black_box(m2([[-3112122077, 4554249819], [873639280, 8427202878]]));
         assert!(try_inverse_recip(a).unwrap() == e);
     }
 

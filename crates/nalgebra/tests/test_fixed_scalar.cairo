@@ -93,7 +93,7 @@ fn test_vector3_kernels_are_fixeds() {
     assert!(a + b == gv(AX + BX, AY + BY, AZ + BZ), "add");
     assert!(a.scale(g(HALF_RAW)) == gv(AX / 2, AY / 2, AZ / 2), "scale");
     let l = a.lerp(b, g(HALF_RAW));
-    assert!(l.y == FixedTrait::lerp(a.y, b.y, g(HALF_RAW)), "lerp");
+    assert!(l.y == fixed::FixedTrait::lerp(a.y, b.y, g(HALF_RAW)), "lerp");
 }
 
 /// `normalize` is `unscale` by the norm, one `Real::div` per component: `fixed`'s `/`,

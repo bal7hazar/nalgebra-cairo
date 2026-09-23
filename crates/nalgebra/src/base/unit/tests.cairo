@@ -27,14 +27,14 @@ fn p() -> Vector3<Fixed> {
     v3(0x300000000, -0x400000000, 0xc00000000)
 }
 
-/// `p / 13`, floored
+/// `p / 13`, truncated toward zero
 fn np() -> Unit<Vector3<Fixed>> {
-    u3(991146299, -1321528399, 3964585196)
+    u3(991146299, -1321528398, 3964585196)
 }
 
-/// `a / |a|`, floored
+/// `a / |a|`, truncated toward zero
 fn na() -> Unit<Vector3<Fixed>> {
-    u3(1393471396, -2090207096, 3483678492)
+    u3(1393471396, -2090207095, 3483678492)
 }
 
 // --- construction
@@ -63,7 +63,7 @@ fn test_new_normalize_axes_are_exact() {
 #[test]
 fn test_new_normalize_2d_and_4d() {
     // (3, -4) / 5 and (1, -1, 1, -1) / 2 and (3, -4, 12, 0) / 13.
-    assert!(UnitTrait::new_normalize(v2(0x300000000, -0x400000000)) == u2(2576980377, -3435973837));
+    assert!(UnitTrait::new_normalize(v2(0x300000000, -0x400000000)) == u2(2576980377, -3435973836));
     assert!(
         UnitTrait::new_normalize(
             v4(0x100000000, -0x100000000, 0x100000000, -0x100000000),
@@ -72,14 +72,14 @@ fn test_new_normalize_2d_and_4d() {
     assert!(
         UnitTrait::new_normalize(
             v4(0x300000000, -0x400000000, 0xc00000000, 0),
-        ) == u4(991146299, -1321528399, 3964585196, 0),
+        ) == u4(991146299, -1321528398, 3964585196, 0),
     );
 }
 
 #[test]
 fn test_new_normalize_tiny_is_exact() {
     // (3, -4, 0) ulp has a norm of 5 ulp: the divisions still give (0.6, -0.8, 0) floored.
-    assert!(UnitTrait::new_normalize(v3(3, -4, 0)) == u3(2576980377, -3435973837, 0));
+    assert!(UnitTrait::new_normalize(v3(3, -4, 0)) == u3(2576980377, -3435973836, 0));
 }
 
 #[test]
@@ -94,19 +94,19 @@ fn test_new_normalize_huge_does_not_overflow() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_new_normalize_zero() {
     let _ = UnitTrait::new_normalize(black_box(Vector3Trait::<Fixed>::zeros()));
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_new_normalize_zero_2d() {
     let _ = UnitTrait::new_normalize(black_box(Vector2Trait::<Fixed>::zeros()));
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_new_normalize_zero_4d() {
     let _ = UnitTrait::new_normalize(black_box(Vector4Trait::<Fixed>::zeros()));
 }
@@ -117,7 +117,7 @@ fn test_new_and_get_returns_the_norm() {
     assert!(u == np());
     assert!(n == fx(0xd00000000));
     let (u, n) = UnitTrait::new_and_get(v2(0x300000000, -0x400000000));
-    assert!(u == u2(2576980377, -3435973837));
+    assert!(u == u2(2576980377, -3435973836));
     assert!(n == fx(0x500000000));
     let (u, n) = UnitTrait::new_and_get(a());
     assert!(u == na());
@@ -125,7 +125,7 @@ fn test_new_and_get_returns_the_norm() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_new_and_get_zero() {
     let _ = UnitTrait::new_and_get(black_box(Vector3Trait::<Fixed>::zeros()));
 }
@@ -135,7 +135,7 @@ fn test_try_new_some() {
     assert!(UnitTrait::try_new(p(), Real::ZERO) == Some(np()));
     assert!(UnitTrait::try_new(p(), fx(0xd00000000) - Real::EPSILON) == Some(np()));
     assert!(
-        UnitTrait::try_new(v3(3, -4, 0), Real::EPSILON) == Some(u3(2576980377, -3435973837, 0)),
+        UnitTrait::try_new(v3(3, -4, 0), Real::EPSILON) == Some(u3(2576980377, -3435973836, 0)),
     );
 }
 
@@ -159,7 +159,7 @@ fn test_try_new_and_get() {
 #[test]
 fn test_into_inner_and_as_ref() {
     assert!(np().into_inner() == np().value);
-    assert!(np().as_ref() == v3(991146299, -1321528399, 3964585196));
+    assert!(np().as_ref() == v3(991146299, -1321528398, 3964585196));
 }
 
 // --- renormalization
@@ -172,20 +172,25 @@ fn test_renormalize_matches_new_normalize() {
     // `na` scaled by 1 + 3e-6: back to the exact unit vector.
     let drifted = u3(1393475576, -2090213367, 3483688943);
     assert!(drifted.renormalize() == UnitTrait::new_normalize(drifted.value));
-    assert!(drifted.renormalize() == u3(1393471395, -2090207097, 3483678492));
+    assert!(drifted.renormalize() == u3(1393471395, -2090207096, 3483678492));
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_zero() {
     let _ = black_box(u3(0, 0, 0)).renormalize();
 }
 
 #[test]
 fn test_renormalize_fast_is_a_fixed_point_of_normalized_vectors() {
-    // |v|² is 1 or 1 ulp short: the correction rounds to zero.
-    assert!(np().renormalize_fast() == np());
-    assert!(na().renormalize_fast() == na());
+    // |v|² is 1 or 1 ulp short: the correction rounds to zero. These are the FLOORED quotients
+    // (3, -4, 12) / 13 and a / |a|; `new_normalize` truncates toward zero, and one fast step
+    // takes its output (one ulp above on the negative component) to them.
+    let np_floor = u3(991146299, -1321528399, 3964585196);
+    let na_floor = u3(1393471396, -2090207096, 3483678492);
+    assert!(np_floor.renormalize_fast() == np_floor);
+    assert!(na_floor.renormalize_fast() == na_floor);
+    assert!(np().renormalize_fast() == np_floor);
     assert!(Unit3Trait::<Fixed>::x_axis().renormalize_fast() == Unit3Trait::<Fixed>::x_axis());
     assert!(Unit3Trait::<Fixed>::z_axis().renormalize_fast() == Unit3Trait::<Fixed>::z_axis());
 }
@@ -236,7 +241,7 @@ fn test_renormalize_fast_zero_stays_zero() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_renormalize_fast_overflow() {
     // The squared norm (1e10) does not fit: `renormalize` still works on such a vector.
     let _ = black_box(u3(0x186a000000000, 0, 0)).renormalize_fast();
@@ -277,14 +282,14 @@ fn test_scale_gives_a_vector() {
 
 #[test]
 fn test_neg_is_exact() {
-    assert!(-np() == u3(-991146299, 1321528399, -3964585196));
+    assert!(-np() == u3(-991146299, 1321528398, -3964585196));
     assert!(-(-np()) == np());
     assert!(-u2(2576980377, -3435973837) == u2(-2576980377, 3435973837));
     assert!(-(-Unit3Trait::<Fixed>::z_axis()) == Unit3Trait::<Fixed>::z_axis());
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_neg_overflow() {
     let _ = -black_box(u3(0, 0, -0x8000000000000000));
 }
@@ -292,8 +297,8 @@ fn test_neg_overflow() {
 #[test]
 fn test_abs_diff_eq_counts_ulps() {
     assert!(np().abs_diff_eq(np(), 0));
-    assert!(np().abs_diff_eq(u3(991146299 + 2, -1321528399 - 2, 3964585196 + 2), 2));
-    assert!(!np().abs_diff_eq(u3(991146299 + 2, -1321528399 - 2, 3964585196 + 2), 1));
+    assert!(np().abs_diff_eq(u3(991146299 + 2, -1321528398 - 2, 3964585196 + 2), 2));
+    assert!(!np().abs_diff_eq(u3(991146299 + 2, -1321528398 - 2, 3964585196 + 2), 1));
     assert!(!np().abs_diff_eq(-np(), 1000));
     assert!(!u3(MAX, 0, 0).abs_diff_eq(u3(-MAX, 0, 0), 1));
 }

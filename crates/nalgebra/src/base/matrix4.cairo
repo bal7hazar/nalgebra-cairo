@@ -1118,14 +1118,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
         let m = black_box(Matrix4Trait::from_diagonal_element(Real::<Fixed>::MAX));
         let _ = m + m;
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
         let _ = -black_box(Matrix4Trait::from_diagonal_element(Real::<Fixed>::MIN));
     }
@@ -1207,7 +1207,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_mul_overflow_panics() {
         let m = black_box(Matrix4Trait::from_diagonal_element(int(65536)));
         let _ = m * m;
@@ -1263,7 +1263,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_norm_squared_overflow_panics() {
         black_box(Matrix4Trait::from_diagonal_element(int(0x20000000))).norm_squared();
     }
@@ -1308,7 +1308,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_determinant_overflow_panics() {
         black_box(Matrix4Trait::from_diagonal_element(int(256))).determinant();
     }
@@ -1357,7 +1357,7 @@ mod tests {
         // (cases above the oracle tolerance, worst error in ulp) of the shipped algorithm, of
         // `adjugate / det` without pre-scaling and of `adjugate * (1 / det)`.
         assert!(inverse_failures(0) == (0, 50));
-        assert!(inverse_failures(1) == (6, 56713));
+        assert!(inverse_failures(1) == (6, 56712));
         assert!(inverse_failures(2) == (12, 56713));
     }
 
@@ -1412,7 +1412,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_tiny_norm_panics() {
         let _ = black_box(Matrix4Trait::from_diagonal_element(fx(1))).try_inverse();
     }
@@ -2882,10 +2882,10 @@ mod tests {
         let e = black_box(
             m4(
                 [
-                    [-1580935658, 3651218852, -5141402076, -3920011882],
-                    [-1134111645, -2131795105, -1434037613, 5310029221],
-                    [-1976110118, -3309244046, -601828060, 1869987304],
-                    [-2509710474, 1463757663, 1391329344, -333367901],
+                    [-1580935657, 3651218852, -5141402075, -3920011881],
+                    [-1134111644, -2131795104, -1434037612, 5310029221],
+                    [-1976110117, -3309244045, -601828059, 1869987304],
+                    [-2509710473, 1463757663, 1391329344, -333367900],
                 ],
             ),
         );
@@ -2908,10 +2908,10 @@ mod tests {
         let e = black_box(
             m4(
                 [
-                    [1007590045, -8113460288, 5589193161, -2009983770],
-                    [-6224010726, 4566957181, 2947460227, -2543902750],
-                    [1941005617, -48662219, -3082533348, -1655358742],
-                    [-1106373953, -6410886766, -6200760652, 1520649381],
+                    [1007590045, -8113460287, 5589193161, -2009983769],
+                    [-6224010725, 4566957181, 2947460227, -2543902749],
+                    [1941005617, -48662218, -3082533347, -1655358741],
+                    [-1106373952, -6410886765, -6200760651, 1520649381],
                 ],
             ),
         );
@@ -2937,7 +2937,7 @@ mod tests {
                     [15582438276, -6677561308, 22505666527, -13287450710],
                     [12081009333, -2389516454, -15753444996, 21012555187],
                     [-9746308220, -6782176897, 9363645371, 9440493449],
-                    [1024804345, 3407105854, 24450685987, 5706213630],
+                    [1024804345, 3407105854, 24450685986, 5706213630],
                 ],
             ),
         );
@@ -2960,10 +2960,10 @@ mod tests {
         let e = black_box(
             m4(
                 [
-                    [-1580935658, 3651218852, -5141402076, -3920011882],
-                    [-1134111645, -2131795105, -1434037613, 5310029221],
-                    [-1976110118, -3309244046, -601828060, 1869987304],
-                    [-2509710474, 1463757663, 1391329344, -333367901],
+                    [-1580935657, 3651218852, -5141402075, -3920011881],
+                    [-1134111644, -2131795104, -1434037612, 5310029221],
+                    [-1976110117, -3309244045, -601828059, 1869987304],
+                    [-2509710473, 1463757663, 1391329344, -333367900],
                 ],
             ),
         );
