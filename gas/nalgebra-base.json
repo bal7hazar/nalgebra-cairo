@@ -124,6 +124,7 @@
     },
     "matrix2_try_inverse": {
       "alt_div": 40380,
+      "alt_div_n": 39610,
       "alt_recip": 33330,
       "baseline": 18040,
       "prescaled_det_ge_half": 52010,
@@ -279,6 +280,7 @@
     },
     "matrix3_try_inverse": {
       "alt_div": 91470,
+      "alt_div_n": 88400,
       "alt_recip": 70620,
       "baseline": 21540,
       "prescaled_det_ge_half": 109900,
@@ -415,6 +417,7 @@
     },
     "matrix4_try_inverse": {
       "alt_div": 196400,
+      "alt_div_n": 190110,
       "alt_recip": 156230,
       "baseline": 28440,
       "prescaled_det_ge_half": 225260,

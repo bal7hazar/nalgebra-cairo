@@ -189,6 +189,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 33330 | 15290 | x1.00 |
+| `alt_div_n` | 39610 | 21570 | x1.41 |
 | `alt_div` | 40380 | 22340 | x1.46 |
 | `prescaled_det_ge_half` | 52010 | 33970 | x2.22 |
 | `prescaled_norm_gt_one` | 52010 | 33970 | x2.22 |
@@ -414,6 +415,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 70620 | 49080 | x1.00 |
+| `alt_div_n` | 88400 | 66860 | x1.36 |
 | `alt_div` | 91470 | 69930 | x1.42 |
 | `prescaled_det_ge_half` | 109900 | 88360 | x1.80 |
 | `prescaled_norm_gt_one` | 109900 | 88360 | x1.80 |
@@ -612,6 +614,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 156230 | 127790 | x1.00 |
+| `alt_div_n` | 190110 | 161670 | x1.27 |
 | `alt_div` | 196400 | 167960 | x1.31 |
 | `prescaled_det_ge_half` | 225260 | 196820 | x1.54 |
 | `prescaled_norm_gt_one` | 225260 | 196820 | x1.54 |
