@@ -1,7 +1,7 @@
 //! `Real` / `Transcendental` for `fixed::Fixed`: each method is the `fixed` call it wraps
 //! (forwarding tests on negative, inexact and edge values), the semantics that changed with the
-//! move to `fixed` (truncating division, `signum(0)`, rounded constants), `fixed`'s panic
-//! messages, and generic code written against `Real` only.
+//! move to `fixed` (division rounded to nearest, ties to even, `signum(0)`, rounded constants),
+//! `fixed`'s panic messages, and generic code written against `Real` only.
 
 use fixed::exp::ExpTrait;
 use fixed::trig::TrigTrait;
@@ -46,8 +46,13 @@ fn test_real_constants_are_fixeds() {
 fn test_real_from_int_and_ratio() {
     assert!(Real::<Fixed>::from_int(-3) == FixedTrait::from_int(-3));
     assert!(Real::<Fixed>::from_int(-3) == fx(-0x3_0000_0000));
-    // Truncated toward zero: -1/3 = -1431655765.33 raw.
+    // To nearest: -1/3 = -1431655765.33 raw, 2/3 = 2863311530.67 raw.
     assert!(Real::<Fixed>::from_ratio(-1, 3) == fx(-1431655765));
+    assert!(Real::<Fixed>::from_ratio(2, 3) == fx(2863311531));
+    // Ties to even: 1 / 2^33 = 0.5 raw -> 0, 3 / 2^33 = 1.5 raw -> 2, -5 / 2^33 = -2.5 raw -> -2.
+    assert!(Real::<Fixed>::from_ratio(1, 0x200000000) == fx(0));
+    assert!(Real::<Fixed>::from_ratio(3, 0x200000000) == fx(2));
+    assert!(Real::<Fixed>::from_ratio(-5, 0x200000000) == fx(-2));
     assert!(Real::<Fixed>::from_ratio(7, 2) == FixedTrait::from_ratio(7, 2));
 }
 
@@ -79,10 +84,13 @@ fn test_real_signum_of_zero_is_one() {
 }
 
 #[test]
-fn test_real_recip_truncates() {
-    // 2^32 / 3 = 1431655765.33: toward zero on both signs.
+fn test_real_recip_rounds_to_nearest() {
+    // 2^32 / 3 = 1431655765.33 and 2^32 / 1.5 = 2863311530.67: to nearest on both signs.
     assert!(Real::recip(fx(0x3_0000_0000)) == fx(1431655765));
     assert!(Real::recip(fx(-0x3_0000_0000)) == fx(-1431655765));
+    assert!(Real::recip(fx(0x1_8000_0000)) == fx(2863311531));
+    assert!(Real::recip(fx(-0x1_8000_0000)) == fx(-2863311531));
+    assert!(Real::recip(fx(0x1_8000_0000)) == Real::div(Real::ONE, fx(0x1_8000_0000)));
     assert!(Real::recip(fx(A)) == FixedTrait::recip(fx(A)));
 }
 
@@ -110,12 +118,17 @@ fn test_real_abs_diff_eq_counts_ulps() {
 // --- division -------------------------------------------------------------------------------
 
 #[test]
-fn test_real_div_truncates_toward_zero() {
+fn test_real_div_rounds_to_nearest_ties_to_even() {
     let (a, b) = (fx(A), fx(B));
     assert!(Real::div(a, b) == a / b);
-    // -1 ulp / 2 = -0.5 ulp: 0 toward zero (the former floor gave -1 ulp).
+    assert!(Real::div(a, b) == FixedTrait::div_nearest(a, b));
+    // Ties to even, like `f64 /`: -0.5 ulp -> 0, -1.5 ulp -> -2, 2.5 ulp -> 2, -2.5 ulp -> -2.
     assert!(Real::div(fx(-1), Real::TWO) == Real::ZERO);
-    assert!(Real::div(fx(-3), Real::TWO) == fx(-1));
+    assert!(Real::div(fx(-3), Real::TWO) == fx(-2));
+    assert!(Real::div(fx(5), Real::TWO) == fx(2));
+    assert!(Real::div(fx(-5), Real::TWO) == fx(-2));
+    // Not a tie: -2 / 3 = -0.67 ulp -> -1 (truncation gave 0, floor -1).
+    assert!(Real::div(fx(-2), Real::from_int(3)) == fx(-1));
     assert!(Real::div(Real::<Fixed>::from_int(-7), Real::from_int(2)) == Real::from_ratio(-7, 2));
 }
 
@@ -322,7 +335,8 @@ fn test_real_generic_code_on_fixed() {
     assert!(a.norm() == fx(0x300000000));
     let c = a.cross(b);
     assert!(c.x == fx(0x600000000) && c.y == fx(0xb00000000) && c.z == fx(0x800000000));
-    // -2 / 3 truncates toward zero: -2863311530.67 raw -> -2863311530.
+    // To nearest: 1 / 3 = 1431655765.33 raw -> 1431655765, -2 / 3 = -2863311530.67 raw ->
+    // -2863311531.
     let u = a.unscale(Real::from_int(3));
-    assert!(u.x == fx(1431655765) && u.y == fx(-2863311530) && u.z == fx(2863311530));
+    assert!(u.x == fx(1431655765) && u.y == fx(-2863311531) && u.z == fx(2863311531));
 }

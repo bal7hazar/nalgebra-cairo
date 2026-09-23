@@ -10,7 +10,7 @@
 //!   `wide_sqrt` sites of nalgebra: `Vector6::norm`, the Frobenius norms of `Matrix3`, `Matrix4`,
 //!   `SymMatrix3`), `Acc::sqrt` (`acc`) against the typed `W6` / `W9` / `W16` accumulator and
 //!   `WideSqrt` (`typed`).
-//! - **`normalize3`**: three `Real::div` by `Real::norm3` (`div`, truncating) against `fixed`'s
+//! - **`normalize3`**: three `Real::div` by `Real::norm3` (`div`, to nearest) against `fixed`'s
 //!   `wide::normalize3` (`recip`, one reciprocal, rounded to nearest).
 //!
 //! Plus the scalar headline figures of `docs/BENCHMARK.md` section 6 (`add`, `mul`, `div`,
@@ -512,7 +512,7 @@ fn bench_real_scalar__div() {
 #[inline(never)]
 fn bench_real_scalar__recip() {
     let (a, _b) = (black_box(fx(P)), black_box(fx(Q)));
-    let e = black_box(fx(-3774873600));
+    let e = black_box(fx(-3774873601));
     assert!(Real::recip(a) == e);
 }
 

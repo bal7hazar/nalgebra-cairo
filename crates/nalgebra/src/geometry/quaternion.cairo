@@ -149,7 +149,7 @@ pub impl QuaternionImpl<
         Quaternion { i: self.i * k, j: self.j * k, k: self.k * k, w: self.w * k }
     }
 
-    /// `self / k`, each component being the truncated quotient. Panics on a zero `k` and on
+    /// `self / k`, each component being the correctly rounded quotient. Panics on a zero `k` and on
     /// overflow. Upstream: `Div<T>` (`q / k`).
     ///
     /// One division per component on purpose (see `Vector3Trait::unscale`): multiplying by the
@@ -220,7 +220,7 @@ pub impl QuaternionImpl<
         Quaternion { i, j, k, w }
     }
 
-    /// `self / |self|`: the floored norm, then one truncated division per component, so the
+    /// `self / |self|`: the floored norm, then one correctly rounded division per component, so the
     /// error is about `1 + 1 / |self|` ulp per component whatever the magnitude of `self` (see
     /// `Vector3Trait::normalize`). Panics with `Fixed: division by zero` on a zero quaternion.
     /// Upstream: `normalize`.
@@ -230,9 +230,9 @@ pub impl QuaternionImpl<
     }
 
     /// `self⁻¹ = conjugate / |self|²`, or `None` when `|self|²` floors to zero (upstream
-    /// compares it to zero with `relative_eq`). One truncated division per component, so the
-    /// error is about `1 + |q| / |q|²` ulp. Panics on overflow of `|self|²` (norm above about 46
-    /// 340) and on `-MIN`. Upstream: `try_inverse`.
+    /// compares it to zero with `relative_eq`). One correctly rounded division per component, so
+    /// the error is about `1 + |q| / |q|²` ulp. Panics on overflow of `|self|²` (norm above about
+    /// 46 340) and on `-MIN`. Upstream: `try_inverse`.
     #[inline(always)]
     fn try_inverse(self: Quaternion<T>) -> Option<Quaternion<T>> {
         let n2 = R::norm_squared4(self.i, self.j, self.k, self.w);

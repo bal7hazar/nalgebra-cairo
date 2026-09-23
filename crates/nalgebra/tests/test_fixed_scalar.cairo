@@ -2,7 +2,7 @@
 //! them (formerly the integration tests of `simba_fixed`).
 //!
 //! The kernels that map one-to-one onto a `fixed` call are checked against that call (`dot` is
-//! `fixed::wide::dot3`, `normalize` divides by the norm with `fixed`'s truncating `/`, ...); the
+//! `fixed::wide::dot3`, `normalize` divides by the norm with `fixed`'s `/` (to nearest), ...); the
 //! composite ones (`quadform`, the Hamilton product, isometries) are pinned to their raw values.
 //! Panics carry `fixed`'s messages.
 
@@ -97,7 +97,7 @@ fn test_vector3_kernels_are_fixeds() {
 }
 
 /// `normalize` is `unscale` by the norm, one `Real::div` per component: `fixed`'s `/`,
-/// truncated toward zero, including on the negative inexact `y`.
+/// rounded to nearest, including on the negative inexact `y`.
 #[test]
 fn test_vector3_normalize_divides_by_the_norm() {
     let a = gv(AX, AY, AZ);
@@ -108,9 +108,9 @@ fn test_vector3_normalize_divides_by_the_norm() {
     assert!(a.try_normalize(Real::ZERO).unwrap() == u, "try_normalize");
 }
 
-/// `unscale` by a positive inexact divisor, and `/=`: `fixed`'s truncating `/`.
+/// `unscale` by a positive inexact divisor, and `/=`: `fixed`'s `/`, rounded to nearest.
 #[test]
-fn test_vector3_unscale_truncates() {
+fn test_vector3_unscale_rounds_to_nearest() {
     let k = g(0x7_0000_0000); // 7: -2.25 / 7 and -0.375 / 7 are inexact
     let a = gv(AX, AY, BX).unscale(k);
     assert_vector(a, (920350134, -1380525202, -230087533), "unscale");

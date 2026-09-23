@@ -27,12 +27,12 @@ fn p() -> Vector3<Fixed> {
     v3(0x300000000, -0x400000000, 0xc00000000)
 }
 
-/// `p / 13`, truncated toward zero
+/// `p / 13`, rounded to nearest
 fn np() -> Unit<Vector3<Fixed>> {
     u3(991146299, -1321528398, 3964585196)
 }
 
-/// `a / |a|`, truncated toward zero
+/// `a / |a|`, rounded to nearest
 fn na() -> Unit<Vector3<Fixed>> {
     u3(1393471396, -2090207095, 3483678492)
 }
@@ -184,7 +184,7 @@ fn test_renormalize_zero() {
 #[test]
 fn test_renormalize_fast_is_a_fixed_point_of_normalized_vectors() {
     // |v|² is 1 or 1 ulp short: the correction rounds to zero. These are the FLOORED quotients
-    // (3, -4, 12) / 13 and a / |a|; `new_normalize` truncates toward zero, and one fast step
+    // (3, -4, 12) / 13 and a / |a|; `new_normalize` rounds toward zero, and one fast step
     // takes its output (one ulp above on the negative component) to them.
     let np_floor = u3(991146299, -1321528399, 3964585196);
     let na_floor = u3(1393471396, -2090207096, 3483678492);

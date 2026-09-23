@@ -68,9 +68,9 @@ fn inv2() -> SymMatrix2<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// truncated divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve2_recip(f: Cholesky2<Fixed>, b: Vector2<Fixed>) -> Vector2<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);
@@ -282,9 +282,9 @@ fn inv3() -> SymMatrix3<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// truncated divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve3_recip(f: Cholesky3<Fixed>, b: Vector3<Fixed>) -> Vector3<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);
@@ -538,9 +538,9 @@ fn inv4() -> Matrix4<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// truncated divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve4_recip(f: Cholesky4<Fixed>, b: Vector4<Fixed>) -> Vector4<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);
@@ -877,9 +877,9 @@ fn inv6() -> Matrix6<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// truncated divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve6_recip(f: Cholesky6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);

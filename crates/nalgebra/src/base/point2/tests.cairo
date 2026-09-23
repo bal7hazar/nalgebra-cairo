@@ -106,15 +106,17 @@ fn test_from_homogeneous_divides_by_w() {
 }
 
 #[test]
-fn test_from_homogeneous_rounds_toward_zero() {
-    // (1.5, -2.25) / 7: truncated toward zero.
+fn test_from_homogeneous_rounds_to_nearest() {
+    // (1.5, -2.25) / 7: rounded to nearest.
     assert!(
         Point2Trait::<
             Fixed,
         >::from_homogeneous(
             v3(0x180000000, -0x240000000, 0x700000000),
-        ) == Some(p2(920350134, -1380525202)),
+        ) == Some(p2(920350135, -1380525202)),
     );
+    // Ties to even: 0.5, -1.5 ulp.
+    assert!(Point2Trait::<Fixed>::from_homogeneous(v3(1, -3, 0x200000000)) == Some(p2(0, -2)));
 }
 
 #[test]
@@ -248,9 +250,11 @@ fn test_unscale_exact() {
 }
 
 #[test]
-fn test_unscale_rounds_toward_zero() {
-    // (1.5, -2.25) / 7: truncated toward zero.
-    assert!(a().unscale(fx(0x700000000)) == p2(920350134, -1380525202));
+fn test_unscale_rounds_to_nearest() {
+    // (1.5, -2.25) / 7: rounded to nearest.
+    assert!(a().unscale(fx(0x700000000)) == p2(920350135, -1380525202));
+    // Ties to even: 0.5, -1.5 ulp.
+    assert!(p2(1, -3).unscale(fx(0x200000000)) == p2(0, -2));
 }
 
 #[test]

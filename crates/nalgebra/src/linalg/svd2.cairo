@@ -81,7 +81,7 @@ pub impl Svd2Impl<
     ///                              singular values come out descending
     /// w_i = M v_i                 (2 fused sum_prod2 each)
     /// σ_i = |w_i|                 (floored norm2 on the unscaled sum of squares)
-    /// u_1 = w_1 / σ_1             (one truncated division per component)
+    /// u_1 = w_1 / σ_1             (one correctly rounded division per component)
     /// u_2 = ± perp(u_1)           (EXACT orthonormality, see below)
     /// ```
     ///

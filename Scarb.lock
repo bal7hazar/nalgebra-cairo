@@ -3,9 +3,9 @@ version = 1
 
 [[package]]
 name = "fixed"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:75d1f100e7651d16687dd6d53e65c172f3a8f9ae4e9b36c57f6c100910de4864"
+checksum = "sha256:2f5867291f4bc0660ee113c1cb5e3edac65515dc4fb8618283d26b30bd13a021"
 
 [[package]]
 name = "nalgebra"

@@ -83,10 +83,10 @@ pub impl UnitQuaternionImpl<
         UnitQuaternion { quaternion: q }
     }
 
-    /// `q / |q|`: the norm (floored once), then one truncated division per component, so the
-    /// error is about `1 + 1 / |q|` ulp per component whatever the magnitude of `q`. Panics with
-    /// `Fixed: division by zero` on a zero quaternion. Upstream: `UnitQuaternion::new_normalize`
-    /// (`from_quaternion`, `Unit::new_normalize`).
+    /// `q / |q|`: the norm (floored once), then one correctly rounded division per component, so
+    /// the error is about `1 + 1 / |q|` ulp per component whatever the magnitude of `q`. Panics
+    /// with `Fixed: division by zero` on a zero quaternion. Upstream:
+    /// `UnitQuaternion::new_normalize` (`from_quaternion`, `Unit::new_normalize`).
     #[inline(always)]
     fn new_normalize(q: Quaternion<T>) -> UnitQuaternion<T> {
         UnitQuaternion { quaternion: q.normalize() }
@@ -173,8 +173,8 @@ pub impl UnitQuaternionImpl<
     // --- renormalization --------------------------------------------------------------------
 
     /// Renormalizes exactly: `new_normalize(self.quaternion)`, i.e. one norm and one exactly
-    /// truncated division per component. Use it when the norm may be far from 1 (after `nlerp`,
-    /// after an unnormalized construction). Panics on a zero quaternion. Upstream:
+    /// correctly rounded division per component. Use it when the norm may be far from 1 (after
+    /// `nlerp`, after an unnormalized construction). Panics on a zero quaternion. Upstream:
     /// `Unit::renormalize`.
     #[inline(always)]
     fn renormalize(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
@@ -214,8 +214,8 @@ pub impl UnitQuaternionImpl<
     /// imaginary part, i.e. an angle of `0` or `2π`). The sign convention is upstream's: the axis
     /// is flipped when `w < 0`, so that the matching `angle()` lies in `[0, π]`.
     ///
-    /// The axis is `imag / |imag|` (one norm, then one truncated division per component), so
-    /// its error is about `1 + 1 / |imag|` ulp per component: the axis of a rotation by a very
+    /// The axis is `imag / |imag|` (one norm, then one correctly rounded division per component),
+    /// so its error is about `1 + 1 / |imag|` ulp per component: the axis of a rotation by a very
     /// small angle is poorly determined (`|imag| = sin(angle / 2)`), which is why `scaled_axis` is
     /// the right output for integration. Upstream: `axis`.
     fn axis(self: UnitQuaternion<T>) -> Option<Unit<Vector3<T>>> {

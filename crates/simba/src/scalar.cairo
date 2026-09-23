@@ -20,8 +20,9 @@
 //!
 //! - every rescale (products, fused kernels, `Acc::narrow`) rounds toward negative infinity
 //!   (floor); `sqrt` and the `norm*` kernels return the floor of the exact root;
-//! - `div`, `rem`, `recip` and `from_ratio` TRUNCATE toward zero (`rem` has the sign of the
-//!   dividend), like Rust's integer division and float `%`;
+//! - `div`, `recip` and `from_ratio` are correctly rounded: to NEAREST, ties to even, like Rust's
+//!   `f64 /` (exact whenever the quotient is representable); `rem` is the exact truncated
+//!   remainder (sign of the dividend), like Rust's float `%`;
 //! - `inv_norm2` goes through `fixed::wide::RecipTrait::mul`, which rounds to nearest;
 //! - the transcendental functions of `fixed::trig` round their final rescale to nearest;
 //! - constants are rounded to nearest;
@@ -87,8 +88,8 @@ pub trait Real<T> {
 
     /// The integer `v`, exactly.
     fn from_int(v: i32) -> T;
-    /// `num / den` for two integers, rounded once (toward zero for `fixed::Fixed`). Panics on a
-    /// zero denominator or overflow.
+    /// `num / den` for two integers, rounded once (to nearest, ties to even for `fixed::Fixed`).
+    /// Panics on a zero denominator or overflow.
     fn from_ratio(num: i64, den: i64) -> T;
 
     // --- helpers -------------------------------------------------------------------------------
@@ -109,7 +110,8 @@ pub trait Real<T> {
     fn clamp(self: T, lo: T, hi: T) -> T;
     /// Largest integer `<= self`.
     fn floor(self: T) -> T;
-    /// `1 / self`, cheaper than `Real::div(ONE, self)` (toward zero for `fixed::Fixed`).
+    /// `1 / self`, bit-identical to `Real::div(ONE, self)` and cheaper (to nearest, ties to even
+    /// for `fixed::Fixed`).
     fn recip(self: T) -> T;
     /// Square root (floor of the exact root for `fixed::Fixed`). Panics on a negative input.
     fn sqrt(self: T) -> T;
@@ -123,8 +125,8 @@ pub trait Real<T> {
 
     // --- division: the ONLY division entry points of generic code -------------------------------
 
-    /// `a / b`, rounded once (toward zero for `fixed::Fixed`). Panics on a zero divisor and when
-    /// the quotient is out of range.
+    /// `a / b`, rounded once (to nearest, ties to even for `fixed::Fixed`, like `f64 /`). Panics on
+    /// a zero divisor and when the quotient is out of range.
     ///
     /// Generic code (nalgebra) divides through `Real::div` / `Real::rem`, never through the
     /// corelib `/` / `%` operators, so that the trait pins the semantics. Upstream: `Div for f64`.
@@ -352,7 +354,7 @@ pub impl FixedReal of Real<Fixed> {
         FixedTrait::abs_diff_eq(self, other, tol)
     }
 
-    /// `fixed::Fixed`'s `/` (`FixedDiv`): truncated toward zero.
+    /// `fixed::Fixed`'s `/` (`FixedDiv`, `FixedTrait::div_nearest`): to nearest, ties to even.
     #[inline(always)]
     fn div(a: Fixed, b: Fixed) -> Fixed {
         a / b

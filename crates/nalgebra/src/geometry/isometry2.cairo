@@ -306,10 +306,10 @@ pub impl Isometry2Impl<
     }
 
     /// Renormalises the rotation exactly (`UnitComplex::renormalize`: one `norm2` and two exactly
-    /// truncated divisions), leaving the translation untouched. Call it after a long chain of
-    /// compositions, each of which lets the norm of the complex drift by up to 2 ulp. Panics with
-    /// `Fixed: division by zero` on a zero rotation. Upstream: `Rotation::renormalize` applied to
-    /// the rotation part (upstream has no `Isometry::renormalize`).
+    /// correctly rounded divisions), leaving the translation untouched. Call it after a long chain
+    /// of compositions, each of which lets the norm of the complex drift by up to 2 ulp. Panics
+    /// with `Fixed: division by zero` on a zero rotation. Upstream: `Rotation::renormalize` applied
+    /// to the rotation part (upstream has no `Isometry::renormalize`).
     #[inline(always)]
     fn renormalize(self: Isometry2<T>) -> Isometry2<T> {
         Isometry2 { rotation: self.rotation.renormalize(), translation: self.translation }

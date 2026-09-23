@@ -10,7 +10,7 @@ repository.workspace = true
 keywords.workspace = true
 
 [dependencies]
-fixed = "0.2.0"
+fixed = "0.3.0"
 
 [dev-dependencies]
 snforge_std.workspace = true

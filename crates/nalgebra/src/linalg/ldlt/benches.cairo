@@ -5,9 +5,9 @@
 //! Three candidates are measured here.
 //!
 //! `alt_recip` in `solve` and `inverse`: one `recip(d_j)` then multiplications instead of exactly
-//! truncated divisions. Same verdict as in `cholesky::benches` — each pivot is divided by ONCE in
-//! `solve`, so the reciprocal is both dearer (19 to 26 %) and, on the oracle's 12 cases, markedly
-//! less accurate; in `inverse` it saves 6 to 11 % but rounds twice per entry, which
+//! correctly rounded divisions. Same verdict as in `cholesky::benches` — each pivot is divided by
+//! ONCE in `solve`, so the reciprocal is both dearer (19 to 26 %) and, on the oracle's 12 cases,
+//! markedly less accurate; in `inverse` it saves 6 to 11 % but rounds twice per entry, which
 //! `test_ldlt2_inverse_alt_recip_loses_low_bits` exhibits on a hand-built factor.
 //!
 //! `alt_products` in `new`: recompute the column of `l·diag(d)` as explicit rounded products
@@ -90,7 +90,7 @@ fn new2_products(a: SymMatrix2<Fixed>) -> Option<Ldlt2<Fixed>> {
     Some(Ldlt2 { l21, d: Vector2 { x: d1, y: d2 } })
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one truncated division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve2_recip(f: Ldlt2<Fixed>, b: Vector2<Fixed>) -> Vector2<Fixed> {
     let y1 = b.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
@@ -390,7 +390,7 @@ fn new3_products(a: SymMatrix3<Fixed>) -> Option<Ldlt3<Fixed>> {
     Some(Ldlt3 { l21, l31, l32, d: Vector3 { x: d1, y: d2, z: d3 } })
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one truncated division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve3_recip(f: Ldlt3<Fixed>, b: Vector3<Fixed>) -> Vector3<Fixed> {
     let y1 = b.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
@@ -746,7 +746,7 @@ fn new4_products(a: Matrix4<Fixed>) -> Option<Ldlt4<Fixed>> {
     Some(Ldlt4 { l21, l31, l41, l32, l42, l43, d: Vector4 { x: d1, y: d2, z: d3, w: d4 } })
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one truncated division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve4_recip(f: Ldlt4<Fixed>, b: Vector4<Fixed>) -> Vector4<Fixed> {
     let y1 = b.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
@@ -1264,7 +1264,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     )
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one truncated division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve6_recip(f: Ldlt6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
     let y1 = b.a.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a.y);

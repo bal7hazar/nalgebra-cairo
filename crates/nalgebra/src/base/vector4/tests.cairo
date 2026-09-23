@@ -218,12 +218,14 @@ fn test_unscale_exact() {
 }
 
 #[test]
-fn test_unscale_rounds_toward_zero() {
-    // +-1 / 3, +-2 / 3: truncated toward zero.
+fn test_unscale_rounds_to_nearest() {
+    // +-1 / 3, +-2 / 3: rounded to nearest.
     assert!(
         v4(0x100000000, -0x100000000, 0x200000000, -0x200000000)
-            .unscale(fx(0x300000000)) == v4(1431655765, -1431655765, 2863311530, -2863311530),
+            .unscale(fx(0x300000000)) == v4(1431655765, -1431655765, 2863311531, -2863311531),
     );
+    // Ties to even: 0.5, -1.5, 2.5 and -2.5 ulp.
+    assert!(v4(1, -3, 5, -5).unscale(fx(0x200000000)) == v4(0, -2, 2, -2));
 }
 
 #[test]

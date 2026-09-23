@@ -187,9 +187,11 @@ fn test_unscale_exact() {
 }
 
 #[test]
-fn test_unscale_rounds_toward_zero() {
-    // +-1 / 3, +-2 / 3: truncated toward zero.
+fn test_unscale_rounds_to_nearest() {
+    // +-1 / 3, +-2 / 3: rounded to nearest.
     assert!(v2(0x100000000, -0x100000000).unscale(fx(0x300000000)) == v2(1431655765, -1431655765));
+    // Ties to even: 0.5, -1.5 ulp.
+    assert!(v2(1, -3).unscale(fx(0x200000000)) == v2(0, -2));
 }
 
 #[test]

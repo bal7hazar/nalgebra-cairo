@@ -51,7 +51,7 @@ pub impl Qr3Impl<
     /// Always succeeds. Each `r_ii` is a floored `norm3`, whose sum of squares is accumulated
     /// unscaled, so no intermediate can overflow and the norm is the exact floor of the true one;
     /// each `r_ij` is one fused `sum_prod3`, each update one fused `mul_add` per component, and
-    /// each component of `q_i` one truncated division.
+    /// each component of `q_i` one correctly rounded division.
     ///
     /// The MODIFIED form (subtracting the projections one at a time, from the already updated
     /// vector) is the same arithmetic statement for statement and is never less orthogonal; on the
@@ -163,8 +163,9 @@ pub impl Qr3Impl<
     ///
     /// `x = R^-1 (Qᵀ b)`: one fused `tr_mul_vec` for `Qᵀ b` (one rounding per component), then
     /// back substitution. Each component of `x` costs TWO roundings — the numerator, accumulated
-    /// exactly in `Real::Wide` whatever the number of terms, then the truncated division by the
-    /// diagonal entry. Panics with the scalar's overflow error if a component of `x` does not fit.
+    /// exactly in `Real::Wide` whatever the number of terms, then the correctly rounded division by
+    /// the diagonal entry. Panics with the scalar's overflow error if a component of `x` does not
+    /// fit.
     fn solve(self: Qr3<T>, b: Vector3<T>) -> Option<Vector3<T>> {
         if !Self::is_invertible(self) {
             return None;
@@ -182,10 +183,10 @@ pub impl Qr3Impl<
     ///
     /// `A^-1 = R^-1 Qᵀ`: the transpose is free (column `j` of `Qᵀ` is row `j` of `Q`), and the
     /// back substitution runs on the three columns at once. Two roundings per entry (the fused
-    /// numerator, then the truncated division by the diagonal entry); a reciprocal per diagonal
-    /// entry would amortise over the 3 columns and is not used, for the reason `Lu2::try_inverse`
-    /// documents (a second rounding per output scalar). Panics with the scalar's overflow error if
-    /// an entry does not fit.
+    /// numerator, then the correctly rounded division by the diagonal entry); a reciprocal per
+    /// diagonal entry would amortise over the 3 columns and is not used, for the reason
+    /// `Lu2::try_inverse` documents (a second rounding per output scalar). Panics with the scalar's
+    /// overflow error if an entry does not fit.
     fn try_inverse(self: Qr3<T>) -> Option<Matrix3<T>> {
         if !Self::is_invertible(self) {
             return None;

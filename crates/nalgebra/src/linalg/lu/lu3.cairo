@@ -58,17 +58,17 @@ pub impl Lu3Impl<
     /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
     /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..3` is
     /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 3 multipliers
-    /// `l_ik = a_ik / a_kk` are each one truncated division, and the trailing submatrix is updated
-    /// entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one overflow
-    /// check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
+    /// `l_ik = a_ik / a_kk` are each one correctly rounded division, and the trailing submatrix is
+    /// updated entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one
+    /// overflow check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
     ///
     /// A pivot column that is exactly zero is skipped — no swap, no permutation, zero multipliers
     /// —
     /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
     ///
-    /// Error model: `l_ik` is off by at most 1 ulp (truncated quotient) and every update floors
-    /// once, so after each of the 2 steps an entry of `U` is within about `k * (1 + |a_kj|)` raw
-    /// units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
+    /// Error model: `l_ik` is off by at most 1 ulp (correctly rounded quotient) and every update
+    /// floors once, so after each of the 2 steps an entry of `U` is within about `k * (1 + |a_kj|)`
+    /// raw units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
     /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
     /// not fit.
     fn new(matrix: Matrix3<T>) -> Lu3<T> {
@@ -310,11 +310,11 @@ pub impl Lu3Impl<
     /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
     /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
     /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
-    /// then the truncated division by the pivot.
+    /// then the correctly rounded division by the pivot.
     ///
-    /// The 3 truncated divisions are kept rather than 3 reciprocals and 3 multiplications. That
-    /// candidate loses on both counts here: a reciprocal plus a multiplication is dearer than a
-    /// division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
+    /// The 3 correctly rounded divisions are kept rather than 3 reciprocals and 3 multiplications.
+    /// That candidate loses on both counts here: a reciprocal plus a multiplication is dearer than
+    /// a division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
     /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu3_solve__alt_recip` and
     /// `test_solve_candidates_error` keep both measurements. `try_inverse` amortises a reciprocal
     /// over 3 columns and would be cheaper with one, and still does not use one (see there).
@@ -358,8 +358,8 @@ pub impl Lu3Impl<
     /// by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
     ///
     /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
-    /// (the numerator, then the truncated division by the pivot). Panics with the scalar's overflow
-    /// error if an entry of the inverse does not fit.
+    /// (the numerator, then the correctly rounded division by the pivot). Panics with the scalar's
+    /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 3 columns
     /// amortise: 44 950 against 46 230 gas. It still divides, because `mul(x, recip(u))` rounds
@@ -551,9 +551,10 @@ mod tests {
     //! - `alt_no_pivot`: the elimination without partial pivoting. Cheaper and shorter, and wrong
     //! on a matrix as ordinary as a permuted identity.
     //!
-    //! - `alt_recip`: one reciprocal per pivot instead of one truncated division per output scalar.
-    //! DEARER for `solve`, where a single right-hand side does not amortise the reciprocal, cheaper
-    //! for `try_inverse`, where 3 columns share it, and a second rounding per output in both.
+    //! - `alt_recip`: one reciprocal per pivot instead of one correctly rounded division per output
+    //! scalar. DEARER for `solve`, where a single right-hand side does not amortise the reciprocal,
+    //! cheaper for `try_inverse`, where 3 columns share it, and a second rounding per output in
+    //! both.
     //!
     //! - `alt_solve_columns`: the inverse as 3 calls to `solve`. Bit-identical, dearer.
 
@@ -687,7 +688,7 @@ mod tests {
         }
     }
 
-    /// `solve` with ONE reciprocal per pivot and 3 multiplications instead of 3 truncated
+    /// `solve` with ONE reciprocal per pivot and 3 multiplications instead of 3 correctly rounded
     /// divisions.
     /// Kept as evidence, and it loses on both counts: a reciprocal (2 190) plus a multiplication (1
     /// 750) is dearer than a division (2 740), and a single right-hand side gives nothing to

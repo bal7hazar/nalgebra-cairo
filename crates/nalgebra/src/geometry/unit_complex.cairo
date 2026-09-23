@@ -123,8 +123,8 @@ pub trait UnitComplexTrait<T> {
     /// Exact. Upstream: `to_homogeneous`.
     fn to_homogeneous(self: UnitComplex<T>) -> Matrix3<T>;
     /// Renormalizes exactly: divides `(re, im)` by their norm (one `norm2`, then one exactly
-    /// truncated division per component), so the result is unit within about `1 + 1/|c|` ulp
-    /// whatever the drift. Panics with `Fixed: division by zero` on the zero pair. Upstream:
+    /// correctly rounded division per component), so the result is unit within about `1 + 1/|c|`
+    /// ulp whatever the drift. Panics with `Fixed: division by zero` on the zero pair. Upstream:
     /// `Unit::renormalize` (which also returns the previous norm and works in place).
     fn renormalize(self: UnitComplex<T>) -> UnitComplex<T>;
     /// Renormalizes a pair whose norm is already close to 1 (the usual case: rounding accumulated

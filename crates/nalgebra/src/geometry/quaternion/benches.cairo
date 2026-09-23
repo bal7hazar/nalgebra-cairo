@@ -134,7 +134,8 @@ fn test_normalize_alt_recip_is_less_accurate() {
 fn test_try_inverse_alt_recip_is_less_accurate() {
     let exact = a().try_inverse().unwrap();
     let approx = alt_try_inverse_recip(a()).unwrap();
-    // 2 ulp apart with `fixed`'s truncating division and reciprocal (3 with the former floor).
+    // 2 ulp apart with `fixed`'s correctly rounded division and reciprocal (3 with the former
+    // floor).
     assert!(!approx.abs_diff_eq(exact, 1));
     assert!(approx.abs_diff_eq(exact, 2));
     assert!(alt_try_inverse_recip(QuaternionTrait::<Fixed>::zero()) == None);

@@ -60,7 +60,7 @@ pub trait Vector3Trait<T> {
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale`
     /// (`self * k`).
     fn scale(self: Vector3<T>, k: T) -> Vector3<T>;
-    /// `self / k`, each component being the truncated quotient. Panics on a zero `k` and
+    /// `self / k`, each component being the correctly rounded quotient. Panics on a zero `k` and
     /// on overflow. Upstream: `unscale` (`self / k`).
     ///
     /// One division per component on purpose: `scale(k.recip())` is cheaper but rounds `1 / k`
@@ -71,7 +71,7 @@ pub trait Vector3Trait<T> {
     /// Component-wise product, each component floored once. Panics on overflow. Upstream:
     /// `component_mul`.
     fn component_mul(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T>;
-    /// Component-wise quotient, each component truncated toward zero. Panics on a zero component of
+    /// Component-wise quotient, each component rounded to nearest. Panics on a zero component of
     /// `rhs` and on overflow. Upstream: `component_div`.
     fn component_div(self: Vector3<T>, rhs: Vector3<T>) -> Vector3<T>;
     /// Component-wise absolute value. Exact; panics on overflow (`|MIN|`). Upstream: `abs`.
@@ -131,7 +131,7 @@ pub trait Vector3Trait<T> {
     /// `(self - rhs).norm()`. Panics when a component difference or the result overflows.
     /// Upstream: `metric_distance`.
     fn metric_distance(self: Vector3<T>, rhs: Vector3<T>) -> T;
-    /// `self / self.norm()`: the floored norm, then one truncated division per component
+    /// `self / self.norm()`: the floored norm, then one correctly rounded division per component
     /// (`unscale`). The error is about `1 + 1 / norm` ulp per component whatever the magnitude of
     /// `self`, from a few ulp up to the longest vector whose norm fits. Panics with a division by
     /// zero when the norm is zero, and on overflow when the norm does not fit. Upstream:

@@ -389,7 +389,7 @@ pub impl Isometry3Impl<
     }
 
     /// Renormalises the rotation exactly (`UnitQuaternion::renormalize`: one norm and four exactly
-    /// truncated divisions), leaving the translation untouched. Panics with
+    /// correctly rounded divisions), leaving the translation untouched. Panics with
     /// `Fixed: division by zero` on a zero rotation. Upstream: `Unit::renormalize` applied to the
     /// rotation part (upstream has no `Isometry::renormalize`).
     #[inline(always)]

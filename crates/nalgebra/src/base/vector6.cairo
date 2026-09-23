@@ -58,7 +58,7 @@ pub trait Vector6Trait<T> {
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale`
     /// (`self * k`).
     fn scale(self: Vector6<T>, k: T) -> Vector6<T>;
-    /// `self / k`, each component being the truncated quotient. Panics on a zero `k` and on
+    /// `self / k`, each component being the correctly rounded quotient. Panics on a zero `k` and on
     /// overflow. Upstream: `unscale` (`self / k`).
     ///
     /// One division per component on purpose, like `Vector3::unscale`: `scale(k.recip())` is
@@ -93,7 +93,7 @@ pub trait Vector6Trait<T> {
     /// floored once. No intermediate overflow: only the result must fit, so the norm of
     /// `(1e6, .., 1e6)` is fine. Upstream: `norm`.
     fn norm(self: Vector6<T>) -> T;
-    /// `self / self.norm()`: the floored norm, then one truncated division per component
+    /// `self / self.norm()`: the floored norm, then one correctly rounded division per component
     /// (`unscale`). The error is about `1 + 1 / norm` ulp per component whatever the magnitude of
     /// `self`. Panics with a division by zero when the norm is zero, and on overflow when the norm
     /// does not fit. Upstream: `normalize`.

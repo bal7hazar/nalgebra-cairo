@@ -12,7 +12,7 @@
 //!
 //! Numeric contract (AGENTS.md rule 4): every sum of products — pivots, substitution dot
 //! products, products of the triangular inverse — is accumulated EXACTLY in the `Real::Wide`
-//! accumulator and floored ONCE. Divisions by a pivot are truncated divisions, never a
+//! accumulator and floored ONCE. Divisions by a pivot are correctly rounded divisions, never a
 //! multiplication by a rounded reciprocal, following the precedent of `Matrix3::try_inverse` and
 //! `Vector3::unscale`.
 //! The `alt_recip` candidates are kept in `benches.cairo` with their measurements: in `solve` a
@@ -197,8 +197,8 @@ pub impl Cholesky2Impl<
     /// Column by column (j = 1..2): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of
     /// the square root); each sub-diagonal entry `l_ij = (a_ij - Σ_(k<j) l_ik·l_jk) / l_jj` costs
-    /// one exact accumulation (one floor) and one truncated division (a second rounding, toward
-    /// zero).
+    /// one exact accumulation (one floor) and one correctly rounded division (a second rounding, to
+    /// nearest).
     /// 2 square roots and 1 division in total.
     ///
     /// SINGULARITY CRITERION: `None` as soon as a pivot is `<= 0` AFTER that flooring. Upstream
@@ -236,10 +236,10 @@ pub impl Cholesky2Impl<
     /// The solution `x` of `a * x = b`, by forward substitution on `l` then back substitution on
     /// `lᵀ`. Upstream: `Cholesky::solve`.
     ///
-    /// Each of the 4 intermediates is ONE exact accumulation floored once
-    /// (`b_i - Σ_(k<i) l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one exactly
-    /// truncated division by the pivot: two roundings per intermediate, 4 divisions in total. Never
-    /// a multiplication by a rounded reciprocal (see the module doc).
+    /// Each of the 4 intermediates is ONE exact accumulation floored once (`b_i - Σ_(k<i)
+    /// l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one correctly rounded division
+    /// by the pivot: two roundings per intermediate, 4 divisions in total. Never a multiplication
+    /// by a rounded reciprocal (see the module doc).
     ///
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
@@ -262,10 +262,10 @@ pub impl Cholesky2Impl<
     /// Upstream: `Cholesky::inverse`.
     ///
     /// `q = l⁻¹` (lower triangular) is built column by column — `q_jj = recip(l_jj)` (the
-    /// `1 / l_jj` truncated toward zero, cheaper than `ONE / l_jj`) and
-    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one truncated
-    /// division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation floored once
-    /// per output.
+    /// `1 / l_jj` rounded to nearest, cheaper than `ONE / l_jj`) and
+    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one correctly
+    /// rounded division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation
+    /// floored once per output.
     /// 3 divisions in total, against the 8 of 2 `solve` calls on the columns
     /// of the identity.
     ///
@@ -326,8 +326,8 @@ pub impl Cholesky3Impl<
     /// Column by column (j = 1..3): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of
     /// the square root); each sub-diagonal entry `l_ij = (a_ij - Σ_(k<j) l_ik·l_jk) / l_jj` costs
-    /// one exact accumulation (one floor) and one truncated division (a second rounding, toward
-    /// zero).
+    /// one exact accumulation (one floor) and one correctly rounded division (a second rounding, to
+    /// nearest).
     /// 3 square roots and 3 divisions in total.
     ///
     /// SINGULARITY CRITERION: `None` as soon as a pivot is `<= 0` AFTER that flooring. Upstream
@@ -388,10 +388,10 @@ pub impl Cholesky3Impl<
     /// The solution `x` of `a * x = b`, by forward substitution on `l` then back substitution on
     /// `lᵀ`. Upstream: `Cholesky::solve`.
     ///
-    /// Each of the 6 intermediates is ONE exact accumulation floored once
-    /// (`b_i - Σ_(k<i) l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one exactly
-    /// truncated division by the pivot: two roundings per intermediate, 6 divisions in total. Never
-    /// a multiplication by a rounded reciprocal (see the module doc).
+    /// Each of the 6 intermediates is ONE exact accumulation floored once (`b_i - Σ_(k<i)
+    /// l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one correctly rounded division
+    /// by the pivot: two roundings per intermediate, 6 divisions in total. Never a multiplication
+    /// by a rounded reciprocal (see the module doc).
     ///
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
@@ -424,10 +424,10 @@ pub impl Cholesky3Impl<
     /// Upstream: `Cholesky::inverse`.
     ///
     /// `q = l⁻¹` (lower triangular) is built column by column — `q_jj = recip(l_jj)` (the
-    /// `1 / l_jj` truncated toward zero, cheaper than `ONE / l_jj`) and
-    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one truncated
-    /// division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation floored once
-    /// per output.
+    /// `1 / l_jj` rounded to nearest, cheaper than `ONE / l_jj`) and
+    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one correctly
+    /// rounded division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation
+    /// floored once per output.
     /// 6 divisions in total, against the 18 of 3 `solve` calls on the columns
     /// of the identity.
     ///
@@ -510,8 +510,8 @@ pub impl Cholesky4Impl<
     /// Column by column (j = 1..4): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of
     /// the square root); each sub-diagonal entry `l_ij = (a_ij - Σ_(k<j) l_ik·l_jk) / l_jj` costs
-    /// one exact accumulation (one floor) and one truncated division (a second rounding, toward
-    /// zero).
+    /// one exact accumulation (one floor) and one correctly rounded division (a second rounding, to
+    /// nearest).
     /// 4 square roots and 6 divisions in total.
     ///
     /// SINGULARITY CRITERION: `None` as soon as a pivot is `<= 0` AFTER that flooring. Upstream
@@ -598,10 +598,10 @@ pub impl Cholesky4Impl<
     /// The solution `x` of `a * x = b`, by forward substitution on `l` then back substitution on
     /// `lᵀ`. Upstream: `Cholesky::solve`.
     ///
-    /// Each of the 8 intermediates is ONE exact accumulation floored once
-    /// (`b_i - Σ_(k<i) l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one exactly
-    /// truncated division by the pivot: two roundings per intermediate, 8 divisions in total. Never
-    /// a multiplication by a rounded reciprocal (see the module doc).
+    /// Each of the 8 intermediates is ONE exact accumulation floored once (`b_i - Σ_(k<i)
+    /// l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one correctly rounded division
+    /// by the pivot: two roundings per intermediate, 8 divisions in total. Never a multiplication
+    /// by a rounded reciprocal (see the module doc).
     ///
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
@@ -645,10 +645,10 @@ pub impl Cholesky4Impl<
     /// Upstream: `Cholesky::inverse`.
     ///
     /// `q = l⁻¹` (lower triangular) is built column by column — `q_jj = recip(l_jj)` (the
-    /// `1 / l_jj` truncated toward zero, cheaper than `ONE / l_jj`) and
-    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one truncated
-    /// division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation floored once
-    /// per output.
+    /// `1 / l_jj` rounded to nearest, cheaper than `ONE / l_jj`) and
+    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one correctly
+    /// rounded division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation
+    /// floored once per output.
     /// 10 divisions in total, against the 32 of 4 `solve` calls on the columns
     /// of the identity.
     ///
@@ -780,8 +780,8 @@ pub impl Cholesky6Impl<
     /// Column by column (j = 1..6): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of
     /// the square root); each sub-diagonal entry `l_ij = (a_ij - Σ_(k<j) l_ik·l_jk) / l_jj` costs
-    /// one exact accumulation (one floor) and one truncated division (a second rounding, toward
-    /// zero).
+    /// one exact accumulation (one floor) and one correctly rounded division (a second rounding, to
+    /// nearest).
     /// 6 square roots and 15 divisions in total.
     ///
     /// SINGULARITY CRITERION: `None` as soon as a pivot is `<= 0` AFTER that flooring. Upstream
@@ -980,10 +980,10 @@ pub impl Cholesky6Impl<
     /// The solution `x` of `a * x = b`, by forward substitution on `l` then back substitution on
     /// `lᵀ`. Upstream: `Cholesky::solve`.
     ///
-    /// Each of the 12 intermediates is ONE exact accumulation floored once
-    /// (`b_i - Σ_(k<i) l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one exactly
-    /// truncated division by the pivot: two roundings per intermediate, 12 divisions in total.
-    /// Never a multiplication by a rounded reciprocal (see the module doc).
+    /// Each of the 12 intermediates is ONE exact accumulation floored once (`b_i - Σ_(k<i)
+    /// l_ik·y_k`, then `y_i - Σ_(k>i) l_ki·x_k`) followed by one correctly rounded division
+    /// by the pivot: two roundings per intermediate, 12 divisions in total. Never a multiplication
+    /// by a rounded reciprocal (see the module doc).
     ///
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
@@ -1057,10 +1057,10 @@ pub impl Cholesky6Impl<
     /// Upstream: `Cholesky::inverse`.
     ///
     /// `q = l⁻¹` (lower triangular) is built column by column — `q_jj = recip(l_jj)` (the
-    /// `1 / l_jj` truncated toward zero, cheaper than `ONE / l_jj`) and
-    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one truncated
-    /// division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation floored once
-    /// per output.
+    /// `1 / l_jj` rounded to nearest, cheaper than `ONE / l_jj`) and
+    /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one correctly
+    /// rounded division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation
+    /// floored once per output.
     /// 21 divisions in total, against the 72 of 6 `solve` calls on the columns
     /// of the identity.
     ///

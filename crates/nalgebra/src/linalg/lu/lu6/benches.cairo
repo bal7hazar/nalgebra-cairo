@@ -5,9 +5,9 @@
 //! - `alt_no_pivot`: the elimination without partial pivoting. Cheaper and shorter, and wrong on a
 //! matrix as ordinary as a permuted identity.
 //!
-//! - `alt_recip`: one reciprocal per pivot instead of one truncated division per output scalar.
-//! DEARER for `solve`, where a single right-hand side does not amortise the reciprocal, cheaper for
-//! `try_inverse`, where 6 columns share it, and a second rounding per output in both.
+//! - `alt_recip`: one reciprocal per pivot instead of one correctly rounded division per output
+//! scalar. DEARER for `solve`, where a single right-hand side does not amortise the reciprocal,
+//! cheaper for `try_inverse`, where 6 columns share it, and a second rounding per output in both.
 //!
 //! - `alt_solve_columns`: the inverse as 6 calls to `solve`. Bit-identical, dearer.
 
@@ -312,11 +312,12 @@ pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
     }
 }
 
-/// `solve` with ONE reciprocal per pivot and 6 multiplications instead of 6 truncated divisions.
-/// Kept as evidence, and it loses on both counts: a reciprocal (2 190) plus a multiplication (1
-/// 750) is dearer than a division (2 740), and a single right-hand side gives nothing to amortise
-/// it over, so it costs 73 460 against 65 020 gas; and rounding `1 / u_ii` before using it puts 1
-/// of the oracle cases outside the tolerance against 0 (`test_solve_candidates_error`).
+/// `solve` with ONE reciprocal per pivot and 6 multiplications instead of 6 correctly rounded
+/// divisions. Kept as evidence, and it loses on both counts: a reciprocal (2 190) plus a
+/// multiplication (1 750) is dearer than a division (2 740), and a single right-hand side gives
+/// nothing to amortise it over, so it costs 73 460 against 65 020 gas; and rounding `1 / u_ii`
+/// before using it puts 1 of the oracle cases outside the tolerance against 0
+/// (`test_solve_candidates_error`).
 pub fn solve_recip(f: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
     if !f.is_invertible() {
         return None;

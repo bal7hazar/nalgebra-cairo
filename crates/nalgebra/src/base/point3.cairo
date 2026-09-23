@@ -57,7 +57,7 @@ pub trait Point3Trait<T> {
     /// component is `0`). Upstream: `to_homogeneous`.
     fn to_homogeneous(self: Point3<T>) -> Vector4<T>;
     /// The point of homogeneous coordinates `v`: `(x / w, y / w, z / w)`, each component the
-    /// truncated quotient, or `None` when `w = 0`. Panics on overflow of a quotient.
+    /// correctly rounded quotient, or `None` when `w = 0`. Panics on overflow of a quotient.
     /// Upstream: `from_homogeneous`.
     ///
     /// One division per component on purpose (see `Vector3Trait::unscale`): multiplying by the
@@ -77,7 +77,7 @@ pub trait Point3Trait<T> {
     /// `self * k`, each coordinate floored once. Panics on overflow. Upstream: `Mul<T> for
     /// Point` (`p * k`).
     fn scale(self: Point3<T>, k: T) -> Point3<T>;
-    /// `self / k`, each coordinate being the truncated quotient. Panics on a zero `k` and
+    /// `self / k`, each coordinate being the correctly rounded quotient. Panics on a zero `k` and
     /// on overflow. Upstream: `Div<T> for Point` (`p / k`).
     fn unscale(self: Point3<T>, k: T) -> Point3<T>;
     /// Coordinate-wise minimum (infimum). Exact. Upstream: `inf`.
