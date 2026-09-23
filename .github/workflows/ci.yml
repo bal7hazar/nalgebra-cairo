@@ -23,7 +23,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [simba, nalgebra::base, nalgebra::geometry, nalgebra::linalg, integration]
+        # "<filter> <index>/<total>" runs one `snforge --partition` of a shard (large shards only).
+        shard: [simba, nalgebra_testing, "nalgebra::base 1/2", "nalgebra::base 2/2", nalgebra::geometry, nalgebra::linalg, integration]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
@@ -41,8 +42,40 @@ jobs:
             snforge test -p nalgebra nalgebra_integrationtest
             exit 0
           fi
-          package="${shard%%::*}"
-          snforge test -p "$package" "$shard" | tee /dev/stderr | python3 scripts/gas_report.py --check gas/ --filter "$shard"
+          filter="${shard%% *}"
+          package="${filter%%::*}"
+          if [[ "$shard" == *" "* ]]; then
+            partition="${shard#* }"
+            snforge test -p "$package" "$filter" --partition "$partition" | tee snforge.out /dev/stderr \
+              | python3 scripts/gas_report.py --check gas/ --filter "$filter" --partial
+          else
+            snforge test -p "$package" "$filter" | tee snforge.out /dev/stderr \
+              | python3 scripts/gas_report.py --check gas/ --filter "$filter"
+          fi
+      - name: Keep the benchmark lines for the full snapshot check
+        if: matrix.shard != 'integration'
+        run: |
+          grep -E "^\[PASS\].*::bench_" snforge.out > bench.out || true
+          echo "artifact=bench-$(echo '${{ matrix.shard }}' | tr ':/ ' '--_')" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: matrix.shard != 'integration'
+        with:
+          name: ${{ env.artifact }}
+          path: bench.out
+          retention-days: 1
+
+  gas:
+    name: Gas snapshot
+    needs: library
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: bench-*
+          path: bench
+      - name: Every benchmark of every shard against the full snapshot (catches removed benchmarks)
+        run: cat bench/*/bench.out | python3 scripts/gas_report.py --check gas/
 
   benchmarks:
     name: Design benchmarks
