@@ -146,9 +146,9 @@ pub trait Vector3Trait<T> {
     /// it never divides by zero. Upstream: `try_normalize`.
     fn try_normalize(self: Vector3<T>, min_norm: T) -> Option<Vector3<T>>;
     /// `self` when its norm is `<= max`, otherwise `self.scale(max / norm)` like upstream. The
-    /// ratio is floored, so the capped norm is short of `max` by up to about `norm / max` ulp and
-    /// exceeds it by at most the final rounding of the components. `max` is expected to be
-    /// `>= 0`. Panics only when the norm does not fit. Upstream: `cap_magnitude`.
+    /// ratio is rounded to nearest (like Rust's `max / n` in f64), so the capped norm is within
+    /// about `norm / max` ulp of `max` and, as in Rust, may exceed it by the rounding. `max` is
+    /// expected to be `>= 0`. Panics only when the norm does not fit. Upstream: `cap_magnitude`.
     ///
     /// The more accurate and dearer `normalize().scale(max)` is kept as a benchmark
     /// (`bench_vector3_cap_magnitude__alt_normalize`).

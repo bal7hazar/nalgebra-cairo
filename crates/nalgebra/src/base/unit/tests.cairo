@@ -197,13 +197,15 @@ fn test_renormalize_fast_is_a_fixed_point_of_normalized_vectors() {
 
 #[test]
 fn test_renormalize_fast_fixes_small_drift() {
-    // na scaled by 1 + 3e-6 and by 1 - 5e-6: one step gives the exact result within 1 ulp.
+    // na scaled by 1 + 3e-6 and by 1 - 5e-6: one step gives the exact unit vector within about
+    // 1 ulp (1.18 ulp measured, floor products), and `renormalize` (divisions rounded to nearest)
+    // is within 0.82 ulp of it; the two can straddle the exact value, hence 2 ulp between them.
     let up = u3(1393475576, -2090213367, 3483688943);
     assert!(up.renormalize_fast() == u3(1393471395, -2090207097, 3483678491));
-    assert!(up.renormalize_fast().abs_diff_eq(up.renormalize(), 1));
+    assert!(up.renormalize_fast().abs_diff_eq(up.renormalize(), 2));
     let down = u3(1393464429, -2090196645, 3483661074);
     assert!(down.renormalize_fast() == u3(1393471397, -2090207097, 3483678492));
-    assert!(down.renormalize_fast().abs_diff_eq(down.renormalize(), 1));
+    assert!(down.renormalize_fast().abs_diff_eq(down.renormalize(), 2));
 }
 
 #[test]

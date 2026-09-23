@@ -163,7 +163,7 @@ fn test_mul_is_the_composition_of_the_actions() {
 }
 
 #[test]
-fn test_inv_mul_is_the_inverse_times_other_within_four_ulp() {
+fn test_inv_mul_is_the_inverse_times_other_within_nine_ulp() {
     let (x, y) = (a(), b());
     // Same transform, but `inv_mul` rounds one intermediate less (see `benches.cairo`).
     assert!(x.inv_mul(y).abs_diff_eq(x.inverse() * y, 4));
@@ -173,7 +173,7 @@ fn test_inv_mul_is_the_inverse_times_other_within_four_ulp() {
         x
             .inv_mul(y)
             .transform_point(p)
-            .abs_diff_eq(x.inverse_transform_point(y.transform_point(p)), 8),
+            .abs_diff_eq(x.inverse_transform_point(y.transform_point(p)), 9),
     );
 }
 

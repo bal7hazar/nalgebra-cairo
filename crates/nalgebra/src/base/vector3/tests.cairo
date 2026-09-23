@@ -633,7 +633,9 @@ fn test_cap_magnitude_exact() {
 fn test_cap_magnitude_never_exceeds_cap_by_more_than_rounding() {
     let r = a().cap_magnitude(fx(0x200000000));
     assert!(r == v3(2786942794, -4180414192, 6967356986));
-    assert!(r.norm() <= fx(0x200000000) && r.norm().abs_diff_eq(fx(0x200000000), 16));
+    // The ratio `max / norm` is rounded to nearest, like Rust's `self * (max / n)` in f64: the
+    // capped norm may exceed `max` by the rounding, here by 1 ulp.
+    assert!(r.norm() <= fx(0x200000001) && r.norm().abs_diff_eq(fx(0x200000000), 16));
 }
 
 #[test]
@@ -704,7 +706,9 @@ fn assert_orthonormal_basis(v: Vector3<Fixed>, tol: u64) {
 
 #[test]
 fn test_orthonormal_basis_is_orthonormal_and_right_handed() {
-    // Every octant, directions close to the poles `z = +-1` and to the equator, axes.
+    // Every octant, directions close to the poles `z = +-1` and to the equator, axes. Tolerance
+    // 3 ulp: input-dependent rounding (the nearest-normalized `(0.25, -0.5, 0.125)` reaches 3 ulp
+    // on `u.v` and `u x w - v`, the other directions stay within 2).
     let mut dirs = array![
         v3(0x100000000, 0x200000000, 0x300000000), // (1, 2, 3)
         v3(-0x100000000, 0x200000000, 0x300000000), // (-1, 2, 3)
@@ -725,7 +729,7 @@ fn test_orthonormal_basis_is_orthonormal_and_right_handed() {
     ]
         .span();
     while let Some(dir) = dirs.pop_front() {
-        assert_orthonormal_basis((*dir).normalize(), 2);
+        assert_orthonormal_basis((*dir).normalize(), 3);
     }
 }
 

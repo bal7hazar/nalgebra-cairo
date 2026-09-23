@@ -97,8 +97,8 @@ fn test_cholesky2_l_oracle() {
     assert!(fail == 0 && worst <= 1, "chol2_l fail {} worst {}", fail, worst);
 }
 
-/// Reconstruction `l·lᵀ ≈ a` over the `cholesky2_l` inputs, within the oracle's tolerance for
-/// the factor itself.
+/// Reconstruction `l·lᵀ ≈ a` over the `cholesky2_l` inputs: the measured worst (9 ulp with the
+/// divisions rounded to nearest, 8 in the floor era).
 #[test]
 fn test_cholesky2_reconstruction() {
     let mut cases = oracle_cholesky::cholesky2_l_cases();
@@ -108,7 +108,7 @@ fn test_cholesky2_reconstruction() {
         let l = Cholesky2Trait::new(s2r(a)).unwrap().l();
         worst = core::cmp::max(worst, max_ulp_diff2(l * l.transpose(), m2(a)));
     }
-    assert!(worst <= 8, "chol2_rec worst {}", worst);
+    assert!(worst <= 9, "chol2_rec worst {}", worst);
 }
 
 /// `solve` against the oracle's `cholesky2_solve`.

@@ -213,7 +213,9 @@ fn test_ldlt2_inverse_oracle() {
     assert!(fail == 0 && worst <= 33, "ldlt2_inv fail {} worst {}", fail, worst);
 }
 
-/// The identity `a · a⁻¹ ≈ I` over the `udu2_inverse` inputs.
+/// The identity `a · a⁻¹ ≈ I` over the `udu2_inverse` inputs. Worst: case 10 (entries up to
+/// about 65, 66 ulp with the divisions rounded to nearest, 46 in the floor era); the per-case
+/// oracle tolerance of the inverse itself holds (`test_ldlt2_inverse_oracle`).
 #[test]
 fn test_ldlt2_inverse_is_a_right_inverse() {
     let mut cases = oracle_udu::udu2_inverse_cases();
@@ -226,7 +228,7 @@ fn test_ldlt2_inverse_is_a_right_inverse() {
                 worst, max_ulp_diff2(m2(a) * f.inverse().to_matrix(), Matrix2Trait::identity()),
             );
     }
-    assert!(worst <= 46, "ldlt2_id worst {}", worst);
+    assert!(worst <= 66, "ldlt2_id worst {}", worst);
 }
 
 /// `determinant` against the closed form of the same matrix, on the `small` and `unit` cases only
