@@ -362,17 +362,24 @@ pub impl Lu3Impl<
     /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 3 columns
-    /// amortise: 44 950 against 46 230 gas. It still divides, because `mul(x, recip(u))` rounds
-    /// twice where `x / u` rounds once, which is the rule DESIGN D2 and `Vector3::unscale` already
-    /// follow; the drift is small but real (13 ulp on the oracle inverses).
+    /// amortise: 46 160 against 57 820 gas (net, `fixed` 0.3.0). It still divides — upstream's
+    /// `solve_mut` divides by the pivot — because `mul(x, recip(u))` rounds twice where `x / u`
+    /// rounds once, which is the rule DESIGN D2 and `Vector3::unscale` already follow; the drift is
+    /// small but real (14 ulp on the oracle inverses).
     /// `bench_lu3_try_inverse__alt_recip` and `test_try_inverse_candidates` keep the measurement.
     ///
-    /// Against `Matrix3::try_inverse` (cofactors with the integer pre-scaling) the trade is real,
-    /// unlike for the determinant: on the `matrix3` oracle vectors this one is 11 % CHEAPER (79 590
-    /// against 88 940 gas, factorisation included) and less accurate (worst error 63 ulp against
-    /// 27), both inside the oracle tolerance. Use the closed form when the inverse is the answer,
-    /// this one when the same matrix is also solved against or its determinant is wanted, since the
-    /// factorisation is then paid once (`bench_lu3_vs_matrix3_inverse`).
+    /// The back substitution runs ROW by row across the 3 columns, so the quotients that
+    /// share a pivot go through ONE prepared divisor (`Real::div3`, bit-identical
+    /// to per-element division, cheaper from 3 quotients) and the corner `1 / u_33` is
+    /// `Real::recip` (WP 7.2).
+    ///
+    /// Against `Matrix3::try_inverse` (cofactors with the integer pre-scaling): on the `matrix3`
+    /// oracle vectors this one is 8 % DEARER since `fixed` 0.3.0 (95 760 against 88 360 gas,
+    /// factorisation included; it was 11 % cheaper on the floor-division scalar) and less accurate
+    /// (worst error 64 ulp against 27), both inside the oracle tolerance. Use the closed form when
+    /// the inverse is the answer, this one when the same matrix is also solved against or its
+    /// determinant is wanted, since the factorisation is then paid once
+    /// (`bench_lu3_vs_matrix3_inverse`).
     fn try_inverse(self: Lu3<T>) -> Option<Matrix3<T>> {
         if !Self::is_invertible(self) {
             return None;
@@ -381,41 +388,28 @@ pub impl Lu3Impl<
         let y31 = R::wide_rescale(
             R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m31), self.lu.m32, y21),
         );
-        let x31 = R::div(y31, self.lu.m33);
-        let x21 = R::div(R::mul_add(-self.lu.m23, x31, y21), self.lu.m22);
-        let x11 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12, x21),
-                    self.lu.m13,
-                    x31,
-                ),
-            ),
-            self.lu.m11,
-        );
         let y32 = -self.lu.m32;
+        let x33 = R::recip(self.lu.m33);
+        let x31 = R::div(y31, self.lu.m33);
         let x32 = R::div(y32, self.lu.m33);
-        let x22 = R::div(R::mul_add(-self.lu.m23, x32, R::ONE), self.lu.m22);
-        let x12 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22), self.lu.m13, x32,
-                ),
+        let n21 = R::mul_add(-self.lu.m23, x31, y21);
+        let n22 = R::mul_add(-self.lu.m23, x32, R::ONE);
+        let n23 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m23, x33));
+        let (x21, x22, x23) = R::div3(n21, n22, n23, self.lu.m22);
+        let n11 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12, x21),
+                self.lu.m13,
+                x31,
             ),
-            self.lu.m11,
         );
-        let x33 = R::div(R::ONE, self.lu.m33);
-        let x23 = R::div(
-            R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m23, x33)), self.lu.m22,
+        let n12 = R::wide_rescale(
+            R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22), self.lu.m13, x32),
         );
-        let x13 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_zero(), self.lu.m12, x23), self.lu.m13, x33,
-                ),
-            ),
-            self.lu.m11,
+        let n13 = R::wide_rescale(
+            R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x23), self.lu.m13, x33),
         );
+        let (x11, x12, x13) = R::div3(n11, n12, n13, self.lu.m11);
         let mut c11 = x11;
         let mut c12 = x12;
         let mut c13 = x13;

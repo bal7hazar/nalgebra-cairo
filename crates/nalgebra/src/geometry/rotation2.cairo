@@ -338,7 +338,7 @@ pub impl Rotation2AngleImpl<
 /// matrix product gives.
 ///
 /// The two extra products buy bit-exactness: composing through the complex form (two kernels,
-/// 4 600 gas against 10 260, `bench_rotation2_mul__alt_complex`) gives `m12` as `-floor(sin)`
+/// 4 260 gas against 9 950, `bench_rotation2_mul__alt_complex`) gives `m12` as `-floor(sin)`
 /// where the matrix product gives `floor(-sin)`, which differ by 1 ulp whenever the exact value
 /// is not an integer — and the oracle (`rotation2_mul`, tolerance 0) expects upstream's floor.
 /// Composing in `UnitComplex` form costs 4 000 gas and is exact there, which is what hot code

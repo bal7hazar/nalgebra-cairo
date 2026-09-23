@@ -1405,10 +1405,16 @@ pub impl Lu6Impl<
     /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 6 columns
-    /// amortise: 213 300 against 233 420 gas. It still divides, because `mul(x, recip(u))` rounds
-    /// twice where `x / u` rounds once, which is the rule DESIGN D2 and `Vector6::unscale` already
-    /// follow; the drift is small but real (3 ulp on the oracle inverses).
+    /// amortise: 208 240 against 271 680 gas (net, `fixed` 0.3.0). It still divides — upstream's
+    /// `solve_mut` divides by the pivot — because `mul(x, recip(u))` rounds twice where `x / u`
+    /// rounds once, which is the rule DESIGN D2 and `Vector6::unscale` already follow; the drift is
+    /// small but real (17 ulp on the oracle inverses).
     /// `bench_lu6_try_inverse__alt_recip` and `test_try_inverse_candidates` keep the measurement.
+    ///
+    /// The back substitution runs ROW by row across the 6 columns, so the quotients that
+    /// share a pivot go through ONE prepared divisor (`Real::div5` / `Real::div6`, bit-identical
+    /// to per-element division, cheaper from 3 quotients) and the corner `1 / u_66` is
+    /// `Real::recip` (WP 7.2).
     fn try_inverse(self: Lu6<T>) -> Option<Matrix6<T>> {
         if !Self::is_invertible(self) {
             return None;
@@ -1456,76 +1462,6 @@ pub impl Lu6Impl<
                 y51,
             ),
         );
-        let x61 = R::div(y61, self.lu.m22.m33);
-        let x51 = R::div(R::mul_add(-self.lu.m22.m23, x61, y51), self.lu.m22.m22);
-        let x41 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y41), self.lu.m22.m12, x51),
-                    self.lu.m22.m13,
-                    x61,
-                ),
-            ),
-            self.lu.m22.m11,
-        );
-        let x31 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), y31), self.lu.m12.m31, x41),
-                        self.lu.m12.m32,
-                        x51,
-                    ),
-                    self.lu.m12.m33,
-                    x61,
-                ),
-            ),
-            self.lu.m11.m33,
-        );
-        let x21 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_add(R::wide_zero(), y21), self.lu.m11.m23, x31,
-                            ),
-                            self.lu.m12.m21,
-                            x41,
-                        ),
-                        self.lu.m12.m22,
-                        x51,
-                    ),
-                    self.lu.m12.m23,
-                    x61,
-                ),
-            ),
-            self.lu.m11.m22,
-        );
-        let x11 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(
-                                    R::wide_add(R::wide_zero(), R::ONE), self.lu.m11.m12, x21,
-                                ),
-                                self.lu.m11.m13,
-                                x31,
-                            ),
-                            self.lu.m12.m11,
-                            x41,
-                        ),
-                        self.lu.m12.m12,
-                        x51,
-                    ),
-                    self.lu.m12.m13,
-                    x61,
-                ),
-            ),
-            self.lu.m11.m11,
-        );
         let y32 = -self.lu.m11.m32;
         let y42 = R::wide_rescale(
             R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m21.m12), self.lu.m21.m13, y32),
@@ -1552,74 +1488,6 @@ pub impl Lu6Impl<
                 y52,
             ),
         );
-        let x62 = R::div(y62, self.lu.m22.m33);
-        let x52 = R::div(R::mul_add(-self.lu.m22.m23, x62, y52), self.lu.m22.m22);
-        let x42 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y42), self.lu.m22.m12, x52),
-                    self.lu.m22.m13,
-                    x62,
-                ),
-            ),
-            self.lu.m22.m11,
-        );
-        let x32 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), y32), self.lu.m12.m31, x42),
-                        self.lu.m12.m32,
-                        x52,
-                    ),
-                    self.lu.m12.m33,
-                    x62,
-                ),
-            ),
-            self.lu.m11.m33,
-        );
-        let x22 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_add(R::wide_zero(), R::ONE), self.lu.m11.m23, x32,
-                            ),
-                            self.lu.m12.m21,
-                            x42,
-                        ),
-                        self.lu.m12.m22,
-                        x52,
-                    ),
-                    self.lu.m12.m23,
-                    x62,
-                ),
-            ),
-            self.lu.m11.m22,
-        );
-        let x12 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x22),
-                                self.lu.m11.m13,
-                                x32,
-                            ),
-                            self.lu.m12.m11,
-                            x42,
-                        ),
-                        self.lu.m12.m12,
-                        x52,
-                    ),
-                    self.lu.m12.m13,
-                    x62,
-                ),
-            ),
-            self.lu.m11.m11,
-        );
         let y43 = -self.lu.m21.m13;
         let y53 = R::wide_rescale(
             R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m21.m23), self.lu.m22.m21, y43),
@@ -1633,274 +1501,328 @@ pub impl Lu6Impl<
                 y53,
             ),
         );
-        let x63 = R::div(y63, self.lu.m22.m33);
-        let x53 = R::div(R::mul_add(-self.lu.m22.m23, x63, y53), self.lu.m22.m22);
-        let x43 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y43), self.lu.m22.m12, x53),
-                    self.lu.m22.m13,
-                    x63,
-                ),
-            ),
-            self.lu.m22.m11,
-        );
-        let x33 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12.m31, x43),
-                        self.lu.m12.m32,
-                        x53,
-                    ),
-                    self.lu.m12.m33,
-                    x63,
-                ),
-            ),
-            self.lu.m11.m33,
-        );
-        let x23 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x33),
-                            self.lu.m12.m21,
-                            x43,
-                        ),
-                        self.lu.m12.m22,
-                        x53,
-                    ),
-                    self.lu.m12.m23,
-                    x63,
-                ),
-            ),
-            self.lu.m11.m22,
-        );
-        let x13 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x23),
-                                self.lu.m11.m13,
-                                x33,
-                            ),
-                            self.lu.m12.m11,
-                            x43,
-                        ),
-                        self.lu.m12.m12,
-                        x53,
-                    ),
-                    self.lu.m12.m13,
-                    x63,
-                ),
-            ),
-            self.lu.m11.m11,
-        );
         let y54 = -self.lu.m22.m21;
         let y64 = R::wide_rescale(
             R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m22.m31), self.lu.m22.m32, y54),
         );
-        let x64 = R::div(y64, self.lu.m22.m33);
-        let x54 = R::div(R::mul_add(-self.lu.m22.m23, x64, y54), self.lu.m22.m22);
-        let x44 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m22.m12, x54),
-                    self.lu.m22.m13,
-                    x64,
-                ),
-            ),
-            self.lu.m22.m11,
-        );
-        let x34 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_zero(), self.lu.m12.m31, x44),
-                        self.lu.m12.m32,
-                        x54,
-                    ),
-                    self.lu.m12.m33,
-                    x64,
-                ),
-            ),
-            self.lu.m11.m33,
-        );
-        let x24 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x34),
-                            self.lu.m12.m21,
-                            x44,
-                        ),
-                        self.lu.m12.m22,
-                        x54,
-                    ),
-                    self.lu.m12.m23,
-                    x64,
-                ),
-            ),
-            self.lu.m11.m22,
-        );
-        let x14 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x24),
-                                self.lu.m11.m13,
-                                x34,
-                            ),
-                            self.lu.m12.m11,
-                            x44,
-                        ),
-                        self.lu.m12.m12,
-                        x54,
-                    ),
-                    self.lu.m12.m13,
-                    x64,
-                ),
-            ),
-            self.lu.m11.m11,
-        );
         let y65 = -self.lu.m22.m32;
-        let x65 = R::div(y65, self.lu.m22.m33);
-        let x55 = R::div(R::mul_add(-self.lu.m22.m23, x65, R::ONE), self.lu.m22.m22);
-        let x45 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_zero(), self.lu.m22.m12, x55), self.lu.m22.m13, x65,
-                ),
+        let x66 = R::recip(self.lu.m22.m33);
+        let (x61, x62, x63, x64, x65) = R::div5(y61, y62, y63, y64, y65, self.lu.m22.m33);
+        let n51 = R::mul_add(-self.lu.m22.m23, x61, y51);
+        let n52 = R::mul_add(-self.lu.m22.m23, x62, y52);
+        let n53 = R::mul_add(-self.lu.m22.m23, x63, y53);
+        let n54 = R::mul_add(-self.lu.m22.m23, x64, y54);
+        let n55 = R::mul_add(-self.lu.m22.m23, x65, R::ONE);
+        let n56 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m22.m23, x66));
+        let (x51, x52, x53, x54, x55, x56) = R::div6(n51, n52, n53, n54, n55, n56, self.lu.m22.m22);
+        let n41 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), y41), self.lu.m22.m12, x51),
+                self.lu.m22.m13,
+                x61,
             ),
-            self.lu.m22.m11,
         );
-        let x35 = R::div(
-            R::wide_rescale(
+        let n42 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), y42), self.lu.m22.m12, x52),
+                self.lu.m22.m13,
+                x62,
+            ),
+        );
+        let n43 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), y43), self.lu.m22.m12, x53),
+                self.lu.m22.m13,
+                x63,
+            ),
+        );
+        let n44 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m22.m12, x54),
+                self.lu.m22.m13,
+                x64,
+            ),
+        );
+        let n45 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_zero(), self.lu.m22.m12, x55), self.lu.m22.m13, x65,
+            ),
+        );
+        let n46 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_zero(), self.lu.m22.m12, x56), self.lu.m22.m13, x66,
+            ),
+        );
+        let (x41, x42, x43, x44, x45, x46) = R::div6(n41, n42, n43, n44, n45, n46, self.lu.m22.m11);
+        let n31 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y31), self.lu.m12.m31, x41),
+                    self.lu.m12.m32,
+                    x51,
+                ),
+                self.lu.m12.m33,
+                x61,
+            ),
+        );
+        let n32 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y32), self.lu.m12.m31, x42),
+                    self.lu.m12.m32,
+                    x52,
+                ),
+                self.lu.m12.m33,
+                x62,
+            ),
+        );
+        let n33 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12.m31, x43),
+                    self.lu.m12.m32,
+                    x53,
+                ),
+                self.lu.m12.m33,
+                x63,
+            ),
+        );
+        let n34 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12.m31, x44), self.lu.m12.m32, x54,
+                ),
+                self.lu.m12.m33,
+                x64,
+            ),
+        );
+        let n35 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12.m31, x45), self.lu.m12.m32, x55,
+                ),
+                self.lu.m12.m33,
+                x65,
+            ),
+        );
+        let n36 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12.m31, x46), self.lu.m12.m32, x56,
+                ),
+                self.lu.m12.m33,
+                x66,
+            ),
+        );
+        let (x31, x32, x33, x34, x35, x36) = R::div6(n31, n32, n33, n34, n35, n36, self.lu.m11.m33);
+        let n21 = R::wide_rescale(
+            R::wide_sub_prod(
                 R::wide_sub_prod(
                     R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_zero(), self.lu.m12.m31, x45),
-                        self.lu.m12.m32,
-                        x55,
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), y21), self.lu.m11.m23, x31),
+                        self.lu.m12.m21,
+                        x41,
                     ),
-                    self.lu.m12.m33,
-                    x65,
+                    self.lu.m12.m22,
+                    x51,
                 ),
+                self.lu.m12.m23,
+                x61,
             ),
-            self.lu.m11.m33,
         );
-        let x25 = R::div(
-            R::wide_rescale(
+        let n22 = R::wide_rescale(
+            R::wide_sub_prod(
                 R::wide_sub_prod(
                     R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x35),
-                            self.lu.m12.m21,
-                            x45,
-                        ),
-                        self.lu.m12.m22,
-                        x55,
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m11.m23, x32),
+                        self.lu.m12.m21,
+                        x42,
                     ),
-                    self.lu.m12.m23,
-                    x65,
+                    self.lu.m12.m22,
+                    x52,
                 ),
+                self.lu.m12.m23,
+                x62,
             ),
-            self.lu.m11.m22,
         );
-        let x15 = R::div(
-            R::wide_rescale(
+        let n23 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x33),
+                        self.lu.m12.m21,
+                        x43,
+                    ),
+                    self.lu.m12.m22,
+                    x53,
+                ),
+                self.lu.m12.m23,
+                x63,
+            ),
+        );
+        let n24 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x34),
+                        self.lu.m12.m21,
+                        x44,
+                    ),
+                    self.lu.m12.m22,
+                    x54,
+                ),
+                self.lu.m12.m23,
+                x64,
+            ),
+        );
+        let n25 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x35),
+                        self.lu.m12.m21,
+                        x45,
+                    ),
+                    self.lu.m12.m22,
+                    x55,
+                ),
+                self.lu.m12.m23,
+                x65,
+            ),
+        );
+        let n26 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x36),
+                        self.lu.m12.m21,
+                        x46,
+                    ),
+                    self.lu.m12.m22,
+                    x56,
+                ),
+                self.lu.m12.m23,
+                x66,
+            ),
+        );
+        let (x21, x22, x23, x24, x25, x26) = R::div6(n21, n22, n23, n24, n25, n26, self.lu.m11.m22);
+        let n11 = R::wide_rescale(
+            R::wide_sub_prod(
                 R::wide_sub_prod(
                     R::wide_sub_prod(
                         R::wide_sub_prod(
                             R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x25),
-                                self.lu.m11.m13,
-                                x35,
+                                R::wide_add(R::wide_zero(), R::ONE), self.lu.m11.m12, x21,
                             ),
-                            self.lu.m12.m11,
-                            x45,
+                            self.lu.m11.m13,
+                            x31,
                         ),
-                        self.lu.m12.m12,
-                        x55,
+                        self.lu.m12.m11,
+                        x41,
                     ),
-                    self.lu.m12.m13,
-                    x65,
+                    self.lu.m12.m12,
+                    x51,
                 ),
+                self.lu.m12.m13,
+                x61,
             ),
-            self.lu.m11.m11,
         );
-        let x66 = R::div(R::ONE, self.lu.m22.m33);
-        let x56 = R::div(
-            R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m22.m23, x66)),
-            self.lu.m22.m22,
-        );
-        let x46 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_zero(), self.lu.m22.m12, x56), self.lu.m22.m13, x66,
-                ),
-            ),
-            self.lu.m22.m11,
-        );
-        let x36 = R::div(
-            R::wide_rescale(
-                R::wide_sub_prod(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_zero(), self.lu.m12.m31, x46),
-                        self.lu.m12.m32,
-                        x56,
-                    ),
-                    self.lu.m12.m33,
-                    x66,
-                ),
-            ),
-            self.lu.m11.m33,
-        );
-        let x26 = R::div(
-            R::wide_rescale(
+        let n12 = R::wide_rescale(
+            R::wide_sub_prod(
                 R::wide_sub_prod(
                     R::wide_sub_prod(
                         R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m23, x36),
-                            self.lu.m12.m21,
-                            x46,
+                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x22),
+                            self.lu.m11.m13,
+                            x32,
                         ),
-                        self.lu.m12.m22,
-                        x56,
+                        self.lu.m12.m11,
+                        x42,
                     ),
-                    self.lu.m12.m23,
-                    x66,
+                    self.lu.m12.m12,
+                    x52,
                 ),
+                self.lu.m12.m13,
+                x62,
             ),
-            self.lu.m11.m22,
         );
-        let x16 = R::div(
-            R::wide_rescale(
+        let n13 = R::wide_rescale(
+            R::wide_sub_prod(
                 R::wide_sub_prod(
                     R::wide_sub_prod(
                         R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x26),
-                                self.lu.m11.m13,
-                                x36,
-                            ),
-                            self.lu.m12.m11,
-                            x46,
+                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x23),
+                            self.lu.m11.m13,
+                            x33,
                         ),
-                        self.lu.m12.m12,
-                        x56,
+                        self.lu.m12.m11,
+                        x43,
                     ),
-                    self.lu.m12.m13,
-                    x66,
+                    self.lu.m12.m12,
+                    x53,
                 ),
+                self.lu.m12.m13,
+                x63,
             ),
-            self.lu.m11.m11,
         );
+        let n14 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x24),
+                            self.lu.m11.m13,
+                            x34,
+                        ),
+                        self.lu.m12.m11,
+                        x44,
+                    ),
+                    self.lu.m12.m12,
+                    x54,
+                ),
+                self.lu.m12.m13,
+                x64,
+            ),
+        );
+        let n15 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x25),
+                            self.lu.m11.m13,
+                            x35,
+                        ),
+                        self.lu.m12.m11,
+                        x45,
+                    ),
+                    self.lu.m12.m12,
+                    x55,
+                ),
+                self.lu.m12.m13,
+                x65,
+            ),
+        );
+        let n16 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_zero(), self.lu.m11.m12, x26),
+                            self.lu.m11.m13,
+                            x36,
+                        ),
+                        self.lu.m12.m11,
+                        x46,
+                    ),
+                    self.lu.m12.m12,
+                    x56,
+                ),
+                self.lu.m12.m13,
+                x66,
+            ),
+        );
+        let (x11, x12, x13, x14, x15, x16) = R::div6(n11, n12, n13, n14, n15, n16, self.lu.m11.m11);
         let mut c11 = x11;
         let mut c12 = x12;
         let mut c13 = x13;

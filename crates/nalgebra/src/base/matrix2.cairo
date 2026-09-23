@@ -254,6 +254,15 @@ pub impl Matrix2Impl<
     /// `k = floor(2 / f)` (exact products), which gives `inverse = adjugate(k * self) * (k /
     /// det(k * self))`. Matrices with `|det| >= 1/2` skip the norm computation (`f <= 1`
     /// implies `|det| <= 1/2`). Panics with the overflow error when `0 < f <= 2^-30`.
+    ///
+    /// Re-ranked on `fixed` 0.3.0 (WP 7.2): the unscaled branch divides through ONE prepared
+    /// divisor (`Real::div4`, bit-identical to per-element division). `adjugate / det` without the
+    /// pre-scaling — upstream's 2x2 formula — costs 21 570 gas through `Real::div4`
+    /// (`bench_matrix2_try_inverse__alt_div_n`) against 33 970, and `adjugate * (1 / det)` is
+    /// cheaper still, but they leave respectively 1 and 4 of the 30 oracle cases outside their
+    /// tolerance (`test_try_inverse_candidates_error`), so the pre-scaled algorithm stays. The
+    /// charged gas is that of the costliest branch (the pre-scaled one): the three
+    /// `bench_matrix2_try_inverse__prescaled_*` benchmarks measure the same figure.
     fn try_inverse(self: Matrix2<T>) -> Option<Matrix2<T>> {
         let det = R::diff_prod(self.m11, self.m22, self.m12, self.m21);
         if det < R::HALF && det > -R::HALF {
@@ -277,14 +286,8 @@ pub impl Matrix2Impl<
                 return None;
             }
         }
-        Some(
-            Matrix2 {
-                m11: R::div(self.m22, det),
-                m21: R::div(-self.m21, det),
-                m12: R::div(-self.m12, det),
-                m22: R::div(self.m11, det),
-            },
-        )
+        let (m11, m21, m12, m22) = R::div4(self.m22, -self.m21, -self.m12, self.m11, det);
+        Some(Matrix2 { m11, m21, m12, m22 })
     }
 
     // --- approximate equality ------------------------------------------------------------------
@@ -408,6 +411,19 @@ mod tests {
         )
     }
 
+    /// Upstream's `adjugate / determinant` (the formula of `try_inverse_div`) through ONE prepared
+    /// divisor (`Real::div4`): bit-identical to `try_inverse_div`, so it fails the same oracle
+    /// cases; kept to price upstream's formula at its cheapest (WP 7.2).
+    fn try_inverse_div_n(m: Matrix2<Fixed>) -> Option<Matrix2<Fixed>> {
+        let adj = m.adjugate();
+        let det = m.determinant();
+        if det == Real::ZERO {
+            return None;
+        }
+        let (m11, m21, m12, m22) = Real::div4(adj.m11, adj.m21, adj.m12, adj.m22, det);
+        Some(Matrix2 { m11, m21, m12, m22 })
+    }
+
     /// `adjugate * (1 / determinant)`: one reciprocal, 4 multiplications.
     fn try_inverse_recip(m: Matrix2<Fixed>) -> Option<Matrix2<Fixed>> {
         let det = m.determinant();
@@ -427,6 +443,7 @@ mod tests {
             let got = match variant {
                 0 => m2(a).try_inverse(),
                 1 => try_inverse_div(m2(a)),
+                3 => try_inverse_div_n(m2(a)),
                 _ => try_inverse_recip(m2(a)),
             };
             let err = max_ulp_diff2(got.unwrap(), m2(expected));
@@ -744,6 +761,8 @@ mod tests {
         // `adjugate / det` without pre-scaling and of `adjugate * (1 / det)`.
         assert!(inverse_failures(0) == (0, 8));
         assert!(inverse_failures(1) == (1, 1112));
+        // Upstream's formula through one prepared divisor: the same bits as `try_inverse_div`.
+        assert!(inverse_failures(3) == (1, 1112));
         assert!(inverse_failures(2) == (4, 1111));
     }
 
@@ -1379,6 +1398,14 @@ mod tests {
         let a = black_box(m2([[-5146602846, 2781339837], [533542917, 1900613592]]));
         let e = black_box(m2([[-3112122076, 4554249820], [873639280, 8427202879]]));
         assert!(try_inverse_div(a).unwrap() == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_matrix2_try_inverse__alt_div_n() {
+        let a = black_box(m2([[-5146602846, 2781339837], [533542917, 1900613592]]));
+        let e = black_box(m2([[-3112122076, 4554249820], [873639280, 8427202879]]));
+        assert!(try_inverse_div_n(a).unwrap() == e);
     }
 
     #[test]

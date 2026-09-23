@@ -240,7 +240,7 @@ pub impl UnitQuaternionImpl<
     /// 24 products, 9 roundings, no division, no trigonometry, entries within 2 ulp of the exactly
     /// rounded matrix (oracle tolerance: 4 ulp).
     ///
-    /// Measured 23 530 gas. The `1 - 2(j² + k²)` diagonal would cost 22 930 (-2.5 %) but is only
+    /// Measured 22 370 gas. The `1 - 2(j² + k²)` diagonal would cost 21 770 (-2.7 %) but is only
     /// valid for an exactly unit quaternion, and turns a drifted one into a matrix that is not even
     /// a similarity (`bench_unit_quaternion_to_rotation_matrix__alt_one_minus`,
     /// `test_to_rotation_matrix_alt_one_minus_differs_by_the_norm_defect`): upstream's form is
@@ -608,9 +608,9 @@ pub impl UnitQuaternionAngleImpl<
     // --- axis, angle, Euler angles ----------------------------------------------------------
 
     /// The rotation angle, in `[0, π]`: `2·atan2(|imag|, |w|)` like upstream. One norm and one
-    /// `atan2` (21 460 gas); the doubling is an exact addition.
+    /// `atan2` (35 490 gas); the doubling is an exact addition.
     ///
-    /// `2·acos(|w|)` would cost 16 720 (-22 %) but collapses near the ends: at an angle of `2^-20`
+    /// `2·acos(|w|)` would cost 32 170 (-9 %) but collapses near the ends: at an angle of `2^-20`
     /// rad `|w|` rounds to 1 and it returns 0, while `atan2` is exact to 4 ulp
     /// (`bench_unit_quaternion_angle__alt_acos`, `test_angle_alt_acos_loses_precision_near_zero`).
     /// Upstream: `angle`.
@@ -640,8 +640,8 @@ pub impl UnitQuaternionAngleImpl<
     /// more than `π` comes back as a rotation by slightly less than `π` about the opposite axis
     /// (upstream's convention).
     ///
-    /// Measured 36 470 gas; folding `angle / |imag|` into one factor and three products costs
-    /// 30 830 (-15 %) but rounds the factor first, which costs a few ulp on the result
+    /// Measured 54 710 gas; folding `angle / |imag|` into one factor and three products costs
+    /// 46 340 (-15 %) but rounds the factor first, which costs a few ulp on the result
     /// (`bench_unit_quaternion_scaled_axis__alt_factor`, `test_scaled_axis_alt_factor_*`). The
     /// exact divisions are kept, like `Vector3Trait::unscale`. Upstream: `scaled_axis`.
     fn scaled_axis(self: UnitQuaternion<T>) -> Vector3<T> {

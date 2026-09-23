@@ -60,9 +60,10 @@ pub trait Point3Trait<T> {
     /// correctly rounded quotient, or `None` when `w = 0`. Panics on overflow of a quotient.
     /// Upstream: `from_homogeneous`.
     ///
-    /// One division per component on purpose (see `Vector3Trait::unscale`): multiplying by the
-    /// rounded reciprocal of `w` would cost up to `|x|` ulp instead of 1 for 8 % less gas
-    /// (`bench_point3_from_homogeneous__alt_recip`,
+    /// One division per component on purpose, like upstream (`v.xyz() / v.w`, see
+    /// `Vector3Trait::unscale`), through one prepared divisor (`Real::div3`): multiplying by the
+    /// rounded reciprocal of `w` would cost up to `|x|` ulp instead of 1 for 17 % less gas on
+    /// `fixed` 0.3.0 (8 090 against 9 710, `bench_point3_from_homogeneous__alt_recip`,
     /// `test_from_homogeneous_alt_recip_is_less_accurate`).
     fn from_homogeneous(v: Vector4<T>) -> Option<Point3<T>>;
     /// `self - rhs`: the displacement vector from `rhs` to `self`. Exact; panics on overflow.

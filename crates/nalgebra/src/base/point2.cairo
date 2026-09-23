@@ -60,9 +60,10 @@ pub trait Point2Trait<T> {
     /// correctly rounded quotient, or `None` when `w = 0`. Panics on overflow of a quotient.
     /// Upstream: `from_homogeneous`.
     ///
-    /// One division per component on purpose (see `Vector2Trait::unscale`): multiplying by the
-    /// rounded reciprocal of `w` would cost up to `|x|` ulp instead of 1, and is not even
-    /// cheaper in 2D (`bench_point2_from_homogeneous__alt_recip`,
+    /// One division per component on purpose, like upstream (`v.xy() / v.z`, see
+    /// `Vector2Trait::unscale`): multiplying by the rounded reciprocal of `w` would cost up to
+    /// `|x|` ulp instead of 1 for 6 % less gas on `fixed` 0.3.0 (6 410 against 6 830,
+    /// `bench_point2_from_homogeneous__alt_recip`,
     /// `test_from_homogeneous_alt_recip_is_less_accurate`).
     fn from_homogeneous(v: Vector3<T>) -> Option<Point2<T>>;
     /// `self - rhs`: the displacement vector from `rhs` to `self`. Exact; panics on overflow.

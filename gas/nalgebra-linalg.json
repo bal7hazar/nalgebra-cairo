@@ -51,7 +51,7 @@
     "cholesky4_inverse": {
       "alt_recip": 88070,
       "baseline": 27240,
-      "triangular": 104030
+      "triangular": 103720
     },
     "cholesky4_l": {
       "baseline": 27240,
@@ -73,7 +73,7 @@
     "cholesky6_inverse": {
       "alt_recip": 172880,
       "baseline": 41440,
-      "triangular": 212780
+      "triangular": 210470
     },
     "cholesky6_l": {
       "baseline": 42340,
@@ -290,7 +290,7 @@
       "alt_recip": 68400,
       "alt_solve_columns": 108860,
       "baseline": 22240,
-      "columns": 80680
+      "columns": 80060
     },
     "lu3_vs_matrix3_determinant": {
       "baseline": 17540,
@@ -300,7 +300,7 @@
     "lu3_vs_matrix3_inverse": {
       "baseline": 21840,
       "cofactors": 110200,
-      "lu": 118220
+      "lu": 117600
     }
   },
   "nalgebra::linalg::lu::lu4::tests": {
@@ -347,7 +347,7 @@
       "alt_recip": 115160,
       "alt_solve_columns": 193700,
       "baseline": 30940,
-      "columns": 142400
+      "columns": 139780
     }
   },
   "nalgebra::linalg::lu::lu6::benches": {
@@ -394,13 +394,13 @@
       "alt_recip": 257580,
       "alt_solve_columns": 495180,
       "baseline": 49340,
-      "columns": 330700
+      "columns": 321020
     },
     "matrix6_lu": {
       "baseline": 22940,
       "determinant": 290740,
       "solve": 348800,
-      "try_inverse": 583020
+      "try_inverse": 573340
     }
   },
   "nalgebra::linalg::qr::qr2::tests": {

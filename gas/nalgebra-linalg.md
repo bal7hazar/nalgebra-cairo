@@ -79,7 +79,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 88070 | 60830 | x1.00 |
-| `triangular` | 104030 | 76790 | x1.26 |
+| `triangular` | 103720 | 76480 | x1.26 |
 
 ### cholesky4_l
 
@@ -111,7 +111,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 172880 | 131440 | x1.00 |
-| `triangular` | 212780 | 171340 | x1.30 |
+| `triangular` | 210470 | 169030 | x1.29 |
 
 ### cholesky6_l
 
@@ -421,7 +421,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 68400 | 46160 | x1.00 |
-| `columns` | 80680 | 58440 | x1.27 |
+| `columns` | 80060 | 57820 | x1.25 |
 | `alt_solve_columns` | 108860 | 86620 | x1.88 |
 
 ### lu3_vs_matrix3_determinant
@@ -436,7 +436,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `cofactors` | 110200 | 88360 | x1.00 |
-| `lu` | 118220 | 96380 | x1.09 |
+| `lu` | 117600 | 95760 | x1.08 |
 
 ## nalgebra::linalg::lu::lu4::tests
 
@@ -502,7 +502,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 115160 | 84220 | x1.00 |
-| `columns` | 142400 | 111460 | x1.32 |
+| `columns` | 139780 | 108840 | x1.29 |
 | `alt_solve_columns` | 193700 | 162760 | x1.93 |
 
 ## nalgebra::linalg::lu::lu6::benches
@@ -569,7 +569,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_recip` | 257580 | 208240 | x1.00 |
-| `columns` | 330700 | 281360 | x1.35 |
+| `columns` | 321020 | 271680 | x1.30 |
 | `alt_solve_columns` | 495180 | 445840 | x2.14 |
 
 ### matrix6_lu
@@ -578,7 +578,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `determinant` | 290740 | 267800 | x1.00 |
 | `solve` | 348800 | 325860 | x1.22 |
-| `try_inverse` | 583020 | 560080 | x2.09 |
+| `try_inverse` | 573340 | 550400 | x2.06 |
 
 ## nalgebra::linalg::qr::qr2::tests
 

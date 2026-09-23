@@ -28,7 +28,8 @@
 //! Numeric contract (AGENTS.md rule 4): every sum of products is accumulated EXACTLY in the
 //! `Real::Wide` accumulator and floored ONCE; divisions are correctly rounded divisions, never a
 //! multiplication by a rounded reciprocal (the `alt_recip` candidates of `benches.cairo` lose on
-//! gas in `solve` and on accuracy in `inverse`). `new` keeps the unrounded numerator of each
+//! gas in `solve`; in `inverse` they are cheaper since `fixed` 0.3.0 but round twice per entry,
+//! where upstream's substitution divides). `new` keeps the unrounded numerator of each
 //! column as the column of `l·diag(d)` instead of recomputing `l_jk·d_k`: the `alt_products`
 //! candidate that recomputes it is measurably dearer and less accurate, see `Ldlt2Trait::new`.
 //!

@@ -6,9 +6,11 @@
 //!
 //! `alt_recip` in `solve` and `inverse`: one `recip(d_j)` then multiplications instead of exactly
 //! correctly rounded divisions. Same verdict as in `cholesky::benches` — each pivot is divided by
-//! ONCE in `solve`, so the reciprocal is both dearer (19 to 26 %) and, on the oracle's 12 cases,
-//! markedly less accurate; in `inverse` it saves 6 to 11 % but rounds twice per entry, which
-//! `test_ldlt2_inverse_alt_recip_loses_low_bits` exhibits on a hand-built factor.
+//! ONCE in `solve`, so the reciprocal is both dearer (13 to 15 % on `fixed` 0.3.0) and, on the
+//! oracle's 12 cases, markedly less accurate; in `inverse` it saves 15 to 24 % since `fixed`
+//! 0.3.0 but rounds twice per entry, which `test_ldlt2_inverse_alt_recip_loses_low_bits` exhibits
+//! on a hand-built factor, where the division follows upstream's substitution (`Cholesky`'s
+//! `solve_mut` divides by the pivot; `UDU` itself has no inverse). Re-ranked in WP 7.2: kept.
 //!
 //! `alt_products` in `new`: recompute the column of `l·diag(d)` as explicit rounded products
 //! `l_jk · d_k` instead of reusing the unrounded numerator of column k, which is the same quantity
