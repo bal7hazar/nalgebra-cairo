@@ -53,7 +53,7 @@
       "inv_norm2": 20680,
       "mul": 17920,
       "recip": 18690,
-      "sin_cos": 48240,
+      "sin_cos": 47840,
       "sqrt": 18160
     },
     "real_sum_prod2": {

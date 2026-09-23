@@ -535,8 +535,7 @@ fn bench_real_scalar__inv_norm2() {
 #[test]
 #[inline(never)]
 fn bench_real_scalar__sin_cos() {
-    let (_a, _b) = (black_box(fx(ANGLE)), black_box(fx(Q)));
-    let a = black_box(fx(ANGLE));
+    let (a, _b) = (black_box(fx(ANGLE)), black_box(fx(Q)));
     let e = black_box(fx(0));
     let (s, _) = Transcendental::sin_cos(a);
     assert!(s != e);

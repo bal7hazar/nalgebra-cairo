@@ -78,7 +78,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `div` | 19170 | 2830 | x4.42 |
 | `inv_norm2` | 20680 | 4340 | x6.78 |
 | `atan2` | 44760 | 28420 | x44.41 |
-| `sin_cos` | 48240 | 31900 | x49.84 |
+| `sin_cos` | 47840 | 31500 | x49.22 |
 
 ### real_sum_prod2
 
