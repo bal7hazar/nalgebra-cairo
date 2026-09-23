@@ -470,6 +470,15 @@ pub impl Matrix3Impl<
     /// det(k * self))`: 27 ulp instead of 84 960 on the oracle's `small` matrices. Matrices
     /// with `|det| >= 1/2` skip the norm computation (`f <= 1` implies `|det| < 1/2`). Panics
     /// with the overflow error when `0 < f <= 2^-30`.
+    ///
+    /// Re-ranked on `fixed` 0.3.0 (WP 7.2): the unscaled branch divides through ONE prepared
+    /// divisor (`Real::div9`, bit-identical to per-element division). `adjugate / det` without the
+    /// pre-scaling — upstream's 3x3 formula — costs 66 860 gas through `Real::div9`
+    /// (`bench_matrix3_try_inverse__alt_div_n`) against 88 360, and `adjugate * (1 / det)` is
+    /// cheaper still, but they leave respectively 2 and 9 of the 30 oracle cases outside their
+    /// tolerance (`test_try_inverse_candidates_error`), so the pre-scaled algorithm stays. The
+    /// charged gas is that of the costliest branch (the pre-scaled one): the three
+    /// `bench_matrix3_try_inverse__prescaled_*` benchmarks measure the same figure.
     fn try_inverse(self: Matrix3<T>) -> Option<Matrix3<T>> {
         let adj = Self::adjugate(self);
         let det = R::sum_prod3(self.m11, adj.m11, self.m12, adj.m21, self.m13, adj.m31);
@@ -492,19 +501,10 @@ pub impl Matrix3Impl<
                 return None;
             }
         }
-        Some(
-            Matrix3 {
-                m11: R::div(adj.m11, det),
-                m21: R::div(adj.m21, det),
-                m31: R::div(adj.m31, det),
-                m12: R::div(adj.m12, det),
-                m22: R::div(adj.m22, det),
-                m32: R::div(adj.m32, det),
-                m13: R::div(adj.m13, det),
-                m23: R::div(adj.m23, det),
-                m33: R::div(adj.m33, det),
-            },
-        )
+        let (m11, m21, m31, m12, m22, m32, m13, m23, m33) = R::div9(
+            adj.m11, adj.m21, adj.m31, adj.m12, adj.m22, adj.m32, adj.m13, adj.m23, adj.m33, det,
+        );
+        Some(Matrix3 { m11, m21, m31, m12, m22, m32, m13, m23, m33 })
     }
 
     // --- approximate equality ------------------------------------------------------------------
@@ -688,6 +688,21 @@ mod tests {
         )
     }
 
+    /// Upstream's `adjugate / determinant` (the formula of `try_inverse_div`) through ONE prepared
+    /// divisor (`Real::div9`): bit-identical to `try_inverse_div`, so it fails the same oracle
+    /// cases; kept to price upstream's formula at its cheapest (WP 7.2).
+    fn try_inverse_div_n(m: Matrix3<Fixed>) -> Option<Matrix3<Fixed>> {
+        let adj = m.adjugate();
+        let det = m.determinant();
+        if det == Real::ZERO {
+            return None;
+        }
+        let (m11, m21, m31, m12, m22, m32, m13, m23, m33) = Real::div9(
+            adj.m11, adj.m21, adj.m31, adj.m12, adj.m22, adj.m32, adj.m13, adj.m23, adj.m33, det,
+        );
+        Some(Matrix3 { m11, m21, m31, m12, m22, m32, m13, m23, m33 })
+    }
+
     /// `adjugate * (1 / determinant)`: one reciprocal, 9 multiplications.
     fn try_inverse_recip(m: Matrix3<Fixed>) -> Option<Matrix3<Fixed>> {
         let det = m.determinant();
@@ -707,6 +722,7 @@ mod tests {
             let got = match variant {
                 0 => m3(a).try_inverse(),
                 1 => try_inverse_div(m3(a)),
+                3 => try_inverse_div_n(m3(a)),
                 _ => try_inverse_recip(m3(a)),
             };
             let err = max_ulp_diff3(got.unwrap(), m3(expected));
@@ -1078,6 +1094,8 @@ mod tests {
         // `adjugate / det` without pre-scaling and of `adjugate * (1 / det)`.
         assert!(inverse_failures(0) == (0, 27));
         assert!(inverse_failures(1) == (2, 84960));
+        // Upstream's formula through one prepared divisor: the same bits as `try_inverse_div`.
+        assert!(inverse_failures(3) == (2, 84960));
         assert!(inverse_failures(2) == (9, 84960));
     }
 
@@ -2641,6 +2659,28 @@ mod tests {
             ),
         );
         assert!(try_inverse_div(a).unwrap() == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_matrix3_try_inverse__alt_div_n() {
+        let a = black_box(
+            m3(
+                [
+                    [1651849619, 3942926787, -4111385247], [-2706174340, -1356311774, -3161153896],
+                    [1713407532, -2388220103, 1097729905],
+                ],
+            ),
+        );
+        let e = black_box(
+            m3(
+                [
+                    [2746796817, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
+                    [-2670352862, -3252013208, -2561850149],
+                ],
+            ),
+        );
+        assert!(try_inverse_div_n(a).unwrap() == e);
     }
 
     #[test]
