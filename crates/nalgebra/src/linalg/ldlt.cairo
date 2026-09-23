@@ -26,7 +26,7 @@
 //! diagonal is implicit and never materialised) plus `D` as a `VectorN`, returned as such by `d()`.
 //!
 //! Numeric contract (AGENTS.md rule 4): every sum of products is accumulated EXACTLY in the
-//! `Real::Wide` accumulator and floored ONCE; divisions are exactly floored divisions, never a
+//! `Real::Wide` accumulator and floored ONCE; divisions are correctly rounded divisions, never a
 //! multiplication by a rounded reciprocal (the `alt_recip` candidates of `benches.cairo` lose on
 //! gas in `solve` and on accuracy in `inverse`). `new` keeps the unrounded numerator of each
 //! column as the column of `l·diag(d)` instead of recomputing `l_jk·d_k`: the `alt_products`
@@ -182,7 +182,7 @@ pub impl Ldlt2Impl<
     ///
     /// Column by column (j = 1..2), in terms of the numerators `n_ij = a_ij - Σ_(k<j) l_ik·n_jk`
     /// for `i >= j`: each is ONE exact accumulation floored ONCE, the pivot is `d_j = n_jj`, and
-    /// `l_ij = n_ij / d_j` is one exactly floored division. 1 division, no square root
+    /// `l_ij = n_ij / d_j` is one correctly rounded division. 1 division, no square root
     /// and no other product.
     ///
     /// `n_jk` IS the column of `l·diag(d)`: `l_jk·d_k` differs from it only by the remainder of
@@ -261,8 +261,8 @@ pub impl Ldlt2Impl<
     /// `q = l⁻¹` is unit lower triangular and is built WITHOUT any division
     /// (`q_ij = -(l_ij + Σ_(k=j+1..i-1) l_ik·q_kj)`, one exact accumulation floored once); the
     /// 3 scaled entries `s_kj = q_kj / d_k` are the only divisions (2 of them are
-    /// `recip(d_k)`, the exact floor of `1 / d_k`), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one exact
-    /// accumulation floored once per output component.
+    /// `recip(d_k)`, the `1 / d_k` rounded to nearest), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one
+    /// exact accumulation floored once per output component.
     ///
     /// The result is symmetric by construction, so only its upper triangle is computed — the sum
     /// is taken as `Σ_k q_ki·s_kj` with `i <= j`, which for rounded `s` differs from
@@ -315,7 +315,7 @@ pub impl Ldlt3Impl<
     ///
     /// Column by column (j = 1..3), in terms of the numerators `n_ij = a_ij - Σ_(k<j) l_ik·n_jk`
     /// for `i >= j`: each is ONE exact accumulation floored ONCE, the pivot is `d_j = n_jj`, and
-    /// `l_ij = n_ij / d_j` is one exactly floored division. 3 divisions, no square root
+    /// `l_ij = n_ij / d_j` is one correctly rounded division. 3 divisions, no square root
     /// and no other product.
     ///
     /// `n_jk` IS the column of `l·diag(d)`: `l_jk·d_k` differs from it only by the remainder of
@@ -426,8 +426,8 @@ pub impl Ldlt3Impl<
     /// `q = l⁻¹` is unit lower triangular and is built WITHOUT any division
     /// (`q_ij = -(l_ij + Σ_(k=j+1..i-1) l_ik·q_kj)`, one exact accumulation floored once); the
     /// 6 scaled entries `s_kj = q_kj / d_k` are the only divisions (3 of them are
-    /// `recip(d_k)`, the exact floor of `1 / d_k`), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one exact
-    /// accumulation floored once per output component.
+    /// `recip(d_k)`, the `1 / d_k` rounded to nearest), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one
+    /// exact accumulation floored once per output component.
     ///
     /// The result is symmetric by construction, so only its upper triangle is computed — the sum
     /// is taken as `Σ_k q_ki·s_kj` with `i <= j`, which for rounded `s` differs from
@@ -499,7 +499,7 @@ pub impl Ldlt4Impl<
     ///
     /// Column by column (j = 1..4), in terms of the numerators `n_ij = a_ij - Σ_(k<j) l_ik·n_jk`
     /// for `i >= j`: each is ONE exact accumulation floored ONCE, the pivot is `d_j = n_jj`, and
-    /// `l_ij = n_ij / d_j` is one exactly floored division. 6 divisions, no square root
+    /// `l_ij = n_ij / d_j` is one correctly rounded division. 6 divisions, no square root
     /// and no other product.
     ///
     /// `n_jk` IS the column of `l·diag(d)`: `l_jk·d_k` differs from it only by the remainder of
@@ -647,8 +647,8 @@ pub impl Ldlt4Impl<
     /// `q = l⁻¹` is unit lower triangular and is built WITHOUT any division
     /// (`q_ij = -(l_ij + Σ_(k=j+1..i-1) l_ik·q_kj)`, one exact accumulation floored once); the
     /// 10 scaled entries `s_kj = q_kj / d_k` are the only divisions (4 of them are
-    /// `recip(d_k)`, the exact floor of `1 / d_k`), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one exact
-    /// accumulation floored once per output component.
+    /// `recip(d_k)`, the `1 / d_k` rounded to nearest), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one
+    /// exact accumulation floored once per output component.
     ///
     /// The result is symmetric by construction, so only its upper triangle is computed — the sum
     /// is taken as `Σ_k q_ki·s_kj` with `i <= j`, which for rounded `s` differs from
@@ -670,12 +670,10 @@ pub impl Ldlt4Impl<
         let s11 = R::recip(self.d.x);
         let s21 = R::div(q21, self.d.y);
         let s31 = R::div(q31, self.d.z);
-        let s41 = R::div(q41, self.d.w);
+        let (s41, s42, s43) = R::div3(q41, q42, q43, self.d.w);
         let s22 = R::recip(self.d.y);
         let s32 = R::div(q32, self.d.z);
-        let s42 = R::div(q42, self.d.w);
         let s33 = R::recip(self.d.z);
-        let s43 = R::div(q43, self.d.w);
         let s44 = R::recip(self.d.w);
         let w = R::wide_zero();
         let w = R::wide_add(w, s11);
@@ -765,7 +763,7 @@ pub impl Ldlt6Impl<
     ///
     /// Column by column (j = 1..6), in terms of the numerators `n_ij = a_ij - Σ_(k<j) l_ik·n_jk`
     /// for `i >= j`: each is ONE exact accumulation floored ONCE, the pivot is `d_j = n_jj`, and
-    /// `l_ij = n_ij / d_j` is one exactly floored division. 15 divisions, no square root
+    /// `l_ij = n_ij / d_j` is one correctly rounded division. 15 divisions, no square root
     /// and no other product.
     ///
     /// `n_jk` IS the column of `l·diag(d)`: `l_jk·d_k` differs from it only by the remainder of
@@ -1050,8 +1048,8 @@ pub impl Ldlt6Impl<
     /// `q = l⁻¹` is unit lower triangular and is built WITHOUT any division
     /// (`q_ij = -(l_ij + Σ_(k=j+1..i-1) l_ik·q_kj)`, one exact accumulation floored once); the
     /// 21 scaled entries `s_kj = q_kj / d_k` are the only divisions (6 of them are
-    /// `recip(d_k)`, the exact floor of `1 / d_k`), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one exact
-    /// accumulation floored once per output component.
+    /// `recip(d_k)`, the `1 / d_k` rounded to nearest), and `a⁻¹_ij = Σ_k q_ki·s_kj` is one
+    /// exact accumulation floored once per output component.
     ///
     /// The result is symmetric by construction, so only its upper triangle is computed — the sum
     /// is taken as `Σ_k q_ki·s_kj` with `i <= j`, which for rounded `s` differs from
@@ -1105,23 +1103,14 @@ pub impl Ldlt6Impl<
         let s11 = R::recip(self.d.a.x);
         let s21 = R::div(q21, self.d.a.y);
         let s31 = R::div(q31, self.d.a.z);
-        let s41 = R::div(q41, self.d.b.x);
-        let s51 = R::div(q51, self.d.b.y);
-        let s61 = R::div(q61, self.d.b.z);
+        let (s41, s42, s43) = R::div3(q41, q42, q43, self.d.b.x);
+        let (s51, s52, s53, s54) = R::div4(q51, q52, q53, q54, self.d.b.y);
+        let (s61, s62, s63, s64, s65) = R::div5(q61, q62, q63, q64, q65, self.d.b.z);
         let s22 = R::recip(self.d.a.y);
         let s32 = R::div(q32, self.d.a.z);
-        let s42 = R::div(q42, self.d.b.x);
-        let s52 = R::div(q52, self.d.b.y);
-        let s62 = R::div(q62, self.d.b.z);
         let s33 = R::recip(self.d.a.z);
-        let s43 = R::div(q43, self.d.b.x);
-        let s53 = R::div(q53, self.d.b.y);
-        let s63 = R::div(q63, self.d.b.z);
         let s44 = R::recip(self.d.b.x);
-        let s54 = R::div(q54, self.d.b.y);
-        let s64 = R::div(q64, self.d.b.z);
         let s55 = R::recip(self.d.b.y);
-        let s65 = R::div(q65, self.d.b.z);
         let s66 = R::recip(self.d.b.z);
         let w = R::wide_zero();
         let w = R::wide_add(w, s11);

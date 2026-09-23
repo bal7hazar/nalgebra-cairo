@@ -57,7 +57,7 @@ pub trait Point3Trait<T> {
     /// component is `0`). Upstream: `to_homogeneous`.
     fn to_homogeneous(self: Point3<T>) -> Vector4<T>;
     /// The point of homogeneous coordinates `v`: `(x / w, y / w, z / w)`, each component the
-    /// exactly floored quotient, or `None` when `w = 0`. Panics on overflow of a quotient.
+    /// correctly rounded quotient, or `None` when `w = 0`. Panics on overflow of a quotient.
     /// Upstream: `from_homogeneous`.
     ///
     /// One division per component on purpose (see `Vector3Trait::unscale`): multiplying by the
@@ -77,7 +77,7 @@ pub trait Point3Trait<T> {
     /// `self * k`, each coordinate floored once. Panics on overflow. Upstream: `Mul<T> for
     /// Point` (`p * k`).
     fn scale(self: Point3<T>, k: T) -> Point3<T>;
-    /// `self / k`, each coordinate being the exactly floored quotient. Panics on a zero `k` and
+    /// `self / k`, each coordinate being the correctly rounded quotient. Panics on a zero `k` and
     /// on overflow. Upstream: `Div<T> for Point` (`p / k`).
     fn unscale(self: Point3<T>, k: T) -> Point3<T>;
     /// Coordinate-wise minimum (infimum). Exact. Upstream: `inf`.
@@ -161,7 +161,8 @@ pub impl Point3Impl<
         if v.w == R::ZERO {
             None
         } else {
-            Some(Point3 { x: R::div(v.x, v.w), y: R::div(v.y, v.w), z: R::div(v.z, v.w) })
+            let (x, y, z) = R::div3(v.x, v.y, v.z, v.w);
+            Some(Point3 { x, y, z })
         }
     }
 
@@ -187,7 +188,8 @@ pub impl Point3Impl<
 
     #[inline(always)]
     fn unscale(self: Point3<T>, k: T) -> Point3<T> {
-        Point3 { x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k) }
+        let (x, y, z) = R::div3(self.x, self.y, self.z, k);
+        Point3 { x, y, z }
     }
 
     #[inline(always)]
@@ -284,7 +286,8 @@ pub impl Point3MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Point3<T>,
 pub impl Point3DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Point3<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Point3<T>, rhs: T) {
-        self = Point3 { x: R::div(self.x, rhs), y: R::div(self.y, rhs), z: R::div(self.z, rhs) };
+        let (x, y, z) = R::div3(self.x, self.y, self.z, rhs);
+        self = Point3 { x, y, z };
     }
 }
 

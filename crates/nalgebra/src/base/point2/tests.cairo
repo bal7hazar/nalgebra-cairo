@@ -8,8 +8,8 @@
 //! --max-per-dist 4 --ops <list> --out <oracle.cairo>`, `<list>` being the comma-separated
 //! `point2_<op>` names of the oracle tests at the bottom of this file.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, p2, p2t, p3, v2, v2t, v3};
 use crate::base::vector2::{Vector2, Vector2Trait};
@@ -106,15 +106,17 @@ fn test_from_homogeneous_divides_by_w() {
 }
 
 #[test]
-fn test_from_homogeneous_rounds_toward_negative_infinity() {
-    // (1.5, -2.25) / 7: exact floors.
+fn test_from_homogeneous_rounds_to_nearest() {
+    // (1.5, -2.25) / 7: rounded to nearest.
     assert!(
         Point2Trait::<
             Fixed,
         >::from_homogeneous(
             v3(0x180000000, -0x240000000, 0x700000000),
-        ) == Some(p2(920350134, -1380525203)),
+        ) == Some(p2(920350135, -1380525202)),
     );
+    // Ties to even: 0.5, -1.5 ulp.
+    assert!(Point2Trait::<Fixed>::from_homogeneous(v3(1, -3, 0x200000000)) == Some(p2(0, -2)));
 }
 
 #[test]
@@ -130,7 +132,7 @@ fn test_from_homogeneous_inverts_to_homogeneous() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_from_homogeneous_overflow() {
     // 2^30 / 2^-32 does not fit.
     let _ = Point2Trait::<Fixed>::from_homogeneous(black_box(v3(0x4000000000000000, 0, 1)));
@@ -168,19 +170,19 @@ fn test_translation_identities() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_sub Overflow')]
 fn test_sub_point_overflow() {
     let _ = black_box(p2(0, MAX)).sub_point(p2(0, -1));
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_add_vector_overflow() {
     let _ = black_box(p2(0, MAX)).add_vector(v2(0, 1));
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_sub Underflow')]
 fn test_sub_vector_overflow() {
     let _ = black_box(p2(0, MIN)).sub_vector(v2(0, 1));
 }
@@ -192,7 +194,7 @@ fn test_neg_mirrors_through_origin() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_neg_overflow() {
     let _ = -black_box(p2(0, MIN));
 }
@@ -234,7 +236,7 @@ fn test_scale_rounds_toward_negative_infinity() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_scale_overflow() {
     let _ = black_box(p2(0, 0x4000000000000000)).scale(fx(0x200000000));
 }
@@ -248,13 +250,15 @@ fn test_unscale_exact() {
 }
 
 #[test]
-fn test_unscale_rounds_toward_negative_infinity() {
-    // (1.5, -2.25) / 7: exact floors.
-    assert!(a().unscale(fx(0x700000000)) == p2(920350134, -1380525203));
+fn test_unscale_rounds_to_nearest() {
+    // (1.5, -2.25) / 7: rounded to nearest.
+    assert!(a().unscale(fx(0x700000000)) == p2(920350135, -1380525202));
+    // Ties to even: 0.5, -1.5 ulp.
+    assert!(p2(1, -3).unscale(fx(0x200000000)) == p2(0, -2));
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero() {
     let _ = black_box(a()).unscale(Real::ZERO);
 }
@@ -369,13 +373,13 @@ fn test_distance_without_intermediate_overflow() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_distance_squared_overflow() {
     let _ = black_box(p2(0x186a000000000, 0)).distance_squared(p2(0, 0));
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_sub Overflow')]
 fn test_distance_difference_overflow() {
     let _ = black_box(p2(0, MAX)).distance(p2(0, -1));
 }

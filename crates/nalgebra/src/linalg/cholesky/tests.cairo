@@ -97,8 +97,8 @@ fn test_cholesky2_l_oracle() {
     assert!(fail == 0 && worst <= 1, "chol2_l fail {} worst {}", fail, worst);
 }
 
-/// Reconstruction `l·lᵀ ≈ a` over the `cholesky2_l` inputs, within the oracle's tolerance for
-/// the factor itself.
+/// Reconstruction `l·lᵀ ≈ a` over the `cholesky2_l` inputs: the measured worst (9 ulp with the
+/// divisions rounded to nearest, 8 in the floor era).
 #[test]
 fn test_cholesky2_reconstruction() {
     let mut cases = oracle_cholesky::cholesky2_l_cases();
@@ -108,7 +108,7 @@ fn test_cholesky2_reconstruction() {
         let l = Cholesky2Trait::new(s2r(a)).unwrap().l();
         worst = core::cmp::max(worst, max_ulp_diff2(l * l.transpose(), m2(a)));
     }
-    assert!(worst <= 8, "chol2_rec worst {}", worst);
+    assert!(worst <= 9, "chol2_rec worst {}", worst);
 }
 
 /// `solve` against the oracle's `cholesky2_solve`.
@@ -144,7 +144,7 @@ fn test_cholesky2_inverse_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 114, "chol2_inv fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 122, "chol2_inv fail {} worst {}", fail, worst);
 }
 
 /// The identity `a · a⁻¹ ≈ I` over the `cholesky2_inverse` inputs.
@@ -283,7 +283,7 @@ fn test_cholesky3_solve_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 111, "chol3_solve fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 135, "chol3_solve fail {} worst {}", fail, worst);
 }
 
 /// `inverse` against the oracle's `cholesky3_inverse`.
@@ -475,7 +475,7 @@ fn test_cholesky4_inverse_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 135, "chol4_inv fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 147, "chol4_inv fail {} worst {}", fail, worst);
 }
 
 /// The identity `a · a⁻¹ ≈ I` over the `cholesky4_inverse` inputs.
@@ -703,7 +703,7 @@ fn test_cholesky6_solve_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 1126, "chol6_solve fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 1558, "chol6_solve fail {} worst {}", fail, worst);
 }
 
 /// `inverse` against the oracle's `cholesky6_inverse`.

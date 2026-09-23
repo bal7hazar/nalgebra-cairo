@@ -7,8 +7,8 @@
 //!
 //! The translations used are `(1.25, -0.375)` and `(-0.25, 2.5)`, the point `(-2.5, 3.75)`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use crate::base::matrix_test_utils::{fx, p2, t2};
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;

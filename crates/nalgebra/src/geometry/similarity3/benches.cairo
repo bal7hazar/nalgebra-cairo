@@ -1,8 +1,8 @@
 //! Gas benchmarks of `Similarity3` (`bench_similarity3_<op>__<variant>`) and the alternative
 //! formulations requested by the work package.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{p3, sim3, v3};
 use crate::base::point3::{Point3, Point3Trait};

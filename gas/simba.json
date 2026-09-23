@@ -1,540 +1,95 @@
 {
-  "simba::fixed::convert::tests": {
-    "from_int": {
-      "baseline": 15940,
-      "fixed_n": 16040
-    },
-    "from_ratio": {
-      "baseline": 16340,
-      "fixed_np": 19080,
-      "fixed_pp": 19080
-    },
-    "from_raw": {
-      "baseline": 15940,
-      "fixed": 15940
-    },
-    "into": {
-      "baseline": 15940,
-      "fixed_i16": 16040,
-      "fixed_i32": 16040,
-      "fixed_i8": 16040,
-      "fixed_u16": 16040,
-      "fixed_u8": 16040
-    },
-    "to_int": {
-      "baseline": 15940,
-      "fixed_n": 17050,
-      "fixed_p": 17050
-    },
-    "try_into": {
-      "baseline": 15940,
-      "fixed_i128": 16580,
-      "fixed_i64": 16580,
-      "fixed_u128": 16310,
-      "fixed_u32": 16310,
-      "fixed_u64": 16310
-    }
-  },
-  "simba::fixed::fused::tests": {
-    "diff_prod": {
-      "baseline": 17140,
-      "fixed": 19090,
-      "unfused": 21480
-    },
-    "lerp": {
-      "baseline": 16740,
-      "fixed": 18790,
-      "unfused": 19970
-    },
-    "mul_add": {
-      "baseline": 16740,
-      "fixed": 18690,
-      "unfused": 19230
-    },
-    "mul_sub": {
-      "baseline": 16740,
-      "fixed": 18690,
-      "unfused": 19230
-    },
-    "norm2": {
-      "baseline": 16340,
-      "fixed": 18360,
-      "unfused": 22600
-    },
-    "norm3": {
-      "baseline": 16740,
-      "fixed": 18960,
-      "unfused": 25590
-    },
-    "norm4": {
-      "baseline": 17140,
-      "fixed": 19560
-    },
-    "norm_squared2": {
-      "baseline": 16340,
-      "fixed": 18290,
-      "unfused": 20680
-    },
-    "norm_squared3": {
-      "baseline": 16740,
-      "fixed": 18890,
-      "unfused": 23670
-    },
-    "norm_squared4": {
-      "baseline": 17140,
-      "fixed": 19490
-    },
-    "sqr": {
-      "baseline": 15940,
-      "fixed": 17690,
-      "unfused": 17690
-    },
-    "sum_prod2": {
-      "baseline": 17140,
-      "fixed": 19090,
-      "unfused": 21480
-    },
-    "sum_prod3": {
-      "baseline": 17940,
-      "fixed": 20090,
-      "unfused": 24870
-    },
-    "sum_prod4": {
-      "baseline": 18740,
-      "fixed": 21090,
-      "unfused": 28260
-    }
-  },
-  "simba::fixed::kernels::alternatives::tests": {
-    "abs": {
-      "alt_downcast_n": 17080,
-      "alt_downcast_p": 16650,
-      "alt_native_n": 17010,
-      "alt_native_p": 16830,
-      "alt_trim_first_n": 16810,
-      "alt_trim_first_p": 16820
-    },
-    "abs_diff_eq": {
-      "alt_native_gt": 19170,
-      "alt_native_lt": 19270
-    },
-    "add": {
-      "alt_checked_pn": 16980,
-      "alt_native_pn": 16980
-    },
-    "ceil": {
-      "alt_branch_n": 19400,
-      "alt_branch_p": 19400,
-      "alt_neg_floor_n": 17750,
-      "alt_neg_floor_p": 17750
-    },
-    "div": {
-      "alt_floor_peel_np": 20280,
-      "alt_floor_peel_pn": 20280,
-      "alt_floor_peel_pp": 19930,
-      "alt_native_trunc_np": 29220,
-      "alt_native_trunc_pp": 29220,
-      "alt_trunc_peel_np": 19680,
-      "alt_trunc_peel_pp": 19700
-    },
-    "floor": {
-      "alt_native_n": 20270,
-      "alt_native_p": 19410,
-      "alt_sub_rem_n": 17420,
-      "alt_sub_rem_p": 17420
-    },
-    "fract": {
-      "alt_sub_trunc_n": 18460,
-      "alt_sub_trunc_p": 18380
-    },
-    "from_int": {
-      "alt_native_n": 16580
-    },
-    "inv_sqrt": {
-      "alt_constrain_p": 18870,
-      "alt_recip_p": 20050,
-      "alt_two_step_p": 19610
-    },
-    "is_negative": {
-      "alt_is_ok_n": 17220,
-      "alt_is_ok_p": 17220,
-      "alt_native_n": 16920,
-      "alt_native_p": 17020
-    },
-    "is_positive": {
-      "alt_native_n": 17020,
-      "alt_native_p": 16920
-    },
-    "lt": {
-      "alt_constrain_np": 17220,
-      "alt_constrain_pn": 17320
-    },
-    "min": {
-      "alt_constrain_np": 17110,
-      "alt_constrain_pn": 17120
-    },
-    "mul": {
-      "alt_kernel_raw_pn": 18090,
-      "alt_native_trunc_pn": 26680,
-      "alt_native_trunc_pp": 26600,
-      "alt_postcheck_pn": 18190,
-      "alt_via_u128_pn": 18190
-    },
-    "neg": {
-      "alt_downcast_n": 16310,
-      "alt_downcast_p": 16310,
-      "alt_native_n": 16240,
-      "alt_native_p": 16240
-    },
-    "recip": {
-      "alt_div_n": 18760,
-      "alt_div_p": 18680
-    },
-    "rem": {
-      "alt_native_trunc_np": 20660,
-      "alt_native_trunc_pp": 20660
-    },
-    "round": {
-      "alt_half_up_n": 17520,
-      "alt_half_up_p": 17520
-    },
-    "signum": {
-      "alt_native_n": 17380,
-      "alt_native_p": 16940,
-      "alt_native_z": 17290
-    },
-    "sqrt": {
-      "alt_constrain_p": 17860,
-      "alt_native_p": 17760
-    },
-    "sub": {
-      "alt_native_pn": 16980
-    },
-    "sum_prod8": {
-      "alt_chunked": 27480,
-      "alt_native_trunc": 87720,
-      "alt_typed": 25090,
-      "alt_typed_postcheck": 25190
-    },
-    "to_int": {
-      "alt_native_n": 19630,
-      "alt_native_p": 19370
-    },
-    "trunc": {
-      "alt_floor_fix_n": 19600,
-      "alt_floor_fix_p": 19100
-    },
-    "wide_mul_scalar": {
-      "alt_corelib_divrem": 19160,
-      "alt_kernel_raw": 18320,
-      "alt_native_trunc": 20120,
-      "alt_sign_split_n": 19290,
-      "alt_sign_split_p": 19030
-    }
-  },
-  "simba::fixed::math::tests": {
-    "abs": {
-      "baseline": 15940,
-      "fixed_n": 16810,
-      "fixed_p": 16630
-    },
-    "abs_diff_eq": {
-      "baseline": 16750,
-      "fixed_gt": 18590,
-      "fixed_lt": 18500
-    },
-    "ceil": {
-      "baseline": 15940,
-      "fixed_n": 17520,
-      "fixed_p": 17520
-    },
-    "clamp": {
-      "baseline": 16740,
-      "fixed_above": 18090,
-      "fixed_below": 17550,
-      "fixed_inside": 18080
-    },
-    "floor": {
-      "baseline": 15940,
-      "fixed_n": 17150,
-      "fixed_p": 17150
-    },
-    "fract": {
-      "baseline": 15940,
-      "fixed_n": 17720,
-      "fixed_p": 17640
-    },
-    "inv_sqrt": {
-      "baseline": 15940,
-      "fixed_p": 18770
-    },
-    "is_negative": {
-      "baseline": 16040,
-      "fixed_n": 16720,
-      "fixed_p": 16820
-    },
-    "is_positive": {
-      "baseline": 15950,
-      "fixed_n": 16810,
-      "fixed_p": 16720
-    },
-    "max": {
-      "baseline": 16340,
-      "fixed_np": 17120,
-      "fixed_pn": 17110
-    },
-    "min": {
-      "baseline": 16340,
-      "fixed_np": 17110,
-      "fixed_pn": 17120
-    },
-    "recip": {
-      "baseline": 15940,
-      "fixed_n": 18390,
-      "fixed_p": 18130
-    },
-    "round": {
-      "baseline": 15940,
-      "fixed_n": 17930,
-      "fixed_p": 18090
-    },
-    "signum": {
-      "baseline": 15940,
-      "fixed_n": 16610,
-      "fixed_p": 16720,
-      "fixed_z": 16820
-    },
-    "sqrt": {
-      "baseline": 15940,
-      "fixed_p": 17760
-    },
-    "trunc": {
-      "baseline": 15940,
-      "fixed_n": 17720,
-      "fixed_p": 17640
-    }
-  },
-  "simba::fixed::ops::tests": {
-    "add": {
-      "baseline": 16340,
-      "fixed_nn": 16980,
-      "fixed_pn": 16980,
-      "fixed_pp": 16980
-    },
-    "add_assign": {
-      "baseline": 16340,
-      "fixed_pn": 16980
-    },
-    "div": {
-      "baseline": 16340,
-      "fixed_nn": 19160,
-      "fixed_np": 19080,
-      "fixed_pn": 19160,
-      "fixed_pp": 19080
-    },
-    "div_assign": {
-      "baseline": 16340,
-      "fixed_pn": 19160
-    },
-    "eq": {
-      "baseline": 16440,
-      "fixed_np": 16940,
-      "fixed_pn": 16940,
-      "fixed_pp": 16940
-    },
-    "ge": {
-      "baseline": 16350,
-      "fixed_np": 17310,
-      "fixed_pn": 17230,
-      "fixed_pp": 17310
-    },
-    "gt": {
-      "baseline": 16350,
-      "fixed_np": 17320,
-      "fixed_pn": 17220,
-      "fixed_pp": 17320
-    },
-    "le": {
-      "baseline": 16440,
-      "fixed_np": 17230,
-      "fixed_pn": 17310,
-      "fixed_pp": 17230
-    },
-    "lt": {
-      "baseline": 16440,
-      "fixed_np": 17220,
-      "fixed_pn": 17320,
-      "fixed_pp": 17220
-    },
-    "mul": {
-      "baseline": 16340,
-      "fixed_nn": 18090,
-      "fixed_pn": 18090,
-      "fixed_pp": 18090
-    },
-    "mul_assign": {
-      "baseline": 16340,
-      "fixed_pn": 18090
-    },
-    "neg": {
-      "baseline": 15940,
-      "fixed_n": 16240,
-      "fixed_p": 16240
-    },
-    "rem": {
-      "baseline": 16340,
-      "fixed_nn": 18420,
-      "fixed_np": 18350,
-      "fixed_pn": 18420,
-      "fixed_pp": 18350
-    },
-    "rem_assign": {
-      "baseline": 16340,
-      "fixed_pn": 18420
-    },
-    "sub": {
-      "baseline": 16340,
-      "fixed_pn": 16980,
-      "fixed_pp": 16980
-    },
-    "sub_assign": {
-      "baseline": 16340,
-      "fixed_pn": 16980
-    }
-  },
-  "simba::fixed::transcendental::tests": {
-    "acos": {
-      "baseline": 15940,
-      "deg15_large": 27370,
-      "deg15_small": 27370
-    },
-    "asin": {
-      "baseline": 15940,
-      "deg11_small": 25950,
-      "deg15_large": 27360,
-      "deg15_small_x": 27360,
-      "deg19_small": 27760
-    },
-    "atan": {
-      "above_one_with_division": 29540,
-      "baseline": 15940,
-      "reciprocal_only": 28470,
-      "unit_no_division": 29540,
-      "via_atan2": 31340
-    },
-    "atan2": {
-      "baseline": 16340,
-      "deg17": 29730,
-      "deg21": 31340,
-      "deg25": 31740,
-      "deg29": 33150
-    },
-    "cos": {
-      "baseline": 15940,
-      "deg10": 28840
-    },
-    "exp": {
-      "baseline": 15940,
-      "deg10_alt": 31640,
-      "deg6_alt": 28820,
-      "deg8": 30230,
-      "deg8_negative": 30230
-    },
-    "ln": {
-      "baseline": 15940,
-      "deg11": 28520,
-      "deg11_tiny": 28520,
-      "deg7_alt": 27110
-    },
-    "sin": {
-      "baseline": 15940,
-      "deg11": 28740,
-      "deg11_alt": 28840,
-      "deg11_huge_argument": 28740,
-      "deg11_negative": 28740,
-      "deg7_alt": 27430,
-      "deg9_alt": 28840
-    },
-    "sin_cos": {
-      "baseline": 16240,
-      "shared": 33060,
-      "two_calls": 42040
-    },
-    "tan": {
-      "baseline": 15940,
-      "q32_ratio": 35880,
-      "wide_ratio": 35440
-    }
-  },
-  "simba::fixed::types::tests": {
-    "is_zero": {
-      "baseline": 16040,
-      "fixed_is_non_one": 16740,
-      "fixed_is_non_zero": 16640,
-      "fixed_is_one": 16540,
-      "fixed_is_zero": 16340
-    }
-  },
-  "simba::fixed::wide::tests": {
-    "sum_prod4": {
-      "baseline": 18740,
-      "fused_kernel": 21090,
-      "wide": 21090,
-      "wide_from_prod": 21090
-    },
-    "sum_prod6": {
-      "baseline": 20340,
-      "wide": 23090,
-      "wide_from_prod": 23090
-    },
-    "sum_prod8": {
-      "baseline": 21940,
-      "wide": 25090,
-      "wide_from_prod": 25090
-    },
-    "triple_product": {
-      "alt_diff_prod_then_mul": 21340,
-      "baseline": 17540,
-      "wide_mul_scalar": 19320
-    },
-    "wide_mixed": {
-      "baseline": 17940,
-      "wide": 20290
-    },
-    "wide_mul_scalar": {
-      "alt_rescale_then_mul": 20340,
-      "baseline": 16740,
-      "fused": 18320
-    },
-    "wide_norm6": {
-      "baseline": 17940,
-      "wide": 20760
-    }
-  },
-  "simba::scalar::tests": {
+  "simba::benches": {
     "real_cross3": {
       "baseline": 17140,
-      "generic": 23790
+      "direct": 22480,
+      "generic": 22480
     },
-    "real_div": {
-      "alt_operator": 19080,
-      "baseline": 16340,
-      "fixed": 19080
+    "real_diff_prod": {
+      "acc": 18920,
+      "baseline": 17140,
+      "named": 18920
     },
     "real_dot3": {
       "baseline": 17140,
-      "direct": 19290,
-      "generic": 19290,
-      "generic_wide": 19290
+      "direct": 19120,
+      "generic": 19120
+    },
+    "real_jacobi_c": {
+      "alt_inv_norm2": 20780,
+      "baseline": 15940,
+      "recip_sqrt": 22690
+    },
+    "real_mul_add": {
+      "acc": 18920,
+      "baseline": 17140,
+      "named": 18920
+    },
+    "real_norm16": {
+      "acc": 23880,
+      "baseline": 17140,
+      "typed": 23880
     },
     "real_norm3": {
       "baseline": 16340,
+      "direct": 18560,
       "generic": 18560
     },
-    "real_rem": {
-      "alt_operator": 18350,
+    "real_norm6": {
+      "acc": 22080,
+      "baseline": 17140,
+      "typed": 22080
+    },
+    "real_norm9": {
+      "acc": 22480,
+      "baseline": 17140,
+      "typed": 22580
+    },
+    "real_normalize3": {
       "baseline": 16340,
-      "fixed": 18350
+      "div": 28020,
+      "recip": 23840
+    },
+    "real_scalar": {
+      "add": 16980,
+      "atan2": 46270,
+      "baseline": 16340,
+      "div": 19640,
+      "inv_norm2": 20680,
+      "mul": 17920,
+      "recip": 19160,
+      "sin_cos": 47840,
+      "sqrt": 18160
+    },
+    "real_shared_div2": {
+      "alt_per_element_div": 23870,
+      "baseline": 16740,
+      "prepared": 24000
+    },
+    "real_shared_div3": {
+      "alt_per_element_div": 27800,
+      "baseline": 16740,
+      "prepared": 27450
+    },
+    "real_shared_div4": {
+      "alt_per_element_div": 32800,
+      "baseline": 17540,
+      "prepared": 31970
+    },
+    "real_sum_prod2": {
+      "acc": 18920,
+      "baseline": 17140,
+      "named": 18920
+    },
+    "real_sum_prod3": {
+      "acc": 19120,
+      "baseline": 17140,
+      "named": 19120
+    },
+    "real_sum_prod4": {
+      "acc": 19320,
+      "baseline": 17140,
+      "named": 19320
     }
   }
 }

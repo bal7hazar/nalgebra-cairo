@@ -61,7 +61,7 @@ pub trait Vector4Trait<T> {
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale`
     /// (`self * k`).
     fn scale(self: Vector4<T>, k: T) -> Vector4<T>;
-    /// `self / k`, each component being the exactly floored quotient. Panics on a zero `k` and
+    /// `self / k`, each component being the correctly rounded quotient. Panics on a zero `k` and
     /// on overflow. Upstream: `unscale` (`self / k`).
     ///
     /// One division per component on purpose: `scale(k.recip())` is cheaper but rounds `1 / k`
@@ -72,7 +72,7 @@ pub trait Vector4Trait<T> {
     /// Component-wise product, each component floored once. Panics on overflow. Upstream:
     /// `component_mul`.
     fn component_mul(self: Vector4<T>, rhs: Vector4<T>) -> Vector4<T>;
-    /// Component-wise quotient, each component exactly floored. Panics on a zero component of
+    /// Component-wise quotient, each component rounded to nearest. Panics on a zero component of
     /// `rhs` and on overflow. Upstream: `component_div`.
     fn component_div(self: Vector4<T>, rhs: Vector4<T>) -> Vector4<T>;
     /// Component-wise absolute value. Exact; panics on overflow (`|MIN|`). Upstream: `abs`.
@@ -129,7 +129,7 @@ pub trait Vector4Trait<T> {
     /// `(self - rhs).norm()`. Panics when a component difference or the result overflows.
     /// Upstream: `metric_distance`.
     fn metric_distance(self: Vector4<T>, rhs: Vector4<T>) -> T;
-    /// `self / self.norm()`: the floored norm, then one exactly floored division per component
+    /// `self / self.norm()`: the floored norm, then one correctly rounded division per component
     /// (`unscale`). The error is about `1 + 1 / norm` ulp per component whatever the magnitude of
     /// `self`, from a few ulp up to the longest vector whose norm fits. Panics with a division by
     /// zero when the norm is zero, and on overflow when the norm does not fit. Upstream:
@@ -137,16 +137,16 @@ pub trait Vector4Trait<T> {
     ///
     /// The cheaper candidates are kept as benchmarks (`bench_vector4_normalize__alt_*`): one
     /// reciprocal of the norm then one product per component is off by about `norm` ulp and
-    /// overflows for norms up to `2^-31`; `inv_sqrt(norm_squared)` also overflows for norms above
-    /// 46 340 and has no precision left for short vectors.
+    /// overflows for norms up to `2^-31`; `recip(sqrt(norm_squared))` also overflows for norms
+    /// above 46 340 and has no precision left for short vectors.
     fn normalize(self: Vector4<T>) -> Vector4<T>;
     /// `Some(self.normalize())`, or `None` when the norm is `<= min_norm`. With `min_norm >= 0`
     /// it never divides by zero. Upstream: `try_normalize`.
     fn try_normalize(self: Vector4<T>, min_norm: T) -> Option<Vector4<T>>;
     /// `self` when its norm is `<= max`, otherwise `self.scale(max / norm)` like upstream. The
-    /// ratio is floored, so the capped norm is short of `max` by up to about `norm / max` ulp and
-    /// exceeds it by at most the final rounding of the components. `max` is expected to be
-    /// `>= 0`. Panics only when the norm does not fit. Upstream: `cap_magnitude`.
+    /// ratio is rounded to nearest (like Rust's `max / n` in f64), so the capped norm is within
+    /// about `norm / max` ulp of `max` and, as in Rust, may exceed it by the rounding. `max` is
+    /// expected to be `>= 0`. Panics only when the norm does not fit. Upstream: `cap_magnitude`.
     ///
     /// The more accurate and dearer `normalize().scale(max)` is kept as a benchmark
     /// (`bench_vector4_cap_magnitude__alt_normalize`).
@@ -241,9 +241,8 @@ pub impl Vector4Impl<
 
     #[inline(always)]
     fn unscale(self: Vector4<T>, k: T) -> Vector4<T> {
-        Vector4 {
-            x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k), w: R::div(self.w, k),
-        }
+        let (x, y, z, w) = R::div4(self.x, self.y, self.z, self.w, k);
+        Vector4 { x, y, z, w }
     }
 
     #[inline(always)]
@@ -459,18 +458,10 @@ pub impl Vector4AngleImpl<
         if n1 == R::ZERO || n2 == R::ZERO {
             return R::ZERO;
         }
-        let u = Vector4 {
-            x: R::div(self.x, n1),
-            y: R::div(self.y, n1),
-            z: R::div(self.z, n1),
-            w: R::div(self.w, n1),
-        };
-        let v = Vector4 {
-            x: R::div(other.x, n2),
-            y: R::div(other.y, n2),
-            z: R::div(other.z, n2),
-            w: R::div(other.w, n2),
-        };
+        let (ux, uy, uz, uw) = R::div4(self.x, self.y, self.z, self.w, n1);
+        let (vx, vy, vz, vw) = R::div4(other.x, other.y, other.z, other.w, n2);
+        let u = Vector4 { x: ux, y: uy, z: uz, w: uw };
+        let v = Vector4 { x: vx, y: vy, z: vz, w: vw };
         let d = R::norm4(u.x - v.x, u.y - v.y, u.z - v.z, u.w - v.w);
         let s = R::norm4(u.x + v.x, u.y + v.y, u.z + v.z, u.w + v.w);
         let half = Tr::atan2(d, s);
@@ -533,13 +524,8 @@ pub impl Vector4MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector4<T
 pub impl Vector4DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector4<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector4<T>, rhs: T) {
-        self =
-            Vector4 {
-                x: R::div(self.x, rhs),
-                y: R::div(self.y, rhs),
-                z: R::div(self.z, rhs),
-                w: R::div(self.w, rhs),
-            };
+        let (x, y, z, w) = R::div4(self.x, self.y, self.z, self.w, rhs);
+        self = Vector4 { x, y, z, w };
     }
 }
 

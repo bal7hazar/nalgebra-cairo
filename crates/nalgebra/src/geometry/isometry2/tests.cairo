@@ -15,7 +15,7 @@
 //! `cargo run --release -- emit-cairo isometry2 --from vectors --max-per-dist 6 --out
 //! <oracle.cairo>`.
 
-use simba::fixed::Fixed;
+use fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, iso2t, m3, p2t, uct, v2t};

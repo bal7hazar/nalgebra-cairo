@@ -48,7 +48,7 @@ pub impl Qr2Impl<
     /// Always succeeds. `r11` and `r22` are floored `norm2`, whose sum of squares is accumulated
     /// unscaled, so no intermediate can overflow and each norm is the exact floor of the true one;
     /// `r12` is one fused `sum_prod2`, `w` two fused `mul_add`, and each component of `q1` / `q2`
-    /// one floor division. Five roundings per column.
+    /// one correctly rounded division. Five roundings per column.
     ///
     /// A column that is exactly zero leaves `r_ii = 0` and sets `q_i = 0` rather than completing
     /// the basis (module doc): `Q * R = A` still holds exactly, and `is_invertible` is false.
@@ -113,7 +113,8 @@ pub impl Qr2Impl<
     /// is exactly zero (`is_invertible`). Upstream: `QR::solve`.
     ///
     /// `x = R^-1 (Qᵀ b)`: one fused `tr_mul_vec` for `Qᵀ b` (one rounding per component), then
-    /// back substitution, each component costing one fused numerator and one floor division.
+    /// back substitution, each component costing one fused numerator and one correctly rounded
+    /// division.
     /// Panics with the scalar's overflow error if a component of `x` does not fit.
     fn solve(self: Qr2<T>, b: Vector2<T>) -> Option<Vector2<T>> {
         if !Self::is_invertible(self) {
@@ -198,8 +199,8 @@ mod tests {
     //! identities (`Q R = A`, `QᵀQ = I`, `A A^-1 = I`), and the oracle vectors of `tools/oracle`
     //! (upstream nalgebra 0.35 on the same raw inputs, unpacked factors, `r_ii >= 0`).
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
@@ -330,7 +331,7 @@ mod tests {
         // unpacked Householder factors entry by entry, no sign flip, and every case stays inside
         // the oracle tolerance (`worst_ex == 0`).
         assert!(
-            (worst_q, worst_r, worst_ex) == (25, 78, 0),
+            (worst_q, worst_r, worst_ex) == (25, 15, 0),
             "regressed: {worst_q} {worst_r} {worst_ex}",
         );
     }
@@ -349,7 +350,7 @@ mod tests {
         }
         // Measured: `|A - Q R| <= worst_rec ulp * max(1, max |a_ij|)` and `|QᵀQ - I| <=
         // worst_orth`.
-        assert!(worst_rec == 2 && worst_orth == 54, "regressed: {worst_rec} {worst_orth}");
+        assert!(worst_rec == 2 && worst_orth == 52, "regressed: {worst_rec} {worst_orth}");
     }
 
     #[test]
@@ -364,7 +365,7 @@ mod tests {
             worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v2(e), tol)));
             worst = core::cmp::max(worst, err);
         }
-        assert!((worst, worst_ex) == (709, 7), "regressed: {worst} {worst_ex}");
+        assert!((worst, worst_ex) == (749, 4), "regressed: {worst} {worst_ex}");
     }
 
     #[test]
@@ -379,7 +380,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff2(inv * m2(a), Matrix2Trait::identity()));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
-        assert!(worst == 99, "regressed: {worst}");
+        assert!(worst == 47, "regressed: {worst}");
     }
 
     #[test]
@@ -394,11 +395,11 @@ mod tests {
             let err = ulp_diff(Qr2Trait::new(m2(a)).determinant(), m2(a).determinant());
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 528, "regressed: {worst}");
+        assert!(worst == 519, "regressed: {worst}");
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_overflow_panics() {
         // 2^-32 * I: both diagonal entries of R are 1 raw unit, so the inverse is 2^32 * I.
         let _ = black_box(Matrix2Trait::from_diagonal_element(Fixed { raw: 1 })).qr().try_inverse();

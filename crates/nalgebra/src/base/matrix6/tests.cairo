@@ -13,8 +13,8 @@
 //! crates/nalgebra/src/base/oracle_dim6_matrix.cairo --ops matrix6_add,matrix6_sub,matrix6_scale,
 //! matrix6_mul,matrix6_mul_vec,matrix6_transpose,matrix6_trace`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix_test_utils::{fx, int, m6, m6i, v6, v6i, v6t};
@@ -166,13 +166,13 @@ fn test_trace_and_abs() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_trace_overflow_panics() {
     let _ = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MAX)).trace();
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_abs_of_min_panics() {
     let _ = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MIN)).abs();
 }
@@ -188,14 +188,14 @@ fn test_add_sub_neg_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_add_overflow_panics() {
     let m = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MAX));
     let _ = m + m;
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_neg_min_panics() {
     let _ = -black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MIN));
 }
@@ -254,7 +254,7 @@ fn test_mul_is_a_single_rescale_per_scalar() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_mul_overflow_panics() {
     let m = black_box(Matrix6Trait::from_diagonal_element(int(65536)));
     let _ = m * m;
@@ -271,7 +271,7 @@ fn test_mul_vec_and_tr_mul_vec_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_mul_vec_overflow_panics() {
     let m = black_box(Matrix6Trait::from_diagonal_element(int(65536)));
     let _ = m.mul_vec(black_box(v6i(65536, 0, 0, 0, 0, 0)));

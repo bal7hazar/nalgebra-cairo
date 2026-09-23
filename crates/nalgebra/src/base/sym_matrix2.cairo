@@ -286,8 +286,8 @@ pub impl SymMatrix2SubAssign<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::Matrix2Trait;
     use crate::base::matrix_test_utils::{
@@ -399,14 +399,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
         let s = black_box(SymMatrix2Trait::from_diagonal_element(Real::<Fixed>::MAX));
         let _ = s + s;
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
         let _ = -black_box(SymMatrix2Trait::from_diagonal_element(Real::<Fixed>::MIN));
     }
@@ -503,7 +503,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_quadform_overflow_panics() {
         let r = black_box(Matrix2Trait::from_diagonal_element(int(65536)));
         let _ = SymMatrix2Trait::quadform(r, black_box(v2i(1, 1)));
@@ -530,7 +530,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_determinant_overflow_panics() {
         black_box(SymMatrix2Trait::from_diagonal_element(int(65536))).determinant();
     }
@@ -619,13 +619,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: division by zero')]
+    #[should_panic(expected: 'Fixed: division by zero')]
     fn test_inverse_unchecked_singular_panics() {
         let _ = black_box(s2i((1, 2, 4))).inverse_unchecked();
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_tiny_norm_panics() {
         let _ = black_box(SymMatrix2Trait::from_diagonal_element(fx(1))).try_inverse();
     }
@@ -1103,7 +1103,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_try_inverse__structured() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(s2((13566534218, -2170479783, 12041205356)));
+        let e = black_box(s2((13566534219, -2170479783, 12041205357)));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1111,7 +1111,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_try_inverse__structured_prescaled() {
         let a = black_box(s2((301259457, 33609003, 288701628)));
-        let e = black_box(s2((62037790974, -7222087099, 64736286220)));
+        let e = black_box(s2((62037790975, -7222087099, 64736286221)));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1119,7 +1119,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_try_inverse__generic() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(s2((13566534218, -2170479783, 12041205356)));
+        let e = black_box(s2((13566534219, -2170479783, 12041205357)));
         let inv = a.to_matrix().try_inverse().unwrap();
         assert!(SymMatrix2Trait::from_matrix_unchecked(inv) == e);
     }
@@ -1136,7 +1136,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_inverse_unchecked__structured() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(s2((13566534218, -2170479783, 12041205356)));
+        let e = black_box(s2((13566534219, -2170479783, 12041205357)));
         assert!(a.inverse_unchecked() == e);
     }
 

@@ -9,8 +9,8 @@
 //! results of the kernels themselves, all of which are checked against upstream nalgebra in
 //! `tests.cairo`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{fx, iso3, p3, uq, v3};
 use crate::base::point3::{Point3, Point3Trait};
@@ -748,7 +748,7 @@ fn bench_isometry3_lerp_nlerp__lerp_normalize() {
     let s: Fixed = black_box(fx(0x40000000));
     let e: Isometry3<Fixed> = black_box(
         iso3(
-            (4026531840, -6710886400, 13421772800), (4238238332, 150031943, -112523959, 670006486),
+            (4026531840, -6710886400, 13421772800), (4238238332, 150031943, -112523959, 670006487),
         ),
     );
     assert!(x.lerp_nlerp(y, s) == e);

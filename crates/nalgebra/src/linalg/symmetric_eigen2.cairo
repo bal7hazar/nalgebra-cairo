@@ -63,7 +63,7 @@ pub impl SymmetricEigen2Impl<
     ///
     /// Cost: constant (no loop, no tolerance). Rounding: `mean` and `d` are one floored halving
     /// each, `r` is a floored `norm2` (the sum of squares is accumulated unscaled, so it cannot
-    /// overflow), the eigenvector is one floored division per component.
+    /// overflow), the eigenvector is one correctly rounded division per component.
     ///
     /// **Measured** bit-exactly on the 60 vectors of the `symmetric_eigen_svd` oracle suite
     /// (`small` / `unit` / `medium`, generic and SPD): eigenvalues within **1 ulp** of the floored
@@ -157,8 +157,8 @@ pub impl SymmetricEigen2Impl<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
@@ -220,8 +220,8 @@ mod tests {
         // [[0, 1], [1, 0]]: eigenvalues -1, 1 for (1, -1)/sqrt(2), (1, 1)/sqrt(2).
         let e = SymmetricEigen2Trait::new(s2i((0, 1, 0)));
         assert!(e.eigenvalues == v2i(-1, 1));
-        // `1/sqrt(2)` reached through a floored `norm2` and a floored division: 2 ulp of the
-        // rounded constant.
+        // `1/sqrt(2)` reached through a floored `norm2` and a correctly rounded division: 2 ulp of
+        // the rounded constant.
         let h = Real::<Fixed>::FRAC_1_SQRT_2;
         assert!(max_ulp_diff_v2(e.eigenvectors.column1(), Vector2 { x: h, y: -h }) <= 2);
         assert!(max_ulp_diff_v2(e.eigenvectors.column2(), Vector2 { x: h, y: h }) <= 2);
@@ -361,7 +361,7 @@ mod tests {
     // --- overflow ------------------------------------------------------------------------------
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_new_overflow_panics() {
         // `mean + r` leaves the representable range.
         let s = black_box(SymMatrix2 { m11: Real::<Fixed>::MAX, m12: Real::MAX, m22: Real::MAX });

@@ -4,8 +4,8 @@
 //!
 //! Expected values come from a bit-exact integer model of the Q32.32 kernels (floor rounding).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix_test_utils::{fx, v2, v3};
 use crate::base::vector3::Vector3;
@@ -27,11 +27,11 @@ fn alt_normalize_recip(v: Vector2<Fixed>) -> Vector2<Fixed> {
     v.scale(v.norm().recip())
 }
 
-/// `normalize` through `inv_sqrt(norm_squared)`: the squared norm overflows above 46 340 and
+/// `normalize` through `recip(sqrt(norm_squared))`: the squared norm overflows above 46 340 and
 /// has no precision left for short vectors.
 #[inline(always)]
-fn alt_normalize_inv_sqrt(v: Vector2<Fixed>) -> Vector2<Fixed> {
-    v.scale(v.norm_squared().inv_sqrt())
+fn alt_normalize_recip_sqrt(v: Vector2<Fixed>) -> Vector2<Fixed> {
+    v.scale(v.norm_squared().sqrt().recip())
 }
 
 /// `cap_magnitude` as `normalize().scale(max)`: accurate to about `max` ulp, one more division
@@ -58,7 +58,7 @@ fn alt_dot_unfused(a: Vector2<Fixed>, b: Vector2<Fixed>) -> Fixed {
 fn test_unscale_alt_recip_is_less_accurate() {
     // (3000, -4000, ..) / 3: exact floors vs an error of 1334 ulp through `recip(3)`.
     let v = v2(0xbb800000000, -0xfa000000000);
-    assert!(v.unscale(fx(0x300000000)) == v2(0x3e800000000, -5726623061334));
+    assert!(v.unscale(fx(0x300000000)) == v2(0x3e800000000, -5726623061333));
     assert!(alt_unscale_recip(v, fx(0x300000000)) == v2(4294967295000, -5726623060000));
     assert!(!alt_unscale_recip(v, fx(0x300000000)).abs_diff_eq(v.unscale(fx(0x300000000)), 1000));
 }
@@ -68,7 +68,7 @@ fn test_normalize_alt_recip_is_less_accurate() {
     // (30000, -40000, ..) / 50000 = (0.6, -0.8, ..): exact floors vs 13837 ulp through
     // `recip(50000)`.
     let v = v2(0x753000000000, -0x9c4000000000);
-    assert!(v.normalize() == v2(2576980377, -3435973837));
+    assert!(v.normalize() == v2(2576980378, -3435973837));
     assert!(alt_normalize_recip(v) == v2(2576970000, -3435960000));
     assert!(!alt_normalize_recip(v).abs_diff_eq(v.normalize(), 10000));
 }
@@ -76,11 +76,11 @@ fn test_normalize_alt_recip_is_less_accurate() {
 #[test]
 fn test_normalize_tiny_is_exact() {
     // (3, -4, ..) ulp has a norm of 5 ulp: the divisions still give (0.6, -0.8, ..) floored.
-    assert!(v2(3, -4).normalize() == v2(2576980377, -3435973837));
+    assert!(v2(3, -4).normalize() == v2(2576980378, -3435973837));
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_normalize_alt_recip_overflows_on_tiny() {
     // Norm 1 ulp: `normalize` gives (1, -1, ..), the reciprocal of the norm does not fit.
     assert!(v2(1, -1).normalize() == v2(0x100000000, -0x100000000));
@@ -90,22 +90,22 @@ fn test_normalize_alt_recip_overflows_on_tiny() {
 #[test]
 fn test_normalize_huge_does_not_overflow() {
     // Norm 141 421.35: its square does not fit Q32.32, the norm does.
-    assert!(v2(0x186a000000000, -0x186a000000000).normalize() == v2(3037000499, -3037000500));
+    assert!(v2(0x186a000000000, -0x186a000000000).normalize() == v2(3037000500, -3037000500));
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
-fn test_normalize_alt_inv_sqrt_overflows_on_huge() {
-    let _ = alt_normalize_inv_sqrt(black_box(v2(0x186a000000000, -0x186a000000000)));
+#[should_panic(expected: 'Fixed: overflow')]
+fn test_normalize_alt_recip_sqrt_overflows_on_huge() {
+    let _ = alt_normalize_recip_sqrt(black_box(v2(0x186a000000000, -0x186a000000000)));
 }
 
 #[test]
-fn test_normalize_alt_inv_sqrt_is_wrong_on_short() {
+fn test_normalize_alt_recip_sqrt_is_wrong_on_short() {
     // (3, -4, ..) * 2^-18 has a squared norm of 25 * 2^-36, floored to 1 ulp: (0.75, -1, ..)
     // instead of (0.6, -0.8, ..).
     let v = v2(49152, -65536);
-    assert!(v.normalize() == v2(2576980377, -3435973837));
-    assert!(alt_normalize_inv_sqrt(v) == v2(0xc0000000, -0x100000000));
+    assert!(v.normalize() == v2(2576980378, -3435973837));
+    assert!(alt_normalize_recip_sqrt(v) == v2(0xc0000000, -0x100000000));
 }
 
 #[test]
@@ -114,7 +114,7 @@ fn test_cap_magnitude_alt_normalize_is_more_accurate() {
     // (0.6, -0.8, ..), the price of flooring `1 / 50000`; `normalize().scale(max)` is exact here.
     let v = v2(0x753000000000, -0x9c4000000000);
     assert!(v.cap_magnitude(fx(0x100000000)) == v2(2576970000, -3435960000));
-    assert!(alt_cap_magnitude_normalize(v, fx(0x100000000)) == v2(2576980377, -3435973837));
+    assert!(alt_cap_magnitude_normalize(v, fx(0x100000000)) == v2(2576980378, -3435973837));
 }
 
 // --- gas benchmarks
@@ -388,7 +388,7 @@ fn bench_vector2_unscale__baseline() {
 fn bench_vector2_unscale__unscale() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let k: Fixed = black_box(fx(0x280000000));
-    let e: Vector2<Fixed> = black_box(v2(2576980377, -3865470567));
+    let e: Vector2<Fixed> = black_box(v2(2576980378, -3865470566));
     assert!(a.unscale(k) == e);
 }
 
@@ -397,7 +397,7 @@ fn bench_vector2_unscale__unscale() {
 fn bench_vector2_unscale__div_assign() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let k: Fixed = black_box(fx(0x280000000));
-    let e: Vector2<Fixed> = black_box(v2(2576980377, -3865470567));
+    let e: Vector2<Fixed> = black_box(v2(2576980378, -3865470566));
     let mut r = a;
     r /= k;
     assert!(r == e);
@@ -444,7 +444,7 @@ fn bench_vector2_component_div__baseline() {
 fn bench_vector2_component_div__component_div() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let b: Vector2<Fixed> = black_box(v2(-0x480000000, 0x40000000));
-    let e: Vector2<Fixed> = black_box(v2(-1431655766, -0x900000000));
+    let e: Vector2<Fixed> = black_box(v2(-1431655765, -0x900000000));
     assert!(a.component_div(b) == e);
 }
 
@@ -766,7 +766,7 @@ fn bench_vector2_normalize__baseline() {
 #[inline(never)]
 fn bench_vector2_normalize__unscale() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
-    let e: Vector2<Fixed> = black_box(v2(2382419201, -3573628803));
+    let e: Vector2<Fixed> = black_box(v2(2382419202, -3573628803));
     assert!(a.normalize() == e);
 }
 
@@ -774,16 +774,16 @@ fn bench_vector2_normalize__unscale() {
 #[inline(never)]
 fn bench_vector2_normalize__alt_recip() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
-    let e: Vector2<Fixed> = black_box(v2(2382419200, -3573628801));
+    let e: Vector2<Fixed> = black_box(v2(2382419202, -3573628803));
     assert!(alt_normalize_recip(a) == e);
 }
 
 #[test]
 #[inline(never)]
-fn bench_vector2_normalize__alt_inv_sqrt() {
+fn bench_vector2_normalize__alt_recip_sqrt() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
-    let e: Vector2<Fixed> = black_box(v2(2382419200, -3573628801));
-    assert!(alt_normalize_inv_sqrt(a) == e);
+    let e: Vector2<Fixed> = black_box(v2(2382419202, -3573628803));
+    assert!(alt_normalize_recip_sqrt(a) == e);
 }
 
 #[test]
@@ -800,7 +800,7 @@ fn bench_vector2_try_normalize__baseline() {
 fn bench_vector2_try_normalize__some() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let min_norm: Fixed = black_box(fx(65536));
-    let e: Option<Vector2<Fixed>> = black_box(Some(v2(2382419201, -3573628803)));
+    let e: Option<Vector2<Fixed>> = black_box(Some(v2(2382419202, -3573628803)));
     assert!(a.try_normalize(min_norm) == e);
 }
 
@@ -827,7 +827,7 @@ fn bench_vector2_cap_magnitude__baseline() {
 fn bench_vector2_cap_magnitude__capped() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let max: Fixed = black_box(fx(0x200000000));
-    let e: Vector2<Fixed> = black_box(v2(4764838402, -7147257604));
+    let e: Vector2<Fixed> = black_box(v2(4764838404, -7147257606));
     assert!(a.cap_magnitude(max) == e);
 }
 
@@ -845,7 +845,7 @@ fn bench_vector2_cap_magnitude__unchanged() {
 fn bench_vector2_cap_magnitude__alt_normalize() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let max: Fixed = black_box(fx(0x200000000));
-    let e: Vector2<Fixed> = black_box(v2(4764838402, -7147257606));
+    let e: Vector2<Fixed> = black_box(v2(4764838404, -7147257606));
     assert!(alt_cap_magnitude_normalize(a, max) == e);
 }
 
@@ -893,7 +893,7 @@ fn test_angle_alt_acos_loses_precision_on_close_directions() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_angle_alt_acos_overflows_on_long_vectors() {
     // Norms of 1e6: their product does not fit Q32.32, while the half-angle form normalizes
     // first and answers pi/2.
@@ -925,6 +925,6 @@ fn bench_vector2_angle__half_angle() {
 fn bench_vector2_angle__alt_acos() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let b: Vector2<Fixed> = black_box(v2(-0x480000000, 0x40000000));
-    let e: Fixed = black_box(fx(9510335070));
+    let e: Fixed = black_box(fx(9510335071));
     assert!(alt_angle_acos(a, b) == e);
 }

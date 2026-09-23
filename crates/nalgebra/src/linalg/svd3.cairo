@@ -125,8 +125,14 @@ pub impl Svd3Impl<
         let (c1, c2) = (ev.column1(), ev.column2());
         let n1 = R::norm3(c1.x, c1.y, c1.z);
         let n2 = R::norm3(c2.x, c2.y, c2.z);
-        let v1 = Vector3 { x: R::div(c1.x, n1), y: R::div(c1.y, n1), z: R::div(c1.z, n1) };
-        let v2 = Vector3 { x: R::div(c2.x, n2), y: R::div(c2.y, n2), z: R::div(c2.z, n2) };
+        let v1 = {
+            let (x, y, z) = R::div3(c1.x, c1.y, c1.z, n1);
+            Vector3 { x, y, z }
+        };
+        let v2 = {
+            let (x, y, z) = R::div3(c2.x, c2.y, c2.z, n2);
+            Vector3 { x, y, z }
+        };
         let v3 = v1.cross(v2);
         let (w1, w2, w3) = (matrix.mul_vec(v1), matrix.mul_vec(v2), matrix.mul_vec(v3));
         let s1 = R::norm3(w1.x, w1.y, w1.z);
@@ -171,7 +177,10 @@ pub impl Svd3Impl<
         let u1 = if s1 == R::ZERO {
             Vector3 { x: R::ONE, y: R::ZERO, z: R::ZERO }
         } else {
-            Vector3 { x: R::div(w1.x, s1), y: R::div(w1.y, s1), z: R::div(w1.z, s1) }
+            {
+                let (x, y, z) = R::div3(w1.x, w1.y, w1.z, s1);
+                Vector3 { x, y, z }
+            }
         };
         // `w2` stripped of its `u1` component: one fused dot and one fused `mul_add` per
         // component, so `u2` is orthogonal to `u1` to within the final normalisation alone.
@@ -186,7 +195,10 @@ pub impl Svd3Impl<
             let (basis, _) = u1.orthonormal_basis();
             basis
         } else {
-            Vector3 { x: R::div(g.x, n), y: R::div(g.y, n), z: R::div(g.z, n) }
+            {
+                let (x, y, z) = R::div3(g.x, g.y, g.z, n);
+                Vector3 { x, y, z }
+            }
         };
         let c = u1.cross(u2);
         let along = R::sum_prod3(c.x, w3.x, c.y, w3.y, c.z, w3.z);
@@ -419,8 +431,8 @@ mod tests {
     //! dearer: every rotation recomputes three inner products of the working columns where the
     //! Jacobi on `MᵀM` updates six scalars.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
@@ -515,7 +527,7 @@ mod tests {
             g
         };
         let t = num / (h.abs() + Real::norm2(h, g));
-        let c = Real::mul_add(t, t, Real::ONE).inv_sqrt();
+        let c = Real::recip(Real::sqrt(Real::mul_add(t, t, Real::ONE)));
         (c, t * c)
     }
 
@@ -693,7 +705,7 @@ mod tests {
             assert!(got.x >= got.y && got.y >= got.z && got.z >= Real::ZERO, "not descending");
             worst = core::cmp::max(worst, err);
         }
-        assert!((worst, worst_ex) == (47, 0), "regressed: {worst} {worst_ex}");
+        assert!((worst, worst_ex) == (71, 0), "regressed: {worst} {worst_ex}");
     }
 
     #[test]
@@ -726,7 +738,7 @@ mod tests {
             worst_sqrt =
                 core::cmp::max(worst_sqrt, max_ulp_diff_v3(singular_values_from_sqrt(m3(a)), e));
         }
-        assert!(worst_norm == 47 && worst_sqrt == 75, "regressed: {worst_norm} {worst_sqrt}");
+        assert!(worst_norm == 71 && worst_sqrt == 95, "regressed: {worst_norm} {worst_sqrt}");
     }
 
     #[test]
@@ -761,7 +773,7 @@ mod tests {
             worst_orth = core::cmp::max(worst_orth, orthonormality_error_m3(f.u));
         }
         assert!(
-            worst_sv == 67 && worst_rec == 12 && worst_orth == 324,
+            worst_sv == 297 && worst_rec == 13 && worst_orth == 308,
             "regressed: {worst_sv} {worst_rec} {worst_orth}",
         );
     }
@@ -778,7 +790,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff_v3(x, e));
         }
         // Measured gap to `Matrix3::try_inverse` * b over the 30 well-conditioned vectors.
-        assert!(worst == 4174, "regressed: {worst}");
+        assert!(worst == 4119, "regressed: {worst}");
     }
 
     #[test]
@@ -790,7 +802,7 @@ mod tests {
             let p = Svd3Trait::new(m3(a)).pseudo_inverse(Real::EPSILON).unwrap();
             worst = core::cmp::max(worst, max_ulp_diff3(p, m3(a).try_inverse().unwrap()));
         }
-        assert!(worst == 77568, "regressed: {worst}");
+        assert!(worst == 77683, "regressed: {worst}");
     }
 
     #[test]
@@ -828,7 +840,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_new_overflow_panics() {
         // `MᵀM` does not fit: the squares of the entries must be representable.
         let m = black_box(Matrix3Trait::from_diagonal_element(Real::<Fixed>::MAX));

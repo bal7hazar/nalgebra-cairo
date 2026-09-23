@@ -81,7 +81,7 @@ pub impl Svd2Impl<
     ///                              singular values come out descending
     /// w_i = M v_i                 (2 fused sum_prod2 each)
     /// σ_i = |w_i|                 (floored norm2 on the unscaled sum of squares)
-    /// u_1 = w_1 / σ_1             (one floor division per component)
+    /// u_1 = w_1 / σ_1             (one correctly rounded division per component)
     /// u_2 = ± perp(u_1)           (EXACT orthonormality, see below)
     /// ```
     ///
@@ -349,8 +349,8 @@ mod tests {
     //! - `alt_normalised_columns`: `u_2 = M v_2 / σ_2` instead of the perpendicular of `u_1`.
     //! Dearer, and its orthonormality degrades with the condition number.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
@@ -530,7 +530,7 @@ mod tests {
                     worst_norm, orthonormality_error_m2(u_from_normalised_columns(m2(a))),
                 );
         }
-        assert!(worst_perp == 23 && worst_norm == 57, "regressed: {worst_perp} {worst_norm}");
+        assert!(worst_perp == 23 && worst_norm == 56, "regressed: {worst_perp} {worst_norm}");
     }
 
     #[test]
@@ -546,7 +546,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff_v2(x, e));
         }
         // Measured gap to `Matrix2::try_inverse` * b over the 30 well-conditioned vectors.
-        assert!(worst == 2032, "regressed: {worst}");
+        assert!(worst == 2099, "regressed: {worst}");
     }
 
     #[test]
@@ -559,7 +559,7 @@ mod tests {
             let e = m2(a).try_inverse().unwrap();
             worst = core::cmp::max(worst, max_ulp_diff2(p, e));
         }
-        assert!(worst == 1941, "regressed: {worst}");
+        assert!(worst == 1947, "regressed: {worst}");
     }
 
     #[test]
@@ -589,7 +589,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff2(r * p.to_matrix(), m2(a)) / amax_m2(m2(a)));
         }
         // Measured: `|M - R P| <= worst ulp * max(1, max |m_ij|)`, `|RᵀR - I| <= worst_orth ulp`.
-        assert!((worst, worst_orth) == (7, 25), "regressed: {worst} {worst_orth}");
+        assert!((worst, worst_orth) == (7, 24), "regressed: {worst} {worst_orth}");
     }
 
     #[test]
@@ -602,7 +602,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_new_overflow_panics() {
         // `MᵀM` does not fit: the squares of the entries must be representable.
         let m = black_box(Matrix2Trait::from_diagonal_element(Real::<Fixed>::MAX));

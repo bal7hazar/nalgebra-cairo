@@ -4,8 +4,8 @@
 //!
 //! The rotations used are `c = new(0.4 rad)` and `d = new(-1/6 rad)`, the vector `(1.5, -2.25)`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix_test_utils::{fx, p2, uc, v2};
 use crate::base::point2::Point2;
@@ -437,7 +437,7 @@ fn bench_unit_complex_rotation_between__algebraic() {
 fn bench_unit_complex_rotation_between__alt_atan2() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let b: Vector2<Fixed> = black_box(v2(-0x480000000, 0x40000000));
-    let e: UnitComplex<Fixed> = black_box(uc(-2576980376, -3435973838));
+    let e: UnitComplex<Fixed> = black_box(uc(-2576980378, -3435973836));
     assert!(alt_rotation_between_atan2(a, b) == e);
 }
 
@@ -446,7 +446,7 @@ fn bench_unit_complex_rotation_between__alt_atan2() {
 fn bench_unit_complex_rotation_between__alt_normalized_inputs() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let b: Vector2<Fixed> = black_box(v2(-0x480000000, 0x40000000));
-    let e: UnitComplex<Fixed> = black_box(uc(-2576980377, -3435973838));
+    let e: UnitComplex<Fixed> = black_box(uc(-2576980378, -3435973837));
     assert!(alt_rotation_between_normalized(a, b) == e);
 }
 
@@ -518,7 +518,7 @@ fn bench_unit_complex_powf__baseline() {
 fn bench_unit_complex_powf__atan2_sin_cos() {
     let c: UnitComplex<Fixed> = black_box(c());
     let n: Fixed = black_box(Real::TWO);
-    let e: UnitComplex<Fixed> = black_box(uc(2992332532, 3081020949));
+    let e: UnitComplex<Fixed> = black_box(uc(2992332532, 3081020950));
     assert!(c.powf(n) == e);
 }
 
@@ -554,7 +554,7 @@ fn bench_unit_complex_renormalize__baseline() {
 #[inline(never)]
 fn bench_unit_complex_renormalize__norm_and_divisions() {
     let c: UnitComplex<Fixed> = black_box(uc(3955930943, 1672543140));
-    let e: UnitComplex<Fixed> = black_box(uc(3955925999, 1672541049));
+    let e: UnitComplex<Fixed> = black_box(uc(3955926000, 1672541050));
     assert!(c.renormalize() == e);
 }
 
@@ -602,7 +602,7 @@ fn bench_unit_complex_renormalize_fast__alt_lerp() {
 #[inline(never)]
 fn bench_unit_complex_renormalize_fast__alt_exact() {
     let c: UnitComplex<Fixed> = black_box(uc(3955930943, 1672543140));
-    let e: UnitComplex<Fixed> = black_box(uc(3955925999, 1672541049));
+    let e: UnitComplex<Fixed> = black_box(uc(3955926000, 1672541050));
     assert!(c.renormalize() == e);
 }
 
@@ -620,7 +620,7 @@ fn bench_unit_complex_append_axisangle_linearized__baseline() {
 fn bench_unit_complex_append_axisangle_linearized__renormalize() {
     let c: UnitComplex<Fixed> = black_box(c());
     let a: Fixed = black_box(fx(0x28f5c29));
-    let e: UnitComplex<Fixed> = black_box(uc(3939004511, 1712012713));
+    let e: UnitComplex<Fixed> = black_box(uc(3939004512, 1712012714));
     assert!(c.append_axisangle_linearized(a) == e);
 }
 

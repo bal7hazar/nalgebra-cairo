@@ -4,8 +4,8 @@
 //!
 //! Expected values come from a bit-exact integer model of the Q32.32 kernels (floor rounding).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, q};
 use crate::base::vector3::Vector3;
@@ -97,7 +97,7 @@ fn test_mul_alt_sum_prod4_cannot_take_min() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_mul_alt_sum_prod4_of_min_panics() {
     let m = q(0, -0x8000000000000000, 0, 0);
     let _ = alt_mul_sum_prod4(black_box(m), black_box(QuaternionTrait::<Fixed>::identity()));
@@ -113,7 +113,7 @@ fn test_mul_alt_unfused_is_less_accurate() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_mul_alt_unfused_overflows_on_intermediates() {
     // |i| = 50 000: i·i does not fit, although the result (0) does.
     let t = q(0, 50000 * ONE_RAW, 0, 0);
@@ -134,8 +134,10 @@ fn test_normalize_alt_recip_is_less_accurate() {
 fn test_try_inverse_alt_recip_is_less_accurate() {
     let exact = a().try_inverse().unwrap();
     let approx = alt_try_inverse_recip(a()).unwrap();
-    assert!(!approx.abs_diff_eq(exact, 2));
-    assert!(approx.abs_diff_eq(exact, 3));
+    // 2 ulp apart with `fixed`'s correctly rounded division and reciprocal (3 with the former
+    // floor).
+    assert!(!approx.abs_diff_eq(exact, 1));
+    assert!(approx.abs_diff_eq(exact, 2));
     assert!(alt_try_inverse_recip(QuaternionTrait::<Fixed>::zero()) == None);
 }
 
@@ -479,7 +481,7 @@ fn bench_quaternion_normalize__baseline() {
 #[inline(never)]
 fn bench_quaternion_normalize__divisions() {
     let x = black_box(a());
-    let e = black_box(q(784150157, 1568300314, -2352450472, 3136600629));
+    let e = black_box(q(784150157, 1568300315, -2352450472, 3136600629));
     assert!(x.normalize() == e);
 }
 
@@ -503,7 +505,7 @@ fn bench_quaternion_try_inverse__baseline() {
 #[inline(never)]
 fn bench_quaternion_try_inverse__divisions() {
     let x = black_box(a());
-    let e = black_box(q(143165576, -286331154, 429496729, -572662307));
+    let e = black_box(q(143165577, -286331153, 429496730, -572662306));
     assert!(x.try_inverse() == Some(e));
 }
 
@@ -511,7 +513,7 @@ fn bench_quaternion_try_inverse__divisions() {
 #[inline(never)]
 fn bench_quaternion_try_inverse__alt_recip() {
     let x = black_box(a());
-    let e = black_box(q(143165576, -286331152, 429496728, -572662304));
+    let e = black_box(q(143165577, -286331154, 429496731, -572662308));
     assert!(alt_try_inverse_recip(x) == Some(e));
 }
 

@@ -6,8 +6,8 @@
 //! `alt_unit_complex` variants measure the same operation on `UnitComplex`, reached from the
 //! matrix by `to_unit_complex` (a copy of two components).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix_test_utils::{fx, p2, r2, v2};
@@ -446,7 +446,7 @@ fn bench_rotation2_powf__baseline() {
 fn bench_rotation2_powf__atan2_sin_cos() {
     let r: Rotation2<Fixed> = black_box(r());
     let n: Fixed = black_box(Real::TWO);
-    let e: Rotation2<Fixed> = black_box(r2([[2992332532, -3081020949], [3081020949, 2992332532]]));
+    let e: Rotation2<Fixed> = black_box(r2([[2992332532, -3081020950], [3081020950, 2992332532]]));
     assert!(r.powf(n) == e);
 }
 
@@ -462,7 +462,7 @@ fn bench_rotation2_renormalize__baseline() {
 #[inline(never)]
 fn bench_rotation2_renormalize__first_column() {
     let r: Rotation2<Fixed> = black_box(r2([[3955930943, -1672539044], [1672543140, 3955926847]]));
-    let e: Rotation2<Fixed> = black_box(r2([[3955925999, -1672541049], [1672541049, 3955925999]]));
+    let e: Rotation2<Fixed> = black_box(r2([[3955926000, -1672541050], [1672541050, 3955926000]]));
     assert!(r.renormalize() == e);
 }
 

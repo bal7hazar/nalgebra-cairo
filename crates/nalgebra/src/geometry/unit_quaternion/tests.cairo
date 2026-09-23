@@ -20,8 +20,8 @@
 //!     --out crates/nalgebra/src/geometry/unit_quaternion/oracle.cairo
 //! ```
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{
@@ -684,7 +684,7 @@ fn test_nlerp_endpoints_and_oracle() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_nlerp_of_opposite_quaternions_panics() {
     let a = black_box(third());
     let _ = a.nlerp(black_box(-a), Real::HALF);

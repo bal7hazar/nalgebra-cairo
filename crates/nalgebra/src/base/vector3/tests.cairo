@@ -7,8 +7,8 @@
 //! `cargo run --release -- emit-cairo vector3 --from vectors --max-per-dist 4 --out
 //! <oracle.cairo>`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, v2, v3, v3t, v4};
 use crate::base::vector2::Vector2Trait;
@@ -135,19 +135,19 @@ fn test_neg_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_add_overflow() {
     let _ = black_box(v3(0, 0, 9223372036854775807)) + v3(0, 0, 1);
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_sub Underflow')]
 fn test_sub_overflow() {
     let _ = black_box(v3(0, 0, -0x8000000000000000)) - v3(0, 0, 1);
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_neg_overflow() {
     let _ = -black_box(v3(0, 0, MIN));
 }
@@ -197,7 +197,7 @@ fn test_scale_rounds_toward_negative_infinity() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_scale_overflow() {
     let _ = black_box(v3(0, 0, 0x4000000000000000)).scale(fx(0x200000000));
 }
@@ -205,27 +205,29 @@ fn test_scale_overflow() {
 #[test]
 fn test_unscale_exact() {
     // (1.5, -2.25, 3.75) / 2.5 = (0.5999999999, -0.9000000001, 1.5)
-    assert!(a().unscale(fx(0x280000000)) == v3(2576980377, -3865470567, 0x180000000));
+    assert!(a().unscale(fx(0x280000000)) == v3(2576980378, -3865470566, 0x180000000));
     assert!(a().unscale(Real::ONE) == a());
 }
 
 #[test]
-fn test_unscale_rounds_toward_negative_infinity() {
-    // +-1 / 3, +-2 / 3: exact floors.
+fn test_unscale_rounds_to_nearest() {
+    // +-1 / 3, +-2 / 3: rounded to nearest.
     assert!(
         v3(0x100000000, -0x100000000, 0x200000000)
-            .unscale(fx(0x300000000)) == v3(1431655765, -1431655766, 2863311530),
+            .unscale(fx(0x300000000)) == v3(1431655765, -1431655765, 2863311531),
     );
+    // Ties to even: 0.5, -1.5, 2.5 ulp.
+    assert!(v3(1, -3, 5).unscale(fx(0x200000000)) == v3(0, -2, 2));
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero() {
     let _ = black_box(a()).unscale(Real::ZERO);
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_unscale_overflow() {
     let _ = black_box(v3(0, 0, 0x4000000000000000)).unscale(fx(0x80000000));
 }
@@ -238,7 +240,7 @@ fn test_component_mul_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_component_mul_overflow() {
     let _ = black_box(v3(0, 0, 0x1000000000000)).component_mul(v3(0, 0, 0x800000000000));
 }
@@ -246,12 +248,12 @@ fn test_component_mul_overflow() {
 #[test]
 fn test_component_div_exact() {
     // (1.5, -2.25, 3.75) ./ (-4.5, 0.25, 2) = floor of the exact quotients
-    assert!(a().component_div(b()) == v3(-1431655766, -0x900000000, 0x1e0000000));
+    assert!(a().component_div(b()) == v3(-1431655765, -0x900000000, 0x1e0000000));
     assert!(a().component_div(Vector3Trait::<Fixed>::repeat(Real::ONE)) == a());
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_component_div_by_zero() {
     let _ = black_box(a()).component_div(v3(0x100000000, 0x100000000, 0));
 }
@@ -263,7 +265,7 @@ fn test_abs_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_abs_overflow() {
     let _ = black_box(v3(MIN, 0, 0)).abs();
 }
@@ -372,7 +374,7 @@ fn test_imin_imax_ties_pick_first() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_amax_overflow() {
     let _ = black_box(v3(0, 0, MIN)).amax();
 }
@@ -384,7 +386,7 @@ fn test_sum_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_sum_overflow() {
     let _ = black_box(v3(0x4000000000000000, 0x4000000000000000, 0)).sum();
 }
@@ -415,7 +417,10 @@ fn test_abs_diff_eq_counts_ulps() {
     );
     // The difference itself may exceed the scalar range.
     assert!(!v3(MIN, MIN, MIN).abs_diff_eq(v3(MAX, MAX, MAX), 0xfffffffffffffffe));
-    assert!(v3(MIN, MIN, MIN).abs_diff_eq(v3(MAX, MAX, MAX), 0xffffffffffffffff));
+    // `fixed`'s tolerance is a `Fixed`: a `u64` tolerance above `MAX` raw is clamped to it,
+    // so a pair `2^63` raw or more apart is never equal (the exact answer would be `true`).
+    assert!(!v3(MIN, MIN, MIN).abs_diff_eq(v3(MAX, MAX, MAX), 0xffffffffffffffff));
+    assert!(v3(MAX, MAX, MAX).abs_diff_eq(v3(MAX, MAX, MAX).scale(Real::ZERO), 0xffffffffffffffff));
 }
 
 // --- products
@@ -445,7 +450,7 @@ fn test_dot_intermediate_products_may_overflow() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_dot_overflow() {
     let _ = black_box(v3(0xea6000000000, 0xea6000000000, 0))
         .dot(v3(0xea6000000000, 0xea6000000000, 0));
@@ -489,7 +494,7 @@ fn test_cross_intermediate_products_may_overflow() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_cross_overflow() {
     let _ = black_box(v3(0xea6000000000, 0xea6000000000, 0))
         .cross(v3(-0xea6000000000, 0xea6000000000, 0));
@@ -506,7 +511,7 @@ fn test_norm_squared_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_norm_squared_overflow() {
     let _ = black_box(v3(0xea6000000000, 0, 0)).norm_squared();
 }
@@ -536,7 +541,7 @@ fn test_norm_tiny_magnitude_keeps_precision() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_norm_overflow() {
     let _ = black_box(v3(MAX, MAX, 0)).norm();
 }
@@ -550,7 +555,7 @@ fn test_metric_distance_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_sub Overflow')]
 fn test_metric_distance_overflow() {
     let _ = black_box(v3(MAX, 0, 0)).metric_distance(v3(-1, 0, 0));
 }
@@ -569,7 +574,7 @@ fn test_normalize_large_magnitude() {
     // (1e6, ..) / |(1e6, ..)|: no overflow, every component is 1 / sqrt(3) within 1 ulp.
     assert!(
         v3(0xf424000000000, 0xf424000000000, 0xf424000000000)
-            .normalize() == v3(2479700524, 2479700524, 2479700524),
+            .normalize() == v3(2479700525, 2479700525, 2479700525),
     );
     assert!(
         v3(0xf424000000000, 0xf424000000000, 0xf424000000000)
@@ -581,11 +586,11 @@ fn test_normalize_large_magnitude() {
 #[test]
 fn test_normalize_tiny_magnitude() {
     // (3, -4, ..) ulp: norm 5 ulp, result (0.6, -0.8, ..) floored.
-    assert!(v3(3, -4, 0).normalize() == v3(2576980377, -3435973837, 0));
+    assert!(v3(3, -4, 0).normalize() == v3(2576980378, -3435973837, 0));
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_normalize_zero() {
     let _ = black_box(Vector3Trait::<Fixed>::zeros()).normalize();
 }
@@ -593,7 +598,7 @@ fn test_normalize_zero() {
 #[test]
 fn test_normalize_is_unit_within_tolerance() {
     let r = a().normalize();
-    assert!(r == v3(1393471396, -2090207096, 3483678492));
+    assert!(r == v3(1393471397, -2090207095, 3483678492));
     assert!(r.norm().abs_diff_eq(Real::ONE, 6));
 }
 
@@ -627,8 +632,10 @@ fn test_cap_magnitude_exact() {
 #[test]
 fn test_cap_magnitude_never_exceeds_cap_by_more_than_rounding() {
     let r = a().cap_magnitude(fx(0x200000000));
-    assert!(r == v3(2786942793, -4180414190, 6967356982));
-    assert!(r.norm() <= fx(0x200000000) && r.norm().abs_diff_eq(fx(0x200000000), 16));
+    assert!(r == v3(2786942794, -4180414192, 6967356986));
+    // The ratio `max / norm` is rounded to nearest, like Rust's `self * (max / n)` in f64: the
+    // capped norm may exceed `max` by the rounding, here by 1 ulp.
+    assert!(r.norm() <= fx(0x200000001) && r.norm().abs_diff_eq(fx(0x200000000), 16));
 }
 
 #[test]
@@ -662,7 +669,7 @@ fn test_lerp_full_range_does_not_overflow() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_lerp_overflow() {
     let _ = black_box(v3(0, 0, 0))
         .lerp(v3(0x4000000000000000, 0x4000000000000000, 0x4000000000000000), fx(0x400000000));
@@ -699,7 +706,9 @@ fn assert_orthonormal_basis(v: Vector3<Fixed>, tol: u64) {
 
 #[test]
 fn test_orthonormal_basis_is_orthonormal_and_right_handed() {
-    // Every octant, directions close to the poles `z = +-1` and to the equator, axes.
+    // Every octant, directions close to the poles `z = +-1` and to the equator, axes. Tolerance
+    // 3 ulp: input-dependent rounding (the nearest-normalized `(0.25, -0.5, 0.125)` reaches 3 ulp
+    // on `u.v` and `u x w - v`, the other directions stay within 2).
     let mut dirs = array![
         v3(0x100000000, 0x200000000, 0x300000000), // (1, 2, 3)
         v3(-0x100000000, 0x200000000, 0x300000000), // (-1, 2, 3)
@@ -720,7 +729,7 @@ fn test_orthonormal_basis_is_orthonormal_and_right_handed() {
     ]
         .span();
     while let Some(dir) = dirs.pop_front() {
-        assert_orthonormal_basis((*dir).normalize(), 2);
+        assert_orthonormal_basis((*dir).normalize(), 3);
     }
 }
 
@@ -730,13 +739,13 @@ fn test_orthonormal_basis_model_values() {
     assert!(
         v3(1393471396, -2090207096, 3483678492)
             .orthonormal_basis() == (
-                v3(4045339972, 374440986, -1393471396), v3(374440986, 3733305815, 2090207096),
+                v3(4045339972, 374440987, -1393471396), v3(374440987, 3733305816, 2090207096),
             ),
     );
     assert!(
         v3(1393471396, -2090207096, -3483678493)
             .orthonormal_basis() == (
-                v3(4045339972, 374440986, 1393471396), v3(-374440986, -3733305816, 2090207096),
+                v3(4045339972, 374440987, 1393471396), v3(-374440987, -3733305816, 2090207096),
             ),
     );
 }

@@ -1,6 +1,6 @@
 [package]
 name = "simba"
-description = "Scalar abstraction and Q32.32 fixed-point numbers for provable linear algebra."
+description = "Scalar traits for provable linear algebra, implemented for glam.cairo's Q32.32 `fixed::Fixed`."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -10,6 +10,7 @@ repository.workspace = true
 keywords.workspace = true
 
 [dependencies]
+fixed = "0.3.0"
 
 [dev-dependencies]
 snforge_std.workspace = true

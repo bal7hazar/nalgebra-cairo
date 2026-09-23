@@ -83,10 +83,10 @@ pub impl UnitQuaternionImpl<
         UnitQuaternion { quaternion: q }
     }
 
-    /// `q / |q|`: the norm (floored once), then one exactly floored division per component, so the
-    /// error is about `1 + 1 / |q|` ulp per component whatever the magnitude of `q`. Panics with
-    /// `simba: division by zero` on a zero quaternion. Upstream: `UnitQuaternion::new_normalize`
-    /// (`from_quaternion`, `Unit::new_normalize`).
+    /// `q / |q|`: the norm (floored once), then one correctly rounded division per component, so
+    /// the error is about `1 + 1 / |q|` ulp per component whatever the magnitude of `q`. Panics
+    /// with `Fixed: division by zero` on a zero quaternion. Upstream:
+    /// `UnitQuaternion::new_normalize` (`from_quaternion`, `Unit::new_normalize`).
     #[inline(always)]
     fn new_normalize(q: Quaternion<T>) -> UnitQuaternion<T> {
         UnitQuaternion { quaternion: q.normalize() }
@@ -173,8 +173,9 @@ pub impl UnitQuaternionImpl<
     // --- renormalization --------------------------------------------------------------------
 
     /// Renormalizes exactly: `new_normalize(self.quaternion)`, i.e. one norm and one exactly
-    /// floored division per component. Use it when the norm may be far from 1 (after `nlerp`, after
-    /// an unnormalized construction). Panics on a zero quaternion. Upstream: `Unit::renormalize`.
+    /// correctly rounded division per component. Use it when the norm may be far from 1 (after
+    /// `nlerp`, after an unnormalized construction). Panics on a zero quaternion. Upstream:
+    /// `Unit::renormalize`.
     #[inline(always)]
     fn renormalize(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
         UnitQuaternion { quaternion: self.quaternion.normalize() }
@@ -213,8 +214,8 @@ pub impl UnitQuaternionImpl<
     /// imaginary part, i.e. an angle of `0` or `2π`). The sign convention is upstream's: the axis
     /// is flipped when `w < 0`, so that the matching `angle()` lies in `[0, π]`.
     ///
-    /// The axis is `imag / |imag|` (one norm, then one exactly floored division per component), so
-    /// its error is about `1 + 1 / |imag|` ulp per component: the axis of a rotation by a very
+    /// The axis is `imag / |imag|` (one norm, then one correctly rounded division per component),
+    /// so its error is about `1 + 1 / |imag|` ulp per component: the axis of a rotation by a very
     /// small angle is poorly determined (`|imag| = sin(angle / 2)`), which is why `scaled_axis` is
     /// the right output for integration. Upstream: `axis`.
     fn axis(self: UnitQuaternion<T>) -> Option<Unit<Vector3<T>>> {
@@ -320,44 +321,36 @@ pub impl UnitQuaternionImpl<
             let d = R::sqrt(R::ONE + tr);
             let denom = d + d;
             UnitQuaternion {
-                quaternion: Quaternion {
-                    i: R::div(m.m32 - m.m23, denom),
-                    j: R::div(m.m13 - m.m31, denom),
-                    k: R::div(m.m21 - m.m12, denom),
-                    w: d * R::HALF,
+                quaternion: {
+                    let (i, j, k) = R::div3(m.m32 - m.m23, m.m13 - m.m31, m.m21 - m.m12, denom);
+                    Quaternion { i, j, k, w: d * R::HALF }
                 },
             }
         } else if m.m11 > m.m22 && m.m11 > m.m33 {
             let d = R::sqrt(R::ONE + m.m11 - m.m22 - m.m33);
             let denom = d + d;
             UnitQuaternion {
-                quaternion: Quaternion {
-                    i: d * R::HALF,
-                    j: R::div(m.m12 + m.m21, denom),
-                    k: R::div(m.m13 + m.m31, denom),
-                    w: R::div(m.m32 - m.m23, denom),
+                quaternion: {
+                    let (j, k, w) = R::div3(m.m12 + m.m21, m.m13 + m.m31, m.m32 - m.m23, denom);
+                    Quaternion { i: d * R::HALF, j, k, w }
                 },
             }
         } else if m.m22 > m.m33 {
             let d = R::sqrt(R::ONE + m.m22 - m.m11 - m.m33);
             let denom = d + d;
             UnitQuaternion {
-                quaternion: Quaternion {
-                    i: R::div(m.m12 + m.m21, denom),
-                    j: d * R::HALF,
-                    k: R::div(m.m23 + m.m32, denom),
-                    w: R::div(m.m13 - m.m31, denom),
+                quaternion: {
+                    let (i, k, w) = R::div3(m.m12 + m.m21, m.m23 + m.m32, m.m13 - m.m31, denom);
+                    Quaternion { i, j: d * R::HALF, k, w }
                 },
             }
         } else {
             let d = R::sqrt(R::ONE + m.m33 - m.m11 - m.m22);
             let denom = d + d;
             UnitQuaternion {
-                quaternion: Quaternion {
-                    i: R::div(m.m13 + m.m31, denom),
-                    j: R::div(m.m23 + m.m32, denom),
-                    k: d * R::HALF,
-                    w: R::div(m.m21 - m.m12, denom),
+                quaternion: {
+                    let (i, j, w) = R::div3(m.m13 + m.m31, m.m23 + m.m32, m.m21 - m.m12, denom);
+                    Quaternion { i, j, k: d * R::HALF, w }
                 },
             }
         }
@@ -498,7 +491,7 @@ pub impl UnitQuaternionImpl<
     /// and its angular velocity is not constant, but it needs no trigonometry (4 fused lerps, one
     /// norm, 4 divisions). `t` is not clamped.
     ///
-    /// Panics with `simba: division by zero` when the interpolated quaternion is zero, which
+    /// Panics with `Fixed: division by zero` when the interpolated quaternion is zero, which
     /// happens only for exactly opposite rotations at `t = 1/2`. Upstream: `nlerp`.
     #[inline(always)]
     fn nlerp(self: UnitQuaternion<T>, other: UnitQuaternion<T>, t: T) -> UnitQuaternion<T> {
@@ -661,13 +654,11 @@ pub impl UnitQuaternionAngleImpl<
         let angle = half + half;
         // axis = imag / |imag| (sign-corrected), then scaled by the angle, as upstream.
         if R::is_negative(q.w) {
-            Vector3 {
-                x: R::div(-q.i, n) * angle, y: R::div(-q.j, n) * angle, z: R::div(-q.k, n) * angle,
-            }
+            let (x, y, z) = R::div3(-q.i, -q.j, -q.k, n);
+            Vector3 { x: x * angle, y: y * angle, z: z * angle }
         } else {
-            Vector3 {
-                x: R::div(q.i, n) * angle, y: R::div(q.j, n) * angle, z: R::div(q.k, n) * angle,
-            }
+            let (x, y, z) = R::div3(q.i, q.j, q.k, n);
+            Vector3 { x: x * angle, y: y * angle, z: z * angle }
         }
     }
 

@@ -8,8 +8,8 @@
 //! crates/nalgebra/src/base/oracle_dim6_vector.cairo --ops vector6_add,vector6_sub,vector6_neg,
 //! vector6_scale,vector6_dot,vector6_norm_squared,vector6_norm`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, int, v3, v6, v6i, v6t};
 use crate::base::oracle_dim6_vector as oracle;
@@ -126,20 +126,20 @@ fn test_add_sub_assign_match_operators() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_add_overflow_panics() {
     let m = black_box(v6(MAX, 0, 0, 0, 0, 0));
     let _ = m + m;
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_sub Underflow')]
 fn test_sub_overflow_panics() {
     let _ = black_box(v6(MIN, 0, 0, 0, 0, 0)) - black_box(v6(0x100000000, 0, 0, 0, 0, 0));
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_neg_min_panics() {
     let _ = -black_box(v6(0, 0, 0, 0, 0, MIN));
 }
@@ -156,7 +156,7 @@ fn test_scale_unscale_exact() {
     );
     assert!(p().unscale(int(2)) == v6i(1, -1, 1, -1, 1, 2));
     // Floor rounding, once per component: 1 / 3 and -1 / 3 floor apart.
-    assert!(v6i(1, -1, 0, 0, 0, 0).unscale(int(3)) == v6(1431655765, -1431655766, 0, 0, 0, 0));
+    assert!(v6i(1, -1, 0, 0, 0, 0).unscale(int(3)) == v6(1431655765, -1431655765, 0, 0, 0, 0));
 }
 
 #[test]
@@ -170,13 +170,13 @@ fn test_mul_div_assign_are_scale_unscale() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero_panics() {
     let _ = black_box(a()).unscale(Real::ZERO);
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_scale_overflow_panics() {
     let _ = black_box(v6(0, 0, 0, 0, 0, MAX)).scale(black_box(int(2)));
 }
@@ -217,13 +217,13 @@ fn test_component_mul_abs_inf_sup_sum() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_abs_of_min_panics() {
     let _ = black_box(v6(0, 0, MIN, 0, 0, 0)).abs();
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_sum_overflow_panics() {
     let _ = black_box(v6(MAX, MAX, 0, 0, 0, 0)).sum();
 }
@@ -257,7 +257,7 @@ fn test_dot_of_huge_components_does_not_overflow_intermediates() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_dot_overflow_panics() {
     let u = black_box(v6i(65536, 65536, 65536, 65536, 65536, 65536));
     let _ = u.dot(u);
@@ -283,7 +283,7 @@ fn test_norm_of_huge_vector_does_not_overflow() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_norm_squared_overflow_panics() {
     let _ = black_box(v6i(1000000, 0, 0, 0, 0, 0)).norm_squared();
 }
@@ -294,7 +294,7 @@ fn test_normalize_exact() {
     assert!(
         p()
             .normalize() == v6(
-                1431655765, -1431655766, 1431655765, -1431655766, 1431655765, 2863311530,
+                1431655765, -1431655765, 1431655765, -1431655765, 1431655765, 2863311531,
             ),
     );
     assert!(p().normalize().norm().abs_diff_eq(Real::ONE, 2));
@@ -308,7 +308,7 @@ fn test_normalize_tiny_is_exact() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_normalize_of_zero_panics() {
     let _ = black_box(Vector6Trait::<Fixed>::zeros()).normalize();
 }
@@ -339,7 +339,13 @@ fn test_abs_diff_eq_counts_raw_units() {
     // Never overflows, whatever the distance: `MAX - MIN` is 2^64 - 1 raw units, and the
     // comparison against a `u64` tolerance is done on a wider type.
     assert!(!v6(MIN, 0, 0, 0, 0, 0).abs_diff_eq(v6(MAX, 0, 0, 0, 0, 0), 0xfffffffffffffffe));
-    assert!(v6(MIN, 0, 0, 0, 0, 0).abs_diff_eq(v6(MAX, 0, 0, 0, 0, 0), 0xffffffffffffffff));
+    // `fixed`'s tolerance is a `Fixed`: a `u64` tolerance above `MAX` raw is clamped to it,
+    // so a pair `2^63` raw or more apart is never equal (the exact answer would be `true`).
+    assert!(!v6(MIN, 0, 0, 0, 0, 0).abs_diff_eq(v6(MAX, 0, 0, 0, 0, 0), 0xffffffffffffffff));
+    assert!(
+        v6(MAX, 0, 0, 0, 0, 0)
+            .abs_diff_eq(v6(MAX, 0, 0, 0, 0, 0).scale(Real::ZERO), 0xffffffffffffffff),
+    );
 }
 
 // --- oracle vectors (upstream nalgebra on the same raw inputs; `tol` in ulp, 0 = bit for bit)

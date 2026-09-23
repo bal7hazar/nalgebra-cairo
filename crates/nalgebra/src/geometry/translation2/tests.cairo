@@ -12,7 +12,7 @@
 //! translation2_mul,translation2_inverse,translation2_transform_point,
 //! translation2_inverse_transform_point --out <oracle.cairo>`.
 
-use simba::fixed::Fixed;
+use fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, p2t, t2t, v2t};
@@ -61,7 +61,7 @@ fn test_mul_inverse_is_the_identity_exactly() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_neg Underflow')]
 fn test_inverse_of_min_component_panics() {
     let _ = Translation2 { vector: Vector2 { x: Real::<Fixed>::MIN, y: Real::ZERO } }.inverse();
 }
@@ -77,7 +77,7 @@ fn test_mul_is_the_sum_and_commutes_bit_for_bit() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_mul_overflow_panics() {
     let big = Translation2 { vector: Vector2 { x: Real::<Fixed>::MAX, y: Real::ZERO } };
     let _ = big * Translation2 { vector: Vector2 { x: Real::<Fixed>::ONE, y: Real::ZERO } };

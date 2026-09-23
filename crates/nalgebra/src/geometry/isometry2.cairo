@@ -306,10 +306,10 @@ pub impl Isometry2Impl<
     }
 
     /// Renormalises the rotation exactly (`UnitComplex::renormalize`: one `norm2` and two exactly
-    /// floored divisions), leaving the translation untouched. Call it after a long chain of
-    /// compositions, each of which lets the norm of the complex drift by up to 2 ulp. Panics with
-    /// `simba: division by zero` on a zero rotation. Upstream: `Rotation::renormalize` applied to
-    /// the rotation part (upstream has no `Isometry::renormalize`).
+    /// correctly rounded divisions), leaving the translation untouched. Call it after a long chain
+    /// of compositions, each of which lets the norm of the complex drift by up to 2 ulp. Panics
+    /// with `Fixed: division by zero` on a zero rotation. Upstream: `Rotation::renormalize` applied
+    /// to the rotation part (upstream has no `Isometry::renormalize`).
     #[inline(always)]
     fn renormalize(self: Isometry2<T>) -> Isometry2<T> {
         Isometry2 { rotation: self.rotation.renormalize(), translation: self.translation }
@@ -346,7 +346,7 @@ pub impl Isometry2Impl<
     /// `θ/2 - atan(tan(θ/2)·(2t-1))`-ish, i.e. below 2 % of the arc for a half turn and nothing
     /// for small angles. It takes the SHORTEST arc only when the two rotations are within a half
     /// turn; exactly opposite rotations make the interpolated pair vanish at `t = 1/2` and panic
-    /// with `simba: division by zero`, like `UnitQuaternion::nlerp`.
+    /// with `Fixed: division by zero`, like `UnitQuaternion::nlerp`.
     ///
     /// Upstream has no `Isometry2::lerp_nlerp`; this is `lerp_slerp` with `nlerp` in place of
     /// `slerp`, the form to use inside a physics step (DESIGN D6: transcendentals cost one to two

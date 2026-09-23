@@ -7,8 +7,8 @@
 //! vector `(0.25, -0.1875, 0.125)`. Expected values are the results of the kernels themselves, all
 //! of which are checked against upstream nalgebra in `tests.cairo`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix_test_utils::{fx, r3, u3t, v3t};
@@ -386,7 +386,7 @@ fn bench_rotation3_to_unit_quaternion__shepperd() {
     let e = black_box(
         UnitQuaternion {
             quaternion: Quaternion {
-                i: fx(2563574020), j: fx(2263667718), k: fx(-2114881863), w: fx(1509276477),
+                i: fx(2563574020), j: fx(2263667719), k: fx(-2114881862), w: fx(1509276477),
             },
         },
     );
@@ -423,7 +423,7 @@ fn bench_rotation3_axis__baseline() {
 #[inline(never)]
 fn bench_rotation3_axis__antisymmetric_part() {
     let r = black_box(a());
-    let e = black_box(u3t((2738208059, 2417871746, -2258950401)));
+    let e = black_box(u3t((2738208060, 2417871746, -2258950400)));
     assert!(r.axis() == Some(e));
 }
 
@@ -439,7 +439,7 @@ fn bench_rotation3_angle__baseline() {
 #[inline(never)]
 fn bench_rotation3_angle__acos_trace() {
     let r = black_box(a());
-    let e = black_box(fx(10408630471));
+    let e = black_box(fx(10408630473));
     assert!(r.angle() == e);
 }
 
@@ -463,7 +463,7 @@ fn bench_rotation3_scaled_axis__baseline() {
 #[inline(never)]
 fn bench_rotation3_scaled_axis__axis_times_angle() {
     let r = black_box(a());
-    let e = black_box(v3t((6635905205, 5859586766, -5474449130)));
+    let e = black_box(v3t((6635905209, 5859586767, -5474449129)));
     assert!(r.scaled_axis() == e);
 }
 
@@ -539,7 +539,7 @@ fn bench_rotation3_from_scaled_axis__norm_and_rodrigues() {
     let e = black_box(
         r3(
             [
-                [4186940974, -626508540, -723710167], [427075329, 4128772954, -1103442173],
+                [4186940974, -626508541, -723710167], [427075330, 4128772954, -1103442173],
                 [856665639, 1003725567, 4087224369],
             ],
         ),
@@ -593,11 +593,11 @@ fn bench_rotation3_euler_angles__baseline() {
 #[inline(never)]
 fn bench_rotation3_euler_angles__asin_atan2() {
     let r = black_box(a());
-    let e = black_box(fx(-11965891172));
+    let e = black_box(fx(-11965891174));
     let (roll, pitch, yaw) = r.euler_angles();
     assert!(roll == e);
-    assert!(pitch == fx(5500842971));
-    assert!(yaw == fx(7356808382));
+    assert!(pitch == fx(5500842972));
+    assert!(yaw == fx(7356808383));
 }
 
 // --- construction from vectors
@@ -626,8 +626,8 @@ fn bench_rotation3_rotation_between__algebraic_quaternion() {
     let e = black_box(
         r3(
             [
-                [3667369366, -466783079, 2186151768], [1085783774, 4043498262, -958091575],
-                [-1954026508, 1370758705, 3570650507],
+                [3667369367, -466783078, 2186151768], [1085783775, 4043498262, -958091577],
+                [-1954026508, 1370758707, 3570650507],
             ],
         ),
     );
@@ -642,8 +642,8 @@ fn bench_rotation3_rotation_between__alt_axis_angle() {
     let e = black_box(
         r3(
             [
-                [3667369367, -466783079, 2186151769], [1085783775, 4043498262, -958091576],
-                [-1954026509, 1370758706, 3570650508],
+                [3667369368, -466783078, 2186151766], [1085783773, 4043498263, -958091576],
+                [-1954026507, 1370758705, 3570650509],
             ],
         ),
     );
@@ -674,8 +674,8 @@ fn bench_rotation3_scaled_rotation_between__acos_rodrigues() {
     let e = black_box(
         r3(
             [
-                [4134225491, -328359477, 1116737979], [486899339, 4230560477, -558597492],
-                [-1057285532, 664290733, 4109453637],
+                [4134225492, -328359477, 1116737978], [486899338, 4230560477, -558597492],
+                [-1057285531, 664290732, 4109453638],
             ],
         ),
     );
@@ -706,8 +706,8 @@ fn bench_rotation3_face_towards__two_normalizations() {
     let e = black_box(
         r3(
             [
-                [-2001464795, 3535409489, 1393471396], [-3558159633, -1190495032, -2090207096],
-                [-1334309867, -2128460815, 3483678492],
+                [-2001464795, 3535409487, 1393471397], [-3558159633, -1190495033, -2090207095],
+                [-1334309862, -2128460815, 3483678492],
             ],
         ),
     );
@@ -738,8 +738,8 @@ fn bench_rotation3_look_at_rh__transpose() {
     let e = black_box(
         r3(
             [
-                [2001464792, 3558159631, 1334309858], [3535409484, -1190495033, -2128460813],
-                [-1393471397, 2090207095, -3483678493],
+                [2001464792, 3558159632, 1334309858], [3535409484, -1190495032, -2128460813],
+                [-1393471397, 2090207095, -3483678492],
             ],
         ),
     );
@@ -770,8 +770,8 @@ fn bench_rotation3_renormalize__gram_schmidt() {
     let e = black_box(
         r3(
             [
-                [-173945352, 4188633151, -933723414], [1215906026, -848092611, -4031011727],
-                [-4115587398, -427592472, -1151455222],
+                [-173945351, 4188633152, -933723413], [1215906026, -848092610, -4031011728],
+                [-4115587398, -427592470, -1151455223],
             ],
         ),
     );

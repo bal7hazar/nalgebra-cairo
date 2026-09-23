@@ -159,10 +159,14 @@ pub impl Similarity3Impl<
             isometry: Isometry3 {
                 rotation: inv_iso.rotation,
                 translation: Translation3 {
-                    vector: Vector3 {
-                        x: R::div(inv_iso.translation.vector.x, self.scaling),
-                        y: R::div(inv_iso.translation.vector.y, self.scaling),
-                        z: R::div(inv_iso.translation.vector.z, self.scaling),
+                    vector: {
+                        let (x, y, z) = R::div3(
+                            inv_iso.translation.vector.x,
+                            inv_iso.translation.vector.y,
+                            inv_iso.translation.vector.z,
+                            self.scaling,
+                        );
+                        Vector3 { x, y, z }
                     },
                 },
             },
@@ -185,10 +189,9 @@ pub impl Similarity3Impl<
             isometry: Isometry3 {
                 rotation: self.isometry.rotation.conj_mul(other.isometry.rotation),
                 translation: Translation3 {
-                    vector: Vector3 {
-                        x: R::div(r.x, self.scaling),
-                        y: R::div(r.y, self.scaling),
-                        z: R::div(r.z, self.scaling),
+                    vector: {
+                        let (x, y, z) = R::div3(r.x, r.y, r.z, self.scaling);
+                        Vector3 { x, y, z }
                     },
                 },
             },
@@ -221,10 +224,9 @@ pub impl Similarity3Impl<
     /// `inverse_transform_point`.
     fn inverse_transform_point(self: Similarity3<T>, p: Point3<T>) -> Point3<T> {
         let c = self.isometry.inverse_transform_point(p);
-        Point3 {
-            x: R::div(c.x, self.scaling),
-            y: R::div(c.y, self.scaling),
-            z: R::div(c.z, self.scaling),
+        {
+            let (x, y, z) = R::div3(c.x, c.y, c.z, self.scaling);
+            Point3 { x, y, z }
         }
     }
 
@@ -233,10 +235,9 @@ pub impl Similarity3Impl<
     #[inline(always)]
     fn inverse_transform_vector(self: Similarity3<T>, v: Vector3<T>) -> Vector3<T> {
         let c = self.isometry.inverse_transform_vector(v);
-        Vector3 {
-            x: R::div(c.x, self.scaling),
-            y: R::div(c.y, self.scaling),
-            z: R::div(c.z, self.scaling),
+        {
+            let (x, y, z) = R::div3(c.x, c.y, c.z, self.scaling);
+            Vector3 { x, y, z }
         }
     }
 

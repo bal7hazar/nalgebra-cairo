@@ -58,7 +58,7 @@ pub trait Vector6Trait<T> {
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale`
     /// (`self * k`).
     fn scale(self: Vector6<T>, k: T) -> Vector6<T>;
-    /// `self / k`, each component being the exactly floored quotient. Panics on a zero `k` and on
+    /// `self / k`, each component being the correctly rounded quotient. Panics on a zero `k` and on
     /// overflow. Upstream: `unscale` (`self / k`).
     ///
     /// One division per component on purpose, like `Vector3::unscale`: `scale(k.recip())` is
@@ -93,7 +93,7 @@ pub trait Vector6Trait<T> {
     /// floored once. No intermediate overflow: only the result must fit, so the norm of
     /// `(1e6, .., 1e6)` is fine. Upstream: `norm`.
     fn norm(self: Vector6<T>) -> T;
-    /// `self / self.norm()`: the floored norm, then one exactly floored division per component
+    /// `self / self.norm()`: the floored norm, then one correctly rounded division per component
     /// (`unscale`). The error is about `1 + 1 / norm` ulp per component whatever the magnitude of
     /// `self`. Panics with a division by zero when the norm is zero, and on overflow when the norm
     /// does not fit. Upstream: `normalize`.
@@ -157,7 +157,10 @@ pub impl Vector6Impl<
 
     #[inline(always)]
     fn unscale(self: Vector6<T>, k: T) -> Vector6<T> {
-        Vector6 { a: Vector3Trait::unscale(self.a, k), b: Vector3Trait::unscale(self.b, k) }
+        let (ax, ay, az, bx, by, bz) = R::div6(
+            self.a.x, self.a.y, self.a.z, self.b.x, self.b.y, self.b.z, k,
+        );
+        Vector6 { a: Vector3 { x: ax, y: ay, z: az }, b: Vector3 { x: bx, y: by, z: bz } }
     }
 
     #[inline(always)]
@@ -292,15 +295,10 @@ pub impl Vector6MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector6<T
 pub impl Vector6DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector6<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector6<T>, rhs: T) {
-        self =
-            Vector6 {
-                a: Vector3 {
-                    x: R::div(self.a.x, rhs), y: R::div(self.a.y, rhs), z: R::div(self.a.z, rhs),
-                },
-                b: Vector3 {
-                    x: R::div(self.b.x, rhs), y: R::div(self.b.y, rhs), z: R::div(self.b.z, rhs),
-                },
-            };
+        let (ax, ay, az, bx, by, bz) = R::div6(
+            self.a.x, self.a.y, self.a.z, self.b.x, self.b.y, self.b.z, rhs,
+        );
+        self = Vector6 { a: Vector3 { x: ax, y: ay, z: az }, b: Vector3 { x: bx, y: by, z: bz } };
     }
 }
 

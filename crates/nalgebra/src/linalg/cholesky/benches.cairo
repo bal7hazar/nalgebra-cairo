@@ -17,8 +17,8 @@
 //! all-ones lower triangular matrix: all inputs and results are integers, so the asserted values
 //! are exact and the two variants of a group take the same branches (every quantity is positive).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
@@ -68,9 +68,9 @@ fn inv2() -> SymMatrix2<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// floored divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve2_recip(f: Cholesky2<Fixed>, b: Vector2<Fixed>) -> Vector2<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);
@@ -146,7 +146,7 @@ fn test_cholesky2_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve2_worst(0), solve2_worst(1));
     let (id, ir) = (inverse2_worst(0), inverse2_worst(1));
     assert!(
-        sd == 48 && sr == 287 && id == 114 && ir == 114,
+        sd == 45 && sr == 120 && id == 122 && ir == 122,
         "cholesky2 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -282,9 +282,9 @@ fn inv3() -> SymMatrix3<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// floored divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve3_recip(f: Cholesky3<Fixed>, b: Vector3<Fixed>) -> Vector3<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);
@@ -391,7 +391,7 @@ fn test_cholesky3_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve3_worst(0), solve3_worst(1));
     let (id, ir) = (inverse3_worst(0), inverse3_worst(1));
     assert!(
-        sd == 111 && sr == 160 && id == 86 && ir == 86,
+        sd == 135 && sr == 167 && id == 86 && ir == 86,
         "cholesky3 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -538,9 +538,9 @@ fn inv4() -> Matrix4<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// floored divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve4_recip(f: Cholesky4<Fixed>, b: Vector4<Fixed>) -> Vector4<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);
@@ -709,7 +709,7 @@ fn test_cholesky4_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve4_worst(0), solve4_worst(1));
     let (id, ir) = (inverse4_worst(0), inverse4_worst(1));
     assert!(
-        sd == 132 && sr == 144 && id == 135 && ir == 135,
+        sd == 107 && sr == 110 && id == 147 && ir == 148,
         "cholesky4 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -877,9 +877,9 @@ fn inv6() -> Matrix6<Fixed> {
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
-/// floored divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is off by up
-/// to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than two
-/// divisions.
+/// correctly rounded divisions: `recip(l_jj)` rounds `1/l_jj` first, so each substitution step is
+/// off by up to `|y_i|` ulp instead of 1, and two multiplications plus a reciprocal cost more than
+/// two divisions.
 fn solve6_recip(f: Cholesky6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
     let e1 = Real::recip(f.l11);
     let e2 = Real::recip(f.l22);
@@ -1216,7 +1216,7 @@ fn test_cholesky6_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve6_worst(0), solve6_worst(1));
     let (id, ir) = (inverse6_worst(0), inverse6_worst(1));
     assert!(
-        sd == 1126 && sr == 607 && id == 113 && ir == 113,
+        sd == 1558 && sr == 1023 && id == 95 && ir == 105,
         "cholesky6 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,

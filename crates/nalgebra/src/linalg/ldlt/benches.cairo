@@ -5,9 +5,9 @@
 //! Three candidates are measured here.
 //!
 //! `alt_recip` in `solve` and `inverse`: one `recip(d_j)` then multiplications instead of exactly
-//! floored divisions. Same verdict as in `cholesky::benches` — each pivot is divided by ONCE in
-//! `solve`, so the reciprocal is both dearer (19 to 26 %) and, on the oracle's 12 cases, markedly
-//! less accurate; in `inverse` it saves 6 to 11 % but rounds twice per entry, which
+//! correctly rounded divisions. Same verdict as in `cholesky::benches` — each pivot is divided by
+//! ONCE in `solve`, so the reciprocal is both dearer (19 to 26 %) and, on the oracle's 12 cases,
+//! markedly less accurate; in `inverse` it saves 6 to 11 % but rounds twice per entry, which
 //! `test_ldlt2_inverse_alt_recip_loses_low_bits` exhibits on a hand-built factor.
 //!
 //! `alt_products` in `new`: recompute the column of `l·diag(d)` as explicit rounded products
@@ -23,8 +23,8 @@
 //! all-ones unit lower triangle with `d = (1, .., 1)`: every input and result is an integer, the
 //! asserted values are exact, and all variants of a group take the same branches.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2Trait;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
@@ -90,7 +90,7 @@ fn new2_products(a: SymMatrix2<Fixed>) -> Option<Ldlt2<Fixed>> {
     Some(Ldlt2 { l21, d: Vector2 { x: d1, y: d2 } })
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one exactly floored division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve2_recip(f: Ldlt2<Fixed>, b: Vector2<Fixed>) -> Vector2<Fixed> {
     let y1 = b.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
@@ -183,7 +183,7 @@ fn test_ldlt2_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve2_worst(0), solve2_worst(1));
     let (id, ir) = (inverse2_worst(0), inverse2_worst(1));
     assert!(
-        sd == 250 && sr == 329 && id == 33 && ir == 33,
+        sd == 226 && sr == 265 && id == 33 && ir == 33,
         "ldlt2 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -198,7 +198,7 @@ fn test_ldlt2_alt_products_is_less_accurate() {
     let (f0, b0) = new2_worst(0);
     let (f1, b1) = new2_worst(1);
     assert!(
-        f0 == 16 && b0 == 30 && f1 == 34 && b1 == 30,
+        f0 == 5 && b0 == 11 && f1 == 9 && b1 == 11,
         "new2 shipped ({}, {}) products ({}, {})",
         f0,
         b0,
@@ -390,7 +390,7 @@ fn new3_products(a: SymMatrix3<Fixed>) -> Option<Ldlt3<Fixed>> {
     Some(Ldlt3 { l21, l31, l32, d: Vector3 { x: d1, y: d2, z: d3 } })
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one exactly floored division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve3_recip(f: Ldlt3<Fixed>, b: Vector3<Fixed>) -> Vector3<Fixed> {
     let y1 = b.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
@@ -510,7 +510,7 @@ fn test_ldlt3_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve3_worst(0), solve3_worst(1));
     let (id, ir) = (inverse3_worst(0), inverse3_worst(1));
     assert!(
-        sd == 193 && sr == 500 && id == 72 && ir == 72,
+        sd == 74 && sr == 142 && id == 98 && ir == 98,
         "ldlt3 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -525,7 +525,7 @@ fn test_ldlt3_alt_products_is_less_accurate() {
     let (f0, b0) = new3_worst(0);
     let (f1, b1) = new3_worst(1);
     assert!(
-        f0 == 30 && b0 == 16 && f1 == 30 && b1 == 16,
+        f0 == 29 && b0 == 8 && f1 == 29 && b1 == 8,
         "new3 shipped ({}, {}) products ({}, {})",
         f0,
         b0,
@@ -746,7 +746,7 @@ fn new4_products(a: Matrix4<Fixed>) -> Option<Ldlt4<Fixed>> {
     Some(Ldlt4 { l21, l31, l41, l32, l42, l43, d: Vector4 { x: d1, y: d2, z: d3, w: d4 } })
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one exactly floored division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve4_recip(f: Ldlt4<Fixed>, b: Vector4<Fixed>) -> Vector4<Fixed> {
     let y1 = b.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
@@ -923,7 +923,7 @@ fn test_ldlt4_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve4_worst(0), solve4_worst(1));
     let (id, ir) = (inverse4_worst(0), inverse4_worst(1));
     assert!(
-        sd == 70 && sr == 521 && id == 340 && ir == 340,
+        sd == 68 && sr == 83 && id == 342 && ir == 341,
         "ldlt4 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -938,7 +938,7 @@ fn test_ldlt4_alt_products_is_less_accurate() {
     let (f0, b0) = new4_worst(0);
     let (f1, b1) = new4_worst(1);
     assert!(
-        f0 == 27 && b0 == 75 && f1 == 42 && b1 == 75,
+        f0 == 18 && b0 == 41 && f1 == 36 && b1 == 41,
         "new4 shipped ({}, {}) products ({}, {})",
         f0,
         b0,
@@ -1264,7 +1264,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     )
 }
 
-/// LOSER. `solve` with one reciprocal per pivot instead of one exactly floored division.
+/// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve6_recip(f: Ldlt6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
     let y1 = b.a.x;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a.y);
@@ -1596,7 +1596,7 @@ fn test_ldlt6_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve6_worst(0), solve6_worst(1));
     let (id, ir) = (inverse6_worst(0), inverse6_worst(1));
     assert!(
-        sd == 615 && sr == 623 && id == 365 && ir == 365,
+        sd == 458 && sr == 493 && id == 365 && ir == 365,
         "ldlt6 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -1611,7 +1611,7 @@ fn test_ldlt6_alt_products_is_less_accurate() {
     let (f0, b0) = new6_worst(0);
     let (f1, b1) = new6_worst(1);
     assert!(
-        f0 == 27 && b0 == 25 && f1 == 36 && b1 == 25,
+        f0 == 27 && b0 == 10 && f1 == 27 && b1 == 10,
         "new6 shipped ({}, {}) products ({}, {})",
         f0,
         b0,

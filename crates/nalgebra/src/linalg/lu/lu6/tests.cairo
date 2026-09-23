@@ -5,8 +5,8 @@
 //! Tolerance of the oracle assertions: the oracle's `tol` plus ONE relative ulp of the expected
 //! value. `base::matrix_test_utils::oracle_tol` states why, with the measurement.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use crate::base::matrix6::{Matrix6, Matrix6Trait};
 use crate::base::matrix_test_utils::{
     abs_raw, fx, int, m6, max_abs_m6, max_abs_v6, max_ulp_diff6, max_ulp_diff_v6, oracle_tol,
@@ -164,7 +164,7 @@ fn test_new_reconstruction_oracle() {
         let f = Lu6Trait::new(m6(a));
         worst = core::cmp::max(worst, max_ulp_diff6(f.permute_rows(m6(a)), f.l() * f.u()));
     }
-    assert!(worst == 40, "reconstruction error {worst}");
+    assert!(worst == 31, "reconstruction error {worst}");
 }
 
 #[test]
@@ -254,7 +254,7 @@ fn test_solve_oracle() {
         assert!(err <= oracle_tol(max_abs_v6(e), tol), "solve error {err}");
         worst = core::cmp::max(worst, err);
     }
-    assert!(worst == 8238);
+    assert!(worst == 8212);
 }
 
 #[test]
@@ -271,7 +271,7 @@ fn test_solve_near_singular_oracle() {
         assert!(err <= oracle_tol(max_abs_v6(e), tol), "solve error {err}");
         worst = core::cmp::max(worst, err);
     }
-    assert!(worst == 460827);
+    assert!(worst == 658058);
 }
 
 #[test]
@@ -286,7 +286,7 @@ fn test_try_inverse_oracle() {
         assert!(err <= oracle_tol(max_abs_m6(e), tol), "inverse error {err}");
         worst = core::cmp::max(worst, err);
     }
-    assert!(worst == 1013);
+    assert!(worst == 817);
 }
 
 #[test]
@@ -317,11 +317,11 @@ fn test_try_inverse_candidates() {
             );
     }
     // ... and the reciprocal variant drifts by at most this many ulp from it.
-    assert!(worst == 3);
+    assert!(worst == 17);
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_try_inverse_overflow_panics() {
     // 2^-32 * I: every pivot is 1 raw unit, so the inverse is 2^32 * I.
     let _ = black_box(Matrix6Trait::from_diagonal_element(fx(1))).lu().try_inverse();
@@ -338,7 +338,7 @@ fn test_determinant_oracle() {
         assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
         worst = core::cmp::max(worst, err);
     }
-    assert!(worst == 93);
+    assert!(worst == 1361);
 }
 
 #[test]
@@ -369,9 +369,9 @@ fn test_solve_candidates_error() {
     // The unpivoted figure is NOT a win: these matrices are random and
     // well-conditioned, so their leading entries happen to be usable pivots.
     // `test_no_pivot_candidate_is_wrong` shows the structural failure.
-    assert!(solve_failures(0) == (0, 8238));
-    assert!(solve_failures(1) == (1, 8237));
-    assert!(solve_failures(2) == (0, 7754));
+    assert!(solve_failures(0) == (0, 8212));
+    assert!(solve_failures(1) == (1, 8213));
+    assert!(solve_failures(2) == (0, 7906));
 }
 
 #[test]

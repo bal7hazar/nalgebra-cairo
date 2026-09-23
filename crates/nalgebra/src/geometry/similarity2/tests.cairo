@@ -1,7 +1,7 @@
 //! Unit tests of `Similarity2`: exact cases, identities, zero-scale panics, append/prepend
 //! semantics, homogeneous layout, and oracle vectors from upstream nalgebra 0.35.
 
-use simba::fixed::Fixed;
+use fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, p2t, sim2t, uct, v2t};

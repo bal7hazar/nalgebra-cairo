@@ -1,7 +1,7 @@
 //! The vector API as a downstream crate sees it: only `nalgebra::` and `simba::` paths.
 
+use fixed::Fixed;
 use nalgebra::{Vector2, Vector3, Vector4};
-use simba::fixed::Fixed;
 
 fn f(v: i32) -> Fixed {
     simba::scalar::Real::from_int(v)
@@ -106,7 +106,7 @@ mod with_traits {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: division by zero')]
+    #[should_panic(expected: 'Fixed: division by zero')]
     fn test_api_stable_panic_message() {
         let _ = nalgebra_testing::black_box(Vector4Trait::<Fixed>::zeros()).normalize();
     }

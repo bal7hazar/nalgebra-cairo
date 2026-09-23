@@ -65,18 +65,19 @@ pub impl Lu6Impl<
     /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
     /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..6` is
     /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 15 multipliers
-    /// `l_ik = a_ik / a_kk` are each one floor division, and the trailing submatrix is updated
-    /// entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one overflow
-    /// check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
+    /// `l_ik = a_ik / a_kk` are each one correctly rounded division, and the trailing submatrix is
+    /// updated entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one
+    /// overflow check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
     ///
     /// A pivot column that is exactly zero is skipped — no swap, no permutation, zero multipliers
     /// —
     /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
     ///
-    /// Error model: `l_ik` is off by at most 1 ulp (floored quotient) and every update floors once,
-    /// so after each of the 5 steps an entry of `U` is within about `k * (1 + |a_kj|)` raw units of
-    /// its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of
-    /// the trailing submatrix. Panics with the scalar's overflow error if an update does not fit.
+    /// Error model: `l_ik` is off by at most 1 ulp (correctly rounded quotient) and every update
+    /// floors once, so after each of the 5 steps an entry of `U` is within about `k * (1 + |a_kj|)`
+    /// raw units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
+    /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
+    /// not fit.
     fn new(matrix: Matrix6<T>) -> Lu6<T> {
         let mut a11 = matrix.m11.m11;
         let mut a12 = matrix.m11.m12;
@@ -239,7 +240,8 @@ pub impl Lu6Impl<
             a66 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a21, a11);
+            let (l_a21, l_a31, l_a41, l_a51, l_a61) = R::div5(a21, a31, a41, a51, a61, a11);
+            let l = l_a21;
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
             a23 = R::mul_add(nl, a13, a23);
@@ -247,7 +249,7 @@ pub impl Lu6Impl<
             a25 = R::mul_add(nl, a15, a25);
             a26 = R::mul_add(nl, a16, a26);
             a21 = l;
-            let l = R::div(a31, a11);
+            let l = l_a31;
             let nl = -l;
             a32 = R::mul_add(nl, a12, a32);
             a33 = R::mul_add(nl, a13, a33);
@@ -255,7 +257,7 @@ pub impl Lu6Impl<
             a35 = R::mul_add(nl, a15, a35);
             a36 = R::mul_add(nl, a16, a36);
             a31 = l;
-            let l = R::div(a41, a11);
+            let l = l_a41;
             let nl = -l;
             a42 = R::mul_add(nl, a12, a42);
             a43 = R::mul_add(nl, a13, a43);
@@ -263,7 +265,7 @@ pub impl Lu6Impl<
             a45 = R::mul_add(nl, a15, a45);
             a46 = R::mul_add(nl, a16, a46);
             a41 = l;
-            let l = R::div(a51, a11);
+            let l = l_a51;
             let nl = -l;
             a52 = R::mul_add(nl, a12, a52);
             a53 = R::mul_add(nl, a13, a53);
@@ -271,7 +273,7 @@ pub impl Lu6Impl<
             a55 = R::mul_add(nl, a15, a55);
             a56 = R::mul_add(nl, a16, a56);
             a51 = l;
-            let l = R::div(a61, a11);
+            let l = l_a61;
             let nl = -l;
             a62 = R::mul_add(nl, a12, a62);
             a63 = R::mul_add(nl, a13, a63);
@@ -381,28 +383,29 @@ pub impl Lu6Impl<
             a66 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a32, a22);
+            let (l_a32, l_a42, l_a52, l_a62) = R::div4(a32, a42, a52, a62, a22);
+            let l = l_a32;
             let nl = -l;
             a33 = R::mul_add(nl, a23, a33);
             a34 = R::mul_add(nl, a24, a34);
             a35 = R::mul_add(nl, a25, a35);
             a36 = R::mul_add(nl, a26, a36);
             a32 = l;
-            let l = R::div(a42, a22);
+            let l = l_a42;
             let nl = -l;
             a43 = R::mul_add(nl, a23, a43);
             a44 = R::mul_add(nl, a24, a44);
             a45 = R::mul_add(nl, a25, a45);
             a46 = R::mul_add(nl, a26, a46);
             a42 = l;
-            let l = R::div(a52, a22);
+            let l = l_a52;
             let nl = -l;
             a53 = R::mul_add(nl, a23, a53);
             a54 = R::mul_add(nl, a24, a54);
             a55 = R::mul_add(nl, a25, a55);
             a56 = R::mul_add(nl, a26, a56);
             a52 = l;
-            let l = R::div(a62, a22);
+            let l = l_a62;
             let nl = -l;
             a63 = R::mul_add(nl, a23, a63);
             a64 = R::mul_add(nl, a24, a64);
@@ -487,19 +490,20 @@ pub impl Lu6Impl<
             a66 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a43, a33);
+            let (l_a43, l_a53, l_a63) = R::div3(a43, a53, a63, a33);
+            let l = l_a43;
             let nl = -l;
             a44 = R::mul_add(nl, a34, a44);
             a45 = R::mul_add(nl, a35, a45);
             a46 = R::mul_add(nl, a36, a46);
             a43 = l;
-            let l = R::div(a53, a33);
+            let l = l_a53;
             let nl = -l;
             a54 = R::mul_add(nl, a34, a54);
             a55 = R::mul_add(nl, a35, a55);
             a56 = R::mul_add(nl, a36, a56);
             a53 = l;
-            let l = R::div(a63, a33);
+            let l = l_a63;
             let nl = -l;
             a64 = R::mul_add(nl, a34, a64);
             a65 = R::mul_add(nl, a35, a65);
@@ -1246,11 +1250,11 @@ pub impl Lu6Impl<
     /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
     /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
     /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
-    /// then the floor division by the pivot.
+    /// then the correctly rounded division by the pivot.
     ///
-    /// The 6 floor divisions are kept rather than 6 reciprocals and 6 multiplications. That
-    /// candidate loses on both counts here: a reciprocal plus a multiplication is dearer than a
-    /// division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
+    /// The 6 correctly rounded divisions are kept rather than 6 reciprocals and 6 multiplications.
+    /// That candidate loses on both counts here: a reciprocal plus a multiplication is dearer than
+    /// a division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
     /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu6_solve__alt_recip` and
     /// `test_solve_candidates_error` keep both measurements. `try_inverse` amortises a reciprocal
     /// over 6 columns and would be cheaper with one, and still does not use one (see there).
@@ -1397,8 +1401,8 @@ pub impl Lu6Impl<
     /// end by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
     ///
     /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
-    /// (the numerator, then the floor division by the pivot). Panics with the scalar's overflow
-    /// error if an entry of the inverse does not fit.
+    /// (the numerator, then the correctly rounded division by the pivot). Panics with the scalar's
+    /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 6 columns
     /// amortise: 213 300 against 233 420 gas. It still divides, because `mul(x, recip(u))` rounds

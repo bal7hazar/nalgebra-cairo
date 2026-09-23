@@ -44,7 +44,7 @@ pub impl Qr4Impl<
     /// projection taken against the ALREADY UPDATED column (the modified form, see `qr3`), then
     /// normalised. Each `r_ii` is a floored `norm4` on an unscaled sum of squares, each `r_ij` one
     /// fused `sum_prod4`, each update one fused `mul_add` per component, each component of `q_i`
-    /// one floor division.
+    /// one correctly rounded division.
     ///
     /// A column of the working matrix that is exactly zero leaves `r_ii = 0` and sets `q_i = 0`
     /// rather than completing the basis (module doc): `Q * R = A` still holds exactly, and
@@ -104,13 +104,16 @@ pub impl Qr4Impl<
     }
 
     /// `v / n`, or the zero vector when `n` is exactly zero (the rank-deficient fallback of the
-    /// module doc). One floor division per component. No upstream equivalent.
+    /// module doc). One correctly rounded division per component. No upstream equivalent.
     #[inline(always)]
     fn unit(v: Vector4<T>, n: T) -> Vector4<T> {
         if n == R::ZERO {
             Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO }
         } else {
-            Vector4 { x: R::div(v.x, n), y: R::div(v.y, n), z: R::div(v.z, n), w: R::div(v.w, n) }
+            {
+                let (x, y, z, w) = R::div4(v.x, v.y, v.z, v.w, n);
+                Vector4 { x, y, z, w }
+            }
         }
     }
 
@@ -183,7 +186,7 @@ pub impl Qr4Impl<
 
     /// `R^-1 * y` by back substitution, the shared body of `solve` and `try_inverse`. The caller
     /// guarantees a nonzero diagonal. Two roundings per component: the numerator, accumulated
-    /// exactly in `Real::Wide`, then the floor division. No upstream equivalent.
+    /// exactly in `Real::Wide`, then the correctly rounded division. No upstream equivalent.
     fn back_substitute(self: Qr4<T>, y: Vector4<T>) -> Vector4<T> {
         let x4 = R::div(y.w, self.r.m44);
         let x3 = R::div(R::mul_add(-self.r.m34, x4, y.z), self.r.m33);
@@ -238,8 +241,8 @@ pub impl Matrix4QrImpl<
 mod tests {
     //! Unit tests of `Qr4`: exact cases, the identities and the oracle vectors of `tools/oracle`.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix4::{Matrix4, Matrix4Trait};
     use crate::base::matrix_test_utils::{
@@ -342,7 +345,7 @@ mod tests {
             worst_r = core::cmp::max(worst_r, dr);
         }
         assert!(
-            (worst_q, worst_r, worst_ex) == (84, 29, 0),
+            (worst_q, worst_r, worst_ex) == (84, 15, 0),
             "regressed: {worst_q} {worst_r} {worst_ex}",
         );
     }
@@ -360,7 +363,7 @@ mod tests {
             worst_orth = core::cmp::max(worst_orth, orth);
         }
         // Measured: `|A - Q R| <= worst_rec ulp * max(1, max |a_ij|)`, `|QᵀQ - I| <= worst_orth`.
-        assert!(worst_rec == 3 && worst_orth == 78, "regressed: {worst_rec} {worst_orth}");
+        assert!(worst_rec == 3 && worst_orth == 86, "regressed: {worst_rec} {worst_orth}");
     }
 
     #[test]
@@ -375,7 +378,7 @@ mod tests {
             worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v4(e), tol)));
             worst = core::cmp::max(worst, err);
         }
-        assert!((worst, worst_ex) == (3134, 0), "regressed: {worst} {worst_ex}");
+        assert!((worst, worst_ex) == (940, 0), "regressed: {worst} {worst_ex}");
     }
 
     #[test]
@@ -390,11 +393,11 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff4(inv * m4(a), id));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
-        assert!(worst == 149, "regressed: {worst}");
+        assert!(worst == 128, "regressed: {worst}");
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_overflow_panics() {
         // 2^-32 * I: every diagonal entry of R is 1 raw unit, so the inverse is 2^32 * I.
         let _ = black_box(Matrix4Trait::from_diagonal_element(Fixed { raw: 1 })).qr().try_inverse();

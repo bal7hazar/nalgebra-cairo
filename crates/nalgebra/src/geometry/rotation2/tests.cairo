@@ -9,8 +9,8 @@
 //! <oracle.cairo> --ops rotation2_new,rotation2_angle,rotation2_mul,rotation2_inverse,
 //! rotation2_transform_vector`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::matrix_test_utils::{ONE_RAW, fx, m2, p2t, r2, uct, ulp_diff, v2t};
@@ -78,7 +78,7 @@ fn test_from_matrix_normalizes_the_first_column() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_from_matrix_of_a_zero_first_column_panics() {
     let m = Matrix2 { m11: Real::<Fixed>::ZERO, m21: Real::ZERO, m12: Real::ONE, m22: Real::ONE };
     let _ = Rotation2Trait::from_matrix(black_box(m));
@@ -172,7 +172,7 @@ fn test_inverse_transform_is_the_transposed_product() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_transform_vector_overflow_panics() {
     let r = black_box(Rotation2AngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_4));
     let _ = r.transform_vector(black_box(v2t((0x6000000000000000, 0x6000000000000000))));
@@ -275,7 +275,7 @@ fn test_renormalize_recovers_orthogonality() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: division by zero')]
+#[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_of_a_zero_first_column_panics() {
     let m = Matrix2 { m11: Real::<Fixed>::ZERO, m21: Real::ZERO, m12: Real::ONE, m22: Real::ONE };
     let _ = black_box(Rotation2Trait::from_matrix_unchecked(m)).renormalize();

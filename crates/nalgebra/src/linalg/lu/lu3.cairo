@@ -58,18 +58,19 @@ pub impl Lu3Impl<
     /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
     /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..3` is
     /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 3 multipliers
-    /// `l_ik = a_ik / a_kk` are each one floor division, and the trailing submatrix is updated
-    /// entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one overflow
-    /// check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
+    /// `l_ik = a_ik / a_kk` are each one correctly rounded division, and the trailing submatrix is
+    /// updated entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one
+    /// overflow check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
     ///
     /// A pivot column that is exactly zero is skipped — no swap, no permutation, zero multipliers
     /// —
     /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
     ///
-    /// Error model: `l_ik` is off by at most 1 ulp (floored quotient) and every update floors once,
-    /// so after each of the 2 steps an entry of `U` is within about `k * (1 + |a_kj|)` raw units of
-    /// its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of
-    /// the trailing submatrix. Panics with the scalar's overflow error if an update does not fit.
+    /// Error model: `l_ik` is off by at most 1 ulp (correctly rounded quotient) and every update
+    /// floors once, so after each of the 2 steps an entry of `U` is within about `k * (1 + |a_kj|)`
+    /// raw units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
+    /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
+    /// not fit.
     fn new(matrix: Matrix3<T>) -> Lu3<T> {
         let mut a11 = matrix.m11;
         let mut a12 = matrix.m12;
@@ -309,11 +310,11 @@ pub impl Lu3Impl<
     /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
     /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
     /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
-    /// then the floor division by the pivot.
+    /// then the correctly rounded division by the pivot.
     ///
-    /// The 3 floor divisions are kept rather than 3 reciprocals and 3 multiplications. That
-    /// candidate loses on both counts here: a reciprocal plus a multiplication is dearer than a
-    /// division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
+    /// The 3 correctly rounded divisions are kept rather than 3 reciprocals and 3 multiplications.
+    /// That candidate loses on both counts here: a reciprocal plus a multiplication is dearer than
+    /// a division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
     /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu3_solve__alt_recip` and
     /// `test_solve_candidates_error` keep both measurements. `try_inverse` amortises a reciprocal
     /// over 3 columns and would be cheaper with one, and still does not use one (see there).
@@ -357,8 +358,8 @@ pub impl Lu3Impl<
     /// by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
     ///
     /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
-    /// (the numerator, then the floor division by the pivot). Panics with the scalar's overflow
-    /// error if an entry of the inverse does not fit.
+    /// (the numerator, then the correctly rounded division by the pivot). Panics with the scalar's
+    /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 3 columns
     /// amortise: 44 950 against 46 230 gas. It still divides, because `mul(x, recip(u))` rounds
@@ -550,14 +551,15 @@ mod tests {
     //! - `alt_no_pivot`: the elimination without partial pivoting. Cheaper and shorter, and wrong
     //! on a matrix as ordinary as a permuted identity.
     //!
-    //! - `alt_recip`: one reciprocal per pivot instead of one floor division per output scalar.
-    //! DEARER for `solve`, where a single right-hand side does not amortise the reciprocal, cheaper
-    //! for `try_inverse`, where 3 columns share it, and a second rounding per output in both.
+    //! - `alt_recip`: one reciprocal per pivot instead of one correctly rounded division per output
+    //! scalar. DEARER for `solve`, where a single right-hand side does not amortise the reciprocal,
+    //! cheaper for `try_inverse`, where 3 columns share it, and a second rounding per output in
+    //! both.
     //!
     //! - `alt_solve_columns`: the inverse as 3 calls to `solve`. Bit-identical, dearer.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
@@ -686,7 +688,8 @@ mod tests {
         }
     }
 
-    /// `solve` with ONE reciprocal per pivot and 3 multiplications instead of 3 floor divisions.
+    /// `solve` with ONE reciprocal per pivot and 3 multiplications instead of 3 correctly rounded
+    /// divisions.
     /// Kept as evidence, and it loses on both counts: a reciprocal (2 190) plus a multiplication (1
     /// 750) is dearer than a division (2 740), and a single right-hand side gives nothing to
     /// amortise it over, so it costs 27 560 against 23 560 gas; and rounding `1 / u_ii` before
@@ -955,7 +958,7 @@ mod tests {
             let f = Lu3Trait::new(m3(a));
             worst = core::cmp::max(worst, max_ulp_diff3(f.permute_rows(m3(a)), f.l() * f.u()));
         }
-        assert!(worst == 16, "reconstruction error {worst}");
+        assert!(worst == 10, "reconstruction error {worst}");
     }
 
     #[test]
@@ -1036,7 +1039,7 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_v3(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 832);
+        assert!(worst == 436);
     }
 
     #[test]
@@ -1053,7 +1056,7 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_v3(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 17355912);
+        assert!(worst == 7603197);
     }
 
     #[test]
@@ -1099,11 +1102,11 @@ mod tests {
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
-        assert!(worst == 13);
+        assert!(worst == 14);
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_overflow_panics() {
         // 2^-32 * I: every pivot is 1 raw unit, so the inverse is 2^32 * I.
         let _ = black_box(Matrix3Trait::from_diagonal_element(fx(1))).lu().try_inverse();
@@ -1120,7 +1123,7 @@ mod tests {
             assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 466349);
+        assert!(worst == 326241);
     }
 
     #[test]
@@ -1147,9 +1150,9 @@ mod tests {
         // The unpivoted figure is NOT a win: these matrices are random and
         // well-conditioned, so their leading entries happen to be usable pivots.
         // `test_no_pivot_candidate_is_wrong` shows the structural failure.
-        assert!(solve_failures(0) == (0, 832));
-        assert!(solve_failures(1) == (3, 991));
-        assert!(solve_failures(2) == (0, 541));
+        assert!(solve_failures(0) == (0, 436));
+        assert!(solve_failures(1) == (3, 374));
+        assert!(solve_failures(2) == (0, 447));
     }
 
     #[test]
@@ -1169,9 +1172,9 @@ mod tests {
         // tolerance predicate. The closed form wins on accuracy for a 3x3: its
         // determinant is a sum of exact 2x2 minors, where the LU determinant is a
         // product of pivots that already carry the rounding of the elimination.
-        assert!(matrix3_inverse_failures(0) == (0, 63));
+        assert!(matrix3_inverse_failures(0) == (0, 64));
         assert!(matrix3_inverse_failures(1) == (0, 27));
-        assert!(matrix3_determinant_failures(0) == (4, 181307427));
+        assert!(matrix3_determinant_failures(0) == (2, 27731535));
         assert!(matrix3_determinant_failures(1) == (0, 556));
     }
 
@@ -1199,8 +1202,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [6298117444, -2725477524, -1338161353], [1782629075, 3822108354, 3606471941],
-                    [-1646294845, -704614973, 4674552576],
+                    [6298117444, -2725477524, -1338161353], [1782629076, 3822108355, 3606471942],
+                    [-1646294844, -704614971, 4674552574],
                 ],
             ),
         );
@@ -1214,8 +1217,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [-2414118097, 417657389, 4595817171], [-11205006285, -1635864183, 10651722792],
-                    [-4650645423, -8252330159, 28493647239],
+                    [-2414118097, 417657389, 4595817171], [-11205006284, -1635864183, 10651722790],
+                    [-4650645423, -8252330158, 28493647233],
                 ],
             ),
         );
@@ -1363,7 +1366,7 @@ mod tests {
     fn bench_lu3_solve__substitution() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v3t((-1035334030, 24604680, 6703439320))));
+        let e = black_box(Some(v3t((-1035334029, 24604680, 6703439320))));
         assert!(f.solve(b) == e);
     }
 
@@ -1372,7 +1375,7 @@ mod tests {
     fn bench_lu3_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v3t((-1035334029, 24604681, 6703439319))));
+        let e = black_box(Some(v3t((-1035334030, 24604680, 6703439320))));
         assert!(solve_recip(f, b) == e);
     }
 
@@ -1419,8 +1422,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904016, 1818436374, 1961768289],
-                        [-3723567548, -3176899586, 4215453383], [3946205283, 1243908434, 647398487],
+                        [-772904015, 1818436373, 1961768289],
+                        [-3723567548, -3176899587, 4215453383], [3946205284, 1243908435, 647398487],
                     ],
                 ),
             ),
@@ -1436,8 +1439,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904016, 1818436374, 1961768289],
-                        [-3723567548, -3176899586, 4215453383], [3946205283, 1243908434, 647398487],
+                        [-772904015, 1818436373, 1961768289],
+                        [-3723567548, -3176899587, 4215453383], [3946205284, 1243908435, 647398487],
                     ],
                 ),
             ),
@@ -1453,8 +1456,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904016, 1818436374, 1961768289],
-                        [-3723567548, -3176899586, 4215453384], [3946205283, 1243908434, 647398486],
+                        [-772904016, 1818436374, 1961768288],
+                        [-3723567548, -3176899586, 4215453382], [3946205284, 1243908434, 647398487],
                     ],
                 ),
             ),
@@ -1503,8 +1506,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904016, 1818436374, 1961768289],
-                        [-3723567548, -3176899586, 4215453383], [3946205283, 1243908434, 647398487],
+                        [-772904016, 1818436373, 1961768289],
+                        [-3723567549, -3176899587, 4215453384], [3946205285, 1243908435, 647398485],
                     ],
                 ),
             ),
@@ -1520,8 +1523,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904016, 1818436374, 1961768289],
-                        [-3723567548, -3176899587, 4215453384], [3946205283, 1243908435, 647398485],
+                        [-772904015, 1818436374, 1961768289],
+                        [-3723567548, -3176899587, 4215453384], [3946205284, 1243908435, 647398485],
                     ],
                 ),
             ),
@@ -1541,7 +1544,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu3_vs_matrix3_determinant__lu() {
         let a = black_box(a_bench());
-        let e = black_box(fx(6100059567));
+        let e = black_box(fx(6100059565));
         assert!(a.lu().determinant() == e);
     }
 

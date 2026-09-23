@@ -58,18 +58,19 @@ pub impl Lu4Impl<
     /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
     /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..4` is
     /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 6 multipliers
-    /// `l_ik = a_ik / a_kk` are each one floor division, and the trailing submatrix is updated
-    /// entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one overflow
-    /// check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
+    /// `l_ik = a_ik / a_kk` are each one correctly rounded division, and the trailing submatrix is
+    /// updated entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one
+    /// overflow check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
     ///
     /// A pivot column that is exactly zero is skipped — no swap, no permutation, zero multipliers
     /// —
     /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
     ///
-    /// Error model: `l_ik` is off by at most 1 ulp (floored quotient) and every update floors once,
-    /// so after each of the 3 steps an entry of `U` is within about `k * (1 + |a_kj|)` raw units of
-    /// its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of
-    /// the trailing submatrix. Panics with the scalar's overflow error if an update does not fit.
+    /// Error model: `l_ik` is off by at most 1 ulp (correctly rounded quotient) and every update
+    /// floors once, so after each of the 3 steps an entry of `U` is within about `k * (1 + |a_kj|)`
+    /// raw units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
+    /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
+    /// not fit.
     fn new(matrix: Matrix4<T>) -> Lu4<T> {
         let mut a11 = matrix.m11;
         let mut a12 = matrix.m12;
@@ -146,19 +147,20 @@ pub impl Lu4Impl<
             a44 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a21, a11);
+            let (l_a21, l_a31, l_a41) = R::div3(a21, a31, a41, a11);
+            let l = l_a21;
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
             a23 = R::mul_add(nl, a13, a23);
             a24 = R::mul_add(nl, a14, a24);
             a21 = l;
-            let l = R::div(a31, a11);
+            let l = l_a31;
             let nl = -l;
             a32 = R::mul_add(nl, a12, a32);
             a33 = R::mul_add(nl, a13, a33);
             a34 = R::mul_add(nl, a14, a34);
             a31 = l;
-            let l = R::div(a41, a11);
+            let l = l_a41;
             let nl = -l;
             a42 = R::mul_add(nl, a12, a42);
             a43 = R::mul_add(nl, a13, a43);
@@ -504,11 +506,11 @@ pub impl Lu4Impl<
     /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
     /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
     /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
-    /// then the floor division by the pivot.
+    /// then the correctly rounded division by the pivot.
     ///
-    /// The 4 floor divisions are kept rather than 4 reciprocals and 4 multiplications. That
-    /// candidate loses on both counts here: a reciprocal plus a multiplication is dearer than a
-    /// division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
+    /// The 4 correctly rounded divisions are kept rather than 4 reciprocals and 4 multiplications.
+    /// That candidate loses on both counts here: a reciprocal plus a multiplication is dearer than
+    /// a division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
     /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu4_solve__alt_recip` and
     /// `test_solve_candidates_error` keep both measurements. `try_inverse` amortises a reciprocal
     /// over 4 columns and would be cheaper with one, and still does not use one (see there).
@@ -577,8 +579,8 @@ pub impl Lu4Impl<
     /// end by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
     ///
     /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
-    /// (the numerator, then the floor division by the pivot). Panics with the scalar's overflow
-    /// error if an entry of the inverse does not fit.
+    /// (the numerator, then the correctly rounded division by the pivot). Panics with the scalar's
+    /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 4 columns
     /// amortise: 84 250 against 89 870 gas. It still divides, because `mul(x, recip(u))` rounds
@@ -903,14 +905,15 @@ mod tests {
     //! - `alt_no_pivot`: the elimination without partial pivoting. Cheaper and shorter, and wrong
     //! on a matrix as ordinary as a permuted identity.
     //!
-    //! - `alt_recip`: one reciprocal per pivot instead of one floor division per output scalar.
-    //! DEARER for `solve`, where a single right-hand side does not amortise the reciprocal, cheaper
-    //! for `try_inverse`, where 4 columns share it, and a second rounding per output in both.
+    //! - `alt_recip`: one reciprocal per pivot instead of one correctly rounded division per output
+    //! scalar. DEARER for `solve`, where a single right-hand side does not amortise the reciprocal,
+    //! cheaper for `try_inverse`, where 4 columns share it, and a second rounding per output in
+    //! both.
     //!
     //! - `alt_solve_columns`: the inverse as 4 calls to `solve`. Bit-identical, dearer.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix4::{Matrix4, Matrix4Trait};
     use crate::base::matrix_test_utils::{
@@ -1079,7 +1082,8 @@ mod tests {
         }
     }
 
-    /// `solve` with ONE reciprocal per pivot and 4 multiplications instead of 4 floor divisions.
+    /// `solve` with ONE reciprocal per pivot and 4 multiplications instead of 4 correctly rounded
+    /// divisions.
     /// Kept as evidence, and it loses on both counts: a reciprocal (2 190) plus a multiplication (1
     /// 750) is dearer than a division (2 740), and a single right-hand side gives nothing to
     /// amortise it over, so it costs 39 660 against 34 180 gas; and rounding `1 / u_ii` before
@@ -1472,7 +1476,7 @@ mod tests {
             let f = Lu4Trait::new(m4(a));
             worst = core::cmp::max(worst, max_ulp_diff4(f.permute_rows(m4(a)), f.l() * f.u()));
         }
-        assert!(worst == 44, "reconstruction error {worst}");
+        assert!(worst == 25, "reconstruction error {worst}");
     }
 
     #[test]
@@ -1571,7 +1575,7 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_m4(e), tol), "inverse error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 2618);
+        assert!(worst == 2619);
     }
 
     #[test]
@@ -1602,11 +1606,11 @@ mod tests {
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
-        assert!(worst == 3);
+        assert!(worst == 7);
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_overflow_panics() {
         // 2^-32 * I: every pivot is 1 raw unit, so the inverse is 2^32 * I.
         let _ = black_box(Matrix4Trait::from_diagonal_element(fx(1))).lu().try_inverse();
@@ -1623,7 +1627,7 @@ mod tests {
             assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 197808);
+        assert!(worst == 17456);
     }
 
     #[test]
@@ -1653,8 +1657,8 @@ mod tests {
         // well-conditioned, so their leading entries happen to be usable pivots.
         // `test_no_pivot_candidate_is_wrong` shows the structural failure.
         assert!(solve_failures(0) == (0, 1451));
-        assert!(solve_failures(1) == (4, 1450));
-        assert!(solve_failures(2) == (0, 1019));
+        assert!(solve_failures(1) == (3, 1450));
+        assert!(solve_failures(2) == (0, 678));
     }
 
     #[test]
@@ -1701,8 +1705,8 @@ mod tests {
                 [
                     [-3905117829, -101544735, 2917390324, -1089761038],
                     [138042224, -3594501327, -1433035679, -1793672967],
-                    [2904686338, -672132918, -4889978813, 1893902051],
-                    [242782019, -3207459345, 2235014795, -6063365662],
+                    [2904686339, -672132918, -4889978813, 1893902052],
+                    [242782019, -3207459345, 2235014795, -6063365663],
                 ],
             ),
         );
@@ -1717,9 +1721,9 @@ mod tests {
             m4(
                 [
                     [-125512283, -3597765021, -1339269412, -1828698387],
-                    [133631171082, 111837271069, 44586657535, 55807321097],
-                    [7553781748, 345871237, -2544646840, -5077817027],
-                    [90374759643, 2926288999, 8253522146, 11651805299],
+                    [133631171083, 111837271070, 44586657535, 55807321098],
+                    [7553781749, 345871238, -2544646850, -5077817040],
+                    [90374759643, 2926289000, 8253522131, 11651805292],
                 ],
             ),
         );
@@ -1874,7 +1878,7 @@ mod tests {
     fn bench_lu4_solve__substitution() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v4t((-6526739453, -3077920152, -5908376560, -6714764226))));
+        let e = black_box(Some(v4t((-6526739453, -3077920151, -5908376560, -6714764226))));
         assert!(f.solve(b) == e);
     }
 
@@ -1883,7 +1887,7 @@ mod tests {
     fn bench_lu4_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v4t((-6526739454, -3077920151, -5908376561, -6714764228))));
+        let e = black_box(Some(v4t((-6526739453, -3077920152, -5908376560, -6714764225))));
         assert!(solve_recip(f, b) == e);
     }
 
@@ -1932,10 +1936,10 @@ mod tests {
             Some(
                 m4(
                     [
-                        [-368910955, -2803986567, -82972189, -2814138558],
-                        [-3573914248, -315013115, 1987894369, 469481705],
-                        [-1374341491, 2247339518, -1178301687, -3159192093],
-                        [-2024239780, -833661343, -3042327497, 1583166179],
+                        [-368910954, -2803986567, -82972188, -2814138557],
+                        [-3573914249, -315013115, 1987894368, 469481704],
+                        [-1374341490, 2247339518, -1178301686, -3159192092],
+                        [-2024239779, -833661342, -3042327496, 1583166180],
                     ],
                 ),
             ),
@@ -1951,10 +1955,10 @@ mod tests {
             Some(
                 m4(
                     [
-                        [-368910955, -2803986567, -82972189, -2814138558],
-                        [-3573914248, -315013115, 1987894369, 469481705],
-                        [-1374341491, 2247339518, -1178301687, -3159192093],
-                        [-2024239780, -833661343, -3042327497, 1583166179],
+                        [-368910954, -2803986567, -82972188, -2814138557],
+                        [-3573914249, -315013115, 1987894368, 469481704],
+                        [-1374341490, 2247339518, -1178301686, -3159192092],
+                        [-2024239779, -833661342, -3042327496, 1583166180],
                     ],
                 ),
             ),
@@ -1970,10 +1974,10 @@ mod tests {
             Some(
                 m4(
                     [
-                        [-368910955, -2803986568, -82972189, -2814138559],
-                        [-3573914249, -315013115, 1987894369, 469481705],
+                        [-368910955, -2803986567, -82972190, -2814138558],
+                        [-3573914248, -315013115, 1987894369, 469481705],
                         [-1374341491, 2247339518, -1178301687, -3159192093],
-                        [-2024239780, -833661343, -3042327497, 1583166179],
+                        [-2024239780, -833661342, -3042327496, 1583166179],
                     ],
                 ),
             ),

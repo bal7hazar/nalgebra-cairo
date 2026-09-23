@@ -9,8 +9,8 @@
 //! The translations used are `(1.25, -0.375, 2.5)` and `(-0.25, 2.5, -1.5)`, the point
 //! `(-2.5, 3.75, 0.75)`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use crate::base::matrix_test_utils::{fx, p3, t3};
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;

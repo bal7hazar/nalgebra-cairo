@@ -229,7 +229,7 @@ pub impl Rotation3Impl<
     ///
     /// The result is orthonormal to within a few ulp and is the closest rotation to `self` only to
     /// first order (Gram-Schmidt privileges the first column, unlike the polar decomposition).
-    /// Panics with `simba: division by zero` on a singular matrix. Upstream:
+    /// Panics with `Fixed: division by zero` on a singular matrix. Upstream:
     /// `Rotation::renormalize`
     /// (which uses a QR decomposition).
     fn renormalize(self: Rotation3<T>) -> Rotation3<T> {
@@ -341,7 +341,7 @@ pub impl Rotation3AngleImpl<
 
     /// The rotation angle, in `[0, π]`: `acos((trace - 1) / 2)` like upstream, the argument being
     /// clamped to `[-1, 1]` (a rounded rotation matrix can have a trace slightly outside, where
-    /// upstream's `acos` would return NaN and ours would panic with `simba: out of domain`).
+    /// upstream's `acos` would return NaN and ours would panic with `Fixed: acos domain`).
     ///
     /// Cheap (18 750 gas) but `acos` amplifies the error near `0` and `π`, where its derivative is
     /// `1/θ`: at `θ = 2^-10` the result is off by 1 024 ulp, and below `2^-16` it returns exactly

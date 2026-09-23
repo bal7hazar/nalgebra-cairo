@@ -1,8 +1,8 @@
 //! Gas benchmarks of `Similarity2` (`bench_similarity2_<op>__<variant>`) and the alternative
 //! formulations requested by the work package.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{p2, sim2, v2};
 use crate::base::point2::{Point2, Point2Trait};

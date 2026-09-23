@@ -389,8 +389,8 @@ pub impl Isometry3Impl<
     }
 
     /// Renormalises the rotation exactly (`UnitQuaternion::renormalize`: one norm and four exactly
-    /// floored divisions), leaving the translation untouched. Panics with
-    /// `simba: division by zero` on a zero rotation. Upstream: `Unit::renormalize` applied to the
+    /// correctly rounded divisions), leaving the translation untouched. Panics with
+    /// `Fixed: division by zero` on a zero rotation. Upstream: `Unit::renormalize` applied to the
     /// rotation part (upstream has no `Isometry::renormalize`).
     #[inline(always)]
     fn renormalize(self: Isometry3<T>) -> Isometry3<T> {
@@ -426,7 +426,7 @@ pub impl Isometry3Impl<
     /// shortest arc and its angular velocity is not constant (the chord is walked at constant
     /// speed): for the small relative rotations of one physics step the difference is far below an
     /// ulp, for rendering between two distant poses it is visible. Panics with
-    /// `simba: division by zero` when the interpolated quaternion vanishes (exactly opposite
+    /// `Fixed: division by zero` when the interpolated quaternion vanishes (exactly opposite
     /// rotations at `t = 1/2`).
     ///
     /// Upstream has no `Isometry3::lerp_nlerp`; this is `lerp_slerp` with `nlerp` in place of

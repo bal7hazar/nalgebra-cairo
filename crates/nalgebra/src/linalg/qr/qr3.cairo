@@ -51,7 +51,7 @@ pub impl Qr3Impl<
     /// Always succeeds. Each `r_ii` is a floored `norm3`, whose sum of squares is accumulated
     /// unscaled, so no intermediate can overflow and the norm is the exact floor of the true one;
     /// each `r_ij` is one fused `sum_prod3`, each update one fused `mul_add` per component, and
-    /// each component of `q_i` one floor division.
+    /// each component of `q_i` one correctly rounded division.
     ///
     /// The MODIFIED form (subtracting the projections one at a time, from the already updated
     /// vector) is the same arithmetic statement for statement and is never less orthogonal; on the
@@ -80,7 +80,7 @@ pub impl Qr3Impl<
         let (q11, q21, q31) = if r11 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (R::div(matrix.m11, r11), R::div(matrix.m21, r11), R::div(matrix.m31, r11))
+            R::div3(matrix.m11, matrix.m21, matrix.m31, r11)
         };
         let r12 = R::sum_prod3(q11, matrix.m12, q21, matrix.m22, q31, matrix.m32);
         let r13 = R::sum_prod3(q11, matrix.m13, q21, matrix.m23, q31, matrix.m33);
@@ -94,7 +94,7 @@ pub impl Qr3Impl<
         let (q12, q22, q32) = if r22 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (R::div(b21, r22), R::div(b22, r22), R::div(b23, r22))
+            R::div3(b21, b22, b23, r22)
         };
         let r23 = R::sum_prod3(q12, b31, q22, b32, q32, b33);
         let c31 = R::mul_add(-r23, q12, b31);
@@ -104,7 +104,7 @@ pub impl Qr3Impl<
         let (q13, q23, q33) = if r33 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (R::div(c31, r33), R::div(c32, r33), R::div(c33, r33))
+            R::div3(c31, c32, c33, r33)
         };
         Qr3 {
             q: Matrix3 {
@@ -163,8 +163,9 @@ pub impl Qr3Impl<
     ///
     /// `x = R^-1 (Qᵀ b)`: one fused `tr_mul_vec` for `Qᵀ b` (one rounding per component), then
     /// back substitution. Each component of `x` costs TWO roundings — the numerator, accumulated
-    /// exactly in `Real::Wide` whatever the number of terms, then the floor division by the
-    /// diagonal entry. Panics with the scalar's overflow error if a component of `x` does not fit.
+    /// exactly in `Real::Wide` whatever the number of terms, then the correctly rounded division by
+    /// the diagonal entry. Panics with the scalar's overflow error if a component of `x` does not
+    /// fit.
     fn solve(self: Qr3<T>, b: Vector3<T>) -> Option<Vector3<T>> {
         if !Self::is_invertible(self) {
             return None;
@@ -182,10 +183,10 @@ pub impl Qr3Impl<
     ///
     /// `A^-1 = R^-1 Qᵀ`: the transpose is free (column `j` of `Qᵀ` is row `j` of `Q`), and the
     /// back substitution runs on the three columns at once. Two roundings per entry (the fused
-    /// numerator, then the floor division by the diagonal entry); a reciprocal per diagonal entry
-    /// would amortise over the 3 columns and is not used, for the reason `Lu2::try_inverse`
-    /// documents (a second rounding per output scalar). Panics with the scalar's overflow error if
-    /// an entry does not fit.
+    /// numerator, then the correctly rounded division by the diagonal entry); a reciprocal per
+    /// diagonal entry would amortise over the 3 columns and is not used, for the reason
+    /// `Lu2::try_inverse` documents (a second rounding per output scalar). Panics with the scalar's
+    /// overflow error if an entry does not fit.
     fn try_inverse(self: Qr3<T>) -> Option<Matrix3<T>> {
         if !Self::is_invertible(self) {
             return None;
@@ -279,8 +280,8 @@ mod tests {
     //! - `alt_completed_basis`: the rank-deficient fallback that completes `Q` to an orthonormal
     //! basis instead of leaving a zero column. Strictly dearer, on every call.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
@@ -570,7 +571,7 @@ mod tests {
         // Measured worst cases: the MGS factors agree with upstream's unpacked Householder
         // factors entry by entry, no sign flip, and every case stays inside the oracle tolerance.
         assert!(
-            (worst_q, worst_r, worst_ex) == (30, 121, 0),
+            (worst_q, worst_r, worst_ex) == (29, 55, 0),
             "regressed: {worst_q} {worst_r} {worst_ex}",
         );
     }
@@ -588,7 +589,7 @@ mod tests {
             worst_orth = core::cmp::max(worst_orth, orth);
         }
         // Measured: `|A - Q R| <= worst_rec ulp * max(1, max |a_ij|)`, `|QᵀQ - I| <= worst_orth`.
-        assert!(worst_rec == 3 && worst_orth == 36, "regressed: {worst_rec} {worst_orth}");
+        assert!(worst_rec == 2 && worst_orth == 34, "regressed: {worst_rec} {worst_orth}");
     }
 
     #[test]
@@ -606,7 +607,7 @@ mod tests {
         // Householder: 402 ulp from the oracle factors and 29 ulp of orthonormality, against 121
         // and 36 for the shipped modified Gram-Schmidt. More orthonormal, further from the
         // factors, and dearer (`bench_qr3_new__alt_householder`), which is why MGS ships.
-        assert!(worst_gap == 402 && worst_orth == 29, "regressed: {worst_gap} {worst_orth}");
+        assert!(worst_gap == 142 && worst_orth == 28, "regressed: {worst_gap} {worst_orth}");
     }
 
     #[test]
@@ -620,7 +621,7 @@ mod tests {
         }
         // Identical on the oracle (condition number <= 8): the classical form's quadratic loss
         // of orthogonality only separates from the modified form's linear one beyond these inputs.
-        assert!(worst_mgs == 36 && worst_cgs == 36, "regressed: {worst_mgs} {worst_cgs}");
+        assert!(worst_mgs == 34 && worst_cgs == 34, "regressed: {worst_mgs} {worst_cgs}");
     }
 
     #[test]
@@ -644,7 +645,7 @@ mod tests {
             worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v3(e), tol)));
             worst = core::cmp::max(worst, err);
         }
-        assert!((worst, worst_ex) == (551, 10), "regressed: {worst} {worst_ex}");
+        assert!((worst, worst_ex) == (273, 0), "regressed: {worst} {worst_ex}");
     }
 
     #[test]
@@ -659,7 +660,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff3(inv * m3(a), id));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
-        assert!(worst == 200, "regressed: {worst}");
+        assert!(worst == 82, "regressed: {worst}");
     }
 
     #[test]
@@ -672,11 +673,11 @@ mod tests {
             let err = ulp_diff(Qr3Trait::new(m3(a)).determinant(), m3(a).determinant());
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 90847, "regressed: {worst}");
+        assert!(worst == 72181, "regressed: {worst}");
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_overflow_panics() {
         // 2^-32 * I: every diagonal entry of R is 1 raw unit, so the inverse is 2^32 * I.
         let _ = black_box(Matrix3Trait::from_diagonal_element(Fixed { raw: 1 })).qr().try_inverse();

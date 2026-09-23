@@ -4,8 +4,8 @@
 //!
 //! Expected values come from a bit-exact integer model of the Q32.32 kernels (floor rounding).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, p2, p3, v3, v4};
 use crate::base::point2::Point2;
@@ -88,7 +88,7 @@ fn test_center_alts_agree_with_center() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'i64_add Overflow')]
 fn test_center_alt_add_scale_overflows() {
     // The exact midpoint fits, the sum does not.
     let _ = alt_center_add_scale(
@@ -116,7 +116,7 @@ fn test_distance_alt_sqrt_is_less_accurate_on_short_distances() {
 }
 
 #[test]
-#[should_panic(expected: 'simba: overflow')]
+#[should_panic(expected: 'Fixed: overflow')]
 fn test_distance_alt_sqrt_overflows_on_long_distances() {
     // Distance 100 000: `distance` is fine, its square does not fit.
     let _ = alt_distance_sqrt(p3(0x186a000000000, 0x0, 0x0), p3(0x0, 0x0, 0x0));
@@ -450,7 +450,7 @@ fn bench_point3_unscale__baseline() {
 fn bench_point3_unscale__unscale() {
     let p: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
     let k: Fixed = black_box(fx(0x280000000));
-    let e: Point3<Fixed> = black_box(p3(0x99999999, -0xe6666667, 0x180000000));
+    let e: Point3<Fixed> = black_box(p3(0x9999999a, -0xe6666666, 0x180000000));
     assert!(p.unscale(k) == e);
 }
 
@@ -459,7 +459,7 @@ fn bench_point3_unscale__unscale() {
 fn bench_point3_unscale__div_assign() {
     let p: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
     let k: Fixed = black_box(fx(0x280000000));
-    let e: Point3<Fixed> = black_box(p3(0x99999999, -0xe6666667, 0x180000000));
+    let e: Point3<Fixed> = black_box(p3(0x9999999a, -0xe6666666, 0x180000000));
     let mut r = p;
     r /= k;
     assert!(r == e);

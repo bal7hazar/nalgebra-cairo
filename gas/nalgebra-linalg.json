@@ -2,12 +2,12 @@
   "nalgebra::linalg::cholesky::benches": {
     "cholesky2_determinant": {
       "baseline": 16340,
-      "diagonal_product": 19940
+      "diagonal_product": 19600
     },
     "cholesky2_inverse": {
-      "alt_recip": 33450,
+      "alt_recip": 35590,
       "baseline": 17340,
-      "triangular": 34420
+      "triangular": 38250
     },
     "cholesky2_l": {
       "baseline": 17840,
@@ -15,21 +15,21 @@
     },
     "cholesky2_new": {
       "baseline": 17340,
-      "factorize": 29690
+      "factorize": 31040
     },
     "cholesky2_solve": {
-      "alt_recip": 35700,
+      "alt_recip": 37670,
       "baseline": 17440,
-      "substitution": 35120
+      "substitution": 40660
     },
     "cholesky3_determinant": {
       "baseline": 16940,
-      "diagonal_product": 22390
+      "diagonal_product": 21880
     },
     "cholesky3_inverse": {
-      "alt_recip": 52450,
+      "alt_recip": 54710,
       "baseline": 19440,
-      "triangular": 55360
+      "triangular": 62690
     },
     "cholesky3_l": {
       "baseline": 20940,
@@ -37,21 +37,21 @@
     },
     "cholesky3_new": {
       "baseline": 19440,
-      "factorize": 44920
+      "factorize": 48970
     },
     "cholesky3_solve": {
-      "alt_recip": 48150,
+      "alt_recip": 50750,
       "baseline": 18740,
-      "substitution": 47060
+      "substitution": 55300
     },
     "cholesky4_determinant": {
       "baseline": 17740,
-      "diagonal_product": 25040
+      "diagonal_product": 24360
     },
     "cholesky4_inverse": {
-      "alt_recip": 86200,
+      "alt_recip": 88070,
       "baseline": 27240,
-      "triangular": 92020
+      "triangular": 104030
     },
     "cholesky4_l": {
       "baseline": 27240,
@@ -59,21 +59,21 @@
     },
     "cholesky4_new": {
       "baseline": 23440,
-      "factorize": 68120
+      "factorize": 75910
     },
     "cholesky4_solve": {
-      "alt_recip": 61300,
+      "alt_recip": 64530,
       "baseline": 20240,
-      "substitution": 59700
+      "substitution": 70640
     },
     "cholesky6_determinant": {
       "baseline": 19940,
-      "diagonal_product": 30940
+      "diagonal_product": 29920
     },
     "cholesky6_inverse": {
-      "alt_recip": 173690,
+      "alt_recip": 172880,
       "baseline": 41440,
-      "triangular": 188240
+      "triangular": 212780
     },
     "cholesky6_l": {
       "baseline": 42340,
@@ -81,12 +81,12 @@
     },
     "cholesky6_new": {
       "baseline": 35440,
-      "factorize": 137530
+      "factorize": 156550
     },
     "cholesky6_solve": {
-      "alt_recip": 89700,
+      "alt_recip": 94190,
       "baseline": 23840,
-      "substitution": 87080
+      "substitution": 103420
     }
   },
   "nalgebra::linalg::ldlt::benches": {
@@ -96,26 +96,26 @@
     },
     "ldlt2_determinant": {
       "baseline": 16340,
-      "diagonal_product": 18090
+      "diagonal_product": 17920
     },
     "ldlt2_inverse": {
-      "alt_recip": 29950,
+      "alt_recip": 32430,
       "baseline": 17340,
-      "triangular": 30920
+      "triangular": 35090
     },
     "ldlt2_l": {
       "baseline": 17840,
       "expand": 17940
     },
     "ldlt2_new": {
-      "alt_products": 26120,
+      "alt_products": 27670,
       "baseline": 17340,
-      "factorize": 24070
+      "factorize": 25790
     },
     "ldlt2_solve": {
-      "alt_recip": 32000,
+      "alt_recip": 34310,
       "baseline": 17440,
-      "substitution": 29040
+      "substitution": 32110
     },
     "ldlt3_d": {
       "accessor": 18240,
@@ -123,26 +123,26 @@
     },
     "ldlt3_determinant": {
       "baseline": 16940,
-      "diagonal_product": 20540
+      "diagonal_product": 20200
     },
     "ldlt3_inverse": {
-      "alt_recip": 47200,
+      "alt_recip": 49970,
       "baseline": 19440,
-      "triangular": 50110
+      "triangular": 57950
     },
     "ldlt3_l": {
       "baseline": 20940,
       "expand": 20940
     },
     "ldlt3_new": {
-      "alt_products": 42560,
+      "alt_products": 46470,
       "baseline": 19440,
-      "factorize": 37010
+      "factorize": 41430
     },
     "ldlt3_solve": {
-      "alt_recip": 42600,
+      "alt_recip": 45710,
       "baseline": 18740,
-      "substitution": 38160
+      "substitution": 42410
     },
     "ldlt4_d": {
       "accessor": 19640,
@@ -150,26 +150,26 @@
     },
     "ldlt4_determinant": {
       "baseline": 17740,
-      "diagonal_product": 23190
+      "diagonal_product": 22680
     },
     "ldlt4_inverse": {
-      "alt_recip": 79200,
+      "alt_recip": 81750,
       "baseline": 27240,
-      "triangular": 85020
+      "triangular": 97400
     },
     "ldlt4_l": {
       "baseline": 27240,
       "expand": 28840
     },
     "ldlt4_new": {
-      "alt_products": 68820,
+      "alt_products": 76270,
       "baseline": 23440,
-      "factorize": 57720
+      "factorize": 66190
     },
     "ldlt4_solve": {
-      "alt_recip": 53900,
+      "alt_recip": 57810,
       "baseline": 20240,
-      "substitution": 47980
+      "substitution": 53410
     },
     "ldlt6_d": {
       "accessor": 23340,
@@ -177,32 +177,32 @@
     },
     "ldlt6_determinant": {
       "baseline": 20240,
-      "diagonal_product": 29390
+      "diagonal_product": 28540
     },
     "ldlt6_inverse": {
-      "alt_recip": 163490,
+      "alt_recip": 163700,
       "baseline": 41740,
-      "triangular": 178040
+      "triangular": 201290
     },
     "ldlt6_l": {
       "baseline": 42640,
       "expand": 46240
     },
     "ldlt6_new": {
-      "alt_products": 150200,
+      "alt_products": 168270,
       "baseline": 35740,
-      "factorize": 122450
+      "factorize": 143070
     },
     "ldlt6_solve": {
-      "alt_recip": 78900,
+      "alt_recip": 84410,
       "baseline": 24140,
-      "substitution": 70020
+      "substitution": 77810
     }
   },
   "nalgebra::linalg::lu::lu2::tests": {
     "lu2_determinant": {
       "baseline": 16740,
-      "pivots": 19690
+      "pivots": 19520
     },
     "lu2_factors": {
       "baseline": 18240,
@@ -214,9 +214,9 @@
       "pivots": 17450
     },
     "lu2_new": {
-      "alt_no_pivot": 25270,
+      "alt_no_pivot": 26890,
       "baseline": 18040,
-      "pivot": 28590
+      "pivot": 30510
     },
     "lu2_p": {
       "baseline": 16740,
@@ -231,25 +231,25 @@
       "transpositions": 20440
     },
     "lu2_solve": {
-      "alt_recip": 34900,
+      "alt_recip": 37210,
       "baseline": 18140,
-      "substitution": 32380
+      "substitution": 34880
     },
     "lu2_solve_singular": {
       "baseline": 17350,
-      "none": 31890
+      "none": 34390
     },
     "lu2_try_inverse": {
-      "alt_recip": 38400,
-      "alt_solve_columns": 50620,
+      "alt_recip": 40370,
+      "alt_solve_columns": 55620,
       "baseline": 18540,
-      "columns": 37720
+      "columns": 42780
     }
   },
   "nalgebra::linalg::lu::lu3::tests": {
     "lu3_determinant": {
       "baseline": 17940,
-      "pivots": 25820
+      "pivots": 25850
     },
     "lu3_factors": {
       "baseline": 21940,
@@ -261,9 +261,9 @@
       "pivots": 18750
     },
     "lu3_new": {
-      "alt_no_pivot": 44810,
+      "alt_no_pivot": 48890,
       "baseline": 21540,
-      "pivot": 54800
+      "pivot": 59380
     },
     "lu3_p": {
       "baseline": 18640,
@@ -278,35 +278,35 @@
       "transpositions": 27320
     },
     "lu3_solve": {
-      "alt_recip": 47600,
+      "alt_recip": 50710,
       "baseline": 20040,
-      "substitution": 43600
+      "substitution": 47280
     },
     "lu3_solve_singular": {
       "baseline": 18750,
-      "none": 42610
+      "none": 46290
     },
     "lu3_try_inverse": {
-      "alt_recip": 67190,
-      "alt_solve_columns": 97820,
+      "alt_recip": 68400,
+      "alt_solve_columns": 108860,
       "baseline": 22240,
-      "columns": 68470
+      "columns": 80680
     },
     "lu3_vs_matrix3_determinant": {
       "baseline": 17540,
-      "cofactors": 28200,
-      "lu": 58780
+      "cofactors": 27890,
+      "lu": 63390
     },
     "lu3_vs_matrix3_inverse": {
       "baseline": 21840,
-      "cofactors": 110780,
-      "lu": 101430
+      "cofactors": 110200,
+      "lu": 118220
     }
   },
   "nalgebra::linalg::lu::lu4::tests": {
     "lu4_determinant": {
       "baseline": 19540,
-      "pivots": 30680
+      "pivots": 30540
     },
     "lu4_factors": {
       "baseline": 29040,
@@ -318,9 +318,9 @@
       "pivots": 20450
     },
     "lu4_new": {
-      "alt_no_pivot": 83120,
+      "alt_no_pivot": 90230,
       "baseline": 28440,
-      "pivot": 104430
+      "pivot": 112130
     },
     "lu4_p": {
       "baseline": 20840,
@@ -335,25 +335,25 @@
       "transpositions": 45140
     },
     "lu4_solve": {
-      "alt_recip": 62000,
+      "alt_recip": 65910,
       "baseline": 22340,
-      "substitution": 56520
+      "substitution": 61380
     },
     "lu4_solve_singular": {
       "baseline": 20550,
-      "none": 55030
+      "none": 59890
     },
     "lu4_try_inverse": {
-      "alt_recip": 115190,
-      "alt_solve_columns": 174260,
+      "alt_recip": 115160,
+      "alt_solve_columns": 193700,
       "baseline": 30940,
-      "columns": 120810
+      "columns": 142400
     }
   },
   "nalgebra::linalg::lu::lu6::benches": {
     "lu6_determinant": {
       "baseline": 23940,
-      "pivots": 42800
+      "pivots": 42320
     },
     "lu6_factors": {
       "baseline": 46340,
@@ -365,9 +365,9 @@
       "pivots": 25050
     },
     "lu6_new": {
-      "alt_no_pivot": 218750,
+      "alt_no_pivot": 232570,
       "baseline": 44440,
-      "pivot": 283850
+      "pivot": 297360
     },
     "lu6_p": {
       "baseline": 26440,
@@ -382,227 +382,227 @@
       "transpositions": 97640
     },
     "lu6_solve": {
-      "alt_recip": 101600,
+      "alt_recip": 107110,
       "baseline": 28140,
-      "substitution": 93160
+      "substitution": 100380
     },
     "lu6_solve_singular": {
       "baseline": 25350,
-      "none": 90670
+      "none": 97890
     },
     "lu6_try_inverse": {
-      "alt_recip": 262640,
-      "alt_solve_columns": 451860,
+      "alt_recip": 257580,
+      "alt_solve_columns": 495180,
       "baseline": 49340,
-      "columns": 282760
+      "columns": 330700
     },
     "matrix6_lu": {
       "baseline": 22940,
-      "determinant": 277710,
-      "solve": 328070,
-      "try_inverse": 521570
+      "determinant": 290740,
+      "solve": 348800,
+      "try_inverse": 583020
     }
   },
   "nalgebra::linalg::qr::qr2::tests": {
     "qr2_determinant": {
-      "baseline": 42720,
-      "diagonal_product": 50350
+      "baseline": 46450,
+      "diagonal_product": 54110
     },
     "qr2_factors": {
-      "baseline": 42610,
-      "unpack": 43310
+      "baseline": 46340,
+      "unpack": 47040
     },
     "qr2_is_invertible": {
-      "baseline": 42720,
-      "pivots": 43420
+      "baseline": 46450,
+      "pivots": 47150
     },
     "qr2_new": {
       "baseline": 16540,
-      "gram_schmidt": 43250
+      "gram_schmidt": 48920
     },
     "qr2_solve": {
-      "baseline": 43320,
-      "substitution": 59510
+      "baseline": 47050,
+      "substitution": 65570
     },
     "qr2_solve_singular": {
-      "baseline": 43320,
-      "none": 59410
+      "baseline": 46930,
+      "none": 65350
     },
     "qr2_try_inverse": {
-      "baseline": 42720,
-      "substitution": 62700
+      "baseline": 46450,
+      "substitution": 72070
     }
   },
   "nalgebra::linalg::qr::qr3::tests": {
     "qr3_determinant": {
-      "baseline": 82390,
-      "diagonal_product": 101680
+      "baseline": 91660,
+      "diagonal_product": 110670
     },
     "qr3_determinant_closed_form": {
       "baseline": 17550,
-      "matrix3_cofactors": 28810
+      "matrix3_cofactors": 28500
     },
     "qr3_factors": {
-      "baseline": 82390,
-      "unpack": 83090
+      "baseline": 91660,
+      "unpack": 92360
     },
     "qr3_is_invertible": {
-      "baseline": 82390,
-      "pivots": 83190
+      "baseline": 91660,
+      "pivots": 92460
     },
     "qr3_new": {
-      "alt_classical_gram_schmidt": 76280,
-      "alt_completed_basis": 109920,
-      "alt_householder": 195130,
+      "alt_classical_gram_schmidt": 88430,
+      "alt_completed_basis": 123720,
+      "alt_householder": 199220,
       "baseline": 17550,
-      "gram_schmidt": 84130
+      "gram_schmidt": 95440
     },
     "qr3_solve": {
-      "baseline": 83190,
-      "substitution": 108400
+      "baseline": 92460,
+      "substitution": 121180
     },
     "qr3_solve_singular": {
-      "baseline": 82990,
-      "none": 108100
+      "baseline": 92260,
+      "none": 120880
     },
     "qr3_try_inverse": {
-      "baseline": 82390,
-      "substitution": 127070
+      "baseline": 91660,
+      "substitution": 149000
     }
   },
   "nalgebra::linalg::qr::qr4::tests": {
     "qr4_determinant": {
-      "baseline": 151950,
-      "diagonal_product": 194340
+      "baseline": 166070,
+      "diagonal_product": 206480
     },
     "qr4_factors": {
-      "baseline": 151950,
-      "unpack": 152650
+      "baseline": 166070,
+      "unpack": 166770
     },
     "qr4_is_invertible": {
-      "baseline": 151950,
-      "pivots": 152850
+      "baseline": 166070,
+      "pivots": 166970
     },
     "qr4_new": {
       "baseline": 18950,
-      "gram_schmidt": 153790
+      "gram_schmidt": 170630
     },
     "qr4_solve": {
-      "baseline": 152950,
-      "substitution": 192380
+      "baseline": 167070,
+      "substitution": 211190
     },
     "qr4_try_inverse": {
-      "baseline": 151950,
-      "substitution": 254870
+      "baseline": 166070,
+      "substitution": 290470
     }
   },
   "nalgebra::linalg::svd2::tests": {
     "svd2_new": {
-      "alt_normalised_columns": 103090,
+      "alt_normalised_columns": 116210,
       "baseline": 16550,
-      "eigen_of_gram": 81290
+      "eigen_of_gram": 88910
     },
     "svd2_pseudo_inverse": {
-      "baseline": 70390,
-      "reciprocals": 96760
+      "baseline": 89230,
+      "reciprocals": 117230
     },
     "svd2_rank": {
-      "baseline": 70390,
-      "comparisons": 73030
+      "baseline": 89230,
+      "comparisons": 91870
     },
     "svd2_recompose": {
-      "baseline": 70390,
-      "scaled_product": 89550
+      "baseline": 89230,
+      "scaled_product": 107400
     },
     "svd2_singular_values": {
-      "alt_sqrt_eigenvalues": 37320,
+      "alt_sqrt_eigenvalues": 36470,
       "baseline": 16550,
-      "from_left_vectors": 81290
+      "from_left_vectors": 88910
     },
     "svd2_solve": {
-      "baseline": 70990,
-      "divisions": 89700
+      "baseline": 89830,
+      "divisions": 111070
     },
     "svd2_to_polar": {
-      "baseline": 70390,
-      "quadform": 96960
+      "baseline": 89230,
+      "quadform": 114670
     }
   },
   "nalgebra::linalg::svd3::tests": {
     "svd3_gram": {
       "baseline": 17550,
-      "fused": 31050,
-      "transpose_mul_transpose": 33810
+      "fused": 30030,
+      "transpose_mul_transpose": 33160
     },
     "svd3_new": {
-      "alt_normalised_columns": 746900,
-      "alt_one_sided_jacobi": 737370,
+      "alt_normalised_columns": 808610,
+      "alt_one_sided_jacobi": 779160,
       "baseline": 17550,
-      "eigen_of_gram": 692950
+      "eigen_of_gram": 743440
     },
     "svd3_pseudo_inverse": {
-      "baseline": 683370,
-      "reciprocals": 736160
+      "baseline": 744960,
+      "reciprocals": 798990
     },
     "svd3_rank": {
-      "baseline": 683370,
-      "comparisons": 687180
+      "baseline": 744960,
+      "comparisons": 748770
     },
     "svd3_recompose": {
-      "baseline": 683370,
-      "scaled_product": 725430
+      "baseline": 744960,
+      "scaled_product": 784330
     },
     "svd3_singular_values": {
-      "alt_sqrt_eigenvalues": 343420,
+      "alt_sqrt_eigenvalues": 380560,
       "baseline": 17550,
-      "from_left_vectors": 692950
+      "from_left_vectors": 743440
     },
     "svd3_solve": {
-      "baseline": 684170,
-      "divisions": 712870
+      "baseline": 745760,
+      "divisions": 778070
     },
     "svd3_to_polar": {
-      "baseline": 683370,
-      "quadform": 740190
+      "baseline": 744960,
+      "quadform": 798440
     }
   },
   "nalgebra::linalg::symmetric_eigen2::tests": {
     "symmetric_eigen2_eigenvalues": {
       "baseline": 16340,
-      "closed_form": 23810
+      "closed_form": 23470
     },
     "symmetric_eigen2_new": {
       "baseline": 16340,
-      "closed_form": 40870
+      "closed_form": 43670
     },
     "symmetric_eigen2_recompose": {
-      "baseline": 35230,
-      "quadform": 50640
+      "baseline": 43800,
+      "quadform": 58390
     }
   },
   "nalgebra::linalg::symmetric_eigen3::tests": {
     "symmetric_eigen3_eigenvalues": {
       "baseline": 16940,
-      "via_new": 567710,
-      "without_eigenvectors": 320410
+      "via_new": 607030,
+      "without_eigenvectors": 358570
     },
     "symmetric_eigen3_new": {
       "baseline": 16940,
-      "diagonal_input": 568170,
-      "jacobi_3_sweeps": 442130,
-      "jacobi_4_sweeps": 567710,
-      "jacobi_5_sweeps": 693290,
-      "jacobi_6_sweeps": 818870,
-      "no_renormalisation": 545250
+      "diagonal_input": 607490,
+      "jacobi_3_sweeps": 473860,
+      "jacobi_4_sweeps": 607030,
+      "jacobi_5_sweeps": 740200,
+      "jacobi_6_sweeps": 873370,
+      "no_renormalisation": 576070
     },
     "symmetric_eigen3_recompose": {
-      "baseline": 568870,
-      "quadform": 601480
+      "baseline": 608190,
+      "quadform": 638620
     },
     "symmetric_eigen3_sweep": {
       "baseline": 18740,
-      "three_rotations": 144120,
-      "three_rotations_without_eigenvectors": 92200
+      "three_rotations": 151710,
+      "three_rotations_without_eigenvectors": 94990
     }
   }
 }

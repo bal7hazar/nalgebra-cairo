@@ -11,7 +11,7 @@
 //!
 //! Alternative implementations and the measurements that rejected them live in `benches.cairo`.
 
-use simba::fixed::Fixed;
+use fixed::Fixed;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix4::Matrix4Trait;
@@ -152,7 +152,7 @@ fn test_ldlt2_l_d_oracle() {
         worst_d = core::cmp::max(worst_d, max_ulp_diff_v2(f.d(), v2t(d)));
     }
     assert!(
-        fail == 0 && worst_l <= 0 && worst_d <= 34,
+        fail == 0 && worst_l <= 1 && worst_d <= 5,
         "ldlt2_l fail {} worst_l {} worst_d {}",
         fail,
         worst_l,
@@ -213,7 +213,9 @@ fn test_ldlt2_inverse_oracle() {
     assert!(fail == 0 && worst <= 33, "ldlt2_inv fail {} worst {}", fail, worst);
 }
 
-/// The identity `a · a⁻¹ ≈ I` over the `udu2_inverse` inputs.
+/// The identity `a · a⁻¹ ≈ I` over the `udu2_inverse` inputs. Worst: case 10 (entries up to
+/// about 65, 66 ulp with the divisions rounded to nearest, 46 in the floor era); the per-case
+/// oracle tolerance of the inverse itself holds (`test_ldlt2_inverse_oracle`).
 #[test]
 fn test_ldlt2_inverse_is_a_right_inverse() {
     let mut cases = oracle_udu::udu2_inverse_cases();
@@ -226,7 +228,7 @@ fn test_ldlt2_inverse_is_a_right_inverse() {
                 worst, max_ulp_diff2(m2(a) * f.inverse().to_matrix(), Matrix2Trait::identity()),
             );
     }
-    assert!(worst <= 46, "ldlt2_id worst {}", worst);
+    assert!(worst <= 66, "ldlt2_id worst {}", worst);
 }
 
 /// `determinant` against the closed form of the same matrix, on the `small` and `unit` cases only
@@ -411,7 +413,7 @@ fn test_ldlt3_inverse_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 72, "ldlt3_inv fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 98, "ldlt3_inv fail {} worst {}", fail, worst);
 }
 
 /// The identity `a · a⁻¹ ≈ I` over the `udu3_inverse` inputs.
@@ -621,7 +623,7 @@ fn test_ldlt4_inverse_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 340, "ldlt4_inv fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 342, "ldlt4_inv fail {} worst {}", fail, worst);
 }
 
 /// The identity `a · a⁻¹ ≈ I` over the `udu4_inverse` inputs.

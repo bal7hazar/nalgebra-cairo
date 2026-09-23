@@ -639,8 +639,8 @@ pub impl Matrix3MulAssign<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix_test_utils::{fx, int, m3, m3i, max_ulp_diff3, s3, ulp_diff, v3i, v3t};
     use crate::base::sym_matrix3::SymMatrix3Trait;
@@ -815,14 +815,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
         let m = black_box(Matrix3Trait::from_diagonal_element(Real::<Fixed>::MAX));
         let _ = m + m;
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
         let _ = -black_box(Matrix3Trait::from_diagonal_element(Real::<Fixed>::MIN));
     }
@@ -897,7 +897,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_mul_overflow_panics() {
         let m = black_box(Matrix3Trait::from_diagonal_element(int(65536)));
         let _ = m * m;
@@ -996,7 +996,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_norm_squared_overflow_panics() {
         black_box(Matrix3Trait::from_diagonal_element(int(0x20000000))).norm_squared();
     }
@@ -1034,7 +1034,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_determinant_overflow_panics() {
         black_box(Matrix3Trait::from_diagonal_element(int(2048))).determinant();
     }
@@ -1078,7 +1078,7 @@ mod tests {
         // `adjugate / det` without pre-scaling and of `adjugate * (1 / det)`.
         assert!(inverse_failures(0) == (0, 27));
         assert!(inverse_failures(1) == (2, 84960));
-        assert!(inverse_failures(2) == (10, 84960));
+        assert!(inverse_failures(2) == (9, 84960));
     }
 
     #[test]
@@ -1128,7 +1128,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_tiny_norm_panics() {
         let _ = black_box(Matrix3Trait::from_diagonal_element(fx(1))).try_inverse();
     }
@@ -2569,8 +2569,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [2746796816, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
-                    [-2670352862, -3252013209, -2561850150],
+                    [2746796817, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
+                    [-2670352862, -3252013208, -2561850149],
                 ],
             ),
         );
@@ -2591,8 +2591,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [-6951842770, -153772324, -7990975570], [-3388673951, 9398089719, 9237754150],
-                    [-6515945503, 233474261, 2126960559],
+                    [-6951842770, -153772323, -7990975570], [-3388673950, 9398089719, 9237754150],
+                    [-6515945503, 233474262, 2126960560],
                 ],
             ),
         );
@@ -2613,8 +2613,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [16495394596, 3675684940, -11699880121],
-                    [-13341091190, 955040073, -17220417570], [93636196, -10763579369, -164828975],
+                    [16495394595, 3675684940, -11699880121],
+                    [-13341091189, 955040073, -17220417569], [93636196, -10763579368, -164828975],
                 ],
             ),
         );
@@ -2635,8 +2635,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [2746796816, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
-                    [-2670352862, -3252013209, -2561850150],
+                    [2746796817, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
+                    [-2670352862, -3252013208, -2561850149],
                 ],
             ),
         );

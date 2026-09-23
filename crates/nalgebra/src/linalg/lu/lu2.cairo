@@ -58,18 +58,18 @@ pub impl Lu2Impl<
     /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
     /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..2` is
     /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 1 multipliers
-    /// `l_ik = a_ik / a_kk` are each one floor division, and the trailing submatrix is updated
-    /// entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one overflow
-    /// check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
+    /// `l_ik = a_ik / a_kk` are each one correctly rounded division, and the trailing submatrix is
+    /// updated entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one
+    /// overflow check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
     ///
     /// A pivot column that is exactly zero is skipped — no swap, no permutation, zero multipliers
     /// —
     /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
     ///
-    /// Error model: `l_ik` is off by at most 1 ulp (floored quotient) and every update floors once,
-    /// so after step 1 an entry of `U` is within about `k * (1 + |a_kj|)` raw units of its exact
-    /// value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of the trailing
-    /// submatrix. Panics with the scalar's overflow error if an update does not fit.
+    /// Error model: `l_ik` is off by at most 1 ulp (correctly rounded quotient) and every update
+    /// floors once, so after step 1 an entry of `U` is within about `k * (1 + |a_kj|)` raw units of
+    /// its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of
+    /// the trailing submatrix. Panics with the scalar's overflow error if an update does not fit.
     fn new(matrix: Matrix2<T>) -> Lu2<T> {
         let mut a11 = matrix.m11;
         let mut a12 = matrix.m12;
@@ -173,11 +173,11 @@ pub impl Lu2Impl<
     /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
     /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
     /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
-    /// then the floor division by the pivot.
+    /// then the correctly rounded division by the pivot.
     ///
-    /// The 2 floor divisions are kept rather than 2 reciprocals and 2 multiplications. That
-    /// candidate loses on both counts here: a reciprocal plus a multiplication is dearer than a
-    /// division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
+    /// The 2 correctly rounded divisions are kept rather than 2 reciprocals and 2 multiplications.
+    /// That candidate loses on both counts here: a reciprocal plus a multiplication is dearer than
+    /// a division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
     /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu2_solve__alt_recip` and
     /// `test_solve_candidates_error` keep both measurements. `try_inverse` amortises a reciprocal
     /// over 2 columns and would be cheaper with one, and still does not use one (see there).
@@ -204,8 +204,8 @@ pub impl Lu2Impl<
     /// by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
     ///
     /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
-    /// (the numerator, then the floor division by the pivot). Panics with the scalar's overflow
-    /// error if an entry of the inverse does not fit.
+    /// (the numerator, then the correctly rounded division by the pivot). Panics with the scalar's
+    /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 2 columns
     /// amortise: 19 860 against 19 180 gas. It still divides, because `mul(x, recip(u))` rounds
@@ -313,14 +313,15 @@ mod tests {
     //! - `alt_no_pivot`: the elimination without partial pivoting. Cheaper and shorter, and wrong
     //! on a matrix as ordinary as a permuted identity.
     //!
-    //! - `alt_recip`: one reciprocal per pivot instead of one floor division per output scalar.
-    //! DEARER for `solve`, where a single right-hand side does not amortise the reciprocal, cheaper
-    //! for `try_inverse`, where 2 columns share it, and a second rounding per output in both.
+    //! - `alt_recip`: one reciprocal per pivot instead of one correctly rounded division per output
+    //! scalar. DEARER for `solve`, where a single right-hand side does not amortise the reciprocal,
+    //! cheaper for `try_inverse`, where 2 columns share it, and a second rounding per output in
+    //! both.
     //!
     //! - `alt_solve_columns`: the inverse as 2 calls to `solve`. Bit-identical, dearer.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
@@ -386,7 +387,8 @@ mod tests {
         Lu2 { lu: Matrix2 { m11: a11, m21: a21, m12: a12, m22: a22 }, p: Perm2 { p1: 1 } }
     }
 
-    /// `solve` with ONE reciprocal per pivot and 2 multiplications instead of 2 floor divisions.
+    /// `solve` with ONE reciprocal per pivot and 2 multiplications instead of 2 correctly rounded
+    /// divisions.
     /// Kept as evidence, and it loses on both counts: a reciprocal (2 190) plus a multiplication (1
     /// 750) is dearer than a division (2 740), and a single right-hand side gives nothing to
     /// amortise it over, so it costs 16 760 against 14 240 gas; and rounding `1 / u_ii` before
@@ -500,7 +502,7 @@ mod tests {
             let f = Lu2Trait::new(m2(a));
             worst = core::cmp::max(worst, max_ulp_diff2(f.permute_rows(m2(a)), f.l() * f.u()));
         }
-        assert!(worst == 34, "reconstruction error {worst}");
+        assert!(worst == 19, "reconstruction error {worst}");
     }
 
     #[test]
@@ -574,7 +576,7 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_m2(e), tol), "inverse error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 393);
+        assert!(worst == 394);
     }
 
     #[test]
@@ -583,9 +585,9 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let inv = Lu2Trait::new(m2(a)).try_inverse().unwrap();
-            // Worst residual over the oracle: 52 ulp.
-            assert!((m2(a) * inv).is_identity(52));
-            assert!((inv * m2(a)).is_identity(52));
+            // Worst residual over the oracle: 61 ulp.
+            assert!((m2(a) * inv).is_identity(61));
+            assert!((inv * m2(a)).is_identity(61));
         }
     }
 
@@ -605,11 +607,11 @@ mod tests {
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
-        assert!(worst == 2);
+        assert!(worst == 3);
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_overflow_panics() {
         // 2^-32 * I: every pivot is 1 raw unit, so the inverse is 2^32 * I.
         let _ = black_box(Matrix2Trait::from_diagonal_element(fx(1))).lu().try_inverse();
@@ -626,7 +628,7 @@ mod tests {
             assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 166);
+        assert!(worst == 43);
     }
 
     #[test]
@@ -649,8 +651,8 @@ mod tests {
         // well-conditioned, so their leading entries happen to be usable pivots.
         // `test_no_pivot_candidate_is_wrong` shows the structural failure.
         assert!(solve_failures(0) == (0, 122));
-        assert!(solve_failures(1) == (4, 767));
-        assert!(solve_failures(2) == (0, 80));
+        assert!(solve_failures(1) == (2, 396));
+        assert!(solve_failures(2) == (0, 79));
     }
 
     #[test]
@@ -678,7 +680,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_new__pivot() {
         let a = black_box(a_bench());
-        let e = black_box(m2([[3058251633, 1932838604], [-389055470, 4539457456]]));
+        let e = black_box(m2([[3058251633, 1932838604], [-389055469, 4539457456]]));
         assert!(Lu2Trait::new(a).lu == e);
     }
 
@@ -686,7 +688,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_new__alt_no_pivot() {
         let a = black_box(a_bench());
-        let e = black_box(m2([[-277028774, 4364373136], [-47414174915, 50113217406]]));
+        let e = black_box(m2([[-277028774, 4364373136], [-47414174914, 50113217405]]));
         assert!(new_no_pivot(a).lu == e);
     }
 
@@ -805,7 +807,7 @@ mod tests {
     fn bench_lu2_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v2t((-5305313725, -6129723446))));
+        let e = black_box(Some(v2t((-5305313723, -6129723448))));
         assert!(solve_recip(f, b) == e);
     }
 
@@ -839,7 +841,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_try_inverse__columns() {
         let f = black_box(f_bench());
-        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645105, 368101372]])));
+        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645106, 368101373]])));
         assert!(f.try_inverse() == e);
     }
 
@@ -847,7 +849,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_try_inverse__alt_solve_columns() {
         let f = black_box(f_bench());
-        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645105, 368101372]])));
+        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645106, 368101373]])));
         assert!(try_inverse_solve_columns(f) == e);
     }
 
@@ -855,7 +857,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_try_inverse__alt_recip() {
         let f = black_box(f_bench());
-        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645105, 368101372]])));
+        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645106, 368101372]])));
         assert!(try_inverse_recip(f) == e);
     }
 

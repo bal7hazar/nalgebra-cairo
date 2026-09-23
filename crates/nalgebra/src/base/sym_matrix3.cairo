@@ -403,8 +403,8 @@ pub impl SymMatrix3SubAssign<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::Matrix3Trait;
     use crate::base::matrix_test_utils::{
@@ -526,14 +526,14 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
         let s = black_box(SymMatrix3Trait::from_diagonal_element(Real::<Fixed>::MAX));
         let _ = s + s;
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
         let _ = -black_box(SymMatrix3Trait::from_diagonal_element(Real::<Fixed>::MIN));
     }
@@ -633,7 +633,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_quadform_overflow_panics() {
         let r = black_box(Matrix3Trait::from_diagonal_element(int(65536)));
         let _ = SymMatrix3Trait::quadform(r, black_box(v3i(1, 1, 1)));
@@ -663,7 +663,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_determinant_overflow_panics() {
         black_box(SymMatrix3Trait::from_diagonal_element(int(2048))).determinant();
     }
@@ -770,13 +770,13 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: division by zero')]
+    #[should_panic(expected: 'Fixed: division by zero')]
     fn test_inverse_unchecked_singular_panics() {
         let _ = black_box(SymMatrix3Trait::from_outer_self(v3i(3, -1, 2))).inverse_unchecked();
     }
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'Fixed: overflow')]
     fn test_try_inverse_tiny_norm_panics() {
         let _ = black_box(SymMatrix3Trait::from_diagonal_element(fx(1))).try_inverse();
     }
@@ -1467,7 +1467,7 @@ mod tests {
     fn bench_sym_matrix3_try_inverse__structured_prescaled() {
         let a = black_box(s3((927656796, 185981564, 385239268, 728183245, -57978140, 705759751)));
         let e = black_box(
-            s3((28296730480, -8512599912, -16145092481, 28060217721, 6951752315, 35521319149)),
+            s3((28296730480, -8512599912, -16145092481, 28060217722, 6951752316, 35521319149)),
         );
         assert!(a.try_inverse().unwrap() == e);
     }

@@ -149,16 +149,15 @@ pub impl QuaternionImpl<
         Quaternion { i: self.i * k, j: self.j * k, k: self.k * k, w: self.w * k }
     }
 
-    /// `self / k`, each component being the exactly floored quotient. Panics on a zero `k` and on
+    /// `self / k`, each component being the correctly rounded quotient. Panics on a zero `k` and on
     /// overflow. Upstream: `Div<T>` (`q / k`).
     ///
     /// One division per component on purpose (see `Vector3Trait::unscale`): multiplying by the
     /// rounded reciprocal of `k` is cheaper but costs up to `|self|` ulp instead of 1.
     #[inline(always)]
     fn unscale(self: Quaternion<T>, k: T) -> Quaternion<T> {
-        Quaternion {
-            i: R::div(self.i, k), j: R::div(self.j, k), k: R::div(self.k, k), w: R::div(self.w, k),
-        }
+        let (i, j, k, w) = R::div4(self.i, self.j, self.k, self.w, k);
+        Quaternion { i, j, k, w }
     }
 
     /// `(w, -i, -j, -k)`. Exact; panics on overflow (`-MIN`). Upstream: `conjugate`.
@@ -197,7 +196,7 @@ pub impl QuaternionImpl<
     ///
     /// The only behavioural difference: a component of `self` equal to the scalar's `MIN` no
     /// longer panics (the conjugate would have negated it); only an overflow of a result
-    /// component panics (`simba: overflow`). Upstream has no direct equivalent: it replaces
+    /// component panics (`Fixed: overflow`). Upstream has no direct equivalent: it replaces
     /// `q.conjugate() * other` (and `q.try_inverse().unwrap() * other` for a unit `q`), the
     /// rotation part of `Isometry3::inv_mul`.
     fn conj_mul(self: Quaternion<T>, other: Quaternion<T>) -> Quaternion<T> {
@@ -220,9 +219,9 @@ pub impl QuaternionImpl<
         Quaternion { i, j, k, w }
     }
 
-    /// `self / |self|`: the floored norm, then one exactly floored division per component, so the
+    /// `self / |self|`: the floored norm, then one correctly rounded division per component, so the
     /// error is about `1 + 1 / |self|` ulp per component whatever the magnitude of `self` (see
-    /// `Vector3Trait::normalize`). Panics with `simba: division by zero` on a zero quaternion.
+    /// `Vector3Trait::normalize`). Panics with `Fixed: division by zero` on a zero quaternion.
     /// Upstream: `normalize`.
     #[inline(always)]
     fn normalize(self: Quaternion<T>) -> Quaternion<T> {
@@ -230,9 +229,9 @@ pub impl QuaternionImpl<
     }
 
     /// `self⁻¹ = conjugate / |self|²`, or `None` when `|self|²` floors to zero (upstream
-    /// compares it to zero with `relative_eq`). One exactly floored division per component, so the
-    /// error is about `1 + |q| / |q|²` ulp. Panics on overflow of `|self|²` (norm above about 46
-    /// 340) and on `-MIN`. Upstream: `try_inverse`.
+    /// compares it to zero with `relative_eq`). One correctly rounded division per component, so
+    /// the error is about `1 + |q| / |q|²` ulp. Panics on overflow of `|self|²` (norm above about
+    /// 46 340) and on `-MIN`. Upstream: `try_inverse`.
     #[inline(always)]
     fn try_inverse(self: Quaternion<T>) -> Option<Quaternion<T>> {
         let n2 = R::norm_squared4(self.i, self.j, self.k, self.w);
@@ -240,11 +239,9 @@ pub impl QuaternionImpl<
             None
         } else {
             Some(
-                Quaternion {
-                    i: R::div(-self.i, n2),
-                    j: R::div(-self.j, n2),
-                    k: R::div(-self.k, n2),
-                    w: R::div(self.w, n2),
+                {
+                    let (i, j, k, w) = R::div4(-self.i, -self.j, -self.k, self.w, n2);
+                    Quaternion { i, j, k, w }
                 },
             )
         }
