@@ -110,7 +110,10 @@ pub impl Qr4Impl<
         if n == R::ZERO {
             Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO }
         } else {
-            Vector4 { x: R::div(v.x, n), y: R::div(v.y, n), z: R::div(v.z, n), w: R::div(v.w, n) }
+            {
+                let (x, y, z, w) = R::div4(v.x, v.y, v.z, v.w, n);
+                Vector4 { x, y, z, w }
+            }
         }
     }
 

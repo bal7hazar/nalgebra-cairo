@@ -80,7 +80,7 @@ pub impl Qr3Impl<
         let (q11, q21, q31) = if r11 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (R::div(matrix.m11, r11), R::div(matrix.m21, r11), R::div(matrix.m31, r11))
+            R::div3(matrix.m11, matrix.m21, matrix.m31, r11)
         };
         let r12 = R::sum_prod3(q11, matrix.m12, q21, matrix.m22, q31, matrix.m32);
         let r13 = R::sum_prod3(q11, matrix.m13, q21, matrix.m23, q31, matrix.m33);
@@ -94,7 +94,7 @@ pub impl Qr3Impl<
         let (q12, q22, q32) = if r22 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (R::div(b21, r22), R::div(b22, r22), R::div(b23, r22))
+            R::div3(b21, b22, b23, r22)
         };
         let r23 = R::sum_prod3(q12, b31, q22, b32, q32, b33);
         let c31 = R::mul_add(-r23, q12, b31);
@@ -104,7 +104,7 @@ pub impl Qr3Impl<
         let (q13, q23, q33) = if r33 == R::ZERO {
             (R::ZERO, R::ZERO, R::ZERO)
         } else {
-            (R::div(c31, r33), R::div(c32, r33), R::div(c33, r33))
+            R::div3(c31, c32, c33, r33)
         };
         Qr3 {
             q: Matrix3 {

@@ -147,19 +147,20 @@ pub impl Lu4Impl<
             a44 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a21, a11);
+            let (l_a21, l_a31, l_a41) = R::div3(a21, a31, a41, a11);
+            let l = l_a21;
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
             a23 = R::mul_add(nl, a13, a23);
             a24 = R::mul_add(nl, a14, a24);
             a21 = l;
-            let l = R::div(a31, a11);
+            let l = l_a31;
             let nl = -l;
             a32 = R::mul_add(nl, a12, a32);
             a33 = R::mul_add(nl, a13, a33);
             a34 = R::mul_add(nl, a14, a34);
             a31 = l;
-            let l = R::div(a41, a11);
+            let l = l_a41;
             let nl = -l;
             a42 = R::mul_add(nl, a12, a42);
             a43 = R::mul_add(nl, a13, a43);

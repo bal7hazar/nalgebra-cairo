@@ -240,7 +240,8 @@ pub impl Lu6Impl<
             a66 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a21, a11);
+            let (l_a21, l_a31, l_a41, l_a51, l_a61) = R::div5(a21, a31, a41, a51, a61, a11);
+            let l = l_a21;
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
             a23 = R::mul_add(nl, a13, a23);
@@ -248,7 +249,7 @@ pub impl Lu6Impl<
             a25 = R::mul_add(nl, a15, a25);
             a26 = R::mul_add(nl, a16, a26);
             a21 = l;
-            let l = R::div(a31, a11);
+            let l = l_a31;
             let nl = -l;
             a32 = R::mul_add(nl, a12, a32);
             a33 = R::mul_add(nl, a13, a33);
@@ -256,7 +257,7 @@ pub impl Lu6Impl<
             a35 = R::mul_add(nl, a15, a35);
             a36 = R::mul_add(nl, a16, a36);
             a31 = l;
-            let l = R::div(a41, a11);
+            let l = l_a41;
             let nl = -l;
             a42 = R::mul_add(nl, a12, a42);
             a43 = R::mul_add(nl, a13, a43);
@@ -264,7 +265,7 @@ pub impl Lu6Impl<
             a45 = R::mul_add(nl, a15, a45);
             a46 = R::mul_add(nl, a16, a46);
             a41 = l;
-            let l = R::div(a51, a11);
+            let l = l_a51;
             let nl = -l;
             a52 = R::mul_add(nl, a12, a52);
             a53 = R::mul_add(nl, a13, a53);
@@ -272,7 +273,7 @@ pub impl Lu6Impl<
             a55 = R::mul_add(nl, a15, a55);
             a56 = R::mul_add(nl, a16, a56);
             a51 = l;
-            let l = R::div(a61, a11);
+            let l = l_a61;
             let nl = -l;
             a62 = R::mul_add(nl, a12, a62);
             a63 = R::mul_add(nl, a13, a63);
@@ -382,28 +383,29 @@ pub impl Lu6Impl<
             a66 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a32, a22);
+            let (l_a32, l_a42, l_a52, l_a62) = R::div4(a32, a42, a52, a62, a22);
+            let l = l_a32;
             let nl = -l;
             a33 = R::mul_add(nl, a23, a33);
             a34 = R::mul_add(nl, a24, a34);
             a35 = R::mul_add(nl, a25, a35);
             a36 = R::mul_add(nl, a26, a36);
             a32 = l;
-            let l = R::div(a42, a22);
+            let l = l_a42;
             let nl = -l;
             a43 = R::mul_add(nl, a23, a43);
             a44 = R::mul_add(nl, a24, a44);
             a45 = R::mul_add(nl, a25, a45);
             a46 = R::mul_add(nl, a26, a46);
             a42 = l;
-            let l = R::div(a52, a22);
+            let l = l_a52;
             let nl = -l;
             a53 = R::mul_add(nl, a23, a53);
             a54 = R::mul_add(nl, a24, a54);
             a55 = R::mul_add(nl, a25, a55);
             a56 = R::mul_add(nl, a26, a56);
             a52 = l;
-            let l = R::div(a62, a22);
+            let l = l_a62;
             let nl = -l;
             a63 = R::mul_add(nl, a23, a63);
             a64 = R::mul_add(nl, a24, a64);
@@ -488,19 +490,20 @@ pub impl Lu6Impl<
             a66 = t;
         }
         if piv != R::ZERO {
-            let l = R::div(a43, a33);
+            let (l_a43, l_a53, l_a63) = R::div3(a43, a53, a63, a33);
+            let l = l_a43;
             let nl = -l;
             a44 = R::mul_add(nl, a34, a44);
             a45 = R::mul_add(nl, a35, a45);
             a46 = R::mul_add(nl, a36, a46);
             a43 = l;
-            let l = R::div(a53, a33);
+            let l = l_a53;
             let nl = -l;
             a54 = R::mul_add(nl, a34, a54);
             a55 = R::mul_add(nl, a35, a55);
             a56 = R::mul_add(nl, a36, a56);
             a53 = l;
-            let l = R::div(a63, a33);
+            let l = l_a63;
             let nl = -l;
             a64 = R::mul_add(nl, a34, a64);
             a65 = R::mul_add(nl, a35, a65);

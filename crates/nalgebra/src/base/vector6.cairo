@@ -157,7 +157,10 @@ pub impl Vector6Impl<
 
     #[inline(always)]
     fn unscale(self: Vector6<T>, k: T) -> Vector6<T> {
-        Vector6 { a: Vector3Trait::unscale(self.a, k), b: Vector3Trait::unscale(self.b, k) }
+        let (ax, ay, az, bx, by, bz) = R::div6(
+            self.a.x, self.a.y, self.a.z, self.b.x, self.b.y, self.b.z, k,
+        );
+        Vector6 { a: Vector3 { x: ax, y: ay, z: az }, b: Vector3 { x: bx, y: by, z: bz } }
     }
 
     #[inline(always)]
@@ -292,15 +295,10 @@ pub impl Vector6MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector6<T
 pub impl Vector6DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector6<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector6<T>, rhs: T) {
-        self =
-            Vector6 {
-                a: Vector3 {
-                    x: R::div(self.a.x, rhs), y: R::div(self.a.y, rhs), z: R::div(self.a.z, rhs),
-                },
-                b: Vector3 {
-                    x: R::div(self.b.x, rhs), y: R::div(self.b.y, rhs), z: R::div(self.b.z, rhs),
-                },
-            };
+        let (ax, ay, az, bx, by, bz) = R::div6(
+            self.a.x, self.a.y, self.a.z, self.b.x, self.b.y, self.b.z, rhs,
+        );
+        self = Vector6 { a: Vector3 { x: ax, y: ay, z: az }, b: Vector3 { x: bx, y: by, z: bz } };
     }
 }
 

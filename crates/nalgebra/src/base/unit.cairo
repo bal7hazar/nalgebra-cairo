@@ -109,7 +109,10 @@ pub impl Vector3Normalizable<
 
     #[inline(always)]
     fn unscale(self: Vector3<T>, k: T) -> Vector3<T> {
-        Vector3 { x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k) }
+        {
+            let (x, y, z) = R::div3(self.x, self.y, self.z, k);
+            Vector3 { x, y, z }
+        }
     }
 
     #[inline(always)]
@@ -145,8 +148,9 @@ pub impl Vector4Normalizable<
 
     #[inline(always)]
     fn unscale(self: Vector4<T>, k: T) -> Vector4<T> {
-        Vector4 {
-            x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k), w: R::div(self.w, k),
+        {
+            let (x, y, z, w) = R::div4(self.x, self.y, self.z, self.w, k);
+            Vector4 { x, y, z, w }
         }
     }
 

@@ -809,6 +809,22 @@ fn bench_vector3_normalize__baseline() {
     assert!(e == e);
 }
 
+/// `normalize` with one `Real::div` per component instead of `Real::div3` (the shared prepared
+/// divisor of the shipped `unscale`): the same bits, three divisor preparations.
+#[inline(always)]
+fn alt_normalize_per_element_div(v: Vector3<Fixed>) -> Vector3<Fixed> {
+    let n = v.norm();
+    Vector3 { x: Real::div(v.x, n), y: Real::div(v.y, n), z: Real::div(v.z, n) }
+}
+
+#[test]
+#[inline(never)]
+fn bench_vector3_normalize__alt_per_element_div() {
+    let a: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
+    let e: Vector3<Fixed> = black_box(v3(1393471397, -2090207095, 3483678492));
+    assert!(alt_normalize_per_element_div(a) == e);
+}
+
 #[test]
 #[inline(never)]
 fn bench_vector3_normalize__unscale() {

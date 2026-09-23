@@ -156,9 +156,8 @@ pub impl QuaternionImpl<
     /// rounded reciprocal of `k` is cheaper but costs up to `|self|` ulp instead of 1.
     #[inline(always)]
     fn unscale(self: Quaternion<T>, k: T) -> Quaternion<T> {
-        Quaternion {
-            i: R::div(self.i, k), j: R::div(self.j, k), k: R::div(self.k, k), w: R::div(self.w, k),
-        }
+        let (i, j, k, w) = R::div4(self.i, self.j, self.k, self.w, k);
+        Quaternion { i, j, k, w }
     }
 
     /// `(w, -i, -j, -k)`. Exact; panics on overflow (`-MIN`). Upstream: `conjugate`.
@@ -240,11 +239,9 @@ pub impl QuaternionImpl<
             None
         } else {
             Some(
-                Quaternion {
-                    i: R::div(-self.i, n2),
-                    j: R::div(-self.j, n2),
-                    k: R::div(-self.k, n2),
-                    w: R::div(self.w, n2),
+                {
+                    let (i, j, k, w) = R::div4(-self.i, -self.j, -self.k, self.w, n2);
+                    Quaternion { i, j, k, w }
                 },
             )
         }

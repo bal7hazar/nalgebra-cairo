@@ -241,9 +241,8 @@ pub impl Vector4Impl<
 
     #[inline(always)]
     fn unscale(self: Vector4<T>, k: T) -> Vector4<T> {
-        Vector4 {
-            x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k), w: R::div(self.w, k),
-        }
+        let (x, y, z, w) = R::div4(self.x, self.y, self.z, self.w, k);
+        Vector4 { x, y, z, w }
     }
 
     #[inline(always)]
@@ -459,18 +458,10 @@ pub impl Vector4AngleImpl<
         if n1 == R::ZERO || n2 == R::ZERO {
             return R::ZERO;
         }
-        let u = Vector4 {
-            x: R::div(self.x, n1),
-            y: R::div(self.y, n1),
-            z: R::div(self.z, n1),
-            w: R::div(self.w, n1),
-        };
-        let v = Vector4 {
-            x: R::div(other.x, n2),
-            y: R::div(other.y, n2),
-            z: R::div(other.z, n2),
-            w: R::div(other.w, n2),
-        };
+        let (ux, uy, uz, uw) = R::div4(self.x, self.y, self.z, self.w, n1);
+        let (vx, vy, vz, vw) = R::div4(other.x, other.y, other.z, other.w, n2);
+        let u = Vector4 { x: ux, y: uy, z: uz, w: uw };
+        let v = Vector4 { x: vx, y: vy, z: vz, w: vw };
         let d = R::norm4(u.x - v.x, u.y - v.y, u.z - v.z, u.w - v.w);
         let s = R::norm4(u.x + v.x, u.y + v.y, u.z + v.z, u.w + v.w);
         let half = Tr::atan2(d, s);
@@ -533,13 +524,8 @@ pub impl Vector4MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector4<T
 pub impl Vector4DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector4<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector4<T>, rhs: T) {
-        self =
-            Vector4 {
-                x: R::div(self.x, rhs),
-                y: R::div(self.y, rhs),
-                z: R::div(self.z, rhs),
-                w: R::div(self.w, rhs),
-            };
+        let (x, y, z, w) = R::div4(self.x, self.y, self.z, self.w, rhs);
+        self = Vector4 { x, y, z, w };
     }
 }
 

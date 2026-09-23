@@ -13,11 +13,16 @@
 //! - **`normalize3`**: three `Real::div` by `Real::norm3` (`div`, to nearest) against `fixed`'s
 //!   `wide::normalize3` (`recip`, one reciprocal, rounded to nearest).
 //!
+//! - **Shared divisor**: `n` quotients by one divisor, per-element `Real::div`
+//! (`alt_per_element_div`)
+//!   against `Real::div3` / `div4` (`prepared`, one `fixed::wide::RecipNearest`), and at 2
+//!   quotients against `fixed`'s prepared divisor directly: the break-even is 3 quotients.
+//!
 //! Plus the scalar headline figures of `docs/BENCHMARK.md` section 6 (`add`, `mul`, `div`,
 //! `sqrt`, `sin_cos`, `atan2`) on `fixed::Fixed` through `Real` / `Transcendental`.
 
 use fixed::Fixed;
-use fixed::wide::{self, AccTrait, WideAdd, WideSqrt, wide_mul};
+use fixed::wide::{self, AccTrait, RecipNearestTrait, WideAdd, WideSqrt, wide_mul};
 use nalgebra_testing::black_box;
 use crate::scalar::{Real, Transcendental};
 
@@ -547,4 +552,87 @@ fn bench_real_scalar__atan2() {
     let (a, b) = (black_box(fx(P)), black_box(fx(Q)));
     let e = black_box(fx(0));
     assert!(Transcendental::atan2(a, b) != e);
+}
+
+// --- a divisor shared by n quotients: per-element `Real::div` vs `Real::divisor` + `div_by` ---
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div2__baseline() {
+    let (_a, _d) = (a3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div2__alt_per_element_div() {
+    let (a, d) = (a3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    assert!(Real::div(a.x, d) != e && Real::div(a.y, d) != e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div2__prepared() {
+    let (a, d) = (a3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    // Below the `divN` family: `fixed`'s prepared divisor directly.
+    let r = RecipNearestTrait::new(d);
+    assert!(r.div_nearest(a.x) != e && r.div_nearest(a.y) != e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div3__baseline() {
+    let (_a, _d) = (a3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div3__alt_per_element_div() {
+    let (a, d) = (a3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    assert!(Real::div(a.x, d) != e && Real::div(a.y, d) != e && Real::div(a.z, d) != e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div3__prepared() {
+    let (a, d) = (a3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    let (x, y, z) = Real::div3(a.x, a.y, a.z, d);
+    assert!(x != e && y != e && z != e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div4__baseline() {
+    let (_a, _b, _d) = (a3(), b3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div4__alt_per_element_div() {
+    let (a, b, d) = (a3(), b3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    assert!(
+        Real::div(a.x, d) != e
+            && Real::div(a.y, d) != e
+            && Real::div(a.z, d) != e
+            && Real::div(b.x, d) != e,
+    );
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_shared_div4__prepared() {
+    let (a, b, d) = (a3(), b3(), black_box(fx(Q)));
+    let e = black_box(fx(0));
+    let (x, y, z, w) = Real::div4(a.x, a.y, a.z, b.x, d);
+    assert!(x != e && y != e && z != e && w != e);
 }

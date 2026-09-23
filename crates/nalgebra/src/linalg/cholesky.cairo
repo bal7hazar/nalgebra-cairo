@@ -528,9 +528,7 @@ pub impl Cholesky4Impl<
             return None;
         }
         let l11 = R::sqrt(p1);
-        let l21 = R::div(a.m21, l11);
-        let l31 = R::div(a.m31, l11);
-        let l41 = R::div(a.m41, l11);
+        let (l21, l31, l41) = R::div3(a.m21, a.m31, a.m41, l11);
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
@@ -798,11 +796,9 @@ pub impl Cholesky6Impl<
             return None;
         }
         let l11 = R::sqrt(p1);
-        let l21 = R::div(a.m11.m21, l11);
-        let l31 = R::div(a.m11.m31, l11);
-        let l41 = R::div(a.m21.m11, l11);
-        let l51 = R::div(a.m21.m21, l11);
-        let l61 = R::div(a.m21.m31, l11);
+        let (l21, l31, l41, l51, l61) = R::div5(
+            a.m11.m21, a.m11.m31, a.m21.m11, a.m21.m21, a.m21.m31, l11,
+        );
         let w = R::wide_add(R::wide_zero(), a.m11.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);

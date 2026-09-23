@@ -324,6 +324,12 @@ impl V3Impl<T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>> of V3Trait<T
     fn unscale(self: V3<T>, k: T) -> V3<T> {
         V3 { x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k) }
     }
+    /// Same quotients through one prepared divisor.
+    #[inline(always)]
+    fn unscale_prepared(self: V3<T>, k: T) -> V3<T> {
+        let (x, y, z) = R::div3(self.x, self.y, self.z, k);
+        V3 { x, y, z }
+    }
 }
 
 #[test]
@@ -338,5 +344,52 @@ fn test_real_generic_code_on_fixed() {
     // To nearest: 1 / 3 = 1431655765.33 raw -> 1431655765, -2 / 3 = -2863311530.67 raw ->
     // -2863311531.
     let u = a.unscale(Real::from_int(3));
+    let p = a.unscale_prepared(Real::from_int(3));
+    assert!(p.x == u.x && p.y == u.y && p.z == u.z);
     assert!(u.x == fx(1431655765) && u.y == fx(-2863311531) && u.z == fx(2863311531));
+}
+
+// --- prepared divisor: `div3` .. `div16` -------------------------------------------------------
+
+#[test]
+fn test_real_div_n_is_bit_identical_to_div() {
+    let (a, b, c, d) = (fx(A), fx(B), fx(C), fx(D));
+    let ds = array![
+        fx(B), fx(C), Real::<Fixed>::TWO, fx(-0x3_0000_0000), fx(A), Real::<Fixed>::MIN,
+    ];
+    let mut ds = ds.span();
+    while let Some(k) = ds.pop_front() {
+        let k = *k;
+        let (q0, q1, q2) = Real::div3(a, b, c, k);
+        assert!(q0 == Real::div(a, k) && q1 == Real::div(b, k) && q2 == Real::div(c, k));
+        let (q0, q1, q2, q3) = Real::div4(d, fx(-1), fx(5), fx(-3), k);
+        assert!(q0 == Real::div(d, k) && q1 == Real::div(fx(-1), k));
+        assert!(q2 == Real::div(fx(5), k) && q3 == Real::div(fx(-3), k));
+    }
+    // Ties to even through the prepared divisor too: -0.5, 2.5, -1.5, -2.5 ulp.
+    let (q0, q1, q2, q3, q4) = Real::div5(fx(-1), fx(5), fx(-3), fx(-5), fx(A), Real::<Fixed>::TWO);
+    assert!(q0 == Real::ZERO && q1 == fx(2) && q2 == fx(-2) && q3 == fx(-2));
+    assert!(q4 == Real::div(fx(A), Real::TWO));
+    let (_, _, _, _, _, q5) = Real::div6(a, b, c, d, a, Real::<Fixed>::MAX, Real::TWO);
+    assert!(q5 == Real::div(Real::<Fixed>::MAX, Real::TWO));
+    let (q0, _, _, _, _, _, _, _, q8) = Real::div9(
+        a, b, c, d, a, b, c, d, Real::<Fixed>::MIN, fx(C),
+    );
+    assert!(q0 == Real::div(a, fx(C)) && q8 == Real::div(Real::<Fixed>::MIN, fx(C)));
+    let (q0, _, _, _, _, _, _, _, _, _, _, _, _, _, _, q15) = Real::div16(
+        a, b, c, d, a, b, c, d, a, b, c, d, a, b, c, fx(-3), Real::<Fixed>::TWO,
+    );
+    assert!(q0 == Real::div(a, Real::TWO) && q15 == fx(-2));
+}
+
+#[test]
+#[should_panic(expected: 'Fixed: division by zero')]
+fn test_real_div3_by_zero_panics() {
+    let _ = Real::div3(fx(A), fx(B), fx(C), black_box(Real::<Fixed>::ZERO));
+}
+
+#[test]
+#[should_panic(expected: 'Fixed: overflow')]
+fn test_real_div3_overflow_panics() {
+    let _ = Real::div3(fx(A), Real::<Fixed>::MAX, fx(C), black_box(Real::<Fixed>::HALF));
 }

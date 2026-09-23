@@ -251,7 +251,8 @@ pub impl Vector3Impl<
 
     #[inline(always)]
     fn unscale(self: Vector3<T>, k: T) -> Vector3<T> {
-        Vector3 { x: R::div(self.x, k), y: R::div(self.y, k), z: R::div(self.z, k) }
+        let (x, y, z) = R::div3(self.x, self.y, self.z, k);
+        Vector3 { x, y, z }
     }
 
     #[inline(always)]
@@ -471,8 +472,10 @@ pub impl Vector3AngleImpl<
         if n1 == R::ZERO || n2 == R::ZERO {
             return R::ZERO;
         }
-        let u = Vector3 { x: R::div(self.x, n1), y: R::div(self.y, n1), z: R::div(self.z, n1) };
-        let v = Vector3 { x: R::div(other.x, n2), y: R::div(other.y, n2), z: R::div(other.z, n2) };
+        let (ux, uy, uz) = R::div3(self.x, self.y, self.z, n1);
+        let (vx, vy, vz) = R::div3(other.x, other.y, other.z, n2);
+        let u = Vector3 { x: ux, y: uy, z: uz };
+        let v = Vector3 { x: vx, y: vy, z: vz };
         let d = R::norm3(u.x - v.x, u.y - v.y, u.z - v.z);
         let s = R::norm3(u.x + v.x, u.y + v.y, u.z + v.z);
         let half = Tr::atan2(d, s);
@@ -533,7 +536,8 @@ pub impl Vector3MulAssign<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector3<T
 pub impl Vector3DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<Vector3<T>, T> {
     #[inline(always)]
     fn div_assign(ref self: Vector3<T>, rhs: T) {
-        self = Vector3 { x: R::div(self.x, rhs), y: R::div(self.y, rhs), z: R::div(self.z, rhs) };
+        let (x, y, z) = R::div3(self.x, self.y, self.z, rhs);
+        self = Vector3 { x, y, z };
     }
 }
 

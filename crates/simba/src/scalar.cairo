@@ -32,7 +32,7 @@
 
 use fixed::exp::ExpTrait;
 use fixed::trig::TrigTrait;
-use fixed::wide::{self, Acc, AccTrait, NormTrait, RecipTrait};
+use fixed::wide::{self, Acc, AccTrait, NormTrait, RecipNearestTrait, RecipTrait};
 use fixed::{Fixed, FixedTrait, fixed as consts};
 
 /// Real scalar: constants, conversions, helpers, fused kernels and wide accumulation.
@@ -131,6 +131,43 @@ pub trait Real<T> {
     /// Generic code (nalgebra) divides through `Real::div` / `Real::rem`, never through the
     /// corelib `/` / `%` operators, so that the trait pins the semantics. Upstream: `Div for f64`.
     fn div(a: T, b: T) -> T;
+    /// `(x0 / d, x1 / d, x2 / d)` with ONE prepared divisor: BIT-IDENTICAL to three `div(xi, d)`
+    /// (same rounding, same panics), cheaper from 3 quotients on (normalisations, adjugate
+    /// scaling, pivot columns). The `divN` family exists for the static counts nalgebra uses: a
+    /// divisor object held across generic code would need `Copy` / `Drop` bounds on an associated
+    /// type, which Cairo cannot state without making `+Drop<R::Wide>` ambiguous. Upstream: `x / d`
+    /// per element.
+    fn div3(x0: T, x1: T, x2: T, d: T) -> (T, T, T);
+    /// Four quotients by one prepared divisor, see `div3`.
+    fn div4(x0: T, x1: T, x2: T, x3: T, d: T) -> (T, T, T, T);
+    /// Five quotients by one prepared divisor, see `div3`.
+    fn div5(x0: T, x1: T, x2: T, x3: T, x4: T, d: T) -> (T, T, T, T, T);
+    /// Six quotients by one prepared divisor, see `div3`.
+    fn div6(x0: T, x1: T, x2: T, x3: T, x4: T, x5: T, d: T) -> (T, T, T, T, T, T);
+    /// Nine quotients by one prepared divisor (3x3 adjugate), see `div3`.
+    fn div9(
+        x0: T, x1: T, x2: T, x3: T, x4: T, x5: T, x6: T, x7: T, x8: T, d: T,
+    ) -> (T, T, T, T, T, T, T, T, T);
+    /// Sixteen quotients by one prepared divisor (4x4 adjugate), see `div3`.
+    fn div16(
+        x0: T,
+        x1: T,
+        x2: T,
+        x3: T,
+        x4: T,
+        x5: T,
+        x6: T,
+        x7: T,
+        x8: T,
+        x9: T,
+        x10: T,
+        x11: T,
+        x12: T,
+        x13: T,
+        x14: T,
+        x15: T,
+        d: T,
+    ) -> (T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T);
     /// `a - b * trunc(a / b)`, exact: zero or the sign of the DIVIDEND, `|rem(a, b)| < |b|`, as
     /// Rust's float `%`. Panics on a zero divisor. Upstream: `Rem for f64`.
     fn rem(a: T, b: T) -> T;
@@ -358,6 +395,128 @@ pub impl FixedReal of Real<Fixed> {
     #[inline(always)]
     fn div(a: Fixed, b: Fixed) -> Fixed {
         a / b
+    }
+    /// `fixed::wide::RecipNearestTrait`: `new(d)` once, then `div_nearest` per quotient (the
+    /// bits of `x / d`).
+    #[inline(always)]
+    fn div3(x0: Fixed, x1: Fixed, x2: Fixed, d: Fixed) -> (Fixed, Fixed, Fixed) {
+        let r = RecipNearestTrait::new(d);
+        (r.div_nearest(x0), r.div_nearest(x1), r.div_nearest(x2))
+    }
+    #[inline(always)]
+    fn div4(x0: Fixed, x1: Fixed, x2: Fixed, x3: Fixed, d: Fixed) -> (Fixed, Fixed, Fixed, Fixed) {
+        let r = RecipNearestTrait::new(d);
+        (r.div_nearest(x0), r.div_nearest(x1), r.div_nearest(x2), r.div_nearest(x3))
+    }
+    #[inline(always)]
+    fn div5(
+        x0: Fixed, x1: Fixed, x2: Fixed, x3: Fixed, x4: Fixed, d: Fixed,
+    ) -> (Fixed, Fixed, Fixed, Fixed, Fixed) {
+        let r = RecipNearestTrait::new(d);
+        (
+            r.div_nearest(x0),
+            r.div_nearest(x1),
+            r.div_nearest(x2),
+            r.div_nearest(x3),
+            r.div_nearest(x4),
+        )
+    }
+    #[inline(always)]
+    fn div6(
+        x0: Fixed, x1: Fixed, x2: Fixed, x3: Fixed, x4: Fixed, x5: Fixed, d: Fixed,
+    ) -> (Fixed, Fixed, Fixed, Fixed, Fixed, Fixed) {
+        let r = RecipNearestTrait::new(d);
+        (
+            r.div_nearest(x0),
+            r.div_nearest(x1),
+            r.div_nearest(x2),
+            r.div_nearest(x3),
+            r.div_nearest(x4),
+            r.div_nearest(x5),
+        )
+    }
+    #[inline(always)]
+    fn div9(
+        x0: Fixed,
+        x1: Fixed,
+        x2: Fixed,
+        x3: Fixed,
+        x4: Fixed,
+        x5: Fixed,
+        x6: Fixed,
+        x7: Fixed,
+        x8: Fixed,
+        d: Fixed,
+    ) -> (Fixed, Fixed, Fixed, Fixed, Fixed, Fixed, Fixed, Fixed, Fixed) {
+        let r = RecipNearestTrait::new(d);
+        (
+            r.div_nearest(x0),
+            r.div_nearest(x1),
+            r.div_nearest(x2),
+            r.div_nearest(x3),
+            r.div_nearest(x4),
+            r.div_nearest(x5),
+            r.div_nearest(x6),
+            r.div_nearest(x7),
+            r.div_nearest(x8),
+        )
+    }
+    #[inline(always)]
+    fn div16(
+        x0: Fixed,
+        x1: Fixed,
+        x2: Fixed,
+        x3: Fixed,
+        x4: Fixed,
+        x5: Fixed,
+        x6: Fixed,
+        x7: Fixed,
+        x8: Fixed,
+        x9: Fixed,
+        x10: Fixed,
+        x11: Fixed,
+        x12: Fixed,
+        x13: Fixed,
+        x14: Fixed,
+        x15: Fixed,
+        d: Fixed,
+    ) -> (
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+        Fixed,
+    ) {
+        let r = RecipNearestTrait::new(d);
+        (
+            r.div_nearest(x0),
+            r.div_nearest(x1),
+            r.div_nearest(x2),
+            r.div_nearest(x3),
+            r.div_nearest(x4),
+            r.div_nearest(x5),
+            r.div_nearest(x6),
+            r.div_nearest(x7),
+            r.div_nearest(x8),
+            r.div_nearest(x9),
+            r.div_nearest(x10),
+            r.div_nearest(x11),
+            r.div_nearest(x12),
+            r.div_nearest(x13),
+            r.div_nearest(x14),
+            r.div_nearest(x15),
+        )
     }
     /// `fixed::Fixed`'s `%` (`FixedRem`): truncated remainder, sign of the dividend.
     #[inline(always)]
