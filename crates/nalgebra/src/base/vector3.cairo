@@ -176,7 +176,7 @@ pub trait Vector3AngleTrait<T> {
     /// unlike upstream's `acos(dot / (|a| * |b|))`, it cannot overflow on long vectors and stays
     /// accurate for nearly parallel ones. Panics when a norm does not fit. Upstream: `angle`.
     ///
-    /// The robustness costs 49 410 gas against 23 310 for upstream's form, kept as
+    /// The robustness costs 71 740 gas against 39 120 for upstream's form, kept as
     /// `bench_vector3_angle__alt_acos`: that one returns exactly 0 for two directions 2^-20 rad
     /// apart (its cosine floors to 1) and panics on vectors whose norms multiply out of range.
     fn angle(self: Vector3<T>, other: Vector3<T>) -> T;

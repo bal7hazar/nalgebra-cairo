@@ -155,15 +155,16 @@ pub trait UnitComplexTrait<T> {
     /// The linearization multiplies the norm by `sqrt(1 + angle²)` and rotates by
     /// `atan(angle)` instead of `angle`: the angular error is `angle³/3` (1.7e-4 rad for
     /// `angle = 0.08`, i.e. a body spinning at 5 rad/s at 60 Hz), which is the price of skipping
-    /// `sin_cos` — 12 100 gas against 20 920 for the exact `self * new(angle)`
+    /// `sin_cos` — 12 540 gas against 34 760 for the exact `self * new(angle)`
     /// (`bench_unit_complex_append_axisangle_linearized__alt_sin_cos`).
     ///
     /// The exact `renormalize` is used rather than `renormalize_fast` because `|c|² - 1 = angle²`
     /// is far outside the radius where one Newton step converges: the fast variant leaves
     /// `3·angle⁴/4` of squared-norm error (6e-9 at `angle = 0.01`, 2.6e-5 at `angle = 0.08`) and
-    /// saves 100 gas out of 12 100, 0.8 %
-    /// (`bench_unit_complex_append_axisangle_linearized__alt_renormalize_fast`). Panics on
-    /// overflow.
+    /// saves 1 560 gas out of 12 540, 12 % on `fixed` 0.3.0, whose division rounds to nearest
+    /// (`bench_unit_complex_append_axisangle_linearized__alt_renormalize_fast`; re-ranked in
+    /// WP 7.2: the accuracy failure decides, and upstream's quaternion counterpart normalises
+    /// exactly with `Unit::new_normalize`). Panics on overflow.
     fn append_axisangle_linearized(self: UnitComplex<T>, angle: T) -> UnitComplex<T>;
     /// `true` when `re` and `im` are both within `ulps` smallest units (raw units for fixed
     /// point) of `other`'s; cannot overflow. Note that `-c` is the same rotation as `c` turned by

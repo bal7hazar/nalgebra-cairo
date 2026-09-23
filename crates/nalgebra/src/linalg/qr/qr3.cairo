@@ -273,9 +273,11 @@ mod tests {
     //!
     //! - `alt_classical_gram_schmidt`: the projections of column 3 both taken against the ORIGINAL
     //! column. Same arithmetic, statement for statement, and the same orthonormality on these
-    //! well-conditioned inputs; it measures 12 % cheaper only because it divides UNGUARDED, so
-    //! its figure also prices the three `r_ii == 0` guards the shipped `new` carries (2 600 gas
-    //! each). Worse in theory, see `new`.
+    //! well-conditioned inputs; it measures 9 % cheaper (70 880 against 77 890 on `fixed` 0.3.0)
+    //! only because it divides UNGUARDED — it panics with a division by zero on a matrix with a
+    //! zero column, where the shipped `new` returns `r_ii = 0` — so its figure also prices the
+    //! three `r_ii == 0` guards the shipped `new` carries. Worse in theory, see `new`; re-ranked
+    //! in WP 7.2: kept as the loser.
     //!
     //! - `alt_completed_basis`: the rank-deficient fallback that completes `Q` to an orthonormal
     //! basis instead of leaving a zero column. Strictly dearer, on every call.
