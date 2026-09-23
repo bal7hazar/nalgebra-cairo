@@ -15,7 +15,7 @@ large directly.
   background with its output redirected to a log file.
 - Two interchangeable CLIs, on two accounts distinct from the session; alternate according to
   the remaining quota of each:
-  - `claude -p "$(cat brief.md)" --model <sonnet|opus|fable> --dangerously-skip-permissions --name <task>`;
+  - `claude -p "$(cat brief.md)" --model <sonnet|claude-opus-5-5> --dangerously-skip-permissions --name <task>`;
     resume with context: `claude --continue -p "<follow-up>"` in the same worktree.
   - `codex exec -C <worktree> -m <model> -c model_reasoning_effort=<low|medium|high|xhigh> --dangerously-bypass-approvals-and-sandbox -o REPORT.md "$(cat brief.md)"`.
 - The agent writes a `REPORT.md` (not committed) at the root of its worktree: the orchestrator
@@ -26,8 +26,8 @@ large directly.
 | difficulty | claude CLI | codex CLI | examples |
 |---|---|---|---|
 | mechanical, well framed | Sonnet | `gpt-5.5` or `gpt-5.6-*` (effort `medium`) | template-generated code, test compaction, spec alignment, benching variants already identified |
-| standard port with numerics | Opus | `gpt-5.6-*` (effort `high`) | a new module: kernels, tests, golden vectors, benches |
-| genuinely complex | Fable 5.1 | `gpt-6-astra` (effort `xhigh`) | novel numerics, hard debugging, cross-module design, API arbitration |
+| standard port with numerics | Opus 5.5 | `gpt-5.6-*` (effort `high`) | a new module: kernels, tests, golden vectors, benches |
+| genuinely complex | Opus 5.5 (Fable is not used for sub-agents) | `gpt-6-astra` (effort `xhigh`) | novel numerics, hard debugging, cross-module design, API arbitration |
 
 - The strong models are not the default, but do not rule them out when the problem warrants
   them.
