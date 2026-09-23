@@ -3,15 +3,15 @@
 //! with the accuracy measurements that rejected them (AGENTS.md rule 8).
 //!
 //! THE MEASUREMENT. `solve` divides by each pivot twice (once forward, once back) and `inverse`
-//! n(n+1)/2 times in all. In `simba` a division costs 2 740 gas net, a reciprocal 2 190 and a
-//! multiplication 1 750, so `recip` + k multiplications only beats k divisions from k = 3 on.
-//! `alt_recip` is accordingly 3 to 4 % DEARER in `solve` — and, on the oracle's 12 cases, less
-//! accurate at every size but 6 — so it loses outright there. In `inverse` it is 6 to 10 %
-//! cheaper, because the diagonal of `l⁻¹` is already `recip(l_jj)` and reusing it as a
-//! multiplier costs nothing: the oracle sample does not separate the two (identical worst error at
-//! every size), but `t_ij / l_ii` is the exact floor where `t_ij · recip(l_ii)` rounds twice, and
-//! `test_cholesky2_inverse_alt_recip_loses_low_bits` exhibits the drift on a hand-built factor.
-//! Division therefore ships, for the reason `Matrix3::try_inverse` and `Vector3::unscale` divide.
+//! n(n+1)/2 times in all. On `fixed` 0.3.0 (division rounded to nearest, 3 300 gas; `recip`
+//! 2 820; product 1 580) `alt_recip` is the CHEAPER candidate everywhere: 12 to 13 % in `solve`,
+//! 13 to 22 % in `inverse` (on the floor-division scalar it was 3 to 4 % dearer in `solve`). It
+//! still loses (WP 7.2 re-rank), on upstream fidelity first: upstream's `solve_mut`, and `inverse`
+//! which is `solve_mut` on the identity, DIVIDE by the pivot; and on accuracy: on the oracle's 12
+//! cases it is less accurate in `solve` at every size but 6, and in `inverse` `t_ij / l_ii` is the
+//! correctly rounded quotient where `t_ij · recip(l_ii)` rounds twice, which
+//! `test_cholesky2_inverse_alt_recip_loses_low_bits` exhibits on a hand-built factor. Division
+//! therefore ships, for the reason `Matrix3::try_inverse` and `Vector3::unscale` divide.
 //!
 //! THE FIXTURE. Every benchmark factorises `a_ij = min(i, j)`, whose Cholesky factor is exactly the
 //! all-ones lower triangular matrix: all inputs and results are integers, so the asserted values

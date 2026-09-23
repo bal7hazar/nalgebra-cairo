@@ -15,10 +15,14 @@
 //! accumulator and floored ONCE. Divisions by a pivot are correctly rounded divisions, never a
 //! multiplication by a rounded reciprocal, following the precedent of `Matrix3::try_inverse` and
 //! `Vector3::unscale`.
-//! The `alt_recip` candidates are kept in `benches.cairo` with their measurements: in `solve` a
-//! pivot is divided by only twice, so `recip` + 2 products is 3 to 4 % DEARER than 2 divisions and
-//! it loses outright; in `inverse` it is 6 to 10 % cheaper, but it rounds twice where a division
-//! rounds once, which `test_cholesky2_inverse_alt_recip_loses_low_bits` exhibits.
+//! The `alt_recip` candidates are kept in `benches.cairo` with their measurements. Since `fixed`
+//! 0.3.0 (division rounded to nearest) they are the cheaper ones — 12 to 13 % in `solve`, 13 to
+//! 22 % in `inverse` — and they still do not ship (WP 7.2): upstream's `solve_mut` (and
+//! `inverse`, which is `solve_mut` on the identity) DIVIDES by each pivot, and `recip` + product
+//! rounds twice where a division rounds once, which
+//! `test_cholesky2_inverse_alt_recip_loses_low_bits` exhibits. Quotients of one row of `l⁻¹`
+//! that share a pivot go through one prepared divisor (`Real::div3` .. `div5`, bit-identical to
+//! per-element division).
 //!
 //! NOT ported: `rank_one_update` (rapier never updates a factor in place — it refactorises the
 //! effective mass every step) and the dynamic `insert_column` / `remove_column`, which have no
@@ -647,8 +651,8 @@ pub impl Cholesky4Impl<
     /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one correctly
     /// rounded division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation
     /// floored once per output.
-    /// 10 divisions in total, against the 32 of 4 `solve` calls on the columns
-    /// of the identity.
+    /// 10 divisions in total (the 3 quotients of row 4 through one `Real::div3`), against the 32
+    /// of 4 `solve` calls on the columns of the identity.
     ///
     /// The result is symmetric by construction (one accumulation per unordered pair), so only its
     /// upper triangle is computed. Panics on overflow, which for an ill-conditioned `a` happens
@@ -666,26 +670,24 @@ pub impl Cholesky4Impl<
         let w = R::wide_sub_prod(w, self.l31, q11);
         let w = R::wide_sub_prod(w, self.l32, q21);
         let t31 = R::wide_rescale(w);
+        let w = R::wide_zero();
+        let w = R::wide_sub_prod(w, self.l32, q22);
+        let t32 = R::wide_rescale(w);
         let q31 = R::div(t31, self.l33);
+        let q32 = R::div(t32, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l41, q11);
         let w = R::wide_sub_prod(w, self.l42, q21);
         let w = R::wide_sub_prod(w, self.l43, q31);
         let t41 = R::wide_rescale(w);
-        let q41 = R::div(t41, self.l44);
-        let w = R::wide_zero();
-        let w = R::wide_sub_prod(w, self.l32, q22);
-        let t32 = R::wide_rescale(w);
-        let q32 = R::div(t32, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l42, q22);
         let w = R::wide_sub_prod(w, self.l43, q32);
         let t42 = R::wide_rescale(w);
-        let q42 = R::div(t42, self.l44);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l43, q33);
         let t43 = R::wide_rescale(w);
-        let q43 = R::div(t43, self.l44);
+        let (q41, q42, q43) = R::div3(t41, t42, t43, self.l44);
         let w = R::wide_zero();
         let w = R::wide_add_prod(w, q11, q11);
         let w = R::wide_add_prod(w, q21, q21);
@@ -1057,8 +1059,8 @@ pub impl Cholesky6Impl<
     /// `q_ij = (-Σ_(k=j..i-1) l_ik·q_kj) / l_ii`, one exact accumulation and one correctly
     /// rounded division each — then `a⁻¹_ij = Σ_k q_ki·q_kj` is one exact accumulation
     /// floored once per output.
-    /// 21 divisions in total, against the 72 of 6 `solve` calls on the columns
-    /// of the identity.
+    /// 21 divisions in total (rows 4, 5 and 6 through one `Real::div3` / `div4` / `div5` each),
+    /// against the 72 of 6 `solve` calls on the columns of the identity.
     ///
     /// The result is symmetric by construction (one accumulation per unordered pair), so only its
     /// upper triangle is computed. Panics on overflow, which for an ill-conditioned `a` happens
@@ -1078,20 +1080,43 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, self.l31, q11);
         let w = R::wide_sub_prod(w, self.l32, q21);
         let t31 = R::wide_rescale(w);
+        let w = R::wide_zero();
+        let w = R::wide_sub_prod(w, self.l32, q22);
+        let t32 = R::wide_rescale(w);
         let q31 = R::div(t31, self.l33);
+        let q32 = R::div(t32, self.l33);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l41, q11);
         let w = R::wide_sub_prod(w, self.l42, q21);
         let w = R::wide_sub_prod(w, self.l43, q31);
         let t41 = R::wide_rescale(w);
-        let q41 = R::div(t41, self.l44);
+        let w = R::wide_zero();
+        let w = R::wide_sub_prod(w, self.l42, q22);
+        let w = R::wide_sub_prod(w, self.l43, q32);
+        let t42 = R::wide_rescale(w);
+        let w = R::wide_zero();
+        let w = R::wide_sub_prod(w, self.l43, q33);
+        let t43 = R::wide_rescale(w);
+        let (q41, q42, q43) = R::div3(t41, t42, t43, self.l44);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l51, q11);
         let w = R::wide_sub_prod(w, self.l52, q21);
         let w = R::wide_sub_prod(w, self.l53, q31);
         let w = R::wide_sub_prod(w, self.l54, q41);
         let t51 = R::wide_rescale(w);
-        let q51 = R::div(t51, self.l55);
+        let w = R::wide_zero();
+        let w = R::wide_sub_prod(w, self.l52, q22);
+        let w = R::wide_sub_prod(w, self.l53, q32);
+        let w = R::wide_sub_prod(w, self.l54, q42);
+        let t52 = R::wide_rescale(w);
+        let w = R::wide_zero();
+        let w = R::wide_sub_prod(w, self.l53, q33);
+        let w = R::wide_sub_prod(w, self.l54, q43);
+        let t53 = R::wide_rescale(w);
+        let w = R::wide_zero();
+        let w = R::wide_sub_prod(w, self.l54, q44);
+        let t54 = R::wide_rescale(w);
+        let (q51, q52, q53, q54) = R::div4(t51, t52, t53, t54, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l61, q11);
         let w = R::wide_sub_prod(w, self.l62, q21);
@@ -1099,57 +1124,25 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, self.l64, q41);
         let w = R::wide_sub_prod(w, self.l65, q51);
         let t61 = R::wide_rescale(w);
-        let q61 = R::div(t61, self.l66);
-        let w = R::wide_zero();
-        let w = R::wide_sub_prod(w, self.l32, q22);
-        let t32 = R::wide_rescale(w);
-        let q32 = R::div(t32, self.l33);
-        let w = R::wide_zero();
-        let w = R::wide_sub_prod(w, self.l42, q22);
-        let w = R::wide_sub_prod(w, self.l43, q32);
-        let t42 = R::wide_rescale(w);
-        let q42 = R::div(t42, self.l44);
-        let w = R::wide_zero();
-        let w = R::wide_sub_prod(w, self.l52, q22);
-        let w = R::wide_sub_prod(w, self.l53, q32);
-        let w = R::wide_sub_prod(w, self.l54, q42);
-        let t52 = R::wide_rescale(w);
-        let q52 = R::div(t52, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l62, q22);
         let w = R::wide_sub_prod(w, self.l63, q32);
         let w = R::wide_sub_prod(w, self.l64, q42);
         let w = R::wide_sub_prod(w, self.l65, q52);
         let t62 = R::wide_rescale(w);
-        let q62 = R::div(t62, self.l66);
-        let w = R::wide_zero();
-        let w = R::wide_sub_prod(w, self.l43, q33);
-        let t43 = R::wide_rescale(w);
-        let q43 = R::div(t43, self.l44);
-        let w = R::wide_zero();
-        let w = R::wide_sub_prod(w, self.l53, q33);
-        let w = R::wide_sub_prod(w, self.l54, q43);
-        let t53 = R::wide_rescale(w);
-        let q53 = R::div(t53, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l63, q33);
         let w = R::wide_sub_prod(w, self.l64, q43);
         let w = R::wide_sub_prod(w, self.l65, q53);
         let t63 = R::wide_rescale(w);
-        let q63 = R::div(t63, self.l66);
-        let w = R::wide_zero();
-        let w = R::wide_sub_prod(w, self.l54, q44);
-        let t54 = R::wide_rescale(w);
-        let q54 = R::div(t54, self.l55);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l64, q44);
         let w = R::wide_sub_prod(w, self.l65, q54);
         let t64 = R::wide_rescale(w);
-        let q64 = R::div(t64, self.l66);
         let w = R::wide_zero();
         let w = R::wide_sub_prod(w, self.l65, q55);
         let t65 = R::wide_rescale(w);
-        let q65 = R::div(t65, self.l66);
+        let (q61, q62, q63, q64, q65) = R::div5(t61, t62, t63, t64, t65, self.l66);
         let w = R::wide_zero();
         let w = R::wide_add_prod(w, q11, q11);
         let w = R::wide_add_prod(w, q21, q21);
