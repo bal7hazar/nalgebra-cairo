@@ -11,8 +11,8 @@
 //! quaternion_try_inverse --out crates/nalgebra/src/geometry/quaternion/oracle.cairo
 //! ```
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, qi, qt, v3};
 use crate::base::vector4::Vector4;

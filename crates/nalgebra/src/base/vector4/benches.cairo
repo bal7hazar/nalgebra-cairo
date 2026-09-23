@@ -4,8 +4,8 @@
 //!
 //! Expected values come from a bit-exact integer model of the Q32.32 kernels (floor rounding).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix_test_utils::{fx, v2, v3, v4};
 use crate::base::vector2::Vector2;
@@ -28,11 +28,11 @@ fn alt_normalize_recip(v: Vector4<Fixed>) -> Vector4<Fixed> {
     v.scale(v.norm().recip())
 }
 
-/// `normalize` through `inv_sqrt(norm_squared)`: the squared norm overflows above 46 340 and
+/// `normalize` through `recip(sqrt(norm_squared))`: the squared norm overflows above 46 340 and
 /// has no precision left for short vectors.
 #[inline(always)]
-fn alt_normalize_inv_sqrt(v: Vector4<Fixed>) -> Vector4<Fixed> {
-    v.scale(v.norm_squared().inv_sqrt())
+fn alt_normalize_recip_sqrt(v: Vector4<Fixed>) -> Vector4<Fixed> {
+    v.scale(v.norm_squared().sqrt().recip())
 }
 
 /// `cap_magnitude` as `normalize().scale(max)`: accurate to about `max` ulp, one more division
@@ -99,17 +99,17 @@ fn test_normalize_huge_does_not_overflow() {
 
 #[test]
 #[should_panic(expected: 'simba: overflow')]
-fn test_normalize_alt_inv_sqrt_overflows_on_huge() {
-    let _ = alt_normalize_inv_sqrt(black_box(v4(0x186a000000000, -0x186a000000000, 0, 0)));
+fn test_normalize_alt_recip_sqrt_overflows_on_huge() {
+    let _ = alt_normalize_recip_sqrt(black_box(v4(0x186a000000000, -0x186a000000000, 0, 0)));
 }
 
 #[test]
-fn test_normalize_alt_inv_sqrt_is_wrong_on_short() {
+fn test_normalize_alt_recip_sqrt_is_wrong_on_short() {
     // (3, -4, ..) * 2^-18 has a squared norm of 25 * 2^-36, floored to 1 ulp: (0.75, -1, ..)
     // instead of (0.6, -0.8, ..).
     let v = v4(49152, -65536, 0, 0);
     assert!(v.normalize() == v4(2576980377, -3435973837, 0, 0));
-    assert!(alt_normalize_inv_sqrt(v) == v4(0xc0000000, -0x100000000, 0, 0));
+    assert!(alt_normalize_recip_sqrt(v) == v4(0xc0000000, -0x100000000, 0, 0));
 }
 
 #[test]
@@ -811,10 +811,10 @@ fn bench_vector4_normalize__alt_recip() {
 
 #[test]
 #[inline(never)]
-fn bench_vector4_normalize__alt_inv_sqrt() {
+fn bench_vector4_normalize__alt_recip_sqrt() {
     let a: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, -0x80000000));
     let e: Vector4<Fixed> = black_box(v4(1385393233, -2078089851, 3463483083, -461797745));
-    assert!(alt_normalize_inv_sqrt(a) == e);
+    assert!(alt_normalize_recip_sqrt(a) == e);
 }
 
 #[test]

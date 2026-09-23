@@ -8,8 +8,8 @@
 //! --max-per-dist 4 --ops <list> --out <oracle.cairo>`, `<list>` being the comma-separated
 //! `point2_<op>` names of the oracle tests at the bottom of this file.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, p2, p2t, p3, v2, v2t, v3};
 use crate::base::vector2::{Vector2, Vector2Trait};

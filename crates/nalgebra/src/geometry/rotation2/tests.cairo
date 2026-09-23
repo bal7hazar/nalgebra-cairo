@@ -9,8 +9,8 @@
 //! <oracle.cairo> --ops rotation2_new,rotation2_angle,rotation2_mul,rotation2_inverse,
 //! rotation2_transform_vector`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::matrix_test_utils::{ONE_RAW, fx, m2, p2t, r2, uct, ulp_diff, v2t};

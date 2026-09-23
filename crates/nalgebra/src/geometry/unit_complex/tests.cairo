@@ -9,8 +9,8 @@
 //! <oracle.cairo> --ops <list>`, `<list>` being the comma-separated op names of the oracle tests
 //! at the bottom of this file.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, m2, max_ulp_diff_uc, p2t, r2, uct, ulp_diff, v2t};
 use crate::base::vector2::{Vector2, Vector2Trait};

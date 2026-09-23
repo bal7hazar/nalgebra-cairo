@@ -1,22 +1,25 @@
-//! Scalar abstraction and Q32.32 fixed-point numbers.
+//! Scalar abstraction for nalgebra.cairo: the counterpart of Dimforge's `simba`.
 //!
-//! Counterpart of the Rust `simba` crate for nalgebra.cairo. See `docs/DESIGN.md` (D2, D3).
+//! Rust has one real scalar, `f64`, and `simba` is a trait layer (`RealField`) implemented for
+//! it; nalgebra is generic over `T: RealField`. Here the primitive is glam.cairo's Q32.32
+//! `fixed::Fixed` (package `fixed`, pinned to 0.2.0) and this package is the trait layer
+//! implemented for it; nalgebra.cairo is generic over `T: Real`. See `docs/DESIGN.md` (D2, D3).
 //!
-//! - `fixed`: the Q32.32 `Fixed` type, its operators, helpers, fused kernels and `Wide`
-//!   accumulator;
-//! - `scalar`: the generic `Real` trait (implemented by `Fixed`) and `Transcendental`;
-//! - `errors`: stable panic messages;
-//! - `prelude`: everything needed to use `Fixed` with method syntax.
+//! - `scalar`: the `Real` trait (constants, helpers, fused kernels, the `Acc` accumulator) and
+//!   `Transcendental`, with their `#[inline(always)]` impls for `fixed::Fixed`, which delegate
+//!   every operation to `fixed`'s public API: the numeric specification (rounding, overflow,
+//!   panic messages `'Fixed: ...'`) is `fixed`'s;
+//! - `prelude`: everything needed to use `fixed::Fixed` through the traits with method syntax.
 
-pub mod errors;
-pub mod fixed;
+#[cfg(test)]
+mod benches;
 pub mod scalar;
 
-/// `use simba::prelude::*;`: the `Fixed` type, its `Wide` accumulator and the scalar traits (method
-/// syntax). Operator and conversion impls need no import: they are re-exported by the module of
-/// `Fixed`, where the compiler looks them up.
+/// `use simba::prelude::*;`: the scalar `fixed::Fixed`, its accumulator (`Real::Wide`) and the
+/// scalar traits with their impls (method syntax). Operator impls need no import: they live in
+/// the module of `fixed::Fixed`, where the compiler looks them up.
 pub mod prelude {
-    pub use crate::fixed::types::Fixed;
-    pub use crate::fixed::wide::{Wide, WideTrait};
-    pub use crate::scalar::{FixedReal, Real, Transcendental};
+    pub use fixed::Fixed;
+    pub use fixed::wide::{Acc, AccTrait};
+    pub use crate::scalar::{FixedReal, FixedTranscendental, Real, Transcendental};
 }

@@ -81,7 +81,7 @@ pub impl Svd2Impl<
     ///                              singular values come out descending
     /// w_i = M v_i                 (2 fused sum_prod2 each)
     /// σ_i = |w_i|                 (floored norm2 on the unscaled sum of squares)
-    /// u_1 = w_1 / σ_1             (one floor division per component)
+    /// u_1 = w_1 / σ_1             (one truncated division per component)
     /// u_2 = ± perp(u_1)           (EXACT orthonormality, see below)
     /// ```
     ///
@@ -349,8 +349,8 @@ mod tests {
     //! - `alt_normalised_columns`: `u_2 = M v_2 / σ_2` instead of the perpendicular of `u_1`.
     //! Dearer, and its orthonormality degrades with the condition number.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{

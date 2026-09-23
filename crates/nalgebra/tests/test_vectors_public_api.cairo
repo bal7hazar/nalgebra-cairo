@@ -1,7 +1,7 @@
 //! The vector API as a downstream crate sees it: only `nalgebra::` and `simba::` paths.
 
+use fixed::Fixed;
 use nalgebra::{Vector2, Vector3, Vector4};
-use simba::fixed::Fixed;
 
 fn f(v: i32) -> Fixed {
     simba::scalar::Real::from_int(v)

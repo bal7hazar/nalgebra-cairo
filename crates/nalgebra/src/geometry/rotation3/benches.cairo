@@ -7,8 +7,8 @@
 //! vector `(0.25, -0.1875, 0.125)`. Expected values are the results of the kernels themselves, all
 //! of which are checked against upstream nalgebra in `tests.cairo`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix_test_utils::{fx, r3, u3t, v3t};

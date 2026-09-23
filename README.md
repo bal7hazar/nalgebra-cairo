@@ -15,9 +15,8 @@ is provable.
 
 | Package | Content |
 |---|---|
-| [`simba`](crates/simba) | Scalar abstraction, `Fixed` Q32.32 (`i64`), fused kernels, transcendentals |
-| [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions) |
-| [`simba_fixed`](crates/simba_fixed) | `Real` for glam.cairo's shared `fixed::Fixed`: use nalgebra types with the physics stack's scalar, bit-identically |
+| [`simba`](crates/simba) | Scalar traits (`Real`, `Transcendental`: fused kernels, wide accumulator, transcendentals) implemented for glam.cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/glam.cairo) 0.2.0, the scalar shared by the whole stack |
+| [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions), generic over `Real` |
 
 ## Why it is fast
 

@@ -384,8 +384,8 @@ pub impl Matrix2MulAssign<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix_test_utils::{fx, int, m2, m2i, max_ulp_diff2, s2, v2i, v2t};
     use crate::base::sym_matrix2::SymMatrix2Trait;

@@ -13,8 +13,8 @@
 //! crates/nalgebra/src/base/oracle_dim6_matrix.cairo --ops matrix6_add,matrix6_sub,matrix6_scale,
 //! matrix6_mul,matrix6_mul_vec,matrix6_transpose,matrix6_trace`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix_test_utils::{fx, int, m6, m6i, v6, v6i, v6t};

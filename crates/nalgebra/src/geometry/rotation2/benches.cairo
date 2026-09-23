@@ -6,8 +6,8 @@
 //! `alt_unit_complex` variants measure the same operation on `UnitComplex`, reached from the
 //! matrix by `to_unit_complex` (a copy of two components).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix_test_utils::{fx, p2, r2, v2};

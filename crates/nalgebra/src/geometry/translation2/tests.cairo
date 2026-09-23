@@ -12,7 +12,7 @@
 //! translation2_mul,translation2_inverse,translation2_transform_point,
 //! translation2_inverse_transform_point --out <oracle.cairo>`.
 
-use simba::fixed::Fixed;
+use fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, p2t, t2t, v2t};

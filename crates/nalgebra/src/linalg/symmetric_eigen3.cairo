@@ -93,10 +93,11 @@ impl Jacobi3Impl<
     ///
     /// `sqrt(h² + g²)` is `Real::norm2`, whose sum of squares is accumulated unscaled: neither
     /// the square nor the ratio can overflow, and `|t| <= 1` always (`h = 0` gives `t = ±1`
-    /// exactly, the 45° rotation). `1 + t² <= 2`, so `inv_sqrt` is exact to its last bit. Four
-    /// roundings in total: `h`, `t`, `c`, `s`. The tangent is returned as well, because the
-    /// diagonal update uses it directly. No upstream equivalent (`GivensRotation::new` solves a
-    /// different problem).
+    /// exactly, the 45° rotation). `c = 1 / sqrt(1 + t²)` is `Real::inv_norm2(1, t)`: the
+    /// normalisation path of the scalar (for `fixed::Fixed`, the floor of the exact norm, then
+    /// one reciprocal rounded to nearest). Four roundings in total: `h`, `t`, `c`, `s`. The tangent
+    /// is returned as well, because the diagonal update uses it directly. No upstream equivalent
+    /// (`GivensRotation::new` solves a different problem).
     #[inline(always)]
     fn rotation(app: T, g: T, aqq: T) -> (T, T, T) {
         let h = R::diff_prod(aqq, R::HALF, app, R::HALF);
@@ -106,7 +107,7 @@ impl Jacobi3Impl<
             g
         };
         let t = R::div(num, h.abs() + R::norm2(h, g));
-        let c = R::mul_add(t, t, R::ONE).inv_sqrt();
+        let c = R::inv_norm2(R::ONE, t);
         (t, c, t * c)
     }
 
@@ -454,8 +455,9 @@ pub impl SymmetricEigen3Impl<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
+    use fixed::wide::{NormTrait, RecipTrait, norm3_wide};
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
@@ -583,7 +585,8 @@ mod tests {
         let s = s3i((1, 1, 1, 1, 1, 1));
         let e = SymmetricEigen3Trait::new(s);
         assert!(max_ulp_diff_v3(e.eigenvalues, v3i(0, 0, 3)) <= 2);
-        let third = Real::<Fixed>::from_int(3).inv_sqrt();
+        // 1/sqrt(3) through `fixed`'s normalisation path (it has no `inv_sqrt`).
+        let third = norm3_wide(Real::ONE, Real::ONE, Real::ONE).recip().mul(Real::ONE);
         let c3 = e.eigenvectors.column3();
         assert!(max_ulp_diff_v3(c3.abs(), Vector3 { x: third, y: third, z: third }) <= 4);
         assert!(orthonormality_error(e.eigenvectors) <= 16);

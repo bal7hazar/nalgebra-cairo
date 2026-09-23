@@ -11,7 +11,7 @@
 //!
 //! Alternative implementations and the measurements that rejected them live in `benches.cairo`.
 
-use simba::fixed::Fixed;
+use fixed::Fixed;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix4::Matrix4Trait;

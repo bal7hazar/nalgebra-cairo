@@ -7,8 +7,8 @@
 //! twice (once per 3x3 product, once more when the two are added), which breaks the oracle's
 //! tolerance of 0. They also cost more gas, so nothing is given up.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{fx, int, m6i, v6i};

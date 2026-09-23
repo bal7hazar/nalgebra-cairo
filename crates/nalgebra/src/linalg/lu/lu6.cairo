@@ -65,7 +65,7 @@ pub impl Lu6Impl<
     /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
     /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..6` is
     /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 15 multipliers
-    /// `l_ik = a_ik / a_kk` are each one floor division, and the trailing submatrix is updated
+    /// `l_ik = a_ik / a_kk` are each one truncated division, and the trailing submatrix is updated
     /// entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one overflow
     /// check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
     ///
@@ -73,10 +73,11 @@ pub impl Lu6Impl<
     /// —
     /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
     ///
-    /// Error model: `l_ik` is off by at most 1 ulp (floored quotient) and every update floors once,
-    /// so after each of the 5 steps an entry of `U` is within about `k * (1 + |a_kj|)` raw units of
-    /// its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of
-    /// the trailing submatrix. Panics with the scalar's overflow error if an update does not fit.
+    /// Error model: `l_ik` is off by at most 1 ulp (truncated quotient) and every update floors
+    /// once, so after each of the 5 steps an entry of `U` is within about `k * (1 + |a_kj|)` raw
+    /// units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
+    /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
+    /// not fit.
     fn new(matrix: Matrix6<T>) -> Lu6<T> {
         let mut a11 = matrix.m11.m11;
         let mut a12 = matrix.m11.m12;
@@ -1246,9 +1247,9 @@ pub impl Lu6Impl<
     /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
     /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
     /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
-    /// then the floor division by the pivot.
+    /// then the truncated division by the pivot.
     ///
-    /// The 6 floor divisions are kept rather than 6 reciprocals and 6 multiplications. That
+    /// The 6 truncated divisions are kept rather than 6 reciprocals and 6 multiplications. That
     /// candidate loses on both counts here: a reciprocal plus a multiplication is dearer than a
     /// division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
     /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu6_solve__alt_recip` and
@@ -1397,7 +1398,7 @@ pub impl Lu6Impl<
     /// end by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
     ///
     /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
-    /// (the numerator, then the floor division by the pivot). Panics with the scalar's overflow
+    /// (the numerator, then the truncated division by the pivot). Panics with the scalar's overflow
     /// error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 6 columns

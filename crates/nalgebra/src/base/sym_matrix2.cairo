@@ -286,8 +286,8 @@ pub impl SymMatrix2SubAssign<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::Matrix2Trait;
     use crate::base::matrix_test_utils::{

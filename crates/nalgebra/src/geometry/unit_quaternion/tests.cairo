@@ -20,8 +20,8 @@
 //!     --out crates/nalgebra/src/geometry/unit_quaternion/oracle.cairo
 //! ```
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{

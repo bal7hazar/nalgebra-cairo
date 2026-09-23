@@ -99,7 +99,7 @@
 //!     --out crates/nalgebra/src/linalg/oracle_svd.cairo
 //! ```
 
-use simba::fixed::Fixed;
+use fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};

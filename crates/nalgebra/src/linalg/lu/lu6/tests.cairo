@@ -5,8 +5,8 @@
 //! Tolerance of the oracle assertions: the oracle's `tol` plus ONE relative ulp of the expected
 //! value. `base::matrix_test_utils::oracle_tol` states why, with the measurement.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use crate::base::matrix6::{Matrix6, Matrix6Trait};
 use crate::base::matrix_test_utils::{
     abs_raw, fx, int, m6, max_abs_m6, max_abs_v6, max_ulp_diff6, max_ulp_diff_v6, oracle_tol,

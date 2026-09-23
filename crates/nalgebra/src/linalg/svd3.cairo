@@ -419,8 +419,8 @@ mod tests {
     //! dearer: every rotation recomputes three inner products of the working columns where the
     //! Jacobi on `MᵀM` updates six scalars.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
@@ -515,7 +515,7 @@ mod tests {
             g
         };
         let t = num / (h.abs() + Real::norm2(h, g));
-        let c = Real::mul_add(t, t, Real::ONE).inv_sqrt();
+        let c = Real::inv_norm2(Real::ONE, t);
         (c, t * c)
     }
 

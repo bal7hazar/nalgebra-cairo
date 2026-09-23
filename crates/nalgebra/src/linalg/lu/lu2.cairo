@@ -58,7 +58,7 @@ pub impl Lu2Impl<
     /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
     /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..2` is
     /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 1 multipliers
-    /// `l_ik = a_ik / a_kk` are each one floor division, and the trailing submatrix is updated
+    /// `l_ik = a_ik / a_kk` are each one truncated division, and the trailing submatrix is updated
     /// entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one overflow
     /// check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
     ///
@@ -66,10 +66,10 @@ pub impl Lu2Impl<
     /// —
     /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
     ///
-    /// Error model: `l_ik` is off by at most 1 ulp (floored quotient) and every update floors once,
-    /// so after step 1 an entry of `U` is within about `k * (1 + |a_kj|)` raw units of its exact
-    /// value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of the trailing
-    /// submatrix. Panics with the scalar's overflow error if an update does not fit.
+    /// Error model: `l_ik` is off by at most 1 ulp (truncated quotient) and every update floors
+    /// once, so after step 1 an entry of `U` is within about `k * (1 + |a_kj|)` raw units of its
+    /// exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the growth of the
+    /// trailing submatrix. Panics with the scalar's overflow error if an update does not fit.
     fn new(matrix: Matrix2<T>) -> Lu2<T> {
         let mut a11 = matrix.m11;
         let mut a12 = matrix.m12;
@@ -173,9 +173,9 @@ pub impl Lu2Impl<
     /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
     /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
     /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
-    /// then the floor division by the pivot.
+    /// then the truncated division by the pivot.
     ///
-    /// The 2 floor divisions are kept rather than 2 reciprocals and 2 multiplications. That
+    /// The 2 truncated divisions are kept rather than 2 reciprocals and 2 multiplications. That
     /// candidate loses on both counts here: a reciprocal plus a multiplication is dearer than a
     /// division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
     /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu2_solve__alt_recip` and
@@ -204,7 +204,7 @@ pub impl Lu2Impl<
     /// by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
     ///
     /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
-    /// (the numerator, then the floor division by the pivot). Panics with the scalar's overflow
+    /// (the numerator, then the truncated division by the pivot). Panics with the scalar's overflow
     /// error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 2 columns
@@ -313,14 +313,14 @@ mod tests {
     //! - `alt_no_pivot`: the elimination without partial pivoting. Cheaper and shorter, and wrong
     //! on a matrix as ordinary as a permuted identity.
     //!
-    //! - `alt_recip`: one reciprocal per pivot instead of one floor division per output scalar.
+    //! - `alt_recip`: one reciprocal per pivot instead of one truncated division per output scalar.
     //! DEARER for `solve`, where a single right-hand side does not amortise the reciprocal, cheaper
     //! for `try_inverse`, where 2 columns share it, and a second rounding per output in both.
     //!
     //! - `alt_solve_columns`: the inverse as 2 calls to `solve`. Bit-identical, dearer.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
@@ -386,7 +386,8 @@ mod tests {
         Lu2 { lu: Matrix2 { m11: a11, m21: a21, m12: a12, m22: a22 }, p: Perm2 { p1: 1 } }
     }
 
-    /// `solve` with ONE reciprocal per pivot and 2 multiplications instead of 2 floor divisions.
+    /// `solve` with ONE reciprocal per pivot and 2 multiplications instead of 2 truncated
+    /// divisions.
     /// Kept as evidence, and it loses on both counts: a reciprocal (2 190) plus a multiplication (1
     /// 750) is dearer than a division (2 740), and a single right-hand side gives nothing to
     /// amortise it over, so it costs 16 760 against 14 240 gas; and rounding `1 / u_ii` before

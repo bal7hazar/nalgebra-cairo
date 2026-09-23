@@ -4,8 +4,8 @@
 //!
 //! The rotations used are `c = new(0.4 rad)` and `d = new(-1/6 rad)`, the vector `(1.5, -2.25)`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix_test_utils::{fx, p2, uc, v2};
 use crate::base::point2::Point2;

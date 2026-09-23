@@ -57,7 +57,7 @@ pub trait Point2Trait<T> {
     /// component is `0`). Upstream: `to_homogeneous`.
     fn to_homogeneous(self: Point2<T>) -> Vector3<T>;
     /// The point of homogeneous coordinates `v`: `(x / w, y / w)`, each component the exactly
-    /// floored quotient, or `None` when `w = 0`. Panics on overflow of a quotient. Upstream:
+    /// truncated quotient, or `None` when `w = 0`. Panics on overflow of a quotient. Upstream:
     /// `from_homogeneous`.
     ///
     /// One division per component on purpose (see `Vector2Trait::unscale`): multiplying by the
@@ -77,7 +77,7 @@ pub trait Point2Trait<T> {
     /// `self * k`, each coordinate floored once. Panics on overflow. Upstream: `Mul<T> for
     /// Point` (`p * k`).
     fn scale(self: Point2<T>, k: T) -> Point2<T>;
-    /// `self / k`, each coordinate being the exactly floored quotient. Panics on a zero `k` and
+    /// `self / k`, each coordinate being the truncated quotient. Panics on a zero `k` and
     /// on overflow. Upstream: `Div<T> for Point` (`p / k`).
     fn unscale(self: Point2<T>, k: T) -> Point2<T>;
     /// Coordinate-wise minimum (infimum). Exact. Upstream: `inf`.

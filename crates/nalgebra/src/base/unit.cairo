@@ -46,7 +46,7 @@ pub trait Normalizable<V, T> {
     fn norm_squared(self: V) -> T;
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale`.
     fn scale(self: V, k: T) -> V;
-    /// `self / k`, each component exactly floored. Panics on a zero `k` and on overflow.
+    /// `self / k`, each component truncated toward zero. Panics on a zero `k` and on overflow.
     /// Upstream: `unscale`.
     fn unscale(self: V, k: T) -> V;
     /// Dot product, fused (floored once). Panics on overflow. Upstream: `dot`.
@@ -170,9 +170,9 @@ pub trait UnitTrait<V, T> {
     /// Wraps `v` WITHOUT normalizing it: the caller guarantees a unit norm. Upstream:
     /// `Unit::new_unchecked` (equal to the struct literal `Unit { value: v }`).
     fn new_unchecked(v: V) -> Unit<V>;
-    /// `v / |v|`: the norm (floored once), then one exactly floored division per component, so
+    /// `v / |v|`: the norm (floored once), then one truncated division per component, so
     /// the error is about `1 + 1 / |v|` ulp per component whatever the magnitude of `v` (see
-    /// `Vector3Trait::normalize`). Panics with `simba: division by zero` when the norm is zero,
+    /// `Vector3Trait::normalize`). Panics with `Fixed: division by zero` when the norm is zero,
     /// and on overflow when the norm does not fit. Upstream: `Unit::new_normalize`.
     fn new_normalize(v: V) -> Unit<V>;
     /// `(Unit::new_normalize(v), |v|)`: the unit vector and the norm it was divided by. Same
@@ -190,7 +190,7 @@ pub trait UnitTrait<V, T> {
     /// (`AsRef`), a reference in Rust.
     fn as_ref(self: Unit<V>) -> V;
     /// Renormalizes exactly: `Unit::new_normalize(self.value)`, i.e. one norm and one exactly
-    /// floored division per component. Panics on a zero norm. Upstream: `Unit::renormalize`
+    /// truncated division per component. Panics on a zero norm. Upstream: `Unit::renormalize`
     /// (which also returns the previous norm and works in place).
     fn renormalize(self: Unit<V>) -> Unit<V>;
     /// Renormalizes a vector that already has a norm close to 1 (accumulated rounding errors,

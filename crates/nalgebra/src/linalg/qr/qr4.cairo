@@ -44,7 +44,7 @@ pub impl Qr4Impl<
     /// projection taken against the ALREADY UPDATED column (the modified form, see `qr3`), then
     /// normalised. Each `r_ii` is a floored `norm4` on an unscaled sum of squares, each `r_ij` one
     /// fused `sum_prod4`, each update one fused `mul_add` per component, each component of `q_i`
-    /// one floor division.
+    /// one truncated division.
     ///
     /// A column of the working matrix that is exactly zero leaves `r_ii = 0` and sets `q_i = 0`
     /// rather than completing the basis (module doc): `Q * R = A` still holds exactly, and
@@ -104,7 +104,7 @@ pub impl Qr4Impl<
     }
 
     /// `v / n`, or the zero vector when `n` is exactly zero (the rank-deficient fallback of the
-    /// module doc). One floor division per component. No upstream equivalent.
+    /// module doc). One truncated division per component. No upstream equivalent.
     #[inline(always)]
     fn unit(v: Vector4<T>, n: T) -> Vector4<T> {
         if n == R::ZERO {
@@ -183,7 +183,7 @@ pub impl Qr4Impl<
 
     /// `R^-1 * y` by back substitution, the shared body of `solve` and `try_inverse`. The caller
     /// guarantees a nonzero diagonal. Two roundings per component: the numerator, accumulated
-    /// exactly in `Real::Wide`, then the floor division. No upstream equivalent.
+    /// exactly in `Real::Wide`, then the truncated division. No upstream equivalent.
     fn back_substitute(self: Qr4<T>, y: Vector4<T>) -> Vector4<T> {
         let x4 = R::div(y.w, self.r.m44);
         let x3 = R::div(R::mul_add(-self.r.m34, x4, y.z), self.r.m33);
@@ -238,8 +238,8 @@ pub impl Matrix4QrImpl<
 mod tests {
     //! Unit tests of `Qr4`: exact cases, the identities and the oracle vectors of `tools/oracle`.
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix4::{Matrix4, Matrix4Trait};
     use crate::base::matrix_test_utils::{

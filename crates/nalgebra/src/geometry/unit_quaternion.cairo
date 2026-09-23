@@ -83,9 +83,9 @@ pub impl UnitQuaternionImpl<
         UnitQuaternion { quaternion: q }
     }
 
-    /// `q / |q|`: the norm (floored once), then one exactly floored division per component, so the
+    /// `q / |q|`: the norm (floored once), then one truncated division per component, so the
     /// error is about `1 + 1 / |q|` ulp per component whatever the magnitude of `q`. Panics with
-    /// `simba: division by zero` on a zero quaternion. Upstream: `UnitQuaternion::new_normalize`
+    /// `Fixed: division by zero` on a zero quaternion. Upstream: `UnitQuaternion::new_normalize`
     /// (`from_quaternion`, `Unit::new_normalize`).
     #[inline(always)]
     fn new_normalize(q: Quaternion<T>) -> UnitQuaternion<T> {
@@ -173,8 +173,9 @@ pub impl UnitQuaternionImpl<
     // --- renormalization --------------------------------------------------------------------
 
     /// Renormalizes exactly: `new_normalize(self.quaternion)`, i.e. one norm and one exactly
-    /// floored division per component. Use it when the norm may be far from 1 (after `nlerp`, after
-    /// an unnormalized construction). Panics on a zero quaternion. Upstream: `Unit::renormalize`.
+    /// truncated division per component. Use it when the norm may be far from 1 (after `nlerp`,
+    /// after an unnormalized construction). Panics on a zero quaternion. Upstream:
+    /// `Unit::renormalize`.
     #[inline(always)]
     fn renormalize(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
         UnitQuaternion { quaternion: self.quaternion.normalize() }
@@ -213,7 +214,7 @@ pub impl UnitQuaternionImpl<
     /// imaginary part, i.e. an angle of `0` or `2π`). The sign convention is upstream's: the axis
     /// is flipped when `w < 0`, so that the matching `angle()` lies in `[0, π]`.
     ///
-    /// The axis is `imag / |imag|` (one norm, then one exactly floored division per component), so
+    /// The axis is `imag / |imag|` (one norm, then one truncated division per component), so
     /// its error is about `1 + 1 / |imag|` ulp per component: the axis of a rotation by a very
     /// small angle is poorly determined (`|imag| = sin(angle / 2)`), which is why `scaled_axis` is
     /// the right output for integration. Upstream: `axis`.
@@ -498,7 +499,7 @@ pub impl UnitQuaternionImpl<
     /// and its angular velocity is not constant, but it needs no trigonometry (4 fused lerps, one
     /// norm, 4 divisions). `t` is not clamped.
     ///
-    /// Panics with `simba: division by zero` when the interpolated quaternion is zero, which
+    /// Panics with `Fixed: division by zero` when the interpolated quaternion is zero, which
     /// happens only for exactly opposite rotations at `t = 1/2`. Upstream: `nlerp`.
     #[inline(always)]
     fn nlerp(self: UnitQuaternion<T>, other: UnitQuaternion<T>, t: T) -> UnitQuaternion<T> {

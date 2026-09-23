@@ -639,8 +639,8 @@ pub impl Matrix3MulAssign<
 
 #[cfg(test)]
 mod tests {
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix_test_utils::{fx, int, m3, m3i, max_ulp_diff3, s3, ulp_diff, v3i, v3t};
     use crate::base::sym_matrix3::SymMatrix3Trait;

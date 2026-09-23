@@ -9,8 +9,8 @@
 //! results of the kernels themselves, all of which are checked against upstream nalgebra in
 //! `tests.cairo`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{fx, iso3, p3, uq, v3};
 use crate::base::point3::{Point3, Point3Trait};

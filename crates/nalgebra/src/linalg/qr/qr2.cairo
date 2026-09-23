@@ -48,7 +48,7 @@ pub impl Qr2Impl<
     /// Always succeeds. `r11` and `r22` are floored `norm2`, whose sum of squares is accumulated
     /// unscaled, so no intermediate can overflow and each norm is the exact floor of the true one;
     /// `r12` is one fused `sum_prod2`, `w` two fused `mul_add`, and each component of `q1` / `q2`
-    /// one floor division. Five roundings per column.
+    /// one truncated division. Five roundings per column.
     ///
     /// A column that is exactly zero leaves `r_ii = 0` and sets `q_i = 0` rather than completing
     /// the basis (module doc): `Q * R = A` still holds exactly, and `is_invertible` is false.
@@ -113,7 +113,7 @@ pub impl Qr2Impl<
     /// is exactly zero (`is_invertible`). Upstream: `QR::solve`.
     ///
     /// `x = R^-1 (Qᵀ b)`: one fused `tr_mul_vec` for `Qᵀ b` (one rounding per component), then
-    /// back substitution, each component costing one fused numerator and one floor division.
+    /// back substitution, each component costing one fused numerator and one truncated division.
     /// Panics with the scalar's overflow error if a component of `x` does not fit.
     fn solve(self: Qr2<T>, b: Vector2<T>) -> Option<Vector2<T>> {
         if !Self::is_invertible(self) {
@@ -198,8 +198,8 @@ mod tests {
     //! identities (`Q R = A`, `QᵀQ = I`, `A A^-1 = I`), and the oracle vectors of `tools/oracle`
     //! (upstream nalgebra 0.35 on the same raw inputs, unpacked factors, `r_ii >= 0`).
 
+    use fixed::Fixed;
     use nalgebra_testing::black_box;
-    use simba::fixed::Fixed;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{

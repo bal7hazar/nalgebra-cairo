@@ -7,8 +7,8 @@
 //! `cargo run --release -- emit-cairo vector2 --from vectors --max-per-dist 4 --out
 //! <oracle.cairo>`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, v2, v2t, v3};
 use super::{Vector2, Vector2AngleTrait, Vector2Trait, oracle};

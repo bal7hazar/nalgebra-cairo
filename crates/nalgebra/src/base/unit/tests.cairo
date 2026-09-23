@@ -6,8 +6,8 @@
 //! `oracle.cairo` is emitted from `tools/oracle` (committed vectors, 4 cases per distribution)
 //! as documented in its header.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, u2, u3, u4, v2, v3, v4};
 use crate::base::vector2::Vector2Trait;

@@ -2,8 +2,8 @@
 //! group), and the alternative implementations that lost (`alt_*`), kept as evidence together
 //! with the tests showing why (AGENTS.md rule 8).
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, v3, v6};
 use crate::base::vector3::{Vector3, Vector3Trait};

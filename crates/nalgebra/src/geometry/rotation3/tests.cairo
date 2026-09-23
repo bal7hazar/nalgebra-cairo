@@ -14,8 +14,8 @@
 //!     --out crates/nalgebra/src/geometry/rotation3/oracle.cairo
 //! ```
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, m3, r3, r3i, u3t, uqt, v3i, v3t};
@@ -246,7 +246,7 @@ fn test_angle_oracle_and_exact_cases() {
 }
 
 /// The trace of a rounded rotation matrix can exceed 3: the argument of `acos` is clamped instead
-/// of panicking with `simba: out of domain`.
+/// of panicking with `Fixed: acos domain`.
 #[test]
 fn test_angle_clamps_the_trace() {
     let over = r3([[ONE_RAW + 4, 0, 0], [0, ONE_RAW + 4, 0], [0, 0, ONE_RAW + 4]]);

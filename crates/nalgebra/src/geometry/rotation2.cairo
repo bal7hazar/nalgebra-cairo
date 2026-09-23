@@ -58,7 +58,7 @@ pub trait Rotation2Trait<T> {
     /// `det R = 1`. Upstream: `Rotation2::from_matrix_unchecked`.
     fn from_matrix_unchecked(m: Matrix2<T>) -> Rotation2<T>;
     /// The rotation closest to `m` in the sense of its FIRST COLUMN: `(m11, m21)` normalized,
-    /// then expanded back into a rotation matrix. Panics with `simba: division by zero` when that
+    /// then expanded back into a rotation matrix. Panics with `Fixed: division by zero` when that
     /// column is zero.
     ///
     /// Deviates from upstream, which runs a Gauss-Newton optimization
@@ -106,7 +106,7 @@ pub trait Rotation2Trait<T> {
     fn to_unit_complex(self: Rotation2<T>) -> UnitComplex<T>;
     /// Renormalizes exactly: normalizes the first column (one `norm2` and two exactly floored
     /// divisions), then rebuilds the matrix from it, so `Rᵀ R = I` within a few ulp again.
-    /// Panics with `simba: division by zero` when that column is zero. Upstream:
+    /// Panics with `Fixed: division by zero` when that column is zero. Upstream:
     /// `Rotation2::renormalize` (which does the same through `UnitComplex`, in place).
     fn renormalize(self: Rotation2<T>) -> Rotation2<T>;
     /// `true` when every component is within `ulps` smallest units (raw units for fixed point) of

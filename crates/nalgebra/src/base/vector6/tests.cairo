@@ -8,8 +8,8 @@
 //! crates/nalgebra/src/base/oracle_dim6_vector.cairo --ops vector6_add,vector6_sub,vector6_neg,
 //! vector6_scale,vector6_dot,vector6_norm_squared,vector6_norm`.
 
+use fixed::Fixed;
 use nalgebra_testing::black_box;
-use simba::fixed::Fixed;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, int, v3, v6, v6i, v6t};
 use crate::base::oracle_dim6_vector as oracle;
