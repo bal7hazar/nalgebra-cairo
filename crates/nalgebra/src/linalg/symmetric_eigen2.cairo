@@ -361,7 +361,7 @@ mod tests {
     // --- overflow ------------------------------------------------------------------------------
 
     #[test]
-    #[should_panic(expected: 'simba: overflow')]
+    #[should_panic(expected: 'i64_add Overflow')]
     fn test_new_overflow_panics() {
         // `mean + r` leaves the representable range.
         let s = black_box(SymMatrix2 { m11: Real::<Fixed>::MAX, m12: Real::MAX, m22: Real::MAX });

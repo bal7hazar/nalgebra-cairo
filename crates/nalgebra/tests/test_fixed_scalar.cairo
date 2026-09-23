@@ -136,15 +136,27 @@ fn test_unit_quaternion_new_normalize() {
 /// `append_axisangle_linearized` (fused `Real` kernels end to end), pinned.
 #[test]
 fn test_unit_quaternion_kernels() {
-    assert_quaternion((q() * r()).quaternion, (0, 0, 0, 0), "product");
-    assert_vector(q().transform_vector(gv(AX, AY, AZ)), (0, 0, 0), "transform_vector");
-    assert_vector(
-        q().inverse_transform_vector(gv(AX, AY, AZ)), (0, 0, 0), "inverse_transform_vector",
+    assert_quaternion(
+        (q() * r()).quaternion, (3852976350, -1706466595, 571709618, -602027559), "product",
     );
-    assert_quaternion(q().renormalize_fast().quaternion, (0, 0, 0, 0), "renormalize_fast");
+    assert_vector(
+        q().transform_vector(gv(AX, AY, AZ)),
+        (8904137148, -6539827782, 4818205456),
+        "transform_vector",
+    );
+    assert_vector(
+        q().inverse_transform_vector(gv(AX, AY, AZ)),
+        (3087494630, -10071360742, 5856891605),
+        "inverse_transform_vector",
+    );
+    assert_quaternion(
+        q().renormalize_fast().quaternion,
+        (3449105434, 1293414537, -1724552720, 1379642173),
+        "renormalize_fast",
+    );
     assert_quaternion(
         q().append_axisangle_linearized(gv(BX, BY, BZ)).quaternion,
-        (0, 0, 0, 0),
+        (2915936134, 1918013280, 2378058493, 781103959),
         "append_axisangle_linearized",
     );
 }
@@ -157,11 +169,23 @@ fn test_unit_quaternion_kernels() {
 fn test_sym_matrix3_quadform_and_inverse() {
     let m = Matrix3Trait::new(g(AX), g(AY), g(AZ), g(BX), g(BY), g(BZ), g(AZ), g(BX), g(AY));
     let s: SymMatrix3<Fixed> = SymMatrix3Trait::quadform(m, gv(AX, BY, BZ));
-    assert_vector(gv(s.m11.raw, s.m12.raw, s.m13.raw), (0, 0, 0), "quadform row 1");
-    assert_vector(gv(s.m22.raw, s.m23.raw, s.m33.raw), (0, 0, 0), "quadform rows 2-3");
+    assert_vector(
+        gv(s.m11.raw, s.m12.raw, s.m13.raw),
+        (85010153472, -94359257088, 10871635968),
+        "quadform row 1",
+    );
+    assert_vector(
+        gv(s.m22.raw, s.m23.raw, s.m33.raw),
+        (137129623552, -28449964032, 28613541888),
+        "quadform rows 2-3",
+    );
     let i = s.try_inverse().unwrap();
-    assert_vector(gv(i.m11.raw, i.m12.raw, i.m13.raw), (0, 0, 0), "inverse row 1");
-    assert_vector(gv(i.m22.raw, i.m23.raw, i.m33.raw), (0, 0, 0), "inverse rows 2-3");
+    assert_vector(
+        gv(i.m11.raw, i.m12.raw, i.m13.raw), (1101637382, 845641357, 422242924), "inverse row 1",
+    );
+    assert_vector(
+        gv(i.m22.raw, i.m23.raw, i.m33.raw), (818614499, 492635554, 974075024), "inverse rows 2-3",
+    );
 }
 
 // --- Isometry3 -----------------------------------------------------------------------------
@@ -171,11 +195,19 @@ fn test_sym_matrix3_quadform_and_inverse() {
 fn test_isometry3_kernels() {
     let a = Isometry3Trait::from_parts(Translation3 { vector: gv(BX, BY, BZ) }, q());
     let p = a.transform_point(Point3 { x: g(AX), y: g(AY), z: g(AZ) });
-    assert_vector(gv(p.x.raw, p.y.raw, p.z.raw), (0, 0, 0), "transform_point");
+    assert_vector(
+        gv(p.x.raw, p.y.raw, p.z.raw), (7293524412, 6881945018, 9381608208), "transform_point",
+    );
     let b = Isometry3Trait::from_parts(Translation3 { vector: gv(AX, AY, AZ) }, r());
     let m: Isometry3<Fixed> = a.inv_mul(b);
-    assert_quaternion(m.rotation.quaternion, (0, 0, 0, 0), "inv_mul rotation");
-    assert_vector(m.translation.vector, (0, 0, 0), "inv_mul translation");
+    assert_quaternion(
+        m.rotation.quaternion,
+        (-388069562, -2451421556, 3239687848, -1338320245),
+        "inv_mul rotation",
+    );
+    assert_vector(
+        m.translation.vector, (-3658122833, -20539369763, 12819659395), "inv_mul translation",
+    );
 }
 
 // --- panics: `fixed`'s messages ------------------------------------------------------------
