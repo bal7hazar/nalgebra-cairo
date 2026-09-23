@@ -55,10 +55,10 @@
     },
     "isometry2_lerp_nlerp": {
       "baseline": 19440,
-      "lerp_normalize": 37870
+      "lerp_normalize": 40890
     },
     "isometry2_lerp_slerp": {
-      "atan2_sin_cos": 96380,
+      "atan2_sin_cos": 97890,
       "baseline": 19440
     },
     "isometry2_mul": {
@@ -79,7 +79,7 @@
     },
     "isometry2_renormalize": {
       "baseline": 18240,
-      "exact": 25980
+      "exact": 26920
     },
     "isometry2_renormalize_fast": {
       "baseline": 18240,
@@ -130,7 +130,7 @@
     },
     "isometry3_face_towards": {
       "baseline": 20940,
-      "gram_schmidt": 84720
+      "gram_schmidt": 97610
     },
     "isometry3_from_parts": {
       "baseline": 20340,
@@ -168,15 +168,15 @@
     },
     "isometry3_lerp_nlerp": {
       "baseline": 22140,
-      "lerp_normalize": 53370
+      "lerp_normalize": 58640
     },
     "isometry3_lerp_slerp": {
-      "acos_sin": 147670,
+      "acos_sin": 155960,
       "baseline": 22140
     },
     "isometry3_look_at_rh": {
       "baseline": 20940,
-      "gram_schmidt": 108090
+      "gram_schmidt": 120980
     },
     "isometry3_mul": {
       "baseline": 21740,
@@ -184,7 +184,7 @@
     },
     "isometry3_new": {
       "baseline": 20140,
-      "from_scaled_axis": 69300
+      "from_scaled_axis": 70810
     },
     "isometry3_prepend_rotation": {
       "baseline": 21440,
@@ -196,7 +196,7 @@
     },
     "isometry3_renormalize": {
       "baseline": 20140,
-      "exact": 34170
+      "exact": 35220
     },
     "isometry3_renormalize_fast": {
       "baseline": 20140,
@@ -204,7 +204,7 @@
     },
     "isometry3_rotation": {
       "baseline": 19340,
-      "from_scaled_axis": 67600
+      "from_scaled_axis": 69110
     },
     "isometry3_to_homogeneous": {
       "baseline": 17140,
@@ -290,9 +290,9 @@
       "fused": 18720
     },
     "quaternion_normalize": {
-      "alt_recip": 29460,
+      "alt_recip": 29830,
       "baseline": 18040,
-      "divisions": 31770
+      "divisions": 32820
     },
     "quaternion_scale": {
       "baseline": 18440,
@@ -303,13 +303,13 @@
       "op": 22300
     },
     "quaternion_try_inverse": {
-      "alt_recip": 30620,
+      "alt_recip": 30990,
       "baseline": 18040,
-      "divisions": 32900
+      "divisions": 33950
     },
     "quaternion_unscale": {
       "baseline": 18440,
-      "divisions": 29650
+      "divisions": 30700
     },
     "quaternion_vector": {
       "baseline": 17540,
@@ -322,17 +322,17 @@
       "baseline": 17640
     },
     "rotation2_angle": {
-      "atan2": 44460,
+      "atan2": 45970,
       "baseline": 16540
     },
     "rotation2_angle_to": {
-      "alt_product_then_angle": 55510,
+      "alt_product_then_angle": 57020,
       "baseline": 17540,
-      "first_columns": 49020
+      "first_columns": 50530
     },
     "rotation2_from_matrix": {
       "baseline": 18040,
-      "normalize_first_column": 25980
+      "normalize_first_column": 26920
     },
     "rotation2_from_matrix_unchecked": {
       "baseline": 18040,
@@ -373,20 +373,20 @@
       "sin_cos": 49040
     },
     "rotation2_powf": {
-      "atan2_sin_cos": 79640,
+      "atan2_sin_cos": 81150,
       "baseline": 18440
     },
     "rotation2_renormalize": {
       "baseline": 18040,
-      "first_column": 25980
+      "first_column": 26920
     },
     "rotation2_rotation_between": {
-      "algebraic": 32280,
-      "alt_unit_complex": 32480,
+      "algebraic": 35300,
+      "alt_unit_complex": 35500,
       "baseline": 18240
     },
     "rotation2_scaled_rotation_between": {
-      "atan2_sin_cos": 85900,
+      "atan2_sin_cos": 87410,
       "baseline": 18640
     },
     "rotation2_to_homogeneous": {
@@ -415,20 +415,20 @@
     },
     "rotation3_angle": {
       "acos_trace": 51170,
-      "alt_quaternion": 75150,
+      "alt_quaternion": 81110,
       "baseline": 17540
     },
     "rotation3_axis": {
-      "antisymmetric_part": 32300,
+      "antisymmetric_part": 33360,
       "baseline": 18540
     },
     "rotation3_euler_angles": {
-      "asin_atan2": 105280,
+      "asin_atan2": 108300,
       "baseline": 17540
     },
     "rotation3_face_towards": {
       "baseline": 21140,
-      "two_normalizations": 56870
+      "two_normalizations": 65310
     },
     "rotation3_from_axis_angle": {
       "alt_quaternion": 83060,
@@ -441,7 +441,7 @@
     },
     "rotation3_from_scaled_axis": {
       "baseline": 20340,
-      "norm_and_rodrigues": 92920
+      "norm_and_rodrigues": 97140
     },
     "rotation3_from_unit_quaternion": {
       "baseline": 20540,
@@ -461,7 +461,7 @@
     },
     "rotation3_look_at_rh": {
       "baseline": 21140,
-      "transpose": 58370
+      "transpose": 66810
     },
     "rotation3_matrix": {
       "baseline": 21540,
@@ -473,21 +473,21 @@
     },
     "rotation3_renormalize": {
       "alt_newton": 101550,
-      "alt_quaternion": 90370,
+      "alt_quaternion": 94820,
       "baseline": 21540,
-      "gram_schmidt": 59950
+      "gram_schmidt": 68390
     },
     "rotation3_rotation_between": {
-      "algebraic_quaternion": 94170,
-      "alt_axis_angle": 156400,
+      "algebraic_quaternion": 107880,
+      "alt_axis_angle": 169060,
       "baseline": 21140
     },
     "rotation3_scaled_axis": {
-      "axis_times_angle": 73740,
+      "axis_times_angle": 77960,
       "baseline": 18540
     },
     "rotation3_scaled_rotation_between": {
-      "acos_rodrigues": 158080,
+      "acos_rodrigues": 170740,
       "baseline": 21140
     },
     "rotation3_to_homogeneous": {
@@ -496,7 +496,7 @@
     },
     "rotation3_to_unit_quaternion": {
       "baseline": 19040,
-      "shepperd": 42570
+      "shepperd": 47020
     },
     "rotation3_transform_point": {
       "baseline": 19340,
@@ -509,19 +509,19 @@
   },
   "nalgebra::geometry::similarity2::benches": {
     "similarity2_inv_mul": {
-      "alt_inverse_then_mul": 51730,
+      "alt_inverse_then_mul": 53040,
       "baseline": 18740,
-      "direct": 44070
+      "direct": 48600
     },
     "similarity2_inverse_transform_point": {
-      "alt_reciprocal": 33200,
+      "alt_reciprocal": 34610,
       "baseline": 17840,
-      "division": 28500
+      "division": 29440
     },
     "similarity2_inverse_transform_vector": {
-      "alt_reciprocal": 31720,
+      "alt_reciprocal": 33130,
       "baseline": 17840,
-      "division": 27020
+      "division": 27960
     },
     "similarity2_transform_point": {
       "alt_rotate_scale_add": 28670,
@@ -535,19 +535,19 @@
   },
   "nalgebra::geometry::similarity3::benches": {
     "similarity3_inv_mul": {
-      "alt_inverse_then_mul": 114240,
+      "alt_inverse_then_mul": 119870,
       "baseline": 20840,
-      "direct": 80290
+      "direct": 86020
     },
     "similarity3_inverse_transform_point": {
-      "alt_reciprocal": 58670,
+      "alt_reciprocal": 60080,
       "baseline": 19140,
-      "division": 56720
+      "division": 60940
     },
     "similarity3_inverse_transform_vector": {
-      "alt_reciprocal": 54550,
+      "alt_reciprocal": 55960,
       "baseline": 19140,
-      "division": 49490
+      "division": 50550
     },
     "similarity3_transform_point": {
       "alt_rotate_scale_add": 51300,
@@ -642,18 +642,18 @@
       "cos_sin_angle": 17240
     },
     "unit_complex_angle": {
-      "atan2": 44060,
+      "atan2": 45570,
       "baseline": 16140
     },
     "unit_complex_angle_to": {
       "baseline": 16740,
-      "fused_atan2": 48220
+      "fused_atan2": 49730
     },
     "unit_complex_append_axisangle_linearized": {
       "alt_renormalize_fast": 28020,
       "alt_sin_cos": 51800,
       "baseline": 17040,
-      "renormalize": 28640
+      "renormalize": 29580
     },
     "unit_complex_from_rotation_matrix": {
       "baseline": 17040,
@@ -686,15 +686,15 @@
       "sin_cos": 47640
     },
     "unit_complex_powf": {
-      "atan2_sin_cos": 77840,
+      "atan2_sin_cos": 79350,
       "baseline": 17040
     },
     "unit_complex_renormalize": {
       "baseline": 16640,
-      "norm_and_divisions": 24180
+      "norm_and_divisions": 25120
     },
     "unit_complex_renormalize_fast": {
-      "alt_exact": 24180,
+      "alt_exact": 25120,
       "alt_lerp": 24160,
       "alt_literal": 24400,
       "alt_mul_add_each": 23960,
@@ -702,9 +702,9 @@
       "mul_add": 23560
     },
     "unit_complex_rotation_between": {
-      "algebraic": 30880,
-      "alt_atan2": 96040,
-      "alt_normalized_inputs": 43940,
+      "algebraic": 33900,
+      "alt_atan2": 99430,
+      "alt_normalized_inputs": 45820,
       "baseline": 17240
     },
     "unit_complex_rotation_to": {
@@ -712,11 +712,11 @@
       "fused": 20900
     },
     "unit_complex_scaled_rotation_between": {
-      "atan2_sin_cos": 83600,
+      "atan2_sin_cos": 85110,
       "baseline": 17640
     },
     "unit_complex_slerp": {
-      "angle_then_compose": 87790,
+      "angle_then_compose": 89300,
       "baseline": 17640
     },
     "unit_complex_to_homogeneous": {
@@ -743,21 +743,21 @@
     },
     "unit_quaternion_angle": {
       "alt_acos": 48710,
-      "atan2": 50520,
+      "atan2": 52030,
       "baseline": 16540
     },
     "unit_quaternion_angle_to": {
       "baseline": 17540,
-      "product_and_atan2": 63770
+      "product_and_atan2": 65280
     },
     "unit_quaternion_append_axisangle_linearized": {
-      "alt_exact": 78950,
+      "alt_exact": 80460,
       "baseline": 18840,
-      "reduced_product": 49340
+      "reduced_product": 54610
     },
     "unit_quaternion_axis": {
       "baseline": 17540,
-      "try_new": 32790
+      "try_new": 37010
     },
     "unit_quaternion_conj_mul": {
       "alt_conjugate_then_mul": 31190,
@@ -770,7 +770,7 @@
     },
     "unit_quaternion_euler_angles": {
       "baseline": 16540,
-      "five_entries": 115800
+      "five_entries": 118820
     },
     "unit_quaternion_from_axis_angle": {
       "baseline": 18240,
@@ -782,12 +782,12 @@
     },
     "unit_quaternion_from_rotation_matrix": {
       "baseline": 19040,
-      "shepperd": 42570
+      "shepperd": 47020
     },
     "unit_quaternion_from_scaled_axis": {
-      "alt_unit_axis": 71960,
+      "alt_unit_axis": 76490,
       "baseline": 17840,
-      "one_division": 66300
+      "one_division": 67810
     },
     "unit_quaternion_identity": {
       "baseline": 17040,
@@ -812,7 +812,7 @@
     },
     "unit_quaternion_new_normalize": {
       "baseline": 18040,
-      "divisions": 31770
+      "divisions": 32820
     },
     "unit_quaternion_new_unchecked": {
       "baseline": 18040,
@@ -820,24 +820,24 @@
     },
     "unit_quaternion_nlerp": {
       "baseline": 19440,
-      "lerp_normalize": 41630
+      "lerp_normalize": 42680
     },
     "unit_quaternion_powf": {
-      "axis_angle": 110400,
+      "axis_angle": 116130,
       "baseline": 18440
     },
     "unit_quaternion_renormalize": {
       "baseline": 18040,
-      "exact": 32310
+      "exact": 33360
     },
     "unit_quaternion_renormalize_fast": {
-      "alt_exact": 32310,
+      "alt_exact": 33360,
       "baseline": 18040,
       "newton": 28720
     },
     "unit_quaternion_rotation_between": {
-      "algebraic": 67800,
-      "alt_axis_angle": 133860,
+      "algebraic": 81510,
+      "alt_axis_angle": 146520,
       "baseline": 18640
     },
     "unit_quaternion_rotation_to": {
@@ -845,16 +845,16 @@
       "conjugate_product": 31190
     },
     "unit_quaternion_scaled_axis": {
-      "alt_factor": 60860,
+      "alt_factor": 63880,
       "baseline": 17540,
-      "divisions": 66520
+      "divisions": 72250
     },
     "unit_quaternion_scaled_rotation_between": {
-      "acos": 133860,
+      "acos": 146520,
       "baseline": 18640
     },
     "unit_quaternion_slerp": {
-      "acos_sin": 135400,
+      "acos_sin": 143690,
       "baseline": 19440
     },
     "unit_quaternion_to_homogeneous": {

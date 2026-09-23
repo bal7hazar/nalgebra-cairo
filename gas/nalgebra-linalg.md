@@ -14,8 +14,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 32770 | 15430 | x1.00 |
-| `triangular` | 33920 | 16580 | x1.07 |
+| `alt_recip` | 35590 | 18250 | x1.00 |
+| `triangular` | 38250 | 20910 | x1.15 |
 
 ### cholesky2_l
 
@@ -27,14 +27,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 29530 | 12190 | x1.00 |
+| `factorize` | 31040 | 13700 | x1.00 |
 
 ### cholesky2_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 34620 | 17180 | x1.00 |
-| `alt_recip` | 34850 | 17410 | x1.01 |
+| `alt_recip` | 37670 | 20230 | x1.00 |
+| `substitution` | 40660 | 23220 | x1.15 |
 
 ### cholesky3_determinant
 
@@ -46,8 +46,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 50480 | 31040 | x1.00 |
-| `triangular` | 53930 | 34490 | x1.11 |
+| `alt_recip` | 54710 | 35270 | x1.00 |
+| `triangular` | 62690 | 43250 | x1.23 |
 
 ### cholesky3_l
 
@@ -59,14 +59,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 44440 | 25000 | x1.00 |
+| `factorize` | 48970 | 29530 | x1.00 |
 
 ### cholesky3_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 46240 | 27500 | x1.00 |
-| `alt_recip` | 46520 | 27780 | x1.01 |
+| `alt_recip` | 50750 | 32010 | x1.00 |
+| `substitution` | 55300 | 36560 | x1.14 |
 
 ### cholesky4_determinant
 
@@ -78,8 +78,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 82430 | 55190 | x1.00 |
-| `triangular` | 89330 | 62090 | x1.13 |
+| `alt_recip` | 88070 | 60830 | x1.00 |
+| `triangular` | 104030 | 76790 | x1.26 |
 
 ### cholesky4_l
 
@@ -91,14 +91,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 67160 | 43720 | x1.00 |
+| `factorize` | 75910 | 52470 | x1.00 |
 
 ### cholesky4_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 58560 | 38320 | x1.00 |
-| `alt_recip` | 58890 | 38650 | x1.01 |
+| `alt_recip` | 64530 | 44290 | x1.00 |
+| `substitution` | 70640 | 50400 | x1.14 |
 
 ### cholesky6_determinant
 
@@ -110,8 +110,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 164420 | 122980 | x1.00 |
-| `triangular` | 181670 | 140230 | x1.14 |
+| `alt_recip` | 172880 | 131440 | x1.00 |
+| `triangular` | 212780 | 171340 | x1.30 |
 
 ### cholesky6_l
 
@@ -123,14 +123,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 135130 | 99690 | x1.00 |
+| `factorize` | 156550 | 121110 | x1.00 |
 
 ### cholesky6_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 85300 | 61460 | x1.00 |
-| `alt_recip` | 85730 | 61890 | x1.01 |
+| `alt_recip` | 94190 | 70350 | x1.00 |
+| `substitution` | 103420 | 79580 | x1.13 |
 
 ## nalgebra::linalg::ldlt::benches
 
@@ -150,8 +150,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 29610 | 12270 | x1.00 |
-| `triangular` | 30760 | 13420 | x1.09 |
+| `alt_recip` | 32430 | 15090 | x1.00 |
+| `triangular` | 35090 | 17750 | x1.18 |
 
 ### ldlt2_l
 
@@ -163,15 +163,15 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 24280 | 6940 | x1.00 |
-| `alt_products` | 26160 | 8820 | x1.27 |
+| `factorize` | 25790 | 8450 | x1.00 |
+| `alt_products` | 27670 | 10330 | x1.22 |
 
 ### ldlt2_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 29090 | 11650 | x1.00 |
-| `alt_recip` | 31490 | 14050 | x1.21 |
+| `substitution` | 32110 | 14670 | x1.00 |
+| `alt_recip` | 34310 | 16870 | x1.15 |
 
 ### ldlt3_d
 
@@ -189,8 +189,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 45740 | 26300 | x1.00 |
-| `triangular` | 49190 | 29750 | x1.13 |
+| `alt_recip` | 49970 | 30530 | x1.00 |
+| `triangular` | 57950 | 38510 | x1.26 |
 
 ### ldlt3_l
 
@@ -202,15 +202,15 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 36900 | 17460 | x1.00 |
-| `alt_products` | 41940 | 22500 | x1.29 |
+| `factorize` | 41430 | 21990 | x1.00 |
+| `alt_products` | 46470 | 27030 | x1.23 |
 
 ### ldlt3_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 37880 | 19140 | x1.00 |
-| `alt_recip` | 41480 | 22740 | x1.19 |
+| `substitution` | 42410 | 23670 | x1.00 |
+| `alt_recip` | 45710 | 26970 | x1.14 |
 
 ### ldlt4_d
 
@@ -228,8 +228,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 76110 | 48870 | x1.00 |
-| `triangular` | 83010 | 55770 | x1.14 |
+| `alt_recip` | 81750 | 54510 | x1.00 |
+| `triangular` | 97400 | 70160 | x1.29 |
 
 ### ldlt4_l
 
@@ -241,15 +241,15 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 57130 | 33690 | x1.00 |
-| `alt_products` | 67210 | 43770 | x1.30 |
+| `factorize` | 66190 | 42750 | x1.00 |
+| `alt_products` | 76270 | 52830 | x1.24 |
 
 ### ldlt4_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 47370 | 27130 | x1.00 |
-| `alt_recip` | 52170 | 31930 | x1.18 |
+| `substitution` | 53410 | 33170 | x1.00 |
+| `alt_recip` | 57810 | 37570 | x1.13 |
 
 ### ldlt6_d
 
@@ -267,8 +267,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 155240 | 113500 | x1.00 |
-| `triangular` | 172490 | 130750 | x1.15 |
+| `alt_recip` | 163700 | 121960 | x1.00 |
+| `triangular` | 201290 | 159550 | x1.31 |
 
 ### ldlt6_l
 
@@ -280,15 +280,15 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 120420 | 84680 | x1.00 |
-| `alt_products` | 145620 | 109880 | x1.30 |
+| `factorize` | 143070 | 107330 | x1.00 |
+| `alt_products` | 168270 | 132530 | x1.23 |
 
 ### ldlt6_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 68750 | 44610 | x1.00 |
-| `alt_recip` | 75950 | 51810 | x1.16 |
+| `substitution` | 77810 | 53670 | x1.00 |
+| `alt_recip` | 84410 | 60270 | x1.12 |
 
 ## nalgebra::linalg::lu::lu2::tests
 
@@ -315,8 +315,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_no_pivot` | 25380 | 7340 | x1.00 |
-| `pivot` | 29000 | 10960 | x1.49 |
+| `alt_no_pivot` | 26890 | 8850 | x1.00 |
+| `pivot` | 30510 | 12470 | x1.41 |
 
 ### lu2_p
 
@@ -340,22 +340,22 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 31860 | 13720 | x1.00 |
-| `alt_recip` | 34390 | 16250 | x1.18 |
+| `substitution` | 34880 | 16740 | x1.00 |
+| `alt_recip` | 37210 | 19070 | x1.14 |
 
 ### lu2_solve_singular
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `none` | 31370 | 14020 | x1.00 |
+| `none` | 34390 | 17040 | x1.00 |
 
 ### lu2_try_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `columns` | 36840 | 18300 | x1.00 |
-| `alt_recip` | 37550 | 19010 | x1.04 |
-| `alt_solve_columns` | 49580 | 31040 | x1.70 |
+| `alt_recip` | 40370 | 21830 | x1.00 |
+| `columns` | 42780 | 24240 | x1.11 |
+| `alt_solve_columns` | 55620 | 37080 | x1.70 |
 
 ## nalgebra::linalg::lu::lu3::tests
 
@@ -382,8 +382,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_no_pivot` | 44360 | 22820 | x1.00 |
-| `pivot` | 54850 | 33310 | x1.46 |
+| `alt_no_pivot` | 48890 | 27350 | x1.00 |
+| `pivot` | 59380 | 37840 | x1.38 |
 
 ### lu3_p
 
@@ -407,36 +407,36 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 42750 | 22710 | x1.00 |
-| `alt_recip` | 46480 | 26440 | x1.16 |
+| `substitution` | 47280 | 27240 | x1.00 |
+| `alt_recip` | 50710 | 30670 | x1.13 |
 
 ### lu3_solve_singular
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `none` | 41760 | 23010 | x1.00 |
+| `none` | 46290 | 27540 | x1.00 |
 
 ### lu3_try_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 64170 | 41930 | x1.00 |
-| `columns` | 67190 | 44950 | x1.07 |
-| `alt_solve_columns` | 95270 | 73030 | x1.74 |
+| `alt_recip` | 68400 | 46160 | x1.00 |
+| `columns` | 80680 | 58440 | x1.27 |
+| `alt_solve_columns` | 108860 | 86620 | x1.88 |
 
 ### lu3_vs_matrix3_determinant
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `cofactors` | 27890 | 10350 | x1.00 |
-| `lu` | 58860 | 41320 | x3.99 |
+| `lu` | 63390 | 45850 | x4.43 |
 
 ### lu3_vs_matrix3_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `lu` | 100200 | 78360 | x1.00 |
-| `cofactors` | 107280 | 85440 | x1.09 |
+| `cofactors` | 110200 | 88360 | x1.00 |
+| `lu` | 118220 | 96380 | x1.09 |
 
 ## nalgebra::linalg::lu::lu4::tests
 
@@ -463,8 +463,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_no_pivot` | 81170 | 52730 | x1.00 |
-| `pivot` | 103380 | 74940 | x1.42 |
+| `alt_no_pivot` | 90230 | 61790 | x1.00 |
+| `pivot` | 112130 | 83690 | x1.35 |
 
 ### lu4_p
 
@@ -488,22 +488,22 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 55340 | 33000 | x1.00 |
-| `alt_recip` | 60270 | 37930 | x1.15 |
+| `substitution` | 61380 | 39040 | x1.00 |
+| `alt_recip` | 65910 | 43570 | x1.12 |
 
 ### lu4_solve_singular
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `none` | 53850 | 33300 | x1.00 |
+| `none` | 59890 | 39340 | x1.00 |
 
 ### lu4_try_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 109520 | 78580 | x1.00 |
-| `columns` | 118340 | 87400 | x1.11 |
-| `alt_solve_columns` | 169540 | 138600 | x1.76 |
+| `alt_recip` | 115160 | 84220 | x1.00 |
+| `columns` | 142400 | 111460 | x1.32 |
+| `alt_solve_columns` | 193700 | 162760 | x1.93 |
 
 ## nalgebra::linalg::lu::lu6::benches
 
@@ -530,8 +530,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_no_pivot` | 209920 | 165480 | x1.00 |
-| `pivot` | 277020 | 232580 | x1.41 |
+| `alt_no_pivot` | 232570 | 188130 | x1.00 |
+| `pivot` | 297360 | 252920 | x1.34 |
 
 ### lu6_p
 
@@ -555,30 +555,30 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 91320 | 63180 | x1.00 |
-| `alt_recip` | 98650 | 70510 | x1.12 |
+| `substitution` | 100380 | 72240 | x1.00 |
+| `alt_recip` | 107110 | 78970 | x1.09 |
 
 ### lu6_solve_singular
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `none` | 88830 | 63480 | x1.00 |
+| `none` | 97890 | 72540 | x1.00 |
 
 ### lu6_try_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 249120 | 199780 | x1.00 |
-| `columns` | 276440 | 227100 | x1.14 |
-| `alt_solve_columns` | 440820 | 391480 | x1.96 |
+| `alt_recip` | 257580 | 208240 | x1.00 |
+| `columns` | 330700 | 281360 | x1.35 |
+| `alt_solve_columns` | 495180 | 445840 | x2.14 |
 
 ### matrix6_lu
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `determinant` | 270400 | 247460 | x1.00 |
-| `solve` | 319400 | 296460 | x1.20 |
-| `try_inverse` | 508420 | 485480 | x1.96 |
+| `determinant` | 290740 | 267800 | x1.00 |
+| `solve` | 348800 | 325860 | x1.22 |
+| `try_inverse` | 583020 | 560080 | x2.09 |
 
 ## nalgebra::linalg::qr::qr2::tests
 
@@ -586,43 +586,43 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `diagonal_product` | 48070 | 7660 | x1.00 |
+| `diagonal_product` | 54110 | 7660 | x1.00 |
 
 ### qr2_factors
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unpack` | 41000 | 700 | x1.00 |
+| `unpack` | 47040 | 700 | x1.00 |
 
 ### qr2_is_invertible
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `pivots` | 41110 | 700 | x1.00 |
+| `pivots` | 47150 | 700 | x1.00 |
 
 ### qr2_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `gram_schmidt` | 42880 | 26340 | x1.00 |
+| `gram_schmidt` | 48920 | 32380 | x1.00 |
 
 ### qr2_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 56510 | 15500 | x1.00 |
+| `substitution` | 65570 | 18520 | x1.00 |
 
 ### qr2_solve_singular
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `none` | 54920 | 15400 | x1.00 |
+| `none` | 65350 | 18420 | x1.00 |
 
 ### qr2_try_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 59990 | 19580 | x1.00 |
+| `substitution` | 72070 | 25620 | x1.00 |
 
 ## nalgebra::linalg::qr::qr3::tests
 
@@ -630,7 +630,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `diagonal_product` | 98340 | 19010 | x1.00 |
+| `diagonal_product` | 110670 | 19010 | x1.00 |
 
 ### qr3_determinant_closed_form
 
@@ -642,40 +642,40 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unpack` | 80030 | 700 | x1.00 |
+| `unpack` | 92360 | 700 | x1.00 |
 
 ### qr3_is_invertible
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `pivots` | 80130 | 800 | x1.00 |
+| `pivots` | 92460 | 800 | x1.00 |
 
 ### qr3_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_classical_gram_schmidt` | 74840 | 57290 | x1.00 |
-| `gram_schmidt` | 82780 | 65230 | x1.14 |
-| `alt_completed_basis` | 108040 | 90490 | x1.58 |
-| `alt_householder` | 191670 | 174120 | x3.04 |
+| `alt_classical_gram_schmidt` | 88430 | 70880 | x1.00 |
+| `gram_schmidt` | 95440 | 77890 | x1.10 |
+| `alt_completed_basis` | 123720 | 106170 | x1.50 |
+| `alt_householder` | 199220 | 181670 | x2.56 |
 
 ### qr3_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 104320 | 24190 | x1.00 |
+| `substitution` | 121180 | 28720 | x1.00 |
 
 ### qr3_solve_singular
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `none` | 101150 | 24090 | x1.00 |
+| `none` | 120880 | 28620 | x1.00 |
 
 ### qr3_try_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 123080 | 43750 | x1.00 |
+| `substitution` | 149000 | 57340 | x1.00 |
 
 ## nalgebra::linalg::qr::qr4::tests
 
@@ -683,37 +683,37 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `diagonal_product` | 186020 | 40410 | x1.00 |
+| `diagonal_product` | 206480 | 40410 | x1.00 |
 
 ### qr4_factors
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unpack` | 146310 | 700 | x1.00 |
+| `unpack` | 166770 | 700 | x1.00 |
 
 ### qr4_is_invertible
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `pivots` | 146510 | 900 | x1.00 |
+| `pivots` | 166970 | 900 | x1.00 |
 
 ### qr4_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `gram_schmidt` | 149550 | 130600 | x1.00 |
+| `gram_schmidt` | 170630 | 151680 | x1.00 |
 
 ### qr4_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 184690 | 38080 | x1.00 |
+| `substitution` | 211190 | 44120 | x1.00 |
 
 ### qr4_try_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 245850 | 100240 | x1.00 |
+| `substitution` | 290470 | 124400 | x1.00 |
 
 ## nalgebra::linalg::svd2::tests
 
@@ -721,45 +721,45 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 79850 | 63300 | x1.00 |
-| `alt_normalised_columns` | 101110 | 84560 | x1.34 |
+| `eigen_of_gram` | 88910 | 72360 | x1.00 |
+| `alt_normalised_columns` | 116210 | 99660 | x1.38 |
 
 ### svd2_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reciprocals` | 105350 | 25180 | x1.00 |
+| `reciprocals` | 117230 | 28000 | x1.00 |
 
 ### svd2_rank
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `comparisons` | 82810 | 2640 | x1.00 |
+| `comparisons` | 91870 | 2640 | x1.00 |
 
 ### svd2_recompose
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 98340 | 18170 | x1.00 |
+| `scaled_product` | 107400 | 18170 | x1.00 |
 
 ### svd2_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_sqrt_eigenvalues` | 36470 | 19920 | x1.00 |
-| `from_left_vectors` | 79850 | 63300 | x3.18 |
+| `from_left_vectors` | 88910 | 72360 | x3.63 |
 
 ### svd2_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `divisions` | 98990 | 18220 | x1.00 |
+| `divisions` | 111070 | 21240 | x1.00 |
 
 ### svd2_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 105610 | 25440 | x1.00 |
+| `quadform` | 114670 | 25440 | x1.00 |
 
 ## nalgebra::linalg::svd3::tests
 
@@ -774,46 +774,46 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 664960 | 647410 | x1.00 |
-| `alt_one_sided_jacobi` | 712140 | 694590 | x1.07 |
-| `alt_normalised_columns` | 717470 | 699920 | x1.08 |
+| `eigen_of_gram` | 743440 | 725890 | x1.00 |
+| `alt_one_sided_jacobi` | 779160 | 761610 | x1.05 |
+| `alt_normalised_columns` | 808610 | 791060 | x1.09 |
 
 ### svd3_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reciprocals` | 714480 | 49800 | x1.00 |
+| `reciprocals` | 798990 | 54030 | x1.00 |
 
 ### svd3_rank
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `comparisons` | 668490 | 3810 | x1.00 |
+| `comparisons` | 748770 | 3810 | x1.00 |
 
 ### svd3_recompose
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 704050 | 39370 | x1.00 |
+| `scaled_product` | 784330 | 39370 | x1.00 |
 
 ### svd3_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_sqrt_eigenvalues` | 326200 | 308650 | x1.00 |
-| `from_left_vectors` | 664960 | 647410 | x2.10 |
+| `alt_sqrt_eigenvalues` | 380560 | 363010 | x1.00 |
+| `from_left_vectors` | 743440 | 725890 | x2.00 |
 
 ### svd3_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `divisions` | 693260 | 27780 | x1.00 |
+| `divisions` | 778070 | 32310 | x1.00 |
 
 ### svd3_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 718160 | 53480 | x1.00 |
+| `quadform` | 798440 | 53480 | x1.00 |
 
 ## nalgebra::linalg::symmetric_eigen2::tests
 
@@ -827,13 +827,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `closed_form` | 40650 | 24310 | x1.00 |
+| `closed_form` | 43670 | 27330 | x1.00 |
 
 ### symmetric_eigen2_recompose
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 55370 | 14590 | x1.00 |
+| `quadform` | 58390 | 14590 | x1.00 |
 
 ## nalgebra::linalg::symmetric_eigen3::tests
 
@@ -841,30 +841,30 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `without_eigenvectors` | 304210 | 287270 | x1.00 |
-| `via_new` | 544230 | 527290 | x1.84 |
+| `without_eigenvectors` | 358570 | 341630 | x1.00 |
+| `via_new` | 607030 | 590090 | x1.73 |
 
 ### symmetric_eigen3_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `jacobi_3_sweeps` | 424650 | 407710 | x1.00 |
-| `no_renormalisation` | 521710 | 504770 | x1.24 |
-| `jacobi_4_sweeps` | 544230 | 527290 | x1.29 |
-| `diagonal_input` | 544690 | 527750 | x1.29 |
-| `jacobi_5_sweeps` | 663810 | 646870 | x1.59 |
-| `jacobi_6_sweeps` | 783390 | 766450 | x1.88 |
+| `jacobi_3_sweeps` | 473860 | 456920 | x1.00 |
+| `no_renormalisation` | 576070 | 559130 | x1.22 |
+| `jacobi_4_sweeps` | 607030 | 590090 | x1.29 |
+| `diagonal_input` | 607490 | 590550 | x1.29 |
+| `jacobi_5_sweeps` | 740200 | 723260 | x1.58 |
+| `jacobi_6_sweeps` | 873370 | 856430 | x1.87 |
 
 ### symmetric_eigen3_recompose
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 575820 | 30430 | x1.00 |
+| `quadform` | 638620 | 30430 | x1.00 |
 
 ### symmetric_eigen3_sweep
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `three_rotations_without_eigenvectors` | 87850 | 69110 | x1.00 |
-| `three_rotations` | 138120 | 119380 | x1.73 |
+| `three_rotations_without_eigenvectors` | 94990 | 76250 | x1.00 |
+| `three_rotations` | 151710 | 132970 | x1.74 |
 

@@ -123,16 +123,16 @@
       "struct": 18440
     },
     "matrix2_try_inverse": {
-      "alt_div": 34340,
-      "alt_recip": 31920,
+      "alt_div": 40380,
+      "alt_recip": 33330,
       "baseline": 18040,
-      "prescaled_det_ge_half": 49090,
-      "prescaled_norm_gt_one": 49090,
-      "prescaled_small": 49090
+      "prescaled_det_ge_half": 52010,
+      "prescaled_norm_gt_one": 52010,
+      "prescaled_small": 52010
     },
     "matrix2_try_inverse_singular": {
       "baseline": 16550,
-      "none": 47900
+      "none": 50820
     },
     "matrix2_zeros": {
       "baseline": 17040,
@@ -278,16 +278,16 @@
       "struct": 22440
     },
     "matrix3_try_inverse": {
-      "alt_div": 77880,
-      "alt_recip": 69210,
+      "alt_div": 91470,
+      "alt_recip": 70620,
       "baseline": 21540,
-      "prescaled_det_ge_half": 106980,
-      "prescaled_norm_gt_one": 106980,
-      "prescaled_small": 106980
+      "prescaled_det_ge_half": 109900,
+      "prescaled_norm_gt_one": 109900,
+      "prescaled_small": 109900
     },
     "matrix3_try_inverse_singular": {
       "baseline": 17550,
-      "none": 103290
+      "none": 106210
     },
     "matrix3_zeros": {
       "baseline": 19540,
@@ -414,16 +414,16 @@
       "struct": 30040
     },
     "matrix4_try_inverse": {
-      "alt_div": 172240,
-      "alt_recip": 154820,
+      "alt_div": 196400,
+      "alt_recip": 156230,
       "baseline": 28440,
-      "prescaled_det_ge_half": 222340,
-      "prescaled_norm_gt_one": 222340,
-      "prescaled_small": 222340
+      "prescaled_det_ge_half": 225260,
+      "prescaled_norm_gt_one": 225260,
+      "prescaled_small": 225260
     },
     "matrix4_try_inverse_singular": {
       "baseline": 18950,
-      "none": 211550
+      "none": 214470
     },
     "matrix4_zeros": {
       "baseline": 25040,
@@ -525,7 +525,7 @@
       "baseline": 17240
     },
     "point2_center": {
-      "alt_add_div": 23720,
+      "alt_add_div": 24860,
       "alt_add_scale": 21980,
       "alt_lerp": 21100,
       "baseline": 17240,
@@ -554,9 +554,9 @@
       "vector": 18040
     },
     "point2_from_homogeneous": {
-      "alt_recip": 23180,
+      "alt_recip": 23550,
       "baseline": 17140,
-      "from_homogeneous": 23030
+      "from_homogeneous": 23970
     },
     "point2_inf_sup": {
       "baseline": 17240,
@@ -609,8 +609,8 @@
     },
     "point2_unscale": {
       "baseline": 17040,
-      "div_assign": 22730,
-      "unscale": 22730
+      "div_assign": 23670,
+      "unscale": 23670
     }
   },
   "nalgebra::base::point3::benches": {
@@ -625,7 +625,7 @@
       "baseline": 18140
     },
     "point3_center": {
-      "alt_add_div": 27740,
+      "alt_add_div": 29350,
       "alt_add_scale": 25300,
       "alt_lerp": 23980,
       "baseline": 18140,
@@ -654,9 +654,9 @@
       "vector": 19240
     },
     "point3_from_homogeneous": {
-      "alt_recip": 25560,
+      "alt_recip": 25930,
       "baseline": 17840,
-      "from_homogeneous": 26490
+      "from_homogeneous": 27550
     },
     "point3_inf_sup": {
       "baseline": 18140,
@@ -705,8 +705,8 @@
     },
     "point3_unscale": {
       "baseline": 17740,
-      "div_assign": 26190,
-      "unscale": 26190
+      "div_assign": 27250,
+      "unscale": 27250
     },
     "point3_xy": {
       "baseline": 16840,
@@ -760,7 +760,7 @@
     },
     "sym_matrix2_inverse_unchecked": {
       "baseline": 17340,
-      "structured": 44230
+      "structured": 47150
     },
     "sym_matrix2_mul_matrix": {
       "baseline": 18840,
@@ -814,9 +814,9 @@
     },
     "sym_matrix2_try_inverse": {
       "baseline": 17340,
-      "generic": 48690,
-      "structured": 44630,
-      "structured_prescaled": 44630
+      "generic": 51610,
+      "structured": 47550,
+      "structured_prescaled": 47550
     },
     "sym_matrix2_zeros": {
       "baseline": 16540,
@@ -875,7 +875,7 @@
     },
     "sym_matrix3_inverse_unchecked": {
       "baseline": 19440,
-      "structured": 83120
+      "structured": 86040
     },
     "sym_matrix3_mul_matrix": {
       "baseline": 22940,
@@ -929,9 +929,9 @@
     },
     "sym_matrix3_try_inverse": {
       "baseline": 19440,
-      "generic": 105480,
-      "structured": 83520,
-      "structured_prescaled": 83520
+      "generic": 108400,
+      "structured": 86440,
+      "structured_prescaled": 86440
     },
     "sym_matrix3_zeros": {
       "baseline": 18040,
@@ -950,7 +950,7 @@
     },
     "unit2_new_normalize": {
       "baseline": 17440,
-      "new_normalize": 25250
+      "new_normalize": 26190
     },
     "unit2_renormalize_fast": {
       "baseline": 16640,
@@ -984,10 +984,10 @@
     },
     "unit3_new_normalize": {
       "baseline": 18140,
-      "new_and_get": 29210,
-      "new_normalize": 28910,
-      "try_new": 29580,
-      "try_new_and_get": 30380
+      "new_and_get": 30270,
+      "new_normalize": 29970,
+      "try_new": 30640,
+      "try_new_and_get": 31440
     },
     "unit3_new_unchecked": {
       "baseline": 17340,
@@ -995,14 +995,14 @@
     },
     "unit3_orthonormal_basis": {
       "baseline": 18840,
-      "orthonormal_basis": 33790
+      "orthonormal_basis": 34730
     },
     "unit3_renormalize": {
       "baseline": 17340,
-      "renormalize": 28110
+      "renormalize": 29170
     },
     "unit3_renormalize_fast": {
-      "alt_exact": 28110,
+      "alt_exact": 29170,
       "alt_lerp": 29080,
       "alt_mul_add": 27580,
       "alt_scale": 27820,
@@ -1027,7 +1027,7 @@
     },
     "unit4_new_normalize": {
       "baseline": 18840,
-      "new_normalize": 32570
+      "new_normalize": 33620
     },
     "unit4_renormalize_fast": {
       "baseline": 18040,
@@ -1049,19 +1049,19 @@
       "baseline": 17240
     },
     "vector2_angle": {
-      "alt_acos": 55060,
+      "alt_acos": 55530,
       "baseline": 16740,
-      "half_angle": 70390
+      "half_angle": 77940
     },
     "vector2_cap_magnitude": {
-      "alt_normalize": 28980,
+      "alt_normalize": 29920,
       "baseline": 17040,
-      "capped": 26050,
-      "unchanged": 20610
+      "capped": 26520,
+      "unchanged": 20710
     },
     "vector2_component_div": {
       "baseline": 17240,
-      "component_div": 23200
+      "component_div": 24140
     },
     "vector2_component_mul": {
       "baseline": 17240,
@@ -1144,10 +1144,10 @@
       "norm_squared": 17920
     },
     "vector2_normalize": {
-      "alt_recip": 24300,
-      "alt_recip_sqrt": 25980,
+      "alt_recip": 24670,
+      "alt_recip_sqrt": 26350,
       "baseline": 16640,
-      "unscale": 24450
+      "unscale": 25390
     },
     "vector2_perp": {
       "baseline": 16740,
@@ -1174,14 +1174,14 @@
     },
     "vector2_try_normalize": {
       "baseline": 17340,
-      "none": 20370,
-      "some": 25820
+      "none": 20570,
+      "some": 26760
     },
     "vector2_unscale": {
-      "alt_recip": 22580,
+      "alt_recip": 22950,
       "baseline": 17040,
-      "div_assign": 22730,
-      "unscale": 22730
+      "div_assign": 23670,
+      "unscale": 23670
     }
   },
   "nalgebra::base::vector3::benches": {
@@ -1199,19 +1199,19 @@
       "baseline": 18140
     },
     "vector3_angle": {
-      "alt_acos": 55790,
+      "alt_acos": 56260,
       "baseline": 17140,
-      "half_angle": 78930
+      "half_angle": 88880
     },
     "vector3_cap_magnitude": {
-      "alt_normalize": 34320,
+      "alt_normalize": 35380,
       "baseline": 17740,
-      "capped": 28730,
-      "unchanged": 21810
+      "capped": 29200,
+      "unchanged": 21910
     },
     "vector3_component_div": {
       "baseline": 18140,
-      "component_div": 26860
+      "component_div": 28270
     },
     "vector3_component_mul": {
       "baseline": 18140,
@@ -1299,20 +1299,21 @@
       "norm_squared": 18320
     },
     "vector3_normalize": {
-      "alt_recip": 26880,
-      "alt_recip_sqrt": 28560,
+      "alt_per_element_div": 29520,
+      "alt_recip": 27250,
+      "alt_recip_sqrt": 28930,
       "baseline": 17340,
-      "unscale": 28110
+      "unscale": 29170
     },
     "vector3_orthonormal_basis_zneg": {
-      "alt_upstream": 35840,
+      "alt_upstream": 36780,
       "baseline": 18840,
-      "duff": 33950
+      "duff": 34890
     },
     "vector3_orthonormal_basis_zpos": {
-      "alt_upstream": 36110,
+      "alt_upstream": 37050,
       "baseline": 18840,
-      "duff": 33790
+      "duff": 34730
     },
     "vector3_push": {
       "baseline": 18240,
@@ -1335,14 +1336,14 @@
     },
     "vector3_try_normalize": {
       "baseline": 18040,
-      "none": 21250,
-      "some": 29480
+      "none": 21540,
+      "some": 30540
     },
     "vector3_unscale": {
-      "alt_recip": 24960,
+      "alt_recip": 25330,
       "baseline": 17740,
-      "div_assign": 26190,
-      "unscale": 26190
+      "div_assign": 27250,
+      "unscale": 27250
     },
     "vector3_xy": {
       "baseline": 16840,
@@ -1364,19 +1365,19 @@
       "baseline": 19040
     },
     "vector4_angle": {
-      "alt_acos": 57060,
+      "alt_acos": 57530,
       "baseline": 17540,
-      "half_angle": 87470
+      "half_angle": 99520
     },
     "vector4_cap_magnitude": {
-      "alt_normalize": 39930,
+      "alt_normalize": 40980,
       "baseline": 18440,
-      "capped": 31410,
-      "unchanged": 23010
+      "capped": 31880,
+      "unchanged": 23110
     },
     "vector4_component_div": {
       "baseline": 19040,
-      "component_div": 30790
+      "component_div": 32670
     },
     "vector4_component_mul": {
       "baseline": 19040,
@@ -1461,10 +1462,10 @@
       "norm_squared": 18720
     },
     "vector4_normalize": {
-      "alt_recip": 29460,
-      "alt_recip_sqrt": 31140,
+      "alt_recip": 29830,
+      "alt_recip_sqrt": 31510,
       "baseline": 18040,
-      "unscale": 32040
+      "unscale": 33090
     },
     "vector4_scale": {
       "baseline": 18440,
@@ -1482,14 +1483,14 @@
     },
     "vector4_try_normalize": {
       "baseline": 18740,
-      "none": 22130,
-      "some": 33410
+      "none": 22490,
+      "some": 34460
     },
     "vector4_unscale": {
-      "alt_recip": 27340,
+      "alt_recip": 27710,
       "baseline": 18440,
-      "div_assign": 29920,
-      "unscale": 29920
+      "div_assign": 30970,
+      "unscale": 30970
     },
     "vector4_xy": {
       "baseline": 17040,
@@ -1561,7 +1562,7 @@
     },
     "vector6_normalize": {
       "baseline": 19440,
-      "unscale_by_norm": 41480
+      "unscale_by_norm": 42510
     },
     "vector6_scale": {
       "baseline": 19840,
@@ -1579,8 +1580,8 @@
     },
     "vector6_unscale": {
       "baseline": 19840,
-      "div_assign": 36840,
-      "unscale": 36840
+      "div_assign": 37870,
+      "unscale": 37870
     }
   }
 }

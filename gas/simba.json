@@ -15,6 +15,11 @@
       "direct": 19120,
       "generic": 19120
     },
+    "real_jacobi_c": {
+      "alt_inv_norm2": 20780,
+      "baseline": 15940,
+      "recip_sqrt": 22690
+    },
     "real_mul_add": {
       "acc": 18920,
       "baseline": 17140,
@@ -42,19 +47,34 @@
     },
     "real_normalize3": {
       "baseline": 16340,
-      "div": 26610,
+      "div": 28020,
       "recip": 23840
     },
     "real_scalar": {
       "add": 16980,
-      "atan2": 44760,
+      "atan2": 46270,
       "baseline": 16340,
-      "div": 19170,
+      "div": 19640,
       "inv_norm2": 20680,
       "mul": 17920,
-      "recip": 18690,
+      "recip": 19160,
       "sin_cos": 47840,
       "sqrt": 18160
+    },
+    "real_shared_div2": {
+      "alt_per_element_div": 23870,
+      "baseline": 16740,
+      "prepared": 24000
+    },
+    "real_shared_div3": {
+      "alt_per_element_div": 27800,
+      "baseline": 16740,
+      "prepared": 27450
+    },
+    "real_shared_div4": {
+      "alt_per_element_div": 32800,
+      "baseline": 17540,
+      "prepared": 31970
     },
     "real_sum_prod2": {
       "acc": 18920,
