@@ -467,11 +467,7 @@ mod tests {
 
     // --- oracle --------------------------------------------------------------------------------
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst singular value error 48 -> 105 ulp (still within the oracle tolerance). Ignored until
-    // the orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_new_singular_values_oracle() {
         let mut cases = oracle_svd::svd2_singular_values_cases();
         let (mut worst, mut worst_ex) = (0, 0);
@@ -487,11 +483,7 @@ mod tests {
         assert!((worst, worst_ex) == (48, 0), "regressed: {worst} {worst_ex}");
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // (recomposition, orthonormality) (6, 23) -> (7, 21). Ignored until the orchestrator rules (see
-    // REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_new_recompose_and_orthonormality_oracle() {
         let mut cases = oracle_svd::svd2_singular_values_cases();
         let (mut worst_rec, mut worst_orth) = (0, 0);
@@ -521,7 +513,7 @@ mod tests {
             worst_sqrt =
                 core::cmp::max(worst_sqrt, max_ulp_diff_v2(singular_values_from_sqrt(m2(a)), e));
         }
-        assert!(worst_norm == 105 && worst_sqrt == 10, "regressed: {worst_norm} {worst_sqrt}");
+        assert!(worst_norm == 48 && worst_sqrt == 10, "regressed: {worst_norm} {worst_sqrt}");
     }
 
     #[test]
@@ -538,13 +530,10 @@ mod tests {
                     worst_norm, orthonormality_error_m2(u_from_normalised_columns(m2(a))),
                 );
         }
-        assert!(worst_perp == 21 && worst_norm == 67, "regressed: {worst_perp} {worst_norm}");
+        assert!(worst_perp == 23 && worst_norm == 56, "regressed: {worst_perp} {worst_norm}");
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst 2032 -> 2062 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_solve_matches_the_inverse_oracle() {
         // On a non-singular matrix the least-squares solution IS the solution.
         let mut cases = oracle_svd::svd2_singular_values_cases();
@@ -557,7 +546,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff_v2(x, e));
         }
         // Measured gap to `Matrix2::try_inverse` * b over the 30 well-conditioned vectors.
-        assert!(worst == 2032, "regressed: {worst}");
+        assert!(worst == 2099, "regressed: {worst}");
     }
 
     #[test]
@@ -570,7 +559,7 @@ mod tests {
             let e = m2(a).try_inverse().unwrap();
             worst = core::cmp::max(worst, max_ulp_diff2(p, e));
         }
-        assert!(worst == 1907, "regressed: {worst}");
+        assert!(worst == 1947, "regressed: {worst}");
     }
 
     #[test]
@@ -586,11 +575,7 @@ mod tests {
         );
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // (worst, orthonormality) (7, 25) -> (8, 22). Ignored until the orchestrator rules (see
-    // REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_to_polar_oracle() {
         let mut cases = oracle_svd::svd2_singular_values_cases();
         let (mut worst, mut worst_orth) = (0, 0);
@@ -604,7 +589,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff2(r * p.to_matrix(), m2(a)) / amax_m2(m2(a)));
         }
         // Measured: `|M - R P| <= worst ulp * max(1, max |m_ij|)`, `|RᵀR - I| <= worst_orth ulp`.
-        assert!((worst, worst_orth) == (7, 25), "regressed: {worst} {worst_orth}");
+        assert!((worst, worst_orth) == (7, 24), "regressed: {worst} {worst_orth}");
     }
 
     #[test]

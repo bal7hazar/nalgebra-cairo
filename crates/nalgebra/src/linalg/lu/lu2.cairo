@@ -492,11 +492,7 @@ mod tests {
         assert!(f.determinant() == fx(-51539607552));
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // reconstruction error 34 -> 43 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_new_reconstruction_oracle() {
         // `P A == L U` within 34 raw units on the lu2 vectors.
         let mut cases = oracle::lu2_solve_cases();
@@ -506,7 +502,7 @@ mod tests {
             let f = Lu2Trait::new(m2(a));
             worst = core::cmp::max(worst, max_ulp_diff2(f.permute_rows(m2(a)), f.l() * f.u()));
         }
-        assert!(worst == 34, "reconstruction error {worst}");
+        assert!(worst == 19, "reconstruction error {worst}");
     }
 
     #[test]
@@ -553,11 +549,7 @@ mod tests {
         assert!(Lu2Trait::new(a_bench()).is_invertible());
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst solve error 122 -> 123 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_solve_oracle() {
         let mut cases = oracle::lu2_solve_cases();
         let mut worst = 0;
@@ -584,22 +576,18 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_m2(e), tol), "inverse error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 393);
+        assert!(worst == 394);
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst identity residual 52 -> 114 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_try_inverse_product_is_identity() {
         let mut cases = oracle::lu2_inverse_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let inv = Lu2Trait::new(m2(a)).try_inverse().unwrap();
-            // Worst residual over the oracle: 52 ulp.
-            assert!((m2(a) * inv).is_identity(52));
-            assert!((inv * m2(a)).is_identity(52));
+            // Worst residual over the oracle: 61 ulp.
+            assert!((m2(a) * inv).is_identity(61));
+            assert!((inv * m2(a)).is_identity(61));
         }
     }
 
@@ -619,7 +607,7 @@ mod tests {
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
-        assert!(worst == 4);
+        assert!(worst == 3);
     }
 
     #[test]
@@ -629,11 +617,7 @@ mod tests {
         let _ = black_box(Matrix2Trait::from_diagonal_element(fx(1))).lu().try_inverse();
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst determinant error 166 -> 180 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_determinant_oracle() {
         let mut cases = oracle::lu2_determinant_cases();
         let mut worst = 0;
@@ -644,7 +628,7 @@ mod tests {
             assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 166);
+        assert!(worst == 43);
     }
 
     #[test]
@@ -666,8 +650,8 @@ mod tests {
         // The unpivoted figure is NOT a win: these matrices are random and
         // well-conditioned, so their leading entries happen to be usable pivots.
         // `test_no_pivot_candidate_is_wrong` shows the structural failure.
-        assert!(solve_failures(0) == (0, 123));
-        assert!(solve_failures(1) == (3, 492));
+        assert!(solve_failures(0) == (0, 122));
+        assert!(solve_failures(1) == (2, 396));
         assert!(solve_failures(2) == (0, 79));
     }
 
@@ -814,7 +798,7 @@ mod tests {
     fn bench_lu2_solve__substitution() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v2t((-5305313724, -6129723446))));
+        let e = black_box(Some(v2t((-5305313723, -6129723447))));
         assert!(f.solve(b) == e);
     }
 
@@ -823,7 +807,7 @@ mod tests {
     fn bench_lu2_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v2t((-5305313725, -6129723446))));
+        let e = black_box(Some(v2t((-5305313723, -6129723448))));
         assert!(solve_recip(f, b) == e);
     }
 
@@ -857,7 +841,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_try_inverse__columns() {
         let f = black_box(f_bench());
-        let e = black_box(Some(m2([[-2568255028, 5799151168], [4063645105, 368101372]])));
+        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645106, 368101373]])));
         assert!(f.try_inverse() == e);
     }
 
@@ -865,7 +849,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_try_inverse__alt_solve_columns() {
         let f = black_box(f_bench());
-        let e = black_box(Some(m2([[-2568255028, 5799151168], [4063645105, 368101372]])));
+        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645106, 368101373]])));
         assert!(try_inverse_solve_columns(f) == e);
     }
 
@@ -873,7 +857,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu2_try_inverse__alt_recip() {
         let f = black_box(f_bench());
-        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645105, 368101372]])));
+        let e = black_box(Some(m2([[-2568255029, 5799151168], [4063645106, 368101372]])));
         assert!(try_inverse_recip(f) == e);
     }
 

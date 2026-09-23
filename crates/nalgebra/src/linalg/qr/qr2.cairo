@@ -331,7 +331,7 @@ mod tests {
         // unpacked Householder factors entry by entry, no sign flip, and every case stays inside
         // the oracle tolerance (`worst_ex == 0`).
         assert!(
-            (worst_q, worst_r, worst_ex) == (25, 78, 0),
+            (worst_q, worst_r, worst_ex) == (25, 15, 0),
             "regressed: {worst_q} {worst_r} {worst_ex}",
         );
     }
@@ -353,11 +353,7 @@ mod tests {
         assert!(worst_rec == 2 && worst_orth == 52, "regressed: {worst_rec} {worst_orth}");
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // (worst, cases beyond the oracle tolerance) (709, 7) -> (748, 26). Ignored until the
-    // orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_solve_oracle() {
         let mut cases = oracle::qr2_solve_cases();
         let (mut worst, mut worst_ex) = (0, 0);
@@ -369,14 +365,10 @@ mod tests {
             worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v2(e), tol)));
             worst = core::cmp::max(worst, err);
         }
-        assert!((worst, worst_ex) == (709, 7), "regressed: {worst} {worst_ex}");
+        assert!((worst, worst_ex) == (749, 4), "regressed: {worst} {worst_ex}");
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst identity residual 99 -> 111 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_try_inverse_product_is_identity_oracle() {
         let mut cases = oracle::qr2_q_r_cases();
         let mut worst = 0;
@@ -388,13 +380,10 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff2(inv * m2(a), Matrix2Trait::identity()));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
-        assert!(worst == 99, "regressed: {worst}");
+        assert!(worst == 47, "regressed: {worst}");
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst gap 528 -> 1468 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_determinant_versus_matrix2_cofactors() {
         // The closed form is one exactly-rounded `diff_prod`; this one multiplies two norms that
         // already carry the rounding of the orthogonalisation. The gap is recorded, not bounded by
@@ -406,7 +395,7 @@ mod tests {
             let err = ulp_diff(Qr2Trait::new(m2(a)).determinant(), m2(a).determinant());
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 528, "regressed: {worst}");
+        assert!(worst == 519, "regressed: {worst}");
     }
 
     #[test]

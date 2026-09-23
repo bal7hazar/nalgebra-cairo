@@ -571,7 +571,7 @@ mod tests {
         // Measured worst cases: the MGS factors agree with upstream's unpacked Householder
         // factors entry by entry, no sign flip, and every case stays inside the oracle tolerance.
         assert!(
-            (worst_q, worst_r, worst_ex) == (29, 87, 0),
+            (worst_q, worst_r, worst_ex) == (29, 55, 0),
             "regressed: {worst_q} {worst_r} {worst_ex}",
         );
     }
@@ -589,7 +589,7 @@ mod tests {
             worst_orth = core::cmp::max(worst_orth, orth);
         }
         // Measured: `|A - Q R| <= worst_rec ulp * max(1, max |a_ij|)`, `|QᵀQ - I| <= worst_orth`.
-        assert!(worst_rec == 3 && worst_orth == 33, "regressed: {worst_rec} {worst_orth}");
+        assert!(worst_rec == 2 && worst_orth == 34, "regressed: {worst_rec} {worst_orth}");
     }
 
     #[test]
@@ -607,7 +607,7 @@ mod tests {
         // Householder: 402 ulp from the oracle factors and 29 ulp of orthonormality, against 121
         // and 36 for the shipped modified Gram-Schmidt. More orthonormal, further from the
         // factors, and dearer (`bench_qr3_new__alt_householder`), which is why MGS ships.
-        assert!(worst_gap == 412 && worst_orth == 21, "regressed: {worst_gap} {worst_orth}");
+        assert!(worst_gap == 142 && worst_orth == 28, "regressed: {worst_gap} {worst_orth}");
     }
 
     #[test]
@@ -621,7 +621,7 @@ mod tests {
         }
         // Identical on the oracle (condition number <= 8): the classical form's quadratic loss
         // of orthogonality only separates from the modified form's linear one beyond these inputs.
-        assert!(worst_mgs == 33 && worst_cgs == 33, "regressed: {worst_mgs} {worst_cgs}");
+        assert!(worst_mgs == 34 && worst_cgs == 34, "regressed: {worst_mgs} {worst_cgs}");
     }
 
     #[test]
@@ -633,11 +633,7 @@ mod tests {
         assert!(orthonormality_error_m3(Qr3Trait::new(a_rank2()).q) == 0x100000000);
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // (worst, cases beyond the oracle tolerance) (551, 10) -> (276, 14). Ignored until the
-    // orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_solve_oracle() {
         let mut cases = oracle::qr3_solve_cases();
         let (mut worst, mut worst_ex) = (0, 0);
@@ -649,7 +645,7 @@ mod tests {
             worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v3(e), tol)));
             worst = core::cmp::max(worst, err);
         }
-        assert!((worst, worst_ex) == (551, 10), "regressed: {worst} {worst_ex}");
+        assert!((worst, worst_ex) == (273, 0), "regressed: {worst} {worst_ex}");
     }
 
     #[test]
@@ -664,14 +660,10 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff3(inv * m3(a), id));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
-        assert!(worst == 132, "regressed: {worst}");
+        assert!(worst == 82, "regressed: {worst}");
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst gap 90847 -> 116104 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_determinant_versus_matrix3_cofactors() {
         // The closed form sums exact minors; this one multiplies three rounded norms.
         let mut cases = oracle::qr3_q_r_cases();
@@ -681,7 +673,7 @@ mod tests {
             let err = ulp_diff(Qr3Trait::new(m3(a)).determinant(), m3(a).determinant());
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 90847, "regressed: {worst}");
+        assert!(worst == 72181, "regressed: {worst}");
     }
 
     #[test]

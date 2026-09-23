@@ -29,12 +29,12 @@ fn p() -> Vector3<Fixed> {
 
 /// `p / 13`, rounded to nearest
 fn np() -> Unit<Vector3<Fixed>> {
-    u3(991146299, -1321528398, 3964585196)
+    u3(991146299, -1321528399, 3964585196)
 }
 
 /// `a / |a|`, rounded to nearest
 fn na() -> Unit<Vector3<Fixed>> {
-    u3(1393471396, -2090207095, 3483678492)
+    u3(1393471397, -2090207095, 3483678492)
 }
 
 // --- construction
@@ -63,7 +63,7 @@ fn test_new_normalize_axes_are_exact() {
 #[test]
 fn test_new_normalize_2d_and_4d() {
     // (3, -4) / 5 and (1, -1, 1, -1) / 2 and (3, -4, 12, 0) / 13.
-    assert!(UnitTrait::new_normalize(v2(0x300000000, -0x400000000)) == u2(2576980377, -3435973836));
+    assert!(UnitTrait::new_normalize(v2(0x300000000, -0x400000000)) == u2(2576980378, -3435973837));
     assert!(
         UnitTrait::new_normalize(
             v4(0x100000000, -0x100000000, 0x100000000, -0x100000000),
@@ -72,14 +72,14 @@ fn test_new_normalize_2d_and_4d() {
     assert!(
         UnitTrait::new_normalize(
             v4(0x300000000, -0x400000000, 0xc00000000, 0),
-        ) == u4(991146299, -1321528398, 3964585196, 0),
+        ) == u4(991146299, -1321528399, 3964585196, 0),
     );
 }
 
 #[test]
 fn test_new_normalize_tiny_is_exact() {
     // (3, -4, 0) ulp has a norm of 5 ulp: the divisions still give (0.6, -0.8, 0) floored.
-    assert!(UnitTrait::new_normalize(v3(3, -4, 0)) == u3(2576980377, -3435973836, 0));
+    assert!(UnitTrait::new_normalize(v3(3, -4, 0)) == u3(2576980378, -3435973837, 0));
 }
 
 #[test]
@@ -89,7 +89,7 @@ fn test_new_normalize_huge_does_not_overflow() {
     assert!(
         UnitTrait::new_normalize(
             v3(0x186a000000000, 0x186a000000000, 0),
-        ) == u3(3037000499, 3037000499, 0),
+        ) == u3(3037000500, 3037000500, 0),
     );
 }
 
@@ -117,7 +117,7 @@ fn test_new_and_get_returns_the_norm() {
     assert!(u == np());
     assert!(n == fx(0xd00000000));
     let (u, n) = UnitTrait::new_and_get(v2(0x300000000, -0x400000000));
-    assert!(u == u2(2576980377, -3435973836));
+    assert!(u == u2(2576980378, -3435973837));
     assert!(n == fx(0x500000000));
     let (u, n) = UnitTrait::new_and_get(a());
     assert!(u == na());
@@ -135,7 +135,7 @@ fn test_try_new_some() {
     assert!(UnitTrait::try_new(p(), Real::ZERO) == Some(np()));
     assert!(UnitTrait::try_new(p(), fx(0xd00000000) - Real::EPSILON) == Some(np()));
     assert!(
-        UnitTrait::try_new(v3(3, -4, 0), Real::EPSILON) == Some(u3(2576980377, -3435973836, 0)),
+        UnitTrait::try_new(v3(3, -4, 0), Real::EPSILON) == Some(u3(2576980378, -3435973837, 0)),
     );
 }
 
@@ -159,7 +159,7 @@ fn test_try_new_and_get() {
 #[test]
 fn test_into_inner_and_as_ref() {
     assert!(np().into_inner() == np().value);
-    assert!(np().as_ref() == v3(991146299, -1321528398, 3964585196));
+    assert!(np().as_ref() == v3(991146299, -1321528399, 3964585196));
 }
 
 // --- renormalization
@@ -172,7 +172,7 @@ fn test_renormalize_matches_new_normalize() {
     // `na` scaled by 1 + 3e-6: back to the exact unit vector.
     let drifted = u3(1393475576, -2090213367, 3483688943);
     assert!(drifted.renormalize() == UnitTrait::new_normalize(drifted.value));
-    assert!(drifted.renormalize() == u3(1393471395, -2090207096, 3483678492));
+    assert!(drifted.renormalize() == u3(1393471396, -2090207097, 3483678493));
 }
 
 #[test]
@@ -184,8 +184,8 @@ fn test_renormalize_zero() {
 #[test]
 fn test_renormalize_fast_is_a_fixed_point_of_normalized_vectors() {
     // |v|² is 1 or 1 ulp short: the correction rounds to zero. These are the FLOORED quotients
-    // (3, -4, 12) / 13 and a / |a|; `new_normalize` rounds toward zero, and one fast step
-    // takes its output (one ulp above on the negative component) to them.
+    // (3, -4, 12) / 13 and a / |a|; `new_normalize` rounds to nearest, which for `p` is the same
+    // vector, so one fast step leaves `np()` unchanged too.
     let np_floor = u3(991146299, -1321528399, 3964585196);
     let na_floor = u3(1393471396, -2090207096, 3483678492);
     assert!(np_floor.renormalize_fast() == np_floor);
@@ -202,7 +202,7 @@ fn test_renormalize_fast_fixes_small_drift() {
     assert!(up.renormalize_fast() == u3(1393471395, -2090207097, 3483678491));
     assert!(up.renormalize_fast().abs_diff_eq(up.renormalize(), 1));
     let down = u3(1393464429, -2090196645, 3483661074);
-    assert!(down.renormalize_fast() == u3(1393471396, -2090207097, 3483678492));
+    assert!(down.renormalize_fast() == u3(1393471397, -2090207097, 3483678492));
     assert!(down.renormalize_fast().abs_diff_eq(down.renormalize(), 1));
 }
 
@@ -254,8 +254,8 @@ fn test_dot_of_units() {
     assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::x_axis()) == Real::ONE);
     assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::y_axis()) == Real::ZERO);
     assert!(Unit3Trait::<Fixed>::x_axis().dot(-Unit3Trait::<Fixed>::x_axis()) == Real::NEG_ONE);
-    // A normalized vector has a squared norm of 1 within a few ulp: here 2 ulp short.
-    assert!(na().dot(na()) == fx(4294967294));
+    // A normalized vector has a squared norm of 1 within a few ulp: here 1 ulp short.
+    assert!(na().dot(na()) == fx(4294967295));
     assert!(na().dot(np()) == na().value.dot(np().value));
 }
 
@@ -265,7 +265,7 @@ fn test_dot_with_a_vector() {
     assert!(Unit3Trait::<Fixed>::x_axis().dot_vector(p()) == fx(0x300000000));
     assert!(Unit3Trait::<Fixed>::y_axis().dot_vector(p()) == fx(-0x400000000));
     assert!(Unit3Trait::<Fixed>::z_axis().dot_vector(p()) == fx(0xc00000000));
-    assert!(na().dot_vector(a()) == fx(19856967402));
+    assert!(na().dot_vector(a()) == fx(19856967404));
     assert!(u2(0x100000000, 0).dot_vector(v2(0x300000000, 5)) == fx(0x300000000));
     assert!(u4(0, 0, 0, 0x100000000).dot_vector(v4(1, 2, 3, 0x400000000)) == fx(0x400000000));
 }
@@ -282,7 +282,7 @@ fn test_scale_gives_a_vector() {
 
 #[test]
 fn test_neg_is_exact() {
-    assert!(-np() == u3(-991146299, 1321528398, -3964585196));
+    assert!(-np() == u3(-991146299, 1321528399, -3964585196));
     assert!(-(-np()) == np());
     assert!(-u2(2576980377, -3435973837) == u2(-2576980377, 3435973837));
     assert!(-(-Unit3Trait::<Fixed>::z_axis()) == Unit3Trait::<Fixed>::z_axis());
@@ -297,8 +297,8 @@ fn test_neg_overflow() {
 #[test]
 fn test_abs_diff_eq_counts_ulps() {
     assert!(np().abs_diff_eq(np(), 0));
-    assert!(np().abs_diff_eq(u3(991146299 + 2, -1321528398 - 2, 3964585196 + 2), 2));
-    assert!(!np().abs_diff_eq(u3(991146299 + 2, -1321528398 - 2, 3964585196 + 2), 1));
+    assert!(np().abs_diff_eq(u3(991146299 + 2, -1321528399 - 2, 3964585196 + 2), 2));
+    assert!(!np().abs_diff_eq(u3(991146299 + 2, -1321528399 - 2, 3964585196 + 2), 1));
     assert!(!np().abs_diff_eq(-np(), 1000));
     assert!(!u3(MAX, 0, 0).abs_diff_eq(u3(-MAX, 0, 0), 1));
 }

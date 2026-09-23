@@ -490,7 +490,7 @@ fn bench_isometry2_renormalize__baseline() {
 #[inline(never)]
 fn bench_isometry2_renormalize__exact() {
     let x: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926850, 1672539042));
-    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926849, 1672539041));
+    let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3955926849, 1672539042));
     assert!(x.renormalize() == e);
 }
 
@@ -547,7 +547,7 @@ fn bench_isometry2_lerp_nlerp__lerp_normalize() {
     let x: Isometry2<Fixed> = black_box(a());
     let y: Isometry2<Fixed> = black_box(b());
     let s: Fixed = black_box(fx(0x40000000));
-    let e: Isometry2<Fixed> = black_box(iso2(4026531840, -6710886400, 4149247214, 1109275270));
+    let e: Isometry2<Fixed> = black_box(iso2(4026531840, -6710886400, 4149247215, 1109275270));
     assert!(x.lerp_nlerp(y, s) == e);
 }
 

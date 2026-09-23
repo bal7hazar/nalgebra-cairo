@@ -213,7 +213,7 @@ fn test_scale_overflow() {
 #[test]
 fn test_unscale_exact() {
     // (1.5, -2.25, 3.75, -0.5) / 2.5 = (0.5999999999, -0.9000000001, 1.5, -0.2000000002)
-    assert!(a().unscale(fx(0x280000000)) == v4(2576980377, -3865470566, 0x180000000, -858993459));
+    assert!(a().unscale(fx(0x280000000)) == v4(2576980378, -3865470566, 0x180000000, -858993459));
     assert!(a().unscale(Real::ONE) == a());
 }
 
@@ -570,7 +570,7 @@ fn test_metric_distance_overflow() {
 #[test]
 fn test_normalize_exact() {
     // (1, -2, 2, 4) / 5, floored.
-    assert!(p().normalize() == v4(858993459, -1717986918, 1717986918, 3435973836));
+    assert!(p().normalize() == v4(858993459, -1717986918, 1717986918, 3435973837));
     assert!(v4(-0x500000000, 0, 0, 0).normalize() == -Vector4Trait::<Fixed>::x());
     assert!(v4(0, -0x500000000, 0, 0).normalize() == -Vector4Trait::<Fixed>::y());
     assert!(v4(0, 0, -0x500000000, 0).normalize() == -Vector4Trait::<Fixed>::z());
@@ -594,7 +594,7 @@ fn test_normalize_large_magnitude() {
 #[test]
 fn test_normalize_tiny_magnitude() {
     // (3, -4, ..) ulp: norm 5 ulp, result (0.6, -0.8, ..) floored.
-    assert!(v4(3, -4, 0, 0).normalize() == v4(2576980377, -3435973836, 0, 0));
+    assert!(v4(3, -4, 0, 0).normalize() == v4(2576980378, -3435973837, 0, 0));
 }
 
 #[test]
@@ -606,7 +606,7 @@ fn test_normalize_zero() {
 #[test]
 fn test_normalize_is_unit_within_tolerance() {
     let r = a().normalize();
-    assert!(r == v4(1385393233, -2078089850, 3463483084, -461797744));
+    assert!(r == v4(1385393234, -2078089851, 3463483085, -461797745));
     assert!(r.norm().abs_diff_eq(Real::ONE, 8));
 }
 
@@ -655,7 +655,7 @@ fn test_cap_magnitude_large_magnitude() {
         v4(0xf424000000000, 0xf424000000000, 0xf424000000000, 0xf424000000000)
             .cap_magnitude(
                 fx(0xa00000000),
-            ) == v4(21474000000, 21474000000, 21474000000, 21474000000),
+            ) == v4(21475000000, 21475000000, 21475000000, 21475000000),
     );
 }
 

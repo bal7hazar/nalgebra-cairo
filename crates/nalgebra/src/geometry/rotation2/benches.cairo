@@ -353,7 +353,7 @@ fn bench_rotation2_rotation_between__algebraic() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let b: Vector2<Fixed> = black_box(v2(-0x480000000, 0x40000000));
     let e: Rotation2<Fixed> = black_box(
-        r2([[-2576980377, 3435973836], [-3435973836, -2576980377]]),
+        r2([[-2576980378, 3435973837], [-3435973837, -2576980378]]),
     );
     assert!(Rotation2Trait::rotation_between(a, b) == e);
 }
@@ -364,7 +364,7 @@ fn bench_rotation2_rotation_between__alt_unit_complex() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let b: Vector2<Fixed> = black_box(v2(-0x480000000, 0x40000000));
     let e: Rotation2<Fixed> = black_box(
-        r2([[-2576980377, 3435973836], [-3435973836, -2576980377]]),
+        r2([[-2576980378, 3435973837], [-3435973837, -2576980378]]),
     );
     assert!(UnitComplexTrait::rotation_between(a, b).to_rotation_matrix() == e);
 }
@@ -401,7 +401,7 @@ fn bench_rotation2_angle__baseline() {
 #[inline(never)]
 fn bench_rotation2_angle__atan2() {
     let r: Rotation2<Fixed> = black_box(r());
-    let e: Fixed = black_box(fx(1717986917));
+    let e: Fixed = black_box(fx(1717986918));
     assert!(r.angle() == e);
 }
 
@@ -446,7 +446,7 @@ fn bench_rotation2_powf__baseline() {
 fn bench_rotation2_powf__atan2_sin_cos() {
     let r: Rotation2<Fixed> = black_box(r());
     let n: Fixed = black_box(Real::TWO);
-    let e: Rotation2<Fixed> = black_box(r2([[2992332533, -3081020948], [3081020948, 2992332533]]));
+    let e: Rotation2<Fixed> = black_box(r2([[2992332532, -3081020950], [3081020950, 2992332532]]));
     assert!(r.powf(n) == e);
 }
 
@@ -462,7 +462,7 @@ fn bench_rotation2_renormalize__baseline() {
 #[inline(never)]
 fn bench_rotation2_renormalize__first_column() {
     let r: Rotation2<Fixed> = black_box(r2([[3955930943, -1672539044], [1672543140, 3955926847]]));
-    let e: Rotation2<Fixed> = black_box(r2([[3955925999, -1672541049], [1672541049, 3955925999]]));
+    let e: Rotation2<Fixed> = black_box(r2([[3955926000, -1672541050], [1672541050, 3955926000]]));
     assert!(r.renormalize() == e);
 }
 

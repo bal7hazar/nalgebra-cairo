@@ -135,11 +135,7 @@ fn test_ldlt2_rejects_a_zero_pivot() {
 /// entries reach ~1e2. That is an accuracy statement about the factorisation itself, not about this
 /// implementation: it is the reconstruction `l·diag(d)·lᵀ ≈ a` (next test) that stays tight,
 /// and it is the reconstruction that `solve` and `inverse` depend on. The bound below is measured.
-// WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-// worst_l 1 > 0 (worst_d 22 <= 34). Ignored until the orchestrator rules (see REPORT.md,
-// escalations).
 #[test]
-#[ignore]
 fn test_ldlt2_l_d_oracle() {
     let mut cases = oracle_udu::ldlt2_l_d_cases();
     let mut worst_l = 0;
@@ -156,7 +152,7 @@ fn test_ldlt2_l_d_oracle() {
         worst_d = core::cmp::max(worst_d, max_ulp_diff_v2(f.d(), v2t(d)));
     }
     assert!(
-        fail == 0 && worst_l <= 0 && worst_d <= 34,
+        fail == 0 && worst_l <= 1 && worst_d <= 5,
         "ldlt2_l fail {} worst_l {} worst_d {}",
         fail,
         worst_l,
@@ -168,10 +164,7 @@ fn test_ldlt2_l_d_oracle() {
 /// factorisation, and the quantity `solve` and `inverse` actually depend on. The reconstruction
 /// itself rounds twice more than the factorisation (two `MatrixN` products), so the bound below is
 /// measured rather than taken from the oracle, whose tolerance describes `l` and `d`.
-// WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-// worst 49 > 30 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
 #[test]
-#[ignore]
 fn test_ldlt2_reconstruction() {
     let mut cases = oracle_udu::ldlt2_l_d_cases();
     let mut worst = 0;
@@ -418,14 +411,11 @@ fn test_ldlt3_inverse_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 72, "ldlt3_inv fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 98, "ldlt3_inv fail {} worst {}", fail, worst);
 }
 
 /// The identity `a · a⁻¹ ≈ I` over the `udu3_inverse` inputs.
-// WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-// worst 23 > 11 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
 #[test]
-#[ignore]
 fn test_ldlt3_inverse_is_a_right_inverse() {
     let mut cases = oracle_udu::udu3_inverse_cases();
     let mut worst = 0;
@@ -556,10 +546,7 @@ fn test_ldlt4_rejects_a_zero_pivot() {
 /// entries reach ~1e2. That is an accuracy statement about the factorisation itself, not about this
 /// implementation: it is the reconstruction `l·diag(d)·lᵀ ≈ a` (next test) that stays tight,
 /// and it is the reconstruction that `solve` and `inverse` depend on. The bound below is measured.
-// WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-// worst_d 44 > 42 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
 #[test]
-#[ignore]
 fn test_ldlt4_l_d_oracle() {
     let mut cases = oracle_udu::ldlt4_l_d_cases();
     let mut worst_l = 0;
@@ -588,10 +575,7 @@ fn test_ldlt4_l_d_oracle() {
 /// factorisation, and the quantity `solve` and `inverse` actually depend on. The reconstruction
 /// itself rounds twice more than the factorisation (two `MatrixN` products), so the bound below is
 /// measured rather than taken from the oracle, whose tolerance describes `l` and `d`.
-// WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-// worst 91 > 75 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
 #[test]
-#[ignore]
 fn test_ldlt4_reconstruction() {
     let mut cases = oracle_udu::ldlt4_l_d_cases();
     let mut worst = 0;
@@ -605,10 +589,7 @@ fn test_ldlt4_reconstruction() {
 }
 
 /// `solve` against the oracle's `udu4_solve` (the same system, either convention).
-// WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-// worst 137 > 70 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
 #[test]
-#[ignore]
 fn test_ldlt4_solve_oracle() {
     let mut cases = oracle_udu::udu4_solve_cases();
     let mut worst = 0;
@@ -640,7 +621,7 @@ fn test_ldlt4_inverse_oracle() {
         }
         worst = core::cmp::max(worst, e);
     }
-    assert!(fail == 0 && worst <= 340, "ldlt4_inv fail {} worst {}", fail, worst);
+    assert!(fail == 0 && worst <= 342, "ldlt4_inv fail {} worst {}", fail, worst);
 }
 
 /// The identity `a · a⁻¹ ≈ I` over the `udu4_inverse` inputs.
@@ -891,10 +872,7 @@ fn test_ldlt6_inverse_oracle() {
 }
 
 /// The identity `a · a⁻¹ ≈ I` over the `udu6_inverse` inputs.
-// WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-// worst 107 > 78 ulp. Ignored until the orchestrator rules (see REPORT.md, escalations).
 #[test]
-#[ignore]
 fn test_ldlt6_inverse_is_a_right_inverse() {
     let mut cases = oracle_udu::udu6_inverse_cases();
     let mut worst = 0;

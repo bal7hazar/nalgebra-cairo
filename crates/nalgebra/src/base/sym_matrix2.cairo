@@ -1103,7 +1103,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_try_inverse__structured() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(s2((13566534218, -2170479783, 12041205356)));
+        let e = black_box(s2((13566534219, -2170479783, 12041205357)));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1111,7 +1111,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_try_inverse__structured_prescaled() {
         let a = black_box(s2((301259457, 33609003, 288701628)));
-        let e = black_box(s2((62037790974, -7222087099, 64736286220)));
+        let e = black_box(s2((62037790975, -7222087099, 64736286221)));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1119,7 +1119,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_try_inverse__generic() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(s2((13566534218, -2170479783, 12041205356)));
+        let e = black_box(s2((13566534219, -2170479783, 12041205357)));
         let inv = a.to_matrix().try_inverse().unwrap();
         assert!(SymMatrix2Trait::from_matrix_unchecked(inv) == e);
     }
@@ -1136,7 +1136,7 @@ mod tests {
     #[inline(never)]
     fn bench_sym_matrix2_inverse_unchecked__structured() {
         let a = black_box(s2((1400100946, 252374302, 1577459800)));
-        let e = black_box(s2((13566534218, -2170479783, 12041205356)));
+        let e = black_box(s2((13566534219, -2170479783, 12041205357)));
         assert!(a.inverse_unchecked() == e);
     }
 

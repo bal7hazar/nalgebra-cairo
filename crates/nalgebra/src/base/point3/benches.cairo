@@ -450,7 +450,7 @@ fn bench_point3_unscale__baseline() {
 fn bench_point3_unscale__unscale() {
     let p: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
     let k: Fixed = black_box(fx(0x280000000));
-    let e: Point3<Fixed> = black_box(p3(0x99999999, -0xe6666666, 0x180000000));
+    let e: Point3<Fixed> = black_box(p3(0x9999999a, -0xe6666666, 0x180000000));
     assert!(p.unscale(k) == e);
 }
 
@@ -459,7 +459,7 @@ fn bench_point3_unscale__unscale() {
 fn bench_point3_unscale__div_assign() {
     let p: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
     let k: Fixed = black_box(fx(0x280000000));
-    let e: Point3<Fixed> = black_box(p3(0x99999999, -0xe6666666, 0x180000000));
+    let e: Point3<Fixed> = black_box(p3(0x9999999a, -0xe6666666, 0x180000000));
     let mut r = p;
     r /= k;
     assert!(r == e);

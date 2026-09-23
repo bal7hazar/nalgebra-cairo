@@ -481,7 +481,7 @@ fn bench_quaternion_normalize__baseline() {
 #[inline(never)]
 fn bench_quaternion_normalize__divisions() {
     let x = black_box(a());
-    let e = black_box(q(784150157, 1568300314, -2352450471, 3136600629));
+    let e = black_box(q(784150157, 1568300315, -2352450472, 3136600629));
     assert!(x.normalize() == e);
 }
 
@@ -505,7 +505,7 @@ fn bench_quaternion_try_inverse__baseline() {
 #[inline(never)]
 fn bench_quaternion_try_inverse__divisions() {
     let x = black_box(a());
-    let e = black_box(q(143165576, -286331153, 429496729, -572662306));
+    let e = black_box(q(143165577, -286331153, 429496730, -572662306));
     assert!(x.try_inverse() == Some(e));
 }
 
@@ -513,7 +513,7 @@ fn bench_quaternion_try_inverse__divisions() {
 #[inline(never)]
 fn bench_quaternion_try_inverse__alt_recip() {
     let x = black_box(a());
-    let e = black_box(q(143165576, -286331152, 429496728, -572662304));
+    let e = black_box(q(143165577, -286331154, 429496731, -572662308));
     assert!(alt_try_inverse_recip(x) == Some(e));
 }
 

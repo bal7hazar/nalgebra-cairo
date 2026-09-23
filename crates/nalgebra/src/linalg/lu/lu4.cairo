@@ -1465,11 +1465,7 @@ mod tests {
         assert!(f.determinant() == fx(-257698037760));
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // reconstruction error 44 -> 49 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_new_reconstruction_oracle() {
         // `P A == L U` within 44 raw units on the lu4 vectors.
         let mut cases = oracle::lu4_solve_cases();
@@ -1479,7 +1475,7 @@ mod tests {
             let f = Lu4Trait::new(m4(a));
             worst = core::cmp::max(worst, max_ulp_diff4(f.permute_rows(m4(a)), f.l() * f.u()));
         }
-        assert!(worst == 44, "reconstruction error {worst}");
+        assert!(worst == 25, "reconstruction error {worst}");
     }
 
     #[test]
@@ -1563,7 +1559,7 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_v4(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 1384);
+        assert!(worst == 1451);
     }
 
     #[test]
@@ -1578,7 +1574,7 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_m4(e), tol), "inverse error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 2618);
+        assert!(worst == 2619);
     }
 
     #[test]
@@ -1609,7 +1605,7 @@ mod tests {
                 );
         }
         // ... and the reciprocal variant drifts by at most this many ulp from it.
-        assert!(worst == 5);
+        assert!(worst == 7);
     }
 
     #[test]
@@ -1619,11 +1615,7 @@ mod tests {
         let _ = black_box(Matrix4Trait::from_diagonal_element(fx(1))).lu().try_inverse();
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst determinant error 197808 -> 358486 ulp. Ignored until the orchestrator rules (see
-    // REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_determinant_oracle() {
         let mut cases = oracle::lu4_determinant_cases();
         let mut worst = 0;
@@ -1634,7 +1626,7 @@ mod tests {
             assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 197808);
+        assert!(worst == 17456);
     }
 
     #[test]
@@ -1663,9 +1655,9 @@ mod tests {
         // The unpivoted figure is NOT a win: these matrices are random and
         // well-conditioned, so their leading entries happen to be usable pivots.
         // `test_no_pivot_candidate_is_wrong` shows the structural failure.
-        assert!(solve_failures(0) == (0, 1384));
-        assert!(solve_failures(1) == (4, 1384));
-        assert!(solve_failures(2) == (1, 985));
+        assert!(solve_failures(0) == (0, 1451));
+        assert!(solve_failures(1) == (3, 1450));
+        assert!(solve_failures(2) == (0, 678));
     }
 
     #[test]
@@ -1712,8 +1704,8 @@ mod tests {
                 [
                     [-3905117829, -101544735, 2917390324, -1089761038],
                     [138042224, -3594501327, -1433035679, -1793672967],
-                    [2904686338, -672132917, -4889978812, 1893902051],
-                    [242782019, -3207459344, 2235014795, -6063365661],
+                    [2904686339, -672132918, -4889978813, 1893902052],
+                    [242782019, -3207459345, 2235014795, -6063365663],
                 ],
             ),
         );
@@ -1728,9 +1720,9 @@ mod tests {
             m4(
                 [
                     [-125512283, -3597765021, -1339269412, -1828698387],
-                    [133631171082, 111837271069, 44586657535, 55807321097],
-                    [7553781748, 345871237, -2544646840, -5077817027],
-                    [90374759643, 2926288999, 8253522146, 11651805299],
+                    [133631171083, 111837271070, 44586657535, 55807321098],
+                    [7553781749, 345871238, -2544646850, -5077817040],
+                    [90374759643, 2926289000, 8253522131, 11651805292],
                 ],
             ),
         );
@@ -1885,7 +1877,7 @@ mod tests {
     fn bench_lu4_solve__substitution() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v4t((-6526739452, -3077920152, -5908376559, -6714764225))));
+        let e = black_box(Some(v4t((-6526739453, -3077920151, -5908376560, -6714764226))));
         assert!(f.solve(b) == e);
     }
 
@@ -1894,7 +1886,7 @@ mod tests {
     fn bench_lu4_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v4t((-6526739453, -3077920153, -5908376559, -6714764225))));
+        let e = black_box(Some(v4t((-6526739453, -3077920152, -5908376560, -6714764225))));
         assert!(solve_recip(f, b) == e);
     }
 
@@ -1943,10 +1935,10 @@ mod tests {
             Some(
                 m4(
                     [
-                        [-368910954, -2803986566, -82972188, -2814138556],
-                        [-3573914249, -315013114, 1987894368, 469481704],
+                        [-368910954, -2803986567, -82972188, -2814138557],
+                        [-3573914249, -315013115, 1987894368, 469481704],
                         [-1374341490, 2247339518, -1178301686, -3159192092],
-                        [-2024239779, -833661342, -3042327496, 1583166179],
+                        [-2024239779, -833661342, -3042327496, 1583166180],
                     ],
                 ),
             ),
@@ -1962,10 +1954,10 @@ mod tests {
             Some(
                 m4(
                     [
-                        [-368910954, -2803986566, -82972188, -2814138556],
-                        [-3573914249, -315013114, 1987894368, 469481704],
+                        [-368910954, -2803986567, -82972188, -2814138557],
+                        [-3573914249, -315013115, 1987894368, 469481704],
                         [-1374341490, 2247339518, -1178301686, -3159192092],
-                        [-2024239779, -833661342, -3042327496, 1583166179],
+                        [-2024239779, -833661342, -3042327496, 1583166180],
                     ],
                 ),
             ),
@@ -1981,9 +1973,9 @@ mod tests {
             Some(
                 m4(
                     [
-                        [-368910955, -2803986568, -82972189, -2814138557],
-                        [-3573914248, -315013115, 1987894367, 469481704],
-                        [-1374341491, 2247339517, -1178301686, -3159192092],
+                        [-368910955, -2803986567, -82972190, -2814138558],
+                        [-3573914248, -315013115, 1987894369, 469481705],
+                        [-1374341491, 2247339518, -1178301687, -3159192093],
                         [-2024239780, -833661342, -3042327496, 1583166179],
                     ],
                 ),

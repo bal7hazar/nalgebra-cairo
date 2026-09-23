@@ -744,7 +744,7 @@ mod tests {
         // `adjugate / det` without pre-scaling and of `adjugate * (1 / det)`.
         assert!(inverse_failures(0) == (0, 8));
         assert!(inverse_failures(1) == (1, 1112));
-        assert!(inverse_failures(2) == (6, 1111));
+        assert!(inverse_failures(2) == (4, 1111));
     }
 
     #[test]
@@ -1353,7 +1353,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__prescaled_det_ge_half() {
         let a = black_box(m2([[-5146602846, 2781339837], [533542917, 1900613592]]));
-        let e = black_box(m2([[-3112122076, 4554249819], [873639280, 8427202879]]));
+        let e = black_box(m2([[-3112122076, 4554249820], [873639280, 8427202879]]));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1361,7 +1361,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__prescaled_norm_gt_one() {
         let a = black_box(m2([[-4407632017, -216812900], [-2360417318, -1480186601]]));
-        let e = black_box(m2([[-4541423615, 665212901], [7242097005, -13523243702]]));
+        let e = black_box(m2([[-4541423615, 665212902], [7242097005, -13523243702]]));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1369,7 +1369,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__prescaled_small() {
         let a = black_box(m2([[-30484050, -320085972], [-224450602, -21365614]]));
-        let e = black_box(m2([[5536085856, -82938099627], [-58157832641, 7898781568]]));
+        let e = black_box(m2([[5536085856, -82938099629], [-58157832642, 7898781568]]));
         assert!(a.try_inverse().unwrap() == e);
     }
 
@@ -1377,7 +1377,7 @@ mod tests {
     #[inline(never)]
     fn bench_matrix2_try_inverse__alt_div() {
         let a = black_box(m2([[-5146602846, 2781339837], [533542917, 1900613592]]));
-        let e = black_box(m2([[-3112122076, 4554249819], [873639280, 8427202879]]));
+        let e = black_box(m2([[-3112122076, 4554249820], [873639280, 8427202879]]));
         assert!(try_inverse_div(a).unwrap() == e);
     }
 

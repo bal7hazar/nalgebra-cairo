@@ -111,7 +111,7 @@ fn test_rotation_between_alt_atan2_agrees_on_long_vectors() {
     // Same rotation within the accuracy of atan2 + sin_cos, for 4.6x the gas.
     let (a, b) = (v2(0x180000000, -0x240000000), v2(-0x480000000, 0x40000000));
     let got = UnitComplexTrait::rotation_between(a, b);
-    assert!(got == uc(-2576980377, -3435973836));
+    assert!(got == uc(-2576980378, -3435973837));
     assert!(alt_rotation_between_atan2(a, b).abs_diff_eq(got, 16));
 }
 
@@ -428,7 +428,7 @@ fn bench_unit_complex_rotation_between__baseline() {
 fn bench_unit_complex_rotation_between__algebraic() {
     let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let b: Vector2<Fixed> = black_box(v2(-0x480000000, 0x40000000));
-    let e: UnitComplex<Fixed> = black_box(uc(-2576980377, -3435973836));
+    let e: UnitComplex<Fixed> = black_box(uc(-2576980378, -3435973837));
     assert!(UnitComplexTrait::rotation_between(a, b) == e);
 }
 
@@ -482,7 +482,7 @@ fn bench_unit_complex_angle__baseline() {
 #[inline(never)]
 fn bench_unit_complex_angle__atan2() {
     let c: UnitComplex<Fixed> = black_box(c());
-    let e: Fixed = black_box(fx(1717986917));
+    let e: Fixed = black_box(fx(1717986918));
     assert!(c.angle() == e);
 }
 
@@ -518,7 +518,7 @@ fn bench_unit_complex_powf__baseline() {
 fn bench_unit_complex_powf__atan2_sin_cos() {
     let c: UnitComplex<Fixed> = black_box(c());
     let n: Fixed = black_box(Real::TWO);
-    let e: UnitComplex<Fixed> = black_box(uc(2992332533, 3081020948));
+    let e: UnitComplex<Fixed> = black_box(uc(2992332532, 3081020950));
     assert!(c.powf(n) == e);
 }
 
@@ -554,7 +554,7 @@ fn bench_unit_complex_renormalize__baseline() {
 #[inline(never)]
 fn bench_unit_complex_renormalize__norm_and_divisions() {
     let c: UnitComplex<Fixed> = black_box(uc(3955930943, 1672543140));
-    let e: UnitComplex<Fixed> = black_box(uc(3955925999, 1672541049));
+    let e: UnitComplex<Fixed> = black_box(uc(3955926000, 1672541050));
     assert!(c.renormalize() == e);
 }
 
@@ -602,7 +602,7 @@ fn bench_unit_complex_renormalize_fast__alt_lerp() {
 #[inline(never)]
 fn bench_unit_complex_renormalize_fast__alt_exact() {
     let c: UnitComplex<Fixed> = black_box(uc(3955930943, 1672543140));
-    let e: UnitComplex<Fixed> = black_box(uc(3955925999, 1672541049));
+    let e: UnitComplex<Fixed> = black_box(uc(3955926000, 1672541050));
     assert!(c.renormalize() == e);
 }
 
@@ -620,7 +620,7 @@ fn bench_unit_complex_append_axisangle_linearized__baseline() {
 fn bench_unit_complex_append_axisangle_linearized__renormalize() {
     let c: UnitComplex<Fixed> = black_box(c());
     let a: Fixed = black_box(fx(0x28f5c29));
-    let e: UnitComplex<Fixed> = black_box(uc(3939004511, 1712012713));
+    let e: UnitComplex<Fixed> = black_box(uc(3939004512, 1712012714));
     assert!(c.append_axisangle_linearized(a) == e);
 }
 

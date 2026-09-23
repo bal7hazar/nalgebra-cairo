@@ -182,7 +182,7 @@ fn test_scale_overflow() {
 #[test]
 fn test_unscale_exact() {
     // (1.5, -2.25) / 2.5 = (0.5999999999, -0.9000000001)
-    assert!(a().unscale(fx(0x280000000)) == v2(2576980377, -3865470566));
+    assert!(a().unscale(fx(0x280000000)) == v2(2576980378, -3865470566));
     assert!(a().unscale(Real::ONE) == a());
 }
 
@@ -469,7 +469,7 @@ fn test_metric_distance_overflow() {
 #[test]
 fn test_normalize_exact() {
     // (3, -4) / 5, floored.
-    assert!(p().normalize() == v2(2576980377, -3435973836));
+    assert!(p().normalize() == v2(2576980378, -3435973837));
     assert!(v2(-0x500000000, 0).normalize() == -Vector2Trait::<Fixed>::x());
     assert!(v2(0, -0x500000000).normalize() == -Vector2Trait::<Fixed>::y());
 }
@@ -477,7 +477,7 @@ fn test_normalize_exact() {
 #[test]
 fn test_normalize_large_magnitude() {
     // (1e6, ..) / |(1e6, ..)|: no overflow, every component is 1 / sqrt(2) within 1 ulp.
-    assert!(v2(0xf424000000000, 0xf424000000000).normalize() == v2(3037000499, 3037000499));
+    assert!(v2(0xf424000000000, 0xf424000000000).normalize() == v2(3037000500, 3037000500));
     assert!(
         v2(0xf424000000000, 0xf424000000000)
             .normalize()
@@ -488,7 +488,7 @@ fn test_normalize_large_magnitude() {
 #[test]
 fn test_normalize_tiny_magnitude() {
     // (3, -4, ..) ulp: norm 5 ulp, result (0.6, -0.8, ..) floored.
-    assert!(v2(3, -4).normalize() == v2(2576980377, -3435973836));
+    assert!(v2(3, -4).normalize() == v2(2576980378, -3435973837));
 }
 
 #[test]
@@ -500,7 +500,7 @@ fn test_normalize_zero() {
 #[test]
 fn test_normalize_is_unit_within_tolerance() {
     let r = a().normalize();
-    assert!(r == v2(2382419201, -3573628802));
+    assert!(r == v2(2382419202, -3573628803));
     assert!(r.norm().abs_diff_eq(Real::ONE, 4));
 }
 
@@ -534,7 +534,7 @@ fn test_cap_magnitude_exact() {
 #[test]
 fn test_cap_magnitude_never_exceeds_cap_by_more_than_rounding() {
     let r = a().cap_magnitude(fx(0x200000000));
-    assert!(r == v2(4764838402, -7147257604));
+    assert!(r == v2(4764838404, -7147257606));
     assert!(r.norm() <= fx(0x200000000) && r.norm().abs_diff_eq(fx(0x200000000), 16));
 }
 

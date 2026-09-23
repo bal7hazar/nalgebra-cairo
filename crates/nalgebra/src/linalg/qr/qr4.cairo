@@ -327,11 +327,7 @@ mod tests {
 
     // --- oracle --------------------------------------------------------------------------------
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // (worst_q, worst_r, beyond tolerance) (84, 29, 0) -> (83, 31, 0). Ignored until the
-    // orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_new_factors_oracle() {
         let mut cases = oracle::qr4_q_r_cases();
         let (mut worst_q, mut worst_r, mut worst_ex) = (0, 0, 0);
@@ -346,7 +342,7 @@ mod tests {
             worst_r = core::cmp::max(worst_r, dr);
         }
         assert!(
-            (worst_q, worst_r, worst_ex) == (84, 29, 0),
+            (worst_q, worst_r, worst_ex) == (84, 15, 0),
             "regressed: {worst_q} {worst_r} {worst_ex}",
         );
     }
@@ -364,14 +360,10 @@ mod tests {
             worst_orth = core::cmp::max(worst_orth, orth);
         }
         // Measured: `|A - Q R| <= worst_rec ulp * max(1, max |a_ij|)`, `|QᵀQ - I| <= worst_orth`.
-        assert!(worst_rec == 3 && worst_orth == 74, "regressed: {worst_rec} {worst_orth}");
+        assert!(worst_rec == 3 && worst_orth == 86, "regressed: {worst_rec} {worst_orth}");
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // (worst, cases beyond the oracle tolerance) (3134, 0) -> (1463, 2). Ignored until the
-    // orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_solve_oracle() {
         let mut cases = oracle::qr4_solve_cases();
         let (mut worst, mut worst_ex) = (0, 0);
@@ -383,7 +375,7 @@ mod tests {
             worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v4(e), tol)));
             worst = core::cmp::max(worst, err);
         }
-        assert!((worst, worst_ex) == (3134, 0), "regressed: {worst} {worst_ex}");
+        assert!((worst, worst_ex) == (940, 0), "regressed: {worst} {worst_ex}");
     }
 
     #[test]
@@ -398,7 +390,7 @@ mod tests {
             worst = core::cmp::max(worst, max_ulp_diff4(inv * m4(a), id));
         }
         // Measured residual of `A A^-1 - I` and `A^-1 A - I` over the 30 well-conditioned vectors.
-        assert!(worst == 146, "regressed: {worst}");
+        assert!(worst == 128, "regressed: {worst}");
     }
 
     #[test]

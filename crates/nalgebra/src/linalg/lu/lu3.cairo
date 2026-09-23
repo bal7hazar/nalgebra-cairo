@@ -948,11 +948,7 @@ mod tests {
         assert!(f.determinant() == fx(154618822656));
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // reconstruction error 16 -> 28 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_new_reconstruction_oracle() {
         // `P A == L U` within 16 raw units on the lu3 vectors.
         let mut cases = oracle::lu3_solve_cases();
@@ -962,7 +958,7 @@ mod tests {
             let f = Lu3Trait::new(m3(a));
             worst = core::cmp::max(worst, max_ulp_diff3(f.permute_rows(m3(a)), f.l() * f.u()));
         }
-        assert!(worst == 16, "reconstruction error {worst}");
+        assert!(worst == 10, "reconstruction error {worst}");
     }
 
     #[test]
@@ -1031,11 +1027,7 @@ mod tests {
         assert!(Lu3Trait::new(a_bench()).is_invertible());
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst solve error 832 -> 833 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_solve_oracle() {
         let mut cases = oracle::lu3_solve_cases();
         let mut worst = 0;
@@ -1047,14 +1039,10 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_v3(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 832);
+        assert!(worst == 436);
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // worst error 17355912 -> 17355913 ulp. Ignored until the orchestrator rules (see REPORT.md,
-    // escalations).
     #[test]
-    #[ignore]
     fn test_solve_near_singular_oracle() {
         // Condition number 1e2..1e4: the oracle flags these as behaviour, not
         // precision, tests. The tolerances are large by construction.
@@ -1068,7 +1056,7 @@ mod tests {
             assert!(err <= oracle_tol(max_abs_v3(e), tol), "solve error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 17355912);
+        assert!(worst == 7603197);
     }
 
     #[test]
@@ -1124,11 +1112,7 @@ mod tests {
         let _ = black_box(Matrix3Trait::from_diagonal_element(fx(1))).lu().try_inverse();
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // 1 oracle case beyond its tolerance, worst error 466349 -> 642615 ulp. Ignored until the
-    // orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_determinant_oracle() {
         let mut cases = oracle::lu3_determinant_cases();
         let mut worst = 0;
@@ -1139,7 +1123,7 @@ mod tests {
             assert!(err <= oracle_tol(abs_raw(fx(expected)), tol), "determinant error {err}");
             worst = core::cmp::max(worst, err);
         }
-        assert!(worst == 466349);
+        assert!(worst == 326241);
     }
 
     #[test]
@@ -1166,9 +1150,9 @@ mod tests {
         // The unpivoted figure is NOT a win: these matrices are random and
         // well-conditioned, so their leading entries happen to be usable pivots.
         // `test_no_pivot_candidate_is_wrong` shows the structural failure.
-        assert!(solve_failures(0) == (0, 833));
-        assert!(solve_failures(1) == (3, 858));
-        assert!(solve_failures(2) == (0, 516));
+        assert!(solve_failures(0) == (0, 436));
+        assert!(solve_failures(1) == (3, 374));
+        assert!(solve_failures(2) == (0, 447));
     }
 
     #[test]
@@ -1189,8 +1173,8 @@ mod tests {
         // determinant is a sum of exact 2x2 minors, where the LU determinant is a
         // product of pivots that already carry the rounding of the elimination.
         assert!(matrix3_inverse_failures(0) == (0, 64));
-        assert!(matrix3_inverse_failures(1) == (0, 28));
-        assert!(matrix3_determinant_failures(0) == (3, 256136709));
+        assert!(matrix3_inverse_failures(1) == (0, 27));
+        assert!(matrix3_determinant_failures(0) == (2, 27731535));
         assert!(matrix3_determinant_failures(1) == (0, 556));
     }
 
@@ -1218,7 +1202,7 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [6298117444, -2725477524, -1338161353], [1782629075, 3822108354, 3606471941],
+                    [6298117444, -2725477524, -1338161353], [1782629076, 3822108355, 3606471942],
                     [-1646294844, -704614971, 4674552574],
                 ],
             ),
@@ -1234,7 +1218,7 @@ mod tests {
             m3(
                 [
                     [-2414118097, 417657389, 4595817171], [-11205006284, -1635864183, 10651722790],
-                    [-4650645422, -8252330158, 28493647232],
+                    [-4650645423, -8252330158, 28493647233],
                 ],
             ),
         );
@@ -1391,7 +1375,7 @@ mod tests {
     fn bench_lu3_solve__alt_recip() {
         let f = black_box(f_bench());
         let b = black_box(b_bench());
-        let e = black_box(Some(v3t((-1035334029, 24604681, 6703439319))));
+        let e = black_box(Some(v3t((-1035334030, 24604680, 6703439320))));
         assert!(solve_recip(f, b) == e);
     }
 
@@ -1438,8 +1422,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904015, 1818436374, 1961768289],
-                        [-3723567547, -3176899585, 4215453383], [3946205283, 1243908434, 647398487],
+                        [-772904015, 1818436373, 1961768289],
+                        [-3723567548, -3176899587, 4215453383], [3946205284, 1243908435, 647398487],
                     ],
                 ),
             ),
@@ -1455,8 +1439,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904015, 1818436374, 1961768289],
-                        [-3723567547, -3176899585, 4215453383], [3946205283, 1243908434, 647398487],
+                        [-772904015, 1818436373, 1961768289],
+                        [-3723567548, -3176899587, 4215453383], [3946205284, 1243908435, 647398487],
                     ],
                 ),
             ),
@@ -1472,8 +1456,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904016, 1818436374, 1961768289],
-                        [-3723567548, -3176899586, 4215453384], [3946205283, 1243908434, 647398486],
+                        [-772904016, 1818436374, 1961768288],
+                        [-3723567548, -3176899586, 4215453382], [3946205284, 1243908434, 647398487],
                     ],
                 ),
             ),
@@ -1522,8 +1506,8 @@ mod tests {
             Some(
                 m3(
                     [
-                        [-772904015, 1818436374, 1961768289],
-                        [-3723567548, -3176899586, 4215453385], [3946205285, 1243908435, 647398485],
+                        [-772904016, 1818436373, 1961768289],
+                        [-3723567549, -3176899587, 4215453384], [3946205285, 1243908435, 647398485],
                     ],
                 ),
             ),
@@ -1540,7 +1524,7 @@ mod tests {
                 m3(
                     [
                         [-772904015, 1818436374, 1961768289],
-                        [-3723567547, -3176899586, 4215453384], [3946205283, 1243908435, 647398485],
+                        [-3723567548, -3176899587, 4215453384], [3946205284, 1243908435, 647398485],
                     ],
                 ),
             ),
@@ -1560,7 +1544,7 @@ mod tests {
     #[inline(never)]
     fn bench_lu3_vs_matrix3_determinant__lu() {
         let a = black_box(a_bench());
-        let e = black_box(fx(6100059564));
+        let e = black_box(fx(6100059565));
         assert!(a.lu().determinant() == e);
     }
 

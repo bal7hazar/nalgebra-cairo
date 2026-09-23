@@ -712,11 +712,7 @@ mod tests {
         }
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating
-    // `Real::div` / `Real::recip` the worst residual is 47 ulp (40 with the former floor rounding).
-    // Ignored until the orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_try_inverse_product_is_identity() {
         let mut cases = oracle_sym_matrix::udu3_inverse_cases();
         let mut worst = 0;
@@ -1471,7 +1467,7 @@ mod tests {
     fn bench_sym_matrix3_try_inverse__structured_prescaled() {
         let a = black_box(s3((927656796, 185981564, 385239268, 728183245, -57978140, 705759751)));
         let e = black_box(
-            s3((28296730480, -8512599912, -16145092481, 28060217721, 6951752315, 35521319149)),
+            s3((28296730480, -8512599912, -16145092481, 28060217722, 6951752316, 35521319149)),
         );
         assert!(a.try_inverse().unwrap() == e);
     }

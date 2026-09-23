@@ -183,7 +183,7 @@ fn test_ldlt2_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve2_worst(0), solve2_worst(1));
     let (id, ir) = (inverse2_worst(0), inverse2_worst(1));
     assert!(
-        sd == 250 && sr == 329 && id == 33 && ir == 33,
+        sd == 226 && sr == 265 && id == 33 && ir == 33,
         "ldlt2 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -198,7 +198,7 @@ fn test_ldlt2_alt_products_is_less_accurate() {
     let (f0, b0) = new2_worst(0);
     let (f1, b1) = new2_worst(1);
     assert!(
-        f0 == 22 && b0 == 49 && f1 == 44 && b1 == 49,
+        f0 == 5 && b0 == 11 && f1 == 9 && b1 == 11,
         "new2 shipped ({}, {}) products ({}, {})",
         f0,
         b0,
@@ -510,7 +510,7 @@ fn test_ldlt3_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve3_worst(0), solve3_worst(1));
     let (id, ir) = (inverse3_worst(0), inverse3_worst(1));
     assert!(
-        sd == 187 && sr == 508 && id == 72 && ir == 72,
+        sd == 74 && sr == 142 && id == 98 && ir == 98,
         "ldlt3 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -525,7 +525,7 @@ fn test_ldlt3_alt_products_is_less_accurate() {
     let (f0, b0) = new3_worst(0);
     let (f1, b1) = new3_worst(1);
     assert!(
-        f0 == 29 && b0 == 16 && f1 == 29 && b1 == 16,
+        f0 == 29 && b0 == 8 && f1 == 29 && b1 == 8,
         "new3 shipped ({}, {}) products ({}, {})",
         f0,
         b0,
@@ -923,7 +923,7 @@ fn test_ldlt4_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve4_worst(0), solve4_worst(1));
     let (id, ir) = (inverse4_worst(0), inverse4_worst(1));
     assert!(
-        sd == 137 && sr == 539 && id == 324 && ir == 323,
+        sd == 68 && sr == 83 && id == 342 && ir == 341,
         "ldlt4 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -938,7 +938,7 @@ fn test_ldlt4_alt_products_is_less_accurate() {
     let (f0, b0) = new4_worst(0);
     let (f1, b1) = new4_worst(1);
     assert!(
-        f0 == 44 && b0 == 91 && f1 == 86 && b1 == 91,
+        f0 == 18 && b0 == 41 && f1 == 36 && b1 == 41,
         "new4 shipped ({}, {}) products ({}, {})",
         f0,
         b0,
@@ -1596,7 +1596,7 @@ fn test_ldlt6_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve6_worst(0), solve6_worst(1));
     let (id, ir) = (inverse6_worst(0), inverse6_worst(1));
     assert!(
-        sd == 250 && sr == 597 && id == 365 && ir == 365,
+        sd == 458 && sr == 493 && id == 365 && ir == 365,
         "ldlt6 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -1611,7 +1611,7 @@ fn test_ldlt6_alt_products_is_less_accurate() {
     let (f0, b0) = new6_worst(0);
     let (f1, b1) = new6_worst(1);
     assert!(
-        f0 == 25 && b0 == 21 && f1 == 25 && b1 == 21,
+        f0 == 27 && b0 == 10 && f1 == 27 && b1 == 10,
         "new6 shipped ({}, {}) products ({}, {})",
         f0,
         b0,
@@ -1770,6 +1770,6 @@ fn test_ldlt2_inverse_alt_recip_loses_low_bits() {
     let alt = inverse2_recip(f);
     assert!(shipped != alt);
     assert!(shipped.m12 == alt.m12 && shipped.m22 == alt.m22);
-    assert!(ulp_diff(shipped.m11, exact) == 3);
+    assert!(ulp_diff(shipped.m11, exact) == 2);
     assert!(ulp_diff(alt.m11, exact) == 8);
 }

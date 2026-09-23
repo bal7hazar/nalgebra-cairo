@@ -1071,25 +1071,17 @@ mod tests {
         }
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating division / reciprocal,
-    // the shipped algorithm's worst error over the oracle is 27 -> 28 ulp (0 cases beyond
-    // tolerance). Ignored until the orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_try_inverse_candidates_error() {
         // Oracle, 30 well-conditioned matrices (10 small, 10 unit, 10 medium):
         // (cases above the oracle tolerance, worst error in ulp) of the shipped algorithm, of
         // `adjugate / det` without pre-scaling and of `adjugate * (1 / det)`.
         assert!(inverse_failures(0) == (0, 27));
         assert!(inverse_failures(1) == (2, 84960));
-        assert!(inverse_failures(2) == (10, 84960));
+        assert!(inverse_failures(2) == (9, 84960));
     }
 
-    // WP 7.1 FINDING (escalated, tolerance kept): with `fixed`'s truncating
-    // `Real::div` the worst identity residual over the oracle is 178 ulp (104 with the former floor
-    // division). Ignored until the orchestrator rules (see REPORT.md, escalations).
     #[test]
-    #[ignore]
     fn test_try_inverse_product_is_identity() {
         let mut cases = oracle_matrix3_inverse::matrix3_try_inverse_cases();
         while let Some(case) = cases.pop_front() {
@@ -2577,8 +2569,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [2746796816, -1668618016, 5482570468], [743254844, -2691902149, -4968171082],
-                    [-2670352861, -3252013208, -2561850149],
+                    [2746796817, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
+                    [-2670352862, -3252013208, -2561850149],
                 ],
             ),
         );
@@ -2599,8 +2591,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [-6951842769, -153772323, -7990975569], [-3388673950, 9398089719, 9237754150],
-                    [-6515945502, 233474261, 2126960559],
+                    [-6951842770, -153772323, -7990975570], [-3388673950, 9398089719, 9237754150],
+                    [-6515945503, 233474262, 2126960560],
                 ],
             ),
         );
@@ -2643,8 +2635,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [2746796816, -1668618016, 5482570468], [743254844, -2691902149, -4968171082],
-                    [-2670352861, -3252013208, -2561850149],
+                    [2746796817, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
+                    [-2670352862, -3252013208, -2561850149],
                 ],
             ),
         );
@@ -2665,8 +2657,8 @@ mod tests {
         let e = black_box(
             m3(
                 [
-                    [2746796816, -1668618017, 5482570467], [743254843, -2691902150, -4968171083],
-                    [-2670352862, -3252013208, -2561850149],
+                    [2746796816, -1668618017, 5482570468], [743254844, -2691902150, -4968171083],
+                    [-2670352862, -3252013209, -2561850150],
                 ],
             ),
         );

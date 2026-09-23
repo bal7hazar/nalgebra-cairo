@@ -205,7 +205,7 @@ fn test_scale_overflow() {
 #[test]
 fn test_unscale_exact() {
     // (1.5, -2.25, 3.75) / 2.5 = (0.5999999999, -0.9000000001, 1.5)
-    assert!(a().unscale(fx(0x280000000)) == v3(2576980377, -3865470566, 0x180000000));
+    assert!(a().unscale(fx(0x280000000)) == v3(2576980378, -3865470566, 0x180000000));
     assert!(a().unscale(Real::ONE) == a());
 }
 
@@ -563,7 +563,7 @@ fn test_metric_distance_overflow() {
 #[test]
 fn test_normalize_exact() {
     // (3, -4, 12) / 13, floored.
-    assert!(p().normalize() == v3(991146299, -1321528398, 3964585196));
+    assert!(p().normalize() == v3(991146299, -1321528399, 3964585196));
     assert!(v3(-0x500000000, 0, 0).normalize() == -Vector3Trait::<Fixed>::x());
     assert!(v3(0, -0x500000000, 0).normalize() == -Vector3Trait::<Fixed>::y());
     assert!(v3(0, 0, -0x500000000).normalize() == -Vector3Trait::<Fixed>::z());
@@ -574,7 +574,7 @@ fn test_normalize_large_magnitude() {
     // (1e6, ..) / |(1e6, ..)|: no overflow, every component is 1 / sqrt(3) within 1 ulp.
     assert!(
         v3(0xf424000000000, 0xf424000000000, 0xf424000000000)
-            .normalize() == v3(2479700524, 2479700524, 2479700524),
+            .normalize() == v3(2479700525, 2479700525, 2479700525),
     );
     assert!(
         v3(0xf424000000000, 0xf424000000000, 0xf424000000000)
@@ -586,7 +586,7 @@ fn test_normalize_large_magnitude() {
 #[test]
 fn test_normalize_tiny_magnitude() {
     // (3, -4, ..) ulp: norm 5 ulp, result (0.6, -0.8, ..) floored.
-    assert!(v3(3, -4, 0).normalize() == v3(2576980377, -3435973836, 0));
+    assert!(v3(3, -4, 0).normalize() == v3(2576980378, -3435973837, 0));
 }
 
 #[test]
@@ -598,7 +598,7 @@ fn test_normalize_zero() {
 #[test]
 fn test_normalize_is_unit_within_tolerance() {
     let r = a().normalize();
-    assert!(r == v3(1393471396, -2090207095, 3483678492));
+    assert!(r == v3(1393471397, -2090207095, 3483678492));
     assert!(r.norm().abs_diff_eq(Real::ONE, 6));
 }
 
@@ -632,7 +632,7 @@ fn test_cap_magnitude_exact() {
 #[test]
 fn test_cap_magnitude_never_exceeds_cap_by_more_than_rounding() {
     let r = a().cap_magnitude(fx(0x200000000));
-    assert!(r == v3(2786942793, -4180414190, 6967356982));
+    assert!(r == v3(2786942794, -4180414192, 6967356986));
     assert!(r.norm() <= fx(0x200000000) && r.norm().abs_diff_eq(fx(0x200000000), 16));
 }
 
@@ -735,13 +735,13 @@ fn test_orthonormal_basis_model_values() {
     assert!(
         v3(1393471396, -2090207096, 3483678492)
             .orthonormal_basis() == (
-                v3(4045339972, 374440986, -1393471396), v3(374440986, 3733305816, 2090207096),
+                v3(4045339972, 374440987, -1393471396), v3(374440987, 3733305816, 2090207096),
             ),
     );
     assert!(
         v3(1393471396, -2090207096, -3483678493)
             .orthonormal_basis() == (
-                v3(4045339972, 374440986, 1393471396), v3(-374440986, -3733305816, 2090207096),
+                v3(4045339972, 374440987, 1393471396), v3(-374440987, -3733305816, 2090207096),
             ),
     );
 }

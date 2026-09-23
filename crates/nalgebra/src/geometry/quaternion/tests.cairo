@@ -298,7 +298,7 @@ fn test_unscale_by_zero_panics() {
 #[test]
 fn test_normalize_exact_and_oracle() {
     // (0, 3, 4, 0) / 5 and (1, 1, 1, 1) / 2 are exact.
-    assert!(qi(0, 3, 4, 0).normalize() == qt((0, 2576980377, 3435973836, 0)));
+    assert!(qi(0, 3, 4, 0).normalize() == qt((0, 2576980378, 3435973837, 0)));
     assert!(qi(1, 1, 1, 1).normalize() == qt((0x80000000, 0x80000000, 0x80000000, 0x80000000)));
     let mut cases = oracle::quaternion_normalize_cases();
     while let Some(case) = cases.pop_front() {

@@ -146,7 +146,7 @@ fn test_cholesky2_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve2_worst(0), solve2_worst(1));
     let (id, ir) = (inverse2_worst(0), inverse2_worst(1));
     assert!(
-        sd == 45 && sr == 291 && id == 114 && ir == 114,
+        sd == 45 && sr == 120 && id == 122 && ir == 122,
         "cholesky2 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -391,7 +391,7 @@ fn test_cholesky3_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve3_worst(0), solve3_worst(1));
     let (id, ir) = (inverse3_worst(0), inverse3_worst(1));
     assert!(
-        sd == 88 && sr == 160 && id == 82 && ir == 82,
+        sd == 135 && sr == 167 && id == 86 && ir == 86,
         "cholesky3 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -709,7 +709,7 @@ fn test_cholesky4_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve4_worst(0), solve4_worst(1));
     let (id, ir) = (inverse4_worst(0), inverse4_worst(1));
     assert!(
-        sd == 67 && sr == 146 && id == 134 && ir == 135,
+        sd == 107 && sr == 110 && id == 147 && ir == 148,
         "cholesky4 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -1216,7 +1216,7 @@ fn test_cholesky6_alt_recip_is_less_accurate() {
     let (sd, sr) = (solve6_worst(0), solve6_worst(1));
     let (id, ir) = (inverse6_worst(0), inverse6_worst(1));
     assert!(
-        sd == 848 && sr == 533 && id == 87 && ir == 87,
+        sd == 1558 && sr == 1023 && id == 95 && ir == 105,
         "cholesky6 solve div {} recip {} / inverse div {} recip {}",
         sd,
         sr,
@@ -1351,6 +1351,6 @@ fn test_cholesky2_inverse_alt_recip_loses_low_bits() {
     let alt = inverse2_recip(f);
     assert!(shipped != alt);
     assert!(shipped.m12 == alt.m12 && shipped.m22 == alt.m22);
-    assert!(ulp_diff(shipped.m11, exact) == 3);
+    assert!(ulp_diff(shipped.m11, exact) == 1);
     assert!(ulp_diff(alt.m11, exact) == 6);
 }

@@ -104,7 +104,7 @@ fn test_vector3_normalize_divides_by_the_norm() {
     let n = a.norm();
     let u = a.normalize();
     assert!(u == Vector3 { x: a.x / n, y: a.y / n, z: a.z / n }, "normalize");
-    assert_vector(u, (2295756587, -3443634880, 1147878293), "normalize");
+    assert_vector(u, (2295756587, -3443634881, 1147878294), "normalize");
     assert!(a.try_normalize(Real::ZERO).unwrap() == u, "try_normalize");
 }
 
@@ -113,7 +113,7 @@ fn test_vector3_normalize_divides_by_the_norm() {
 fn test_vector3_unscale_rounds_to_nearest() {
     let k = g(0x7_0000_0000); // 7: -2.25 / 7 and -0.375 / 7 are inexact
     let a = gv(AX, AY, BX).unscale(k);
-    assert_vector(a, (920350134, -1380525202, -230087533), "unscale");
+    assert_vector(a, (920350135, -1380525202, -230087534), "unscale");
     let mut c = gv(AX, AY, BX);
     c /= k;
     assert!(c == a, "/=");
@@ -156,7 +156,7 @@ fn test_unit_quaternion_kernels() {
     );
     assert_quaternion(
         q().append_axisangle_linearized(gv(BX, BY, BZ)).quaternion,
-        (2915936134, 1918013280, 2378058493, 781103959),
+        (2915936134, 1918013280, 2378058494, 781103959),
         "append_axisangle_linearized",
     );
 }
@@ -181,10 +181,10 @@ fn test_sym_matrix3_quadform_and_inverse() {
     );
     let i = s.try_inverse().unwrap();
     assert_vector(
-        gv(i.m11.raw, i.m12.raw, i.m13.raw), (1101637382, 845641357, 422242924), "inverse row 1",
+        gv(i.m11.raw, i.m12.raw, i.m13.raw), (1101637383, 845641358, 422242925), "inverse row 1",
     );
     assert_vector(
-        gv(i.m22.raw, i.m23.raw, i.m33.raw), (818614499, 492635554, 974075024), "inverse rows 2-3",
+        gv(i.m22.raw, i.m23.raw, i.m33.raw), (818614500, 492635554, 974075024), "inverse rows 2-3",
     );
 }
 
