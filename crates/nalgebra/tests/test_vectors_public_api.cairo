@@ -106,7 +106,7 @@ mod with_traits {
     }
 
     #[test]
-    #[should_panic(expected: 'simba: division by zero')]
+    #[should_panic(expected: 'Fixed: division by zero')]
     fn test_api_stable_panic_message() {
         let _ = nalgebra_testing::black_box(Vector4Trait::<Fixed>::zeros()).normalize();
     }

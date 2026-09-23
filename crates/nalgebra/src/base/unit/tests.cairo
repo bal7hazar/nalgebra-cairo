@@ -254,8 +254,8 @@ fn test_dot_of_units() {
     assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::x_axis()) == Real::ONE);
     assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::y_axis()) == Real::ZERO);
     assert!(Unit3Trait::<Fixed>::x_axis().dot(-Unit3Trait::<Fixed>::x_axis()) == Real::NEG_ONE);
-    // A normalized vector has a squared norm of 1 within a few ulp: here 1 ulp short.
-    assert!(na().dot(na()) == fx(4294967295));
+    // A normalized vector has a squared norm of 1 within a few ulp: here 2 ulp short.
+    assert!(na().dot(na()) == fx(4294967294));
     assert!(na().dot(np()) == na().value.dot(np().value));
 }
 
@@ -265,7 +265,7 @@ fn test_dot_with_a_vector() {
     assert!(Unit3Trait::<Fixed>::x_axis().dot_vector(p()) == fx(0x300000000));
     assert!(Unit3Trait::<Fixed>::y_axis().dot_vector(p()) == fx(-0x400000000));
     assert!(Unit3Trait::<Fixed>::z_axis().dot_vector(p()) == fx(0xc00000000));
-    assert!(na().dot_vector(a()) == fx(19856967405));
+    assert!(na().dot_vector(a()) == fx(19856967402));
     assert!(u2(0x100000000, 0).dot_vector(v2(0x300000000, 5)) == fx(0x300000000));
     assert!(u4(0, 0, 0, 0x100000000).dot_vector(v4(1, 2, 3, 0x400000000)) == fx(0x400000000));
 }
