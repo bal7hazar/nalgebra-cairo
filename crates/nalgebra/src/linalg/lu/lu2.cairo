@@ -208,21 +208,24 @@ pub impl Lu2Impl<
     /// overflow error if an entry of the inverse does not fit.
     ///
     /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 2 columns
-    /// amortise: 19 860 against 19 180 gas. It still divides, because `mul(x, recip(u))` rounds
-    /// twice where `x / u` rounds once, which is the rule DESIGN D2 and `Vector2::unscale` already
-    /// follow; the drift is small but real (2 ulp on the oracle inverses).
+    /// amortise: 21 830 against 24 240 gas (net, `fixed` 0.3.0). It still divides — upstream's
+    /// `solve_mut` divides by the pivot — because `mul(x, recip(u))` rounds twice where `x / u`
+    /// rounds once, which is the rule DESIGN D2 and `Vector2::unscale` already follow; the drift is
+    /// small but real (3 ulp on the oracle inverses).
     /// `bench_lu2_try_inverse__alt_recip` and `test_try_inverse_candidates` keep the measurement.
+    ///
+    /// The corner `1 / u_22` is `Real::recip`, bit-identical to `ONE / u_22` (WP 7.2).
     fn try_inverse(self: Lu2<T>) -> Option<Matrix2<T>> {
         if !Self::is_invertible(self) {
             return None;
         }
         let y21 = -self.lu.m21;
+        let x22 = R::recip(self.lu.m22);
         let x21 = R::div(y21, self.lu.m22);
-        let x11 = R::div(R::mul_add(-self.lu.m12, x21, R::ONE), self.lu.m11);
-        let x22 = R::div(R::ONE, self.lu.m22);
-        let x12 = R::div(
-            R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22)), self.lu.m11,
-        );
+        let n11 = R::mul_add(-self.lu.m12, x21, R::ONE);
+        let n12 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22));
+        let x11 = R::div(n11, self.lu.m11);
+        let x12 = R::div(n12, self.lu.m11);
         let mut c11 = x11;
         let mut c12 = x12;
         let mut c21 = x21;
