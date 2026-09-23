@@ -119,24 +119,23 @@ narrowing costs 270-540; signed `/` by a variable costs 4,220 — store reciproc
 - Structured kernels pay off on the rigid-body path: `Sym3` inverse 241k vs 344k, `R diag(d) Rᵀ`
   291k vs 593k, cross 66k vs skew-matrix 101k (figures with the slow i128 scalar; ratios hold).
 
-## 6. Shipped library figures (net gas, `Fixed`)
+## 6. Shipped library figures (net gas, `fixed::Fixed` 0.3.0, since WP 7.1)
 
 Measured on the merged code (snapshots in `gas/`), for the operations a physics engine calls most:
 
 | operation | gas | note |
 |---|---:|---|
-| `Fixed` add / mul / div / sqrt | 640 / 1,750 / 2,740 / 1,820 | |
-| `Wide::mul_scalar` (exact triple product, one rounding) | 1,580 | vs 3,600 for rescale-then-mul (two roundings) |
-| `sin_cos` / `atan2` / `acos` | 16,820 / 15,400 / 11,430 | ≤ 1.2 ulp |
-| `Vector3` dot / cross / norm / normalize | 2,150 / 6,050 / 2,220 / 10,740 | |
-| `Matrix3 * Matrix3` / `try_inverse` / `determinant` | ~26,000 / 88,940 / 10,660 | fused rows |
-| `SymMatrix3::quadform` (R·diag(d)·Rᵀ) / `try_inverse` | 32,610 / 65,540 | vs 47,320 / 89,540 generic |
-| `Matrix6 * Matrix6` / `mul_vec` | 114,660 / 22,560 | one rescale per 6-term row |
-| `q * q` / `uq.transform_vector` / `append_axisangle_linearized` | 11,860 / 23,230 / 31,550 | |
-| `Isometry3::transform_point` / `inv_mul` / `*` | 24,430 / 40,110 / 36,790 | `inv_mul` on the fused `conj_mul` |
-| `Isometry3::inverse_transform_point` / `inverse` | 25,750 / 25,130 | sign-folded conjugate (was 27,950 / 27,030) |
-| `Ldlt3::new` + `solve` / `Lu3::new` + `solve` | 36,990 / 56,820 | |
-| `SymmetricEigen3::new` / `Svd3::new` | 550,770 / 675,400 | 4 Jacobi sweeps |
+| `Fixed` add / mul / div / sqrt | 640 / 1,580 / 3,300 / 1,820 | glam.cairo's `fixed` 0.3.0 (div rounds to nearest) |
+| `sin_cos` / `atan2` | 31,500 / 29,930 | `fixed::trig` (≈1.9× the former simba kernels) |
+| `Vector3` dot / cross / norm / normalize | 1,980 / 5,540 / 2,220 / 11,830 | normalize: one prepared divisor (`div3`) |
+| `Matrix3 * Matrix3` / `try_inverse` / `determinant` | 22,150 / 88,360 / 10,350 | fused rows |
+| `SymMatrix3::quadform` (R·diag(d)·Rᵀ) / `try_inverse` | 30,430 / 67,000 | vs 45,000 / 88,960 generic |
+| `Matrix6 * Matrix6` / `mul_vec` | 108,910 / 21,910 | one rescale per 6-term row |
+| `q * q` / `uq.transform_vector` / `append_axisangle_linearized` | 11,550 / 22,070 / 35,770 | |
+| `Isometry3::transform_point` / `inv_mul` / `*` | 23,270 / 38,640 / 35,320 | `inv_mul` on the fused `conj_mul` |
+| `Isometry3::inverse_transform_point` | 26,190 | sign-folded conjugate |
+| `Ldlt3::new` + `solve` / `Lu3::new` + `solve` | 45,660 / 65,080 | nearest division (was 36,990 / 56,820 on the floor scalar) |
+| `SymmetricEigen3::new` / `Svd3::new` | 590,090 / 725,890 | 4 Jacobi sweeps |
 
 Every figure has a `bench_*` test and, where a design choice was made, the losing variant next to it.
 

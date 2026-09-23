@@ -5,7 +5,7 @@ Canonical instructions for AI agents (and humans) working on nalgebra.cairo. Rea
 
 ## Mission
 
-A Cairo port of the Rust `nalgebra` crate on Q32.32 fixed point, as a building block of a
+A Cairo port of the Rust `nalgebra` crate on glam.cairo's Q32.32 `fixed::Fixed`, as a building block of a
 **provable physics engine for games** (siblings: glam.cairo, rapier.cairo). Every Cairo step is
 proven, so gas is a first-class requirement, on par with correctness.
 
@@ -35,7 +35,11 @@ proven, so gas is a first-class requirement, on par with correctness.
 
 ## Numeric rules
 
-- Rounding is floor, once per output scalar. Overflow panics; nothing may wrap silently.
+- The scalar is `fixed` (glam.cairo, pinned version); its rounding is the spec: products and fused
+  kernels floor once per output scalar, `/` / `recip` round to nearest ties-to-even like `f64 /`.
+  Overflow panics; nothing may wrap silently.
+- A kernel or rounding mode `fixed` lacks is an ESCALATION to the glam.cairo orchestrator (in the
+  report), never a local reimplementation.
 - Same inputs must give bit-identical outputs forever: changing the result of a function in its last
   bit is a breaking change.
 - Tolerances are expressed in raw units (ulp), not float epsilons.
@@ -60,8 +64,9 @@ proven, so gas is a first-class requirement, on par with correctness.
   `transform_point`, `Matrix3::new` row-major). Deviations are documented in the doc comment.
 - One type per file, tests in an inline `#[cfg(test)] mod tests` at the bottom of the file.
 - Errors are `felt252` constants in an `errors` module; panic messages are stable API.
-- Pure library: no `starknet` dependency, no storage, no proc macros, no third-party dependency.
-- `core::internal::bounded_int` (unstable) is confined to `simba::fixed::kernels`.
+- Pure library: no `starknet` dependency, no storage, no proc macros; the only dependency is
+  glam.cairo's `fixed` (registry, pinned version).
+- No `core::internal::bounded_int` in this repository: the bounded-int kernels live in `fixed`.
 
 ## Boundaries
 

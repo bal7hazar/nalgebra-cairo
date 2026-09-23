@@ -73,6 +73,13 @@ so M5 stays deferred until a consumer exists.
 | 4.5 ✅ (A-B #19, C #18, E; `Real::div`/`rem` split out as 4.6) | Promote `base::matrix_test_utils` to `pub(crate)` and delete the duplicated builders in `linalg`/`geometry`; fused `conj_mul` quaternion kernel (saves the 3 negations of `Isometry3::inv_mul`); `Wide × Fixed` accumulator op in `simba` for exact triple products (4x4 / 6x6 determinants); `Real::div` / `Real::rem` so that `normalize`/`unscale`/`new_normalize` no longer depend on the foreign scalar's `/` semantics (closes the one `simba_fixed` conformance gap); add `crates/simba_fixed/tools/gen_vectors.py --check` to the gate | M3, M4, 6.1 |
 | 4.6 ✅ (#20) | `Real::div` / `Real::rem`: nalgebra's generic code no longer reaches the scalar's `/` operator; `simba_fixed` integration tests become bit-identical (closes the D8 gap) | 4.5 |
 
+## M7 — One scalar for the stack (mirror of the Rust dependency model)
+
+| WP | Content | Depends on |
+|---|---|---|
+| 7.1 ✅ (#21) | Delete `simba::fixed` (the second Q32.32), `simba` = `Real` / `Transcendental` over glam.cairo's `fixed` (registry, pinned 0.3.0: `wide::Acc` and the `f64`-like nearest division were obtained by escalation), `simba_fixed` merged into `simba`, goldens and gas regenerated, prepared divisors (`Real::div3..div16`) | owner decision 2026-09-22 |
+| 7.2 | Re-rank the measured variants under `fixed` 0.3 (nearest division): several former losers are now cheaper and closer to upstream — e.g. `Matrix3::try_inverse` `alt_div` (per-element `cofactor / det`, exactly nalgebra-rs) 69,930 vs shipped pre-scaled 88,360, Cholesky / LDLᵀ `alt_recip` solves and inverses; keep the cheapest that meets the oracle tolerances | 7.1 |
+
 ## M6 — Interop and release
 
 | WP | Content | Depends on |
