@@ -15,7 +15,7 @@ Snapshots are split per CI shard (`simba`, `nalgebra::base`, ...) into `gas/<sha
 Usage:
     snforge test --workspace | python3 scripts/gas_report.py --update gas/
     snforge test -p nalgebra nalgebra::base | python3 scripts/gas_report.py --check gas/ --filter nalgebra::base
-    snforge test -p nalgebra nalgebra::base --partition 1/2 | python3 scripts/gas_report.py --check gas/ --filter nalgebra::base --partial
+    snforge test -p nalgebra nalgebra::base::vector | python3 scripts/gas_report.py --check gas/ --partial
     snforge test -p simba | python3 scripts/gas_report.py            # print a report
 """
 
@@ -108,8 +108,8 @@ def main():
     parser.add_argument(
         "--partial",
         action="store_true",
-        help="with --check: the run is one partition of a shard (`snforge --partition`); compare only the"
-        " benchmarks it ran (a separate full check of all shards' outputs catches removed benchmarks)",
+        help="with --check: compare only the benchmarks present in this run (one CI shard); a separate"
+        " full check of every shard's output catches removed benchmarks",
     )
     args = parser.parse_args()
 

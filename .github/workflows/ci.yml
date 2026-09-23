@@ -18,13 +18,22 @@ concurrency:
 
 jobs:
   library:
-    name: Library (${{ matrix.shard }})
+    name: Library (${{ matrix.name }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # "<filter> <index>/<total>" runs one `snforge --partition` of a shard (large shards only).
-        shard: [simba, nalgebra_testing, "nalgebra::base 1/2", "nalgebra::base 2/2", nalgebra::geometry, nalgebra::linalg, integration]
+        # `filters`: snforge test filters run one after the other in the same job (a filter's cost is
+        # proportional to the tests it selects; `--partition` would compile the whole package).
+        include:
+          - { name: simba, package: simba, filters: "simba" }
+          - { name: nalgebra_testing, package: nalgebra_testing, filters: "nalgebra_testing" }
+          - { name: "nalgebra::base vectors", package: nalgebra, filters: "nalgebra::base::vector" }
+          - { name: "nalgebra::base matrices", package: nalgebra, filters: "nalgebra::base::matrix nalgebra::base::sym_matrix" }
+          - { name: "nalgebra::base points", package: nalgebra, filters: "nalgebra::base::point nalgebra::base::unit" }
+          - { name: "nalgebra::geometry", package: nalgebra, filters: "nalgebra::geometry" }
+          - { name: "nalgebra::linalg", package: nalgebra, filters: "nalgebra::linalg" }
+          - { name: integration, package: nalgebra, filters: "nalgebra_integrationtest" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
@@ -34,34 +43,20 @@ jobs:
           scarb fmt --check
           scarb lint --deny-warnings
           scarb build
-      - name: Test the shard and check its slice of the gas snapshot
+      - name: Test the shard and check the benchmarks it ran against the snapshot
         run: |
-          shard="${{ matrix.shard }}"
-          if [[ "$shard" == integration ]]; then
-            # crates/nalgebra/tests: public-API tests, no benchmarks, no gas slice.
-            snforge test -p nalgebra nalgebra_integrationtest
-            exit 0
-          fi
-          filter="${shard%% *}"
-          package="${filter%%::*}"
-          if [[ "$shard" == *" "* ]]; then
-            partition="${shard#* }"
-            snforge test -p "$package" "$filter" --partition "$partition" | tee snforge.out /dev/stderr \
-              | python3 scripts/gas_report.py --check gas/ --filter "$filter" --partial
-          else
-            snforge test -p "$package" "$filter" | tee snforge.out /dev/stderr \
-              | python3 scripts/gas_report.py --check gas/ --filter "$filter"
-          fi
-      - name: Keep the benchmark lines for the full snapshot check
-        if: matrix.shard != 'integration'
-        run: |
+          : > snforge.out
+          for filter in ${{ matrix.filters }}; do
+            snforge test -p "${{ matrix.package }}" "$filter" | tee -a snforge.out >&2
+          done
+          python3 scripts/gas_report.py --check gas/ --partial < snforge.out
           grep -E "^\[PASS\].*::bench_" snforge.out > bench.out || true
-          echo "artifact=bench-$(echo '${{ matrix.shard }}' | tr ':/ ' '--_')" >> "$GITHUB_ENV"
+          echo "artifact=bench-${{ strategy.job-index }}" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: matrix.shard != 'integration'
         with:
           name: ${{ env.artifact }}
           path: bench.out
+          if-no-files-found: error
           retention-days: 1
 
   gas:
