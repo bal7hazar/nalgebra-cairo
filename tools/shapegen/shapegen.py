@@ -42,6 +42,7 @@ import compare
 import library
 import shapes
 import tests_core
+import tests_ops
 from model import ALL_SHAPES, COORDS, Shape
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -1215,15 +1216,17 @@ def main() -> int:
     # Generated next to the real packages (same depth: the relative path dependencies resolve),
     # formatted by `scarb fmt`, then compared or copied.
     tmp_proto, tmp_lib = TOOL / ".tmp-proto", TOOL / ".tmp-library"
-    tmp_tests = TOOL / ".tmp-tests"
-    tmps = (tmp_proto, tmp_lib, tmp_tests)
+    tmp_tests, tmp_ops = TOOL / ".tmp-tests", TOOL / ".tmp-tests-ops"
+    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops)
     try:
         for tmp in tmps:
             shutil.rmtree(tmp, ignore_errors=True)
         outputs = (proto_outputs(tmp_proto) | library_outputs(tmp_lib)
-                   | tests_core.outputs(tmp_tests))
+                   | tests_core.outputs(tmp_tests) | tests_ops.outputs(tmp_ops))
         committed = (set((PROTO / "src").rglob("*.cairo"))
-                     | set((tests_core.PACKAGE / "src").rglob("*.cairo")))
+                     | set((tests_core.PACKAGE / "src").rglob("*.cairo"))
+                     | {p for pkg in tests_ops.PACKAGES
+                        for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")})
         removed = sorted(committed - set(outputs))
         stale = sorted(dst for dst, gen in outputs.items()
                        if not dst.is_file() or not filecmp.cmp(gen, dst, shallow=False))

@@ -1870,9 +1870,15 @@ pub impl UnitVector6AngleImpl<
     }
 }
 
-/// `Unit::try_slerp` on the values of two unit vectors (upstream `interpolation.rs`): `None` when
-/// `sin(angle) <= epsilon`, `a` when `cos(angle) >= 1`; each component of the result is ONE
+/// `Unit::try_slerp` on the values `a`, `b` of two unit vectors (upstream `interpolation.rs`): `a`
+/// when they are equal, `None` when `sin θ <= epsilon`, otherwise each component is ONE
 /// `sum_prod2` of the weights `sin((1 - t) θ) / sin θ` and `sin(t θ) / sin θ`.
+///
+/// The angle comes from the Kahan half-angle form of `angle`: `θ = 2 atan2(|a - b|, |a + b|)` and
+/// `sin θ = |a - b| |a + b| / 2` (unit vectors), two fused norms of exact differences / sums.
+/// Upstream's `acos(a · b)` and `sqrt(1 - (a · b)²)` lose the last bit of `1 - c²` near `c = 1`
+/// (a unit vector interpolated with itself came out √2 too long), and is kept as a benchmark
+/// (`bench_vector4_slerp__alt_acos`).
 fn slerp_unit<
     T,
     impl R: Real<T>,
@@ -1889,19 +1895,28 @@ fn slerp_unit<
 >(
     a: Vector6<T>, b: Vector6<T>, t: T, epsilon: T,
 ) -> Option<Vector6<T>> {
-    let c = {
-        let w = R::wide_add_prod(R::wide_zero(), a.x, b.x);
-        let w = R::wide_add_prod(w, a.y, b.y);
-        let w = R::wide_add_prod(w, a.z, b.z);
-        let w = R::wide_add_prod(w, a.w, b.w);
-        let w = R::wide_add_prod(w, a.a, b.a);
-        R::wide_rescale(R::wide_add_prod(w, a.b, b.b))
+    let d = {
+        let w = R::wide_add_prod(R::wide_zero(), a.x - b.x, a.x - b.x);
+        let w = R::wide_add_prod(w, a.y - b.y, a.y - b.y);
+        let w = R::wide_add_prod(w, a.z - b.z, a.z - b.z);
+        let w = R::wide_add_prod(w, a.w - b.w, a.w - b.w);
+        let w = R::wide_add_prod(w, a.a - b.a, a.a - b.a);
+        R::wide_sqrt(R::wide_add_prod(w, a.b - b.b, a.b - b.b))
     };
-    if c >= R::one() {
+    if d == R::zero() {
         return Option::Some(a);
     }
-    let hang = Tr::acos(c);
-    let shang = R::sqrt(R::diff_prod(R::one(), R::one(), c, c));
+    let s = {
+        let w = R::wide_add_prod(R::wide_zero(), a.x + b.x, a.x + b.x);
+        let w = R::wide_add_prod(w, a.y + b.y, a.y + b.y);
+        let w = R::wide_add_prod(w, a.z + b.z, a.z + b.z);
+        let w = R::wide_add_prod(w, a.w + b.w, a.w + b.w);
+        let w = R::wide_add_prod(w, a.a + b.a, a.a + b.a);
+        R::wide_sqrt(R::wide_add_prod(w, a.b + b.b, a.b + b.b))
+    };
+    let half = Tr::atan2(d, s);
+    let hang = half + half;
+    let shang = (d * s) * R::HALF;
     if shang <= epsilon {
         return Option::None;
     }

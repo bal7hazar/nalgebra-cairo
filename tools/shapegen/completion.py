@@ -688,20 +688,27 @@ def unit_items(s: Shape) -> list[str]:
                     f"#[generate_trait]\npub impl {alias}AngleImpl<\n{L.bounds(ANGLE_BOUNDS)}\n> of "
                     f"{alias}AngleTrait<T> {{\n" + "\n\n".join(f.definition() for f in slerp) + "\n}"))
     # The shared kernel of `Vector::slerp`, `Unit::slerp` and `Unit::try_slerp`.
-    c = products([(f"a.{k}", f"b.{k}") for k in F])
-    body = ("let c = " + (c if "\n" not in c else "{\n" + c + "\n}") + ";\n"
-            "if c >= R::one() {\nreturn Option::Some(a);\n}\n"
-            "let hang = Tr::acos(c);\n"
-            "let shang = R::sqrt(R::diff_prod(R::one(), R::one(), c, c));\n"
+    blk = lambda e: e if "\n" not in e else "{\n" + e + "\n}"  # noqa: E731
+    d = squares([f"a.{k} - b.{k}" for k in F], "sqrt")
+    sm = squares([f"a.{k} + b.{k}" for k in F], "sqrt")
+    body = (f"let d = {blk(d)};\nif d == R::zero() {{\nreturn Option::Some(a);\n}}\n"
+            f"let s = {blk(sm)};\n"
+            "let half = Tr::atan2(d, s);\nlet hang = half + half;\n"
+            "let shang = (d * s) * R::HALF;\n"
             "if shang <= epsilon {\nreturn Option::None;\n}\n"
             "let ta = R::div(Tr::sin((R::one() - t) * hang), shang);\n"
             "let tb = R::div(Tr::sin(t * hang), shang);\n"
             f"Option::Some({L.lit(S, [(k, f'R::sum_prod2(a.{k}, ta, b.{k}, tb)') for k in F])})")
     out.append(
-        "/// `Unit::try_slerp` on the values of two unit vectors (upstream `interpolation.rs`): "
-        "`None` when\n/// `sin(angle) <= epsilon`, `a` when `cos(angle) >= 1`; each component "
-        "of the result is ONE\n/// `sum_prod2` of the weights `sin((1 - t) θ) / sin θ` and "
-        "`sin(t θ) / sin θ`.\n"
+        "/// `Unit::try_slerp` on the values `a`, `b` of two unit vectors (upstream "
+        "`interpolation.rs`): `a` when\n/// they are equal, `None` when `sin θ <= epsilon`, "
+        "otherwise each component is ONE `sum_prod2` of\n/// the weights `sin((1 - t) θ) / sin "
+        "θ` and `sin(t θ) / sin θ`.\n///\n/// The angle comes from the Kahan half-angle form of "
+        "`angle`: `θ = 2 atan2(|a - b|, |a + b|)` and\n/// `sin θ = |a - b| |a + b| / 2` (unit "
+        "vectors), two fused norms of exact differences / sums. Upstream's\n/// `acos(a · b)` and "
+        "`sqrt(1 - (a · b)²)` lose the last bit of `1 - c²` near `c = 1` (a unit\n/// vector "
+        "interpolated with itself came out √2 too long), and is kept as a benchmark\n/// "
+        "(`bench_vector4_slerp__alt_acos`).\n"
         f"fn slerp_unit<\n{L.bounds(ANGLE_BOUNDS)}\n>(a: {S}<T>, b: {S}<T>, t: T, epsilon: T) -> "
         f"Option<{S}<T>> {{\n{body}\n}}")
     return out
