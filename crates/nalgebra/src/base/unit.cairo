@@ -1,11 +1,11 @@
 //! `Unit<V>`: a wrapper guaranteeing (by contract) that a vector has unit norm (upstream
 //! `nalgebra::Unit`).
 //!
-//! - `Normalizable<V, T>`: the few operations `Unit` needs from a vector type `V` over the scalar
-//!   `T`, implemented for `Vector2<T>`, `Vector3<T>` and `Vector4<T>`;
+//! - `Normed<V, T>`: the few operations `Unit` needs from a vector type `V` over the scalar
+//!   `T` (upstream `Normed`), implemented for the column vectors `Vector1<T>` to `Vector6<T>`;
 //! - `UnitTrait` / `UnitImpl`: construction (`new_normalize`, `try_new`, `new_unchecked`, ...),
 //!   in-place renormalization (upstream's `&mut self` methods) and the products upstream reaches
-//!   through `Deref`, generic over any `Normalizable` vector;
+//!   through `Deref`, generic over any `Normed` vector;
 //! - `Unit2Trait` / `Unit3Trait` / `Unit4Trait`: the axes (`x_axis`, ...);
 //! - `-u` (exact, a negated unit vector is a unit vector).
 //!
@@ -18,9 +18,12 @@
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
 use simba::scalar::Real;
+use super::matrix1::{Matrix1, Matrix1Trait};
 use super::vector2::Vector2;
 use super::vector3::Vector3;
 use super::vector4::Vector4;
+use super::vector5::{Vector5, Vector5Trait};
+use super::vector6::{Vector6, Vector6Trait};
 
 #[cfg(test)]
 mod benches;
@@ -36,9 +39,12 @@ pub struct Unit<V> {
     pub value: V,
 }
 
-/// What `Unit<V>` needs from a vector type `V` over the scalar `T` (implemented by `Vector2`,
-/// `Vector3` and `Vector4`): norms, products and scaling, every sum of products fused.
-pub trait Normalizable<V, T> {
+/// What `Unit<V>` needs from a vector type `V` over the scalar `T` (implemented by every column
+/// vector, `Vector1` to `Vector6`): norms, products and scaling, every sum of products fused.
+/// Upstream: `Normed` (`norm`, `norm_squared`, `scale_mut`, `unscale_mut`; Cairo values are
+/// passed by value, so the scalings return the scaled vector, and `Unit` also needs `dot` and
+/// `abs_diff_eq`).
+pub trait Normed<V, T> {
     /// Euclidean norm, floored once, no intermediate overflow. Upstream: `norm`.
     fn norm(self: V) -> T;
     /// Squared Euclidean norm, fused (floored once). Panics on overflow. Upstream:
@@ -55,9 +61,9 @@ pub trait Normalizable<V, T> {
     fn abs_diff_eq(self: V, rhs: V, ulps: u64) -> bool;
 }
 
-pub impl Vector2Normalizable<
+pub impl Vector2Normed<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
-> of Normalizable<Vector2<T>, T> {
+> of Normed<Vector2<T>, T> {
     #[inline(always)]
     fn norm(self: Vector2<T>) -> T {
         R::norm2(self.x, self.y)
@@ -89,9 +95,9 @@ pub impl Vector2Normalizable<
     }
 }
 
-pub impl Vector3Normalizable<
+pub impl Vector3Normed<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
-> of Normalizable<Vector3<T>, T> {
+> of Normed<Vector3<T>, T> {
     #[inline(always)]
     fn norm(self: Vector3<T>) -> T {
         R::norm3(self.x, self.y, self.z)
@@ -128,9 +134,9 @@ pub impl Vector3Normalizable<
     }
 }
 
-pub impl Vector4Normalizable<
+pub impl Vector4Normed<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
-> of Normalizable<Vector4<T>, T> {
+> of Normed<Vector4<T>, T> {
     #[inline(always)]
     fn norm(self: Vector4<T>) -> T {
         R::norm4(self.x, self.y, self.z, self.w)
@@ -168,7 +174,142 @@ pub impl Vector4Normalizable<
     }
 }
 
-/// Operations of `Unit<V>` over a `Normalizable` vector type `V` with scalar `T`. By value,
+/// `Normed` of `Matrix1` (`UnitVector1`): the kernels of `Matrix1Trait`.
+pub impl Matrix1Normed<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Normed<Matrix1<T>, T> {
+    #[inline(always)]
+    fn norm(self: Matrix1<T>) -> T {
+        Matrix1Trait::norm(self)
+    }
+
+    #[inline(always)]
+    fn norm_squared(self: Matrix1<T>) -> T {
+        Matrix1Trait::norm_squared(self)
+    }
+
+    #[inline(always)]
+    fn scale(self: Matrix1<T>, k: T) -> Matrix1<T> {
+        Matrix1Trait::scale(self, k)
+    }
+
+    #[inline(always)]
+    fn unscale(self: Matrix1<T>, k: T) -> Matrix1<T> {
+        Matrix1Trait::unscale(self, k)
+    }
+
+    #[inline(always)]
+    fn dot(self: Matrix1<T>, rhs: Matrix1<T>) -> T {
+        Matrix1Trait::dot(self, rhs)
+    }
+
+    #[inline(always)]
+    fn abs_diff_eq(self: Matrix1<T>, rhs: Matrix1<T>, ulps: u64) -> bool {
+        Matrix1Trait::abs_diff_eq(self, rhs, ulps)
+    }
+}
+
+/// `Normed` of `Vector5` (`UnitVector5`): the kernels of `Vector5Trait`.
+pub impl Vector5Normed<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Normed<Vector5<T>, T> {
+    #[inline(always)]
+    fn norm(self: Vector5<T>) -> T {
+        Vector5Trait::norm(self)
+    }
+
+    #[inline(always)]
+    fn norm_squared(self: Vector5<T>) -> T {
+        Vector5Trait::norm_squared(self)
+    }
+
+    #[inline(always)]
+    fn scale(self: Vector5<T>, k: T) -> Vector5<T> {
+        Vector5Trait::scale(self, k)
+    }
+
+    #[inline(always)]
+    fn unscale(self: Vector5<T>, k: T) -> Vector5<T> {
+        Vector5Trait::unscale(self, k)
+    }
+
+    #[inline(always)]
+    fn dot(self: Vector5<T>, rhs: Vector5<T>) -> T {
+        Vector5Trait::dot(self, rhs)
+    }
+
+    #[inline(always)]
+    fn abs_diff_eq(self: Vector5<T>, rhs: Vector5<T>, ulps: u64) -> bool {
+        Vector5Trait::abs_diff_eq(self, rhs, ulps)
+    }
+}
+
+/// `Normed` of `Vector6` (`UnitVector6`): the kernels of `Vector6Trait`.
+pub impl Vector6Normed<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Normed<Vector6<T>, T> {
+    #[inline(always)]
+    fn norm(self: Vector6<T>) -> T {
+        Vector6Trait::norm(self)
+    }
+
+    #[inline(always)]
+    fn norm_squared(self: Vector6<T>) -> T {
+        Vector6Trait::norm_squared(self)
+    }
+
+    #[inline(always)]
+    fn scale(self: Vector6<T>, k: T) -> Vector6<T> {
+        Vector6Trait::scale(self, k)
+    }
+
+    #[inline(always)]
+    fn unscale(self: Vector6<T>, k: T) -> Vector6<T> {
+        Vector6Trait::unscale(self, k)
+    }
+
+    #[inline(always)]
+    fn dot(self: Vector6<T>, rhs: Vector6<T>) -> T {
+        Vector6Trait::dot(self, rhs)
+    }
+
+    #[inline(always)]
+    fn abs_diff_eq(self: Vector6<T>, rhs: Vector6<T>, ulps: u64) -> bool {
+        Vector6Trait::abs_diff_eq(self, rhs, ulps)
+    }
+}
+
+/// Operations of `Unit<V>` over a `Normed` vector type `V` with scalar `T`. By value,
 /// unrolled, no loop.
 pub trait UnitTrait<V, T> {
     /// Wraps `v` WITHOUT normalizing it: the caller guarantees a unit norm. Upstream:
@@ -231,7 +372,7 @@ pub trait UnitTrait<V, T> {
 pub impl UnitImpl<
     V,
     T,
-    impl N: Normalizable<V, T>,
+    impl N: Normed<V, T>,
     impl R: Real<T>,
     +Add<T>,
     +Mul<T>,
@@ -320,7 +461,7 @@ pub impl UnitImpl<
 pub(crate) impl UnitInternalImpl<
     V,
     T,
-    impl N: Normalizable<V, T>,
+    impl N: Normed<V, T>,
     impl R: Real<T>,
     +Add<T>,
     +Mul<T>,

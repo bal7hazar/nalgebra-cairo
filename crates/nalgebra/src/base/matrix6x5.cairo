@@ -8,9 +8,12 @@
 //! `Matrix6x5Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
-use core::ops::{AddAssign, SubAssign};
-use simba::scalar::Real;
-use super::kernels::Fused;
+use core::num::traits::Bounded;
+use core::ops::{AddAssign, IndexView, SubAssign};
+use simba::scalar::{Real, Transcendental};
+use crate::geometry::quaternion::ApproxEqTrait;
+use super::errors;
+use super::kernels::{Fused, Powi};
 use super::matrix5::Matrix5;
 use super::matrix5x2::Matrix5x2;
 use super::matrix5x3::Matrix5x3;
@@ -20,6 +23,7 @@ use super::matrix6::Matrix6;
 use super::matrix6x2::Matrix6x2;
 use super::matrix6x3::Matrix6x3;
 use super::matrix6x4::Matrix6x4;
+use super::matrix_index::MatrixIndex;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
 use super::vector5::Vector5;
@@ -329,6 +333,2239 @@ pub impl Matrix6x5Impl<
             && R::abs_diff_eq(self.m45, other.m45, ulps)
             && R::abs_diff_eq(self.m55, other.m55, ulps)
             && R::abs_diff_eq(self.m65, other.m65, ulps)
+    }
+
+    /// The 6x5 matrix whose components all equal `elem`. Upstream: `Matrix6x5::repeat`.
+    #[inline(always)]
+    fn repeat(elem: T) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: elem,
+            m21: elem,
+            m31: elem,
+            m41: elem,
+            m51: elem,
+            m61: elem,
+            m12: elem,
+            m22: elem,
+            m32: elem,
+            m42: elem,
+            m52: elem,
+            m62: elem,
+            m13: elem,
+            m23: elem,
+            m33: elem,
+            m43: elem,
+            m53: elem,
+            m63: elem,
+            m14: elem,
+            m24: elem,
+            m34: elem,
+            m44: elem,
+            m54: elem,
+            m64: elem,
+            m15: elem,
+            m25: elem,
+            m35: elem,
+            m45: elem,
+            m55: elem,
+            m65: elem,
+        }
+    }
+
+    /// Alias of `repeat`. Upstream: `Matrix6x5::from_element`.
+    #[inline(always)]
+    fn from_element(elem: T) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: elem,
+            m21: elem,
+            m31: elem,
+            m41: elem,
+            m51: elem,
+            m61: elem,
+            m12: elem,
+            m22: elem,
+            m32: elem,
+            m42: elem,
+            m52: elem,
+            m62: elem,
+            m13: elem,
+            m23: elem,
+            m33: elem,
+            m43: elem,
+            m53: elem,
+            m63: elem,
+            m14: elem,
+            m24: elem,
+            m34: elem,
+            m44: elem,
+            m54: elem,
+            m64: elem,
+            m15: elem,
+            m25: elem,
+            m35: elem,
+            m45: elem,
+            m55: elem,
+            m65: elem,
+        }
+    }
+
+    /// The 6x5 matrix whose component `(i, j)` (row, column, 0-based) is `f(i, j)`, `f` being
+    /// called in column-major order like upstream. `f` is any closure or `Fn` value of `(usize,
+    /// usize)` whose output converts `Into<T>` (the identity included): Cairo cannot state `Output
+    /// = T` on the closure without the `associated_item_constraints` experimental feature.
+    /// Upstream: `Matrix6x5::from_fn`.
+    fn from_fn<
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (usize, usize)>,
+        +Into<Func::Output, T>,
+        +Drop<Func::Output>,
+    >(
+        f: F,
+    ) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: f(0, 0).into(),
+            m21: f(1, 0).into(),
+            m31: f(2, 0).into(),
+            m41: f(3, 0).into(),
+            m51: f(4, 0).into(),
+            m61: f(5, 0).into(),
+            m12: f(0, 1).into(),
+            m22: f(1, 1).into(),
+            m32: f(2, 1).into(),
+            m42: f(3, 1).into(),
+            m52: f(4, 1).into(),
+            m62: f(5, 1).into(),
+            m13: f(0, 2).into(),
+            m23: f(1, 2).into(),
+            m33: f(2, 2).into(),
+            m43: f(3, 2).into(),
+            m53: f(4, 2).into(),
+            m63: f(5, 2).into(),
+            m14: f(0, 3).into(),
+            m24: f(1, 3).into(),
+            m34: f(2, 3).into(),
+            m44: f(3, 3).into(),
+            m54: f(4, 3).into(),
+            m64: f(5, 3).into(),
+            m15: f(0, 4).into(),
+            m25: f(1, 4).into(),
+            m35: f(2, 4).into(),
+            m45: f(3, 4).into(),
+            m55: f(4, 4).into(),
+            m65: f(5, 4).into(),
+        }
+    }
+
+    /// The 6x5 matrix of the 30 values of `data`, in row-major order. Panics with `nalgebra: wrong
+    /// slice length` unless `data.len() == 30`. Upstream: `Matrix6x5::from_row_slice` (`&[T]`).
+    fn from_row_slice(data: Span<T>) -> Matrix6x5<T> {
+        if data.len() != 30 {
+            core::panic_with_felt252(errors::SLICE_LENGTH);
+        }
+        Matrix6x5 {
+            m11: *data[0],
+            m21: *data[5],
+            m31: *data[10],
+            m41: *data[15],
+            m51: *data[20],
+            m61: *data[25],
+            m12: *data[1],
+            m22: *data[6],
+            m32: *data[11],
+            m42: *data[16],
+            m52: *data[21],
+            m62: *data[26],
+            m13: *data[2],
+            m23: *data[7],
+            m33: *data[12],
+            m43: *data[17],
+            m53: *data[22],
+            m63: *data[27],
+            m14: *data[3],
+            m24: *data[8],
+            m34: *data[13],
+            m44: *data[18],
+            m54: *data[23],
+            m64: *data[28],
+            m15: *data[4],
+            m25: *data[9],
+            m35: *data[14],
+            m45: *data[19],
+            m55: *data[24],
+            m65: *data[29],
+        }
+    }
+
+    /// The 6x5 matrix of the 30 values of `data`, in column-major order. Panics with `nalgebra:
+    /// wrong slice length` unless `data.len() == 30`. Upstream: `Matrix6x5::from_column_slice`
+    /// (`&[T]`).
+    fn from_column_slice(data: Span<T>) -> Matrix6x5<T> {
+        if data.len() != 30 {
+            core::panic_with_felt252(errors::SLICE_LENGTH);
+        }
+        Matrix6x5 {
+            m11: *data[0],
+            m21: *data[1],
+            m31: *data[2],
+            m41: *data[3],
+            m51: *data[4],
+            m61: *data[5],
+            m12: *data[6],
+            m22: *data[7],
+            m32: *data[8],
+            m42: *data[9],
+            m52: *data[10],
+            m62: *data[11],
+            m13: *data[12],
+            m23: *data[13],
+            m33: *data[14],
+            m43: *data[15],
+            m53: *data[16],
+            m63: *data[17],
+            m14: *data[18],
+            m24: *data[19],
+            m34: *data[20],
+            m44: *data[21],
+            m54: *data[22],
+            m64: *data[23],
+            m15: *data[24],
+            m25: *data[25],
+            m35: *data[26],
+            m45: *data[27],
+            m55: *data[28],
+            m65: *data[29],
+        }
+    }
+
+    /// The 6x5 matrix whose first `data.len()` diagonal components are `data`, every other
+    /// component zero. Panics with `nalgebra: diagonal too long` when `data.len() > 5`. Upstream:
+    /// `Matrix6x5::from_partial_diagonal` (`&[T]`).
+    fn from_partial_diagonal(data: Span<T>) -> Matrix6x5<T> {
+        let len = data.len();
+        if len > 5 {
+            core::panic_with_felt252(errors::TOO_MANY_DIAGONAL);
+        }
+        Matrix6x5 {
+            m11: if len > 0 {
+                *data[0]
+            } else {
+                R::zero()
+            },
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m51: R::zero(),
+            m61: R::zero(),
+            m12: R::zero(),
+            m22: if len > 1 {
+                *data[1]
+            } else {
+                R::zero()
+            },
+            m32: R::zero(),
+            m42: R::zero(),
+            m52: R::zero(),
+            m62: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: if len > 2 {
+                *data[2]
+            } else {
+                R::zero()
+            },
+            m43: R::zero(),
+            m53: R::zero(),
+            m63: R::zero(),
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: if len > 3 {
+                *data[3]
+            } else {
+                R::zero()
+            },
+            m54: R::zero(),
+            m64: R::zero(),
+            m15: R::zero(),
+            m25: R::zero(),
+            m35: R::zero(),
+            m45: R::zero(),
+            m55: if len > 4 {
+                *data[4]
+            } else {
+                R::zero()
+            },
+            m65: R::zero(),
+        }
+    }
+
+    /// `true` when every component is zero. Upstream: `Zero::is_zero`.
+    fn is_zero(self: Matrix6x5<T>) -> bool {
+        self.m11 == R::zero()
+            && self.m21 == R::zero()
+            && self.m31 == R::zero()
+            && self.m41 == R::zero()
+            && self.m51 == R::zero()
+            && self.m61 == R::zero()
+            && self.m12 == R::zero()
+            && self.m22 == R::zero()
+            && self.m32 == R::zero()
+            && self.m42 == R::zero()
+            && self.m52 == R::zero()
+            && self.m62 == R::zero()
+            && self.m13 == R::zero()
+            && self.m23 == R::zero()
+            && self.m33 == R::zero()
+            && self.m43 == R::zero()
+            && self.m53 == R::zero()
+            && self.m63 == R::zero()
+            && self.m14 == R::zero()
+            && self.m24 == R::zero()
+            && self.m34 == R::zero()
+            && self.m44 == R::zero()
+            && self.m54 == R::zero()
+            && self.m64 == R::zero()
+            && self.m15 == R::zero()
+            && self.m25 == R::zero()
+            && self.m35 == R::zero()
+            && self.m45 == R::zero()
+            && self.m55 == R::zero()
+            && self.m65 == R::zero()
+    }
+
+    /// Component-wise (Hadamard) product, each component floored once. Panics on overflow.
+    /// Upstream: `component_mul`.
+    fn component_mul(self: Matrix6x5<T>, rhs: Matrix6x5<T>) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m21 * rhs.m21,
+            m31: self.m31 * rhs.m31,
+            m41: self.m41 * rhs.m41,
+            m51: self.m51 * rhs.m51,
+            m61: self.m61 * rhs.m61,
+            m12: self.m12 * rhs.m12,
+            m22: self.m22 * rhs.m22,
+            m32: self.m32 * rhs.m32,
+            m42: self.m42 * rhs.m42,
+            m52: self.m52 * rhs.m52,
+            m62: self.m62 * rhs.m62,
+            m13: self.m13 * rhs.m13,
+            m23: self.m23 * rhs.m23,
+            m33: self.m33 * rhs.m33,
+            m43: self.m43 * rhs.m43,
+            m53: self.m53 * rhs.m53,
+            m63: self.m63 * rhs.m63,
+            m14: self.m14 * rhs.m14,
+            m24: self.m24 * rhs.m24,
+            m34: self.m34 * rhs.m34,
+            m44: self.m44 * rhs.m44,
+            m54: self.m54 * rhs.m54,
+            m64: self.m64 * rhs.m64,
+            m15: self.m15 * rhs.m15,
+            m25: self.m25 * rhs.m25,
+            m35: self.m35 * rhs.m35,
+            m45: self.m45 * rhs.m45,
+            m55: self.m55 * rhs.m55,
+            m65: self.m65 * rhs.m65,
+        }
+    }
+
+    /// `self = self.component_mul(rhs)`. Upstream: `component_mul_assign`.
+    fn component_mul_assign(ref self: Matrix6x5<T>, rhs: Matrix6x5<T>) {
+        self =
+            Matrix6x5 {
+                m11: self.m11 * rhs.m11,
+                m21: self.m21 * rhs.m21,
+                m31: self.m31 * rhs.m31,
+                m41: self.m41 * rhs.m41,
+                m51: self.m51 * rhs.m51,
+                m61: self.m61 * rhs.m61,
+                m12: self.m12 * rhs.m12,
+                m22: self.m22 * rhs.m22,
+                m32: self.m32 * rhs.m32,
+                m42: self.m42 * rhs.m42,
+                m52: self.m52 * rhs.m52,
+                m62: self.m62 * rhs.m62,
+                m13: self.m13 * rhs.m13,
+                m23: self.m23 * rhs.m23,
+                m33: self.m33 * rhs.m33,
+                m43: self.m43 * rhs.m43,
+                m53: self.m53 * rhs.m53,
+                m63: self.m63 * rhs.m63,
+                m14: self.m14 * rhs.m14,
+                m24: self.m24 * rhs.m24,
+                m34: self.m34 * rhs.m34,
+                m44: self.m44 * rhs.m44,
+                m54: self.m54 * rhs.m54,
+                m64: self.m64 * rhs.m64,
+                m15: self.m15 * rhs.m15,
+                m25: self.m25 * rhs.m25,
+                m35: self.m35 * rhs.m35,
+                m45: self.m45 * rhs.m45,
+                m55: self.m55 * rhs.m55,
+                m65: self.m65 * rhs.m65,
+            };
+    }
+
+    /// Component-wise quotient, each component rounded to nearest (ties to even). Panics on a zero
+    /// component of `rhs` and on overflow. Upstream: `component_div`.
+    fn component_div(self: Matrix6x5<T>, rhs: Matrix6x5<T>) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: R::div(self.m11, rhs.m11),
+            m21: R::div(self.m21, rhs.m21),
+            m31: R::div(self.m31, rhs.m31),
+            m41: R::div(self.m41, rhs.m41),
+            m51: R::div(self.m51, rhs.m51),
+            m61: R::div(self.m61, rhs.m61),
+            m12: R::div(self.m12, rhs.m12),
+            m22: R::div(self.m22, rhs.m22),
+            m32: R::div(self.m32, rhs.m32),
+            m42: R::div(self.m42, rhs.m42),
+            m52: R::div(self.m52, rhs.m52),
+            m62: R::div(self.m62, rhs.m62),
+            m13: R::div(self.m13, rhs.m13),
+            m23: R::div(self.m23, rhs.m23),
+            m33: R::div(self.m33, rhs.m33),
+            m43: R::div(self.m43, rhs.m43),
+            m53: R::div(self.m53, rhs.m53),
+            m63: R::div(self.m63, rhs.m63),
+            m14: R::div(self.m14, rhs.m14),
+            m24: R::div(self.m24, rhs.m24),
+            m34: R::div(self.m34, rhs.m34),
+            m44: R::div(self.m44, rhs.m44),
+            m54: R::div(self.m54, rhs.m54),
+            m64: R::div(self.m64, rhs.m64),
+            m15: R::div(self.m15, rhs.m15),
+            m25: R::div(self.m25, rhs.m25),
+            m35: R::div(self.m35, rhs.m35),
+            m45: R::div(self.m45, rhs.m45),
+            m55: R::div(self.m55, rhs.m55),
+            m65: R::div(self.m65, rhs.m65),
+        }
+    }
+
+    /// `self = self.component_div(rhs)`. Upstream: `component_div_assign`.
+    fn component_div_assign(ref self: Matrix6x5<T>, rhs: Matrix6x5<T>) {
+        self =
+            Matrix6x5 {
+                m11: R::div(self.m11, rhs.m11),
+                m21: R::div(self.m21, rhs.m21),
+                m31: R::div(self.m31, rhs.m31),
+                m41: R::div(self.m41, rhs.m41),
+                m51: R::div(self.m51, rhs.m51),
+                m61: R::div(self.m61, rhs.m61),
+                m12: R::div(self.m12, rhs.m12),
+                m22: R::div(self.m22, rhs.m22),
+                m32: R::div(self.m32, rhs.m32),
+                m42: R::div(self.m42, rhs.m42),
+                m52: R::div(self.m52, rhs.m52),
+                m62: R::div(self.m62, rhs.m62),
+                m13: R::div(self.m13, rhs.m13),
+                m23: R::div(self.m23, rhs.m23),
+                m33: R::div(self.m33, rhs.m33),
+                m43: R::div(self.m43, rhs.m43),
+                m53: R::div(self.m53, rhs.m53),
+                m63: R::div(self.m63, rhs.m63),
+                m14: R::div(self.m14, rhs.m14),
+                m24: R::div(self.m24, rhs.m24),
+                m34: R::div(self.m34, rhs.m34),
+                m44: R::div(self.m44, rhs.m44),
+                m54: R::div(self.m54, rhs.m54),
+                m64: R::div(self.m64, rhs.m64),
+                m15: R::div(self.m15, rhs.m15),
+                m25: R::div(self.m25, rhs.m25),
+                m35: R::div(self.m35, rhs.m35),
+                m45: R::div(self.m45, rhs.m45),
+                m55: R::div(self.m55, rhs.m55),
+                m65: R::div(self.m65, rhs.m65),
+            };
+    }
+
+    /// Component-wise minimum (infimum). Exact. Upstream: `inf`.
+    fn inf(self: Matrix6x5<T>, other: Matrix6x5<T>) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: R::min(self.m11, other.m11),
+            m21: R::min(self.m21, other.m21),
+            m31: R::min(self.m31, other.m31),
+            m41: R::min(self.m41, other.m41),
+            m51: R::min(self.m51, other.m51),
+            m61: R::min(self.m61, other.m61),
+            m12: R::min(self.m12, other.m12),
+            m22: R::min(self.m22, other.m22),
+            m32: R::min(self.m32, other.m32),
+            m42: R::min(self.m42, other.m42),
+            m52: R::min(self.m52, other.m52),
+            m62: R::min(self.m62, other.m62),
+            m13: R::min(self.m13, other.m13),
+            m23: R::min(self.m23, other.m23),
+            m33: R::min(self.m33, other.m33),
+            m43: R::min(self.m43, other.m43),
+            m53: R::min(self.m53, other.m53),
+            m63: R::min(self.m63, other.m63),
+            m14: R::min(self.m14, other.m14),
+            m24: R::min(self.m24, other.m24),
+            m34: R::min(self.m34, other.m34),
+            m44: R::min(self.m44, other.m44),
+            m54: R::min(self.m54, other.m54),
+            m64: R::min(self.m64, other.m64),
+            m15: R::min(self.m15, other.m15),
+            m25: R::min(self.m25, other.m25),
+            m35: R::min(self.m35, other.m35),
+            m45: R::min(self.m45, other.m45),
+            m55: R::min(self.m55, other.m55),
+            m65: R::min(self.m65, other.m65),
+        }
+    }
+
+    /// Component-wise maximum (supremum). Exact. Upstream: `sup`.
+    fn sup(self: Matrix6x5<T>, other: Matrix6x5<T>) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: R::max(self.m11, other.m11),
+            m21: R::max(self.m21, other.m21),
+            m31: R::max(self.m31, other.m31),
+            m41: R::max(self.m41, other.m41),
+            m51: R::max(self.m51, other.m51),
+            m61: R::max(self.m61, other.m61),
+            m12: R::max(self.m12, other.m12),
+            m22: R::max(self.m22, other.m22),
+            m32: R::max(self.m32, other.m32),
+            m42: R::max(self.m42, other.m42),
+            m52: R::max(self.m52, other.m52),
+            m62: R::max(self.m62, other.m62),
+            m13: R::max(self.m13, other.m13),
+            m23: R::max(self.m23, other.m23),
+            m33: R::max(self.m33, other.m33),
+            m43: R::max(self.m43, other.m43),
+            m53: R::max(self.m53, other.m53),
+            m63: R::max(self.m63, other.m63),
+            m14: R::max(self.m14, other.m14),
+            m24: R::max(self.m24, other.m24),
+            m34: R::max(self.m34, other.m34),
+            m44: R::max(self.m44, other.m44),
+            m54: R::max(self.m54, other.m54),
+            m64: R::max(self.m64, other.m64),
+            m15: R::max(self.m15, other.m15),
+            m25: R::max(self.m25, other.m25),
+            m35: R::max(self.m35, other.m35),
+            m45: R::max(self.m45, other.m45),
+            m55: R::max(self.m55, other.m55),
+            m65: R::max(self.m65, other.m65),
+        }
+    }
+
+    /// `(self.inf(other), self.sup(other))`. Exact. Upstream: `inf_sup`.
+    fn inf_sup(self: Matrix6x5<T>, other: Matrix6x5<T>) -> (Matrix6x5<T>, Matrix6x5<T>) {
+        (Self::inf(self, other), Self::sup(self, other))
+    }
+
+    /// `self + k` added to every component. Exact; panics on overflow. Upstream: `add_scalar`.
+    fn add_scalar(self: Matrix6x5<T>, k: T) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: self.m11 + k,
+            m21: self.m21 + k,
+            m31: self.m31 + k,
+            m41: self.m41 + k,
+            m51: self.m51 + k,
+            m61: self.m61 + k,
+            m12: self.m12 + k,
+            m22: self.m22 + k,
+            m32: self.m32 + k,
+            m42: self.m42 + k,
+            m52: self.m52 + k,
+            m62: self.m62 + k,
+            m13: self.m13 + k,
+            m23: self.m23 + k,
+            m33: self.m33 + k,
+            m43: self.m43 + k,
+            m53: self.m53 + k,
+            m63: self.m63 + k,
+            m14: self.m14 + k,
+            m24: self.m24 + k,
+            m34: self.m34 + k,
+            m44: self.m44 + k,
+            m54: self.m54 + k,
+            m64: self.m64 + k,
+            m15: self.m15 + k,
+            m25: self.m25 + k,
+            m35: self.m35 + k,
+            m45: self.m45 + k,
+            m55: self.m55 + k,
+            m65: self.m65 + k,
+        }
+    }
+
+    /// `self = alpha * a ∘ b + beta * self` (component-wise product): per component `alpha * a`
+    /// is floored, then the two products are ONE fused `sum_prod2` (floored once). Panics on
+    /// overflow.
+    /// Upstream: `cmpy` (which skips reading `self` when `beta` is zero: a difference only for NaN,
+    /// which fixed point has not).
+    fn cmpy(ref self: Matrix6x5<T>, alpha: T, a: Matrix6x5<T>, b: Matrix6x5<T>, beta: T) {
+        self =
+            Matrix6x5 {
+                m11: R::sum_prod2(alpha * a.m11, b.m11, beta, self.m11),
+                m21: R::sum_prod2(alpha * a.m21, b.m21, beta, self.m21),
+                m31: R::sum_prod2(alpha * a.m31, b.m31, beta, self.m31),
+                m41: R::sum_prod2(alpha * a.m41, b.m41, beta, self.m41),
+                m51: R::sum_prod2(alpha * a.m51, b.m51, beta, self.m51),
+                m61: R::sum_prod2(alpha * a.m61, b.m61, beta, self.m61),
+                m12: R::sum_prod2(alpha * a.m12, b.m12, beta, self.m12),
+                m22: R::sum_prod2(alpha * a.m22, b.m22, beta, self.m22),
+                m32: R::sum_prod2(alpha * a.m32, b.m32, beta, self.m32),
+                m42: R::sum_prod2(alpha * a.m42, b.m42, beta, self.m42),
+                m52: R::sum_prod2(alpha * a.m52, b.m52, beta, self.m52),
+                m62: R::sum_prod2(alpha * a.m62, b.m62, beta, self.m62),
+                m13: R::sum_prod2(alpha * a.m13, b.m13, beta, self.m13),
+                m23: R::sum_prod2(alpha * a.m23, b.m23, beta, self.m23),
+                m33: R::sum_prod2(alpha * a.m33, b.m33, beta, self.m33),
+                m43: R::sum_prod2(alpha * a.m43, b.m43, beta, self.m43),
+                m53: R::sum_prod2(alpha * a.m53, b.m53, beta, self.m53),
+                m63: R::sum_prod2(alpha * a.m63, b.m63, beta, self.m63),
+                m14: R::sum_prod2(alpha * a.m14, b.m14, beta, self.m14),
+                m24: R::sum_prod2(alpha * a.m24, b.m24, beta, self.m24),
+                m34: R::sum_prod2(alpha * a.m34, b.m34, beta, self.m34),
+                m44: R::sum_prod2(alpha * a.m44, b.m44, beta, self.m44),
+                m54: R::sum_prod2(alpha * a.m54, b.m54, beta, self.m54),
+                m64: R::sum_prod2(alpha * a.m64, b.m64, beta, self.m64),
+                m15: R::sum_prod2(alpha * a.m15, b.m15, beta, self.m15),
+                m25: R::sum_prod2(alpha * a.m25, b.m25, beta, self.m25),
+                m35: R::sum_prod2(alpha * a.m35, b.m35, beta, self.m35),
+                m45: R::sum_prod2(alpha * a.m45, b.m45, beta, self.m45),
+                m55: R::sum_prod2(alpha * a.m55, b.m55, beta, self.m55),
+                m65: R::sum_prod2(alpha * a.m65, b.m65, beta, self.m65),
+            };
+    }
+
+    /// `self = alpha * a / b + beta * self` (component-wise quotient): per component `alpha * a` is
+    /// floored, divided by `b` (rounded to nearest), then `beta * self + quotient` is ONE `mul_add`
+    /// (floored once). Panics on a zero component of `b` and on overflow. Upstream: `cdpy`.
+    fn cdpy(ref self: Matrix6x5<T>, alpha: T, a: Matrix6x5<T>, b: Matrix6x5<T>, beta: T) {
+        self =
+            Matrix6x5 {
+                m11: R::mul_add(beta, self.m11, R::div(alpha * a.m11, b.m11)),
+                m21: R::mul_add(beta, self.m21, R::div(alpha * a.m21, b.m21)),
+                m31: R::mul_add(beta, self.m31, R::div(alpha * a.m31, b.m31)),
+                m41: R::mul_add(beta, self.m41, R::div(alpha * a.m41, b.m41)),
+                m51: R::mul_add(beta, self.m51, R::div(alpha * a.m51, b.m51)),
+                m61: R::mul_add(beta, self.m61, R::div(alpha * a.m61, b.m61)),
+                m12: R::mul_add(beta, self.m12, R::div(alpha * a.m12, b.m12)),
+                m22: R::mul_add(beta, self.m22, R::div(alpha * a.m22, b.m22)),
+                m32: R::mul_add(beta, self.m32, R::div(alpha * a.m32, b.m32)),
+                m42: R::mul_add(beta, self.m42, R::div(alpha * a.m42, b.m42)),
+                m52: R::mul_add(beta, self.m52, R::div(alpha * a.m52, b.m52)),
+                m62: R::mul_add(beta, self.m62, R::div(alpha * a.m62, b.m62)),
+                m13: R::mul_add(beta, self.m13, R::div(alpha * a.m13, b.m13)),
+                m23: R::mul_add(beta, self.m23, R::div(alpha * a.m23, b.m23)),
+                m33: R::mul_add(beta, self.m33, R::div(alpha * a.m33, b.m33)),
+                m43: R::mul_add(beta, self.m43, R::div(alpha * a.m43, b.m43)),
+                m53: R::mul_add(beta, self.m53, R::div(alpha * a.m53, b.m53)),
+                m63: R::mul_add(beta, self.m63, R::div(alpha * a.m63, b.m63)),
+                m14: R::mul_add(beta, self.m14, R::div(alpha * a.m14, b.m14)),
+                m24: R::mul_add(beta, self.m24, R::div(alpha * a.m24, b.m24)),
+                m34: R::mul_add(beta, self.m34, R::div(alpha * a.m34, b.m34)),
+                m44: R::mul_add(beta, self.m44, R::div(alpha * a.m44, b.m44)),
+                m54: R::mul_add(beta, self.m54, R::div(alpha * a.m54, b.m54)),
+                m64: R::mul_add(beta, self.m64, R::div(alpha * a.m64, b.m64)),
+                m15: R::mul_add(beta, self.m15, R::div(alpha * a.m15, b.m15)),
+                m25: R::mul_add(beta, self.m25, R::div(alpha * a.m25, b.m25)),
+                m35: R::mul_add(beta, self.m35, R::div(alpha * a.m35, b.m35)),
+                m45: R::mul_add(beta, self.m45, R::div(alpha * a.m45, b.m45)),
+                m55: R::mul_add(beta, self.m55, R::div(alpha * a.m55, b.m55)),
+                m65: R::mul_add(beta, self.m65, R::div(alpha * a.m65, b.m65)),
+            };
+    }
+
+    /// The smallest component. Exact. Upstream: `min`.
+    fn min(self: Matrix6x5<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(
+                        R::min(
+                            R::min(
+                                R::min(
+                                    R::min(
+                                        R::min(
+                                            R::min(
+                                                R::min(
+                                                    R::min(
+                                                        R::min(
+                                                            R::min(
+                                                                R::min(
+                                                                    R::min(
+                                                                        R::min(
+                                                                            R::min(
+                                                                                R::min(
+                                                                                    R::min(
+                                                                                        R::min(
+                                                                                            R::min(
+                                                                                                R::min(
+                                                                                                    R::min(
+                                                                                                        R::min(
+                                                                                                            R::min(
+                                                                                                                R::min(
+                                                                                                                    R::min(
+                                                                                                                        R::min(
+                                                                                                                            self
+                                                                                                                                .m11,
+                                                                                                                            self
+                                                                                                                                .m21,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m31,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m41,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m51,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m61,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m12,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m22,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m32,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m42,
+                                                                                        ),
+                                                                                        self.m52,
+                                                                                    ),
+                                                                                    self.m62,
+                                                                                ),
+                                                                                self.m13,
+                                                                            ),
+                                                                            self.m23,
+                                                                        ),
+                                                                        self.m33,
+                                                                    ),
+                                                                    self.m43,
+                                                                ),
+                                                                self.m53,
+                                                            ),
+                                                            self.m63,
+                                                        ),
+                                                        self.m14,
+                                                    ),
+                                                    self.m24,
+                                                ),
+                                                self.m34,
+                                            ),
+                                            self.m44,
+                                        ),
+                                        self.m54,
+                                    ),
+                                    self.m64,
+                                ),
+                                self.m15,
+                            ),
+                            self.m25,
+                        ),
+                        self.m35,
+                    ),
+                    self.m45,
+                ),
+                self.m55,
+            ),
+            self.m65,
+        )
+    }
+
+    /// The largest component. Exact. Upstream: `max`.
+    fn max(self: Matrix6x5<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(
+                        R::max(
+                            R::max(
+                                R::max(
+                                    R::max(
+                                        R::max(
+                                            R::max(
+                                                R::max(
+                                                    R::max(
+                                                        R::max(
+                                                            R::max(
+                                                                R::max(
+                                                                    R::max(
+                                                                        R::max(
+                                                                            R::max(
+                                                                                R::max(
+                                                                                    R::max(
+                                                                                        R::max(
+                                                                                            R::max(
+                                                                                                R::max(
+                                                                                                    R::max(
+                                                                                                        R::max(
+                                                                                                            R::max(
+                                                                                                                R::max(
+                                                                                                                    R::max(
+                                                                                                                        R::max(
+                                                                                                                            self
+                                                                                                                                .m11,
+                                                                                                                            self
+                                                                                                                                .m21,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m31,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m41,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m51,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m61,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m12,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m22,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m32,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m42,
+                                                                                        ),
+                                                                                        self.m52,
+                                                                                    ),
+                                                                                    self.m62,
+                                                                                ),
+                                                                                self.m13,
+                                                                            ),
+                                                                            self.m23,
+                                                                        ),
+                                                                        self.m33,
+                                                                    ),
+                                                                    self.m43,
+                                                                ),
+                                                                self.m53,
+                                                            ),
+                                                            self.m63,
+                                                        ),
+                                                        self.m14,
+                                                    ),
+                                                    self.m24,
+                                                ),
+                                                self.m34,
+                                            ),
+                                            self.m44,
+                                        ),
+                                        self.m54,
+                                    ),
+                                    self.m64,
+                                ),
+                                self.m15,
+                            ),
+                            self.m25,
+                        ),
+                        self.m35,
+                    ),
+                    self.m45,
+                ),
+                self.m55,
+            ),
+            self.m65,
+        )
+    }
+
+    /// The smallest absolute value of a component. Panics on the scalar's `MIN`. Upstream: `amin`.
+    fn amin(self: Matrix6x5<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(
+                        R::min(
+                            R::min(
+                                R::min(
+                                    R::min(
+                                        R::min(
+                                            R::min(
+                                                R::min(
+                                                    R::min(
+                                                        R::min(
+                                                            R::min(
+                                                                R::min(
+                                                                    R::min(
+                                                                        R::min(
+                                                                            R::min(
+                                                                                R::min(
+                                                                                    R::min(
+                                                                                        R::min(
+                                                                                            R::min(
+                                                                                                R::min(
+                                                                                                    R::min(
+                                                                                                        R::min(
+                                                                                                            R::min(
+                                                                                                                R::min(
+                                                                                                                    R::min(
+                                                                                                                        R::min(
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m11,
+                                                                                                                            ),
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m21,
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                        R::abs(
+                                                                                                                            self
+                                                                                                                                .m31,
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                    R::abs(
+                                                                                                                        self
+                                                                                                                            .m41,
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                                R::abs(
+                                                                                                                    self
+                                                                                                                        .m51,
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                            R::abs(
+                                                                                                                self
+                                                                                                                    .m61,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        R::abs(
+                                                                                                            self
+                                                                                                                .m12,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    R::abs(
+                                                                                                        self
+                                                                                                            .m22,
+                                                                                                    ),
+                                                                                                ),
+                                                                                                R::abs(
+                                                                                                    self
+                                                                                                        .m32,
+                                                                                                ),
+                                                                                            ),
+                                                                                            R::abs(
+                                                                                                self
+                                                                                                    .m42,
+                                                                                            ),
+                                                                                        ),
+                                                                                        R::abs(
+                                                                                            self
+                                                                                                .m52,
+                                                                                        ),
+                                                                                    ),
+                                                                                    R::abs(
+                                                                                        self.m62,
+                                                                                    ),
+                                                                                ),
+                                                                                R::abs(self.m13),
+                                                                            ),
+                                                                            R::abs(self.m23),
+                                                                        ),
+                                                                        R::abs(self.m33),
+                                                                    ),
+                                                                    R::abs(self.m43),
+                                                                ),
+                                                                R::abs(self.m53),
+                                                            ),
+                                                            R::abs(self.m63),
+                                                        ),
+                                                        R::abs(self.m14),
+                                                    ),
+                                                    R::abs(self.m24),
+                                                ),
+                                                R::abs(self.m34),
+                                            ),
+                                            R::abs(self.m44),
+                                        ),
+                                        R::abs(self.m54),
+                                    ),
+                                    R::abs(self.m64),
+                                ),
+                                R::abs(self.m15),
+                            ),
+                            R::abs(self.m25),
+                        ),
+                        R::abs(self.m35),
+                    ),
+                    R::abs(self.m45),
+                ),
+                R::abs(self.m55),
+            ),
+            R::abs(self.m65),
+        )
+    }
+
+    /// The largest absolute value of a component (the uniform norm). Panics on the scalar's `MIN`.
+    /// Upstream: `amax`.
+    fn amax(self: Matrix6x5<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(
+                        R::max(
+                            R::max(
+                                R::max(
+                                    R::max(
+                                        R::max(
+                                            R::max(
+                                                R::max(
+                                                    R::max(
+                                                        R::max(
+                                                            R::max(
+                                                                R::max(
+                                                                    R::max(
+                                                                        R::max(
+                                                                            R::max(
+                                                                                R::max(
+                                                                                    R::max(
+                                                                                        R::max(
+                                                                                            R::max(
+                                                                                                R::max(
+                                                                                                    R::max(
+                                                                                                        R::max(
+                                                                                                            R::max(
+                                                                                                                R::max(
+                                                                                                                    R::max(
+                                                                                                                        R::max(
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m11,
+                                                                                                                            ),
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m21,
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                        R::abs(
+                                                                                                                            self
+                                                                                                                                .m31,
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                    R::abs(
+                                                                                                                        self
+                                                                                                                            .m41,
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                                R::abs(
+                                                                                                                    self
+                                                                                                                        .m51,
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                            R::abs(
+                                                                                                                self
+                                                                                                                    .m61,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        R::abs(
+                                                                                                            self
+                                                                                                                .m12,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    R::abs(
+                                                                                                        self
+                                                                                                            .m22,
+                                                                                                    ),
+                                                                                                ),
+                                                                                                R::abs(
+                                                                                                    self
+                                                                                                        .m32,
+                                                                                                ),
+                                                                                            ),
+                                                                                            R::abs(
+                                                                                                self
+                                                                                                    .m42,
+                                                                                            ),
+                                                                                        ),
+                                                                                        R::abs(
+                                                                                            self
+                                                                                                .m52,
+                                                                                        ),
+                                                                                    ),
+                                                                                    R::abs(
+                                                                                        self.m62,
+                                                                                    ),
+                                                                                ),
+                                                                                R::abs(self.m13),
+                                                                            ),
+                                                                            R::abs(self.m23),
+                                                                        ),
+                                                                        R::abs(self.m33),
+                                                                    ),
+                                                                    R::abs(self.m43),
+                                                                ),
+                                                                R::abs(self.m53),
+                                                            ),
+                                                            R::abs(self.m63),
+                                                        ),
+                                                        R::abs(self.m14),
+                                                    ),
+                                                    R::abs(self.m24),
+                                                ),
+                                                R::abs(self.m34),
+                                            ),
+                                            R::abs(self.m44),
+                                        ),
+                                        R::abs(self.m54),
+                                    ),
+                                    R::abs(self.m64),
+                                ),
+                                R::abs(self.m15),
+                            ),
+                            R::abs(self.m25),
+                        ),
+                        R::abs(self.m35),
+                    ),
+                    R::abs(self.m45),
+                ),
+                R::abs(self.m55),
+            ),
+            R::abs(self.m65),
+        )
+    }
+
+    /// `amin`: the modulus of a real scalar is its absolute value. Upstream: `camin`.
+    fn camin(self: Matrix6x5<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(
+                        R::min(
+                            R::min(
+                                R::min(
+                                    R::min(
+                                        R::min(
+                                            R::min(
+                                                R::min(
+                                                    R::min(
+                                                        R::min(
+                                                            R::min(
+                                                                R::min(
+                                                                    R::min(
+                                                                        R::min(
+                                                                            R::min(
+                                                                                R::min(
+                                                                                    R::min(
+                                                                                        R::min(
+                                                                                            R::min(
+                                                                                                R::min(
+                                                                                                    R::min(
+                                                                                                        R::min(
+                                                                                                            R::min(
+                                                                                                                R::min(
+                                                                                                                    R::min(
+                                                                                                                        R::min(
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m11,
+                                                                                                                            ),
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m21,
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                        R::abs(
+                                                                                                                            self
+                                                                                                                                .m31,
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                    R::abs(
+                                                                                                                        self
+                                                                                                                            .m41,
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                                R::abs(
+                                                                                                                    self
+                                                                                                                        .m51,
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                            R::abs(
+                                                                                                                self
+                                                                                                                    .m61,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        R::abs(
+                                                                                                            self
+                                                                                                                .m12,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    R::abs(
+                                                                                                        self
+                                                                                                            .m22,
+                                                                                                    ),
+                                                                                                ),
+                                                                                                R::abs(
+                                                                                                    self
+                                                                                                        .m32,
+                                                                                                ),
+                                                                                            ),
+                                                                                            R::abs(
+                                                                                                self
+                                                                                                    .m42,
+                                                                                            ),
+                                                                                        ),
+                                                                                        R::abs(
+                                                                                            self
+                                                                                                .m52,
+                                                                                        ),
+                                                                                    ),
+                                                                                    R::abs(
+                                                                                        self.m62,
+                                                                                    ),
+                                                                                ),
+                                                                                R::abs(self.m13),
+                                                                            ),
+                                                                            R::abs(self.m23),
+                                                                        ),
+                                                                        R::abs(self.m33),
+                                                                    ),
+                                                                    R::abs(self.m43),
+                                                                ),
+                                                                R::abs(self.m53),
+                                                            ),
+                                                            R::abs(self.m63),
+                                                        ),
+                                                        R::abs(self.m14),
+                                                    ),
+                                                    R::abs(self.m24),
+                                                ),
+                                                R::abs(self.m34),
+                                            ),
+                                            R::abs(self.m44),
+                                        ),
+                                        R::abs(self.m54),
+                                    ),
+                                    R::abs(self.m64),
+                                ),
+                                R::abs(self.m15),
+                            ),
+                            R::abs(self.m25),
+                        ),
+                        R::abs(self.m35),
+                    ),
+                    R::abs(self.m45),
+                ),
+                R::abs(self.m55),
+            ),
+            R::abs(self.m65),
+        )
+    }
+
+    /// `amax`: the modulus of a real scalar is its absolute value. Upstream: `camax`.
+    fn camax(self: Matrix6x5<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(
+                        R::max(
+                            R::max(
+                                R::max(
+                                    R::max(
+                                        R::max(
+                                            R::max(
+                                                R::max(
+                                                    R::max(
+                                                        R::max(
+                                                            R::max(
+                                                                R::max(
+                                                                    R::max(
+                                                                        R::max(
+                                                                            R::max(
+                                                                                R::max(
+                                                                                    R::max(
+                                                                                        R::max(
+                                                                                            R::max(
+                                                                                                R::max(
+                                                                                                    R::max(
+                                                                                                        R::max(
+                                                                                                            R::max(
+                                                                                                                R::max(
+                                                                                                                    R::max(
+                                                                                                                        R::max(
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m11,
+                                                                                                                            ),
+                                                                                                                            R::abs(
+                                                                                                                                self
+                                                                                                                                    .m21,
+                                                                                                                            ),
+                                                                                                                        ),
+                                                                                                                        R::abs(
+                                                                                                                            self
+                                                                                                                                .m31,
+                                                                                                                        ),
+                                                                                                                    ),
+                                                                                                                    R::abs(
+                                                                                                                        self
+                                                                                                                            .m41,
+                                                                                                                    ),
+                                                                                                                ),
+                                                                                                                R::abs(
+                                                                                                                    self
+                                                                                                                        .m51,
+                                                                                                                ),
+                                                                                                            ),
+                                                                                                            R::abs(
+                                                                                                                self
+                                                                                                                    .m61,
+                                                                                                            ),
+                                                                                                        ),
+                                                                                                        R::abs(
+                                                                                                            self
+                                                                                                                .m12,
+                                                                                                        ),
+                                                                                                    ),
+                                                                                                    R::abs(
+                                                                                                        self
+                                                                                                            .m22,
+                                                                                                    ),
+                                                                                                ),
+                                                                                                R::abs(
+                                                                                                    self
+                                                                                                        .m32,
+                                                                                                ),
+                                                                                            ),
+                                                                                            R::abs(
+                                                                                                self
+                                                                                                    .m42,
+                                                                                            ),
+                                                                                        ),
+                                                                                        R::abs(
+                                                                                            self
+                                                                                                .m52,
+                                                                                        ),
+                                                                                    ),
+                                                                                    R::abs(
+                                                                                        self.m62,
+                                                                                    ),
+                                                                                ),
+                                                                                R::abs(self.m13),
+                                                                            ),
+                                                                            R::abs(self.m23),
+                                                                        ),
+                                                                        R::abs(self.m33),
+                                                                    ),
+                                                                    R::abs(self.m43),
+                                                                ),
+                                                                R::abs(self.m53),
+                                                            ),
+                                                            R::abs(self.m63),
+                                                        ),
+                                                        R::abs(self.m14),
+                                                    ),
+                                                    R::abs(self.m24),
+                                                ),
+                                                R::abs(self.m34),
+                                            ),
+                                            R::abs(self.m44),
+                                        ),
+                                        R::abs(self.m54),
+                                    ),
+                                    R::abs(self.m64),
+                                ),
+                                R::abs(self.m15),
+                            ),
+                            R::abs(self.m25),
+                        ),
+                        R::abs(self.m35),
+                    ),
+                    R::abs(self.m45),
+                ),
+                R::abs(self.m55),
+            ),
+            R::abs(self.m65),
+        )
+    }
+
+    /// `(row, column)` of the component with the largest absolute value, the first one in
+    /// column-major order on ties. Panics on the scalar's `MIN`. Upstream: `iamax_full`.
+    fn iamax_full(self: Matrix6x5<T>) -> (usize, usize) {
+        let mut best: (usize, usize) = (0, 0);
+        let mut m = R::abs(self.m11);
+        let v = R::abs(self.m21);
+        if v > m {
+            m = v;
+            best = (1, 0);
+        }
+        let v = R::abs(self.m31);
+        if v > m {
+            m = v;
+            best = (2, 0);
+        }
+        let v = R::abs(self.m41);
+        if v > m {
+            m = v;
+            best = (3, 0);
+        }
+        let v = R::abs(self.m51);
+        if v > m {
+            m = v;
+            best = (4, 0);
+        }
+        let v = R::abs(self.m61);
+        if v > m {
+            m = v;
+            best = (5, 0);
+        }
+        let v = R::abs(self.m12);
+        if v > m {
+            m = v;
+            best = (0, 1);
+        }
+        let v = R::abs(self.m22);
+        if v > m {
+            m = v;
+            best = (1, 1);
+        }
+        let v = R::abs(self.m32);
+        if v > m {
+            m = v;
+            best = (2, 1);
+        }
+        let v = R::abs(self.m42);
+        if v > m {
+            m = v;
+            best = (3, 1);
+        }
+        let v = R::abs(self.m52);
+        if v > m {
+            m = v;
+            best = (4, 1);
+        }
+        let v = R::abs(self.m62);
+        if v > m {
+            m = v;
+            best = (5, 1);
+        }
+        let v = R::abs(self.m13);
+        if v > m {
+            m = v;
+            best = (0, 2);
+        }
+        let v = R::abs(self.m23);
+        if v > m {
+            m = v;
+            best = (1, 2);
+        }
+        let v = R::abs(self.m33);
+        if v > m {
+            m = v;
+            best = (2, 2);
+        }
+        let v = R::abs(self.m43);
+        if v > m {
+            m = v;
+            best = (3, 2);
+        }
+        let v = R::abs(self.m53);
+        if v > m {
+            m = v;
+            best = (4, 2);
+        }
+        let v = R::abs(self.m63);
+        if v > m {
+            m = v;
+            best = (5, 2);
+        }
+        let v = R::abs(self.m14);
+        if v > m {
+            m = v;
+            best = (0, 3);
+        }
+        let v = R::abs(self.m24);
+        if v > m {
+            m = v;
+            best = (1, 3);
+        }
+        let v = R::abs(self.m34);
+        if v > m {
+            m = v;
+            best = (2, 3);
+        }
+        let v = R::abs(self.m44);
+        if v > m {
+            m = v;
+            best = (3, 3);
+        }
+        let v = R::abs(self.m54);
+        if v > m {
+            m = v;
+            best = (4, 3);
+        }
+        let v = R::abs(self.m64);
+        if v > m {
+            m = v;
+            best = (5, 3);
+        }
+        let v = R::abs(self.m15);
+        if v > m {
+            m = v;
+            best = (0, 4);
+        }
+        let v = R::abs(self.m25);
+        if v > m {
+            m = v;
+            best = (1, 4);
+        }
+        let v = R::abs(self.m35);
+        if v > m {
+            m = v;
+            best = (2, 4);
+        }
+        let v = R::abs(self.m45);
+        if v > m {
+            m = v;
+            best = (3, 4);
+        }
+        let v = R::abs(self.m55);
+        if v > m {
+            m = v;
+            best = (4, 4);
+        }
+        let v = R::abs(self.m65);
+        if v > m {
+            best = (5, 4);
+        }
+        best
+    }
+
+    /// `iamax_full`: the modulus of a real scalar is its absolute value. Upstream: `icamax_full`.
+    #[inline(always)]
+    fn icamax_full(self: Matrix6x5<T>) -> (usize, usize) {
+        Self::iamax_full(self)
+    }
+
+    /// Dot product (the sum of the component-wise products, upstream's Frobenius inner product for
+    /// matrices): the exact sum is floored ONCE, only the result must fit. Upstream: `dot`.
+    fn dot(self: Matrix6x5<T>, rhs: Matrix6x5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11, rhs.m11);
+        let w = R::wide_add_prod(w, self.m21, rhs.m21);
+        let w = R::wide_add_prod(w, self.m31, rhs.m31);
+        let w = R::wide_add_prod(w, self.m41, rhs.m41);
+        let w = R::wide_add_prod(w, self.m51, rhs.m51);
+        let w = R::wide_add_prod(w, self.m61, rhs.m61);
+        let w = R::wide_add_prod(w, self.m12, rhs.m12);
+        let w = R::wide_add_prod(w, self.m22, rhs.m22);
+        let w = R::wide_add_prod(w, self.m32, rhs.m32);
+        let w = R::wide_add_prod(w, self.m42, rhs.m42);
+        let w = R::wide_add_prod(w, self.m52, rhs.m52);
+        let w = R::wide_add_prod(w, self.m62, rhs.m62);
+        let w = R::wide_add_prod(w, self.m13, rhs.m13);
+        let w = R::wide_add_prod(w, self.m23, rhs.m23);
+        let w = R::wide_add_prod(w, self.m33, rhs.m33);
+        let w = R::wide_add_prod(w, self.m43, rhs.m43);
+        let w = R::wide_add_prod(w, self.m53, rhs.m53);
+        let w = R::wide_add_prod(w, self.m63, rhs.m63);
+        let w = R::wide_add_prod(w, self.m14, rhs.m14);
+        let w = R::wide_add_prod(w, self.m24, rhs.m24);
+        let w = R::wide_add_prod(w, self.m34, rhs.m34);
+        let w = R::wide_add_prod(w, self.m44, rhs.m44);
+        let w = R::wide_add_prod(w, self.m54, rhs.m54);
+        let w = R::wide_add_prod(w, self.m64, rhs.m64);
+        let w = R::wide_add_prod(w, self.m15, rhs.m15);
+        let w = R::wide_add_prod(w, self.m25, rhs.m25);
+        let w = R::wide_add_prod(w, self.m35, rhs.m35);
+        let w = R::wide_add_prod(w, self.m45, rhs.m45);
+        let w = R::wide_add_prod(w, self.m55, rhs.m55);
+        R::wide_rescale(R::wide_add_prod(w, self.m65, rhs.m65))
+    }
+
+    /// Squared Euclidean (Frobenius) norm: the exact sum of squares floored once. Panics on
+    /// overflow (above a norm of about 46 340 in Q32.32 only `norm` works). Upstream:
+    /// `norm_squared`.
+    fn norm_squared(self: Matrix6x5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11, self.m11);
+        let w = R::wide_add_prod(w, self.m21, self.m21);
+        let w = R::wide_add_prod(w, self.m31, self.m31);
+        let w = R::wide_add_prod(w, self.m41, self.m41);
+        let w = R::wide_add_prod(w, self.m51, self.m51);
+        let w = R::wide_add_prod(w, self.m61, self.m61);
+        let w = R::wide_add_prod(w, self.m12, self.m12);
+        let w = R::wide_add_prod(w, self.m22, self.m22);
+        let w = R::wide_add_prod(w, self.m32, self.m32);
+        let w = R::wide_add_prod(w, self.m42, self.m42);
+        let w = R::wide_add_prod(w, self.m52, self.m52);
+        let w = R::wide_add_prod(w, self.m62, self.m62);
+        let w = R::wide_add_prod(w, self.m13, self.m13);
+        let w = R::wide_add_prod(w, self.m23, self.m23);
+        let w = R::wide_add_prod(w, self.m33, self.m33);
+        let w = R::wide_add_prod(w, self.m43, self.m43);
+        let w = R::wide_add_prod(w, self.m53, self.m53);
+        let w = R::wide_add_prod(w, self.m63, self.m63);
+        let w = R::wide_add_prod(w, self.m14, self.m14);
+        let w = R::wide_add_prod(w, self.m24, self.m24);
+        let w = R::wide_add_prod(w, self.m34, self.m34);
+        let w = R::wide_add_prod(w, self.m44, self.m44);
+        let w = R::wide_add_prod(w, self.m54, self.m54);
+        let w = R::wide_add_prod(w, self.m64, self.m64);
+        let w = R::wide_add_prod(w, self.m15, self.m15);
+        let w = R::wide_add_prod(w, self.m25, self.m25);
+        let w = R::wide_add_prod(w, self.m35, self.m35);
+        let w = R::wide_add_prod(w, self.m45, self.m45);
+        let w = R::wide_add_prod(w, self.m55, self.m55);
+        R::wide_rescale(R::wide_add_prod(w, self.m65, self.m65))
+    }
+
+    /// Euclidean (Frobenius) norm: square root of the UNSCALED exact sum of squares, floored once.
+    /// No intermediate overflow: only the result must fit. Upstream: `norm`.
+    fn norm(self: Matrix6x5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11, self.m11);
+        let w = R::wide_add_prod(w, self.m21, self.m21);
+        let w = R::wide_add_prod(w, self.m31, self.m31);
+        let w = R::wide_add_prod(w, self.m41, self.m41);
+        let w = R::wide_add_prod(w, self.m51, self.m51);
+        let w = R::wide_add_prod(w, self.m61, self.m61);
+        let w = R::wide_add_prod(w, self.m12, self.m12);
+        let w = R::wide_add_prod(w, self.m22, self.m22);
+        let w = R::wide_add_prod(w, self.m32, self.m32);
+        let w = R::wide_add_prod(w, self.m42, self.m42);
+        let w = R::wide_add_prod(w, self.m52, self.m52);
+        let w = R::wide_add_prod(w, self.m62, self.m62);
+        let w = R::wide_add_prod(w, self.m13, self.m13);
+        let w = R::wide_add_prod(w, self.m23, self.m23);
+        let w = R::wide_add_prod(w, self.m33, self.m33);
+        let w = R::wide_add_prod(w, self.m43, self.m43);
+        let w = R::wide_add_prod(w, self.m53, self.m53);
+        let w = R::wide_add_prod(w, self.m63, self.m63);
+        let w = R::wide_add_prod(w, self.m14, self.m14);
+        let w = R::wide_add_prod(w, self.m24, self.m24);
+        let w = R::wide_add_prod(w, self.m34, self.m34);
+        let w = R::wide_add_prod(w, self.m44, self.m44);
+        let w = R::wide_add_prod(w, self.m54, self.m54);
+        let w = R::wide_add_prod(w, self.m64, self.m64);
+        let w = R::wide_add_prod(w, self.m15, self.m15);
+        let w = R::wide_add_prod(w, self.m25, self.m25);
+        let w = R::wide_add_prod(w, self.m35, self.m35);
+        let w = R::wide_add_prod(w, self.m45, self.m45);
+        let w = R::wide_add_prod(w, self.m55, self.m55);
+        R::wide_sqrt(R::wide_add_prod(w, self.m65, self.m65))
+    }
+
+    /// Alias of `norm_squared`. Upstream: `magnitude_squared`.
+    #[inline(always)]
+    fn magnitude_squared(self: Matrix6x5<T>) -> T {
+        Self::norm_squared(self)
+    }
+
+    /// Alias of `norm`. Upstream: `magnitude`.
+    #[inline(always)]
+    fn magnitude(self: Matrix6x5<T>) -> T {
+        Self::norm(self)
+    }
+
+    /// `(self - rhs).norm()`: the differences are exact, then one fused norm. Panics when a
+    /// difference or the result overflows. Upstream: `metric_distance`.
+    fn metric_distance(self: Matrix6x5<T>, rhs: Matrix6x5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11 - rhs.m11, self.m11 - rhs.m11);
+        let w = R::wide_add_prod(w, self.m21 - rhs.m21, self.m21 - rhs.m21);
+        let w = R::wide_add_prod(w, self.m31 - rhs.m31, self.m31 - rhs.m31);
+        let w = R::wide_add_prod(w, self.m41 - rhs.m41, self.m41 - rhs.m41);
+        let w = R::wide_add_prod(w, self.m51 - rhs.m51, self.m51 - rhs.m51);
+        let w = R::wide_add_prod(w, self.m61 - rhs.m61, self.m61 - rhs.m61);
+        let w = R::wide_add_prod(w, self.m12 - rhs.m12, self.m12 - rhs.m12);
+        let w = R::wide_add_prod(w, self.m22 - rhs.m22, self.m22 - rhs.m22);
+        let w = R::wide_add_prod(w, self.m32 - rhs.m32, self.m32 - rhs.m32);
+        let w = R::wide_add_prod(w, self.m42 - rhs.m42, self.m42 - rhs.m42);
+        let w = R::wide_add_prod(w, self.m52 - rhs.m52, self.m52 - rhs.m52);
+        let w = R::wide_add_prod(w, self.m62 - rhs.m62, self.m62 - rhs.m62);
+        let w = R::wide_add_prod(w, self.m13 - rhs.m13, self.m13 - rhs.m13);
+        let w = R::wide_add_prod(w, self.m23 - rhs.m23, self.m23 - rhs.m23);
+        let w = R::wide_add_prod(w, self.m33 - rhs.m33, self.m33 - rhs.m33);
+        let w = R::wide_add_prod(w, self.m43 - rhs.m43, self.m43 - rhs.m43);
+        let w = R::wide_add_prod(w, self.m53 - rhs.m53, self.m53 - rhs.m53);
+        let w = R::wide_add_prod(w, self.m63 - rhs.m63, self.m63 - rhs.m63);
+        let w = R::wide_add_prod(w, self.m14 - rhs.m14, self.m14 - rhs.m14);
+        let w = R::wide_add_prod(w, self.m24 - rhs.m24, self.m24 - rhs.m24);
+        let w = R::wide_add_prod(w, self.m34 - rhs.m34, self.m34 - rhs.m34);
+        let w = R::wide_add_prod(w, self.m44 - rhs.m44, self.m44 - rhs.m44);
+        let w = R::wide_add_prod(w, self.m54 - rhs.m54, self.m54 - rhs.m54);
+        let w = R::wide_add_prod(w, self.m64 - rhs.m64, self.m64 - rhs.m64);
+        let w = R::wide_add_prod(w, self.m15 - rhs.m15, self.m15 - rhs.m15);
+        let w = R::wide_add_prod(w, self.m25 - rhs.m25, self.m25 - rhs.m25);
+        let w = R::wide_add_prod(w, self.m35 - rhs.m35, self.m35 - rhs.m35);
+        let w = R::wide_add_prod(w, self.m45 - rhs.m45, self.m45 - rhs.m45);
+        let w = R::wide_add_prod(w, self.m55 - rhs.m55, self.m55 - rhs.m55);
+        R::wide_sqrt(R::wide_add_prod(w, self.m65 - rhs.m65, self.m65 - rhs.m65))
+    }
+
+    /// `self / k`, each component the correctly rounded quotient (nearest, ties to even), through 3
+    /// prepared-divisor `Real::divN` call(s), bit-identical to one `Real::div` per component.
+    /// Panics on a zero `k` and on overflow. Upstream: `unscale` (`self / k`).
+    fn unscale(self: Matrix6x5<T>, k: T) -> Matrix6x5<T> {
+        let (m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62, m13, m23, m33, m43) =
+            R::div16(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m41,
+            self.m51,
+            self.m61,
+            self.m12,
+            self.m22,
+            self.m32,
+            self.m42,
+            self.m52,
+            self.m62,
+            self.m13,
+            self.m23,
+            self.m33,
+            self.m43,
+            k,
+        );
+        let (m53, m63, m14, m24, m34, m44, m54, m64, m15) = R::div9(
+            self.m53,
+            self.m63,
+            self.m14,
+            self.m24,
+            self.m34,
+            self.m44,
+            self.m54,
+            self.m64,
+            self.m15,
+            k,
+        );
+        let (m25, m35, m45, m55, m65) = R::div5(
+            self.m25, self.m35, self.m45, self.m55, self.m65, k,
+        );
+        Matrix6x5 {
+            m11,
+            m21,
+            m31,
+            m41,
+            m51,
+            m61,
+            m12,
+            m22,
+            m32,
+            m42,
+            m52,
+            m62,
+            m13,
+            m23,
+            m33,
+            m43,
+            m53,
+            m63,
+            m14,
+            m24,
+            m34,
+            m44,
+            m54,
+            m64,
+            m15,
+            m25,
+            m35,
+            m45,
+            m55,
+            m65,
+        }
+    }
+
+    /// `self / self.norm()`: the floored norm, then `unscale`. Panics with a division by zero when
+    /// the norm is zero, and on overflow when the norm does not fit. Upstream: `normalize`.
+    fn normalize(self: Matrix6x5<T>) -> Matrix6x5<T> {
+        Self::unscale(self, Self::norm(self))
+    }
+
+    /// `Some(self.normalize())`, or `None` when the norm is `<= min_norm` (never divides by zero
+    /// for `min_norm >= 0`). Upstream: `try_normalize`.
+    fn try_normalize(self: Matrix6x5<T>, min_norm: T) -> Option<Matrix6x5<T>> {
+        let n = Self::norm(self);
+        if n <= min_norm {
+            None
+        } else {
+            Some(Self::unscale(self, n))
+        }
+    }
+
+    /// `self` when its norm is `<= max`, otherwise `self.scale(max / norm)` (the ratio rounded to
+    /// nearest, like upstream's `max / n`). Panics only when the norm does not fit. Upstream:
+    /// `cap_magnitude`.
+    fn cap_magnitude(self: Matrix6x5<T>, max: T) -> Matrix6x5<T> {
+        let n = Self::norm(self);
+        if n <= max {
+            self
+        } else {
+            Self::scale(self, R::div(max, n))
+        }
+    }
+
+    /// Scales `self` to the norm `magnitude` (`self.scale(magnitude / norm)`, the ratio rounded to
+    /// nearest) when its norm is `> min_magnitude`, leaves it unchanged otherwise. Upstream:
+    /// `try_set_magnitude` (`&mut self`).
+    fn try_set_magnitude(ref self: Matrix6x5<T>, magnitude: T, min_magnitude: T) {
+        let n = Self::norm(self);
+        if n > min_magnitude {
+            self = Self::scale(self, R::div(magnitude, n));
+        }
+    }
+
+    /// The induced 1-norm: the largest absolute column sum (the L1 norm of a column vector, the
+    /// largest absolute value of a row vector). Exact; panics on overflow. Upstream: `one_norm`.
+    fn one_norm(self: Matrix6x5<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(
+                        R::abs(self.m11)
+                            + R::abs(self.m21)
+                            + R::abs(self.m31)
+                            + R::abs(self.m41)
+                            + R::abs(self.m51)
+                            + R::abs(self.m61),
+                        R::abs(self.m12)
+                            + R::abs(self.m22)
+                            + R::abs(self.m32)
+                            + R::abs(self.m42)
+                            + R::abs(self.m52)
+                            + R::abs(self.m62),
+                    ),
+                    R::abs(self.m13)
+                        + R::abs(self.m23)
+                        + R::abs(self.m33)
+                        + R::abs(self.m43)
+                        + R::abs(self.m53)
+                        + R::abs(self.m63),
+                ),
+                R::abs(self.m14)
+                    + R::abs(self.m24)
+                    + R::abs(self.m34)
+                    + R::abs(self.m44)
+                    + R::abs(self.m54)
+                    + R::abs(self.m64),
+            ),
+            R::abs(self.m15)
+                + R::abs(self.m25)
+                + R::abs(self.m35)
+                + R::abs(self.m45)
+                + R::abs(self.m55)
+                + R::abs(self.m65),
+        )
+    }
+
+    /// The conjugate transpose, a `Matrix5x6`: the transpose for a real scalar. Exact. Upstream:
+    /// `adjoint`.
+    #[inline(always)]
+    fn adjoint(self: Matrix6x5<T>) -> Matrix5x6<T> {
+        Self::transpose(self)
+    }
+
+    /// Alias of `adjoint` (deprecated upstream). Upstream: `conjugate_transpose`.
+    #[inline(always)]
+    fn conjugate_transpose(self: Matrix6x5<T>) -> Matrix5x6<T> {
+        Self::transpose(self)
+    }
+
+    /// The component-wise conjugate: `self` for a real scalar. Upstream: `conjugate`.
+    #[inline(always)]
+    fn conjugate(self: Matrix6x5<T>) -> Matrix6x5<T> {
+        self
+    }
+
+    /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
+    /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
+    /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Matrix6x5<T>) -> Matrix6x5<U> {
+        Matrix6x5 {
+            m11: self.m11.into(),
+            m21: self.m21.into(),
+            m31: self.m31.into(),
+            m41: self.m41.into(),
+            m51: self.m51.into(),
+            m61: self.m61.into(),
+            m12: self.m12.into(),
+            m22: self.m22.into(),
+            m32: self.m32.into(),
+            m42: self.m42.into(),
+            m52: self.m52.into(),
+            m62: self.m62.into(),
+            m13: self.m13.into(),
+            m23: self.m23.into(),
+            m33: self.m33.into(),
+            m43: self.m43.into(),
+            m53: self.m53.into(),
+            m63: self.m63.into(),
+            m14: self.m14.into(),
+            m24: self.m24.into(),
+            m34: self.m34.into(),
+            m44: self.m44.into(),
+            m54: self.m54.into(),
+            m64: self.m64.into(),
+            m15: self.m15.into(),
+            m25: self.m25.into(),
+            m35: self.m35.into(),
+            m45: self.m45.into(),
+            m55: self.m55.into(),
+            m65: self.m65.into(),
+        }
+    }
+
+    /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
+    /// conversion fails. Upstream: `try_cast`.
+    fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Matrix6x5<T>) -> Option<Matrix6x5<U>> {
+        let m11: U = match self.m11.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m21: U = match self.m21.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m31: U = match self.m31.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m41: U = match self.m41.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m51: U = match self.m51.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m61: U = match self.m61.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m12: U = match self.m12.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m22: U = match self.m22.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m32: U = match self.m32.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m42: U = match self.m42.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m52: U = match self.m52.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m62: U = match self.m62.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m13: U = match self.m13.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m23: U = match self.m23.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m33: U = match self.m33.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m43: U = match self.m43.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m53: U = match self.m53.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m63: U = match self.m63.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m14: U = match self.m14.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m24: U = match self.m24.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m34: U = match self.m34.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m44: U = match self.m44.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m54: U = match self.m54.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m64: U = match self.m64.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m15: U = match self.m15.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m25: U = match self.m25.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m35: U = match self.m35.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m45: U = match self.m45.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m55: U = match self.m55.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let m65: U = match self.m65.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        Option::Some(
+            Matrix6x5 {
+                m11,
+                m21,
+                m31,
+                m41,
+                m51,
+                m61,
+                m12,
+                m22,
+                m32,
+                m42,
+                m52,
+                m62,
+                m13,
+                m23,
+                m33,
+                m43,
+                m53,
+                m63,
+                m14,
+                m24,
+                m34,
+                m44,
+                m54,
+                m64,
+                m15,
+                m25,
+                m35,
+                m45,
+                m55,
+                m65,
+            },
+        )
+    }
+
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_relative` times the larger magnitude of the two (`|a - b| <= max(|a|, |b|)
+    /// · max_relative`). Panics on a component equal to the scalar's `MIN`, and on overflow of
+    /// that product (only possible with `max_relative > 1`). Upstream:
+    /// `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp instead of a float epsilon
+    /// (DESIGN D3).
+    fn relative_eq(self: Matrix6x5<T>, other: Matrix6x5<T>, epsilon: u64, max_relative: T) -> bool {
+        ApproxEqTrait::relative_eq(self.m11, other.m11, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m21, other.m21, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m31, other.m31, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m41, other.m41, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m51, other.m51, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m61, other.m61, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m12, other.m12, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m22, other.m22, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m32, other.m32, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m42, other.m42, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m52, other.m52, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m62, other.m62, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m13, other.m13, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m23, other.m23, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m33, other.m33, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m43, other.m43, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m53, other.m53, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m63, other.m63, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m14, other.m14, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m24, other.m24, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m34, other.m34, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m44, other.m44, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m54, other.m54, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m64, other.m64, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m15, other.m15, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m25, other.m25, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m35, other.m35, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m45, other.m45, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m55, other.m55, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m65, other.m65, epsilon, max_relative)
+    }
+
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_ulps` ulp (in fixed point the distance in ulp IS the raw difference; the
+    /// `max_ulps` budget does not cross zero, like upstream's float `ulps_eq`). Cannot overflow.
+    /// Upstream: `approx::UlpsEq::ulps_eq`.
+    fn ulps_eq(self: Matrix6x5<T>, other: Matrix6x5<T>, epsilon: u64, max_ulps: u32) -> bool {
+        ApproxEqTrait::ulps_eq(self.m11, other.m11, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m21, other.m21, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m31, other.m31, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m41, other.m41, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m51, other.m51, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m61, other.m61, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m12, other.m12, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m22, other.m22, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m32, other.m32, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m42, other.m42, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m52, other.m52, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m62, other.m62, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m13, other.m13, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m23, other.m23, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m33, other.m33, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m43, other.m43, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m53, other.m53, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m63, other.m63, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m14, other.m14, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m24, other.m24, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m34, other.m34, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m44, other.m44, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m54, other.m54, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m64, other.m64, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m15, other.m15, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m25, other.m25, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m35, other.m35, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m45, other.m45, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m55, other.m55, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m65, other.m65, epsilon, max_ulps)
+    }
+}
+
+/// The operations of `Matrix6x5<T>` that need `Transcendental` (inverse trigonometry, `exp`, `ln`):
+/// a scalar may implement `Real` only.
+#[generate_trait]
+pub impl Matrix6x5AngleImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix6x5AngleTrait<T> {
+    /// The angle between `self` and `other` seen as vectors of the Frobenius inner product, in `[0,
+    /// π]` (up to the rounding of `atan2`); `0` when one of them is zero. Computed as `2 *
+    /// atan2(|u - v|, |u + v|)` on the normalized `u`, `v` (Kahan): unlike upstream's `acos(dot /
+    /// (|a| *
+    /// |b|))` it cannot overflow on long inputs and stays accurate for nearly parallel ones. Panics
+    /// when a norm does not fit. Upstream: `angle`.
+    fn angle(self: Matrix6x5<T>, other: Matrix6x5<T>) -> T {
+        let n1 = Matrix6x5Trait::norm(self);
+        let n2 = Matrix6x5Trait::norm(other);
+        if n1 == R::zero() || n2 == R::zero() {
+            return R::zero();
+        }
+        let u = Matrix6x5Trait::unscale(self, n1);
+        let v = Matrix6x5Trait::unscale(other, n2);
+        let half = Tr::atan2(Matrix6x5Trait::metric_distance(u, v), Matrix6x5Trait::norm(u + v));
+        half + half
+    }
+
+    /// The entrywise Lp norm `(Σ |a|^p)^(1/p)`. `p = 1` is the exact sum of the absolute values
+    /// and `p = 2` the fused `norm` (both exact up to their one rounding); above, the components
+    /// are first divided by the largest absolute value `m` (so no power can overflow), `Σ (|a| /
+    /// m)^p`
+    /// is summed (`p` floored products each), and the root is `m * exp(ln(Σ) / p)`: a few ulp
+    /// relative to the result, the rounding of `exp` / `ln`. Panics with `nalgebra: lp_norm needs p
+    /// >= 1` for `p < 1` (upstream returns meaningless values: an infinite root for `p = 0`).
+    /// Upstream: `lp_norm`.
+    fn lp_norm(self: Matrix6x5<T>, p: i32) -> T {
+        if p < 1 {
+            core::panic_with_felt252(errors::LP_NORM_P);
+        }
+        if p == 1 {
+            return R::abs(self.m11)
+                + R::abs(self.m21)
+                + R::abs(self.m31)
+                + R::abs(self.m41)
+                + R::abs(self.m51)
+                + R::abs(self.m61)
+                + R::abs(self.m12)
+                + R::abs(self.m22)
+                + R::abs(self.m32)
+                + R::abs(self.m42)
+                + R::abs(self.m52)
+                + R::abs(self.m62)
+                + R::abs(self.m13)
+                + R::abs(self.m23)
+                + R::abs(self.m33)
+                + R::abs(self.m43)
+                + R::abs(self.m53)
+                + R::abs(self.m63)
+                + R::abs(self.m14)
+                + R::abs(self.m24)
+                + R::abs(self.m34)
+                + R::abs(self.m44)
+                + R::abs(self.m54)
+                + R::abs(self.m64)
+                + R::abs(self.m15)
+                + R::abs(self.m25)
+                + R::abs(self.m35)
+                + R::abs(self.m45)
+                + R::abs(self.m55)
+                + R::abs(self.m65);
+        }
+        if p == 2 {
+            return Matrix6x5Trait::norm(self);
+        }
+        let m = Matrix6x5Trait::amax(self);
+        if m == R::zero() {
+            return R::zero();
+        }
+        let r = Matrix6x5Trait::unscale(Matrix6x5Trait::abs(self), m);
+        let q: u32 = p.try_into().unwrap();
+        let s = Powi::powi(r.m11, q)
+            + Powi::powi(r.m21, q)
+            + Powi::powi(r.m31, q)
+            + Powi::powi(r.m41, q)
+            + Powi::powi(r.m51, q)
+            + Powi::powi(r.m61, q)
+            + Powi::powi(r.m12, q)
+            + Powi::powi(r.m22, q)
+            + Powi::powi(r.m32, q)
+            + Powi::powi(r.m42, q)
+            + Powi::powi(r.m52, q)
+            + Powi::powi(r.m62, q)
+            + Powi::powi(r.m13, q)
+            + Powi::powi(r.m23, q)
+            + Powi::powi(r.m33, q)
+            + Powi::powi(r.m43, q)
+            + Powi::powi(r.m53, q)
+            + Powi::powi(r.m63, q)
+            + Powi::powi(r.m14, q)
+            + Powi::powi(r.m24, q)
+            + Powi::powi(r.m34, q)
+            + Powi::powi(r.m44, q)
+            + Powi::powi(r.m54, q)
+            + Powi::powi(r.m64, q)
+            + Powi::powi(r.m15, q)
+            + Powi::powi(r.m25, q)
+            + Powi::powi(r.m35, q)
+            + Powi::powi(r.m45, q)
+            + Powi::powi(r.m55, q)
+            + Powi::powi(r.m65, q);
+        m * Tr::exp(R::div(Tr::ln(s), R::from_int(p)))
     }
 }
 
@@ -2288,5 +4525,597 @@ pub impl Matrix6x5TrMulMatrix6<
             },
             rhs,
         )
+    }
+}
+
+// --- indexing, comparisons, conversions ----------------------------------------------------------
+
+/// `m.get(i)` / `m.index(..)`: the component `index` in column-major (storage) order. `get` is
+/// `None` out of bounds, `index` panics with `nalgebra: index out of bounds`. Upstream:
+/// `Matrix::get` / `Matrix::index` (their `MatrixIndex` argument).
+pub impl Matrix6x5MatrixIndexLinear<T, +Copy<T>, +Drop<T>> of MatrixIndex<Matrix6x5<T>, usize> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Matrix6x5<T>, index: usize) -> Option<T> {
+        match index {
+            0 => Option::Some(self.m11),
+            1 => Option::Some(self.m21),
+            2 => Option::Some(self.m31),
+            3 => Option::Some(self.m41),
+            4 => Option::Some(self.m51),
+            5 => Option::Some(self.m61),
+            6 => Option::Some(self.m12),
+            7 => Option::Some(self.m22),
+            8 => Option::Some(self.m32),
+            9 => Option::Some(self.m42),
+            10 => Option::Some(self.m52),
+            11 => Option::Some(self.m62),
+            12 => Option::Some(self.m13),
+            13 => Option::Some(self.m23),
+            14 => Option::Some(self.m33),
+            15 => Option::Some(self.m43),
+            16 => Option::Some(self.m53),
+            17 => Option::Some(self.m63),
+            18 => Option::Some(self.m14),
+            19 => Option::Some(self.m24),
+            20 => Option::Some(self.m34),
+            21 => Option::Some(self.m44),
+            22 => Option::Some(self.m54),
+            23 => Option::Some(self.m64),
+            24 => Option::Some(self.m15),
+            25 => Option::Some(self.m25),
+            26 => Option::Some(self.m35),
+            27 => Option::Some(self.m45),
+            28 => Option::Some(self.m55),
+            29 => Option::Some(self.m65),
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Matrix6x5<T>, index: usize) -> T {
+        match index {
+            0 => self.m11,
+            1 => self.m21,
+            2 => self.m31,
+            3 => self.m41,
+            4 => self.m51,
+            5 => self.m61,
+            6 => self.m12,
+            7 => self.m22,
+            8 => self.m32,
+            9 => self.m42,
+            10 => self.m52,
+            11 => self.m62,
+            12 => self.m13,
+            13 => self.m23,
+            14 => self.m33,
+            15 => self.m43,
+            16 => self.m53,
+            17 => self.m63,
+            18 => self.m14,
+            19 => self.m24,
+            20 => self.m34,
+            21 => self.m44,
+            22 => self.m54,
+            23 => self.m64,
+            24 => self.m15,
+            25 => self.m25,
+            26 => self.m35,
+            27 => self.m45,
+            28 => self.m55,
+            29 => self.m65,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[i]`: the component `index` in column-major (storage) order. Panics with `nalgebra: index out
+/// of bounds`. Upstream: `Index<usize>`.
+pub impl Matrix6x5IndexLinear<T, +Copy<T>, +Drop<T>> of IndexView<Matrix6x5<T>, usize> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Matrix6x5<T>, index: usize) -> T {
+        match index {
+            0 => *self.m11,
+            1 => *self.m21,
+            2 => *self.m31,
+            3 => *self.m41,
+            4 => *self.m51,
+            5 => *self.m61,
+            6 => *self.m12,
+            7 => *self.m22,
+            8 => *self.m32,
+            9 => *self.m42,
+            10 => *self.m52,
+            11 => *self.m62,
+            12 => *self.m13,
+            13 => *self.m23,
+            14 => *self.m33,
+            15 => *self.m43,
+            16 => *self.m53,
+            17 => *self.m63,
+            18 => *self.m14,
+            19 => *self.m24,
+            20 => *self.m34,
+            21 => *self.m44,
+            22 => *self.m54,
+            23 => *self.m64,
+            24 => *self.m15,
+            25 => *self.m25,
+            26 => *self.m35,
+            27 => *self.m45,
+            28 => *self.m55,
+            29 => *self.m65,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m.get((i, j))` / `m.index(..)`: the component at `(row, column)`. `get` is `None` out of
+/// bounds, `index` panics with `nalgebra: index out of bounds`. Upstream: `Matrix::get` /
+/// `Matrix::index` (their `MatrixIndex` argument).
+pub impl Matrix6x5MatrixIndexPair<
+    T, +Copy<T>, +Drop<T>,
+> of MatrixIndex<Matrix6x5<T>, (usize, usize)> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Matrix6x5<T>, index: (usize, usize)) -> Option<T> {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => Option::Some(self.m11),
+                1 => Option::Some(self.m21),
+                2 => Option::Some(self.m31),
+                3 => Option::Some(self.m41),
+                4 => Option::Some(self.m51),
+                5 => Option::Some(self.m61),
+                _ => Option::None,
+            },
+            1 => match i {
+                0 => Option::Some(self.m12),
+                1 => Option::Some(self.m22),
+                2 => Option::Some(self.m32),
+                3 => Option::Some(self.m42),
+                4 => Option::Some(self.m52),
+                5 => Option::Some(self.m62),
+                _ => Option::None,
+            },
+            2 => match i {
+                0 => Option::Some(self.m13),
+                1 => Option::Some(self.m23),
+                2 => Option::Some(self.m33),
+                3 => Option::Some(self.m43),
+                4 => Option::Some(self.m53),
+                5 => Option::Some(self.m63),
+                _ => Option::None,
+            },
+            3 => match i {
+                0 => Option::Some(self.m14),
+                1 => Option::Some(self.m24),
+                2 => Option::Some(self.m34),
+                3 => Option::Some(self.m44),
+                4 => Option::Some(self.m54),
+                5 => Option::Some(self.m64),
+                _ => Option::None,
+            },
+            4 => match i {
+                0 => Option::Some(self.m15),
+                1 => Option::Some(self.m25),
+                2 => Option::Some(self.m35),
+                3 => Option::Some(self.m45),
+                4 => Option::Some(self.m55),
+                5 => Option::Some(self.m65),
+                _ => Option::None,
+            },
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Matrix6x5<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => self.m11,
+                1 => self.m21,
+                2 => self.m31,
+                3 => self.m41,
+                4 => self.m51,
+                5 => self.m61,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match i {
+                0 => self.m12,
+                1 => self.m22,
+                2 => self.m32,
+                3 => self.m42,
+                4 => self.m52,
+                5 => self.m62,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match i {
+                0 => self.m13,
+                1 => self.m23,
+                2 => self.m33,
+                3 => self.m43,
+                4 => self.m53,
+                5 => self.m63,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match i {
+                0 => self.m14,
+                1 => self.m24,
+                2 => self.m34,
+                3 => self.m44,
+                4 => self.m54,
+                5 => self.m64,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match i {
+                0 => self.m15,
+                1 => self.m25,
+                2 => self.m35,
+                3 => self.m45,
+                4 => self.m55,
+                5 => self.m65,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[(i, j)]`: the component at `(row, column)`. Panics with `nalgebra: index out of bounds`.
+/// Upstream: `Index<(usize, usize)>`.
+pub impl Matrix6x5IndexPair<T, +Copy<T>, +Drop<T>> of IndexView<Matrix6x5<T>, (usize, usize)> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Matrix6x5<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => *self.m11,
+                1 => *self.m21,
+                2 => *self.m31,
+                3 => *self.m41,
+                4 => *self.m51,
+                5 => *self.m61,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match i {
+                0 => *self.m12,
+                1 => *self.m22,
+                2 => *self.m32,
+                3 => *self.m42,
+                4 => *self.m52,
+                5 => *self.m62,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match i {
+                0 => *self.m13,
+                1 => *self.m23,
+                2 => *self.m33,
+                3 => *self.m43,
+                4 => *self.m53,
+                5 => *self.m63,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match i {
+                0 => *self.m14,
+                1 => *self.m24,
+                2 => *self.m34,
+                3 => *self.m44,
+                4 => *self.m54,
+                5 => *self.m64,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match i {
+                0 => *self.m15,
+                1 => *self.m25,
+                2 => *self.m35,
+                3 => *self.m45,
+                4 => *self.m55,
+                5 => *self.m65,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The component-wise partial order: `a < b` when EVERY component of `a` is smaller than `b`'s
+/// (likewise `<=`, `>`, `>=`), so two matrices may be unordered (`!(a < b) && !(a >= b)`).
+/// Upstream: `PartialOrd for Matrix`.
+pub impl Matrix6x5PartialOrd<T, +PartialOrd<T>, +Copy<T>, +Drop<T>> of PartialOrd<Matrix6x5<T>> {
+    #[inline(always)]
+    fn lt(lhs: Matrix6x5<T>, rhs: Matrix6x5<T>) -> bool {
+        lhs.m11 < rhs.m11
+            && lhs.m21 < rhs.m21
+            && lhs.m31 < rhs.m31
+            && lhs.m41 < rhs.m41
+            && lhs.m51 < rhs.m51
+            && lhs.m61 < rhs.m61
+            && lhs.m12 < rhs.m12
+            && lhs.m22 < rhs.m22
+            && lhs.m32 < rhs.m32
+            && lhs.m42 < rhs.m42
+            && lhs.m52 < rhs.m52
+            && lhs.m62 < rhs.m62
+            && lhs.m13 < rhs.m13
+            && lhs.m23 < rhs.m23
+            && lhs.m33 < rhs.m33
+            && lhs.m43 < rhs.m43
+            && lhs.m53 < rhs.m53
+            && lhs.m63 < rhs.m63
+            && lhs.m14 < rhs.m14
+            && lhs.m24 < rhs.m24
+            && lhs.m34 < rhs.m34
+            && lhs.m44 < rhs.m44
+            && lhs.m54 < rhs.m54
+            && lhs.m64 < rhs.m64
+            && lhs.m15 < rhs.m15
+            && lhs.m25 < rhs.m25
+            && lhs.m35 < rhs.m35
+            && lhs.m45 < rhs.m45
+            && lhs.m55 < rhs.m55
+            && lhs.m65 < rhs.m65
+    }
+    #[inline(always)]
+    fn le(lhs: Matrix6x5<T>, rhs: Matrix6x5<T>) -> bool {
+        lhs.m11 <= rhs.m11
+            && lhs.m21 <= rhs.m21
+            && lhs.m31 <= rhs.m31
+            && lhs.m41 <= rhs.m41
+            && lhs.m51 <= rhs.m51
+            && lhs.m61 <= rhs.m61
+            && lhs.m12 <= rhs.m12
+            && lhs.m22 <= rhs.m22
+            && lhs.m32 <= rhs.m32
+            && lhs.m42 <= rhs.m42
+            && lhs.m52 <= rhs.m52
+            && lhs.m62 <= rhs.m62
+            && lhs.m13 <= rhs.m13
+            && lhs.m23 <= rhs.m23
+            && lhs.m33 <= rhs.m33
+            && lhs.m43 <= rhs.m43
+            && lhs.m53 <= rhs.m53
+            && lhs.m63 <= rhs.m63
+            && lhs.m14 <= rhs.m14
+            && lhs.m24 <= rhs.m24
+            && lhs.m34 <= rhs.m34
+            && lhs.m44 <= rhs.m44
+            && lhs.m54 <= rhs.m54
+            && lhs.m64 <= rhs.m64
+            && lhs.m15 <= rhs.m15
+            && lhs.m25 <= rhs.m25
+            && lhs.m35 <= rhs.m35
+            && lhs.m45 <= rhs.m45
+            && lhs.m55 <= rhs.m55
+            && lhs.m65 <= rhs.m65
+    }
+    #[inline(always)]
+    fn gt(lhs: Matrix6x5<T>, rhs: Matrix6x5<T>) -> bool {
+        lhs.m11 > rhs.m11
+            && lhs.m21 > rhs.m21
+            && lhs.m31 > rhs.m31
+            && lhs.m41 > rhs.m41
+            && lhs.m51 > rhs.m51
+            && lhs.m61 > rhs.m61
+            && lhs.m12 > rhs.m12
+            && lhs.m22 > rhs.m22
+            && lhs.m32 > rhs.m32
+            && lhs.m42 > rhs.m42
+            && lhs.m52 > rhs.m52
+            && lhs.m62 > rhs.m62
+            && lhs.m13 > rhs.m13
+            && lhs.m23 > rhs.m23
+            && lhs.m33 > rhs.m33
+            && lhs.m43 > rhs.m43
+            && lhs.m53 > rhs.m53
+            && lhs.m63 > rhs.m63
+            && lhs.m14 > rhs.m14
+            && lhs.m24 > rhs.m24
+            && lhs.m34 > rhs.m34
+            && lhs.m44 > rhs.m44
+            && lhs.m54 > rhs.m54
+            && lhs.m64 > rhs.m64
+            && lhs.m15 > rhs.m15
+            && lhs.m25 > rhs.m25
+            && lhs.m35 > rhs.m35
+            && lhs.m45 > rhs.m45
+            && lhs.m55 > rhs.m55
+            && lhs.m65 > rhs.m65
+    }
+    #[inline(always)]
+    fn ge(lhs: Matrix6x5<T>, rhs: Matrix6x5<T>) -> bool {
+        lhs.m11 >= rhs.m11
+            && lhs.m21 >= rhs.m21
+            && lhs.m31 >= rhs.m31
+            && lhs.m41 >= rhs.m41
+            && lhs.m51 >= rhs.m51
+            && lhs.m61 >= rhs.m61
+            && lhs.m12 >= rhs.m12
+            && lhs.m22 >= rhs.m22
+            && lhs.m32 >= rhs.m32
+            && lhs.m42 >= rhs.m42
+            && lhs.m52 >= rhs.m52
+            && lhs.m62 >= rhs.m62
+            && lhs.m13 >= rhs.m13
+            && lhs.m23 >= rhs.m23
+            && lhs.m33 >= rhs.m33
+            && lhs.m43 >= rhs.m43
+            && lhs.m53 >= rhs.m53
+            && lhs.m63 >= rhs.m63
+            && lhs.m14 >= rhs.m14
+            && lhs.m24 >= rhs.m24
+            && lhs.m34 >= rhs.m34
+            && lhs.m44 >= rhs.m44
+            && lhs.m54 >= rhs.m54
+            && lhs.m64 >= rhs.m64
+            && lhs.m15 >= rhs.m15
+            && lhs.m25 >= rhs.m25
+            && lhs.m35 >= rhs.m35
+            && lhs.m45 >= rhs.m45
+            && lhs.m55 >= rhs.m55
+            && lhs.m65 >= rhs.m65
+    }
+}
+
+/// The component-wise bounds: every component `Bounded::<T>::MIN` / `MAX`. Upstream: `num::Bounded
+/// for Matrix`.
+pub impl Matrix6x5Bounded<T, +Bounded<T>, +Drop<T>> of Bounded<Matrix6x5<T>> {
+    const MIN: Matrix6x5<T> = Matrix6x5 {
+        m11: Bounded::<T>::MIN,
+        m21: Bounded::<T>::MIN,
+        m31: Bounded::<T>::MIN,
+        m41: Bounded::<T>::MIN,
+        m51: Bounded::<T>::MIN,
+        m61: Bounded::<T>::MIN,
+        m12: Bounded::<T>::MIN,
+        m22: Bounded::<T>::MIN,
+        m32: Bounded::<T>::MIN,
+        m42: Bounded::<T>::MIN,
+        m52: Bounded::<T>::MIN,
+        m62: Bounded::<T>::MIN,
+        m13: Bounded::<T>::MIN,
+        m23: Bounded::<T>::MIN,
+        m33: Bounded::<T>::MIN,
+        m43: Bounded::<T>::MIN,
+        m53: Bounded::<T>::MIN,
+        m63: Bounded::<T>::MIN,
+        m14: Bounded::<T>::MIN,
+        m24: Bounded::<T>::MIN,
+        m34: Bounded::<T>::MIN,
+        m44: Bounded::<T>::MIN,
+        m54: Bounded::<T>::MIN,
+        m64: Bounded::<T>::MIN,
+        m15: Bounded::<T>::MIN,
+        m25: Bounded::<T>::MIN,
+        m35: Bounded::<T>::MIN,
+        m45: Bounded::<T>::MIN,
+        m55: Bounded::<T>::MIN,
+        m65: Bounded::<T>::MIN,
+    };
+    const MAX: Matrix6x5<T> = Matrix6x5 {
+        m11: Bounded::<T>::MAX,
+        m21: Bounded::<T>::MAX,
+        m31: Bounded::<T>::MAX,
+        m41: Bounded::<T>::MAX,
+        m51: Bounded::<T>::MAX,
+        m61: Bounded::<T>::MAX,
+        m12: Bounded::<T>::MAX,
+        m22: Bounded::<T>::MAX,
+        m32: Bounded::<T>::MAX,
+        m42: Bounded::<T>::MAX,
+        m52: Bounded::<T>::MAX,
+        m62: Bounded::<T>::MAX,
+        m13: Bounded::<T>::MAX,
+        m23: Bounded::<T>::MAX,
+        m33: Bounded::<T>::MAX,
+        m43: Bounded::<T>::MAX,
+        m53: Bounded::<T>::MAX,
+        m63: Bounded::<T>::MAX,
+        m14: Bounded::<T>::MAX,
+        m24: Bounded::<T>::MAX,
+        m34: Bounded::<T>::MAX,
+        m44: Bounded::<T>::MAX,
+        m54: Bounded::<T>::MAX,
+        m64: Bounded::<T>::MAX,
+        m15: Bounded::<T>::MAX,
+        m25: Bounded::<T>::MAX,
+        m35: Bounded::<T>::MAX,
+        m45: Bounded::<T>::MAX,
+        m55: Bounded::<T>::MAX,
+        m65: Bounded::<T>::MAX,
+    };
+}
+
+/// The 6x5 matrix of the given COLUMNS (`[[m11, m21, ..], [m12, ..], ..]`). Upstream: `From<[[T;
+/// R]; C]>`.
+pub impl Matrix6x5FromColumnArrays<T, +Drop<T>> of Into<[[T; 6]; 5], Matrix6x5<T>> {
+    #[inline(always)]
+    fn into(self: [[T; 6]; 5]) -> Matrix6x5<T> {
+        let [c0, c1, c2, c3, c4] = self;
+        let [m11, m21, m31, m41, m51, m61] = c0;
+        let [m12, m22, m32, m42, m52, m62] = c1;
+        let [m13, m23, m33, m43, m53, m63] = c2;
+        let [m14, m24, m34, m44, m54, m64] = c3;
+        let [m15, m25, m35, m45, m55, m65] = c4;
+        Matrix6x5 {
+            m11,
+            m21,
+            m31,
+            m41,
+            m51,
+            m61,
+            m12,
+            m22,
+            m32,
+            m42,
+            m52,
+            m62,
+            m13,
+            m23,
+            m33,
+            m43,
+            m53,
+            m63,
+            m14,
+            m24,
+            m34,
+            m44,
+            m54,
+            m64,
+            m15,
+            m25,
+            m35,
+            m45,
+            m55,
+            m65,
+        }
+    }
+}
+
+/// The columns of the 6x5 matrix as nested arrays (`[[m11, m21, ..], [m12, ..], ..]`). Upstream:
+/// `Into<[[T; R]; C]>`.
+pub impl Matrix6x5IntoColumnArrays<T, +Drop<T>> of Into<Matrix6x5<T>, [[T; 6]; 5]> {
+    #[inline(always)]
+    fn into(self: Matrix6x5<T>) -> [[T; 6]; 5] {
+        let Matrix6x5 {
+            m11,
+            m21,
+            m31,
+            m41,
+            m51,
+            m61,
+            m12,
+            m22,
+            m32,
+            m42,
+            m52,
+            m62,
+            m13,
+            m23,
+            m33,
+            m43,
+            m53,
+            m63,
+            m14,
+            m24,
+            m34,
+            m44,
+            m54,
+            m64,
+            m15,
+            m25,
+            m35,
+            m45,
+            m55,
+            m65,
+        } = self;
+        [
+            [m11, m21, m31, m41, m51, m61], [m12, m22, m32, m42, m52, m62],
+            [m13, m23, m33, m43, m53, m63], [m14, m24, m34, m44, m54, m64],
+            [m15, m25, m35, m45, m55, m65],
+        ]
     }
 }

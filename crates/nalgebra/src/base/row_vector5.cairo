@@ -8,15 +8,19 @@
 //! are methods of `RowVector5Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
-use core::ops::{AddAssign, SubAssign};
-use simba::scalar::Real;
-use super::kernels::Fused;
+use core::num::traits::Bounded;
+use core::ops::{AddAssign, IndexView, SubAssign};
+use simba::scalar::{Real, Transcendental};
+use crate::geometry::quaternion::ApproxEqTrait;
+use super::errors;
+use super::kernels::{Fused, Powi};
 use super::matrix1::Matrix1;
 use super::matrix5::Matrix5;
 use super::matrix5x2::Matrix5x2;
 use super::matrix5x3::Matrix5x3;
 use super::matrix5x4::Matrix5x4;
 use super::matrix5x6::Matrix5x6;
+use super::matrix_index::MatrixIndex;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
 use super::row_vector2::RowVector2;
@@ -100,6 +104,579 @@ pub impl RowVector5Impl<
             && R::abs_diff_eq(self.z, other.z, ulps)
             && R::abs_diff_eq(self.w, other.w, ulps)
             && R::abs_diff_eq(self.a, other.a, ulps)
+    }
+
+    /// The 5-dimensional row vector whose components all equal `elem`. Upstream:
+    /// `RowVector5::repeat`.
+    #[inline(always)]
+    fn repeat(elem: T) -> RowVector5<T> {
+        RowVector5 { x: elem, y: elem, z: elem, w: elem, a: elem }
+    }
+
+    /// Alias of `repeat`. Upstream: `RowVector5::from_element`.
+    #[inline(always)]
+    fn from_element(elem: T) -> RowVector5<T> {
+        RowVector5 { x: elem, y: elem, z: elem, w: elem, a: elem }
+    }
+
+    /// The 5-dimensional row vector whose component `(i, j)` (row, column, 0-based) is `f(i, j)`,
+    /// `f` being called in column-major order like upstream. `f` is any closure or `Fn` value of
+    /// `(usize, usize)` whose output converts `Into<T>` (the identity included): Cairo cannot state
+    /// `Output = T` on the closure without the `associated_item_constraints` experimental feature.
+    /// Upstream: `RowVector5::from_fn`.
+    fn from_fn<
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (usize, usize)>,
+        +Into<Func::Output, T>,
+        +Drop<Func::Output>,
+    >(
+        f: F,
+    ) -> RowVector5<T> {
+        RowVector5 {
+            x: f(0, 0).into(),
+            y: f(0, 1).into(),
+            z: f(0, 2).into(),
+            w: f(0, 3).into(),
+            a: f(0, 4).into(),
+        }
+    }
+
+    /// The 5-dimensional row vector of the 5 values of `data`, in row-major order. Panics with
+    /// `nalgebra: wrong slice length` unless `data.len() == 5`. Upstream:
+    /// `RowVector5::from_row_slice` (`&[T]`).
+    #[inline(always)]
+    fn from_row_slice(data: Span<T>) -> RowVector5<T> {
+        if data.len() != 5 {
+            core::panic_with_felt252(errors::SLICE_LENGTH);
+        }
+        RowVector5 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4] }
+    }
+
+    /// The 5-dimensional row vector of the 5 values of `data`, in column-major order. Panics with
+    /// `nalgebra: wrong slice length` unless `data.len() == 5`. Upstream:
+    /// `RowVector5::from_column_slice` (`&[T]`).
+    #[inline(always)]
+    fn from_column_slice(data: Span<T>) -> RowVector5<T> {
+        if data.len() != 5 {
+            core::panic_with_felt252(errors::SLICE_LENGTH);
+        }
+        RowVector5 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4] }
+    }
+
+    /// The 5-dimensional row vector whose first `data.len()` diagonal components are `data`, every
+    /// other component zero. Panics with `nalgebra: diagonal too long` when `data.len() > 1`.
+    /// Upstream: `RowVector5::from_partial_diagonal` (`&[T]`).
+    #[inline(always)]
+    fn from_partial_diagonal(data: Span<T>) -> RowVector5<T> {
+        let len = data.len();
+        if len > 1 {
+            core::panic_with_felt252(errors::TOO_MANY_DIAGONAL);
+        }
+        RowVector5 {
+            x: if len > 0 {
+                *data[0]
+            } else {
+                R::zero()
+            },
+            y: R::zero(),
+            z: R::zero(),
+            w: R::zero(),
+            a: R::zero(),
+        }
+    }
+
+    /// `true` when every component is zero. Upstream: `Zero::is_zero`.
+    #[inline(always)]
+    fn is_zero(self: RowVector5<T>) -> bool {
+        self.x == R::zero()
+            && self.y == R::zero()
+            && self.z == R::zero()
+            && self.w == R::zero()
+            && self.a == R::zero()
+    }
+
+    /// Component-wise (Hadamard) product, each component floored once. Panics on overflow.
+    /// Upstream: `component_mul`.
+    #[inline(always)]
+    fn component_mul(self: RowVector5<T>, rhs: RowVector5<T>) -> RowVector5<T> {
+        RowVector5 {
+            x: self.x * rhs.x,
+            y: self.y * rhs.y,
+            z: self.z * rhs.z,
+            w: self.w * rhs.w,
+            a: self.a * rhs.a,
+        }
+    }
+
+    /// `self = self.component_mul(rhs)`. Upstream: `component_mul_assign`.
+    #[inline(always)]
+    fn component_mul_assign(ref self: RowVector5<T>, rhs: RowVector5<T>) {
+        self =
+            RowVector5 {
+                x: self.x * rhs.x,
+                y: self.y * rhs.y,
+                z: self.z * rhs.z,
+                w: self.w * rhs.w,
+                a: self.a * rhs.a,
+            };
+    }
+
+    /// Component-wise quotient, each component rounded to nearest (ties to even). Panics on a zero
+    /// component of `rhs` and on overflow. Upstream: `component_div`.
+    #[inline(always)]
+    fn component_div(self: RowVector5<T>, rhs: RowVector5<T>) -> RowVector5<T> {
+        RowVector5 {
+            x: R::div(self.x, rhs.x),
+            y: R::div(self.y, rhs.y),
+            z: R::div(self.z, rhs.z),
+            w: R::div(self.w, rhs.w),
+            a: R::div(self.a, rhs.a),
+        }
+    }
+
+    /// `self = self.component_div(rhs)`. Upstream: `component_div_assign`.
+    #[inline(always)]
+    fn component_div_assign(ref self: RowVector5<T>, rhs: RowVector5<T>) {
+        self =
+            RowVector5 {
+                x: R::div(self.x, rhs.x),
+                y: R::div(self.y, rhs.y),
+                z: R::div(self.z, rhs.z),
+                w: R::div(self.w, rhs.w),
+                a: R::div(self.a, rhs.a),
+            };
+    }
+
+    /// Component-wise minimum (infimum). Exact. Upstream: `inf`.
+    #[inline(always)]
+    fn inf(self: RowVector5<T>, other: RowVector5<T>) -> RowVector5<T> {
+        RowVector5 {
+            x: R::min(self.x, other.x),
+            y: R::min(self.y, other.y),
+            z: R::min(self.z, other.z),
+            w: R::min(self.w, other.w),
+            a: R::min(self.a, other.a),
+        }
+    }
+
+    /// Component-wise maximum (supremum). Exact. Upstream: `sup`.
+    #[inline(always)]
+    fn sup(self: RowVector5<T>, other: RowVector5<T>) -> RowVector5<T> {
+        RowVector5 {
+            x: R::max(self.x, other.x),
+            y: R::max(self.y, other.y),
+            z: R::max(self.z, other.z),
+            w: R::max(self.w, other.w),
+            a: R::max(self.a, other.a),
+        }
+    }
+
+    /// `(self.inf(other), self.sup(other))`. Exact. Upstream: `inf_sup`.
+    #[inline(always)]
+    fn inf_sup(self: RowVector5<T>, other: RowVector5<T>) -> (RowVector5<T>, RowVector5<T>) {
+        (Self::inf(self, other), Self::sup(self, other))
+    }
+
+    /// `self + k` added to every component. Exact; panics on overflow. Upstream: `add_scalar`.
+    #[inline(always)]
+    fn add_scalar(self: RowVector5<T>, k: T) -> RowVector5<T> {
+        RowVector5 { x: self.x + k, y: self.y + k, z: self.z + k, w: self.w + k, a: self.a + k }
+    }
+
+    /// `self = alpha * a ∘ b + beta * self` (component-wise product): per component `alpha * a`
+    /// is floored, then the two products are ONE fused `sum_prod2` (floored once). Panics on
+    /// overflow.
+    /// Upstream: `cmpy` (which skips reading `self` when `beta` is zero: a difference only for NaN,
+    /// which fixed point has not).
+    #[inline(always)]
+    fn cmpy(ref self: RowVector5<T>, alpha: T, a: RowVector5<T>, b: RowVector5<T>, beta: T) {
+        self =
+            RowVector5 {
+                x: R::sum_prod2(alpha * a.x, b.x, beta, self.x),
+                y: R::sum_prod2(alpha * a.y, b.y, beta, self.y),
+                z: R::sum_prod2(alpha * a.z, b.z, beta, self.z),
+                w: R::sum_prod2(alpha * a.w, b.w, beta, self.w),
+                a: R::sum_prod2(alpha * a.a, b.a, beta, self.a),
+            };
+    }
+
+    /// `self = alpha * a / b + beta * self` (component-wise quotient): per component `alpha * a` is
+    /// floored, divided by `b` (rounded to nearest), then `beta * self + quotient` is ONE `mul_add`
+    /// (floored once). Panics on a zero component of `b` and on overflow. Upstream: `cdpy`.
+    #[inline(always)]
+    fn cdpy(ref self: RowVector5<T>, alpha: T, a: RowVector5<T>, b: RowVector5<T>, beta: T) {
+        self =
+            RowVector5 {
+                x: R::mul_add(beta, self.x, R::div(alpha * a.x, b.x)),
+                y: R::mul_add(beta, self.y, R::div(alpha * a.y, b.y)),
+                z: R::mul_add(beta, self.z, R::div(alpha * a.z, b.z)),
+                w: R::mul_add(beta, self.w, R::div(alpha * a.w, b.w)),
+                a: R::mul_add(beta, self.a, R::div(alpha * a.a, b.a)),
+            };
+    }
+
+    /// The smallest component. Exact. Upstream: `min`.
+    #[inline(always)]
+    fn min(self: RowVector5<T>) -> T {
+        R::min(R::min(R::min(R::min(self.x, self.y), self.z), self.w), self.a)
+    }
+
+    /// The largest component. Exact. Upstream: `max`.
+    #[inline(always)]
+    fn max(self: RowVector5<T>) -> T {
+        R::max(R::max(R::max(R::max(self.x, self.y), self.z), self.w), self.a)
+    }
+
+    /// The smallest absolute value of a component. Panics on the scalar's `MIN`. Upstream: `amin`.
+    #[inline(always)]
+    fn amin(self: RowVector5<T>) -> T {
+        R::min(
+            R::min(R::min(R::min(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w)),
+            R::abs(self.a),
+        )
+    }
+
+    /// The largest absolute value of a component (the uniform norm). Panics on the scalar's `MIN`.
+    /// Upstream: `amax`.
+    #[inline(always)]
+    fn amax(self: RowVector5<T>) -> T {
+        R::max(
+            R::max(R::max(R::max(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w)),
+            R::abs(self.a),
+        )
+    }
+
+    /// `amin`: the modulus of a real scalar is its absolute value. Upstream: `camin`.
+    #[inline(always)]
+    fn camin(self: RowVector5<T>) -> T {
+        R::min(
+            R::min(R::min(R::min(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w)),
+            R::abs(self.a),
+        )
+    }
+
+    /// `amax`: the modulus of a real scalar is its absolute value. Upstream: `camax`.
+    #[inline(always)]
+    fn camax(self: RowVector5<T>) -> T {
+        R::max(
+            R::max(R::max(R::max(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w)),
+            R::abs(self.a),
+        )
+    }
+
+    /// `(row, column)` of the component with the largest absolute value, the first one in
+    /// column-major order on ties. Panics on the scalar's `MIN`. Upstream: `iamax_full`.
+    #[inline(always)]
+    fn iamax_full(self: RowVector5<T>) -> (usize, usize) {
+        let mut best: (usize, usize) = (0, 0);
+        let mut m = R::abs(self.x);
+        let v = R::abs(self.y);
+        if v > m {
+            m = v;
+            best = (0, 1);
+        }
+        let v = R::abs(self.z);
+        if v > m {
+            m = v;
+            best = (0, 2);
+        }
+        let v = R::abs(self.w);
+        if v > m {
+            m = v;
+            best = (0, 3);
+        }
+        let v = R::abs(self.a);
+        if v > m {
+            best = (0, 4);
+        }
+        best
+    }
+
+    /// `iamax_full`: the modulus of a real scalar is its absolute value. Upstream: `icamax_full`.
+    #[inline(always)]
+    fn icamax_full(self: RowVector5<T>) -> (usize, usize) {
+        Self::iamax_full(self)
+    }
+
+    /// Dot product (the sum of the component-wise products, upstream's Frobenius inner product for
+    /// matrices): the exact sum is floored ONCE, only the result must fit. Upstream: `dot`.
+    #[inline(always)]
+    fn dot(self: RowVector5<T>, rhs: RowVector5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, rhs.x);
+        let w = R::wide_add_prod(w, self.y, rhs.y);
+        let w = R::wide_add_prod(w, self.z, rhs.z);
+        let w = R::wide_add_prod(w, self.w, rhs.w);
+        R::wide_rescale(R::wide_add_prod(w, self.a, rhs.a))
+    }
+
+    /// Squared Euclidean (Frobenius) norm: the exact sum of squares floored once. Panics on
+    /// overflow (above a norm of about 46 340 in Q32.32 only `norm` works). Upstream:
+    /// `norm_squared`.
+    #[inline(always)]
+    fn norm_squared(self: RowVector5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
+        let w = R::wide_add_prod(w, self.y, self.y);
+        let w = R::wide_add_prod(w, self.z, self.z);
+        let w = R::wide_add_prod(w, self.w, self.w);
+        R::wide_rescale(R::wide_add_prod(w, self.a, self.a))
+    }
+
+    /// Euclidean (Frobenius) norm: square root of the UNSCALED exact sum of squares, floored once.
+    /// No intermediate overflow: only the result must fit. Upstream: `norm`.
+    #[inline(always)]
+    fn norm(self: RowVector5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
+        let w = R::wide_add_prod(w, self.y, self.y);
+        let w = R::wide_add_prod(w, self.z, self.z);
+        let w = R::wide_add_prod(w, self.w, self.w);
+        R::wide_sqrt(R::wide_add_prod(w, self.a, self.a))
+    }
+
+    /// Alias of `norm_squared`. Upstream: `magnitude_squared`.
+    #[inline(always)]
+    fn magnitude_squared(self: RowVector5<T>) -> T {
+        Self::norm_squared(self)
+    }
+
+    /// Alias of `norm`. Upstream: `magnitude`.
+    #[inline(always)]
+    fn magnitude(self: RowVector5<T>) -> T {
+        Self::norm(self)
+    }
+
+    /// `(self - rhs).norm()`: the differences are exact, then one fused norm. Panics when a
+    /// difference or the result overflows. Upstream: `metric_distance`.
+    #[inline(always)]
+    fn metric_distance(self: RowVector5<T>, rhs: RowVector5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x - rhs.x, self.x - rhs.x);
+        let w = R::wide_add_prod(w, self.y - rhs.y, self.y - rhs.y);
+        let w = R::wide_add_prod(w, self.z - rhs.z, self.z - rhs.z);
+        let w = R::wide_add_prod(w, self.w - rhs.w, self.w - rhs.w);
+        R::wide_sqrt(R::wide_add_prod(w, self.a - rhs.a, self.a - rhs.a))
+    }
+
+    /// `self / k`, each component the correctly rounded quotient (nearest, ties to even), through 1
+    /// prepared-divisor `Real::divN` call(s), bit-identical to one `Real::div` per component.
+    /// Panics on a zero `k` and on overflow. Upstream: `unscale` (`self / k`).
+    #[inline(always)]
+    fn unscale(self: RowVector5<T>, k: T) -> RowVector5<T> {
+        let (x, y, z, w, a) = R::div5(self.x, self.y, self.z, self.w, self.a, k);
+        RowVector5 { x, y, z, w, a }
+    }
+
+    /// `self / self.norm()`: the floored norm, then `unscale`. Panics with a division by zero when
+    /// the norm is zero, and on overflow when the norm does not fit. Upstream: `normalize`.
+    #[inline(always)]
+    fn normalize(self: RowVector5<T>) -> RowVector5<T> {
+        Self::unscale(self, Self::norm(self))
+    }
+
+    /// `Some(self.normalize())`, or `None` when the norm is `<= min_norm` (never divides by zero
+    /// for `min_norm >= 0`). Upstream: `try_normalize`.
+    #[inline(always)]
+    fn try_normalize(self: RowVector5<T>, min_norm: T) -> Option<RowVector5<T>> {
+        let n = Self::norm(self);
+        if n <= min_norm {
+            None
+        } else {
+            Some(Self::unscale(self, n))
+        }
+    }
+
+    /// `self` when its norm is `<= max`, otherwise `self.scale(max / norm)` (the ratio rounded to
+    /// nearest, like upstream's `max / n`). Panics only when the norm does not fit. Upstream:
+    /// `cap_magnitude`.
+    #[inline(always)]
+    fn cap_magnitude(self: RowVector5<T>, max: T) -> RowVector5<T> {
+        let n = Self::norm(self);
+        if n <= max {
+            self
+        } else {
+            Self::scale(self, R::div(max, n))
+        }
+    }
+
+    /// Scales `self` to the norm `magnitude` (`self.scale(magnitude / norm)`, the ratio rounded to
+    /// nearest) when its norm is `> min_magnitude`, leaves it unchanged otherwise. Upstream:
+    /// `try_set_magnitude` (`&mut self`).
+    #[inline(always)]
+    fn try_set_magnitude(ref self: RowVector5<T>, magnitude: T, min_magnitude: T) {
+        let n = Self::norm(self);
+        if n > min_magnitude {
+            self = Self::scale(self, R::div(magnitude, n));
+        }
+    }
+
+    /// The induced 1-norm: the largest absolute column sum (the L1 norm of a column vector, the
+    /// largest absolute value of a row vector). Exact; panics on overflow. Upstream: `one_norm`.
+    #[inline(always)]
+    fn one_norm(self: RowVector5<T>) -> T {
+        R::max(
+            R::max(R::max(R::max(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w)),
+            R::abs(self.a),
+        )
+    }
+
+    /// The conjugate transpose, a `Vector5`: the transpose for a real scalar. Exact. Upstream:
+    /// `adjoint`.
+    #[inline(always)]
+    fn adjoint(self: RowVector5<T>) -> Vector5<T> {
+        Self::transpose(self)
+    }
+
+    /// Alias of `adjoint` (deprecated upstream). Upstream: `conjugate_transpose`.
+    #[inline(always)]
+    fn conjugate_transpose(self: RowVector5<T>) -> Vector5<T> {
+        Self::transpose(self)
+    }
+
+    /// The component-wise conjugate: `self` for a real scalar. Upstream: `conjugate`.
+    #[inline(always)]
+    fn conjugate(self: RowVector5<T>) -> RowVector5<T> {
+        self
+    }
+
+    /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
+    /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
+    /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: RowVector5<T>) -> RowVector5<U> {
+        RowVector5 {
+            x: self.x.into(),
+            y: self.y.into(),
+            z: self.z.into(),
+            w: self.w.into(),
+            a: self.a.into(),
+        }
+    }
+
+    /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
+    /// conversion fails. Upstream: `try_cast`.
+    fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: RowVector5<T>) -> Option<RowVector5<U>> {
+        let x: U = match self.x.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let y: U = match self.y.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let z: U = match self.z.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let w: U = match self.w.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let a: U = match self.a.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        Option::Some(RowVector5 { x, y, z, w, a })
+    }
+
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_relative` times the larger magnitude of the two (`|a - b| <= max(|a|, |b|)
+    /// · max_relative`). Panics on a component equal to the scalar's `MIN`, and on overflow of
+    /// that product (only possible with `max_relative > 1`). Upstream:
+    /// `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp instead of a float epsilon
+    /// (DESIGN D3).
+    #[inline(always)]
+    fn relative_eq(
+        self: RowVector5<T>, other: RowVector5<T>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        ApproxEqTrait::relative_eq(self.x, other.x, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.y, other.y, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.z, other.z, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.w, other.w, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.a, other.a, epsilon, max_relative)
+    }
+
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_ulps` ulp (in fixed point the distance in ulp IS the raw difference; the
+    /// `max_ulps` budget does not cross zero, like upstream's float `ulps_eq`). Cannot overflow.
+    /// Upstream: `approx::UlpsEq::ulps_eq`.
+    #[inline(always)]
+    fn ulps_eq(self: RowVector5<T>, other: RowVector5<T>, epsilon: u64, max_ulps: u32) -> bool {
+        ApproxEqTrait::ulps_eq(self.x, other.x, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.y, other.y, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.z, other.z, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.w, other.w, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.a, other.a, epsilon, max_ulps)
+    }
+}
+
+/// The operations of `RowVector5<T>` that need `Transcendental` (inverse trigonometry, `exp`,
+/// `ln`):
+/// a scalar may implement `Real` only.
+#[generate_trait]
+pub impl RowVector5AngleImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of RowVector5AngleTrait<T> {
+    /// The angle between `self` and `other` seen as vectors of the Frobenius inner product, in `[0,
+    /// π]` (up to the rounding of `atan2`); `0` when one of them is zero. Computed as `2 *
+    /// atan2(|u - v|, |u + v|)` on the normalized `u`, `v` (Kahan): unlike upstream's `acos(dot /
+    /// (|a| *
+    /// |b|))` it cannot overflow on long inputs and stays accurate for nearly parallel ones. Panics
+    /// when a norm does not fit. Upstream: `angle`.
+    fn angle(self: RowVector5<T>, other: RowVector5<T>) -> T {
+        let n1 = RowVector5Trait::norm(self);
+        let n2 = RowVector5Trait::norm(other);
+        if n1 == R::zero() || n2 == R::zero() {
+            return R::zero();
+        }
+        let u = RowVector5Trait::unscale(self, n1);
+        let v = RowVector5Trait::unscale(other, n2);
+        let half = Tr::atan2(RowVector5Trait::metric_distance(u, v), RowVector5Trait::norm(u + v));
+        half + half
+    }
+
+    /// The entrywise Lp norm `(Σ |a|^p)^(1/p)`. `p = 1` is the exact sum of the absolute values
+    /// and `p = 2` the fused `norm` (both exact up to their one rounding); above, the components
+    /// are first divided by the largest absolute value `m` (so no power can overflow), `Σ (|a| /
+    /// m)^p`
+    /// is summed (`p` floored products each), and the root is `m * exp(ln(Σ) / p)`: a few ulp
+    /// relative to the result, the rounding of `exp` / `ln`. Panics with `nalgebra: lp_norm needs p
+    /// >= 1` for `p < 1` (upstream returns meaningless values: an infinite root for `p = 0`).
+    /// Upstream: `lp_norm`.
+    fn lp_norm(self: RowVector5<T>, p: i32) -> T {
+        if p < 1 {
+            core::panic_with_felt252(errors::LP_NORM_P);
+        }
+        if p == 1 {
+            return R::abs(self.x)
+                + R::abs(self.y)
+                + R::abs(self.z)
+                + R::abs(self.w)
+                + R::abs(self.a);
+        }
+        if p == 2 {
+            return RowVector5Trait::norm(self);
+        }
+        let m = RowVector5Trait::amax(self);
+        if m == R::zero() {
+            return R::zero();
+        }
+        let r = RowVector5Trait::unscale(RowVector5Trait::abs(self), m);
+        let q: u32 = p.try_into().unwrap();
+        let s = Powi::powi(r.x, q)
+            + Powi::powi(r.y, q)
+            + Powi::powi(r.z, q)
+            + Powi::powi(r.w, q)
+            + Powi::powi(r.a, q);
+        m * Tr::exp(R::div(Tr::ln(s), R::from_int(p)))
     }
 }
 
@@ -395,5 +972,215 @@ pub impl RowVector5TrMulRowVector6<
     #[inline(always)]
     fn tr_mul(self: RowVector5<T>, rhs: RowVector6<T>) -> Matrix5x6<T> {
         MatrixMul::mul_mat(Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs)
+    }
+}
+
+// --- indexing, comparisons, conversions ----------------------------------------------------------
+
+/// `m.get(i)` / `m.index(..)`: the component `index` in column-major (storage) order. `get` is
+/// `None` out of bounds, `index` panics with `nalgebra: index out of bounds`. Upstream:
+/// `Matrix::get` / `Matrix::index` (their `MatrixIndex` argument).
+pub impl RowVector5MatrixIndexLinear<T, +Copy<T>, +Drop<T>> of MatrixIndex<RowVector5<T>, usize> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: RowVector5<T>, index: usize) -> Option<T> {
+        match index {
+            0 => Option::Some(self.x),
+            1 => Option::Some(self.y),
+            2 => Option::Some(self.z),
+            3 => Option::Some(self.w),
+            4 => Option::Some(self.a),
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: RowVector5<T>, index: usize) -> T {
+        match index {
+            0 => self.x,
+            1 => self.y,
+            2 => self.z,
+            3 => self.w,
+            4 => self.a,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[i]`: the component `index` in column-major (storage) order. Panics with `nalgebra: index out
+/// of bounds`. Upstream: `Index<usize>`.
+pub impl RowVector5IndexLinear<T, +Copy<T>, +Drop<T>> of IndexView<RowVector5<T>, usize> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @RowVector5<T>, index: usize) -> T {
+        match index {
+            0 => *self.x,
+            1 => *self.y,
+            2 => *self.z,
+            3 => *self.w,
+            4 => *self.a,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m.get((i, j))` / `m.index(..)`: the component at `(row, column)`. `get` is `None` out of
+/// bounds, `index` panics with `nalgebra: index out of bounds`. Upstream: `Matrix::get` /
+/// `Matrix::index` (their `MatrixIndex` argument).
+pub impl RowVector5MatrixIndexPair<
+    T, +Copy<T>, +Drop<T>,
+> of MatrixIndex<RowVector5<T>, (usize, usize)> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: RowVector5<T>, index: (usize, usize)) -> Option<T> {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => Option::Some(self.x),
+                _ => Option::None,
+            },
+            1 => match i {
+                0 => Option::Some(self.y),
+                _ => Option::None,
+            },
+            2 => match i {
+                0 => Option::Some(self.z),
+                _ => Option::None,
+            },
+            3 => match i {
+                0 => Option::Some(self.w),
+                _ => Option::None,
+            },
+            4 => match i {
+                0 => Option::Some(self.a),
+                _ => Option::None,
+            },
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: RowVector5<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => self.x,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match i {
+                0 => self.y,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match i {
+                0 => self.z,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match i {
+                0 => self.w,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match i {
+                0 => self.a,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[(i, j)]`: the component at `(row, column)`. Panics with `nalgebra: index out of bounds`.
+/// Upstream: `Index<(usize, usize)>`.
+pub impl RowVector5IndexPair<T, +Copy<T>, +Drop<T>> of IndexView<RowVector5<T>, (usize, usize)> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @RowVector5<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => *self.x,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match i {
+                0 => *self.y,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match i {
+                0 => *self.z,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match i {
+                0 => *self.w,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match i {
+                0 => *self.a,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The component-wise partial order: `a < b` when EVERY component of `a` is smaller than `b`'s
+/// (likewise `<=`, `>`, `>=`), so two matrices may be unordered (`!(a < b) && !(a >= b)`).
+/// Upstream: `PartialOrd for Matrix`.
+pub impl RowVector5PartialOrd<T, +PartialOrd<T>, +Copy<T>, +Drop<T>> of PartialOrd<RowVector5<T>> {
+    #[inline(always)]
+    fn lt(lhs: RowVector5<T>, rhs: RowVector5<T>) -> bool {
+        lhs.x < rhs.x && lhs.y < rhs.y && lhs.z < rhs.z && lhs.w < rhs.w && lhs.a < rhs.a
+    }
+    #[inline(always)]
+    fn le(lhs: RowVector5<T>, rhs: RowVector5<T>) -> bool {
+        lhs.x <= rhs.x && lhs.y <= rhs.y && lhs.z <= rhs.z && lhs.w <= rhs.w && lhs.a <= rhs.a
+    }
+    #[inline(always)]
+    fn gt(lhs: RowVector5<T>, rhs: RowVector5<T>) -> bool {
+        lhs.x > rhs.x && lhs.y > rhs.y && lhs.z > rhs.z && lhs.w > rhs.w && lhs.a > rhs.a
+    }
+    #[inline(always)]
+    fn ge(lhs: RowVector5<T>, rhs: RowVector5<T>) -> bool {
+        lhs.x >= rhs.x && lhs.y >= rhs.y && lhs.z >= rhs.z && lhs.w >= rhs.w && lhs.a >= rhs.a
+    }
+}
+
+/// The component-wise bounds: every component `Bounded::<T>::MIN` / `MAX`. Upstream: `num::Bounded
+/// for Matrix`.
+pub impl RowVector5Bounded<T, +Bounded<T>, +Drop<T>> of Bounded<RowVector5<T>> {
+    const MIN: RowVector5<T> = RowVector5 {
+        x: Bounded::<T>::MIN,
+        y: Bounded::<T>::MIN,
+        z: Bounded::<T>::MIN,
+        w: Bounded::<T>::MIN,
+        a: Bounded::<T>::MIN,
+    };
+    const MAX: RowVector5<T> = RowVector5 {
+        x: Bounded::<T>::MAX,
+        y: Bounded::<T>::MAX,
+        z: Bounded::<T>::MAX,
+        w: Bounded::<T>::MAX,
+        a: Bounded::<T>::MAX,
+    };
+}
+
+/// The 5-dimensional row vector of the given COLUMNS (`[[m11, m21, ..], [m12, ..], ..]`). Upstream:
+/// `From<[[T; R]; C]>`.
+pub impl RowVector5FromColumnArrays<T, +Drop<T>> of Into<[[T; 1]; 5], RowVector5<T>> {
+    #[inline(always)]
+    fn into(self: [[T; 1]; 5]) -> RowVector5<T> {
+        let [c0, c1, c2, c3, c4] = self;
+        let [x] = c0;
+        let [y] = c1;
+        let [z] = c2;
+        let [w] = c3;
+        let [a] = c4;
+        RowVector5 { x, y, z, w, a }
+    }
+}
+
+/// The columns of the 5-dimensional row vector as nested arrays (`[[m11, m21, ..], [m12, ..],
+/// ..]`). Upstream: `Into<[[T; R]; C]>`.
+pub impl RowVector5IntoColumnArrays<T, +Drop<T>> of Into<RowVector5<T>, [[T; 1]; 5]> {
+    #[inline(always)]
+    fn into(self: RowVector5<T>) -> [[T; 1]; 5] {
+        let RowVector5 { x, y, z, w, a } = self;
+        [[x], [y], [z], [w], [a]]
     }
 }

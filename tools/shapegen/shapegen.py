@@ -1168,7 +1168,7 @@ def library_outputs(pkg: Path) -> dict[Path, Path]:
     shapes.check_block((src / "base.cairo").read_text(), "base.cairo", shapes.owned_modules())
     root = (src / "crate_root.cairo").read_text()
     block = root[root.index(shapes.BEGIN):root.index(shapes.END)]
-    if not re.search(r"pub use base::\{\s*Matrix1,", block) or "MatrixMul" in root.replace(block, ""):
+    if not re.search(r"pub use base::\{\s*EuclideanNorm,", block) or "MatrixMul" in root.replace(block, ""):
         raise SystemExit("shapegen: the generated re-exports of lib.cairo left their markers")
     return out
 

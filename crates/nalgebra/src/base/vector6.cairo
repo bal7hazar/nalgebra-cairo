@@ -4,6 +4,9 @@
 //!
 //! - `Vector6Trait` / `Vector6Impl`: constructors, component-wise operations, reductions, products,
 //!   norms and interpolation, generic over a `simba::scalar::Real` scalar;
+//! - the base completion (WP 8.2a): the rest of upstream's `Matrix` / `Vector` API, in
+//! `Vector6Trait`
+//!   and, for the operations that need `Transcendental`, `Vector6AngleTrait`;
 //! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a scalar, and
 //!   conversions from / to `[T; 6]`: their impls live in this module, where the
 //!   compiler finds them without any import;
@@ -17,14 +20,19 @@
 //! they cost ONE floor rounding and ONE overflow check, exactly like the 3-term `sum_prod3`
 //! kernels — never two chained `sum_prod3`, which would round twice.
 
-use core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
-use simba::scalar::Real;
+use core::num::traits::Bounded;
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use simba::scalar::{Real, Transcendental};
+use crate::geometry::quaternion::ApproxEqTrait;
+use super::errors;
+use super::kernels::Powi;
 use super::matrix1::Matrix1;
 use super::matrix6::Matrix6;
 use super::matrix6x2::Matrix6x2;
 use super::matrix6x3::Matrix6x3;
 use super::matrix6x4::Matrix6x4;
 use super::matrix6x5::Matrix6x5;
+use super::matrix_index::MatrixIndex;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
 use super::row_vector2::RowVector2;
@@ -111,6 +119,185 @@ pub trait Vector6Trait<T> {
     /// floor rounding). `t` is not clamped; `t = 0` gives `self` and `t = 1` gives `rhs` exactly.
     /// Panics on overflow of the result. Upstream: `lerp` (`self * (1 - t) + rhs * t`).
     fn lerp(self: Vector6<T>, rhs: Vector6<T>, t: T) -> Vector6<T>;
+    /// The 6-dimensional column vector whose components all equal `elem`. Upstream:
+    /// `Vector6::repeat`.
+    fn repeat(elem: T) -> Vector6<T>;
+    /// Alias of `repeat`. Upstream: `Vector6::from_element`.
+    fn from_element(elem: T) -> Vector6<T>;
+    /// The 6-dimensional column vector whose component `(i, j)` (row, column, 0-based) is `f(i,
+    /// j)`, `f` being called in column-major order like upstream. `f` is any closure or `Fn` value
+    /// of `(usize, usize)` whose output converts `Into<T>` (the identity included): Cairo cannot
+    /// state `Output = T` on the closure without the `associated_item_constraints` experimental
+    /// feature. Upstream: `Vector6::from_fn`.
+    fn from_fn<
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (usize, usize)>,
+        +Into<Func::Output, T>,
+        +Drop<Func::Output>,
+    >(
+        f: F,
+    ) -> Vector6<T>;
+    /// The 6-dimensional column vector of the 6 values of `data`, in row-major order. Panics with
+    /// `nalgebra: wrong slice length` unless `data.len() == 6`. Upstream: `Vector6::from_row_slice`
+    /// (`&[T]`).
+    fn from_row_slice(data: Span<T>) -> Vector6<T>;
+    /// The 6-dimensional column vector of the 6 values of `data`, in column-major order. Panics
+    /// with `nalgebra: wrong slice length` unless `data.len() == 6`. Upstream:
+    /// `Vector6::from_column_slice` (`&[T]`).
+    fn from_column_slice(data: Span<T>) -> Vector6<T>;
+    /// The 6-dimensional column vector whose first `data.len()` diagonal components are `data`,
+    /// every other component zero. Panics with `nalgebra: diagonal too long` when `data.len() > 1`.
+    /// Upstream: `Vector6::from_partial_diagonal` (`&[T]`).
+    fn from_partial_diagonal(data: Span<T>) -> Vector6<T>;
+    /// The unit axis `(1, 0, 0, 0, 0, 0)`. Upstream: `Vector6::x` (`x_axis` is the `Unit` form).
+    fn x() -> Vector6<T>;
+    /// The unit axis `(0, 1, 0, 0, 0, 0)`. Upstream: `Vector6::y` (`y_axis` is the `Unit` form).
+    fn y() -> Vector6<T>;
+    /// The unit axis `(0, 0, 1, 0, 0, 0)`. Upstream: `Vector6::z` (`z_axis` is the `Unit` form).
+    fn z() -> Vector6<T>;
+    /// The unit axis `(0, 0, 0, 1, 0, 0)`. Upstream: `Vector6::w` (`w_axis` is the `Unit` form).
+    fn w() -> Vector6<T>;
+    /// The unit axis `(0, 0, 0, 0, 1, 0)`. Upstream: `Vector6::a` (`a_axis` is the `Unit` form).
+    fn a() -> Vector6<T>;
+    /// The unit axis `(0, 0, 0, 0, 0, 1)`. Upstream: `Vector6::b` (`b_axis` is the `Unit` form).
+    fn b() -> Vector6<T>;
+    /// The vector whose component `i` is `val`, every other one zero. Panics with `nalgebra: index
+    /// out of bounds` for `i >= 6`. Upstream: `Vector6::ith`.
+    fn ith(i: usize, val: T) -> Vector6<T>;
+    /// The unit vector along axis `i` (`ith(i, 1)`). Panics with `nalgebra: index out of bounds`
+    /// for `i >= 6`. Upstream: `Vector6::ith_axis`.
+    fn ith_axis(i: usize) -> Unit<Vector6<T>>;
+    /// `true` when every component is zero. Upstream: `Zero::is_zero`.
+    fn is_zero(self: Vector6<T>) -> bool;
+    /// `self = self.component_mul(rhs)`. Upstream: `component_mul_assign`.
+    fn component_mul_assign(ref self: Vector6<T>, rhs: Vector6<T>);
+    /// Component-wise quotient, each component rounded to nearest (ties to even). Panics on a zero
+    /// component of `rhs` and on overflow. Upstream: `component_div`.
+    fn component_div(self: Vector6<T>, rhs: Vector6<T>) -> Vector6<T>;
+    /// `self = self.component_div(rhs)`. Upstream: `component_div_assign`.
+    fn component_div_assign(ref self: Vector6<T>, rhs: Vector6<T>);
+    /// `(self.inf(other), self.sup(other))`. Exact. Upstream: `inf_sup`.
+    fn inf_sup(self: Vector6<T>, other: Vector6<T>) -> (Vector6<T>, Vector6<T>);
+    /// `self + k` added to every component. Exact; panics on overflow. Upstream: `add_scalar`.
+    fn add_scalar(self: Vector6<T>, k: T) -> Vector6<T>;
+    /// `self = alpha * a ∘ b + beta * self` (component-wise product): per component `alpha * a`
+    /// is floored, then the two products are ONE fused `sum_prod2` (floored once). Panics on
+    /// overflow.
+    /// Upstream: `cmpy` (which skips reading `self` when `beta` is zero: a difference only for NaN,
+    /// which fixed point has not).
+    fn cmpy(ref self: Vector6<T>, alpha: T, a: Vector6<T>, b: Vector6<T>, beta: T);
+    /// `self = alpha * a / b + beta * self` (component-wise quotient): per component `alpha * a` is
+    /// floored, divided by `b` (rounded to nearest), then `beta * self + quotient` is ONE `mul_add`
+    /// (floored once). Panics on a zero component of `b` and on overflow. Upstream: `cdpy`.
+    fn cdpy(ref self: Vector6<T>, alpha: T, a: Vector6<T>, b: Vector6<T>, beta: T);
+    /// The smallest component. Exact. Upstream: `min`.
+    fn min(self: Vector6<T>) -> T;
+    /// The largest component. Exact. Upstream: `max`.
+    fn max(self: Vector6<T>) -> T;
+    /// The smallest absolute value of a component. Panics on the scalar's `MIN`. Upstream: `amin`.
+    fn amin(self: Vector6<T>) -> T;
+    /// The largest absolute value of a component (the uniform norm). Panics on the scalar's `MIN`.
+    /// Upstream: `amax`.
+    fn amax(self: Vector6<T>) -> T;
+    /// `amin`: the modulus of a real scalar is its absolute value. Upstream: `camin`.
+    fn camin(self: Vector6<T>) -> T;
+    /// `amax`: the modulus of a real scalar is its absolute value. Upstream: `camax`.
+    fn camax(self: Vector6<T>) -> T;
+    /// `(row, column)` of the component with the largest absolute value, the first one in
+    /// column-major order on ties. Panics on the scalar's `MIN`. Upstream: `iamax_full`.
+    fn iamax_full(self: Vector6<T>) -> (usize, usize);
+    /// `iamax_full`: the modulus of a real scalar is its absolute value. Upstream: `icamax_full`.
+    fn icamax_full(self: Vector6<T>) -> (usize, usize);
+    /// `(index, value)` of the smallest component, the first one on ties. Exact. Upstream:
+    /// `argmin`.
+    fn argmin(self: Vector6<T>) -> (usize, T);
+    /// `(index, value)` of the largest component, the first one on ties. Exact. Upstream: `argmax`.
+    fn argmax(self: Vector6<T>) -> (usize, T);
+    /// Index of the smallest component, the first one on ties. Upstream: `imin`.
+    fn imin(self: Vector6<T>) -> usize;
+    /// Index of the largest component, the first one on ties. Upstream: `imax`.
+    fn imax(self: Vector6<T>) -> usize;
+    /// Index of the component with the smallest absolute value, the first one on ties. Panics on
+    /// the scalar's `MIN`. Upstream: `iamin`.
+    fn iamin(self: Vector6<T>) -> usize;
+    /// Index of the component with the largest absolute value, the first one on ties. Panics on the
+    /// scalar's `MIN`. Upstream: `iamax`.
+    fn iamax(self: Vector6<T>) -> usize;
+    /// `iamax`: the modulus of a real scalar is its absolute value. Upstream: `icamax`.
+    fn icamax(self: Vector6<T>) -> usize;
+    /// Alias of `norm_squared`. Upstream: `magnitude_squared`.
+    fn magnitude_squared(self: Vector6<T>) -> T;
+    /// Alias of `norm`. Upstream: `magnitude`.
+    fn magnitude(self: Vector6<T>) -> T;
+    /// `(self - rhs).norm()`: the differences are exact, then one fused norm. Panics when a
+    /// difference or the result overflows. Upstream: `metric_distance`.
+    fn metric_distance(self: Vector6<T>, rhs: Vector6<T>) -> T;
+    /// `Some(self.normalize())`, or `None` when the norm is `<= min_norm` (never divides by zero
+    /// for `min_norm >= 0`). Upstream: `try_normalize`.
+    fn try_normalize(self: Vector6<T>, min_norm: T) -> Option<Vector6<T>>;
+    /// `self` when its norm is `<= max`, otherwise `self.scale(max / norm)` (the ratio rounded to
+    /// nearest, like upstream's `max / n`). Panics only when the norm does not fit. Upstream:
+    /// `cap_magnitude`.
+    fn cap_magnitude(self: Vector6<T>, max: T) -> Vector6<T>;
+    /// Scales `self` to the norm `magnitude` (`self.scale(magnitude / norm)`, the ratio rounded to
+    /// nearest) when its norm is `> min_magnitude`, leaves it unchanged otherwise. Upstream:
+    /// `try_set_magnitude` (`&mut self`).
+    fn try_set_magnitude(ref self: Vector6<T>, magnitude: T, min_magnitude: T);
+    /// The induced 1-norm: the largest absolute column sum (the L1 norm of a column vector, the
+    /// largest absolute value of a row vector). Exact; panics on overflow. Upstream: `one_norm`.
+    fn one_norm(self: Vector6<T>) -> T;
+    /// The conjugate transpose, a `RowVector6`: the transpose for a real scalar. Exact. Upstream:
+    /// `adjoint`.
+    fn adjoint(self: Vector6<T>) -> RowVector6<T>;
+    /// Alias of `adjoint` (deprecated upstream). Upstream: `conjugate_transpose`.
+    fn conjugate_transpose(self: Vector6<T>) -> RowVector6<T>;
+    /// The component-wise conjugate: `self` for a real scalar. Upstream: `conjugate`.
+    fn conjugate(self: Vector6<T>) -> Vector6<T>;
+    /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
+    /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
+    /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Vector6<T>) -> Vector6<U>;
+    /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
+    /// conversion fails. Upstream: `try_cast`.
+    fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Vector6<T>) -> Option<Vector6<U>>;
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_relative` times the larger magnitude of the two (`|a - b| <= max(|a|, |b|)
+    /// · max_relative`). Panics on a component equal to the scalar's `MIN`, and on overflow of
+    /// that product (only possible with `max_relative > 1`). Upstream:
+    /// `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp instead of a float epsilon
+    /// (DESIGN D3).
+    fn relative_eq(self: Vector6<T>, other: Vector6<T>, epsilon: u64, max_relative: T) -> bool;
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_ulps` ulp (in fixed point the distance in ulp IS the raw difference; the
+    /// `max_ulps` budget does not cross zero, like upstream's float `ulps_eq`). Cannot overflow.
+    /// Upstream: `approx::UlpsEq::ulps_eq`.
+    fn ulps_eq(self: Vector6<T>, other: Vector6<T>, epsilon: u64, max_ulps: u32) -> bool;
+}
+
+/// `angle` needs inverse trigonometry, hence its own trait: scalars may implement `Real` only.
+pub trait Vector6AngleTrait<T> {
+    /// The angle between `self` and `other` seen as vectors of the Frobenius inner product, in `[0,
+    /// π]` (up to the rounding of `atan2`); `0` when one of them is zero. Computed as `2 *
+    /// atan2(|u - v|, |u + v|)` on the normalized `u`, `v` (Kahan): unlike upstream's `acos(dot /
+    /// (|a| *
+    /// |b|))` it cannot overflow on long inputs and stays accurate for nearly parallel ones. Panics
+    /// when a norm does not fit. Upstream: `angle`.
+    fn angle(self: Vector6<T>, other: Vector6<T>) -> T;
+    /// The entrywise Lp norm `(Σ |a|^p)^(1/p)`. `p = 1` is the exact sum of the absolute values
+    /// and `p = 2` the fused `norm` (both exact up to their one rounding); above, the components
+    /// are first divided by the largest absolute value `m` (so no power can overflow), `Σ (|a| /
+    /// m)^p`
+    /// is summed (`p` floored products each), and the root is `m * exp(ln(Σ) / p)`: a few ulp
+    /// relative to the result, the rounding of `exp` / `ln`. Panics with `nalgebra: lp_norm needs p
+    /// >= 1` for `p < 1` (upstream returns meaningless values: an infinite root for `p = 0`).
+    /// Upstream: `lp_norm`.
+    fn lp_norm(self: Vector6<T>, p: i32) -> T;
+    /// Spherical interpolation of the DIRECTIONS of `self` and `rhs`: both are normalized, then
+    /// `Unit::slerp` (the unit result along the great arc, with constant angular velocity; `t` is
+    /// not clamped). Returns the normalized `self` when the directions are opposite (the arc is not
+    /// defined), like upstream. Panics when a norm is zero or does not fit. Upstream: `slerp`.
+    fn slerp(self: Vector6<T>, rhs: Vector6<T>, t: T) -> Vector6<T>;
 }
 
 pub impl Vector6Impl<
@@ -268,6 +455,663 @@ pub impl Vector6Impl<
             w: R::lerp(self.w, rhs.w, t),
             a: R::lerp(self.a, rhs.a, t),
             b: R::lerp(self.b, rhs.b, t),
+        }
+    }
+
+    #[inline(always)]
+    fn repeat(elem: T) -> Vector6<T> {
+        Vector6 { x: elem, y: elem, z: elem, w: elem, a: elem, b: elem }
+    }
+
+    #[inline(always)]
+    fn from_element(elem: T) -> Vector6<T> {
+        Vector6 { x: elem, y: elem, z: elem, w: elem, a: elem, b: elem }
+    }
+
+    fn from_fn<
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (usize, usize)>,
+        +Into<Func::Output, T>,
+        +Drop<Func::Output>,
+    >(
+        f: F,
+    ) -> Vector6<T> {
+        Vector6 {
+            x: f(0, 0).into(),
+            y: f(1, 0).into(),
+            z: f(2, 0).into(),
+            w: f(3, 0).into(),
+            a: f(4, 0).into(),
+            b: f(5, 0).into(),
+        }
+    }
+
+    #[inline(always)]
+    fn from_row_slice(data: Span<T>) -> Vector6<T> {
+        if data.len() != 6 {
+            core::panic_with_felt252(errors::SLICE_LENGTH);
+        }
+        Vector6 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4], b: *data[5] }
+    }
+
+    #[inline(always)]
+    fn from_column_slice(data: Span<T>) -> Vector6<T> {
+        if data.len() != 6 {
+            core::panic_with_felt252(errors::SLICE_LENGTH);
+        }
+        Vector6 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4], b: *data[5] }
+    }
+
+    #[inline(always)]
+    fn from_partial_diagonal(data: Span<T>) -> Vector6<T> {
+        let len = data.len();
+        if len > 1 {
+            core::panic_with_felt252(errors::TOO_MANY_DIAGONAL);
+        }
+        Vector6 {
+            x: if len > 0 {
+                *data[0]
+            } else {
+                R::zero()
+            },
+            y: R::zero(),
+            z: R::zero(),
+            w: R::zero(),
+            a: R::zero(),
+            b: R::zero(),
+        }
+    }
+
+    #[inline(always)]
+    fn x() -> Vector6<T> {
+        Vector6 {
+            x: R::one(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+        }
+    }
+
+    #[inline(always)]
+    fn y() -> Vector6<T> {
+        Vector6 {
+            x: R::zero(), y: R::one(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+        }
+    }
+
+    #[inline(always)]
+    fn z() -> Vector6<T> {
+        Vector6 {
+            x: R::zero(), y: R::zero(), z: R::one(), w: R::zero(), a: R::zero(), b: R::zero(),
+        }
+    }
+
+    #[inline(always)]
+    fn w() -> Vector6<T> {
+        Vector6 {
+            x: R::zero(), y: R::zero(), z: R::zero(), w: R::one(), a: R::zero(), b: R::zero(),
+        }
+    }
+
+    #[inline(always)]
+    fn a() -> Vector6<T> {
+        Vector6 {
+            x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::one(), b: R::zero(),
+        }
+    }
+
+    #[inline(always)]
+    fn b() -> Vector6<T> {
+        Vector6 {
+            x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::one(),
+        }
+    }
+
+    #[inline(always)]
+    fn ith(i: usize, val: T) -> Vector6<T> {
+        match i {
+            0 => Vector6 {
+                x: val, y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            },
+            1 => Vector6 {
+                x: R::zero(), y: val, z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            },
+            2 => Vector6 {
+                x: R::zero(), y: R::zero(), z: val, w: R::zero(), a: R::zero(), b: R::zero(),
+            },
+            3 => Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: val, a: R::zero(), b: R::zero(),
+            },
+            4 => Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: val, b: R::zero(),
+            },
+            5 => Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: val,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn ith_axis(i: usize) -> Unit<Vector6<T>> {
+        Unit { value: Self::ith(i, R::one()) }
+    }
+
+    #[inline(always)]
+    fn is_zero(self: Vector6<T>) -> bool {
+        self.x == R::zero()
+            && self.y == R::zero()
+            && self.z == R::zero()
+            && self.w == R::zero()
+            && self.a == R::zero()
+            && self.b == R::zero()
+    }
+
+    #[inline(always)]
+    fn component_mul_assign(ref self: Vector6<T>, rhs: Vector6<T>) {
+        self =
+            Vector6 {
+                x: self.x * rhs.x,
+                y: self.y * rhs.y,
+                z: self.z * rhs.z,
+                w: self.w * rhs.w,
+                a: self.a * rhs.a,
+                b: self.b * rhs.b,
+            };
+    }
+
+    #[inline(always)]
+    fn component_div(self: Vector6<T>, rhs: Vector6<T>) -> Vector6<T> {
+        Vector6 {
+            x: R::div(self.x, rhs.x),
+            y: R::div(self.y, rhs.y),
+            z: R::div(self.z, rhs.z),
+            w: R::div(self.w, rhs.w),
+            a: R::div(self.a, rhs.a),
+            b: R::div(self.b, rhs.b),
+        }
+    }
+
+    #[inline(always)]
+    fn component_div_assign(ref self: Vector6<T>, rhs: Vector6<T>) {
+        self =
+            Vector6 {
+                x: R::div(self.x, rhs.x),
+                y: R::div(self.y, rhs.y),
+                z: R::div(self.z, rhs.z),
+                w: R::div(self.w, rhs.w),
+                a: R::div(self.a, rhs.a),
+                b: R::div(self.b, rhs.b),
+            };
+    }
+
+    #[inline(always)]
+    fn inf_sup(self: Vector6<T>, other: Vector6<T>) -> (Vector6<T>, Vector6<T>) {
+        (Self::inf(self, other), Self::sup(self, other))
+    }
+
+    #[inline(always)]
+    fn add_scalar(self: Vector6<T>, k: T) -> Vector6<T> {
+        Vector6 {
+            x: self.x + k,
+            y: self.y + k,
+            z: self.z + k,
+            w: self.w + k,
+            a: self.a + k,
+            b: self.b + k,
+        }
+    }
+
+    #[inline(always)]
+    fn cmpy(ref self: Vector6<T>, alpha: T, a: Vector6<T>, b: Vector6<T>, beta: T) {
+        self =
+            Vector6 {
+                x: R::sum_prod2(alpha * a.x, b.x, beta, self.x),
+                y: R::sum_prod2(alpha * a.y, b.y, beta, self.y),
+                z: R::sum_prod2(alpha * a.z, b.z, beta, self.z),
+                w: R::sum_prod2(alpha * a.w, b.w, beta, self.w),
+                a: R::sum_prod2(alpha * a.a, b.a, beta, self.a),
+                b: R::sum_prod2(alpha * a.b, b.b, beta, self.b),
+            };
+    }
+
+    #[inline(always)]
+    fn cdpy(ref self: Vector6<T>, alpha: T, a: Vector6<T>, b: Vector6<T>, beta: T) {
+        self =
+            Vector6 {
+                x: R::mul_add(beta, self.x, R::div(alpha * a.x, b.x)),
+                y: R::mul_add(beta, self.y, R::div(alpha * a.y, b.y)),
+                z: R::mul_add(beta, self.z, R::div(alpha * a.z, b.z)),
+                w: R::mul_add(beta, self.w, R::div(alpha * a.w, b.w)),
+                a: R::mul_add(beta, self.a, R::div(alpha * a.a, b.a)),
+                b: R::mul_add(beta, self.b, R::div(alpha * a.b, b.b)),
+            };
+    }
+
+    #[inline(always)]
+    fn min(self: Vector6<T>) -> T {
+        R::min(R::min(R::min(R::min(R::min(self.x, self.y), self.z), self.w), self.a), self.b)
+    }
+
+    #[inline(always)]
+    fn max(self: Vector6<T>) -> T {
+        R::max(R::max(R::max(R::max(R::max(self.x, self.y), self.z), self.w), self.a), self.b)
+    }
+
+    #[inline(always)]
+    fn amin(self: Vector6<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(R::min(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w),
+                ),
+                R::abs(self.a),
+            ),
+            R::abs(self.b),
+        )
+    }
+
+    #[inline(always)]
+    fn amax(self: Vector6<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(R::max(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w),
+                ),
+                R::abs(self.a),
+            ),
+            R::abs(self.b),
+        )
+    }
+
+    #[inline(always)]
+    fn camin(self: Vector6<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(R::min(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w),
+                ),
+                R::abs(self.a),
+            ),
+            R::abs(self.b),
+        )
+    }
+
+    #[inline(always)]
+    fn camax(self: Vector6<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(R::max(R::abs(self.x), R::abs(self.y)), R::abs(self.z)), R::abs(self.w),
+                ),
+                R::abs(self.a),
+            ),
+            R::abs(self.b),
+        )
+    }
+
+    #[inline(always)]
+    fn iamax_full(self: Vector6<T>) -> (usize, usize) {
+        let mut best: (usize, usize) = (0, 0);
+        let mut m = R::abs(self.x);
+        let v = R::abs(self.y);
+        if v > m {
+            m = v;
+            best = (1, 0);
+        }
+        let v = R::abs(self.z);
+        if v > m {
+            m = v;
+            best = (2, 0);
+        }
+        let v = R::abs(self.w);
+        if v > m {
+            m = v;
+            best = (3, 0);
+        }
+        let v = R::abs(self.a);
+        if v > m {
+            m = v;
+            best = (4, 0);
+        }
+        let v = R::abs(self.b);
+        if v > m {
+            best = (5, 0);
+        }
+        best
+    }
+
+    #[inline(always)]
+    fn icamax_full(self: Vector6<T>) -> (usize, usize) {
+        Self::iamax_full(self)
+    }
+
+    #[inline(always)]
+    fn argmin(self: Vector6<T>) -> (usize, T) {
+        let mut i: usize = 0;
+        let mut m = self.x;
+        if self.y < m {
+            m = self.y;
+            i = 1;
+        }
+        if self.z < m {
+            m = self.z;
+            i = 2;
+        }
+        if self.w < m {
+            m = self.w;
+            i = 3;
+        }
+        if self.a < m {
+            m = self.a;
+            i = 4;
+        }
+        if self.b < m {
+            m = self.b;
+            i = 5;
+        }
+        (i, m)
+    }
+
+    #[inline(always)]
+    fn argmax(self: Vector6<T>) -> (usize, T) {
+        let mut i: usize = 0;
+        let mut m = self.x;
+        if self.y > m {
+            m = self.y;
+            i = 1;
+        }
+        if self.z > m {
+            m = self.z;
+            i = 2;
+        }
+        if self.w > m {
+            m = self.w;
+            i = 3;
+        }
+        if self.a > m {
+            m = self.a;
+            i = 4;
+        }
+        if self.b > m {
+            m = self.b;
+            i = 5;
+        }
+        (i, m)
+    }
+
+    #[inline(always)]
+    fn imin(self: Vector6<T>) -> usize {
+        let (i, _) = Self::argmin(self);
+        i
+    }
+
+    #[inline(always)]
+    fn imax(self: Vector6<T>) -> usize {
+        let (i, _) = Self::argmax(self);
+        i
+    }
+
+    #[inline(always)]
+    fn iamin(self: Vector6<T>) -> usize {
+        let mut best: usize = 0;
+        let mut m = R::abs(self.x);
+        let v = R::abs(self.y);
+        if v < m {
+            m = v;
+            best = 1;
+        }
+        let v = R::abs(self.z);
+        if v < m {
+            m = v;
+            best = 2;
+        }
+        let v = R::abs(self.w);
+        if v < m {
+            m = v;
+            best = 3;
+        }
+        let v = R::abs(self.a);
+        if v < m {
+            m = v;
+            best = 4;
+        }
+        let v = R::abs(self.b);
+        if v < m {
+            best = 5;
+        }
+        best
+    }
+
+    #[inline(always)]
+    fn iamax(self: Vector6<T>) -> usize {
+        let mut best: usize = 0;
+        let mut m = R::abs(self.x);
+        let v = R::abs(self.y);
+        if v > m {
+            m = v;
+            best = 1;
+        }
+        let v = R::abs(self.z);
+        if v > m {
+            m = v;
+            best = 2;
+        }
+        let v = R::abs(self.w);
+        if v > m {
+            m = v;
+            best = 3;
+        }
+        let v = R::abs(self.a);
+        if v > m {
+            m = v;
+            best = 4;
+        }
+        let v = R::abs(self.b);
+        if v > m {
+            best = 5;
+        }
+        best
+    }
+
+    #[inline(always)]
+    fn icamax(self: Vector6<T>) -> usize {
+        Self::iamax(self)
+    }
+
+    #[inline(always)]
+    fn magnitude_squared(self: Vector6<T>) -> T {
+        Self::norm_squared(self)
+    }
+
+    #[inline(always)]
+    fn magnitude(self: Vector6<T>) -> T {
+        Self::norm(self)
+    }
+
+    #[inline(always)]
+    fn metric_distance(self: Vector6<T>, rhs: Vector6<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x - rhs.x, self.x - rhs.x);
+        let w = R::wide_add_prod(w, self.y - rhs.y, self.y - rhs.y);
+        let w = R::wide_add_prod(w, self.z - rhs.z, self.z - rhs.z);
+        let w = R::wide_add_prod(w, self.w - rhs.w, self.w - rhs.w);
+        let w = R::wide_add_prod(w, self.a - rhs.a, self.a - rhs.a);
+        R::wide_sqrt(R::wide_add_prod(w, self.b - rhs.b, self.b - rhs.b))
+    }
+
+    #[inline(always)]
+    fn try_normalize(self: Vector6<T>, min_norm: T) -> Option<Vector6<T>> {
+        let n = Self::norm(self);
+        if n <= min_norm {
+            None
+        } else {
+            Some(Self::unscale(self, n))
+        }
+    }
+
+    #[inline(always)]
+    fn cap_magnitude(self: Vector6<T>, max: T) -> Vector6<T> {
+        let n = Self::norm(self);
+        if n <= max {
+            self
+        } else {
+            Self::scale(self, R::div(max, n))
+        }
+    }
+
+    #[inline(always)]
+    fn try_set_magnitude(ref self: Vector6<T>, magnitude: T, min_magnitude: T) {
+        let n = Self::norm(self);
+        if n > min_magnitude {
+            self = Self::scale(self, R::div(magnitude, n));
+        }
+    }
+
+    #[inline(always)]
+    fn one_norm(self: Vector6<T>) -> T {
+        R::abs(self.x)
+            + R::abs(self.y)
+            + R::abs(self.z)
+            + R::abs(self.w)
+            + R::abs(self.a)
+            + R::abs(self.b)
+    }
+
+    #[inline(always)]
+    fn adjoint(self: Vector6<T>) -> RowVector6<T> {
+        Self::transpose(self)
+    }
+
+    #[inline(always)]
+    fn conjugate_transpose(self: Vector6<T>) -> RowVector6<T> {
+        Self::transpose(self)
+    }
+
+    #[inline(always)]
+    fn conjugate(self: Vector6<T>) -> Vector6<T> {
+        self
+    }
+
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Vector6<T>) -> Vector6<U> {
+        Vector6 {
+            x: self.x.into(),
+            y: self.y.into(),
+            z: self.z.into(),
+            w: self.w.into(),
+            a: self.a.into(),
+            b: self.b.into(),
+        }
+    }
+
+    fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Vector6<T>) -> Option<Vector6<U>> {
+        let x: U = match self.x.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let y: U = match self.y.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let z: U = match self.z.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let w: U = match self.w.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let a: U = match self.a.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        let b: U = match self.b.try_into() {
+            Option::Some(v) => v,
+            Option::None => { return Option::None; },
+        };
+        Option::Some(Vector6 { x, y, z, w, a, b })
+    }
+
+    #[inline(always)]
+    fn relative_eq(self: Vector6<T>, other: Vector6<T>, epsilon: u64, max_relative: T) -> bool {
+        ApproxEqTrait::relative_eq(self.x, other.x, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.y, other.y, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.z, other.z, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.w, other.w, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.a, other.a, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.b, other.b, epsilon, max_relative)
+    }
+
+    #[inline(always)]
+    fn ulps_eq(self: Vector6<T>, other: Vector6<T>, epsilon: u64, max_ulps: u32) -> bool {
+        ApproxEqTrait::ulps_eq(self.x, other.x, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.y, other.y, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.z, other.z, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.w, other.w, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.a, other.a, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.b, other.b, epsilon, max_ulps)
+    }
+}
+
+pub impl Vector6AngleImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Vector6AngleTrait<T> {
+    fn angle(self: Vector6<T>, other: Vector6<T>) -> T {
+        let n1 = Vector6Trait::norm(self);
+        let n2 = Vector6Trait::norm(other);
+        if n1 == R::zero() || n2 == R::zero() {
+            return R::zero();
+        }
+        let u = Vector6Trait::unscale(self, n1);
+        let v = Vector6Trait::unscale(other, n2);
+        let half = Tr::atan2(Vector6Trait::metric_distance(u, v), Vector6Trait::norm(u + v));
+        half + half
+    }
+
+    fn lp_norm(self: Vector6<T>, p: i32) -> T {
+        if p < 1 {
+            core::panic_with_felt252(errors::LP_NORM_P);
+        }
+        if p == 1 {
+            return R::abs(self.x)
+                + R::abs(self.y)
+                + R::abs(self.z)
+                + R::abs(self.w)
+                + R::abs(self.a)
+                + R::abs(self.b);
+        }
+        if p == 2 {
+            return Vector6Trait::norm(self);
+        }
+        let m = Vector6Trait::amax(self);
+        if m == R::zero() {
+            return R::zero();
+        }
+        let r = Vector6Trait::unscale(Vector6Trait::abs(self), m);
+        let q: u32 = p.try_into().unwrap();
+        let s = Powi::powi(r.x, q)
+            + Powi::powi(r.y, q)
+            + Powi::powi(r.z, q)
+            + Powi::powi(r.w, q)
+            + Powi::powi(r.a, q)
+            + Powi::powi(r.b, q);
+        m * Tr::exp(R::div(Tr::ln(s), R::from_int(p)))
+    }
+
+    fn slerp(self: Vector6<T>, rhs: Vector6<T>, t: T) -> Vector6<T> {
+        let me = Vector6Trait::normalize(self);
+        let other = Vector6Trait::normalize(rhs);
+        match slerp_unit(me, other, t, R::default_epsilon()) {
+            Option::Some(v) => v,
+            Option::None => me,
         }
     }
 }
@@ -680,4 +1524,397 @@ pub impl Vector6TrMulMatrix6<
             RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }, rhs,
         )
     }
+}
+
+// --- indexing, comparisons, conversions ----------------------------------------------------------
+
+/// `m.get(i)` / `m.index(..)`: the component `index` in column-major (storage) order. `get` is
+/// `None` out of bounds, `index` panics with `nalgebra: index out of bounds`. Upstream:
+/// `Matrix::get` / `Matrix::index` (their `MatrixIndex` argument).
+pub impl Vector6MatrixIndexLinear<T, +Copy<T>, +Drop<T>> of MatrixIndex<Vector6<T>, usize> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Vector6<T>, index: usize) -> Option<T> {
+        match index {
+            0 => Option::Some(self.x),
+            1 => Option::Some(self.y),
+            2 => Option::Some(self.z),
+            3 => Option::Some(self.w),
+            4 => Option::Some(self.a),
+            5 => Option::Some(self.b),
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Vector6<T>, index: usize) -> T {
+        match index {
+            0 => self.x,
+            1 => self.y,
+            2 => self.z,
+            3 => self.w,
+            4 => self.a,
+            5 => self.b,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[i]`: the component `index` in column-major (storage) order. Panics with `nalgebra: index out
+/// of bounds`. Upstream: `Index<usize>`.
+pub impl Vector6IndexLinear<T, +Copy<T>, +Drop<T>> of IndexView<Vector6<T>, usize> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Vector6<T>, index: usize) -> T {
+        match index {
+            0 => *self.x,
+            1 => *self.y,
+            2 => *self.z,
+            3 => *self.w,
+            4 => *self.a,
+            5 => *self.b,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m.get((i, j))` / `m.index(..)`: the component at `(row, column)`. `get` is `None` out of
+/// bounds, `index` panics with `nalgebra: index out of bounds`. Upstream: `Matrix::get` /
+/// `Matrix::index` (their `MatrixIndex` argument).
+pub impl Vector6MatrixIndexPair<T, +Copy<T>, +Drop<T>> of MatrixIndex<Vector6<T>, (usize, usize)> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Vector6<T>, index: (usize, usize)) -> Option<T> {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => Option::Some(self.x),
+                1 => Option::Some(self.y),
+                2 => Option::Some(self.z),
+                3 => Option::Some(self.w),
+                4 => Option::Some(self.a),
+                5 => Option::Some(self.b),
+                _ => Option::None,
+            },
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Vector6<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => self.x,
+                1 => self.y,
+                2 => self.z,
+                3 => self.w,
+                4 => self.a,
+                5 => self.b,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[(i, j)]`: the component at `(row, column)`. Panics with `nalgebra: index out of bounds`.
+/// Upstream: `Index<(usize, usize)>`.
+pub impl Vector6IndexPair<T, +Copy<T>, +Drop<T>> of IndexView<Vector6<T>, (usize, usize)> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Vector6<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => *self.x,
+                1 => *self.y,
+                2 => *self.z,
+                3 => *self.w,
+                4 => *self.a,
+                5 => *self.b,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The component-wise partial order: `a < b` when EVERY component of `a` is smaller than `b`'s
+/// (likewise `<=`, `>`, `>=`), so two matrices may be unordered (`!(a < b) && !(a >= b)`).
+/// Upstream: `PartialOrd for Matrix`.
+pub impl Vector6PartialOrd<T, +PartialOrd<T>, +Copy<T>, +Drop<T>> of PartialOrd<Vector6<T>> {
+    #[inline(always)]
+    fn lt(lhs: Vector6<T>, rhs: Vector6<T>) -> bool {
+        lhs.x < rhs.x
+            && lhs.y < rhs.y
+            && lhs.z < rhs.z
+            && lhs.w < rhs.w
+            && lhs.a < rhs.a
+            && lhs.b < rhs.b
+    }
+    #[inline(always)]
+    fn le(lhs: Vector6<T>, rhs: Vector6<T>) -> bool {
+        lhs.x <= rhs.x
+            && lhs.y <= rhs.y
+            && lhs.z <= rhs.z
+            && lhs.w <= rhs.w
+            && lhs.a <= rhs.a
+            && lhs.b <= rhs.b
+    }
+    #[inline(always)]
+    fn gt(lhs: Vector6<T>, rhs: Vector6<T>) -> bool {
+        lhs.x > rhs.x
+            && lhs.y > rhs.y
+            && lhs.z > rhs.z
+            && lhs.w > rhs.w
+            && lhs.a > rhs.a
+            && lhs.b > rhs.b
+    }
+    #[inline(always)]
+    fn ge(lhs: Vector6<T>, rhs: Vector6<T>) -> bool {
+        lhs.x >= rhs.x
+            && lhs.y >= rhs.y
+            && lhs.z >= rhs.z
+            && lhs.w >= rhs.w
+            && lhs.a >= rhs.a
+            && lhs.b >= rhs.b
+    }
+}
+
+/// The component-wise bounds: every component `Bounded::<T>::MIN` / `MAX`. Upstream: `num::Bounded
+/// for Matrix`.
+pub impl Vector6Bounded<T, +Bounded<T>, +Drop<T>> of Bounded<Vector6<T>> {
+    const MIN: Vector6<T> = Vector6 {
+        x: Bounded::<T>::MIN,
+        y: Bounded::<T>::MIN,
+        z: Bounded::<T>::MIN,
+        w: Bounded::<T>::MIN,
+        a: Bounded::<T>::MIN,
+        b: Bounded::<T>::MIN,
+    };
+    const MAX: Vector6<T> = Vector6 {
+        x: Bounded::<T>::MAX,
+        y: Bounded::<T>::MAX,
+        z: Bounded::<T>::MAX,
+        w: Bounded::<T>::MAX,
+        a: Bounded::<T>::MAX,
+        b: Bounded::<T>::MAX,
+    };
+}
+
+/// The 6-dimensional column vector of the given COLUMNS (`[[m11, m21, ..], [m12, ..], ..]`).
+/// Upstream: `From<[[T; R]; C]>`.
+pub impl Vector6FromColumnArrays<T, +Drop<T>> of Into<[[T; 6]; 1], Vector6<T>> {
+    #[inline(always)]
+    fn into(self: [[T; 6]; 1]) -> Vector6<T> {
+        let [c0] = self;
+        let [x, y, z, w, a, b] = c0;
+        Vector6 { x, y, z, w, a, b }
+    }
+}
+
+/// The columns of the 6-dimensional column vector as nested arrays (`[[m11, m21, ..], [m12, ..],
+/// ..]`). Upstream: `Into<[[T; R]; C]>`.
+pub impl Vector6IntoColumnArrays<T, +Drop<T>> of Into<Vector6<T>, [[T; 6]; 1]> {
+    #[inline(always)]
+    fn into(self: Vector6<T>) -> [[T; 6]; 1] {
+        let Vector6 { x, y, z, w, a, b } = self;
+        [[x, y, z, w, a, b]]
+    }
+}
+
+/// Methods of `UnitVector6<T>` (`Unit<Vector6<T>>`) specific to the shape.
+#[generate_trait]
+pub impl UnitVector6Impl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of UnitVector6Trait<T> {
+    /// The unit vector with every component converted by `Into<T, U>` (the identity for `Fixed`).
+    /// Upstream: `Unit::cast`.
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Unit<Vector6<T>>) -> Unit<Vector6<U>> {
+        Unit {
+            value: Vector6 {
+                x: self.value.x.into(),
+                y: self.value.y.into(),
+                z: self.value.z.into(),
+                w: self.value.w.into(),
+                a: self.value.a.into(),
+                b: self.value.b.into(),
+            },
+        }
+    }
+
+    /// `relative_eq` of the two vectors (see `Vector6Trait::relative_eq`). Upstream:
+    /// `approx::RelativeEq` for `Unit`.
+    #[inline(always)]
+    fn relative_eq(
+        self: Unit<Vector6<T>>, other: Unit<Vector6<T>>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        Vector6Trait::relative_eq(self.value, other.value, epsilon, max_relative)
+    }
+
+    /// `ulps_eq` of the two vectors (see `Vector6Trait::ulps_eq`). Upstream: `approx::UlpsEq` for
+    /// `Unit`.
+    #[inline(always)]
+    fn ulps_eq(
+        self: Unit<Vector6<T>>, other: Unit<Vector6<T>>, epsilon: u64, max_ulps: u32,
+    ) -> bool {
+        Vector6Trait::ulps_eq(self.value, other.value, epsilon, max_ulps)
+    }
+
+    /// The unit vector along `x`. Upstream: `Unit::<Vector6>::x_axis`.
+    #[inline(always)]
+    fn x_axis() -> Unit<Vector6<T>> {
+        Unit {
+            value: Vector6 {
+                x: R::one(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            },
+        }
+    }
+
+    /// The unit vector along `y`. Upstream: `Unit::<Vector6>::y_axis`.
+    #[inline(always)]
+    fn y_axis() -> Unit<Vector6<T>> {
+        Unit {
+            value: Vector6 {
+                x: R::zero(), y: R::one(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            },
+        }
+    }
+
+    /// The unit vector along `z`. Upstream: `Unit::<Vector6>::z_axis`.
+    #[inline(always)]
+    fn z_axis() -> Unit<Vector6<T>> {
+        Unit {
+            value: Vector6 {
+                x: R::zero(), y: R::zero(), z: R::one(), w: R::zero(), a: R::zero(), b: R::zero(),
+            },
+        }
+    }
+
+    /// The unit vector along `w`. Upstream: `Unit::<Vector6>::w_axis`.
+    #[inline(always)]
+    fn w_axis() -> Unit<Vector6<T>> {
+        Unit {
+            value: Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::one(), a: R::zero(), b: R::zero(),
+            },
+        }
+    }
+
+    /// The unit vector along `a`. Upstream: `Unit::<Vector6>::a_axis`.
+    #[inline(always)]
+    fn a_axis() -> Unit<Vector6<T>> {
+        Unit {
+            value: Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::one(), b: R::zero(),
+            },
+        }
+    }
+
+    /// The unit vector along `b`. Upstream: `Unit::<Vector6>::b_axis`.
+    #[inline(always)]
+    fn b_axis() -> Unit<Vector6<T>> {
+        Unit {
+            value: Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::one(),
+            },
+        }
+    }
+}
+
+/// The interpolations of `UnitVector6<T>`, which need `Transcendental`.
+#[generate_trait]
+pub impl UnitVector6AngleImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of UnitVector6AngleTrait<T> {
+    /// Spherical linear interpolation between two unit vectors along the great arc, with constant
+    /// angular velocity (`t` is not clamped). Returns `self` when the vectors are opposite (the arc
+    /// is not defined), like upstream. Upstream: `Unit::slerp`.
+    fn slerp(self: Unit<Vector6<T>>, rhs: Unit<Vector6<T>>, t: T) -> Unit<Vector6<T>> {
+        match slerp_unit(self.value, rhs.value, t, R::default_epsilon()) {
+            Option::Some(v) => Unit { value: v },
+            Option::None => self,
+        }
+    }
+
+    /// `slerp`, or `None` when `sin` of the angle between the vectors is `<= epsilon` (nearly
+    /// parallel or opposite vectors: the interpolation plane is ill-conditioned; `self` is returned
+    /// as is for exactly equal ones). `epsilon` is in scalar units. Upstream: `Unit::try_slerp`.
+    fn try_slerp(
+        self: Unit<Vector6<T>>, rhs: Unit<Vector6<T>>, t: T, epsilon: T,
+    ) -> Option<Unit<Vector6<T>>> {
+        match slerp_unit(self.value, rhs.value, t, epsilon) {
+            Option::Some(v) => Option::Some(Unit { value: v }),
+            Option::None => Option::None,
+        }
+    }
+}
+
+/// `Unit::try_slerp` on the values of two unit vectors (upstream `interpolation.rs`): `None` when
+/// `sin(angle) <= epsilon`, `a` when `cos(angle) >= 1`; each component of the result is ONE
+/// `sum_prod2` of the weights `sin((1 - t) θ) / sin θ` and `sin(t θ) / sin θ`.
+fn slerp_unit<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+>(
+    a: Vector6<T>, b: Vector6<T>, t: T, epsilon: T,
+) -> Option<Vector6<T>> {
+    let c = {
+        let w = R::wide_add_prod(R::wide_zero(), a.x, b.x);
+        let w = R::wide_add_prod(w, a.y, b.y);
+        let w = R::wide_add_prod(w, a.z, b.z);
+        let w = R::wide_add_prod(w, a.w, b.w);
+        let w = R::wide_add_prod(w, a.a, b.a);
+        R::wide_rescale(R::wide_add_prod(w, a.b, b.b))
+    };
+    if c >= R::one() {
+        return Option::Some(a);
+    }
+    let hang = Tr::acos(c);
+    let shang = R::sqrt(R::diff_prod(R::one(), R::one(), c, c));
+    if shang <= epsilon {
+        return Option::None;
+    }
+    let ta = R::div(Tr::sin((R::one() - t) * hang), shang);
+    let tb = R::div(Tr::sin(t * hang), shang);
+    Option::Some(
+        Vector6 {
+            x: R::sum_prod2(a.x, ta, b.x, tb),
+            y: R::sum_prod2(a.y, ta, b.y, tb),
+            z: R::sum_prod2(a.z, ta, b.z, tb),
+            w: R::sum_prod2(a.w, ta, b.w, tb),
+            a: R::sum_prod2(a.a, ta, b.a, tb),
+            b: R::sum_prod2(a.b, ta, b.b, tb),
+        },
+    )
 }
