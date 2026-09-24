@@ -28,21 +28,58 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
+use core::num::traits::One;
 use simba::scalar::{Real, Transcendental};
-use crate::base::matrix3::Matrix3;
+use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::unit::{Unit, UnitTrait};
 use crate::base::vector3::{Vector3, Vector3Trait};
-use super::quaternion::{Quaternion, QuaternionInternalTrait, QuaternionTrait};
+use super::isometry3::Isometry3;
+use super::quaternion::{
+    Quaternion, QuaternionInternalTrait, QuaternionTrait, QuaternionTranscendentalTrait,
+};
 use super::rotation3::{Rotation3, Rotation3Trait};
+use super::similarity3::Similarity3;
+use super::translation3::Translation3;
 
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
+mod ext_benches;
+#[cfg(test)]
+mod ext_oracle;
+#[cfg(test)]
+mod ext_tests;
+#[cfg(test)]
 mod oracle;
 #[cfg(test)]
 mod tests;
+
+/// Panic messages of `UnitQuaternion` (stable API).
+pub mod errors {
+    /// `mean_of` of an empty span (upstream asserts that the sum of the outer products is not
+    /// zero).
+    pub const EMPTY_MEAN: felt252 = 'nalgebra: mean of nothing';
+}
+
+/// Upper bound of the iterations of `from_matrix_eps` (whatever `max_iter`, and when `max_iter`
+/// is 0, which upstream reads as "until convergence"). Measured on the oracle set
+/// (`test_from_matrix_eps_iterations_on_the_oracle_set`): from the identity, every case reaches
+/// its fixed point in at most 9 iterations; the bound leaves room for adversarial inputs while
+/// keeping the worst case finite (about 100 000 gas per iteration).
+pub const FROM_MATRIX_MAX_ITER: usize = 16;
+
+/// Upper bound of the successive perturbations `from_matrix_eps` tries at a stationary point
+/// before accepting it as the maximum (upstream loops until the distance changes by more than
+/// one ulp).
+pub const FROM_MATRIX_MAX_PERTURBATIONS: usize = 4;
+
+/// Number of normalised squarings `S ← S² / tr(S²)` of the `mean_of` matrix: the dominant
+/// eigenvector is extracted from `S^(2^k)`, whose other eigenvalues have shrunk by
+/// `(λ₂ / λ₁)^(2^k)`. Measured on the oracle set
+/// (`test_mean_of_squarings_on_the_oracle_set`).
+pub const MEAN_OF_SQUARINGS: usize = 12;
 
 /// A 3D rotation: a quaternion of unit norm. Nothing enforces the invariant: build it with
 /// `new_normalize` / `try_new` / `from_axis_angle` / ..., or with `new_unchecked` when the
@@ -457,26 +494,32 @@ pub impl UnitQuaternionImpl<
     /// half turn about the rounded cross product. Upstream: `UnitQuaternion::rotation_between`.
     fn rotation_between(a: Vector3<T>, b: Vector3<T>) -> Option<UnitQuaternion<T>> {
         match (a.try_normalize(R::zero()), b.try_normalize(R::zero())) {
-            (
-                Some(u), Some(v),
-            ) => {
-                let c = u.cross(v);
-                if c.is_zero() {
-                    if R::is_sign_negative(Vector3Trait::dot(u, v)) {
-                        // A half turn about an undefined axis: not a simple rotation.
-                        None
-                    } else {
-                        Some(Self::identity())
-                    }
-                } else {
-                    let q = Quaternion {
-                        i: c.x, j: c.y, k: c.z, w: R::one() + Vector3Trait::dot(u, v),
-                    };
-                    Some(Self::new_normalize(q))
-                }
-            },
+            (Some(u), Some(v)) => Self::rotation_between_axis(Unit { value: u }, Unit { value: v }),
             // A zero-length input has no direction: upstream returns the identity.
             _ => Some(Self::identity()),
+        }
+    }
+
+    /// `rotation_between` of two UNIT vectors (no normalisation): the same trigonometry-free
+    /// kernel, `(1 + a·b, a × b)` normalised, and `None` when `a × b` floors to zero with
+    /// `a · b < 0` (exactly antiparallel). Upstream computes `scaled_rotation_between_axis(a, b,
+    /// 1)` through `acos` and `from_axis_angle`; the two agree to the oracle tolerance. Upstream:
+    /// `UnitQuaternion::rotation_between_axis`.
+    fn rotation_between_axis(
+        a: Unit<Vector3<T>>, b: Unit<Vector3<T>>,
+    ) -> Option<UnitQuaternion<T>> {
+        let (u, v) = (a.value, b.value);
+        let c = u.cross(v);
+        if c.is_zero() {
+            if R::is_sign_negative(Vector3Trait::dot(u, v)) {
+                // A half turn about an undefined axis: not a simple rotation.
+                None
+            } else {
+                Some(Self::identity())
+            }
+        } else {
+            let q = Quaternion { i: c.x, j: c.y, k: c.z, w: R::one() + Vector3Trait::dot(u, v) };
+            Some(Self::new_normalize(q))
         }
     }
 
@@ -521,6 +564,219 @@ pub impl UnitQuaternionImpl<
         let nk = R::wide_add_prod(R::wide_add(R::wide_zero(), k), c, w);
         let nk = R::wide_rescale(R::wide_sub_prod(R::wide_add_prod(nk, a, j), b, i));
         Self::new_normalize(Quaternion { i: ni, j: nj, k: nk, w: nw })
+    }
+
+    // --- P08 completion: construction and conversions ------------------------------------------
+
+    /// Alias of `new_normalize`. Upstream: `UnitQuaternion::from_quaternion`.
+    #[inline(always)]
+    fn from_quaternion(q: Quaternion<T>) -> UnitQuaternion<T> {
+        UnitQuaternion { quaternion: q.normalize() }
+    }
+
+    /// The rotation whose matrix has the columns `basis[0]`, `basis[1]`, `basis[2]`, WITHOUT
+    /// checking that they are orthonormal: `from_rotation_matrix` of that matrix (Shepperd's
+    /// method). Upstream: `UnitQuaternion::from_basis_unchecked`.
+    fn from_basis_unchecked(basis: [Vector3<T>; 3]) -> UnitQuaternion<T> {
+        let [x, y, z] = basis;
+        Self::from_rotation_matrix(Rotation3 { matrix: Matrix3Trait::from_columns(x, y, z) })
+    }
+
+    /// The same rotation with every component converted by `Into<T, U>` (the identity for the
+    /// single scalar `Fixed`). Upstream: `cast` (and `SubsetOf<UnitQuaternion<U>>`).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: UnitQuaternion<T>) -> UnitQuaternion<U> {
+        UnitQuaternion { quaternion: self.quaternion.cast() }
+    }
+
+    /// `self.quaternion.lerp(other.quaternion, t)`: the plain linear interpolation of the two
+    /// quaternions, NOT a unit quaternion (see `nlerp`). Upstream: `UnitQuaternion::lerp`.
+    #[inline(always)]
+    fn lerp(self: UnitQuaternion<T>, other: UnitQuaternion<T>, t: T) -> Quaternion<T> {
+        self.quaternion.lerp(other.quaternion, t)
+    }
+
+    /// `relative_eq` of the quaternions (component-wise, tolerances in ulp; `q` and `-q` are not
+    /// equal for it). Upstream: `approx::RelativeEq::relative_eq`.
+    #[inline(always)]
+    fn relative_eq(
+        self: UnitQuaternion<T>, other: UnitQuaternion<T>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        self.quaternion.relative_eq(other.quaternion, epsilon, max_relative)
+    }
+
+    /// `ulps_eq` of the quaternions (component-wise, tolerances in ulp). Upstream:
+    /// `approx::UlpsEq::ulps_eq`.
+    #[inline(always)]
+    fn ulps_eq(
+        self: UnitQuaternion<T>, other: UnitQuaternion<T>, epsilon: u64, max_ulps: u32,
+    ) -> bool {
+        self.quaternion.ulps_eq(other.quaternion, epsilon, max_ulps)
+    }
+
+    // --- P08 completion: observer frames -------------------------------------------------------
+
+    /// The rotation mapping the `z` axis to the direction of `dir`, with the `y` axis as close as
+    /// possible to `up`: `from_rotation_matrix(Rotation3::face_towards(dir, up))`, like upstream.
+    /// `up` MUST not be parallel to `dir` (`Fixed: division by zero`). Upstream:
+    /// `UnitQuaternion::face_towards`.
+    #[inline(always)]
+    fn face_towards(dir: Vector3<T>, up: Vector3<T>) -> UnitQuaternion<T> {
+        Self::from_rotation_matrix(Rotation3Trait::face_towards(dir, up))
+    }
+
+    /// Deprecated alias of `face_towards`. Upstream: `UnitQuaternion::new_observer_frames`.
+    #[inline(always)]
+    fn new_observer_frames(dir: Vector3<T>, up: Vector3<T>) -> UnitQuaternion<T> {
+        Self::face_towards(dir, up)
+    }
+
+    /// The right-handed look-at rotation, `face_towards(-dir, up).inverse()`: `dir` is mapped to
+    /// the NEGATIVE `z` axis. Upstream: `UnitQuaternion::look_at_rh`.
+    #[inline(always)]
+    fn look_at_rh(dir: Vector3<T>, up: Vector3<T>) -> UnitQuaternion<T> {
+        let neg = Vector3 { x: -dir.x, y: -dir.y, z: -dir.z };
+        Self::face_towards(neg, up).conjugate()
+    }
+
+    /// The left-handed look-at rotation, `face_towards(dir, up).inverse()`: `dir` is mapped to the
+    /// POSITIVE `z` axis. Upstream: `UnitQuaternion::look_at_lh`.
+    #[inline(always)]
+    fn look_at_lh(dir: Vector3<T>, up: Vector3<T>) -> UnitQuaternion<T> {
+        Self::face_towards(dir, up).conjugate()
+    }
+
+    // --- P08 completion: unit vectors ----------------------------------------------------------
+
+    /// `self * v` for a unit vector: `transform_vector` of its value, re-wrapped WITHOUT
+    /// renormalising (a rotation preserves the norm, up to the rounding of the three components).
+    /// Upstream: `Mul<Unit<Vector3>>` (`q * v`).
+    #[inline(always)]
+    fn transform_unit_vector(self: UnitQuaternion<T>, v: Unit<Vector3<T>>) -> Unit<Vector3<T>> {
+        Unit { value: Self::transform_vector(self, v.value) }
+    }
+
+    /// `self⁻¹ * v` for a unit vector: `inverse_transform_vector` of its value, not
+    /// renormalised. Upstream: `inverse_transform_unit_vector`.
+    #[inline(always)]
+    fn inverse_transform_unit_vector(
+        self: UnitQuaternion<T>, v: Unit<Vector3<T>>,
+    ) -> Unit<Vector3<T>> {
+        Unit { value: Self::inverse_transform_vector(self, v.value) }
+    }
+
+    // --- P08 completion: heterogeneous operators (Cairo's operator traits are homogeneous) -----
+
+    /// `self * r` with a rotation matrix: `self * from_rotation_matrix(r)`, a unit quaternion.
+    /// Upstream: `Mul<Rotation3> for UnitQuaternion` (`q * r`).
+    #[inline(always)]
+    fn mul_rotation(self: UnitQuaternion<T>, r: Rotation3<T>) -> UnitQuaternion<T> {
+        UnitQuaternion { quaternion: self.quaternion * Self::from_rotation_matrix(r).quaternion }
+    }
+
+    /// `self / r = self * r⁻¹` with a rotation matrix: `from_rotation_matrix(r)`, then the fused
+    /// product by its conjugate. Upstream: `Div<Rotation3> for UnitQuaternion` (`q / r`).
+    #[inline(always)]
+    fn div_rotation(self: UnitQuaternion<T>, r: Rotation3<T>) -> UnitQuaternion<T> {
+        UnitQuaternion {
+            quaternion: self.quaternion.mul_conj(Self::from_rotation_matrix(r).quaternion),
+        }
+    }
+
+    /// `self * t`: the isometry that translates by `t` then rotates, i.e. rotation `self` and
+    /// translation `self · t` (one `transform_vector`). Upstream: `Mul<Translation3> for
+    /// UnitQuaternion` (`q * t`, an `Isometry3`).
+    #[inline(always)]
+    fn mul_translation(self: UnitQuaternion<T>, t: Translation3<T>) -> Isometry3<T> {
+        Isometry3 {
+            rotation: self,
+            translation: Translation3 { vector: Self::transform_vector(self, t.vector) },
+        }
+    }
+
+    /// `self * iso`: rotation `self * iso.rotation`, translation `self · iso.translation` (one
+    /// Hamilton product, one `transform_vector`). Upstream: `Mul<Isometry3> for UnitQuaternion`.
+    #[inline(always)]
+    fn mul_isometry(self: UnitQuaternion<T>, iso: Isometry3<T>) -> Isometry3<T> {
+        Isometry3 {
+            rotation: UnitQuaternion { quaternion: self.quaternion * iso.rotation.quaternion },
+            translation: Translation3 {
+                vector: Self::transform_vector(self, iso.translation.vector),
+            },
+        }
+    }
+
+    /// `self / iso = self * iso⁻¹`, WITHOUT forming the inverse isometry: with `q = self *
+    /// iso.rotation⁻¹` (one fused product with the conjugate), the rotation is `q` and the
+    /// translation `q · (-iso.translation)` — one vector rotation where upstream's `self *
+    /// iso.inverse()` rotates twice (`bench_unit_quaternion_div_isometry__alt_inverse_then_mul`,
+    /// agreeing to a few ulp: `test_div_isometry_alt_inverse_then_mul_agrees`). Panics on
+    /// overflow (`-MIN` of a translation component). Upstream: `Div<Isometry3> for
+    /// UnitQuaternion`.
+    fn div_isometry(self: UnitQuaternion<T>, iso: Isometry3<T>) -> Isometry3<T> {
+        let q = UnitQuaternion { quaternion: self.quaternion.mul_conj(iso.rotation.quaternion) };
+        let t = iso.translation.vector;
+        Isometry3 {
+            rotation: q,
+            translation: Translation3 {
+                vector: Self::transform_vector(q, Vector3 { x: -t.x, y: -t.y, z: -t.z }),
+            },
+        }
+    }
+
+    /// `self * sim`: the isometry part composed like `mul_isometry`, the scaling unchanged.
+    /// Upstream: `Mul<Similarity3> for UnitQuaternion`.
+    #[inline(always)]
+    fn mul_similarity(self: UnitQuaternion<T>, sim: Similarity3<T>) -> Similarity3<T> {
+        Similarity3 { isometry: Self::mul_isometry(self, sim.isometry), scaling: sim.scaling }
+    }
+
+    /// `self / sim = self * sim⁻¹`, without forming the inverse: with `q = self *
+    /// sim.rotation⁻¹`, the translation is `q · (-sim.translation) / sim.scaling` (one
+    /// rotation, three correctly rounded divisions) and the scaling `1 / sim.scaling` (correctly
+    /// rounded, as in `Similarity3::inverse`). Panics with `Fixed: division by zero` on a zero
+    /// scaling.
+    /// Upstream: `Div<Similarity3> for UnitQuaternion`.
+    fn div_similarity(self: UnitQuaternion<T>, sim: Similarity3<T>) -> Similarity3<T> {
+        let iso = Self::div_isometry(self, sim.isometry);
+        let v = iso.translation.vector;
+        let (x, y, z) = R::div3(v.x, v.y, v.z, sim.scaling);
+        Similarity3 {
+            isometry: Isometry3 {
+                rotation: iso.rotation, translation: Translation3 { vector: Vector3 { x, y, z } },
+            },
+            scaling: R::div(R::one(), sim.scaling),
+        }
+    }
+
+    // --- P08 completion: mean ------------------------------------------------------------------
+
+    /// The mean rotation of a set of unit quaternions: the unit eigenvector of the largest
+    /// eigenvalue of `M = Σ q qᵀ` (Oshman & Carmi 2006), which ignores the signs of the inputs
+    /// (`q` and `-q` weigh the same).
+    ///
+    /// `M` is accumulated exactly (ten wide sums, a loop over the span: the input is dynamic) and
+    /// scaled by `1 / n` (its trace is `n` for unit inputs), then its dominant eigenvector is
+    /// extracted by `MEAN_OF_SQUARINGS` normalised squarings `S ← S² / tr(S²)` — a fixed
+    /// number of unrolled steps (40 + 16 products, one reciprocal each), after which `S` is the
+    /// rank-one projector `v vᵀ` to within `(λ₂ / λ₁)^4096` — and its column of largest
+    /// diagonal is normalised. Upstream runs a symmetric eigendecomposition (at most 10 QR sweeps);
+    /// there is no 4x4 eigensolver here, and the dominant eigenvector is all the mean needs.
+    ///
+    /// **Deviation:** upstream builds its result with `Quaternion::new(v[0], v[1], v[2], v[3])`
+    /// from an eigenvector stored in `(i, j, k, w)` order, which permutes the components (its mean
+    /// of identities is the half turn about `z`); the mean here is the eigenvector itself. The
+    /// oracle compares with upstream's result un-permuted. The sign of the result is the one that
+    /// makes its largest component positive. When the two largest eigenvalues are equal the mean
+    /// is not unique (upstream picks one as well). Panics with `nalgebra: mean of nothing` on an
+    /// empty span. Upstream: `UnitQuaternion::mean_of`.
+    fn mean_of(unit_quaternions: Span<UnitQuaternion<T>>) -> UnitQuaternion<T> {
+        let n = unit_quaternions.len();
+        if n == 0 {
+            core::panic_with_felt252(errors::EMPTY_MEAN);
+        }
+        let s = UnitQuaternionInternalTrait::<T>::outer_sum(unit_quaternions, n);
+        let s = UnitQuaternionInternalTrait::<T>::dominant_projector(s);
+        UnitQuaternionInternalTrait::<T>::dominant_column(s)
     }
 }
 
@@ -567,6 +823,122 @@ pub(crate) impl UnitQuaternionInternalImpl<
     fn conj_mul(self: UnitQuaternion<T>, other: UnitQuaternion<T>) -> UnitQuaternion<T> {
         UnitQuaternion { quaternion: self.quaternion.conj_mul(other.quaternion) }
     }
+
+    /// `Σ q qᵀ / n` over the span, in `(w, i, j, k)` order: ten exact wide sums (one loop over
+    /// the dynamic input), each scaled by the rounded `1 / n` with ONE rounding
+    /// (`Real::wide_mul_scalar`). `n` must be the length of the span, at least 1.
+    fn outer_sum(unit_quaternions: Span<UnitQuaternion<T>>, n: usize) -> Sym4<T> {
+        let mut span = unit_quaternions;
+        let (mut ww, mut wi, mut wj, mut wk) = (
+            R::wide_zero(), R::wide_zero(), R::wide_zero(), R::wide_zero(),
+        );
+        let (mut ii, mut ij, mut ik) = (R::wide_zero(), R::wide_zero(), R::wide_zero());
+        let (mut jj, mut jk, mut kk) = (R::wide_zero(), R::wide_zero(), R::wide_zero());
+        while let Some(q) = span.pop_front() {
+            let Quaternion { i, j, k, w } = (*q).quaternion;
+            ww = R::wide_add_prod(ww, w, w);
+            wi = R::wide_add_prod(wi, w, i);
+            wj = R::wide_add_prod(wj, w, j);
+            wk = R::wide_add_prod(wk, w, k);
+            ii = R::wide_add_prod(ii, i, i);
+            ij = R::wide_add_prod(ij, i, j);
+            ik = R::wide_add_prod(ik, i, k);
+            jj = R::wide_add_prod(jj, j, j);
+            jk = R::wide_add_prod(jk, j, k);
+            kk = R::wide_add_prod(kk, k, k);
+        }
+        let r = R::from_ratio(1, n.into());
+        Sym4 {
+            ww: R::wide_mul_scalar(ww, r),
+            wi: R::wide_mul_scalar(wi, r),
+            wj: R::wide_mul_scalar(wj, r),
+            wk: R::wide_mul_scalar(wk, r),
+            ii: R::wide_mul_scalar(ii, r),
+            ij: R::wide_mul_scalar(ij, r),
+            ik: R::wide_mul_scalar(ik, r),
+            jj: R::wide_mul_scalar(jj, r),
+            jk: R::wide_mul_scalar(jk, r),
+            kk: R::wide_mul_scalar(kk, r),
+        }
+    }
+
+    /// One normalised squaring `S² / tr(S²)` of a symmetric positive semi-definite matrix of
+    /// trace 1: `tr(S²) = ‖S‖²_F` (16 products, one wide sum) is inverted once (it is in
+    /// `[1/4, 1]`, so its reciprocal is in `[1, 4]`), then every entry of `S²` is one wide sum of
+    /// four products scaled by that reciprocal with ONE rounding. The result has trace 1 again
+    /// (to rounding). Out of line: `mean_of` calls it `MEAN_OF_SQUARINGS` times.
+    fn normalized_square(s: Sym4<T>) -> Sym4<T> {
+        let Sym4 { ww, wi, wj, wk, ii, ij, ik, jj, jk, kk } = s;
+        let t = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), ww, ww), ii, ii);
+        let t = R::wide_add_prod(R::wide_add_prod(t, jj, jj), kk, kk);
+        let t = R::wide_add_prod(R::wide_add_prod(t, wi, wi), wi, wi);
+        let t = R::wide_add_prod(R::wide_add_prod(t, wj, wj), wj, wj);
+        let t = R::wide_add_prod(R::wide_add_prod(t, wk, wk), wk, wk);
+        let t = R::wide_add_prod(R::wide_add_prod(t, ij, ij), ij, ij);
+        let t = R::wide_add_prod(R::wide_add_prod(t, ik, ik), ik, ik);
+        let t = R::wide_add_prod(R::wide_add_prod(t, jk, jk), jk, jk);
+        let r = R::recip(R::wide_rescale(t));
+        Sym4 {
+            ww: Self::row_col(ww, ww, wi, wi, wj, wj, wk, wk, r),
+            wi: Self::row_col(ww, wi, wi, ii, wj, ij, wk, ik, r),
+            wj: Self::row_col(ww, wj, wi, ij, wj, jj, wk, jk, r),
+            wk: Self::row_col(ww, wk, wi, ik, wj, jk, wk, kk, r),
+            ii: Self::row_col(wi, wi, ii, ii, ij, ij, ik, ik, r),
+            ij: Self::row_col(wi, wj, ii, ij, ij, jj, ik, jk, r),
+            ik: Self::row_col(wi, wk, ii, ik, ij, jk, ik, kk, r),
+            jj: Self::row_col(wj, wj, ij, ij, jj, jj, jk, jk, r),
+            jk: Self::row_col(wj, wk, ij, ik, jj, jk, jk, kk, r),
+            kk: Self::row_col(wk, wk, ik, ik, jk, jk, kk, kk, r),
+        }
+    }
+
+    /// `(a0·b0 + a1·b1 + a2·b2 + a3·b3) · r`, the exact sum scaled with ONE rounding.
+    #[inline(always)]
+    fn row_col(a0: T, b0: T, a1: T, b1: T, a2: T, b2: T, a3: T, b3: T, r: T) -> T {
+        let acc = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a0, b0), a1, b1);
+        R::wide_mul_scalar(R::wide_add_prod(R::wide_add_prod(acc, a2, b2), a3, b3), r)
+    }
+
+    /// `MEAN_OF_SQUARINGS` (12) normalised squarings, unrolled: `S^4096` normalised, the
+    /// projector on the dominant eigenvector to within `(λ₂ / λ₁)^4096`.
+    fn dominant_projector(s: Sym4<T>) -> Sym4<T> {
+        let s = Self::normalized_square(Self::normalized_square(Self::normalized_square(s)));
+        let s = Self::normalized_square(Self::normalized_square(Self::normalized_square(s)));
+        let s = Self::normalized_square(Self::normalized_square(Self::normalized_square(s)));
+        Self::normalized_square(Self::normalized_square(Self::normalized_square(s)))
+    }
+
+    /// The normalised column of largest diagonal entry of a rank-one projector `v vᵀ`: `±v`, the
+    /// sign making its largest component positive.
+    fn dominant_column(s: Sym4<T>) -> UnitQuaternion<T> {
+        let Sym4 { ww, wi, wj, wk, ii, ij, ik, jj, jk, kk } = s;
+        let q = if ww >= ii && ww >= jj && ww >= kk {
+            Quaternion { i: wi, j: wj, k: wk, w: ww }
+        } else if ii >= jj && ii >= kk {
+            Quaternion { i: ii, j: ij, k: ik, w: wi }
+        } else if jj >= kk {
+            Quaternion { i: ij, j: jj, k: jk, w: wj }
+        } else {
+            Quaternion { i: ik, j: jk, k: kk, w: wk }
+        };
+        UnitQuaternion { quaternion: q.normalize() }
+    }
+}
+
+/// A symmetric 4x4 matrix in `(w, i, j, k)` order, upper triangle: the working type of
+/// `UnitQuaternion::mean_of`. Crate-internal.
+#[derive(Copy, Drop, PartialEq, Debug)]
+pub(crate) struct Sym4<T> {
+    pub ww: T,
+    pub wi: T,
+    pub wj: T,
+    pub wk: T,
+    pub ii: T,
+    pub ij: T,
+    pub ik: T,
+    pub jj: T,
+    pub jk: T,
+    pub kk: T,
 }
 
 /// Rotation operations of `UnitQuaternion<T>` that need trigonometry, hence their own trait:
@@ -857,20 +1229,241 @@ pub impl UnitQuaternionAngleImpl<
         match (a.try_normalize(R::zero()), b.try_normalize(R::zero())) {
             (
                 Some(u), Some(v),
-            ) => {
-                let c = u.cross(v);
-                let d = R::clamp(Vector3Trait::dot(u, v), R::NEG_ONE, R::one());
-                match UnitTrait::try_new(c, R::zero()) {
-                    Some(axis) => Some(Self::from_axis_angle(axis, Tr::acos(d) * s)),
-                    None => if R::is_sign_negative(d) {
-                        None
-                    } else {
-                        Some(UnitQuaternionTrait::identity())
-                    },
-                }
-            },
+            ) => Self::scaled_rotation_between_axis(Unit { value: u }, Unit { value: v }, s),
             _ => Some(UnitQuaternionTrait::identity()),
         }
+    }
+
+    /// `scaled_rotation_between` of two UNIT vectors (no normalisation): `from_axis_angle(a × b
+    /// normalised, acos(a · b) · s)`, the dot product clamped to `[-1, 1]`; `None` when `a × b`
+    /// floors to zero with `a · b < 0`, the identity when it floors to zero with `a · b >= 0`.
+    /// Upstream: `UnitQuaternion::scaled_rotation_between_axis` (which tests `|a × b|` against
+    /// `default_epsilon`, here 1 ulp: the same as the exact-zero test once the norm floors).
+    fn scaled_rotation_between_axis(
+        a: Unit<Vector3<T>>, b: Unit<Vector3<T>>, s: T,
+    ) -> Option<UnitQuaternion<T>> {
+        let (u, v) = (a.value, b.value);
+        let c = u.cross(v);
+        let d = R::clamp(Vector3Trait::dot(u, v), R::NEG_ONE, R::one());
+        match UnitTrait::try_new(c, R::zero()) {
+            Some(axis) => Some(Self::from_axis_angle(axis, Tr::acos(d) * s)),
+            None => if R::is_sign_negative(d) {
+                None
+            } else {
+                Some(UnitQuaternionTrait::identity())
+            },
+        }
+    }
+
+    // --- P08 completion ------------------------------------------------------------------------
+
+    /// Alias of `from_scaled_axis` (bit-identical): the rotation of the rotation vector
+    /// `axisangle`. Upstream's `new` is `exp` of `(0, axisangle / 2)` with the threshold
+    /// `|axisangle / 2| <= default_epsilon` (1 ulp here) below which it returns the identity;
+    /// `from_scaled_axis` tests exact zero instead, and at `|axisangle / 2| = 1` ulp both give the
+    /// identity to within 1 ulp. Upstream: `UnitQuaternion::new`.
+    #[inline(always)]
+    fn new(axisangle: Vector3<T>) -> UnitQuaternion<T> {
+        Self::from_scaled_axis(axisangle)
+    }
+
+    /// `from_scaled_axis` with a threshold: the identity when `|axisangle / 2| <= eps` (upstream's
+    /// `exp_eps` of the pure quaternion `(0, axisangle / 2)`; with `eps = 0` this is
+    /// `from_scaled_axis` bit for bit). Upstream: `UnitQuaternion::new_eps`.
+    fn new_eps(axisangle: Vector3<T>, eps: T) -> UnitQuaternion<T> {
+        let h = Vector3 {
+            x: axisangle.x * R::HALF, y: axisangle.y * R::HALF, z: axisangle.z * R::HALF,
+        };
+        let n = R::norm3(h.x, h.y, h.z);
+        if n <= eps {
+            return UnitQuaternionTrait::identity();
+        }
+        let (s, c) = Tr::sin_cos(n);
+        let f = R::div(s, n);
+        UnitQuaternion { quaternion: Quaternion { i: h.x * f, j: h.y * f, k: h.z * f, w: c } }
+    }
+
+    /// Alias of `new_eps`. Upstream: `UnitQuaternion::from_scaled_axis_eps`.
+    #[inline(always)]
+    fn from_scaled_axis_eps(axisangle: Vector3<T>, eps: T) -> UnitQuaternion<T> {
+        Self::new_eps(axisangle, eps)
+    }
+
+    /// `exp` of the underlying quaternion (a general quaternion, not a rotation: for a unit
+    /// quaternion of real part `w`, `e^w · (cos|v|, v̂ sin|v|)`). Upstream:
+    /// `UnitQuaternion::exp`.
+    #[inline(always)]
+    fn exp(self: UnitQuaternion<T>) -> Quaternion<T> {
+        self.quaternion.exp()
+    }
+
+    /// The pure quaternion `(0, scaled_axis())`, i.e. `(0, axis · angle)` with the FULL angle,
+    /// like upstream (the logarithm of the quaternion itself would be `(0, axis · angle / 2)`:
+    /// upstream's `UnitQuaternion::ln` is `from_imag(axis * angle)`), and zero for the identity.
+    /// Upstream:
+    /// `UnitQuaternion::ln`.
+    #[inline(always)]
+    fn ln(self: UnitQuaternion<T>) -> Quaternion<T> {
+        QuaternionTrait::from_imag(Self::scaled_axis(self))
+    }
+
+    /// Deprecated alias of `euler_angles`. Upstream: `UnitQuaternion::to_euler_angles`.
+    #[inline(always)]
+    fn to_euler_angles(self: UnitQuaternion<T>) -> (T, T, T) {
+        Self::euler_angles(self)
+    }
+
+    /// `from_matrix_eps(m, default_epsilon, 0, identity)`: the rotation closest to `m`. See
+    /// `from_matrix_eps`. Upstream: `UnitQuaternion::from_matrix`.
+    #[inline(always)]
+    fn from_matrix(m: Matrix3<T>) -> UnitQuaternion<T> {
+        Self::from_matrix_eps(m, R::default_epsilon(), 0, UnitQuaternionTrait::identity())
+    }
+
+    /// The rotation part of the matrix `m` (the rotation `R` maximising `tr(Rᵀ m)`, i.e. closest
+    /// to `m` in Frobenius norm), by Müller et al.'s iteration ("A Robust Method to Extract the
+    /// Rotational Part of Deformations", upstream's algorithm) started from `guess`:
+    /// `ω = Σ_c r_c × m_c / (|Σ_c r_c · m_c| + ε)` over the columns, then `R ← exp(ω) ·
+    /// R`, until `|ω| <= eps`; at that stationary point `R` is perturbed by `max(sqrt(eps),
+    /// eps²)` radians about a cycling axis to escape a maximum of the distance, like upstream.
+    ///
+    /// The rotation is carried as a unit quaternion (4 parameters, renormalised once at the
+    /// end): each iteration is one `to_rotation_matrix`, two fused kernels per component of `ω`
+    /// and its denominator (18 + 9 products, one rounding each), one `norm3`, one `sin_cos`, four
+    /// divisions and one Hamilton product, about 100 000 gas. Carrying the matrix instead, like
+    /// upstream, costs a 3x3 product and an axis-angle matrix per iteration and drifts from
+    /// orthonormality (`bench_unit_quaternion_from_matrix__alt_rotation3`).
+    ///
+    /// **Bounded:** at most `FROM_MATRIX_MAX_ITER` (16) iterations, also when `max_iter` is 0 or
+    /// larger (upstream loops without bound for 0), and at most `FROM_MATRIX_MAX_PERTURBATIONS`
+    /// (4) successive perturbations per stationary point. `eps` is in scalar units (1 ulp =
+    /// `default_epsilon`). The distance test squares the entries of `m - R`: panics on overflow
+    /// for entries of `m` above about 15 000. Upstream: `UnitQuaternion::from_matrix_eps`.
+    fn from_matrix_eps(
+        m: Matrix3<T>, eps: T, max_iter: usize, guess: UnitQuaternion<T>,
+    ) -> UnitQuaternion<T> {
+        let (q, _) = UnitQuaternionAngleInternalTrait::from_matrix_eps_count(
+            m, eps, max_iter, guess,
+        );
+        q
+    }
+}
+
+/// Crate-internal kernels of `UnitQuaternionAngleTrait::from_matrix_eps`.
+#[generate_trait]
+pub(crate) impl UnitQuaternionAngleInternalImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of UnitQuaternionAngleInternalTrait<T> {
+    /// `from_matrix_eps` and the number of iterations it ran (for the convergence tests).
+    fn from_matrix_eps_count(
+        m: Matrix3<T>, eps: T, max_iter: usize, guess: UnitQuaternion<T>,
+    ) -> (UnitQuaternion<T>, usize) {
+        let cap = if max_iter == 0 || max_iter > FROM_MATRIX_MAX_ITER {
+            FROM_MATRIX_MAX_ITER
+        } else {
+            max_iter
+        };
+        let eps_dist = R::max(R::sqrt(eps), eps * eps);
+        let mut q = guess.quaternion;
+        // Perturbation axis: x, then z, then y (upstream's `yzx` swizzle of the x axis, cycled).
+        let mut axis: u8 = 0;
+        let mut iter: usize = 0;
+        while iter < cap {
+            iter += 1;
+            let r = UnitQuaternionTrait::to_rotation_matrix(UnitQuaternion { quaternion: q })
+                .matrix;
+            let (x, y, z) = Self::muller_axis(r, m);
+            let n = R::norm3(x, y, z);
+            if n > eps {
+                let (s, c) = Tr::sin_cos(n * R::HALF);
+                let f = R::div(s, n);
+                q = Quaternion { i: x * f, j: y * f, k: z * f, w: c } * q;
+                continue;
+            }
+            // A stationary point: perturb to tell a maximum of `tr(Rᵀ m)` from a saddle.
+            let d0 = Self::distance_squared(m, r);
+            let (ps, pc) = Tr::sin_cos(eps_dist * R::HALF);
+            let e = if axis == 0 {
+                Quaternion { i: ps, j: R::zero(), k: R::zero(), w: pc }
+            } else if axis == 1 {
+                Quaternion { i: R::zero(), j: R::zero(), k: ps, w: pc }
+            } else {
+                Quaternion { i: R::zero(), j: ps, k: R::zero(), w: pc }
+            };
+            let mut p = q;
+            let mut d1 = d0;
+            let mut moved = false;
+            let mut tries: usize = 0;
+            while tries < FROM_MATRIX_MAX_PERTURBATIONS {
+                tries += 1;
+                p = p * e;
+                d1 =
+                    Self::distance_squared(
+                        m,
+                        UnitQuaternionTrait::to_rotation_matrix(UnitQuaternion { quaternion: p })
+                            .matrix,
+                    );
+                if !R::abs_diff_eq(d0, d1, 1) {
+                    moved = true;
+                    break;
+                }
+            }
+            if !moved || d0 < d1 {
+                // The distance grows in the perturbed direction: a minimum, done.
+                break;
+            }
+            axis = if axis == 2 {
+                0
+            } else {
+                axis + 1
+            };
+            q = p;
+        }
+        (UnitQuaternionTrait::new_normalize(q), iter)
+    }
+
+    /// Müller's rotation vector `Σ_c r_c × m_c / (|Σ_c r_c · m_c| + ε)` (columns `c`, `ε` =
+    /// `default_epsilon`): each component one fused kernel of six products and the denominator
+    /// one of nine (exactly floored), then three correctly rounded divisions.
+    fn muller_axis(r: Matrix3<T>, m: Matrix3<T>) -> (T, T, T) {
+        let x = R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), r.m21, m.m31), r.m31, m.m21);
+        let x = R::wide_sub_prod(R::wide_add_prod(x, r.m22, m.m32), r.m32, m.m22);
+        let x = R::wide_rescale(R::wide_sub_prod(R::wide_add_prod(x, r.m23, m.m33), r.m33, m.m23));
+        let y = R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), r.m31, m.m11), r.m11, m.m31);
+        let y = R::wide_sub_prod(R::wide_add_prod(y, r.m32, m.m12), r.m12, m.m32);
+        let y = R::wide_rescale(R::wide_sub_prod(R::wide_add_prod(y, r.m33, m.m13), r.m13, m.m33));
+        let z = R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), r.m11, m.m21), r.m21, m.m11);
+        let z = R::wide_sub_prod(R::wide_add_prod(z, r.m12, m.m22), r.m22, m.m12);
+        let z = R::wide_rescale(R::wide_sub_prod(R::wide_add_prod(z, r.m13, m.m23), r.m23, m.m13));
+        let d = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), r.m11, m.m11), r.m21, m.m21);
+        let d = R::wide_add_prod(R::wide_add_prod(d, r.m31, m.m31), r.m12, m.m12);
+        let d = R::wide_add_prod(R::wide_add_prod(d, r.m22, m.m22), r.m32, m.m32);
+        let d = R::wide_add_prod(R::wide_add_prod(d, r.m13, m.m13), r.m23, m.m23);
+        let d = R::wide_rescale(R::wide_add_prod(d, r.m33, m.m33));
+        R::div3(x, y, z, R::abs(d) + R::default_epsilon())
+    }
+
+    /// `‖m - r‖²_F`: nine exact differences, one wide sum of squares, floored once.
+    fn distance_squared(m: Matrix3<T>, r: Matrix3<T>) -> T {
+        let (a, b, c) = (m.m11 - r.m11, m.m21 - r.m21, m.m31 - r.m31);
+        let (d, e, f) = (m.m12 - r.m12, m.m22 - r.m22, m.m32 - r.m32);
+        let (g, h, k) = (m.m13 - r.m13, m.m23 - r.m23, m.m33 - r.m33);
+        let acc = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a, a), b, b);
+        let acc = R::wide_add_prod(R::wide_add_prod(acc, c, c), d, d);
+        let acc = R::wide_add_prod(R::wide_add_prod(acc, e, e), f, f);
+        let acc = R::wide_add_prod(R::wide_add_prod(acc, g, g), h, h);
+        R::wide_rescale(R::wide_add_prod(acc, k, k))
     }
 }
 
@@ -897,6 +1490,100 @@ pub(crate) impl UnitQuaternionNeg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<UnitQua
             quaternion: Quaternion {
                 i: -a.quaternion.i, j: -a.quaternion.j, k: -a.quaternion.k, w: -a.quaternion.w,
             },
+        }
+    }
+}
+
+/// `a / b = a * b⁻¹`: the rotation `r` with `r * b = a`. ONE fused Hamilton product with `b`'s
+/// conjugate signs folded into the accumulation (`QuaternionInternalTrait::mul_conj`): bit for
+/// bit `a * b.inverse()`, without the three negations
+/// (`bench_unit_quaternion_div__alt_inverse_then_mul`). Upstream: `Div for UnitQuaternion`.
+pub impl UnitQuaternionDiv<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Div<UnitQuaternion<T>> {
+    #[inline(always)]
+    fn div(lhs: UnitQuaternion<T>, rhs: UnitQuaternion<T>) -> UnitQuaternion<T> {
+        UnitQuaternion {
+            quaternion: QuaternionInternalTrait::mul_conj(lhs.quaternion, rhs.quaternion),
+        }
+    }
+}
+
+/// `Default::default()`: the identity rotation. Upstream: `Default for UnitQuaternion`.
+pub impl UnitQuaternionDefault<T, impl R: Real<T>, +Drop<T>> of Default<UnitQuaternion<T>> {
+    #[inline(always)]
+    fn default() -> UnitQuaternion<T> {
+        UnitQuaternion {
+            quaternion: Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::one() },
+        }
+    }
+}
+
+/// `One::one()`: the identity rotation; `is_one` compares with `(1, 0, 0, 0)` exactly (`-1`, the
+/// same rotation, is not `one`). Upstream: `num::One for UnitQuaternion`.
+pub impl UnitQuaternionOne<
+    T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of One<UnitQuaternion<T>> {
+    #[inline(always)]
+    fn one() -> UnitQuaternion<T> {
+        UnitQuaternion {
+            quaternion: Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::one() },
+        }
+    }
+
+    #[inline(always)]
+    fn is_one(self: @UnitQuaternion<T>) -> bool {
+        let q = *self.quaternion;
+        q.i == R::zero() && q.j == R::zero() && q.k == R::zero() && q.w == R::one()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @UnitQuaternion<T>) -> bool {
+        !Self::is_one(self)
+    }
+}
+
+/// `q.into()`: the isometry of rotation `q` and zero translation. Upstream: `SubsetOf<Isometry3>
+/// for UnitQuaternion` (`nalgebra::convert(q)`).
+pub impl Isometry3FromUnitQuaternion<
+    T, impl R: Real<T>, +Drop<T>,
+> of Into<UnitQuaternion<T>, Isometry3<T>> {
+    #[inline(always)]
+    fn into(self: UnitQuaternion<T>) -> Isometry3<T> {
+        Isometry3 {
+            rotation: self,
+            translation: Translation3 {
+                vector: Vector3 { x: R::zero(), y: R::zero(), z: R::zero() },
+            },
+        }
+    }
+}
+
+/// `q.into()`: the similarity of rotation `q`, zero translation and scaling 1. Upstream:
+/// `SubsetOf<Similarity3> for UnitQuaternion` (`nalgebra::convert(q)`).
+pub impl Similarity3FromUnitQuaternion<
+    T, impl R: Real<T>, +Drop<T>,
+> of Into<UnitQuaternion<T>, Similarity3<T>> {
+    #[inline(always)]
+    fn into(self: UnitQuaternion<T>) -> Similarity3<T> {
+        Similarity3 {
+            isometry: Isometry3 {
+                rotation: self,
+                translation: Translation3 {
+                    vector: Vector3 { x: R::zero(), y: R::zero(), z: R::zero() },
+                },
+            },
+            scaling: R::one(),
         }
     }
 }

@@ -21,19 +21,38 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
+use core::num::traits::One;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
 use crate::base::point2::Point2;
+use crate::base::unit::Unit;
 use crate::base::vector2::Vector2;
+use super::isometry2::Isometry2;
+use super::quaternion::ApproxEqTrait;
 use super::rotation2::Rotation2;
+use super::similarity2::Similarity2;
+use super::translation2::Translation2;
 
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
+mod ext_benches;
+#[cfg(test)]
+mod ext_oracle;
+#[cfg(test)]
+mod ext_tests;
+#[cfg(test)]
 mod oracle;
 #[cfg(test)]
 mod tests;
+
+/// Upper bound of the iterations of `UnitComplex::from_matrix_eps` (whatever `max_iter`, and when
+/// `max_iter` is 0, which upstream reads as "until convergence"). The 2D iteration
+/// `θ ← θ + tan(φ - θ)` converges cubically once `|φ - θ| < π/2`; measured on the oracle
+/// set (`test_from_matrix_eps_iterations_on_the_oracle_set`), every case reaches its fixed point in
+/// at most 6 iterations from the identity.
+pub const FROM_MATRIX_MAX_ITER: usize = 16;
 
 /// A 2D rotation of angle `θ`, stored as the unit complex number
 /// `re + i·im = cos θ + i·sin θ`.
@@ -149,6 +168,55 @@ pub trait UnitComplexTrait<T> {
     /// `2π`, and is NOT `abs_diff_eq` to it. Upstream: `approx::AbsDiffEq::abs_diff_eq`, the
     /// tolerance being counted in ulp instead of a float epsilon (DESIGN D3).
     fn abs_diff_eq(self: UnitComplex<T>, other: UnitComplex<T>, ulps: u64) -> bool;
+    /// `true` when `re` and `im` are each within `epsilon` ulp of `other`'s, or of the same sign
+    /// and within `max_relative` times the larger magnitude (see `QuaternionTrait::relative_eq`).
+    /// Upstream: `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp (DESIGN D3).
+    fn relative_eq(
+        self: UnitComplex<T>, other: UnitComplex<T>, epsilon: u64, max_relative: T,
+    ) -> bool;
+    /// `true` when `re` and `im` are each within `epsilon` ulp of `other`'s, or of the same sign
+    /// and within `max_ulps` ulp (see `QuaternionTrait::ulps_eq`). Upstream:
+    /// `approx::UlpsEq::ulps_eq`.
+    fn ulps_eq(self: UnitComplex<T>, other: UnitComplex<T>, epsilon: u64, max_ulps: u32) -> bool;
+    /// The same rotation with both components converted by `Into<T, U>` (the identity for the
+    /// single scalar `Fixed`). Upstream: `cast` (and `SubsetOf<UnitComplex<U>>`).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: UnitComplex<T>) -> UnitComplex<U>;
+    /// The complex number `q = (re, im)` (a `Vector2`: there is no `Complex` type here, the same
+    /// layout as `complex()`) divided by its norm: one `norm2`, two correctly rounded divisions.
+    /// Panics with `Fixed: division by zero` on zero (upstream returns NaN). Upstream:
+    /// `UnitComplex::from_complex`.
+    fn from_complex(q: Vector2<T>) -> UnitComplex<T>;
+    /// `(from_complex(q), |q|)`. Upstream: `UnitComplex::from_complex_and_get`.
+    fn from_complex_and_get(q: Vector2<T>) -> (UnitComplex<T>, T);
+    /// The rotation whose matrix has the columns `basis[0]`, `basis[1]`, WITHOUT checking them:
+    /// `(re, im)` is the first column, like `from_rotation_matrix`. Exact. Upstream:
+    /// `UnitComplex::from_basis_unchecked`.
+    fn from_basis_unchecked(basis: [Vector2<T>; 2]) -> UnitComplex<T>;
+    /// `rotation_between` of two UNIT vectors: the same algebraic kernel (`(a·b, a×b)`
+    /// normalised). Upstream computes `from_angle(atan2(a×b, a·b))`; both agree to the oracle
+    /// tolerance. Upstream: `UnitComplex::rotation_between_axis`.
+    fn rotation_between_axis(a: Unit<Vector2<T>>, b: Unit<Vector2<T>>) -> UnitComplex<T>;
+    /// `self * v` for a unit vector: `transform_vector` of its value, not renormalised. Upstream:
+    /// `Mul<Unit<Vector2>> for UnitComplex`.
+    fn transform_unit_vector(self: UnitComplex<T>, v: Unit<Vector2<T>>) -> Unit<Vector2<T>>;
+    /// `self⁻¹ * v` for a unit vector, not renormalised. Upstream:
+    /// `inverse_transform_unit_vector`.
+    fn inverse_transform_unit_vector(self: UnitComplex<T>, v: Unit<Vector2<T>>) -> Unit<Vector2<T>>;
+    /// `self * r` with a rotation matrix: `self * from_rotation_matrix(r)`, a unit complex number
+    /// (two fused kernels). Upstream: `Mul<Rotation2> for UnitComplex`.
+    fn mul_rotation(self: UnitComplex<T>, r: Rotation2<T>) -> UnitComplex<T>;
+    /// `self / r = self * r⁻¹`, the conjugation folded into the two kernels. Upstream:
+    /// `Div<Rotation2> for UnitComplex`.
+    fn div_rotation(self: UnitComplex<T>, r: Rotation2<T>) -> UnitComplex<T>;
+    /// `self * t`: rotation `self`, translation `self · t`. Upstream: `Mul<Translation2> for
+    /// UnitComplex` (an `Isometry2`).
+    fn mul_translation(self: UnitComplex<T>, t: Translation2<T>) -> Isometry2<T>;
+    /// `self * iso`: rotation `self * iso.rotation`, translation `self · iso.translation`.
+    /// Upstream: `Mul<Isometry2> for UnitComplex`.
+    fn mul_isometry(self: UnitComplex<T>, iso: Isometry2<T>) -> Isometry2<T>;
+    /// `self * sim`: the isometry part composed like `mul_isometry`, the scaling unchanged.
+    /// Upstream: `Mul<Similarity2> for UnitComplex`.
+    fn mul_similarity(self: UnitComplex<T>, sim: Similarity2<T>) -> Similarity2<T>;
 }
 
 /// Operations of `UnitComplex<T>` that go through an angle, hence their own trait: scalars may
@@ -194,6 +262,34 @@ pub trait UnitComplexAngleTrait<T> {
     /// The physics engine never calls `slerp` (docs/research/01, §3.3): it exists for clients
     /// interpolating between two poses. Upstream: `slerp`.
     fn slerp(self: UnitComplex<T>, other: UnitComplex<T>, t: T) -> UnitComplex<T>;
+    /// The rotation of angle `axisangle` (the single coordinate of upstream's `Vector1`: there is
+    /// no `Vector1` here). Upstream: `UnitComplex::from_scaled_axis`.
+    fn from_scaled_axis(axisangle: T) -> UnitComplex<T>;
+    /// The angle in `(-π, π]` (the single coordinate of upstream's `Vector1`). Upstream:
+    /// `scaled_axis`.
+    fn scaled_axis(self: UnitComplex<T>) -> T;
+    /// `(axis, angle)` with the axis `±1` (the coordinate of upstream's `Unit<Vector1>`) and the
+    /// angle in `(0, π]`: `(1, θ)` for `θ > 0`, `(-1, -θ)` for `θ < 0`, `None` for `θ = 0`.
+    /// Upstream: `axis_angle`.
+    fn axis_angle(self: UnitComplex<T>) -> Option<(T, T)>;
+    /// `scaled_rotation_between` of two UNIT vectors (the same kernel, which does not normalise
+    /// anyway). Upstream: `UnitComplex::scaled_rotation_between_axis`.
+    fn scaled_rotation_between_axis(
+        a: Unit<Vector2<T>>, b: Unit<Vector2<T>>, s: T,
+    ) -> UnitComplex<T>;
+    /// `from_matrix_eps(m, default_epsilon, 0, identity)`. Upstream: `UnitComplex::from_matrix`.
+    fn from_matrix(m: Matrix2<T>) -> UnitComplex<T>;
+    /// The rotation part of `m` (maximising `tr(Rᵀ m)`), by upstream's 2D Müller iteration from
+    /// `guess`: `δ = (Σ_c r_c ⊥ m_c) / (|Σ_c r_c · m_c| + ε)`, `R ← R(δ) · R` until
+    /// `|δ| <= eps`.
+    /// With `R = (re, im)` both sums are one fused kernel of two products on the exact
+    /// `m21 - m12` and `m11 + m22` (panics when those overflow, entries above about 1e9), then
+    /// one division, one `sin_cos` and one composition per iteration (about 40 000 gas).
+    /// **Bounded:** at most `FROM_MATRIX_MAX_ITER` (16) iterations, also for `max_iter = 0`
+    /// (upstream: unbounded). Upstream: `UnitComplex::from_matrix_eps`.
+    fn from_matrix_eps(
+        m: Matrix2<T>, eps: T, max_iter: usize, guess: UnitComplex<T>,
+    ) -> UnitComplex<T>;
 }
 
 pub impl UnitComplexImpl<
@@ -339,6 +435,102 @@ pub impl UnitComplexImpl<
     fn abs_diff_eq(self: UnitComplex<T>, other: UnitComplex<T>, ulps: u64) -> bool {
         R::abs_diff_eq(self.re, other.re, ulps) && R::abs_diff_eq(self.im, other.im, ulps)
     }
+
+    #[inline(always)]
+    fn relative_eq(
+        self: UnitComplex<T>, other: UnitComplex<T>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        ApproxEqTrait::relative_eq(self.re, other.re, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.im, other.im, epsilon, max_relative)
+    }
+
+    #[inline(always)]
+    fn ulps_eq(self: UnitComplex<T>, other: UnitComplex<T>, epsilon: u64, max_ulps: u32) -> bool {
+        ApproxEqTrait::ulps_eq(self.re, other.re, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.im, other.im, epsilon, max_ulps)
+    }
+
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: UnitComplex<T>) -> UnitComplex<U> {
+        UnitComplex { re: self.re.into(), im: self.im.into() }
+    }
+
+    #[inline(always)]
+    fn from_complex(q: Vector2<T>) -> UnitComplex<T> {
+        let n = R::norm2(q.x, q.y);
+        UnitComplex { re: R::div(q.x, n), im: R::div(q.y, n) }
+    }
+
+    #[inline(always)]
+    fn from_complex_and_get(q: Vector2<T>) -> (UnitComplex<T>, T) {
+        let n = R::norm2(q.x, q.y);
+        (UnitComplex { re: R::div(q.x, n), im: R::div(q.y, n) }, n)
+    }
+
+    #[inline(always)]
+    fn from_basis_unchecked(basis: [Vector2<T>; 2]) -> UnitComplex<T> {
+        let [x, _y] = basis;
+        UnitComplex { re: x.x, im: x.y }
+    }
+
+    #[inline(always)]
+    fn rotation_between_axis(a: Unit<Vector2<T>>, b: Unit<Vector2<T>>) -> UnitComplex<T> {
+        Self::rotation_between(a.value, b.value)
+    }
+
+    #[inline(always)]
+    fn transform_unit_vector(self: UnitComplex<T>, v: Unit<Vector2<T>>) -> Unit<Vector2<T>> {
+        Unit { value: Self::transform_vector(self, v.value) }
+    }
+
+    #[inline(always)]
+    fn inverse_transform_unit_vector(
+        self: UnitComplex<T>, v: Unit<Vector2<T>>,
+    ) -> Unit<Vector2<T>> {
+        Unit { value: Self::inverse_transform_vector(self, v.value) }
+    }
+
+    #[inline(always)]
+    fn mul_rotation(self: UnitComplex<T>, r: Rotation2<T>) -> UnitComplex<T> {
+        let (re, im) = (r.matrix.m11, r.matrix.m21);
+        UnitComplex {
+            re: R::diff_prod(self.re, re, self.im, im), im: R::sum_prod2(self.re, im, self.im, re),
+        }
+    }
+
+    #[inline(always)]
+    fn div_rotation(self: UnitComplex<T>, r: Rotation2<T>) -> UnitComplex<T> {
+        let (re, im) = (r.matrix.m11, r.matrix.m21);
+        UnitComplex {
+            re: R::sum_prod2(self.re, re, self.im, im), im: R::diff_prod(self.im, re, self.re, im),
+        }
+    }
+
+    #[inline(always)]
+    fn mul_translation(self: UnitComplex<T>, t: Translation2<T>) -> Isometry2<T> {
+        Isometry2 {
+            rotation: self,
+            translation: Translation2 { vector: Self::transform_vector(self, t.vector) },
+        }
+    }
+
+    #[inline(always)]
+    fn mul_isometry(self: UnitComplex<T>, iso: Isometry2<T>) -> Isometry2<T> {
+        let r = iso.rotation;
+        Isometry2 {
+            rotation: UnitComplex {
+                re: R::diff_prod(self.re, r.re, self.im, r.im),
+                im: R::sum_prod2(self.re, r.im, self.im, r.re),
+            },
+            translation: Translation2 {
+                vector: Self::transform_vector(self, iso.translation.vector),
+            },
+        }
+    }
+
+    #[inline(always)]
+    fn mul_similarity(self: UnitComplex<T>, sim: Similarity2<T>) -> Similarity2<T> {
+        Similarity2 { isometry: Self::mul_isometry(self, sim.isometry), scaling: sim.scaling }
+    }
 }
 
 /// Crate-internal by-value forms of the in-place `renormalize` / `renormalize_fast` (WP 8.0: the
@@ -429,6 +621,94 @@ pub impl UnitComplexAngleImpl<
             im: R::sum_prod2(self.im, cos, self.re, sin),
         }
     }
+
+    #[inline(always)]
+    fn from_scaled_axis(axisangle: T) -> UnitComplex<T> {
+        let (sin, cos) = Tr::sin_cos(axisangle);
+        UnitComplex { re: cos, im: sin }
+    }
+
+    #[inline(always)]
+    fn scaled_axis(self: UnitComplex<T>) -> T {
+        Tr::atan2(self.im, self.re)
+    }
+
+    fn axis_angle(self: UnitComplex<T>) -> Option<(T, T)> {
+        let ang = Tr::atan2(self.im, self.re);
+        if ang == R::zero() {
+            None
+        } else if R::is_sign_positive(ang) {
+            Some((R::one(), ang))
+        } else {
+            Some((R::NEG_ONE, -ang))
+        }
+    }
+
+    #[inline(always)]
+    fn scaled_rotation_between_axis(
+        a: Unit<Vector2<T>>, b: Unit<Vector2<T>>, s: T,
+    ) -> UnitComplex<T> {
+        Self::scaled_rotation_between(a.value, b.value, s)
+    }
+
+    #[inline(always)]
+    fn from_matrix(m: Matrix2<T>) -> UnitComplex<T> {
+        Self::from_matrix_eps(m, R::default_epsilon(), 0, UnitComplexTrait::identity())
+    }
+
+    fn from_matrix_eps(
+        m: Matrix2<T>, eps: T, max_iter: usize, guess: UnitComplex<T>,
+    ) -> UnitComplex<T> {
+        let (r, _) = UnitComplexAngleInternalTrait::from_matrix_eps_count(m, eps, max_iter, guess);
+        r
+    }
+}
+
+/// Crate-internal kernel of `UnitComplexAngleTrait::from_matrix_eps`.
+#[generate_trait]
+pub(crate) impl UnitComplexAngleInternalImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +Copy<T>,
+    +Drop<T>,
+> of UnitComplexAngleInternalTrait<T> {
+    /// `from_matrix_eps` and the number of iterations it ran (for the convergence tests).
+    fn from_matrix_eps_count(
+        m: Matrix2<T>, eps: T, max_iter: usize, guess: UnitComplex<T>,
+    ) -> (UnitComplex<T>, usize) {
+        let cap = if max_iter == 0 || max_iter > FROM_MATRIX_MAX_ITER {
+            FROM_MATRIX_MAX_ITER
+        } else {
+            max_iter
+        };
+        let mut r = guess;
+        let mut iter: usize = 0;
+        while iter < cap {
+            iter += 1;
+            // With columns (re, im) and (-im, re), a = m21 - m12 and b = m11 + m22 (exact):
+            // axis = re·a - im·b, denom = re·b + im·a, one fused kernel each.
+            let (a, b) = (m.m21 - m.m12, m.m11 + m.m22);
+            let axis = R::diff_prod(r.re, a, r.im, b);
+            let denom = R::sum_prod2(r.re, b, r.im, a);
+            let angle = R::div(axis, R::abs(denom) + R::default_epsilon());
+            // `|angle| <= eps`, with `Real` comparisons only (the trait carries no `PartialOrd`).
+            if R::max(R::abs(angle), eps) == eps {
+                break;
+            }
+            let (sin, cos) = Tr::sin_cos(angle);
+            r =
+                UnitComplex {
+                    re: R::diff_prod(cos, r.re, sin, r.im), im: R::sum_prod2(cos, r.im, sin, r.re),
+                };
+        }
+        (r, iter)
+    }
 }
 
 /// `a * b`: the composition of two rotations (turn by `b`, then by `a` — the product of complex
@@ -442,6 +722,79 @@ pub impl UnitComplexMul<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Mul<UnitCompl
         UnitComplex {
             re: R::diff_prod(lhs.re, rhs.re, lhs.im, rhs.im),
             im: R::sum_prod2(lhs.re, rhs.im, lhs.im, rhs.re),
+        }
+    }
+}
+
+/// `a / b = a * b⁻¹`, the conjugation folded into the two kernels:
+/// `(re_a·re_b + im_a·im_b, im_a·re_b - re_a·im_b)`, each exactly floored. Upstream: `Div for
+/// UnitComplex`.
+pub impl UnitComplexDiv<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Div<UnitComplex<T>> {
+    #[inline(always)]
+    fn div(lhs: UnitComplex<T>, rhs: UnitComplex<T>) -> UnitComplex<T> {
+        UnitComplex {
+            re: R::sum_prod2(lhs.re, rhs.re, lhs.im, rhs.im),
+            im: R::diff_prod(lhs.im, rhs.re, lhs.re, rhs.im),
+        }
+    }
+}
+
+/// `Default::default()`: the identity rotation. Upstream: `Default for UnitComplex`.
+pub impl UnitComplexDefault<T, impl R: Real<T>, +Drop<T>> of Default<UnitComplex<T>> {
+    #[inline(always)]
+    fn default() -> UnitComplex<T> {
+        UnitComplex { re: R::one(), im: R::zero() }
+    }
+}
+
+/// `One::one()`: the identity rotation; `is_one` compares with `(1, 0)` exactly. Upstream:
+/// `num::One for UnitComplex`.
+pub impl UnitComplexOne<
+    T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
+> of One<UnitComplex<T>> {
+    #[inline(always)]
+    fn one() -> UnitComplex<T> {
+        UnitComplex { re: R::one(), im: R::zero() }
+    }
+
+    #[inline(always)]
+    fn is_one(self: @UnitComplex<T>) -> bool {
+        *self.re == R::one() && *self.im == R::zero()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @UnitComplex<T>) -> bool {
+        !Self::is_one(self)
+    }
+}
+
+/// `c.into()`: the isometry of rotation `c` and zero translation. Upstream: `SubsetOf<Isometry2>
+/// for UnitComplex` (`nalgebra::convert(c)`).
+pub impl Isometry2FromUnitComplex<
+    T, impl R: Real<T>, +Drop<T>,
+> of Into<UnitComplex<T>, Isometry2<T>> {
+    #[inline(always)]
+    fn into(self: UnitComplex<T>) -> Isometry2<T> {
+        Isometry2 {
+            rotation: self,
+            translation: Translation2 { vector: Vector2 { x: R::zero(), y: R::zero() } },
+        }
+    }
+}
+
+/// `c.into()`: the similarity of rotation `c`, zero translation and scaling 1. Upstream:
+/// `SubsetOf<Similarity2> for UnitComplex` (`nalgebra::convert(c)`).
+pub impl Similarity2FromUnitComplex<
+    T, impl R: Real<T>, +Drop<T>,
+> of Into<UnitComplex<T>, Similarity2<T>> {
+    #[inline(always)]
+    fn into(self: UnitComplex<T>) -> Similarity2<T> {
+        Similarity2 {
+            isometry: Isometry2 {
+                rotation: self,
+                translation: Translation2 { vector: Vector2 { x: R::zero(), y: R::zero() } },
+            },
+            scaling: R::one(),
         }
     }
 }
