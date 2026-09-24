@@ -6,15 +6,15 @@
 //!
 //! - `Isometry2Trait` / `Isometry2Impl`: construction from parts, composition, inverse, `inv_mul`,
 //!   transforms, the in-place `append_*_mut`, the operator forms `mul_translation` /
-//!   `mul_unit_complex` (Cairo's `Mul` is homogeneous), `to_homogeneous`, renormalisation and the
-//!   trigonometry-free interpolation — everything that is algebraic, hence available for any
-//!   `simba::scalar::Real`
-//!   scalar;
+//!   `mul_unit_complex` (Cairo's `Mul` is homogeneous) and `to_homogeneous` — everything that is
+//!   algebraic, hence available for any `simba::scalar::Real` scalar (the fused kernels, the
+//!   renormalisation of the rotation part and the trigonometry-free interpolation are
+//!   crate-internal, WP 8.0);
 //! - `Isometry2AngleTrait` / `Isometry2AngleImpl`: the constructors and the interpolation that go
 //!   through an ANGLE (`new`, `rotation`, `lerp_slerp`), which additionally need
 //!   `simba::scalar::Transcendental`;
-//! - `a * b` (composition) and the conversion from a `Translation2`: their
-//!   impls live in this module, where the compiler finds them without any import.
+//! - `a * b` (composition) and the conversion from a `Translation2`: their impls live in this
+//!   module, where the compiler finds them without any import.
 //!
 //! The rotation is a `UnitComplex`, never a `Rotation2`: the two hold the same information, but the
 //! complex form composes for 4 000 gas against 10 260 for the matrix and transforms a vector for
@@ -427,9 +427,9 @@ pub impl Isometry2AngleImpl<
     /// (`UnitComplex::slerp`, which takes the SHORTEST arc and walks it at constant angular
     /// velocity). `t` is not clamped; `t = 0` gives `self` exactly.
     ///
-    /// 50 690 gas, dominated by one `atan2` and one `sin_cos`. `lerp_nlerp` gives the same path
-    /// within a fraction of a degree for 18 520 — use `lerp_slerp` for rendering and animation,
-    /// where the parametrisation is visible, and `lerp_nlerp` inside a step. Upstream:
+    /// 50 690 gas, dominated by one `atan2` and one `sin_cos`. The trigonometry-free
+    /// normalized-lerp interpolation (crate-internal `lerp_nlerp`, benchmarked) gives the same path
+    /// within a fraction of a degree for 18 520. Upstream:
     /// `Isometry2::lerp_slerp`. (Upstream has no `try_lerp_slerp` in 2D and neither does this
     /// port: `UnitComplex::slerp` is total, where `UnitQuaternion::try_slerp` can fail.)
     fn lerp_slerp(self: Isometry2<T>, other: Isometry2<T>, t: T) -> Isometry2<T> {

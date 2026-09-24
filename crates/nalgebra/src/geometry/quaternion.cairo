@@ -28,6 +28,7 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
+use core::num::traits::Zero;
 use simba::scalar::Real;
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
@@ -354,7 +355,7 @@ pub impl QuaternionMul<
 /// zero exactly. Upstream: `num::Zero for Quaternion` (the former `QuaternionTrait::zero`, WP 8.0).
 pub impl QuaternionZero<
     T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
-> of core::num::traits::Zero<Quaternion<T>> {
+> of Zero<Quaternion<T>> {
     #[inline(always)]
     fn zero() -> Quaternion<T> {
         Quaternion { i: R::ZERO, j: R::ZERO, k: R::ZERO, w: R::ZERO }

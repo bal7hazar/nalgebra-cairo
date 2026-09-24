@@ -206,12 +206,11 @@ pub impl Rotation3Impl<
     // --- renormalisation and comparison -----------------------------------------------------
 
     /// Restores orthonormality after repeated composition, in place, by Gram-Schmidt on the
-    /// columns:
-    /// `x = c1/|c1|`, `y = (c2 - (x·c2)·x)/|...|`, `z = x × y`. Two norms, six divisions, one
-    /// dot product and one cross product: 39 170 gas, against 70 250 for the round trip through a
-    /// quaternion (`from_rotation_matrix`, `renormalize_fast`, `to_rotation_matrix`) and 78 320 for
-    /// one Newton step of the polar decomposition `R·(3I - RᵀR)/2` (54 products, and it only
-    /// halves the error instead of renormalizing exactly). Both are kept as benchmarks
+    /// columns: `x = c1/|c1|`, `y = (c2 - (x·c2)·x)/|...|`, `z = x × y`. Two norms, six
+    /// divisions, one dot product and one cross product: 39 170 gas, against 70 250 for the round
+    /// trip through a quaternion (`from_rotation_matrix`, `renormalize_fast`, `to_rotation_matrix`)
+    /// and 78 320 for one Newton step of the polar decomposition `R·(3I - RᵀR)/2` (54 products,
+    /// and it only halves the error instead of renormalizing exactly). Both are kept as benchmarks
     /// (`bench_rotation3_renormalize__alt_*`).
     ///
     /// The result is orthonormal to within a few ulp and is the closest rotation to `self` only to

@@ -19,10 +19,10 @@
 //! A `PermN` stores the transposition chosen at each of the `N - 1` elimination steps: `pK` is
 //! the 1-based index of the row swapped with row `K` at step `K`, so `pK == K` means "no swap".
 //! That is upstream's representation minus the allocation, it is `Copy`, and applying it (or its
-//! inverse) is a fixed chain of comparisons and moves — `LuN::permute`, `LuN::permute_rows` and
-//! the column permutation inside `LuN::try_inverse`. Building the `N x N` permutation matrix is
-//! deliberately not offered: nothing in the library needs it, and it would cost a full matrix
-//! product to use.
+//! inverse) is a fixed chain of comparisons and moves — the crate-internal `LuN::permute` /
+//! `LuN::permute_rows` and the column permutation inside `LuN::try_inverse`. Building the `N x N`
+//! permutation matrix is deliberately not offered: nothing in the library needs it, and it would
+//! cost a full matrix product to use.
 
 pub mod lu2;
 pub mod lu3;

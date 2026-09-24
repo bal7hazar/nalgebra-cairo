@@ -8,14 +8,15 @@
 //!
 //! - `Isometry3Trait` / `Isometry3Impl`: construction from parts, composition, inverse, `inv_mul`,
 //!   transforms, the in-place `append_*_mut`, the operator forms `mul_translation` /
-//!   `mul_unit_quaternion` (Cairo's `Mul` is homogeneous), `to_homogeneous`, the observer frames,
-//!   renormalisation and the trigonometry-free interpolation — everything that is algebraic,
-//!   hence available for any `simba::scalar::Real` scalar;
+//!   `mul_unit_quaternion` (Cairo's `Mul` is homogeneous), `to_homogeneous` and the observer
+//!   frames — everything that is algebraic, hence available for any `simba::scalar::Real` scalar
+//!   (the fused kernels, the renormalisation of the rotation part and the trigonometry-free
+//!   interpolation are crate-internal, WP 8.0);
 //! - `Isometry3AngleTrait` / `Isometry3AngleImpl`: the constructors that take a rotation VECTOR
 //!   (`new`, `rotation`) and the spherical interpolation (`lerp_slerp`, `try_lerp_slerp`), which
 //!   additionally need `simba::scalar::Transcendental`;
-//! - `a * b` (composition) and the conversion from a `Translation3`: their
-//!   impls live in this module, where the compiler finds them without any import.
+//! - `a * b` (composition) and the conversion from a `Translation3`: their impls live in this
+//!   module, where the compiler finds them without any import.
 //!
 //! **Representation of the rotation.** The quaternion form is the right one for a pose that is
 //! composed and renormalised every step: composition costs 11 860 gas against 23 310 for a
@@ -462,8 +463,9 @@ pub(crate) impl Isometry3InternalImpl<
 }
 
 /// Operations of `Isometry3<T>` that need trigonometry, hence their own trait: scalars may
-/// implement `Real` only (the whole rapier hot path — composition, `inv_mul`, transforms,
-/// `renormalize_fast` — is in `Isometry3Trait` and needs no trigonometry at all).
+/// implement `Real` only (the whole rapier hot path — composition, `inv_mul`, transforms — is
+/// in `Isometry3Trait`, and `UnitQuaternion::renormalize_fast` on the rotation, none of which needs
+/// trigonometry).
 #[generate_trait]
 pub impl Isometry3AngleImpl<
     T,
@@ -504,7 +506,9 @@ pub impl Isometry3AngleImpl<
     ///
     /// 91 650 gas, dominated by one `acos` and two `sin`. Panics with `nalgebra: ambiguous slerp`
     /// only for a scalar whose resolution makes `sqrt(1 - cos²)` vanish (never in Q32.32, see
-    /// `UnitQuaternion::slerp`). Prefer `lerp_nlerp` (31 610) inside a physics step. Upstream:
+    /// `UnitQuaternion::slerp`). The trigonometry-free alternative, `UnitQuaternion::nlerp` on the
+    /// rotation and a lerp on the translation, costs 31 610 (`bench_isometry3_lerp_slerp__*`).
+    /// Upstream:
     /// `Isometry3::lerp_slerp`.
     fn lerp_slerp(self: Isometry3<T>, other: Isometry3<T>, t: T) -> Isometry3<T> {
         Isometry3 {

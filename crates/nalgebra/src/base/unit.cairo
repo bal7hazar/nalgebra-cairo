@@ -4,9 +4,9 @@
 //! - `Normalizable<V, T>`: the few operations `Unit` needs from a vector type `V` over the scalar
 //!   `T`, implemented for `Vector2<T>`, `Vector3<T>` and `Vector4<T>`;
 //! - `UnitTrait` / `UnitImpl`: construction (`new_normalize`, `try_new`, `new_unchecked`, ...),
-//!   renormalization and products, generic over any `Normalizable` vector;
-//! - `Unit2Trait` / `Unit3Trait` / `Unit4Trait`: the axes (`x_axis`, ...) and, in 3D, the
-//!   orthonormal basis;
+//!   in-place renormalization (upstream's `&mut self` methods) and the products upstream reaches
+//!   through `Deref`, generic over any `Normalizable` vector;
+//! - `Unit2Trait` / `Unit3Trait` / `Unit4Trait`: the axes (`x_axis`, ...);
 //! - `-u` (exact, a negated unit vector is a unit vector).
 //!
 //! The `value` field is public: unlike upstream there is no `Deref`, so vector operations are

@@ -28,9 +28,8 @@
 //! effective mass every step) and the dynamic `insert_column` / `remove_column`, which have no
 //! meaning for a statically sized factor.
 //!
-//! When no square root is wanted — and none is needed to solve a system — prefer
-//! `crate::linalg::ldlt` (DESIGN D6): `LDLᵀ` has the same shape, no `sqrt`, a cheaper `solve`,
-//! and it also factorises indefinite symmetric matrices.
+//! When no square root is wanted, upstream's `UDU` (`crate::linalg::udu`, on the crate-internal
+//! `LDLᵀ` kernel of DESIGN D6) factorises without one, indefinite symmetric matrices included.
 
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;

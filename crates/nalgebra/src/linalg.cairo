@@ -21,9 +21,8 @@
 //! - `qr`: `A = Q·R` with `Q` orthonormal and `R` upper triangular with a non-negative diagonal
 //!   (upstream `QR`, unpacked convention), sizes 2, 3 and 4, by modified Gram-Schmidt;
 //! - `svd2` / `svd3`: `M = U·Σ·Vᵀ`, the pseudo-inverse, the least-squares solve and the left
-//! polar
-//!   decomposition `M = P·U` (upstream `SVD`), built on the symmetric eigen decomposition of
-//!   `MᵀM` (DESIGN D6).
+//!   polar decomposition `M = P·U` (upstream `SVD`), built on the symmetric eigen decomposition
+//!   of `MᵀM` (DESIGN D6).
 
 pub mod cholesky;
 pub(crate) mod ldlt;

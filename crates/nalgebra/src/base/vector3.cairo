@@ -5,7 +5,7 @@
 //! - `Vector3AngleTrait` / `Vector3AngleImpl`: `angle`, which additionally needs
 //!   `simba::scalar::Transcendental`;
 //! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a scalar, and
-//!   conversions from / to `(T, T, T)` and `[T; 3]`: their impls live in this module, where the
+//!   conversions from / to `[T; 3]`: their impls live in this module, where the
 //!   compiler finds them without any import.
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
