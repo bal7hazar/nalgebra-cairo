@@ -317,6 +317,11 @@ fn test_abs_diff_eq_counts_ulps() {
     let drifted = qt((int(1).raw + 2, int(2).raw - 2, int(-3).raw + 1, int(4).raw));
     assert!(a().abs_diff_eq(drifted, 2));
     assert!(!a().abs_diff_eq(drifted, 1));
-    // q and -q are the same rotation but not close.
-    assert!(!a().abs_diff_eq(-a(), 1000));
+    // q and -q are the same rotation and compare equal, like upstream's `approx` impls ...
+    assert!(a().abs_diff_eq(-a(), 0));
+    assert!(a().abs_diff_eq(-drifted, 2));
+    assert!(!a().abs_diff_eq(-drifted, 1));
+    // ... but a partial sign flip is neither.
+    let q = a();
+    assert!(!q.abs_diff_eq(Quaternion { i: q.i, j: q.j, k: -q.k, w: -q.w }, 1000));
 }

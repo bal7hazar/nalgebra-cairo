@@ -1,6 +1,11 @@
 //! WP 8.4-P08: the completion of `Quaternion`, `UnitQuaternion` and `UnitComplex` — the
 //! transcendental quaternion functions, the divisions, the polar decomposition, `from_matrix`,
 //! `mean_of`, the observer frames and the heterogeneous operators.
+//!
+//! WP 8.4-P09a: the completion of the rotation matrices `Rotation2` / `Rotation3` (suite
+//! `rotation_matrix_completion`): `new`, `powf`, `angle_to`, `axis_angle`, `rotation_to`, `/`,
+//! `euler_angles_ordered`, `from_matrix`, `slerp`, `look_at_lh` and the products with unit
+//! quaternions / unit complex numbers.
 
 use super::{
     flat, flat_c, flat_iso2, flat_iso3, flat_q, flat_sim2, flat_sim3, iso2, iso3, quat, ring, sim2,
@@ -118,6 +123,34 @@ fn complex_div<T: Ring>(x: &[T]) -> Vec<T> {
 fn complex_mul_rot<T: Ring>(x: &[T]) -> Vec<T> {
     let (re, im) = (x[2], x[4]);
     vec![x[0] * re - x[1] * im, x[0] * im + x[1] * re]
+}
+
+/// `(m11, m21) * c` for a row-major 2x2 rotation matrix and `c = (re, im)`.
+fn rot_mul_complex<T: Ring>(x: &[T]) -> Vec<T> {
+    let (a, b, re, im) = (x[0], x[2], x[4], x[5]);
+    vec![a * re - b * im, a * im + b * re]
+}
+
+/// `(m11, m21) * conj(c)`.
+fn rot_div_complex<T: Ring>(x: &[T]) -> Vec<T> {
+    let (a, b, re, im) = (x[0], x[2], x[4], x[5]);
+    vec![a * re + b * im, b * re - a * im]
+}
+
+/// `a * bᵀ` for two row-major `n x n` matrices (`Rotation::rotation_to` / `/`).
+fn mat_mul_tr<T: Ring, const N: usize>(x: &[T]) -> Vec<T> {
+    let (a, b) = (&x[..N * N], &x[N * N..2 * N * N]);
+    let mut out = Vec::with_capacity(N * N);
+    for i in 0..N {
+        for j in 0..N {
+            let mut acc = T::zero();
+            for k in 0..N {
+                acc += a[i * N + k] * b[j * N + k];
+            }
+            out.push(acc);
+        }
+    }
+    out
 }
 
 /// `c * conj((m11, m21))`.
@@ -612,6 +645,255 @@ fn unit_complex_completion_ops() -> Vec<Op> {
     ]
 }
 
+/// The angle between two rotation matrices, in f64.
+fn rot3_angle_between(a: &Rotation3<f64>, b: &Rotation3<f64>) -> f64 {
+    a.angle_to(b)
+}
+
+/// `r.euler_angles_ordered(seq, extrinsic)` when well conditioned: observable, the middle angle
+/// away from its range ends (where `acos` is ill-conditioned) and the outer ones away from `±π`
+/// (where the wrap-around of a rounded angle is ambiguous). Upstream asserts `n1 ⟂ n2` and
+/// `n3 ⟂ n1`, so only the six Tait-Bryan sequences are accepted (a symmetric one such as `zxz`
+/// panics upstream, and in the Cairo port).
+fn euler_ordered(
+    r: &Rotation3<f64>,
+    seq: [Unit<Vector3<f64>>; 3],
+    extrinsic: bool,
+) -> Option<Vec<f64>> {
+    let symmetric = seq[0] == seq[2];
+    let (angles, observable) = r.euler_angles_ordered(seq, extrinsic);
+    let mid = angles[1];
+    let mid_ok = if symmetric {
+        mid > 0.1 && mid < PI - 0.1
+    } else {
+        mid.abs() < PI / 2.0 - 0.1
+    };
+    let outer_ok = angles[0].abs() < PI - 0.01 && angles[2].abs() < PI - 0.01;
+    (observable && mid_ok && outer_ok).then(|| angles.to_vec())
+}
+
+fn rotation_matrix_completion_ops() -> Vec<Op> {
+    let (x, y, z) = (Vector3::x_axis(), Vector3::y_axis(), Vector3::z_axis());
+    vec![
+        Op::new(
+            "rotation2_from_matrix",
+            "Rotation2::from_matrix(&m) (upstream's iteration, checked against the closed form)",
+        )
+        .input(with(fm("m", 2, 2), Gen::WellCond(2)))
+        .out(fm("rotation", 2, 2))
+        .dists(&[Dist::Small, Dist::Unit, Dist::Medium])
+        .tol(Tol::Sens { k: 4.0, base: 32.0 })
+        .eval(|x| {
+            let m = sm::<f64, 2, 2>(x);
+            let r = Rotation2::from_matrix_eps(&m, f64::EPSILON, 1000, Rotation2::identity());
+            closest_rotation2(&m).map(|_| flat(r.matrix()))
+        }),
+        Op::new("rotation2_slerp", "a.slerp(&b, t), angle between them < 3")
+            .input(irot("a", 2))
+            .input(irot("b", 2))
+            .input(it("t"))
+            .out(fm("rotation", 2, 2))
+            .dists(&Dist::UNIT)
+            .tol(Tol::Sens { k: 6.0, base: 32.0 })
+            .eval(|x| {
+                let (a, b) = (rot2(x), rot2(&x[4..]));
+                (a.angle_to(&b).abs() < 3.0).then(|| flat(a.slerp(&b, x[8]).matrix()))
+            }),
+        Op::new("rotation2_rotation_to", "a.rotation_to(&b) = b * a^-1")
+            .input(irot("a", 2))
+            .input(irot("b", 2))
+            .out(fm("rotation", 2, 2))
+            .dists(&Dist::UNIT)
+            .ring(checked(
+                (
+                    Box::new(|x: &[f64]| {
+                        let mut y = x[4..8].to_vec();
+                        y.extend_from_slice(&x[..4]);
+                        Some(mat_mul_tr::<f64, 2>(&y))
+                    }) as crate::engine::EvalFn,
+                    Box::new(|x: &[i128]| {
+                        let mut y = x[4..8].to_vec();
+                        y.extend_from_slice(&x[..4]);
+                        Some(mat_mul_tr::<i128, 2>(&y))
+                    }) as crate::engine::ExactFn,
+                ),
+                |x| flat(rot2(x).rotation_to(&rot2(&x[4..])).matrix()),
+            )),
+        Op::new("rotation2_div", "a / b = a * b^-1")
+            .input(irot("a", 2))
+            .input(irot("b", 2))
+            .out(fm("rotation", 2, 2))
+            .dists(&Dist::UNIT)
+            .ring(checked(ring!(mat_mul_tr, 2), |x| {
+                flat((rot2(x) / rot2(&x[4..])).matrix())
+            })),
+        Op::new("rotation2_mul_unit_complex", "r * c (a UnitComplex)")
+            .input(irot("r", 2))
+            .input(iuc("c"))
+            .out(fc("result"))
+            .dists(&Dist::UNIT)
+            .ring(checked(ring!(rot_mul_complex), |x| {
+                flat_c(&(rot2(x) * ucomplex(&x[4..])))
+            })),
+        Op::new("rotation2_div_unit_complex", "r / c (a UnitComplex)")
+            .input(irot("r", 2))
+            .input(iuc("c"))
+            .out(fc("result"))
+            .dists(&Dist::UNIT)
+            .ring(checked(ring!(rot_div_complex), |x| {
+                flat_c(&(rot2(x) / ucomplex(&x[4..])))
+            })),
+        Op::new("rotation3_new", "Rotation3::new(axisangle)")
+            .input(with(fv("axisangle", 3), Gen::ScaledAxis))
+            .out(fm("rotation", 3, 3))
+            .dists(&Dist::UNIT)
+            .tol(Tol::Sens { k: 6.0, base: 8.0 })
+            .eval(|x| Some(flat(Rotation3::new(v3(x)).matrix()))),
+        Op::new("rotation3_powf", "r.powf(n), n in [-2, 2], angle of r < 3")
+            .input(irot("r", 3))
+            .input(iexp("n"))
+            .out(fm("rotation", 3, 3))
+            .dists(&Dist::UNIT)
+            .tol(Tol::Sens { k: 8.0, base: 32.0 })
+            .eval(|x| {
+                let r = rot3(x);
+                (r.angle() > 0.05 && r.angle() < 3.0).then(|| flat(r.powf(x[9]).matrix()))
+            }),
+        Op::new("rotation3_angle_to", "a.angle_to(&b), in [0.05, 3]")
+            .input(irot("a", 3))
+            .input(irot("b", 3))
+            .out(fangle("angle"))
+            .dists(&Dist::UNIT)
+            .tol(Tol::Sens { k: 4.0, base: 24.0 })
+            .eval(|x| {
+                let angle = rot3_angle_between(&rot3(x), &rot3(&x[9..]));
+                (angle > 0.05 && angle < 3.0).then_some(vec![angle])
+            }),
+        Op::new(
+            "rotation3_axis_angle",
+            "r.axis_angle().unwrap(), angle in [0.05, 3]",
+        )
+        .input(irot("r", 3))
+        .out(fv("axis", 3))
+        .out(fangle("angle"))
+        .dists(&Dist::UNIT)
+        .tol(Tol::Sens { k: 4.0, base: 24.0 })
+        .eval(|x| {
+            let (axis, angle) = rot3(x).axis_angle()?;
+            let mut out = flat(&axis.into_inner());
+            out.push(angle);
+            (angle > 0.05 && angle < 3.0).then_some(out)
+        }),
+        Op::new("rotation3_rotation_to", "a.rotation_to(&b) = b * a^-1")
+            .input(irot("a", 3))
+            .input(irot("b", 3))
+            .out(fm("rotation", 3, 3))
+            .dists(&Dist::UNIT)
+            .ring(checked(
+                (
+                    Box::new(|x: &[f64]| {
+                        let mut y = x[9..18].to_vec();
+                        y.extend_from_slice(&x[..9]);
+                        Some(mat_mul_tr::<f64, 3>(&y))
+                    }) as crate::engine::EvalFn,
+                    Box::new(|x: &[i128]| {
+                        let mut y = x[9..18].to_vec();
+                        y.extend_from_slice(&x[..9]);
+                        Some(mat_mul_tr::<i128, 3>(&y))
+                    }) as crate::engine::ExactFn,
+                ),
+                |x| flat(rot3(x).rotation_to(&rot3(&x[9..])).matrix()),
+            )),
+        Op::new("rotation3_div", "a / b = a * b^-1")
+            .input(irot("a", 3))
+            .input(irot("b", 3))
+            .out(fm("rotation", 3, 3))
+            .dists(&Dist::UNIT)
+            .ring(checked(ring!(mat_mul_tr, 3), |x| {
+                flat((rot3(x) / rot3(&x[9..])).matrix())
+            })),
+        Op::new(
+            "rotation3_euler_angles_ordered_zyx",
+            "r.euler_angles_ordered([z, y, x], false) (intrinsic), well-conditioned cases",
+        )
+        .input(irot("r", 3))
+        .out(fv("angles", 3))
+        .dists(&Dist::UNIT)
+        .tol(Tol::Sens { k: 8.0, base: 64.0 })
+        .eval(move |x_| euler_ordered(&rot3(x_), [z, y, x], false)),
+        Op::new(
+            "rotation3_euler_angles_ordered_xyz_extrinsic",
+            "r.euler_angles_ordered([x, y, z], true) (extrinsic), well-conditioned cases",
+        )
+        .input(irot("r", 3))
+        .out(fv("angles", 3))
+        .dists(&Dist::UNIT)
+        .tol(Tol::Sens { k: 8.0, base: 64.0 })
+        .eval(move |x_| euler_ordered(&rot3(x_), [x, y, z], true)),
+        Op::new(
+            "rotation3_euler_angles_ordered_xzy",
+            "r.euler_angles_ordered([x, z, y], false) (intrinsic), well-conditioned cases",
+        )
+        .input(irot("r", 3))
+        .out(fv("angles", 3))
+        .dists(&Dist::UNIT)
+        .tol(Tol::Sens { k: 8.0, base: 64.0 })
+        .eval(move |x_| euler_ordered(&rot3(x_), [x, z, y], false)),
+        Op::new(
+            "rotation3_from_matrix",
+            "Rotation3::from_matrix(&m) (upstream's iteration, checked against the SVD maximiser)",
+        )
+        .input(with(fm("m", 3, 3), Gen::WellCond(3)))
+        .out(fm("rotation", 3, 3))
+        .dists(&[Dist::Small, Dist::Unit, Dist::Medium])
+        .tol(Tol::Sens { k: 4.0, base: 64.0 })
+        .eval(|x| {
+            let m = sm::<f64, 3, 3>(x);
+            closest_rotation3(&m)?;
+            let r = Rotation3::from_matrix_eps(&m, f64::EPSILON, 1000, Rotation3::identity());
+            Some(flat(r.matrix()))
+        }),
+        Op::new("rotation3_slerp", "a.slerp(&b, t), angle between them < 3")
+            .input(irot("a", 3))
+            .input(irot("b", 3))
+            .input(it("t"))
+            .out(fm("rotation", 3, 3))
+            .dists(&Dist::UNIT)
+            .tol(Tol::Sens { k: 8.0, base: 32.0 })
+            .eval(|x| {
+                let (a, b) = (rot3(x), rot3(&x[9..]));
+                (rot3_angle_between(&a, &b) < 3.0).then(|| flat(a.slerp(&b, x[18]).matrix()))
+            }),
+        Op::new(
+            "rotation3_look_at_lh",
+            "Rotation3::look_at_lh(&dir, &up), dir and up not parallel",
+        )
+        .input(iv("dir", 3))
+        .input(iv("up", 3))
+        .out(fm("rotation", 3, 3))
+        .dists(&Dist::NO_LARGE)
+        .tol(Tol::Sens { k: 6.0, base: 8.0 })
+        .eval(|x| {
+            let (d, u) = (v3(x), v3(&x[3..]));
+            separated3(&d, &u).then(|| flat(Rotation3::look_at_lh(&d, &u).matrix()))
+        }),
+        Op::new("rotation3_mul_unit_quaternion", "r * q (a UnitQuaternion)")
+            .input(irot("r", 3))
+            .input(iuq("q"))
+            .out(fq("result"))
+            .dists(&Dist::UNIT)
+            .tol(Tol::Sens { k: 4.0, base: 4.0 })
+            .eval(|x| Some(flat_q(&(rot3(x) * uquat(&x[9..])).into_inner()))),
+        Op::new("rotation3_div_unit_quaternion", "r / q (a UnitQuaternion)")
+            .input(irot("r", 3))
+            .input(iuq("q"))
+            .out(fq("result"))
+            .dists(&Dist::UNIT)
+            .tol(Tol::Sens { k: 4.0, base: 4.0 })
+            .eval(|x| Some(flat_q(&(rot3(x) / uquat(&x[9..])).into_inner()))),
+    ]
+}
+
 pub fn suites() -> Vec<Suite> {
     vec![
         Suite {
@@ -635,6 +917,13 @@ pub fn suites() -> Vec<Suite> {
                           rotations, translations, isometries and similarities, from_complex, \
                           rotation_between_axis, from_matrix",
             ops: unit_complex_completion_ops(),
+        },
+        Suite {
+            name: "rotation_matrix_completion",
+            description: "Rotation2 / Rotation3 completion: from_matrix, slerp, rotation_to, \
+                          division, products with unit complex numbers and unit quaternions, new, \
+                          powf, angle_to, axis_angle, euler_angles_ordered, look_at_lh",
+            ops: rotation_matrix_completion_ops(),
         },
     ]
 }

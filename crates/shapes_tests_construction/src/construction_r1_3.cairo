@@ -10,8 +10,9 @@ use nalgebra::{
     Matrix3x5Trait, Matrix3x6, Matrix3x6Trait, MatrixMul, Rotation2, Rotation2Trait, Rotation3,
     RowVector2, RowVector2Trait, RowVector3, RowVector3Trait, RowVector4, RowVector4Trait,
     RowVector5, RowVector5Trait, RowVector6, RowVector6Trait, Similarity2, Similarity2Trait,
-    Translation2, Translation2Trait, Unit, UnitComplex, UnitComplexTrait, UnitQuaternion,
-    UnitQuaternionTrait, Vector2, Vector2Trait, Vector3, Vector3Trait,
+    Translation1, Translation1Trait, Translation2, Translation2Trait, Unit, UnitComplex,
+    UnitComplexTrait, UnitQuaternion, UnitQuaternionTrait, Vector2, Vector2Trait, Vector3,
+    Vector3Trait,
 };
 use crate::helpers::{assert_raws, fx, load};
 
@@ -403,20 +404,25 @@ fn test_matrix2_construction() {
         array![42758747942, -48074628609, 62942448991, -50325113230].span(),
     );
     assert!(!a.is_zero());
+    let translation1: Translation1<Fixed> = load(array![2379392605].span());
+    let m: Matrix2<Fixed> = translation1.into();
+    assert!(m == Translation1Trait::to_homogeneous(translation1));
     let rotation2: Rotation2<Fixed> = load(
-        array![2379392605, 845143696, -2564322715, 3840820523].span(),
+        array![845143696, -2564322715, 3840820523, -3226608454].span(),
     );
     let m: Matrix2<Fixed> = rotation2.into();
     assert!(m == rotation2.matrix);
-    let unitcomplex: UnitComplex<Fixed> = load(array![-3226608454, 4184895988].span());
+    let unitcomplex: UnitComplex<Fixed> = load(array![4184895988, 1861675656].span());
     let m: Matrix2<Fixed> = unitcomplex.into();
     assert!(m == UnitComplexTrait::to_rotation_matrix(unitcomplex).matrix);
     let rot: Rotation2<Fixed> = load(
-        array![1861675656, -1178365572, 3507632598, -1333057453].span(),
+        array![-1178365572, 3507632598, -1333057453, 2280247019].span(),
     );
-    assert_raws(a.mul_mat(rot), array![1265133082, -7031016265, 15384535629, -23642058294].span());
     assert_raws(
-        a.div_rotation(rot), array![69938112516, -61937927599, -31267138481, 28809475364].span(),
+        a.mul_mat(rot), array![39672839781, -27909996087, 20145546657, -11796934404].span(),
+    );
+    assert_raws(
+        a.div_rotation(rot), array![-31267138481, 28809475364, 68337263029, -65979972452].span(),
     );
 }
 

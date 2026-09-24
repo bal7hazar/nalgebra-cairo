@@ -323,7 +323,8 @@ GEOMETRY_SOURCES = {
     "Rotation2": (4, None), "Rotation3": (9, None), "UnitComplex": (2, None),
     "UnitQuaternion": (4, None), "Isometry2": (4, None), "Isometry3": (7, None),
     "Similarity2": (5, None), "Similarity3": (8, None), "Translation2": (2, None),
-    "Translation3": (3, None),
+    "Translation3": (3, None), "Translation1": (1, None), "Translation4": (4, None),
+    "Translation5": (5, None),
 }
 
 

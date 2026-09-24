@@ -9,9 +9,9 @@ use nalgebra::{
     Matrix5x2, Matrix5x2Trait, Matrix5x3, Matrix5x3Trait, Matrix5x4, Matrix5x4Trait, Matrix5x6,
     Matrix5x6Trait, Matrix6, Matrix6Trait, Matrix6x2, Matrix6x2Trait, Matrix6x3, Matrix6x3Trait,
     Matrix6x4, Matrix6x4Trait, Matrix6x5, Matrix6x5Trait, MatrixMul, Rotation2, Rotation3,
-    Rotation3Trait, Similarity3, Similarity3Trait, Translation3, Translation3Trait, Unit,
-    UnitQuaternion, UnitQuaternionTrait, Vector4, Vector4Trait, Vector5, Vector5Trait, Vector6,
-    Vector6Trait,
+    Rotation3Trait, Similarity3, Similarity3Trait, Translation3, Translation3Trait, Translation4,
+    Translation4Trait, Translation5, Translation5Trait, Unit, UnitQuaternion, UnitQuaternionTrait,
+    Vector4, Vector4Trait, Vector5, Vector5Trait, Vector6, Vector6Trait,
 };
 use crate::helpers::{assert_raws, fx, load};
 
@@ -1159,6 +1159,11 @@ fn test_matrix5_construction() {
             .span(),
     );
     assert!(!a.is_zero());
+    let translation4: Translation4<Fixed> = load(
+        array![-2367094777, 1182523990, 1455673084, -1660275825].span(),
+    );
+    let m: Matrix5<Fixed> = translation4.into();
+    assert!(m == Translation4Trait::to_homogeneous(translation4));
 }
 
 #[should_panic(expected: 'nalgebra: wrong slice length')]
@@ -1991,6 +1996,11 @@ fn test_matrix6_construction() {
             .span(),
     );
     assert!(!a.is_zero());
+    let translation5: Translation5<Fixed> = load(
+        array![94370793, -3993257639, -2314991615, -4226369316, -2339543172].span(),
+    );
+    let m: Matrix6<Fixed> = translation5.into();
+    assert!(m == Translation5Trait::to_homogeneous(translation5));
 }
 
 #[should_panic(expected: 'nalgebra: wrong slice length')]

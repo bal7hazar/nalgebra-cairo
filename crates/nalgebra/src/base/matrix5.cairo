@@ -12,6 +12,7 @@ use core::num::traits::{Bounded, One};
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
+use crate::geometry::{Translation4, Translation4Trait};
 use super::errors;
 use super::kernels::{Fused, Powi};
 use super::matrix5x2::Matrix5x2;
@@ -4768,5 +4769,26 @@ pub impl Matrix5DivAssignScalar<
                 m45,
                 m55,
             };
+    }
+}
+
+/// `translation4.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream:
+/// `From<Translation4> for Matrix5`.
+pub impl Matrix5FromTranslation4<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Translation4<T>, Matrix5<T>> {
+    #[inline(always)]
+    fn into(self: Translation4<T>) -> Matrix5<T> {
+        Translation4Trait::to_homogeneous(self)
     }
 }

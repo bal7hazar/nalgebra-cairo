@@ -15,10 +15,15 @@
 //! Numeric contract (AGENTS.md): additions and negations panic instead of wrapping; no sum of
 //! products is formed here, so no fused kernel is needed.
 
+use core::num::traits::One;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;
+use super::isometry2::Isometry2;
+use super::quaternion::ApproxEqTrait;
+use super::similarity2::Similarity2;
+use super::unit_complex::UnitComplex;
 
 
 /// A 2D translation by `vector`. The field name is upstream's (`Translation { vector }`).
@@ -30,7 +35,7 @@ pub struct Translation2<T> {
 /// Operations of `Translation2<T>` over a `Real` scalar. By value, unrolled, no loop.
 #[generate_trait]
 pub impl Translation2Impl<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Sub<T>, +Neg<T>,
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>, +PartialEq<T>,
 > of Translation2Trait<T> {
     /// The translation by `(x, y)`. Exact. Upstream: `Translation2::new`.
     #[inline(always)]
@@ -98,6 +103,56 @@ pub impl Translation2Impl<
         R::abs_diff_eq(self.vector.x, other.vector.x, ulps)
             && R::abs_diff_eq(self.vector.y, other.vector.y, ulps)
     }
+
+    /// `true` when every component is `relative_eq` to the matching component of `other` (see
+    /// `QuaternionTrait::relative_eq`). Upstream: `approx::RelativeEq::relative_eq` (DESIGN D3).
+    fn relative_eq(
+        self: Translation2<T>, other: Translation2<T>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        let (a, b) = (self.vector, other.vector);
+        ApproxEqTrait::relative_eq(a.x, b.x, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(a.y, b.y, epsilon, max_relative)
+    }
+
+    /// `true` when every component is `ulps_eq` to the matching component of `other` (see
+    /// `QuaternionTrait::ulps_eq`). Upstream: `approx::UlpsEq::ulps_eq` (DESIGN D3).
+    fn ulps_eq(self: Translation2<T>, other: Translation2<T>, epsilon: u64, max_ulps: u32) -> bool {
+        let (a, b) = (self.vector, other.vector);
+        ApproxEqTrait::ulps_eq(a.x, b.x, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(a.y, b.y, epsilon, max_ulps)
+    }
+
+    /// The same translation with every component converted by `Into<T, U>` (the identity for
+    /// the single scalar `Fixed`). Upstream: `cast` (and `SubsetOf<Translation<U>>`).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Translation2<T>) -> Translation2<U> {
+        let v = self.vector;
+        Translation2 { vector: Vector2 { x: v.x.into(), y: v.y.into() } }
+    }
+
+    // --- P09a completion: heterogeneous operators (Cairo's operator traits are homogeneous) ----
+
+    /// `self * iso`: the isometry of rotation `iso.rotation` and translation
+    /// `self.vector + iso.translation.vector` (exact additions). Upstream: `Mul<Isometry2> for
+    /// Translation2` (`t * iso`).
+    #[inline(always)]
+    fn mul_isometry(self: Translation2<T>, iso: Isometry2<T>) -> Isometry2<T> {
+        Isometry2 { rotation: iso.rotation, translation: self * iso.translation }
+    }
+
+    /// `self * sim`: `sim` with `self.vector` added to its translation (exact additions; the
+    /// rotation and the scaling unchanged). Upstream: `Mul<Similarity2> for Translation2` (`t *
+    /// s`).
+    #[inline(always)]
+    fn mul_similarity(self: Translation2<T>, sim: Similarity2<T>) -> Similarity2<T> {
+        Similarity2 { isometry: Self::mul_isometry(self, sim.isometry), scaling: sim.scaling }
+    }
+
+    /// `self * r`: the isometry of rotation `r` and translation `self` (no arithmetic).
+    /// Upstream: `Mul<UnitComplex> for Translation2` (`t * r`).
+    #[inline(always)]
+    fn mul_unit_complex(self: Translation2<T>, r: UnitComplex<T>) -> Isometry2<T> {
+        Isometry2 { rotation: r, translation: self }
+    }
 }
 
 /// `a * b`: the composition of two translations, the SUM of their vectors (translations commute).
@@ -116,5 +171,81 @@ pub impl Translation2FromVector<T> of Into<Vector2<T>, Translation2<T>> {
     #[inline(always)]
     fn into(self: Vector2<T>) -> Translation2<T> {
         Translation2 { vector: self }
+    }
+}
+
+/// `a / b = a * b⁻¹`: the translation by `a.vector - b.vector`. Exact; panics on overflow.
+/// Upstream: `Div<Translation>`.
+pub impl Translation2Div<T, +Sub<T>, +Copy<T>, +Drop<T>> of Div<Translation2<T>> {
+    #[inline(always)]
+    fn div(lhs: Translation2<T>, rhs: Translation2<T>) -> Translation2<T> {
+        let (a, b) = (lhs.vector, rhs.vector);
+        Translation2 { vector: Vector2 { x: a.x - b.x, y: a.y - b.y } }
+    }
+}
+
+/// `One::one()`: the identity translation; `is_one` tests for the zero vector exactly.
+/// Upstream: `num::One for Translation`.
+pub impl Translation2One<
+    T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
+> of One<Translation2<T>> {
+    #[inline(always)]
+    fn one() -> Translation2<T> {
+        Translation2 { vector: Vector2 { x: R::zero(), y: R::zero() } }
+    }
+
+    #[inline(always)]
+    fn is_one(self: @Translation2<T>) -> bool {
+        let v = *self.vector;
+        v.x == R::zero() && v.y == R::zero()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @Translation2<T>) -> bool {
+        !Self::is_one(self)
+    }
+}
+
+/// `p.into()`: the translation by the position vector of `p`. Upstream: `From<Point2> for
+/// Translation2`.
+pub impl Translation2FromPoint<T> of Into<Point2<T>, Translation2<T>> {
+    #[inline(always)]
+    fn into(self: Point2<T>) -> Translation2<T> {
+        let Point2 { x, y } = self;
+        Translation2 { vector: Vector2 { x, y } }
+    }
+}
+
+/// `[x, y].into()`: the translation by that vector. Upstream: `From<[T; 2]>`.
+pub impl Translation2FromArray<T> of Into<[T; 2], Translation2<T>> {
+    #[inline(always)]
+    fn into(self: [T; 2]) -> Translation2<T> {
+        let [x, y] = self;
+        Translation2 { vector: Vector2 { x, y } }
+    }
+}
+
+/// The components of the vector as an array. Upstream: `Into<[T; 2]>`.
+pub impl Translation2IntoArray<T> of Into<Translation2<T>, [T; 2]> {
+    #[inline(always)]
+    fn into(self: Translation2<T>) -> [T; 2] {
+        let Vector2 { x, y } = self.vector;
+        [x, y]
+    }
+}
+
+/// `t.into()`: the similarity of translation `t`, identity rotation and scaling 1. Upstream:
+/// `SubsetOf<Similarity2> for Translation2` (`nalgebra::convert(t)`).
+pub impl Similarity2FromTranslation2<
+    T, impl R: Real<T>, +Drop<T>,
+> of Into<Translation2<T>, Similarity2<T>> {
+    #[inline(always)]
+    fn into(self: Translation2<T>) -> Similarity2<T> {
+        Similarity2 {
+            isometry: Isometry2 {
+                rotation: UnitComplex { re: R::one(), im: R::zero() }, translation: self,
+            },
+            scaling: R::one(),
+        }
     }
 }

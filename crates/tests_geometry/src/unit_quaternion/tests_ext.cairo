@@ -501,7 +501,10 @@ fn test_relative_and_ulps_eq() {
     let b = uqt((-1509276475, -2563574020, -2263667719, 2114881862));
     assert!(a.relative_eq(b, 2, Real::zero()) && !a.relative_eq(b, 1, Real::zero()));
     assert!(a.ulps_eq(b, 0, 2) && !a.ulps_eq(b, 0, 1));
-    assert!(!a.relative_eq(-a, 0, Real::zero()));
+    // `q` and `-q` are the same rotation and compare equal, like upstream (the double cover).
+    assert!(a.relative_eq(-a, 0, Real::zero()) && a.ulps_eq(-a, 0, 0) && a.abs_diff_eq(-a, 0));
+    assert!(a.relative_eq(-b, 2, Real::zero()) && !a.relative_eq(-b, 1, Real::zero()));
+    assert!(a.ulps_eq(-b, 0, 2) && !a.ulps_eq(-b, 0, 1));
 }
 
 #[test]

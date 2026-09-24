@@ -43,7 +43,8 @@ LEGACY_VECTORS = {(2, 1), (3, 1), (4, 1), (6, 1)}
 # `Into<Src, MatrixN>` of the geometry types (upstream `geometry/*_conversion.rs`): (source,
 # body, doc) per square shape.
 GEOMETRY_INTO = {
-    (2, 2): [("Rotation2", "self.matrix", "the rotation matrix"),
+    (2, 2): [("Translation1", "Translation1Trait::to_homogeneous(self)", "the homogeneous matrix"),
+             ("Rotation2", "self.matrix", "the rotation matrix"),
              ("UnitComplex", "UnitComplexTrait::to_rotation_matrix(self).matrix",
               "the rotation matrix `[[re, -im], [im, re]]`")],
     (3, 3): [("Rotation2", "Rotation2Trait::to_homogeneous(self)", "the homogeneous rotation"),
@@ -60,6 +61,8 @@ GEOMETRY_INTO = {
              ("Isometry3", "Isometry3Trait::to_homogeneous(self)", "the homogeneous matrix"),
              ("Similarity3", "Similarity3Trait::to_homogeneous(self)", "the homogeneous matrix"),
              ("Translation3", "Translation3Trait::to_homogeneous(self)", "the homogeneous matrix")],
+    (5, 5): [("Translation4", "Translation4Trait::to_homogeneous(self)", "the homogeneous matrix")],
+    (6, 6): [("Translation5", "Translation5Trait::to_homogeneous(self)", "the homogeneous matrix")],
 }
 DIV_SIZES = (16, 9, 6, 5, 4, 3, 1)  # `Real::divN` (1 = `Real::div`)
 

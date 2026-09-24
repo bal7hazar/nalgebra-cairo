@@ -12,7 +12,7 @@ use core::num::traits::{Bounded, One};
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
-use crate::geometry::{Rotation2, UnitComplex, UnitComplexTrait};
+use crate::geometry::{Rotation2, Translation1, Translation1Trait, UnitComplex, UnitComplexTrait};
 use super::errors;
 use super::kernels::Powi;
 use super::matrix2x3::Matrix2x3;
@@ -1324,6 +1324,27 @@ pub impl Matrix2DivAssignScalar<
     fn div_assign(ref self: Matrix2<T>, rhs: T) {
         let (m11, m21, m12, m22) = R::div4(self.m11, self.m21, self.m12, self.m22, rhs);
         self = Matrix2 { m11, m21, m12, m22 };
+    }
+}
+
+/// `translation1.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream:
+/// `From<Translation1> for Matrix2`.
+pub impl Matrix2FromTranslation1<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Translation1<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn into(self: Translation1<T>) -> Matrix2<T> {
+        Translation1Trait::to_homogeneous(self)
     }
 }
 
