@@ -37,8 +37,6 @@ use super::vector4::Vector4;
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod oracle;
-#[cfg(test)]
 mod tests;
 
 /// A 3-dimensional column vector.

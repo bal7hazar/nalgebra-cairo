@@ -41,8 +41,6 @@ use crate::base::vector4::Vector4;
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod benches_ext;
-#[cfg(test)]
 mod oracle;
 #[cfg(test)]
 mod oracle_ext;

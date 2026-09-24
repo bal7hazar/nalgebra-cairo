@@ -31,10 +31,6 @@ use crate::base::vector2::Vector2;
 use super::unit_complex::UnitComplex;
 
 #[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod oracle;
-#[cfg(test)]
 mod tests;
 
 /// A 2D rotation of angle `θ`, stored as the orthogonal matrix

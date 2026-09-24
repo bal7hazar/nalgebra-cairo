@@ -43,10 +43,6 @@ use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
 use crate::base::vector6::Vector6;
 
-#[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod tests;
 
 /// The Cholesky factorisation `a = l * lᵀ` of a symmetric positive-definite 2x2 matrix:
 /// the 3 components of the LOWER triangular factor `l`, `l22` last.

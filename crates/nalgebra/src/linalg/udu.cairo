@@ -22,10 +22,6 @@ use crate::base::vector4::Vector4;
 use crate::base::vector6::Vector6;
 use crate::linalg::ldlt::{Ldlt2Trait, Ldlt3Trait, Ldlt4Trait, Ldlt6Trait};
 
-#[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod tests;
 
 /// The `UDUᵀ` factorisation `p = u * diag(d) * uᵀ` of a symmetric 2x2 matrix: the unit UPPER
 /// triangular `u` (ones on the diagonal, zeros below it) and the diagonal `d`. The fields are

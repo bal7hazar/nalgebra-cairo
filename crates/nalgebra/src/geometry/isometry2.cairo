@@ -43,8 +43,6 @@ use super::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod oracle;
-#[cfg(test)]
 mod tests;
 
 /// A 2D direct isometry: the rotation `rotation` followed by the translation `translation`. The

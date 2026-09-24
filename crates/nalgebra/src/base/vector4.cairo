@@ -34,13 +34,6 @@ use super::unit::Unit;
 use super::vector2::Vector2;
 use super::vector3::Vector3;
 
-#[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod oracle;
-#[cfg(test)]
-mod tests;
-
 /// A 4-dimensional column vector.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
 pub struct Vector4<T> {

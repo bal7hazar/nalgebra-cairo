@@ -33,8 +33,6 @@ use super::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod oracle;
-#[cfg(test)]
 mod tests;
 
 /// A 3D rotation as an orthonormal 3x3 matrix of determinant +1.

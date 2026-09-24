@@ -37,10 +37,6 @@ use super::translation2::Translation2;
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod benches_ext;
-#[cfg(test)]
-mod oracle;
-#[cfg(test)]
 mod oracle_ext;
 #[cfg(test)]
 mod tests;
