@@ -3,16 +3,19 @@
 //! with the tests showing why (AGENTS.md rule 8).
 //!
 //! The block-composition variants (`alt_mul_blocks`, `alt_mul_vec_blocks`) are the natural way to
-//! multiply a 2x2 grid of `Matrix3`. They are NOT shipped: each output scalar would be rounded
-//! twice (once per 3x3 product, once more when the two are added), which breaks the oracle's
-//! tolerance of 0. They also cost more gas, so nothing is given up.
+//! multiply a 2x2 grid of `Matrix3` (the 3x3 blocks are read and written through the test-only
+//! `m6_block*` / `m6_from_blocks` helpers, moves only). They are NOT shipped: each output scalar
+//! would be rounded twice (once per 3x3 product, once more when the two are added), which breaks
+//! the oracle's tolerance of 0. They also cost more gas, so nothing is given up.
 
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3Trait;
-use crate::base::matrix_test_utils::{fx, int, m6i, v6i};
-use crate::base::vector3::Vector3;
+use crate::base::matrix_test_utils::{
+    fx, int, m6_block11, m6_block12, m6_block21, m6_block22, m6_from_blocks, m6i, v6_from_halves,
+    v6_head, v6_tail, v6i,
+};
 use crate::base::vector6::Vector6;
 use super::{Matrix6, Matrix6Trait};
 
@@ -52,20 +55,121 @@ fn ab6() -> Matrix6<Fixed> {
 /// block formula, and the one AGENTS.md rule 4 forbids — every output scalar is rounded once
 /// inside each `Matrix3` product and once more by the sum.
 fn alt_mul_blocks(lhs: Matrix6<Fixed>, rhs: Matrix6<Fixed>) -> Matrix6<Fixed> {
-    Matrix6 {
-        m11: lhs.m11 * rhs.m11 + lhs.m12 * rhs.m21,
-        m21: lhs.m21 * rhs.m11 + lhs.m22 * rhs.m21,
-        m12: lhs.m11 * rhs.m12 + lhs.m12 * rhs.m22,
-        m22: lhs.m21 * rhs.m12 + lhs.m22 * rhs.m22,
-    }
+    let (l11, l21, l12, l22) = (m6_block11(lhs), m6_block21(lhs), m6_block12(lhs), m6_block22(lhs));
+    let (r11, r21, r12, r22) = (m6_block11(rhs), m6_block21(rhs), m6_block12(rhs), m6_block22(rhs));
+    m6_from_blocks(
+        l11 * r11 + l12 * r21, l21 * r11 + l22 * r21, l11 * r12 + l12 * r22, l21 * r12 + l22 * r22,
+    )
 }
 
 /// `mul_vec` composed from two rounded `Matrix3::mul_vec` per block row: same two-rounding defect.
 fn alt_mul_vec_blocks(m: Matrix6<Fixed>, v: Vector6<Fixed>) -> Vector6<Fixed> {
-    Vector6 {
-        a: Matrix3Trait::mul_vec(m.m11, v.a) + Matrix3Trait::mul_vec(m.m12, v.b),
-        b: Matrix3Trait::mul_vec(m.m21, v.a) + Matrix3Trait::mul_vec(m.m22, v.b),
-    }
+    let (a, b) = (v6_head(v), v6_tail(v));
+    v6_from_halves(
+        Matrix3Trait::mul_vec(m6_block11(m), a) + Matrix3Trait::mul_vec(m6_block12(m), b),
+        Matrix3Trait::mul_vec(m6_block21(m), a) + Matrix3Trait::mul_vec(m6_block22(m), b),
+    )
+}
+
+/// `abs_diff_eq` as the four 3x3 blocks compared by the non-inlined `Matrix3` kernel (the form
+/// of the former block layout): the call returns at the first differing block, and still costs
+/// more than the shipped inlined chain in both cases measured.
+fn alt_abs_diff_eq_blocks(a: Matrix6<Fixed>, b: Matrix6<Fixed>, ulps: u64) -> bool {
+    Matrix3Trait::abs_diff_eq(m6_block11(a), m6_block11(b), ulps)
+        && Matrix3Trait::abs_diff_eq(m6_block21(a), m6_block21(b), ulps)
+        && Matrix3Trait::abs_diff_eq(m6_block12(a), m6_block12(b), ulps)
+        && Matrix3Trait::abs_diff_eq(m6_block22(a), m6_block22(b), ulps)
+}
+
+/// `is_identity` through the four 3x3 blocks, see `alt_abs_diff_eq_blocks`.
+fn alt_is_identity_blocks(a: Matrix6<Fixed>, ulps: u64) -> bool {
+    Matrix3Trait::is_identity(m6_block11(a), ulps)
+        && Matrix3Trait::abs_diff_eq(m6_block21(a), Matrix3Trait::zeros(), ulps)
+        && Matrix3Trait::abs_diff_eq(m6_block12(a), Matrix3Trait::zeros(), ulps)
+        && Matrix3Trait::is_identity(m6_block22(a), ulps)
+}
+
+/// The shipped 36-term `abs_diff_eq` chain as a call (`#[inline(never)]`, the attribute of the
+/// smaller shapes' comparisons): about twice the inlined chain when the first component differs.
+#[inline(never)]
+fn alt_abs_diff_eq_not_inlined(a: Matrix6<Fixed>, b: Matrix6<Fixed>, ulps: u64) -> bool {
+    Real::abs_diff_eq(a.m11, b.m11, ulps)
+        && Real::abs_diff_eq(a.m21, b.m21, ulps)
+        && Real::abs_diff_eq(a.m31, b.m31, ulps)
+        && Real::abs_diff_eq(a.m41, b.m41, ulps)
+        && Real::abs_diff_eq(a.m51, b.m51, ulps)
+        && Real::abs_diff_eq(a.m61, b.m61, ulps)
+        && Real::abs_diff_eq(a.m12, b.m12, ulps)
+        && Real::abs_diff_eq(a.m22, b.m22, ulps)
+        && Real::abs_diff_eq(a.m32, b.m32, ulps)
+        && Real::abs_diff_eq(a.m42, b.m42, ulps)
+        && Real::abs_diff_eq(a.m52, b.m52, ulps)
+        && Real::abs_diff_eq(a.m62, b.m62, ulps)
+        && Real::abs_diff_eq(a.m13, b.m13, ulps)
+        && Real::abs_diff_eq(a.m23, b.m23, ulps)
+        && Real::abs_diff_eq(a.m33, b.m33, ulps)
+        && Real::abs_diff_eq(a.m43, b.m43, ulps)
+        && Real::abs_diff_eq(a.m53, b.m53, ulps)
+        && Real::abs_diff_eq(a.m63, b.m63, ulps)
+        && Real::abs_diff_eq(a.m14, b.m14, ulps)
+        && Real::abs_diff_eq(a.m24, b.m24, ulps)
+        && Real::abs_diff_eq(a.m34, b.m34, ulps)
+        && Real::abs_diff_eq(a.m44, b.m44, ulps)
+        && Real::abs_diff_eq(a.m54, b.m54, ulps)
+        && Real::abs_diff_eq(a.m64, b.m64, ulps)
+        && Real::abs_diff_eq(a.m15, b.m15, ulps)
+        && Real::abs_diff_eq(a.m25, b.m25, ulps)
+        && Real::abs_diff_eq(a.m35, b.m35, ulps)
+        && Real::abs_diff_eq(a.m45, b.m45, ulps)
+        && Real::abs_diff_eq(a.m55, b.m55, ulps)
+        && Real::abs_diff_eq(a.m65, b.m65, ulps)
+        && Real::abs_diff_eq(a.m16, b.m16, ulps)
+        && Real::abs_diff_eq(a.m26, b.m26, ulps)
+        && Real::abs_diff_eq(a.m36, b.m36, ulps)
+        && Real::abs_diff_eq(a.m46, b.m46, ulps)
+        && Real::abs_diff_eq(a.m56, b.m56, ulps)
+        && Real::abs_diff_eq(a.m66, b.m66, ulps)
+}
+
+/// The shipped 36-term `is_identity` chain as a call, see `alt_abs_diff_eq_not_inlined`.
+#[inline(never)]
+fn alt_is_identity_not_inlined(a: Matrix6<Fixed>, ulps: u64) -> bool {
+    Real::abs_diff_eq(a.m11, Real::one(), ulps)
+        && Real::abs_diff_eq(a.m21, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m31, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m41, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m51, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m61, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m12, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m22, Real::one(), ulps)
+        && Real::abs_diff_eq(a.m32, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m42, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m52, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m62, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m13, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m23, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m33, Real::one(), ulps)
+        && Real::abs_diff_eq(a.m43, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m53, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m63, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m14, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m24, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m34, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m44, Real::one(), ulps)
+        && Real::abs_diff_eq(a.m54, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m64, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m15, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m25, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m35, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m45, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m55, Real::one(), ulps)
+        && Real::abs_diff_eq(a.m65, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m16, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m26, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m36, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m46, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m56, Real::zero(), ulps)
+        && Real::abs_diff_eq(a.m66, Real::one(), ulps)
 }
 
 // --- why the alternatives lost
@@ -77,13 +181,13 @@ fn test_mul_alt_blocks_rounds_twice() {
     let h = fx(0x80000000);
     let zero: Fixed = Real::zero();
     let mut lhs = Matrix6Trait::<Fixed>::zeros();
-    lhs.m11.m11 = h;
-    lhs.m12.m11 = h;
+    lhs.m11 = h;
+    lhs.m14 = h;
     let mut rhs = Matrix6Trait::<Fixed>::zeros();
-    rhs.m11.m11 = fx(1);
-    rhs.m21.m11 = fx(1);
-    assert!((lhs * rhs).m11.m11 == fx(1));
-    assert!(alt_mul_blocks(lhs, rhs).m11.m11 == zero);
+    rhs.m11 = fx(1);
+    rhs.m41 = fx(1);
+    assert!((lhs * rhs).m11 == fx(1));
+    assert!(alt_mul_blocks(lhs, rhs).m11 == zero);
 }
 
 #[test]
@@ -91,13 +195,31 @@ fn test_mul_vec_alt_blocks_rounds_twice() {
     let h = fx(0x80000000);
     let zero: Fixed = Real::zero();
     let mut m = Matrix6Trait::<Fixed>::zeros();
-    m.m11.m11 = h;
-    m.m12.m11 = h;
-    let v = Vector6 {
-        a: Vector3 { x: fx(1), y: zero, z: zero }, b: Vector3 { x: fx(1), y: zero, z: zero },
-    };
-    assert!(m.mul_vec(v).a.x == fx(1));
-    assert!(alt_mul_vec_blocks(m, v).a.x == zero);
+    m.m11 = h;
+    m.m14 = h;
+    let v = Vector6 { x: fx(1), y: zero, z: zero, w: fx(1), a: zero, b: zero };
+    assert!(m.mul_vec(v).x == fx(1));
+    assert!(alt_mul_vec_blocks(m, v).x == zero);
+}
+
+#[test]
+fn test_alt_comparisons_agree() {
+    // Same answers as the shipped inlined chains: the alternatives lost on gas only.
+    let i = Matrix6Trait::<Fixed>::identity();
+    let off = i
+        + Matrix6Trait::from_diagonal(
+            Vector6 { x: fx(0), y: fx(0), z: fx(0), w: fx(0), a: fx(0), b: fx(3) },
+        );
+    assert!(alt_abs_diff_eq_blocks(a6(), a6(), 0) && !alt_abs_diff_eq_blocks(a6(), b6(), 1));
+    assert!(alt_abs_diff_eq_not_inlined(a6(), a6(), 0));
+    assert!(!alt_abs_diff_eq_not_inlined(a6(), b6(), 1));
+    assert!(alt_is_identity_blocks(i, 0) && !alt_is_identity_blocks(a6(), 1));
+    assert!(alt_is_identity_not_inlined(i, 0) && !alt_is_identity_not_inlined(a6(), 1));
+    assert!(alt_is_identity_blocks(off, 3) == off.is_identity(3));
+    assert!(alt_is_identity_blocks(off, 2) == off.is_identity(2));
+    assert!(alt_is_identity_not_inlined(off, 2) == off.is_identity(2));
+    assert!(alt_abs_diff_eq_blocks(i, off, 2) == i.abs_diff_eq(off, 2));
+    assert!(alt_abs_diff_eq_not_inlined(i, off, 3) == i.abs_diff_eq(off, 3));
 }
 
 #[test]
@@ -639,6 +761,46 @@ fn bench_matrix6_abs_diff_eq__all_compared() {
 
 #[test]
 #[inline(never)]
+fn bench_matrix6_abs_diff_eq__alt_blocks() {
+    let a = black_box(a6());
+    let b = black_box(a6());
+    assert!(alt_abs_diff_eq_blocks(a, b, 1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_abs_diff_eq__alt_not_inlined() {
+    let a = black_box(a6());
+    let b = black_box(a6());
+    assert!(alt_abs_diff_eq_not_inlined(a, b, 1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_abs_diff_eq__first_differs() {
+    let a = black_box(a6());
+    let b = black_box(b6());
+    assert!(!a.abs_diff_eq(b, 1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_abs_diff_eq__alt_blocks_first_differs() {
+    let a = black_box(a6());
+    let b = black_box(b6());
+    assert!(!alt_abs_diff_eq_blocks(a, b, 1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_abs_diff_eq__alt_not_inlined_first_differs() {
+    let a = black_box(a6());
+    let b = black_box(b6());
+    assert!(!alt_abs_diff_eq_not_inlined(a, b, 1));
+}
+
+#[test]
+#[inline(never)]
 fn bench_matrix6_is_identity__baseline() {
     let _a = black_box(Matrix6Trait::<Fixed>::identity());
     assert!(black_box(true));
@@ -649,4 +811,39 @@ fn bench_matrix6_is_identity__baseline() {
 fn bench_matrix6_is_identity__all_compared() {
     let a = black_box(Matrix6Trait::<Fixed>::identity());
     assert!(a.is_identity(1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_is_identity__alt_blocks() {
+    let a = black_box(Matrix6Trait::<Fixed>::identity());
+    assert!(alt_is_identity_blocks(a, 1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_is_identity__alt_not_inlined() {
+    let a = black_box(Matrix6Trait::<Fixed>::identity());
+    assert!(alt_is_identity_not_inlined(a, 1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_is_identity__first_differs() {
+    let a = black_box(a6());
+    assert!(!a.is_identity(1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_is_identity__alt_blocks_first_differs() {
+    let a = black_box(a6());
+    assert!(!alt_is_identity_blocks(a, 1));
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_is_identity__alt_not_inlined_first_differs() {
+    let a = black_box(a6());
+    assert!(!alt_is_identity_not_inlined(a, 1));
 }

@@ -59,7 +59,7 @@ against the hand-written block `Vector6` (`proto/src/compare.cairo`): `new`, `ad
 output is bit-identical. Block access becomes P05's `fixed_view::<3, 3>(i, j)` / `fixed_rows`,
 which only move fields (free, BENCHMARK §5). Cost: a breaking change of field paths for users of
 `Vector6` / `Matrix6` (`linalg` `Lu6` / `Ldlt6` / `Cholesky6`, rapier's multibody code) —
-**owner decision, open question Q2**.
+**owner decision Q2 (2026-09-24): flat**, done in WP 8.1b-2 (§2.4).
 
 ### 1.3 Products between shapes: `MatrixMul::mul_mat`
 
@@ -217,9 +217,34 @@ before the switch) shows 235 / 235 public operations bit-identical at equal gas,
 `gas/nalgebra-base.json` did not move. Specialisation format (`library.py`): `// @method`,
 `// @internal` (crate-internal matrix trait), `// @use`, `// @doc internal`, `// @item <name>
 <anchor>` (`struct`, `impl`, `end`); the inline `#[cfg(test)] mod tests` of `Matrix2/3/4` is
-spliced from `specialisations/<module>_tests.cairo`. The prototype keeps its own specialisations
-in `specialisations/proto/`. Unifying the vector / matrix / prototype templates is 8.1b-3's work,
+spliced from `specialisations/<module>_tests.cairo` (moved to `base/matrixN/tests.cairo` by
+8.1b-2). The prototype keeps its own specialisations in `specialisations/proto/`. Unifying the vector / matrix / prototype templates is 8.1b-3's work,
 under the same gas gate.
+
+### 2.4 WP 8.1b-2 outcome: flat `Vector6` / `Matrix6` generated
+
+`Vector6 { x, y, z, w, a, b }` and `Matrix6 { m11 .. m66 }` (column-major, `new` row-major) are
+written by the same templates, restricted to the surface of the block types they replaced
+(`VECTOR_SURFACE`, `MATRIX_SURFACE`: no method added). Above 4 terms `simba::Real` has no
+`sum_prodN`, so the 6-term sums are ONE `Real::Wide` chain each (`wide_chain`: `let w = ..`
+statements, the hand-written vector form; `wide_expr`: one nested expression, the hand-written
+matrix form), `Matrix6::mul_vec` / `tr_mul_vec` keep default inlining, and the `Matrix6`
+comparisons (`is_identity`, `abs_diff_eq`) are `#[inline(always)]` 36-term chains: measured
+cheaper than the former four `Matrix3` calls and than the chain as a call in every case
+(`bench_matrix6_{is_identity,abs_diff_eq}__alt_*`). The specialisation files carry only `// @doc`
+sections (the measured notes of the old doc comments; `@doc <method>`, `@doc Mul`, `@doc module`
+are new in 8.1b-2). The inline `mod tests` of `Matrix2/3/4` moved to `base/matrixN/tests.cairo`
+(same test paths and gas keys); every generated shape declares its `base/<module>/*.cairo` test
+modules.
+
+`compare.sh 8d7ccec` (the commit with the hand-written block types; `compare.py` writes their
+inputs as block literals and reads a `Matrix6` result through its flat column-major image) shows
+281 / 281 operations bit-identical, 274 at equal gas and 7 cheaper (`zeros`, `identity`,
+`from_diagonal*` of the flat layout, and the two comparisons), none dearer (`COMPARE.md`). In the
+crate, 67 figures of `gas/` drop (6D shapes, `Lu6`, `Ldlt6`, `Cholesky6`: the flat builders and
+literals) and none rises. `Matrix6::trace` now sums in upstream's left-to-right order instead of
+`(m11 + m22 + m33) + (m44 + m55 + m66)`: equal whenever both are defined; only an overflowing
+partial sum could panic in one order and not the other.
 
 ## 3. Generated tests under the compile budget
 
@@ -373,6 +398,7 @@ PR that creates it; a package over 6 GB splits by shape group (`R ≤ 3` / `R �
   square shapes: ambiguous method).
 - **Q2** flat `Vector6` / `Matrix6` (upstream layout and `Serde` order, equal gas) instead of the
   blocks of DESIGN D4 — a breaking change of field paths for `linalg` and rapier.cairo.
+  **Decided: flat** (owner, 2026-09-24; WP 8.1b-2, §2.4).
 - **Q3** the generated-tests packages are new workspace members and CI jobs (§5).
 - **Q4** the `nalgebra` unit-test crate is at 13.2 GB of 16 GB: moving the hand-written `base`
   tests of the 8 migrated shapes into a `shapes_legacy` test package (or splitting `geometry` /

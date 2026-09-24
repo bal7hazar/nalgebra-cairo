@@ -9,7 +9,8 @@ surface, with the same kernels, the same doc comments and the same tests.
 
 Outputs (committed, reproducible byte for byte, never edited by hand):
 
-* `crates/nalgebra/src/base/{vector2,vector3,vector4,matrix2,matrix3,matrix4}.cairo` (WP 8.1b-1):
+* `crates/nalgebra/src/base/{vector2,vector3,vector4,vector6,matrix2,matrix3,matrix4,matrix6}.cairo`
+  (WP 8.1b-1, 8.1b-2):
   the library shapes, from the templates of `library.py` and the hand-written kernels of
   `specialisations/<module>.cairo` spliced verbatim (format: `library.py`);
 * `proto/src/**.cairo`: the WP 8.1a prototype package (the shapes of `PROTO_SHAPES`, the
@@ -21,7 +22,7 @@ Usage (from the repository root):
 
     python3 tools/shapegen/shapegen.py            # write the outputs (runs `scarb fmt`)
     python3 tools/shapegen/shapegen.py --check    # exit 1 if a committed output is stale
-    python3 tools/shapegen/shapegen.py --compare DIR
+    python3 tools/shapegen/shapegen.py --compare DIR [--compare-root ROOT]
                                                    # staging comparison package (`compare.py`)
     python3 tools/shapegen/shapegen.py --out DIR --shapes all --no-compare
                                                    # a measurement package (compile budget)
@@ -931,11 +932,9 @@ class Case:
 
 
 def hw_literal(s: Shape, values: dict[str, str]) -> str:
+    """A literal of the crate's shape (flat for every shape since WP 8.1b-2; the block `Vector6`
+    the prototype was measured against is gone, `proto/GAS.md` keeps those figures)."""
     H = f"H{HANDWRITTEN[s]}"
-    if s == Shape(6, 1):
-        x = [values[f] for f in s.fields]
-        return (f"{H} {{ a: nalgebra::base::Vector3 {{ x: {x[0]}, y: {x[1]}, z: {x[2]} }}, "
-                f"b: nalgebra::base::Vector3 {{ x: {x[3]}, y: {x[4]}, z: {x[5]} }} }}")
     return f"{H} {{ {', '.join(f'{f}: {values[f]}' for f in s.fields)} }}"
 
 
@@ -1255,6 +1254,9 @@ def main() -> int:
                    help="write the staging comparison package there (`compare.py`)")
     p.add_argument("--out", type=Path, help="write a measurement package there instead")
     p.add_argument("--shapes", default="proto", help="'proto', 'all', 'none' or '2x3,3x1,...'")
+    p.add_argument("--compare-root", type=Path, metavar="ROOT",
+                   help="with --compare: the checkout whose crates are the hand-written side "
+                        "(default: this repository)")
     p.add_argument("--no-compare", action="store_true", help="omit the comparison module")
     p.add_argument("--no-tests", action="store_true", help="omit the generated tests")
     p.add_argument("--test-families", help="only these test families ('products,index')")
@@ -1273,7 +1275,7 @@ def main() -> int:
                  args.integration)
         return 0
     if args.compare:
-        compare.generate(args.compare, str(ROOT))
+        compare.generate(args.compare, str((args.compare_root or ROOT).resolve()))
         subprocess.run(["scarb", "fmt"], cwd=args.compare, check=True)
         print(f"shapegen: staging comparison package written to {args.compare}")
         return 0

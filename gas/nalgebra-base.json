@@ -430,37 +430,47 @@
       "componentwise": 86460
     },
     "matrix6_abs_diff_eq": {
-      "all_compared": 85340,
-      "baseline": 29940
+      "all_compared": 78030,
+      "alt_blocks": 85340,
+      "alt_blocks_first_differs": 44390,
+      "alt_not_inlined": 103260,
+      "alt_not_inlined_first_differs": 103460,
+      "baseline": 29940,
+      "first_differs": 31690
     },
     "matrix6_add": {
-      "assign": 82880,
-      "baseline": 52740,
-      "operator": 82880
+      "assign": 81980,
+      "baseline": 51840,
+      "operator": 81980
     },
     "matrix6_diagonal": {
       "baseline": 25440,
       "blocks": 26040
     },
     "matrix6_fill": {
-      "baseline": 42140,
-      "from_diagonal_element": 48440,
-      "identity": 48440,
-      "zeros": 45740
+      "baseline": 41240,
+      "from_diagonal_element": 44840,
+      "identity": 44840,
+      "zeros": 44840
     },
     "matrix6_from_diagonal": {
-      "baseline": 39340,
-      "blocks": 35440
+      "baseline": 38440,
+      "blocks": 33640
     },
     "matrix6_is_identity": {
-      "all_compared": 76140,
-      "baseline": 24340
+      "all_compared": 70630,
+      "alt_blocks": 74340,
+      "alt_blocks_first_differs": 36090,
+      "alt_not_inlined": 92260,
+      "alt_not_inlined_first_differs": 92460,
+      "baseline": 22540,
+      "first_differs": 25740
     },
     "matrix6_mul": {
-      "alt_blocks": 273110,
-      "assign": 161650,
-      "baseline": 52740,
-      "fused": 161650
+      "alt_blocks": 272210,
+      "assign": 160750,
+      "baseline": 51840,
+      "fused": 160750
     },
     "matrix6_mul_vec": {
       "alt_blocks": 62370,
@@ -473,21 +483,21 @@
     },
     "matrix6_new": {
       "baseline": 37440,
-      "new": 43740
+      "new": 41040
     },
     "matrix6_scale": {
       "baseline": 44840,
       "blocks": 105220
     },
     "matrix6_sub": {
-      "assign": 82880,
-      "baseline": 52740,
-      "operator": 82880
+      "assign": 81980,
+      "baseline": 51840,
+      "operator": 81980
     },
     "matrix6_tr_mul": {
-      "alt_transpose_then_mul": 161650,
-      "baseline": 52740,
-      "fused": 161650
+      "alt_transpose_then_mul": 160750,
+      "baseline": 51840,
+      "fused": 160750
     },
     "matrix6_tr_mul_vec": {
       "alt_transpose_then_mul_vec": 48750,
@@ -1274,36 +1284,36 @@
       "componentwise": 25280
     },
     "vector6_abs_diff_eq": {
-      "all_compared": 25820,
-      "baseline": 18240
+      "all_compared": 25520,
+      "baseline": 17940
     },
     "vector6_add": {
-      "assign": 26680,
-      "baseline": 21740,
-      "operator": 26680
+      "assign": 25780,
+      "baseline": 20840,
+      "operator": 25780
     },
     "vector6_component_mul": {
-      "baseline": 21740,
-      "component_mul": 31720
+      "baseline": 20840,
+      "component_mul": 30820
     },
     "vector6_dot": {
-      "alt_two_sum_prod3": 23740,
-      "alt_unfused": 32620,
-      "baseline": 18940,
-      "wide": 21520
+      "alt_two_sum_prod3": 23140,
+      "alt_unfused": 32020,
+      "baseline": 18340,
+      "wide": 20920
     },
     "vector6_fill": {
-      "baseline": 19540,
-      "zeros": 20440
+      "baseline": 19240,
+      "zeros": 19840
     },
     "vector6_inf_sup": {
-      "baseline": 21740,
-      "inf": 27490,
-      "sup": 27490
+      "baseline": 20840,
+      "inf": 26590,
+      "sup": 26590
     },
     "vector6_lerp": {
-      "baseline": 22140,
-      "fused": 33920
+      "baseline": 21240,
+      "fused": 33020
     },
     "vector6_neg": {
       "baseline": 19440,
@@ -1311,7 +1321,7 @@
     },
     "vector6_new": {
       "baseline": 18440,
-      "new": 19340
+      "new": 19040
     },
     "vector6_norm": {
       "alt_via_norm_squared": 21440,
@@ -1333,9 +1343,9 @@
       "scale": 29820
     },
     "vector6_sub": {
-      "assign": 26380,
-      "baseline": 21440,
-      "operator": 26380
+      "assign": 25780,
+      "baseline": 20840,
+      "operator": 25780
     },
     "vector6_sum": {
       "baseline": 16940,

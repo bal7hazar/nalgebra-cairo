@@ -1,8 +1,8 @@
-# Staging comparison: generated vs hand-written library shapes (WP 8.1b-1)
+# Staging comparison: generated vs hand-written library shapes (WP 8.1b-1, 8.1b-2)
 
-`tools/shapegen/compare.sh` against `crates/nalgebra` at `b304f82` (hand-written `Vector2/3/4`, `Matrix2/3/4`). Raw `l2_gas` of `bench_<group>__generated` / `__handwritten` (same black-boxed inputs); `bits`: `test_<group>_bit_identical` passed (equal `Serde` images on three inputs).
+`tools/shapegen/compare.sh` against `crates/nalgebra` at `8d7ccec` (hand-written `Vector2/3/4/6`, `Matrix2/3/4/6`; the 6D ones in their block layout). Raw `l2_gas` of `bench_<group>__generated` / `__handwritten` (same black-boxed inputs); `bits`: `test_<group>_bit_identical` passed (equal `Serde` images on three inputs).
 
-235 / 235 groups equal, 235 bit-identity tests passed.
+274 / 281 groups equal, 7 cheaper generated, 281 bit-identity tests passed.
 
 | group | generated | hand-written | gas | bits |
 |---|---:|---:|:---:|:---:|
@@ -94,6 +94,28 @@
 | `matrix4_transpose` | 21440 | 21440 | = | yes |
 | `matrix4_try_inverse` | 216860 | 216860 | = | yes |
 | `matrix4_zeros` | 18040 | 18040 | = | yes |
+| `matrix6_abs` | 63640 | 63640 | = | yes |
+| `matrix6_abs_diff_eq` | 32660 | 49920 | < | yes |
+| `matrix6_add` | 63480 | 63480 | = | yes |
+| `matrix6_add_assign` | 63480 | 63480 | = | yes |
+| `matrix6_diagonal` | 23440 | 23440 | = | yes |
+| `matrix6_from_diagonal` | 23440 | 24340 | < | yes |
+| `matrix6_from_diagonal_element` | 22440 | 24240 | < | yes |
+| `matrix6_identity` | 22040 | 23840 | < | yes |
+| `matrix6_is_identity` | 25250 | 41620 | < | yes |
+| `matrix6_mul` | 142250 | 142250 | = | yes |
+| `matrix6_mul_assign` | 142250 | 142250 | = | yes |
+| `matrix6_mul_vec` | 46850 | 46850 | = | yes |
+| `matrix6_neg` | 36640 | 36640 | = | yes |
+| `matrix6_new` | 36440 | 36440 | = | yes |
+| `matrix6_scale` | 86720 | 86720 | = | yes |
+| `matrix6_sub` | 63480 | 63480 | = | yes |
+| `matrix6_sub_assign` | 63480 | 63480 | = | yes |
+| `matrix6_tr_mul` | 142250 | 142250 | = | yes |
+| `matrix6_tr_mul_vec` | 46850 | 46850 | = | yes |
+| `matrix6_trace` | 26140 | 26140 | = | yes |
+| `matrix6_transpose` | 29440 | 29440 | = | yes |
+| `matrix6_zeros` | 22040 | 22940 | < | yes |
 | `vector2_abs` | 17980 | 17980 | = | yes |
 | `vector2_abs_diff_eq` | 19050 | 19050 | = | yes |
 | `vector2_add` | 17920 | 17920 | = | yes |
@@ -241,3 +263,27 @@
 | `vector4_y` | 15640 | 15640 | = | yes |
 | `vector4_z` | 15640 | 15640 | = | yes |
 | `vector4_zeros` | 15640 | 15640 | = | yes |
+| `vector6_abs` | 23050 | 23050 | = | yes |
+| `vector6_abs_diff_eq` | 20650 | 20650 | = | yes |
+| `vector6_add` | 23280 | 23280 | = | yes |
+| `vector6_add_assign` | 23280 | 23280 | = | yes |
+| `vector6_component_mul` | 28320 | 28320 | = | yes |
+| `vector6_div_assign` | 35910 | 35910 | = | yes |
+| `vector6_dot` | 20420 | 20420 | = | yes |
+| `vector6_from_array` | 16840 | 16840 | = | yes |
+| `vector6_inf` | 24090 | 24090 | = | yes |
+| `vector6_into_array` | 17440 | 17440 | = | yes |
+| `vector6_lerp` | 30520 | 30520 | = | yes |
+| `vector6_mul_assign` | 27320 | 27320 | = | yes |
+| `vector6_neg` | 18640 | 18640 | = | yes |
+| `vector6_new` | 18440 | 18440 | = | yes |
+| `vector6_norm` | 21480 | 21480 | = | yes |
+| `vector6_norm_squared` | 19020 | 19020 | = | yes |
+| `vector6_normalize` | 40280 | 40280 | = | yes |
+| `vector6_scale` | 27320 | 27320 | = | yes |
+| `vector6_sub` | 23280 | 23280 | = | yes |
+| `vector6_sub_assign` | 23280 | 23280 | = | yes |
+| `vector6_sum` | 20140 | 20140 | = | yes |
+| `vector6_sup` | 24100 | 24100 | = | yes |
+| `vector6_unscale` | 35100 | 35100 | = | yes |
+| `vector6_zeros` | 16040 | 16340 | < | yes |

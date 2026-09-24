@@ -888,30 +888,30 @@ fn solve6_recip(f: Cholesky6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
     let e4 = Real::recip(f.l44);
     let e5 = Real::recip(f.l55);
     let e6 = Real::recip(f.l66);
-    let y1 = b.a.x * e1;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a.y);
+    let y1 = b.x * e1;
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
     let w = Real::wide_sub_prod(w, f.l21, y1);
     let f2 = Real::wide_rescale(w);
     let y2 = f2 * e2;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a.z);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.z);
     let w = Real::wide_sub_prod(w, f.l31, y1);
     let w = Real::wide_sub_prod(w, f.l32, y2);
     let f3 = Real::wide_rescale(w);
     let y3 = f3 * e3;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b.x);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.w);
     let w = Real::wide_sub_prod(w, f.l41, y1);
     let w = Real::wide_sub_prod(w, f.l42, y2);
     let w = Real::wide_sub_prod(w, f.l43, y3);
     let f4 = Real::wide_rescale(w);
     let y4 = f4 * e4;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b.y);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a);
     let w = Real::wide_sub_prod(w, f.l51, y1);
     let w = Real::wide_sub_prod(w, f.l52, y2);
     let w = Real::wide_sub_prod(w, f.l53, y3);
     let w = Real::wide_sub_prod(w, f.l54, y4);
     let f5 = Real::wide_rescale(w);
     let y5 = f5 * e5;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b.z);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b);
     let w = Real::wide_sub_prod(w, f.l61, y1);
     let w = Real::wide_sub_prod(w, f.l62, y2);
     let w = Real::wide_sub_prod(w, f.l63, y3);
@@ -950,7 +950,7 @@ fn solve6_recip(f: Cholesky6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
     let w = Real::wide_sub_prod(w, f.l61, x6);
     let g1 = Real::wide_rescale(w);
     let x1 = g1 * e1;
-    Vector6 { a: Vector3 { x: x1, y: x2, z: x3 }, b: Vector3 { x: x4, y: x5, z: x6 } }
+    Vector6 { x: x1, y: x2, z: x3, w: x4, a: x5, b: x6 }
 }
 
 /// LOSER. `inverse` reusing the already-computed `q_ii = recip(l_ii)` as a multiplier for the
@@ -1130,50 +1130,42 @@ fn inverse6_recip(f: Cholesky6<Fixed>) -> Matrix6<Fixed> {
     let r56 = q65 * q66;
     let r66 = Real::sqr(q66);
     Matrix6 {
-        m11: Matrix3 {
-            m11: r11,
-            m21: r12,
-            m31: r13,
-            m12: r12,
-            m22: r22,
-            m32: r23,
-            m13: r13,
-            m23: r23,
-            m33: r33,
-        },
-        m21: Matrix3 {
-            m11: r14,
-            m21: r15,
-            m31: r16,
-            m12: r24,
-            m22: r25,
-            m32: r26,
-            m13: r34,
-            m23: r35,
-            m33: r36,
-        },
-        m12: Matrix3 {
-            m11: r14,
-            m21: r24,
-            m31: r34,
-            m12: r15,
-            m22: r25,
-            m32: r35,
-            m13: r16,
-            m23: r26,
-            m33: r36,
-        },
-        m22: Matrix3 {
-            m11: r44,
-            m21: r45,
-            m31: r46,
-            m12: r45,
-            m22: r55,
-            m32: r56,
-            m13: r46,
-            m23: r56,
-            m33: r66,
-        },
+        m11: r11,
+        m21: r12,
+        m31: r13,
+        m12: r12,
+        m22: r22,
+        m32: r23,
+        m13: r13,
+        m23: r23,
+        m33: r33,
+        m41: r14,
+        m51: r15,
+        m61: r16,
+        m42: r24,
+        m52: r25,
+        m62: r26,
+        m43: r34,
+        m53: r35,
+        m63: r36,
+        m14: r14,
+        m24: r24,
+        m34: r34,
+        m15: r15,
+        m25: r25,
+        m35: r35,
+        m16: r16,
+        m26: r26,
+        m36: r36,
+        m44: r44,
+        m54: r45,
+        m64: r46,
+        m45: r45,
+        m55: r55,
+        m65: r56,
+        m46: r46,
+        m56: r56,
+        m66: r66,
     }
 }
 
