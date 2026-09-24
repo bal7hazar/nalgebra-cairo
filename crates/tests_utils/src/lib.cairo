@@ -13,6 +13,8 @@
 //! # Naming
 //!
 //! - `fx(raw)` / `int(v)`: one `Fixed` from its raw value / from an integer.
+//! - `isom2t` / `isom3t` / `simm2t` / `simm3t` (WP 8.4-P09b): the rotation-matrix poses from the
+//!   oracle layout (translation tuple, ROW-major rotation rows, scaling).
 //! - `vN`, `pN`, `uN`, `q`, `uq`, `uc`, `tN`, `iso2`, `iso3`, `sim2`, `sim3` take the raw
 //!   components as SEPARATE arguments (`v3(x, y, z)`, `q(w, i, j, k)`, quaternions in the
 //!   `(w, i, j, k)` order of the oracle); the suffix `i` builds from integers (`v3i(1, 2, 3)`).
@@ -119,11 +121,15 @@ use nalgebra::base::vector4::Vector4;
 use nalgebra::base::vector6::Vector6;
 use nalgebra::geometry::isometry2::Isometry2;
 use nalgebra::geometry::isometry3::Isometry3;
+use nalgebra::geometry::isometry_matrix2::IsometryMatrix2;
+use nalgebra::geometry::isometry_matrix3::IsometryMatrix3;
 use nalgebra::geometry::quaternion::Quaternion;
 use nalgebra::geometry::rotation2::Rotation2;
 use nalgebra::geometry::rotation3::Rotation3;
 use nalgebra::geometry::similarity2::Similarity2;
 use nalgebra::geometry::similarity3::Similarity3;
+use nalgebra::geometry::similarity_matrix2::SimilarityMatrix2;
+use nalgebra::geometry::similarity_matrix3::SimilarityMatrix3;
 use nalgebra::geometry::translation2::Translation2;
 use nalgebra::geometry::translation3::Translation3;
 use nalgebra::geometry::unit_complex::UnitComplex;
@@ -757,6 +763,27 @@ pub fn sim3t(t: ((i64, i64, i64), (i64, i64, i64, i64), i64)) -> Similarity3<Fix
         isometry: Isometry3 { rotation: uqt(rot), translation: Translation3 { vector: v3t(tr) } },
         scaling: fx(scaling),
     }
+}
+
+/// `IsometryMatrix2` from the raw translation `(tx, ty)` and ROW-major rotation rows (oracle
+/// layout), WITHOUT orthonormalisation.
+pub fn isom2t(t: (i64, i64), r: [[i64; 2]; 2]) -> IsometryMatrix2<Fixed> {
+    IsometryMatrix2 { rotation: r2(r), translation: Translation2 { vector: v2t(t) } }
+}
+
+/// `IsometryMatrix3` from the raw translation `(tx, ty, tz)` and ROW-major rotation rows.
+pub fn isom3t(t: (i64, i64, i64), r: [[i64; 3]; 3]) -> IsometryMatrix3<Fixed> {
+    IsometryMatrix3 { rotation: r3(r), translation: Translation3 { vector: v3t(t) } }
+}
+
+/// `SimilarityMatrix2` from the raw translation, ROW-major rotation rows and scaling.
+pub fn simm2t(t: (i64, i64), r: [[i64; 2]; 2], scaling: i64) -> SimilarityMatrix2<Fixed> {
+    SimilarityMatrix2 { isometry: isom2t(t, r), scaling: fx(scaling) }
+}
+
+/// `SimilarityMatrix3` from the raw translation, ROW-major rotation rows and scaling.
+pub fn simm3t(t: (i64, i64, i64), r: [[i64; 3]; 3], scaling: i64) -> SimilarityMatrix3<Fixed> {
+    SimilarityMatrix3 { isometry: isom3t(t, r), scaling: fx(scaling) }
 }
 
 // --- comparisons in raw units -------------------------------------------------------------------

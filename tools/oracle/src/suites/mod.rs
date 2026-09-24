@@ -11,6 +11,7 @@ use num_traits::{One, Zero};
 mod base;
 mod geometry;
 mod linalg;
+mod pose_completion;
 mod rotation_completion;
 mod scalar;
 
@@ -20,6 +21,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(base::suites());
     suites.extend(geometry::suites());
     suites.extend(rotation_completion::suites());
+    suites.extend(pose_completion::suites());
     suites.extend(linalg::suites());
     suites
 }
