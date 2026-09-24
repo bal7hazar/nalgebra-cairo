@@ -1161,6 +1161,9 @@ DIM_ONLY: dict[str, set[str]] = {
     # Upstream names isometries and similarities in 2D and 3D only (`Isometry2/3`,
     # `IsometryMatrix2/3`, `Similarity2/3`...), so their homogeneous matrices are 3x3 and 4x4.
     **{name: {"Matrix3", "Matrix4"} for name in ("From<Isometry>", "From<Similarity>")},
+    # `m / r` needs as many columns as the rotation's dimension: `Rotation2` / `Rotation3`
+    # (upstream's `Rotation<D>` aliases stop at 3).
+    "Div<Rotation>": {shape_name(r, c) for r in DIMS for c in (2, 3)},
     "orthonormal_subspace_basis": {"Vector3"},
     # Square-matrix semantics, generated on the 6 squares (`Matrix1..6`).
     **{name: set(SQUARES) for name in (
@@ -1254,6 +1257,8 @@ RENAMES = (
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<(?:Point|Rotation)>",
          r"MatrixMul::mul_mat", "`m * p` / `m * r` is `m.mul_mat(..)` (Cairo's `Mul` is "
          "homogeneous)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Div<Rotation>", "div_rotation",
+         "Cairo-imposed: heterogeneous operator (`m / r` is `m.div_rotation(r)`)"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:SubsetOf<Matrix>", "cast",
          "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"eq", "impl:PartialEq",

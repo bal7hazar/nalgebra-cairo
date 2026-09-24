@@ -219,44 +219,50 @@ pub impl Matrix2x5Impl<
 
     /// The 2x5 matrix of the 10 values of `data`, in row-major order. Panics with `nalgebra: wrong
     /// slice length` unless `data.len() == 10`. Upstream: `Matrix2x5::from_row_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 10]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_row_slice(data: Span<T>) -> Matrix2x5<T> {
-        if data.len() != 10 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
+        let boxed: @Box<[T; 10]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9] = boxed.unbox();
         Matrix2x5 {
-            m11: *data[0],
-            m21: *data[5],
-            m12: *data[1],
-            m22: *data[6],
-            m13: *data[2],
-            m23: *data[7],
-            m14: *data[3],
-            m24: *data[8],
-            m15: *data[4],
-            m25: *data[9],
+            m11: v0,
+            m21: v5,
+            m12: v1,
+            m22: v6,
+            m13: v2,
+            m23: v7,
+            m14: v3,
+            m24: v8,
+            m15: v4,
+            m25: v9,
         }
     }
 
     /// The 2x5 matrix of the 10 values of `data`, in column-major order. Panics with `nalgebra:
     /// wrong slice length` unless `data.len() == 10`. Upstream: `Matrix2x5::from_column_slice`
     /// (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 10]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_column_slice(data: Span<T>) -> Matrix2x5<T> {
-        if data.len() != 10 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
+        let boxed: @Box<[T; 10]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9] = boxed.unbox();
         Matrix2x5 {
-            m11: *data[0],
-            m21: *data[1],
-            m12: *data[2],
-            m22: *data[3],
-            m13: *data[4],
-            m23: *data[5],
-            m14: *data[6],
-            m24: *data[7],
-            m15: *data[8],
-            m25: *data[9],
+            m11: v0,
+            m21: v1,
+            m12: v2,
+            m22: v3,
+            m13: v4,
+            m23: v5,
+            m14: v6,
+            m24: v7,
+            m15: v8,
+            m25: v9,
         }
     }
 
@@ -894,46 +900,16 @@ pub impl Matrix2x5Impl<
     /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
     /// conversion fails. Upstream: `try_cast`.
     fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Matrix2x5<T>) -> Option<Matrix2x5<U>> {
-        let m11: U = match self.m11.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m21: U = match self.m21.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m12: U = match self.m12.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m22: U = match self.m22.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m13: U = match self.m13.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m23: U = match self.m23.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m14: U = match self.m14.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m24: U = match self.m24.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m15: U = match self.m15.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m25: U = match self.m25.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
+        let m11: U = self.m11.try_into()?;
+        let m21: U = self.m21.try_into()?;
+        let m12: U = self.m12.try_into()?;
+        let m22: U = self.m22.try_into()?;
+        let m13: U = self.m13.try_into()?;
+        let m23: U = self.m23.try_into()?;
+        let m14: U = self.m14.try_into()?;
+        let m24: U = self.m24.try_into()?;
+        let m15: U = self.m15.try_into()?;
+        let m25: U = self.m25.try_into()?;
         Option::Some(Matrix2x5 { m11, m21, m12, m22, m13, m23, m14, m24, m15, m25 })
     }
 

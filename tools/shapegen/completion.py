@@ -211,10 +211,14 @@ def methods(s: Shape) -> list[L.Fn]:
             name,
             f"The {s.kind} of the {n} values of `data`, in {what} order. Panics with "
             f"`nalgebra: wrong slice length` unless `data.len() == {n}`. Upstream: "
-            f"`{S}::{name}` (`&[T]`).",
+            f"`{S}::{name}` (`&[T]`).\n\n"
+            f"`data` is read as ONE fixed-size array (`Span -> @Box<[T; {n}]>`, one length "
+            f"check): measured about 5 times cheaper than a bounds-checked `*data[k]` per "
+            f"component (`bench_matrix3_from_row_slice__alt_span_index`).",
             f"fn {name}(data: Span<T>) -> {T}",
-            f"if data.len() != {n} {{\ncore::panic_with_felt252(errors::SLICE_LENGTH);\n}}\n"
-            + L.lit(S, [(k, f"*data[{pos[k]}]") for k in F]), small))
+            f"let boxed: @Box<[T; {n}]> = data.try_into().expect(errors::SLICE_LENGTH);\n"
+            f"let [{', '.join(f'v{i}' for i in range(n))}] = boxed.unbox();\n"
+            + L.lit(S, [(k, f"v{pos[k]}") for k in F]), small))
     m = min(s.r, s.c)
     diag = {s.f(i, i): (f"if len > {i} {{\n*data[{i}]\n}} else {{\nR::zero()\n}}") for i in range(m)}
     out.append(fn(
@@ -506,14 +510,25 @@ def methods(s: Shape) -> list[L.Fn]:
             "array![Self::cross(a, v), a]\n},\n"
             "2 => array![Self::normalize(Self::cross(*vs[0], *vs[1]))],\n3 => array![],\n"
             "_ => core::panic_with_felt252(errors::NOT_FREE_FAMILY),\n}", False))
+    if s.c in (2, 3):
+        rot, q = f"Rotation{s.c}", Shape(s.c, s.c)
+        vals = [(s.f(i, j), products([(f"self.{s.f(i, k)}", f"r.matrix.{q.f(j, k)}")
+                                      for k in range(s.c)])) for j in range(s.c)
+                for i in range(s.r)]
+        out.append(fn(
+            "div_rotation",
+            f"`self / r` = `self * rᵀ` (the inverse of a rotation is its transpose), a `{S}`: each "
+            f"component one fused `sum_prod{s.c}` (floored once). Panics on overflow. Upstream: "
+            f"`Div<{rot}> for Matrix` (`m / r`; Cairo's `Div` is homogeneous, so the "
+            f"heterogeneous operator is a named method, like `UnitQuaternion::div_rotation`).",
+            f"fn div_rotation(self: {T}, r: {rot}<T>) -> {T}", L.lit(S, vals), s.n <= 4))
     out.append(fn("cast", "The same shape with every component converted by `Into<T, U>`. With "
                           "the single scalar of this library (`Fixed`) it is the identity; it "
                           "exists for scalar-generic code. Upstream: `cast` (and "
                           "`SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).",
                   f"fn cast<U, +Into<T, U>, +Drop<U>>(self: {T}) -> {S}<U>",
                   lit(lambda k: f"self.{k}.into()"), False))
-    tries = "\n".join(f"let {k}: U = match self.{k}.try_into() {{\nOption::Some(v) => v,\n"
-                      f"Option::None => {{\nreturn Option::None;\n}},\n}};" for k in F)
+    tries = "\n".join(f"let {k}: U = self.{k}.try_into()?;" for k in F)
     out.append(fn("try_cast", "`Some` of the shape with every component converted by "
                               "`TryInto<T, U>`, `None` as soon as one conversion fails. Upstream: "
                               "`try_cast`.",
@@ -598,8 +613,7 @@ def angle_methods(s: Shape) -> list[L.Fn]:
             "not fit. Upstream: `slerp`.",
             f"fn slerp(self: {T}, rhs: {T}, t: T) -> {T}",
             f"let me = {Tr}::normalize(self);\nlet other = {Tr}::normalize(rhs);\n"
-            f"match slerp_unit(me, other, t, R::default_epsilon()) {{\nOption::Some(v) => v,\n"
-            f"Option::None => me,\n}}", False))
+            "slerp_unit(me, other, t, R::default_epsilon()).unwrap_or(me)", False))
     return out
 
 
@@ -773,8 +787,8 @@ def unit_items(s: Shape) -> list[str]:
                     "vectors are opposite (the arc is not defined), like upstream. Upstream: "
                     "`Unit::slerp`.",
            f"fn slerp(self: {U}, rhs: {U}, t: T) -> {U}",
-           "match slerp_unit(self.value, rhs.value, t, R::default_epsilon()) {\n"
-           "Option::Some(v) => Unit { value: v },\nOption::None => self,\n}", False),
+           "Unit { value: slerp_unit(self.value, rhs.value, t, R::default_epsilon())"
+           ".unwrap_or(self.value) }", False),
         fn("try_slerp", "`slerp`, or `None` when `sin` of the angle between the vectors is `<= "
                         "epsilon` (nearly parallel or opposite vectors: the interpolation plane is "
                         "ill-conditioned; `self` is returned as is for exactly equal ones). "
@@ -807,8 +821,8 @@ def unit_items(s: Shape) -> list[str]:
         "`angle`: `θ = 2 atan2(|a - b|, |a + b|)` and\n/// `sin θ = |a - b| |a + b| / 2` (unit "
         "vectors), two fused norms of exact differences / sums. Upstream's\n/// `acos(a · b)` and "
         "`sqrt(1 - (a · b)²)` lose the last bit of `1 - c²` near `c = 1` (a unit\n/// vector "
-        "interpolated with itself came out √2 too long), and is kept as a benchmark\n/// "
-        "(`bench_vector4_slerp__alt_acos`).\n"
+        "interpolated with itself came out √2 too long); that form is kept as a benchmark\n/// "
+        "(`bench_vector4_slerp__alt_acos`: 141 180 gas against 155 000 for this one).\n"
         f"fn slerp_unit<\n{L.bounds(ANGLE_BOUNDS)}\n>(a: {S}<T>, b: {S}<T>, t: T, epsilon: T) -> "
         f"Option<{S}<T>> {{\n{body}\n}}")
     return out

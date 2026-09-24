@@ -141,10 +141,18 @@ pub trait Vector6Trait<T> {
     /// The 6-dimensional column vector of the 6 values of `data`, in row-major order. Panics with
     /// `nalgebra: wrong slice length` unless `data.len() == 6`. Upstream: `Vector6::from_row_slice`
     /// (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 6]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     fn from_row_slice(data: Span<T>) -> Vector6<T>;
     /// The 6-dimensional column vector of the 6 values of `data`, in column-major order. Panics
     /// with `nalgebra: wrong slice length` unless `data.len() == 6`. Upstream:
     /// `Vector6::from_column_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 6]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     fn from_column_slice(data: Span<T>) -> Vector6<T>;
     /// The 6-dimensional column vector whose first `data.len()` diagonal components are `data`,
     /// every other component zero. Panics with `nalgebra: diagonal too long` when `data.len() > 1`.
@@ -497,18 +505,16 @@ pub impl Vector6Impl<
 
     #[inline(always)]
     fn from_row_slice(data: Span<T>) -> Vector6<T> {
-        if data.len() != 6 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
-        Vector6 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4], b: *data[5] }
+        let boxed: @Box<[T; 6]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5] = boxed.unbox();
+        Vector6 { x: v0, y: v1, z: v2, w: v3, a: v4, b: v5 }
     }
 
     #[inline(always)]
     fn from_column_slice(data: Span<T>) -> Vector6<T> {
-        if data.len() != 6 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
-        Vector6 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4], b: *data[5] }
+        let boxed: @Box<[T; 6]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5] = boxed.unbox();
+        Vector6 { x: v0, y: v1, z: v2, w: v3, a: v4, b: v5 }
     }
 
     #[inline(always)]
@@ -1055,30 +1061,12 @@ pub impl Vector6Impl<
     }
 
     fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Vector6<T>) -> Option<Vector6<U>> {
-        let x: U = match self.x.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let y: U = match self.y.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let z: U = match self.z.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let w: U = match self.w.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let a: U = match self.a.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let b: U = match self.b.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
+        let x: U = self.x.try_into()?;
+        let y: U = self.y.try_into()?;
+        let z: U = self.z.try_into()?;
+        let w: U = self.w.try_into()?;
+        let a: U = self.a.try_into()?;
+        let b: U = self.b.try_into()?;
         Option::Some(Vector6 { x, y, z, w, a, b })
     }
 
@@ -1162,10 +1150,7 @@ pub impl Vector6AngleImpl<
     fn slerp(self: Vector6<T>, rhs: Vector6<T>, t: T) -> Vector6<T> {
         let me = Vector6Trait::normalize(self);
         let other = Vector6Trait::normalize(rhs);
-        match slerp_unit(me, other, t, R::default_epsilon()) {
-            Option::Some(v) => v,
-            Option::None => me,
-        }
+        slerp_unit(me, other, t, R::default_epsilon()).unwrap_or(me)
     }
 }
 
@@ -1904,9 +1889,8 @@ pub impl UnitVector6AngleImpl<
     /// angular velocity (`t` is not clamped). Returns `self` when the vectors are opposite (the arc
     /// is not defined), like upstream. Upstream: `Unit::slerp`.
     fn slerp(self: Unit<Vector6<T>>, rhs: Unit<Vector6<T>>, t: T) -> Unit<Vector6<T>> {
-        match slerp_unit(self.value, rhs.value, t, R::default_epsilon()) {
-            Option::Some(v) => Unit { value: v },
-            Option::None => self,
+        Unit {
+            value: slerp_unit(self.value, rhs.value, t, R::default_epsilon()).unwrap_or(self.value),
         }
     }
 
@@ -1930,8 +1914,8 @@ pub impl UnitVector6AngleImpl<
 /// The angle comes from the Kahan half-angle form of `angle`: `θ = 2 atan2(|a - b|, |a + b|)` and
 /// `sin θ = |a - b| |a + b| / 2` (unit vectors), two fused norms of exact differences / sums.
 /// Upstream's `acos(a · b)` and `sqrt(1 - (a · b)²)` lose the last bit of `1 - c²` near `c = 1`
-/// (a unit vector interpolated with itself came out √2 too long), and is kept as a benchmark
-/// (`bench_vector4_slerp__alt_acos`).
+/// (a unit vector interpolated with itself came out √2 too long); that form is kept as a
+/// benchmark (`bench_vector4_slerp__alt_acos`: 141 180 gas against 155 000 for this one).
 fn slerp_unit<
     T,
     impl R: Real<T>,

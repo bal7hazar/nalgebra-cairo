@@ -87,6 +87,7 @@ fn test_row_vector2_construction() {
         array![3942360249, -2428930796, 3108778802, 2874373730].span(),
     );
     assert_raws(a.mul_mat(rot), array![26170708413, 12800060153].span());
+    assert_raws(a.div_rotation(rot), array![17109785837, -18378579423].span());
 }
 
 #[should_panic(expected: 'nalgebra: wrong slice length')]
@@ -141,6 +142,7 @@ fn test_row_vector3_construction() {
             .span(),
     );
     assert_raws(a.mul_mat(rot), array![24512253271, 29919020217, 60369500681].span());
+    assert_raws(a.div_rotation(rot), array![-26440688194, -2550964264, 19570010967].span());
 }
 
 #[should_panic(expected: 'nalgebra: wrong slice length')]
@@ -413,6 +415,9 @@ fn test_matrix2_construction() {
         array![1861675656, -1178365572, 3507632598, -1333057453].span(),
     );
     assert_raws(a.mul_mat(rot), array![1265133082, -7031016265, 15384535629, -23642058294].span());
+    assert_raws(
+        a.div_rotation(rot), array![69938112516, -61937927599, -31267138481, 28809475364].span(),
+    );
 }
 
 #[should_panic(expected: 'nalgebra: wrong slice length')]
@@ -486,6 +491,11 @@ fn test_matrix2x3_construction() {
     assert_raws(
         a.mul_mat(rot),
         array![103107664517, 11775390163, -121226077683, -10173013396, 14846060380, -7475009020]
+            .span(),
+    );
+    assert_raws(
+        a.div_rotation(rot),
+        array![-341194512, -25634972690, 64211712527, -18554326857, 48800160564, 16866519526]
             .span(),
     );
 }
@@ -853,6 +863,11 @@ fn test_matrix3x2_construction() {
         array![37636641218, -43366830360, -2090538681, 11813422697, -19448542667, -16030252527]
             .span(),
     );
+    assert_raws(
+        a.div_rotation(rot),
+        array![32664618630, -20183841581, 44161407779, -13460454877, 1592443645, -35912284661]
+            .span(),
+    );
 }
 
 #[should_panic(expected: 'nalgebra: wrong slice length')]
@@ -982,6 +997,14 @@ fn test_matrix3_construction() {
         array![
             -18136158438, -30738337612, 10002673626, 8494034019, -6509957038, 15983349193,
             -42945010040, -3827551289, -1039436579,
+        ]
+            .span(),
+    );
+    assert_raws(
+        a.div_rotation(rot),
+        array![
+            36161245964, -20975699058, 15022350810, -47691820103, -19471553032, 10204388796,
+            -6367336781, -13952164867, -1073023033,
         ]
             .span(),
     );

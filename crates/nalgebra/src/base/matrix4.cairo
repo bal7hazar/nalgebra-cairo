@@ -680,56 +680,62 @@ pub impl Matrix4Impl<
 
     /// The 4x4 matrix of the 16 values of `data`, in row-major order. Panics with `nalgebra: wrong
     /// slice length` unless `data.len() == 16`. Upstream: `Matrix4::from_row_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 16]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_row_slice(data: Span<T>) -> Matrix4<T> {
-        if data.len() != 16 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
+        let boxed: @Box<[T; 16]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15] = boxed.unbox();
         Matrix4 {
-            m11: *data[0],
-            m21: *data[4],
-            m31: *data[8],
-            m41: *data[12],
-            m12: *data[1],
-            m22: *data[5],
-            m32: *data[9],
-            m42: *data[13],
-            m13: *data[2],
-            m23: *data[6],
-            m33: *data[10],
-            m43: *data[14],
-            m14: *data[3],
-            m24: *data[7],
-            m34: *data[11],
-            m44: *data[15],
+            m11: v0,
+            m21: v4,
+            m31: v8,
+            m41: v12,
+            m12: v1,
+            m22: v5,
+            m32: v9,
+            m42: v13,
+            m13: v2,
+            m23: v6,
+            m33: v10,
+            m43: v14,
+            m14: v3,
+            m24: v7,
+            m34: v11,
+            m44: v15,
         }
     }
 
     /// The 4x4 matrix of the 16 values of `data`, in column-major order. Panics with `nalgebra:
     /// wrong slice length` unless `data.len() == 16`. Upstream: `Matrix4::from_column_slice`
     /// (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 16]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_column_slice(data: Span<T>) -> Matrix4<T> {
-        if data.len() != 16 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
+        let boxed: @Box<[T; 16]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15] = boxed.unbox();
         Matrix4 {
-            m11: *data[0],
-            m21: *data[1],
-            m31: *data[2],
-            m41: *data[3],
-            m12: *data[4],
-            m22: *data[5],
-            m32: *data[6],
-            m42: *data[7],
-            m13: *data[8],
-            m23: *data[9],
-            m33: *data[10],
-            m43: *data[11],
-            m14: *data[12],
-            m24: *data[13],
-            m34: *data[14],
-            m44: *data[15],
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m41: v3,
+            m12: v4,
+            m22: v5,
+            m32: v6,
+            m42: v7,
+            m13: v8,
+            m23: v9,
+            m33: v10,
+            m43: v11,
+            m14: v12,
+            m24: v13,
+            m34: v14,
+            m44: v15,
         }
     }
 
@@ -1640,70 +1646,22 @@ pub impl Matrix4Impl<
     /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
     /// conversion fails. Upstream: `try_cast`.
     fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Matrix4<T>) -> Option<Matrix4<U>> {
-        let m11: U = match self.m11.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m21: U = match self.m21.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m31: U = match self.m31.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m41: U = match self.m41.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m12: U = match self.m12.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m22: U = match self.m22.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m32: U = match self.m32.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m42: U = match self.m42.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m13: U = match self.m13.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m23: U = match self.m23.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m33: U = match self.m33.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m43: U = match self.m43.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m14: U = match self.m14.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m24: U = match self.m24.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m34: U = match self.m34.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m44: U = match self.m44.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
+        let m11: U = self.m11.try_into()?;
+        let m21: U = self.m21.try_into()?;
+        let m31: U = self.m31.try_into()?;
+        let m41: U = self.m41.try_into()?;
+        let m12: U = self.m12.try_into()?;
+        let m22: U = self.m22.try_into()?;
+        let m32: U = self.m32.try_into()?;
+        let m42: U = self.m42.try_into()?;
+        let m13: U = self.m13.try_into()?;
+        let m23: U = self.m23.try_into()?;
+        let m33: U = self.m33.try_into()?;
+        let m43: U = self.m43.try_into()?;
+        let m14: U = self.m14.try_into()?;
+        let m24: U = self.m24.try_into()?;
+        let m34: U = self.m34.try_into()?;
+        let m44: U = self.m44.try_into()?;
         Option::Some(
             Matrix4 {
                 m11, m21, m31, m41, m12, m22, m32, m42, m13, m23, m33, m43, m14, m24, m34, m44,

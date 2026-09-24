@@ -130,23 +130,29 @@ pub impl RowVector3Impl<
     /// The 3-dimensional row vector of the 3 values of `data`, in row-major order. Panics with
     /// `nalgebra: wrong slice length` unless `data.len() == 3`. Upstream:
     /// `RowVector3::from_row_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 3]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_row_slice(data: Span<T>) -> RowVector3<T> {
-        if data.len() != 3 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
-        RowVector3 { x: *data[0], y: *data[1], z: *data[2] }
+        let boxed: @Box<[T; 3]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2] = boxed.unbox();
+        RowVector3 { x: v0, y: v1, z: v2 }
     }
 
     /// The 3-dimensional row vector of the 3 values of `data`, in column-major order. Panics with
     /// `nalgebra: wrong slice length` unless `data.len() == 3`. Upstream:
     /// `RowVector3::from_column_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 3]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_column_slice(data: Span<T>) -> RowVector3<T> {
-        if data.len() != 3 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
-        RowVector3 { x: *data[0], y: *data[1], z: *data[2] }
+        let boxed: @Box<[T; 3]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2] = boxed.unbox();
+        RowVector3 { x: v0, y: v1, z: v2 }
     }
 
     /// The 3-dimensional row vector whose first `data.len()` diagonal components are `data`, every
@@ -436,6 +442,19 @@ pub impl RowVector3Impl<
         self
     }
 
+    /// `self / r` = `self * rᵀ` (the inverse of a rotation is its transpose), a `RowVector3`:
+    /// each component one fused `sum_prod3` (floored once). Panics on overflow. Upstream:
+    /// `Div<Rotation3> for Matrix` (`m / r`; Cairo's `Div` is homogeneous, so the heterogeneous
+    /// operator is a named method, like `UnitQuaternion::div_rotation`).
+    #[inline(always)]
+    fn div_rotation(self: RowVector3<T>, r: Rotation3<T>) -> RowVector3<T> {
+        RowVector3 {
+            x: R::sum_prod3(self.x, r.matrix.m11, self.y, r.matrix.m12, self.z, r.matrix.m13),
+            y: R::sum_prod3(self.x, r.matrix.m21, self.y, r.matrix.m22, self.z, r.matrix.m23),
+            z: R::sum_prod3(self.x, r.matrix.m31, self.y, r.matrix.m32, self.z, r.matrix.m33),
+        }
+    }
+
     /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
     /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
     /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
@@ -446,18 +465,9 @@ pub impl RowVector3Impl<
     /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
     /// conversion fails. Upstream: `try_cast`.
     fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: RowVector3<T>) -> Option<RowVector3<U>> {
-        let x: U = match self.x.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let y: U = match self.y.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let z: U = match self.z.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
+        let x: U = self.x.try_into()?;
+        let y: U = self.y.try_into()?;
+        let z: U = self.z.try_into()?;
         Option::Some(RowVector3 { x, y, z })
     }
 

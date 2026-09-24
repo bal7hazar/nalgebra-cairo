@@ -248,48 +248,54 @@ pub impl Matrix3x4Impl<
 
     /// The 3x4 matrix of the 12 values of `data`, in row-major order. Panics with `nalgebra: wrong
     /// slice length` unless `data.len() == 12`. Upstream: `Matrix3x4::from_row_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 12]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_row_slice(data: Span<T>) -> Matrix3x4<T> {
-        if data.len() != 12 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
+        let boxed: @Box<[T; 12]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = boxed.unbox();
         Matrix3x4 {
-            m11: *data[0],
-            m21: *data[4],
-            m31: *data[8],
-            m12: *data[1],
-            m22: *data[5],
-            m32: *data[9],
-            m13: *data[2],
-            m23: *data[6],
-            m33: *data[10],
-            m14: *data[3],
-            m24: *data[7],
-            m34: *data[11],
+            m11: v0,
+            m21: v4,
+            m31: v8,
+            m12: v1,
+            m22: v5,
+            m32: v9,
+            m13: v2,
+            m23: v6,
+            m33: v10,
+            m14: v3,
+            m24: v7,
+            m34: v11,
         }
     }
 
     /// The 3x4 matrix of the 12 values of `data`, in column-major order. Panics with `nalgebra:
     /// wrong slice length` unless `data.len() == 12`. Upstream: `Matrix3x4::from_column_slice`
     /// (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 12]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_column_slice(data: Span<T>) -> Matrix3x4<T> {
-        if data.len() != 12 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
+        let boxed: @Box<[T; 12]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = boxed.unbox();
         Matrix3x4 {
-            m11: *data[0],
-            m21: *data[1],
-            m31: *data[2],
-            m12: *data[3],
-            m22: *data[4],
-            m32: *data[5],
-            m13: *data[6],
-            m23: *data[7],
-            m33: *data[8],
-            m14: *data[9],
-            m24: *data[10],
-            m34: *data[11],
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m12: v3,
+            m22: v4,
+            m32: v5,
+            m13: v6,
+            m23: v7,
+            m33: v8,
+            m14: v9,
+            m24: v10,
+            m34: v11,
         }
     }
 
@@ -1011,54 +1017,18 @@ pub impl Matrix3x4Impl<
     /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
     /// conversion fails. Upstream: `try_cast`.
     fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Matrix3x4<T>) -> Option<Matrix3x4<U>> {
-        let m11: U = match self.m11.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m21: U = match self.m21.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m31: U = match self.m31.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m12: U = match self.m12.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m22: U = match self.m22.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m32: U = match self.m32.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m13: U = match self.m13.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m23: U = match self.m23.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m33: U = match self.m33.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m14: U = match self.m14.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m24: U = match self.m24.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let m34: U = match self.m34.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
+        let m11: U = self.m11.try_into()?;
+        let m21: U = self.m21.try_into()?;
+        let m31: U = self.m31.try_into()?;
+        let m12: U = self.m12.try_into()?;
+        let m22: U = self.m22.try_into()?;
+        let m32: U = self.m32.try_into()?;
+        let m13: U = self.m13.try_into()?;
+        let m23: U = self.m23.try_into()?;
+        let m33: U = self.m33.try_into()?;
+        let m14: U = self.m14.try_into()?;
+        let m24: U = self.m24.try_into()?;
+        let m34: U = self.m34.try_into()?;
         Option::Some(Matrix3x4 { m11, m21, m31, m12, m22, m32, m13, m23, m33, m14, m24, m34 })
     }
 

@@ -145,23 +145,29 @@ pub impl RowVector5Impl<
     /// The 5-dimensional row vector of the 5 values of `data`, in row-major order. Panics with
     /// `nalgebra: wrong slice length` unless `data.len() == 5`. Upstream:
     /// `RowVector5::from_row_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 5]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_row_slice(data: Span<T>) -> RowVector5<T> {
-        if data.len() != 5 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
-        RowVector5 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4] }
+        let boxed: @Box<[T; 5]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4] = boxed.unbox();
+        RowVector5 { x: v0, y: v1, z: v2, w: v3, a: v4 }
     }
 
     /// The 5-dimensional row vector of the 5 values of `data`, in column-major order. Panics with
     /// `nalgebra: wrong slice length` unless `data.len() == 5`. Upstream:
     /// `RowVector5::from_column_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 5]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
     #[inline(always)]
     fn from_column_slice(data: Span<T>) -> RowVector5<T> {
-        if data.len() != 5 {
-            core::panic_with_felt252(errors::SLICE_LENGTH);
-        }
-        RowVector5 { x: *data[0], y: *data[1], z: *data[2], w: *data[3], a: *data[4] }
+        let boxed: @Box<[T; 5]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4] = boxed.unbox();
+        RowVector5 { x: v0, y: v1, z: v2, w: v3, a: v4 }
     }
 
     /// The 5-dimensional row vector whose first `data.len()` diagonal components are `data`, every
@@ -553,26 +559,11 @@ pub impl RowVector5Impl<
     /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
     /// conversion fails. Upstream: `try_cast`.
     fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: RowVector5<T>) -> Option<RowVector5<U>> {
-        let x: U = match self.x.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let y: U = match self.y.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let z: U = match self.z.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let w: U = match self.w.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
-        let a: U = match self.a.try_into() {
-            Option::Some(v) => v,
-            Option::None => { return Option::None; },
-        };
+        let x: U = self.x.try_into()?;
+        let y: U = self.y.try_into()?;
+        let z: U = self.z.try_into()?;
+        let w: U = self.w.try_into()?;
+        let a: U = self.a.try_into()?;
         Option::Some(RowVector5 { x, y, z, w, a })
     }
 

@@ -14,12 +14,21 @@ use nalgebra_testing::black_box;
 use simba::scalar::{Real, Transcendental};
 use crate::helpers::{fx, load};
 
-/// `from_row_slice` reading `data[k]` per component (bounds-checked `Span` indexing), against the
-/// library's single length check then unchecked reads.
-fn alt_index_from_row_slice(data: Span<Fixed>) -> Matrix3<Fixed> {
-    Matrix3Trait::new(
-        *data[0], *data[1], *data[2], *data[3], *data[4], *data[5], *data[6], *data[7], *data[8],
-    )
+/// `from_row_slice` with a length check then a bounds-checked `*data[k]` per component, against
+/// the library's ONE fixed-size-array read (`Span -> @Box<[T; 9]>`).
+fn alt_span_index_from_row_slice(data: Span<Fixed>) -> Matrix3<Fixed> {
+    assert!(data.len() == 9, "nalgebra: wrong slice length");
+    Matrix3 {
+        m11: *data[0],
+        m21: *data[3],
+        m31: *data[6],
+        m12: *data[1],
+        m22: *data[4],
+        m32: *data[7],
+        m13: *data[2],
+        m23: *data[5],
+        m33: *data[8],
+    }
 }
 
 /// `Matrix6::unscale` as four `div9` (the library chunks 36 quotients as `div16 + div16 + div4`).
@@ -112,14 +121,20 @@ fn alt_per_component_unscale(m: Matrix2x3<Fixed>, k: Fixed) -> Matrix2x3<Fixed> 
 #[test]
 #[inline(never)]
 fn bench_matrix2x3_unscale__baseline() {
-    let a: Matrix2x3<Fixed> = black_box(
+    let _a: Matrix2x3<Fixed> = black_box(
         load(
             array![-62560921341, 13624601623, 30731600334, -20701093805, 15607829815, 34466184255]
                 .span(),
         ),
     );
-    let k: Fixed = black_box(fx(3 * 4294967296 + 5));
-    assert!(a == a && k == k);
+    let _k: Fixed = black_box(fx(12884901893));
+    let e: Matrix2x3<Fixed> = black_box(
+        load(
+            array![-20853640439, 4541533873, 10243866774, -6900364599, 5202609936, 11488728081]
+                .span(),
+        ),
+    );
+    assert!(e == e);
 }
 
 #[test]
@@ -131,9 +146,14 @@ fn bench_matrix2x3_unscale__library() {
                 .span(),
         ),
     );
-    let k: Fixed = black_box(fx(3 * 4294967296 + 5));
-    let r = a.unscale(k);
-    assert!(r != a);
+    let k: Fixed = black_box(fx(12884901893));
+    let e: Matrix2x3<Fixed> = black_box(
+        load(
+            array![-20853640439, 4541533873, 10243866774, -6900364599, 5202609936, 11488728081]
+                .span(),
+        ),
+    );
+    assert!(a.unscale(k) == e);
 }
 
 #[test]
@@ -145,15 +165,20 @@ fn bench_matrix2x3_unscale__alt_per_component_div() {
                 .span(),
         ),
     );
-    let k: Fixed = black_box(fx(3 * 4294967296 + 5));
-    let r = alt_per_component_unscale(a, k);
-    assert!(r != a);
+    let k: Fixed = black_box(fx(12884901893));
+    let e: Matrix2x3<Fixed> = black_box(
+        load(
+            array![-20853640439, 4541533873, 10243866774, -6900364599, 5202609936, 11488728081]
+                .span(),
+        ),
+    );
+    assert!(alt_per_component_unscale(a, k) == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix6_unscale__baseline() {
-    let a: Matrix6<Fixed> = black_box(
+    let _a: Matrix6<Fixed> = black_box(
         load(
             array![
                 -53417653702, -31223896726, -51664050958, -41873164306, -46340477096, 65780916842,
@@ -166,8 +191,21 @@ fn bench_matrix6_unscale__baseline() {
                 .span(),
         ),
     );
-    let k: Fixed = black_box(fx(3 * 4294967296 + 5));
-    assert!(a == a && k == k);
+    let _k: Fixed = black_box(fx(12884901893));
+    let e: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                -17805884560, -10407965571, -17221350313, -13957721430, -15446825693, 21926972272,
+                -784142799, -12801546479, -18516428943, 8344445699, -21635926315, -13682456113,
+                -19591223530, 16170419559, 14432178991, 16751086704, 13132028010, 5878934624,
+                8636588015, 16061531419, 5157282234, 76525655, -6641235413, -21858954717,
+                -9154484868, 12009674341, -8873164354, -722311397, 21572217001, -18307794166,
+                22008061462, -2795072760, -6833627775, -5628868983, -8724962620, -12613643121,
+            ]
+                .span(),
+        ),
+    );
+    assert!(e == e);
 }
 
 #[test]
@@ -186,9 +224,21 @@ fn bench_matrix6_unscale__library() {
                 .span(),
         ),
     );
-    let k: Fixed = black_box(fx(3 * 4294967296 + 5));
-    let r = a.unscale(k);
-    assert!(r != a);
+    let k: Fixed = black_box(fx(12884901893));
+    let e: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                -17805884560, -10407965571, -17221350313, -13957721430, -15446825693, 21926972272,
+                -784142799, -12801546479, -18516428943, 8344445699, -21635926315, -13682456113,
+                -19591223530, 16170419559, 14432178991, 16751086704, 13132028010, 5878934624,
+                8636588015, 16061531419, 5157282234, 76525655, -6641235413, -21858954717,
+                -9154484868, 12009674341, -8873164354, -722311397, 21572217001, -18307794166,
+                22008061462, -2795072760, -6833627775, -5628868983, -8724962620, -12613643121,
+            ]
+                .span(),
+        ),
+    );
+    assert!(a.unscale(k) == e);
 }
 
 #[test]
@@ -207,18 +257,33 @@ fn bench_matrix6_unscale__alt_div9() {
                 .span(),
         ),
     );
-    let k: Fixed = black_box(fx(3 * 4294967296 + 5));
-    let r = alt_div9_unscale(a, k);
-    assert!(r != a);
+    let k: Fixed = black_box(fx(12884901893));
+    let e: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                -17805884560, -10407965571, -17221350313, -13957721430, -15446825693, 21926972272,
+                -784142799, -12801546479, -18516428943, 8344445699, -21635926315, -13682456113,
+                -19591223530, 16170419559, 14432178991, 16751086704, 13132028010, 5878934624,
+                8636588015, 16061531419, 5157282234, 76525655, -6641235413, -21858954717,
+                -9154484868, 12009674341, -8873164354, -722311397, 21572217001, -18307794166,
+                22008061462, -2795072760, -6833627775, -5628868983, -8724962620, -12613643121,
+            ]
+                .span(),
+        ),
+    );
+    assert!(alt_div9_unscale(a, k) == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_vector5_normalize__baseline() {
-    let a: Vector5<Fixed> = black_box(
+    let _a: Vector5<Fixed> = black_box(
         load(array![37307616397, -10590881796, -14927429213, -35069782776, 24839176604].span()),
     );
-    assert!(a == a);
+    let e: Vector5<Fixed> = black_box(
+        load(array![2680381709, -760906447, -1072467557, -2519603592, 1784581302].span()),
+    );
+    assert!(e == e);
 }
 
 #[test]
@@ -227,14 +292,16 @@ fn bench_vector5_normalize__library() {
     let a: Vector5<Fixed> = black_box(
         load(array![37307616397, -10590881796, -14927429213, -35069782776, 24839176604].span()),
     );
-    let r = a.normalize();
-    assert!(r != a);
+    let e: Vector5<Fixed> = black_box(
+        load(array![2680381709, -760906447, -1072467557, -2519603592, 1784581302].span()),
+    );
+    assert!(a.normalize() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix5_norm__baseline() {
-    let a: Matrix5<Fixed> = black_box(
+    let _a: Matrix5<Fixed> = black_box(
         load(
             array![
                 -23001516648, 8855523096, -53402040280, -33662211627, -18004761150, -48881756950,
@@ -246,7 +313,8 @@ fn bench_matrix5_norm__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: Fixed = black_box(fx(188271794084));
+    assert!(e == e);
 }
 
 #[test]
@@ -264,14 +332,14 @@ fn bench_matrix5_norm__library() {
                 .span(),
         ),
     );
-    let r = a.norm();
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(188271794084));
+    assert!(a.norm() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3x4_dot__baseline() {
-    let a: Matrix3x4<Fixed> = black_box(
+    let _a: Matrix3x4<Fixed> = black_box(
         load(
             array![
                 2936778579, -60180598672, -62823447720, 59145967448, 54297780707, -3857805910,
@@ -280,7 +348,7 @@ fn bench_matrix3x4_dot__baseline() {
                 .span(),
         ),
     );
-    let b: Matrix3x4<Fixed> = black_box(
+    let _b: Matrix3x4<Fixed> = black_box(
         load(
             array![
                 -8254411525, 4761499813, -2976198562, 1286651170, -16430313386, -16005852608,
@@ -289,7 +357,8 @@ fn bench_matrix3x4_dot__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a && b == b);
+    let e: Fixed = black_box(fx(-170128249550));
+    assert!(e == e);
 }
 
 #[test]
@@ -313,20 +382,21 @@ fn bench_matrix3x4_dot__library() {
                 .span(),
         ),
     );
-    let r = a.dot(b);
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(-170128249550));
+    assert!(a.dot(b) == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_row_vector3_metric_distance__baseline() {
-    let a: RowVector3<Fixed> = black_box(
+    let _a: RowVector3<Fixed> = black_box(
         load(array![51709152015, -58243078180, -24853326178].span()),
     );
-    let b: RowVector3<Fixed> = black_box(
+    let _b: RowVector3<Fixed> = black_box(
         load(array![-5752456510, -11863746516, 9888278352].span()),
     );
-    assert!(a == a && b == b);
+    let e: Fixed = black_box(fx(81607952708));
+    assert!(e == e);
 }
 
 #[test]
@@ -338,14 +408,14 @@ fn bench_row_vector3_metric_distance__library() {
     let b: RowVector3<Fixed> = black_box(
         load(array![-5752456510, -11863746516, 9888278352].span()),
     );
-    let r = a.metric_distance(b);
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(81607952708));
+    assert!(a.metric_distance(b) == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix4_component_div__baseline() {
-    let a: Matrix4<Fixed> = black_box(
+    let _a: Matrix4<Fixed> = black_box(
         load(
             array![
                 16695167407, -35838427873, -59314753028, -65991710452, 28855907071, 38329112446,
@@ -355,7 +425,7 @@ fn bench_matrix4_component_div__baseline() {
                 .span(),
         ),
     );
-    let b: Matrix4<Fixed> = black_box(
+    let _b: Matrix4<Fixed> = black_box(
         load(
             array![
                 1501711464, -4955787407, -13813976261, 5774823143, 14010149242, 3414810276,
@@ -365,7 +435,17 @@ fn bench_matrix4_component_div__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a && b == b);
+    let e: Matrix4<Fixed> = black_box(
+        load(
+            array![
+                47748984897, 31059620402, 18441824397, -49080678521, 8846099711, 48208325246,
+                13163395840, -66667861878, -36840571636, 915336729, -5915075184, 37105629483,
+                3716624263, -1897766943, 17670749313, 3322749381,
+            ]
+                .span(),
+        ),
+    );
+    assert!(e == e);
 }
 
 #[test]
@@ -391,14 +471,23 @@ fn bench_matrix4_component_div__library() {
                 .span(),
         ),
     );
-    let r = a.component_div(b);
-    assert!(r != a);
+    let e: Matrix4<Fixed> = black_box(
+        load(
+            array![
+                47748984897, 31059620402, 18441824397, -49080678521, 8846099711, 48208325246,
+                13163395840, -66667861878, -36840571636, 915336729, -5915075184, 37105629483,
+                3716624263, -1897766943, 17670749313, 3322749381,
+            ]
+                .span(),
+        ),
+    );
+    assert!(a.component_div(b) == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix4x2_cmpy__baseline() {
-    let a: Matrix4x2<Fixed> = black_box(
+    let _a: Matrix4x2<Fixed> = black_box(
         load(
             array![
                 -18259621271, 59454732152, 14238604916, 58997035937, -28543901709, -44188670580,
@@ -407,7 +496,7 @@ fn bench_matrix4x2_cmpy__baseline() {
                 .span(),
         ),
     );
-    let b: Matrix4x2<Fixed> = black_box(
+    let _b: Matrix4x2<Fixed> = black_box(
         load(
             array![
                 -2725705456, 5841873439, -12982361533, 16424945653, -7549548504, 13736787678,
@@ -416,7 +505,16 @@ fn bench_matrix4x2_cmpy__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a && b == b);
+    let e: Matrix4x2<Fixed> = black_box(
+        load(
+            array![
+                -56533918952, 539878782041, -57923709499, 971840002204, 7801011585, -644935209203,
+                19477011174, 207222639154,
+            ]
+                .span(),
+        ),
+    );
+    assert!(e == e);
 }
 
 #[test]
@@ -440,18 +538,26 @@ fn bench_matrix4x2_cmpy__library() {
                 .span(),
         ),
     );
-    let r = {
+    let e: Matrix4x2<Fixed> = black_box(
+        load(
+            array![
+                -56533918952, 539878782041, -57923709499, 971840002204, 7801011585, -644935209203,
+                19477011174, 207222639154,
+            ]
+                .span(),
+        ),
+    );
+    assert!({
         let mut c = a;
-        c.cmpy(fx(3), a, b, fx(5));
+        c.cmpy(fx(12884901888), a, b, fx(21474836480));
         c
-    };
-    assert!(r != a);
+    } == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix6_amax__baseline() {
-    let a: Matrix6<Fixed> = black_box(
+    let _a: Matrix6<Fixed> = black_box(
         load(
             array![
                 64531786758, -61508186472, 66116217929, 65587240069, 58836006082, -1075568350,
@@ -464,7 +570,8 @@ fn bench_matrix6_amax__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: Fixed = black_box(fx(68481342628));
+    assert!(e == e);
 }
 
 #[test]
@@ -483,14 +590,14 @@ fn bench_matrix6_amax__library() {
                 .span(),
         ),
     );
-    let r = a.amax();
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(68481342628));
+    assert!(a.amax() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix6_iamax_full__baseline() {
-    let a: Matrix6<Fixed> = black_box(
+    let _a: Matrix6<Fixed> = black_box(
         load(
             array![
                 32586151325, -27530988766, 15149318931, -54249568563, -47284782928, 14209860138,
@@ -503,7 +610,8 @@ fn bench_matrix6_iamax_full__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: (usize, usize) = black_box((0, 4));
+    assert!(e == e);
 }
 
 #[test]
@@ -522,20 +630,21 @@ fn bench_matrix6_iamax_full__library() {
                 .span(),
         ),
     );
-    let r = a.iamax_full();
-    assert!(r != (7, 7));
+    let e: (usize, usize) = black_box((0, 4));
+    assert!(a.iamax_full() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_vector6_argmax__baseline() {
-    let a: Vector6<Fixed> = black_box(
+    let _a: Vector6<Fixed> = black_box(
         load(
             array![30785142818, 54721722010, -21663431941, 66793762502, 13582893553, -38261451824]
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: (usize, Fixed) = black_box((3, fx(66793762502)));
+    assert!(e == e);
 }
 
 #[test]
@@ -547,14 +656,14 @@ fn bench_vector6_argmax__library() {
                 .span(),
         ),
     );
-    let r = a.argmax();
-    assert!(r != (7, fx(0)));
+    let e: (usize, Fixed) = black_box((3, fx(66793762502)));
+    assert!(a.argmax() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix4_symmetric_part__baseline() {
-    let a: Matrix4<Fixed> = black_box(
+    let _a: Matrix4<Fixed> = black_box(
         load(
             array![
                 -19834739499, 14591579856, 60531753833, -34213091352, -10016181073, 50535128159,
@@ -564,7 +673,17 @@ fn bench_matrix4_symmetric_part__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: Matrix4<Fixed> = black_box(
+        load(
+            array![
+                -19834739499, 2287699391, -2343793225, 13369460373, 2287699391, 50535128159,
+                -5980847091, -27514120248, -2343793225, -5980847091, -40211916492, -10439174220,
+                13369460373, -27514120248, -10439174220, 4736374408,
+            ]
+                .span(),
+        ),
+    );
+    assert!(e == e);
 }
 
 #[test]
@@ -580,14 +699,23 @@ fn bench_matrix4_symmetric_part__library() {
                 .span(),
         ),
     );
-    let r = a.symmetric_part();
-    assert!(r != a);
+    let e: Matrix4<Fixed> = black_box(
+        load(
+            array![
+                -19834739499, 2287699391, -2343793225, 13369460373, 2287699391, 50535128159,
+                -5980847091, -27514120248, -2343793225, -5980847091, -40211916492, -10439174220,
+                13369460373, -27514120248, -10439174220, 4736374408,
+            ]
+                .span(),
+        ),
+    );
+    assert!(a.symmetric_part() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3_relative_eq__baseline() {
-    let a: Matrix3<Fixed> = black_box(
+    let _a: Matrix3<Fixed> = black_box(
         load(
             array![
                 65705992982, -45801091106, 7333834487, 52069517940, -35124459522, 18011365388,
@@ -596,7 +724,7 @@ fn bench_matrix3_relative_eq__baseline() {
                 .span(),
         ),
     );
-    let b: Matrix3<Fixed> = black_box(
+    let _b: Matrix3<Fixed> = black_box(
         load(
             array![
                 3187003140, 3698634956, 7356077888, -5186635807, -2242195619, -14213489490,
@@ -605,7 +733,8 @@ fn bench_matrix3_relative_eq__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a && b == b);
+    let e: bool = black_box(false);
+    assert!(e == e);
 }
 
 #[test]
@@ -629,14 +758,14 @@ fn bench_matrix3_relative_eq__library() {
                 .span(),
         ),
     );
-    let r = a.relative_eq(b, 4, fx(4096));
-    assert!(!r);
+    let e: bool = black_box(false);
+    assert!(a.relative_eq(b, 4, fx(4096)) == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3_partial_cmp__baseline() {
-    let a: Matrix3<Fixed> = black_box(
+    let _a: Matrix3<Fixed> = black_box(
         load(
             array![
                 46644886492, 29408024110, -24934549733, 22689929774, 52512497509, -28162168033,
@@ -645,7 +774,7 @@ fn bench_matrix3_partial_cmp__baseline() {
                 .span(),
         ),
     );
-    let b: Matrix3<Fixed> = black_box(
+    let _b: Matrix3<Fixed> = black_box(
         load(
             array![
                 -16067662965, 1196728904, -9827947821, -14531797034, -13008003966, 11371215892,
@@ -654,7 +783,8 @@ fn bench_matrix3_partial_cmp__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a && b == b);
+    let e: bool = black_box(false);
+    assert!(e == e);
 }
 
 #[test]
@@ -678,14 +808,14 @@ fn bench_matrix3_partial_cmp__library() {
                 .span(),
         ),
     );
-    let r = a < b;
-    assert!(!r);
+    let e: bool = black_box(false);
+    assert!((a < b) == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3_index_linear__baseline() {
-    let a: Matrix3<Fixed> = black_box(
+    let _a: Matrix3<Fixed> = black_box(
         load(
             array![
                 -10857347802, -4208190811, -57322005803, -41563655743, 15225825843, -60473648196,
@@ -694,7 +824,8 @@ fn bench_matrix3_index_linear__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: Fixed = black_box(fx(30664666109));
+    assert!(e == e);
 }
 
 #[test]
@@ -709,14 +840,14 @@ fn bench_matrix3_index_linear__library() {
                 .span(),
         ),
     );
-    let r = a[black_box(7_usize)];
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(30664666109));
+    assert!(a[black_box(7_usize)] == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3_index_pair__baseline() {
-    let a: Matrix3<Fixed> = black_box(
+    let _a: Matrix3<Fixed> = black_box(
         load(
             array![
                 -21131439923, -33606593496, 29971658992, -53461837855, 66522524655, -22214974892,
@@ -725,7 +856,8 @@ fn bench_matrix3_index_pair__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: Fixed = black_box(fx(-37201075693));
+    assert!(e == e);
 }
 
 #[test]
@@ -740,20 +872,21 @@ fn bench_matrix3_index_pair__library() {
                 .span(),
         ),
     );
-    let r = a[(black_box(1_usize), black_box(2_usize))];
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(-37201075693));
+    assert!(a[(black_box(1_usize), black_box(2_usize))] == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix2x3_one_norm__baseline() {
-    let a: Matrix2x3<Fixed> = black_box(
+    let _a: Matrix2x3<Fixed> = black_box(
         load(
             array![-56642082230, -35625822862, -6854276073, 65358484703, 57875654396, -42646397122]
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: Fixed = black_box(fx(100522051518));
+    assert!(e == e);
 }
 
 #[test]
@@ -765,14 +898,14 @@ fn bench_matrix2x3_one_norm__library() {
                 .span(),
         ),
     );
-    let r = a.one_norm();
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(100522051518));
+    assert!(a.one_norm() == e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3_lp_norm3__baseline() {
-    let a: Matrix3<Fixed> = black_box(
+    let _a: Matrix3<Fixed> = black_box(
         load(
             array![
                 -63647936278, 41682299698, 58498650520, 61319681904, -23724255075, 41332923056,
@@ -781,7 +914,8 @@ fn bench_matrix3_lp_norm3__baseline() {
                 .span(),
         ),
     );
-    assert!(a == a);
+    let e: Fixed = black_box(fx(0));
+    assert!(e == e);
 }
 
 #[test]
@@ -796,26 +930,27 @@ fn bench_matrix3_lp_norm3__library() {
                 .span(),
         ),
     );
-    let r = a.lp_norm(3);
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(0));
+    assert!(a.lp_norm(3) != e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3x2_angle__baseline() {
-    let a: Matrix3x2<Fixed> = black_box(
+    let _a: Matrix3x2<Fixed> = black_box(
         load(
             array![-55497624245, 42603285316, -41938400791, 5838330259, -51564637806, 35223665977]
                 .span(),
         ),
     );
-    let b: Matrix3x2<Fixed> = black_box(
+    let _b: Matrix3x2<Fixed> = black_box(
         load(
             array![15520843957, 1565205908, 4293033767, -11192790918, 1304441423, 3182452587]
                 .span(),
         ),
     );
-    assert!(a == a && b == b);
+    let e: Fixed = black_box(fx(0));
+    assert!(e == e);
 }
 
 #[test]
@@ -833,20 +968,21 @@ fn bench_matrix3x2_angle__library() {
                 .span(),
         ),
     );
-    let r = a.angle(b);
-    assert!(r != fx(0));
+    let e: Fixed = black_box(fx(0));
+    assert!(a.angle(b) != e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_vector4_slerp__baseline() {
-    let a: Vector4<Fixed> = black_box(
+    let _a: Vector4<Fixed> = black_box(
         load(array![40940956188, 20952162734, 1813270703, -17462173175].span()),
     );
-    let b: Vector4<Fixed> = black_box(
+    let _b: Vector4<Fixed> = black_box(
         load(array![-4480863825, -16113913565, -2999479254, 6742568694].span()),
     );
-    assert!(a == a && b == b);
+    let e: Vector4<Fixed> = black_box(load(array![0, 0, 0, 0].span()));
+    assert!(e == e);
 }
 
 #[test]
@@ -858,8 +994,8 @@ fn bench_vector4_slerp__library() {
     let b: Vector4<Fixed> = black_box(
         load(array![-4480863825, -16113913565, -2999479254, 6742568694].span()),
     );
-    let r = a.slerp(b, fx(1288490188));
-    assert!(r != a);
+    let e: Vector4<Fixed> = black_box(load(array![0, 0, 0, 0].span()));
+    assert!(a.slerp(b, fx(1288490188)) != e);
 }
 
 #[test]
@@ -871,14 +1007,14 @@ fn bench_vector4_slerp__alt_acos() {
     let b: Vector4<Fixed> = black_box(
         load(array![-4480863825, -16113913565, -2999479254, 6742568694].span()),
     );
-    let r = alt_acos_slerp(a, b, fx(1288490188));
-    assert!(r != a);
+    let e: Vector4<Fixed> = black_box(load(array![0, 0, 0, 0].span()));
+    assert!(alt_acos_slerp(a, b, fx(1288490188)) != e);
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix3_from_row_slice__baseline() {
-    let data = black_box(
+    let _data = black_box(
         array![
             fx(55624630629), fx(-35926646139), fx(-39925461133), fx(13827458663), fx(13742528224),
             fx(-17827243426), fx(-54943602765), fx(-232414930), fx(11597564317),
@@ -894,7 +1030,7 @@ fn bench_matrix3_from_row_slice__baseline() {
                 .span(),
         ),
     );
-    assert!(data.len() == 9 && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -938,5 +1074,5 @@ fn bench_matrix3_from_row_slice__alt_span_index() {
                 .span(),
         ),
     );
-    assert!(alt_index_from_row_slice(data) == e);
+    assert!(alt_span_index_from_row_slice(data) == e);
 }

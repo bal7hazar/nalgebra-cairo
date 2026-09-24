@@ -345,8 +345,11 @@ def conversion_lines(f: File, s: Shape, a: dict, rng: random.Random) -> list[str
         vq = raws(rng, q, 32)
         o = {s.f(i, j): floor_scale(sum(a[s.f(i, k)] * vq[q.f(k, j)] for k in range(s.c)))
              for i in range(s.r) for j in range(s.c)}
+        od = {s.f(i, j): floor_scale(sum(a[s.f(i, k)] * vq[q.f(j, k)] for k in range(s.c)))
+              for i in range(s.r) for j in range(s.c)}
         lines += [f"let rot: Rotation{s.c}<Fixed> = load({col(q, vq)});",
-                  f"assert_raws(a.mul_mat(rot), {col(s, o)});"]
+                  f"assert_raws(a.mul_mat(rot), {col(s, o)});",
+                  f"assert_raws(a.div_rotation(rot), {col(s, od)});"]
         f.uses.add(f"use nalgebra::Rotation{s.c};")
     return lines
 
@@ -530,12 +533,21 @@ def bench(group: str, variant: str, lines: list[str]) -> str:
 
 
 BENCH_HELPERS = """
-/// `from_row_slice` reading `data[k]` per component (bounds-checked `Span` indexing), against the
-/// library's single length check then unchecked reads.
-fn alt_index_from_row_slice(data: Span<Fixed>) -> Matrix3<Fixed> {
-    Matrix3Trait::new(
-        *data[0], *data[1], *data[2], *data[3], *data[4], *data[5], *data[6], *data[7], *data[8],
-    )
+/// `from_row_slice` with a length check then a bounds-checked `*data[k]` per component, against
+/// the library's ONE fixed-size-array read (`Span -> @Box<[T; 9]>`).
+fn alt_span_index_from_row_slice(data: Span<Fixed>) -> Matrix3<Fixed> {
+    assert!(data.len() == 9, "nalgebra: wrong slice length");
+    Matrix3 {
+        m11: *data[0],
+        m21: *data[3],
+        m31: *data[6],
+        m12: *data[1],
+        m22: *data[4],
+        m32: *data[7],
+        m13: *data[2],
+        m23: *data[5],
+        m33: *data[8],
+    }
 }
 
 /// `Matrix6::unscale` as four `div9` (the library chunks 36 quotients as `div16 + div16 + div4`).
@@ -594,66 +606,126 @@ fn alt_per_component_unscale(m: Matrix2x3<Fixed>, k: Fixed) -> Matrix2x3<Fixed> 
 
 
 def render_benches() -> str:
-    """Gas of the new operations, per family, on representative shapes (`bench_<group>__<v>`)."""
+    """Gas of the new operations, per family, on representative shapes (`bench_<group>__<v>`).
+
+    Every variant of a group loads the same black-boxed inputs and compares its result with the
+    same black-boxed expected value (`assert!(r == e)`, the baseline `assert!(e == e)`), so the
+    net gas is the operation's. The transcendental results have no integer model: they are
+    compared with a black-boxed value they differ from (`!=`, same cost as `==`)."""
     fns = []
-    need = {"Matrix3", "Matrix3Trait", "Matrix6", "Matrix2x3"}
+    need = {"Matrix3", "Matrix3Trait", "Matrix6", "Matrix2x3", "Vector4Trait"}
     bb = lambda s, var, v: f"let {var}: {s.name}<Fixed> = black_box(load({col(s, v)}));"  # noqa: E731
 
-    def group(name: str, s: Shape, expr: str, result: str, variants=(), extra_inputs=(),
-              trait: str = "Trait"):
+    def group(name: str, s: Shape, expr, expected, variants=(), k: int | None = None,
+              trait: str = "Trait", exact: bool = True):
+        """`expr(a, b, k)` / `expected(a, b, k)` -> (Cairo type, Cairo value) on the raws."""
         need.update({s.name, f"{s.name}{trait}"})
         rng = random.Random(f"tests_ops/bench/{name}")
         a, b = raws(rng, s), {x: nonzero_raw(rng) for x in s.fields}
+        code = expr("a", "b", "k")
         pre = [bb(s, "a", a)]
-        used = ["a == a"]
-        if re.search(r"\bb\b", expr):
+        if re.search(r"\bb\b", code):
             pre.append(bb(s, "b", b))
-            used.append("b == b")
-        if extra_inputs:
-            pre += list(extra_inputs)
-            used.append("k == k")
-        fns.append(bench(name, "baseline", pre + [f"assert!({' && '.join(used)});"]))
-        fns.append(bench(name, "library", pre + [f"let r = {expr};", result]))
-        for v, e in variants:
-            fns.append(bench(name, v, pre + [f"let r = {e};", result]))
+        if k is not None:
+            pre.append(f"let k: Fixed = black_box(fx({k}));")
+        ty, val = expected(a, b, k)
+        pre.append(f"let e: {ty} = black_box({val});")
+        op = "==" if exact else "!="
+        base = [re.sub(r"let (a|b|k):", r"let _\1:", line) for line in pre]
+        fns.append(bench(name, "baseline", base + ["assert!(e == e);"]))
+        fns.append(bench(name, "library", pre + [f"assert!({code} {op} e);"]))
+        for v, alt in variants:
+            fns.append(bench(name, v, pre + [f"assert!({alt('a', 'b', 'k')} {op} e);"]))
 
-    k = "let k: Fixed = black_box(fx(3 * 4294967296 + 5));"
-    group("matrix2x3_unscale", Shape(2, 3), "a.unscale(k)", "assert!(r != a);",
-          [("alt_per_component_div", "alt_per_component_unscale(a, k)")], [k])
-    group("matrix6_unscale", Shape(6, 6), "a.unscale(k)", "assert!(r != a);",
-          [("alt_div9", "alt_div9_unscale(a, k)")], [k])
-    group("vector5_normalize", Shape(5, 1), "a.normalize()", "assert!(r != a);")
-    group("matrix5_norm", Shape(5, 5), "a.norm()", "assert!(r != fx(0));")
-    group("matrix3x4_dot", Shape(3, 4), "a.dot(b)", "assert!(r != fx(0));")
-    group("row_vector3_metric_distance", Shape(1, 3), "a.metric_distance(b)", "assert!(r != fx(0));")
-    group("matrix4_component_div", Shape(4, 4), "a.component_div(b)", "assert!(r != a);")
-    group("matrix4x2_cmpy", Shape(4, 2), "{\nlet mut c = a;\nc.cmpy(fx(3), a, b, fx(5));\nc\n}",
-          "assert!(r != a);")
-    group("matrix6_amax", Shape(6, 6), "a.amax()", "assert!(r != fx(0));")
-    group("matrix6_iamax_full", Shape(6, 6), "a.iamax_full()", "assert!(r != (7, 7));")
-    group("vector6_argmax", Shape(6, 1), "a.argmax()", "assert!(r != (7, fx(0)));")
-    group("matrix4_symmetric_part", Shape(4, 4), "a.symmetric_part()", "assert!(r != a);")
-    group("matrix3_relative_eq", Shape(3, 3), "a.relative_eq(b, 4, fx(4096))", "assert!(!r);")
-    group("matrix3_partial_cmp", Shape(3, 3), "a < b", "assert!(!r);")
-    group("matrix3_index_linear", Shape(3, 3), "a[black_box(7_usize)]", "assert!(r != fx(0));")
-    group("matrix3_index_pair", Shape(3, 3), "a[(black_box(1_usize), black_box(2_usize))]",
-          "assert!(r != fx(0));")
-    group("matrix2x3_one_norm", Shape(2, 3), "a.one_norm()", "assert!(r != fx(0));")
-    group("matrix3_lp_norm3", Shape(3, 3), "a.lp_norm(3)", "assert!(r != fx(0));",
-          trait="AngleTrait")
-    group("matrix3x2_angle", Shape(3, 2), "a.angle(b)", "assert!(r != fx(0));", trait="AngleTrait")
-    group("vector4_slerp", Shape(4, 1), "a.slerp(b, fx(1288490188))", "assert!(r != a);",
-          [("alt_acos", "alt_acos_slerp(a, b, fx(1288490188))")], trait="AngleTrait")
-    need.add("Vector4Trait")
+    def shape_of(s: Shape, vals: dict) -> tuple[str, str]:
+        return f"{s.name}<Fixed>", f"load({col(s, vals)})"
+
+    def scalar(raw: int) -> tuple[str, str]:
+        return "Fixed", f"fx({raw})"
+
+    kk = 3 * ONE + 5
+    for s, alt in ((Shape(2, 3), ("alt_per_component_div", "alt_per_component_unscale")),
+                   (Shape(6, 6), ("alt_div9", "alt_div9_unscale"))):
+        group(f"{s.module}_unscale", s, lambda a, b, k: f"{a}.unscale({k})",
+              lambda a, b, k, s=s: shape_of(s, {x: div_round(a[x], k) for x in s.fields}),
+              [(alt[0], lambda a, b, k, f=alt[1]: f"{f}({a}, {k})")], k=kk)
+    v5 = Shape(5, 1)
+    group("vector5_normalize", v5, lambda a, b, k: f"{a}.normalize()",
+          lambda a, b, k: shape_of(v5, {x: div_round(a[x], math.isqrt(sum(a[y] ** 2 for y in v5.fields)))
+                                        for x in v5.fields}))
+    group("matrix5_norm", Shape(5, 5), lambda a, b, k: f"{a}.norm()",
+          lambda a, b, k: scalar(math.isqrt(sum(v * v for v in a.values()))))
+    group("matrix3x4_dot", Shape(3, 4), lambda a, b, k: f"{a}.dot({b})",
+          lambda a, b, k: scalar(floor_scale(sum(a[x] * b[x] for x in a))))
+    group("row_vector3_metric_distance", Shape(1, 3), lambda a, b, k: f"{a}.metric_distance({b})",
+          lambda a, b, k: scalar(math.isqrt(sum((a[x] - b[x]) ** 2 for x in a))))
+    m4 = Shape(4, 4)
+    group("matrix4_component_div", m4, lambda a, b, k: f"{a}.component_div({b})",
+          lambda a, b, k: shape_of(m4, {x: div_round(a[x], b[x]) for x in a}))
+    m42 = Shape(4, 2)
+    group("matrix4x2_cmpy", m42,
+          lambda a, b, k: f"{{\nlet mut c = {a};\nc.cmpy(fx({ONE * 3}), {a}, {b}, fx({ONE * 5}));\nc\n}}",
+          lambda a, b, k: shape_of(m42, {x: floor_scale(mul(3 * ONE, a[x]) * b[x] + 5 * ONE * a[x])
+                                         for x in a}))
+    m6 = Shape(6, 6)
+    group("matrix6_amax", m6, lambda a, b, k: f"{a}.amax()",
+          lambda a, b, k: scalar(max(abs(v) for v in a.values())))
+
+    def iamax(a, s):
+        vals = [abs(a[x]) for x in s.fields]
+        i = vals.index(max(vals))
+        return "(usize, usize)", f"({i % s.r}, {i // s.r})"
+    group("matrix6_iamax_full", m6, lambda a, b, k: f"{a}.iamax_full()", lambda a, b, k: iamax(a, m6))
+    v6 = Shape(6, 1)
+
+    def argmax(a):
+        vals = [a[x] for x in v6.fields]
+        i = vals.index(max(vals))
+        return "(usize, Fixed)", f"({i}, fx({vals[i]}))"
+    group("vector6_argmax", v6, lambda a, b, k: f"{a}.argmax()", lambda a, b, k: argmax(a))
+    group("matrix4_symmetric_part", m4, lambda a, b, k: f"{a}.symmetric_part()",
+          lambda a, b, k: shape_of(m4, {m4.f(i, j): a[m4.f(i, j)] if i == j else
+                                        (a[m4.f(i, j)] + a[m4.f(j, i)]) >> 1
+                                        for i in range(4) for j in range(4)}))
+    m3 = Shape(3, 3)
+
+    def rel(a, b):
+        def one(x, y):
+            if abs(x - y) <= 4:
+                return True
+            if (x < 0) != (y < 0):
+                return False
+            return abs(x - y) <= floor_scale(max(abs(x), abs(y)) * 4096)
+        return "bool", "true" if all(one(a[x], b[x]) for x in a) else "false"
+    group("matrix3_relative_eq", m3, lambda a, b, k: f"{a}.relative_eq({b}, 4, fx(4096))",
+          lambda a, b, k: rel(a, b))
+    group("matrix3_partial_cmp", m3, lambda a, b, k: f"({a} < {b})",
+          lambda a, b, k: ("bool", "true" if all(a[x] < b[x] for x in a) else "false"))
+    group("matrix3_index_linear", m3, lambda a, b, k: f"{a}[black_box(7_usize)]",
+          lambda a, b, k: scalar(a[m3.fields[7]]))
+    group("matrix3_index_pair", m3, lambda a, b, k: f"{a}[(black_box(1_usize), black_box(2_usize))]",
+          lambda a, b, k: scalar(a[m3.f(1, 2)]))
+    m23 = Shape(2, 3)
+    group("matrix2x3_one_norm", m23, lambda a, b, k: f"{a}.one_norm()",
+          lambda a, b, k: scalar(max(abs(a[m23.f(0, j)]) + abs(a[m23.f(1, j)]) for j in range(3))))
+    group("matrix3_lp_norm3", m3, lambda a, b, k: f"{a}.lp_norm(3)", lambda a, b, k: scalar(0),
+          trait="AngleTrait", exact=False)
+    group("matrix3x2_angle", Shape(3, 2), lambda a, b, k: f"{a}.angle({b})",
+          lambda a, b, k: scalar(0), trait="AngleTrait", exact=False)
+    group("vector4_slerp", Shape(4, 1), lambda a, b, k: f"{a}.slerp({b}, fx(1288490188))",
+          lambda a, b, k: shape_of(Shape(4, 1), {x: 0 for x in a}),
+          [("alt_acos", lambda a, b, k: f"alt_acos_slerp({a}, {b}, fx(1288490188))")],
+          trait="AngleTrait", exact=False)
     rng = random.Random("tests_ops/bench/from_row_slice")
     m = raws(rng, Shape(3, 3))
     data = f"let data = black_box({fxs(m[x] for x in Shape(3, 3).row_major)});"
     e = f"let e: Matrix3<Fixed> = black_box(load({col(Shape(3, 3), m)}));"
-    fns.append(bench("matrix3_from_row_slice", "baseline", [data, e, "assert!(data.len() == 9 && e == e);"]))
+    fns.append(bench("matrix3_from_row_slice", "baseline", [data.replace("let data", "let _data"),
+                                                            e, "assert!(e == e);"]))
     fns.append(bench("matrix3_from_row_slice", "library",
                      [data, e, "assert!(Matrix3Trait::from_row_slice(data) == e);"]))
     fns.append(bench("matrix3_from_row_slice", "alt_span_index",
-                     [data, e, "assert!(alt_index_from_row_slice(data) == e);"]))
+                     [data, e, "assert!(alt_span_index_from_row_slice(data) == e);"]))
     body = "\n\n".join(fns)
     names = sorted(need)
     uses = ["use fixed::Fixed;", "use nalgebra_testing::black_box;",
