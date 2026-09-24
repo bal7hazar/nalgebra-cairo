@@ -473,6 +473,14 @@ pub fn fv(name: &str, n: usize) -> Field {
 pub fn fq(name: &str) -> Field {
     field(name, Kind::Vector(4), "(w, i, j, k)")
 }
+/// `n` quaternions, each `(w, i, j, k)`.
+pub fn fquats(name: &str, n: usize) -> Field {
+    field(
+        name,
+        Kind::Group(vec![Kind::Vector(4); n]),
+        &format!("({n} quaternions, each (w, i, j, k))"),
+    )
+}
 /// Unit complex `(re, im)`.
 pub fn fc(name: &str) -> Field {
     field(name, Kind::Vector(2), "(re, im)")

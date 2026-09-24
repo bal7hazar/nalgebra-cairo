@@ -115,6 +115,14 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   selection differs.
 - `unit_quaternion_slerp` takes the shortest arc (upstream negates `b` when `dot < 0`);
   `unit_quaternion_nlerp` does not; `unit_complex_slerp` is `a * new((b / a).angle() * t)`.
+- `unit_quaternion_mean_of` (suite `unit_quaternion_completion`) is upstream's `mean_of`
+  UN-PERMUTED: upstream builds `Quaternion::new(v[0], v[1], v[2], v[3])` from an eigenvector stored
+  as `(i, j, k, w)`, so its `(w, i, j, k)` is the true `(i, j, k, w)`. The sign makes the largest
+  component positive; cases whose second eigenvalue exceeds 0.8 of the first are rejected.
+- `unit_quaternion_from_matrix` / `unit_complex_from_matrix` run upstream's iteration bounded to
+  1000 steps and keep a case only when it agrees with the SVD (3D) or closed-form (2D) maximiser of
+  `tr(R^T m)`; the 3D result has the sign of upstream's final `from_rotation_matrix`.
+- `quaternion_half` is upstream's `q / 2` (nearest) floored by the oracle: 1 ulp.
 - The scalar suite and every transcendental inside nalgebra go through the pure-Rust `libm`
   (`libm-force`), not the platform libm.
 
