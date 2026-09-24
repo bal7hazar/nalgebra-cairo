@@ -354,7 +354,8 @@ def impl_rhs_family(value: str) -> str:
             r"(?:f32|f64|u8|u16|u32|u64|u128|usize|i8|i16|i32|i64|i128|isize)", base):
         return "T"
     owner = rust_owner(value)
-    if re.fullmatch(r"(?:Matrix|Vector|DMatrix|DVector|RowDVector|SquareMatrix)\w*", owner):
+    if re.fullmatch(r"(?:Matrix|Vector|RowVector|DMatrix|DVector|RowDVector|SquareMatrix)\w*",
+                    owner):
         return "Matrix"
     if owner == "Unit<Vector>":
         return "Unit<Matrix>"
@@ -1045,6 +1046,11 @@ def parse_cairo() -> list[Item]:
                 tracked = cairo_impl_item(of.group(1), owner)
                 if tracked:
                     items.add(Item(tracked[0], "impl", tracked[1], module, source))
+        for m in re.finditer(r"\bpub\s+type\s+([A-Za-z_]\w*)\s*(?:<[^=]*>)?\s*=", text):
+            # `pub type Matrix3x1<T> = Vector3<T>;`: an upstream alias name, a type of its own
+            # name (`tools/shapegen/DESIGN.md` §4.1).
+            if not inside(m.start(), spans + test_spans):
+                items.add(Item(m.group(1), "type", m.group(1), module, source))
         for m in re.finditer(r"\bpub\s+(struct|enum)\s+([A-Za-z_]\w*)", text):
             if inside(m.start(), test_spans):
                 continue
@@ -1067,16 +1073,43 @@ def parse_cairo() -> list[Item]:
 # Classification
 # --------------------------------------------------------------------------------------------
 
+# The 36 static shapes of `tools/shapegen` (one Cairo struct per shape, the other upstream names
+# being `type` aliases): `Matrix1`, `VectorN` (N x 1), `RowVectorN` (1 x N), `MatrixN`, `MatrixRxC`.
+DIMS = range(1, 7)
+
+
+def shape_name(r: int, c: int) -> str:
+    if r == c == 1:
+        return "Matrix1"
+    if c == 1:
+        return f"Vector{r}"
+    if r == 1:
+        return f"RowVector{c}"
+    return f"Matrix{r}" if r == c else f"Matrix{r}x{c}"
+
+
+SHAPES = [shape_name(r, c) for r in DIMS for c in DIMS]
+SQUARES = [shape_name(n, n) for n in DIMS]
+COLUMNS = [shape_name(n, 1) for n in DIMS]
+ROWS = [shape_name(1, n) for n in DIMS]
+# Upstream alias -> canonical struct (`Matrix3x1` -> `Vector3`, `Vector1` -> `Matrix1`, ...).
+SHAPE_ALIASES = {"Vector1": "Matrix1", "RowVector1": "Matrix1",
+                 **{f"Matrix{n}x1": f"Vector{n}" for n in DIMS if n > 1},
+                 **{f"Matrix1x{n}": f"RowVector{n}" for n in DIMS if n > 1}}
+# The shapes that existed before WP 8.1b-3 (the dimension-restricted items below still name them).
 V = ["Vector2", "Vector3", "Vector4", "Vector6"]
 M = ["Matrix2", "Matrix3", "Matrix4", "Matrix6"]
 
 # Upstream owner -> the Cairo types that stand for it.  Owners absent from this table have no
 # Cairo counterpart yet (their items are missing unless excluded).
 OWNER_CANDIDATES: dict[str, list[str]] = {
-    "Matrix": V + M,
-    "SquareMatrix": M,
-    "Vector": V,
-    **{t: [t] for t in V + M},
+    "Matrix": SHAPES,
+    "SquareMatrix": SQUARES,
+    "Vector": COLUMNS,
+    "RowSVector": ROWS,
+    "RowVector": ROWS,
+    **{t: [t] for t in SHAPES},
+    **{alias: [t] for alias, t in SHAPE_ALIASES.items()},
     "Unit": ["Unit", "UnitComplex", "UnitQuaternion"],
     "Unit<Vector>": ["Unit"],
     "Point": ["Point2", "Point3"],
@@ -1116,11 +1149,17 @@ DIM_ONLY: dict[str, set[str]] = {
     "x_axis": {"Unit"}, "y_axis": {"Unit"}, "z_axis": {"Unit"}, "w_axis": {"Unit"},
     "a": {"Vector6"}, "b": {"Vector6"}, "xyz": set(V[2:]), "xy": set(V[1:]),
     "orthonormal_subspace_basis": {"Vector3"},
-    # Square-matrix semantics: on vectors they need the row / rectangular types of P01.
+    # Square-matrix semantics, generated on the 6 squares (`Matrix1..6`).
+    **{name: set(SQUARES) for name in (
+        "trace", "identity", "is_identity", "from_diagonal_element", "MulAssign<Matrix>")},
+    # Backed by a closed form or a decomposition that exists for 2, 3, 4, 6 only: `Matrix1` and
+    # `Matrix5` come with the LU / QR / SVD completion (P14, WP 8.5). `from_rows` /
+    # `from_columns` (vector arguments) are P05.
     **{name: set(M) for name in (
-        "determinant", "try_inverse", "trace", "identity", "is_identity", "from_rows",
-        "from_columns", "from_diagonal_element", "lu", "qr", "svd", "pseudo_inverse",
-        "singular_values", "tr_mul", "transpose", "Mul<Matrix>", "MulAssign<Matrix>")},
+        "determinant", "try_inverse", "from_rows", "from_columns", "lu", "qr", "svd",
+        "pseudo_inverse", "singular_values")},
+    # 1x1 only (upstream `Matrix1` / `Vector1` impls).
+    **{name: {"Matrix1"} for name in ("into_scalar", "as_scalar", "to_scalar", "as_scalar_mut")},
 }
 
 EXCLUSIONS = {
@@ -1169,8 +1208,13 @@ def rendered(item: Item) -> str:
 # is a Cairo rendered name (`method` names are bare, other kinds prefixed); `\1` refers to the
 # item pattern's groups.  Owners may be redirected with `Owner::name`.
 RENAMES = (
-    rule(r"Matrix|SquareMatrix|Matrix[2-6]", r"impl:Mul<Matrix>", "impl:Mul<Matrix>",
-         "matrix x vector is the named `mul_vec` (DESIGN D4)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d",
+         r"impl:Mul<Matrix>", r"MatrixMul::mul_mat",
+         "conformable products are `mul_mat` (Cairo's `Mul` is homogeneous; `*` stays on the "
+         "square shapes)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"tr_mul",
+         r"MatrixTrMul::tr_mul", "method of the generic `MatrixTrMul` (one impl per pair of "
+         "shapes with the same number of rows)"),
     rule(r"Matrix|Vector|SquareMatrix|Point|Quaternion", r"impl:Mul<T>", "scale",
          "heterogeneous operators are named methods (DESIGN D4)"),
     rule(r"Matrix|Vector|SquareMatrix|Point|Quaternion", r"impl:Div<T>", "unscale",
@@ -1213,12 +1257,6 @@ RENAMES = (
 # `Deref`). They are listed in their own section and are not counted as extras.  (owner, rendered
 # item, upstream spelling, reason) — fullmatch regexes on the Cairo owner and rendered item.
 CAIRO_FORMS = (
-    (r"Matrix[2-6]", r"mul_vec", "`m * v`",
-     "upstream `Mul<Matrix>` with a column vector on the right; Cairo's `Mul` is homogeneous and "
-     "`Mul<Matrix>` is the matrix product"),
-    (r"Matrix[2-6]", r"tr_mul_vec", "`m.tr_mul(&v)`",
-     "upstream's `tr_mul` takes any right-hand matrix; Cairo has no overloading and `tr_mul` is "
-     "the matrix form"),
     (r"Point[23]", r"coords", "`p.coords`",
      "an upstream public field; Cairo's points store `x, y(, z)` as fields (upstream's `Deref` "
      "view), so the vector is a method"),
@@ -1413,6 +1451,12 @@ def classify(rust: list[Item], cairo: list[Item]) -> tuple[dict[Item, Result], l
                     continue
         else:
             present = lookup(candidates, kind, item.name) if candidates else []
+            allowed = DIM_ONLY.get(item.name)
+            if present and [o for o in candidates if (allowed is None or o in allowed)
+                            and o not in present] and find_rule(RENAMES, item):
+                # A partial direct match (`Mul<Matrix>`: the square `*`) gives way to a rename
+                # that covers every candidate (`MatrixMul::mul_mat`).
+                present = []
             if not present:
                 ren = find_rule(RENAMES, item)
                 if ren:
@@ -1748,7 +1792,8 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
         "`Mul<Matrix>`, `From<[T; N]>`, `Into<[T; N]>`; reference and owned variants folded), "
         "`function`, `macro`;",
         "- an upstream owner maps onto the Cairo types listed in `OWNER_CANDIDATES` (e.g. "
-        "`Matrix` → `Vector2/3/4/6`, `Matrix2/3/4/6`); dimension-restricted methods (`cross`, "
+        "`Matrix` → the 36 static shapes `Matrix1..6`, `MatrixRxC`, `Vector2..6`, `RowVector2..6`); "
+        "dimension-restricted methods (`cross`, "
         "`perp`, `x_axis`...) only require the matching Cairo types (`DIM_ONLY`);",
         "- **ported**: same name on every candidate Cairo type, or a documented rename "
         "(`RENAMES`, shown in the detail column); **partial**: on some but not all candidate "
