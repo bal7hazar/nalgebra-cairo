@@ -87,11 +87,11 @@ Target (owner, 2026-09-23/24): publish `simba` and `nalgebra` 0.1.0 on scarbs.xy
 is **strictly nalgebra-rs 0.35.0's, neither more nor less** — every non-excluded item of
 [API_PARITY.md](API_PARITY.md) `ported`, and no Cairo-only public item beyond the renames Cairo
 imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progress is measured by
-`scripts/api_parity.py` (gate: `--check`). Started at 21.9 % (413 / 1,888).
+`scripts/api_parity.py` (gate: `--check`). Started at 21.9 % (413 / 1,888); 22.9 % after 8.0 (extras 401 → 72, all the scalar-kernel exception). WP 8.0b aligns `simba::Real` names on simba-rs (`is_sign_negative`, `T::pi()`, …).
 
 | WP | Content (parity packages) | Depends on |
 |---|---|---|
-| 8.0 | Strict removal of the Cairo-only public API (`SymMatrix2/3`, `conj_mul`, fused-kernel helpers, undocumented decomposition extras…), keeping implementation kernels private; ruling needed on `simba::Real`'s fused-kernel hooks (with gas figures) | 7.3 |
+| 8.0 ✅ (#25) | Strict removal of the Cairo-only public API (`SymMatrix2/3`, `conj_mul`, fused-kernel helpers, undocumented decomposition extras…), keeping implementation kernels private; ruling needed on `simba::Real`'s fused-kernel hooks (with gas figures) | 7.3 |
 | 8.1 | `tools/shapegen`: generator of the 54 static shapes (`Matrix1..6`, `MatrixRxC`, `Vector1..6`, `RowVector1..6`) from templates, committed output + `--check`; existing shapes migrated bit-identically, gas not worse (P01) | 8.0 |
 | 8.2 | Static base completion through the generator: P02 (norms, component-wise, construction, conversions), P03 (`map` / `zip` / in-place), P04 (swizzles), P05 (rows, columns, blocks) | 8.1 |
 | 8.3 | P06 (statistics, BLAS-like), P07 (homogeneous / cg helpers) | 8.2 |

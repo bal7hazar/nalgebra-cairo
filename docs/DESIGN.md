@@ -68,6 +68,14 @@ bit-identical to per-element division, cheaper from 3 quotients). Every sum-of-p
 Approximate equality (`abs_diff_eq`, `relative_eq`) is defined on raw units (ulp), since
 nalgebra's float epsilons are meaningless in fixed point.
 
+**The one exception to "neither more nor less"** (owner ruling, 2026-09-24): the fused kernels of
+`Real` (`sum_prod*`, `diff_prod`, `norm*`, `norm_squared*`, `lerp`, `wide_*`, `div3..div16`) and the
+constants simba-rs has no name for (`TWO`, `HALF`, …) have no counterpart in simba-rs's `RealField`.
+They stay, confined to the scalar trait layer (nalgebra's public API is strictly upstream's):
+expressing nalgebra with upstream-named scalar methods only was measured at +94 % to +326 % gas per
+sum of products, up to 5 ulp more error, and norms overflowing above |x| > 46,341 where `f64` does
+not (WP 8.0 report). Everything with a simba-rs name uses it (`is_sign_negative`, `T::pi()`, …).
+
 ## D4 — Types: static, unrolled, by value
 
 - Named-field `Copy` structs: `Vector2/3/4/6<T>`, `Matrix2/3/4/6<T>` (`m11..m33`, `Matrix3::new`
@@ -75,9 +83,9 @@ nalgebra's float epsilons are meaningless in fixed point.
   `Unit<V>`, `Quaternion`, `UnitQuaternion`, `UnitComplex`, `Rotation2/3`, `Translation2/3`,
   `Isometry2/3`, `Similarity2/3`.
 - `Matrix6` is 2x2 blocks of `Matrix3`; `Vector6` is two `Vector3` (spatial algebra layout).
-- First-class structured types: `SymMatrix3` (6 fields, rapier's `SdpMatrix3`), `SymMatrix2`.
-  Never materialise skew-symmetric or diagonal matrices: provide `cross_matrix_mul`, `gcross`,
-  `quadform` (`R diag(d) Rᵀ → Sym3`), `mul_transpose → Sym3`.
+- Structured kernels stay crate-internal since WP 8.0 (strict public API): `SymMatrix2/3` (Jacobi
+  state, SVD Gram matrix, LDLᵀ input), `quadform`, `mul_transpose`, `cross_matrix_mul`, `adjugate`;
+  public signatures take and return upstream's `MatrixN`.
 - No loops, no `Array`, no `Span` in static types. Hot kernels are explicit scalar formulas over
   fused scalar kernels, not compositions of vector ops.
 - By value everywhere (no `@T`, no `Box`): identical Sierra, simpler API.
@@ -103,13 +111,13 @@ Built only once the static surface is complete, and scoped by what multibody dyn
 | norm | `fixed::wide::norm*` / `Acc::sqrt` of the *unscaled* sum of squares | 2,220 (norm3) |
 | Jacobi `c = 1/√(1+t²)` | `recip(sqrt(1 + t²))` (more accurate SVD3 than the 96-bit-reciprocal `inv_norm2`, kept as the loser) | 6,750 |
 | det / inverse ≤ 4 | closed forms (cofactors; 4x4 determinant from 2x2 minors) on fused kernels, integer pre-scaled inverse; `try_inverse` returns `Option` on an exactly zero determinant | det3 10,350 / inv3 88,360 |
-| Cholesky / LDLᵀ ≤ 6 | unrolled; LDLᵀ preferred (no sqrt, indefinite accepted) | new+solve 3x3: LDLᵀ 45,660 vs Cholesky 66,090; 6x6: 161,000 vs 200,690 |
+| Cholesky / LDLᵀ ≤ 6 | unrolled; LDLᵀ is the crate-internal kernel (no sqrt, indefinite accepted), exposed as upstream's `UDU` (run on the reversed matrix `J·A·J`) since WP 8.0 | new+solve 3x3: LDLᵀ 45,660 vs Cholesky 66,090; 6x6: 161,000 vs 200,690 |
 | LU ≤ 6 | unrolled with partial pivoting (unpivoted variant fails on a permuted identity) | new 3x3 37,840, solve 27,240; 6x6 new 252,920, solve 72,240 |
 | symmetric eigen 2x2 / 3x3 | closed form 2x2; 4-sweep cyclic Jacobi 3x3 (the fixed point: a 5th sweep changes nothing), residual ≤ 31 ulp·max(1, max\|m\|) | 27,330 / 590,090 |
 | SVD 2x2 / 3x3, polar | symmetric eigen of `MᵀM`, renormalised eigenvectors, `σ = \|M·v\|`, `U` orthonormal by construction | 72,360 / 725,890 |
 | QR 2/3/4 | modified Gram-Schmidt (Householder is 2.7× dearer and further from upstream's factors) | new 32,380 / 77,890 / 151,680 |
 | rotations | `UnitComplex` / `UnitQuaternion` as raw pairs/quads (no `Unit` wrapper), Hamilton product on the `Wide` accumulator, algebraic `rotation_between`, quaternion transform for 1 vector and matrix for ≥ 2 | `q*q` 11,550, `uq.transform_vector` 22,070, `rotation_between` 62,870 |
-| isometries | `rotate_translate` fused kernel (translation folded into the accumulator), direct `inv_mul` on the fused `conj_mul` (conjugate signs folded into the accumulation, no negation), quaternion internally, `lerp_nlerp` (trig-free) | `Isometry3::transform_point` 23,270, `inv_mul` 38,640, `*` 35,320 |
+| isometries | `rotate_translate` fused kernel (translation folded into the accumulator), direct `inv_mul` on the crate-internal fused `conj_mul` (conjugate signs folded into the accumulation, no negation), quaternion internally, `lerp_nlerp` (trig-free) | `Isometry3::transform_point` 23,270, `inv_mul` 38,640, `*` 35,320 |
 
 Figures are net gas on `fixed` 0.3.0 (snapshots in `gas/`). When the best implementation is ambiguous, ship the variants behind one trait
 (`one trait, one impl per algorithm`), benchmark them side by side, export the cheapest.
