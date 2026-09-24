@@ -2,7 +2,7 @@ use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, int, m4, m4i, max_ulp_diff4, ulp_diff, v4i, v4t};
-use crate::base::{oracle_matrix4, oracle_matrix4_inverse};
+use crate::base::{MatrixMul, MatrixTrMul, oracle_matrix4, oracle_matrix4_inverse};
 use super::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
 
 // --- losing candidates of the determinant / inverse study (kept as evidence) -----------------
@@ -361,16 +361,16 @@ fn test_mul_vec_oracle() {
     let mut cases = oracle_matrix4::matrix4_mul_vec_cases();
     while let Some(case) = cases.pop_front() {
         let (a, v, expected, _) = *case;
-        assert!(m4(a).mul_vec(v4t(v)) == v4t(expected));
-        assert!(m4(a).transpose().tr_mul_vec(v4t(v)) == v4t(expected));
+        assert!(m4(a).mul_mat(v4t(v)) == v4t(expected));
+        assert!(m4(a).transpose().tr_mul(v4t(v)) == v4t(expected));
     }
 }
 
 #[test]
 fn test_mul_vec_tr_mul_vec_exact() {
     let a = m4i([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]);
-    assert!(a.mul_vec(v4i(1, 0, -1, 2)) == v4i(6, 14, 22, 30));
-    assert!(a.tr_mul_vec(v4i(1, 0, -1, 2)) == v4i(18, 20, 22, 24));
+    assert!(a.mul_mat(v4i(1, 0, -1, 2)) == v4i(6, 14, 22, 30));
+    assert!(a.tr_mul(v4i(1, 0, -1, 2)) == v4i(18, 20, 22, 24));
 }
 
 #[test]
@@ -1531,7 +1531,7 @@ fn bench_matrix4_mul_vec__fused() {
     );
     let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
     let e = black_box(v4t((12125377576, -16750294840, 20631480820, -331180081)));
-    assert!(a.mul_vec(v) == e);
+    assert!(a.mul_mat(v) == e);
 }
 
 #[test]
@@ -1567,7 +1567,7 @@ fn bench_matrix4_tr_mul_vec__fused() {
     );
     let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
     let e = black_box(v4t((-6954980908, -18276934794, -942863330, -2360400514)));
-    assert!(a.tr_mul_vec(v) == e);
+    assert!(a.tr_mul(v) == e);
 }
 
 #[test]
@@ -1585,7 +1585,7 @@ fn bench_matrix4_tr_mul_vec__transpose_mul_vec() {
     );
     let v = black_box(v4t((4751241150, 2551995575, -4086721614, -3145554884)));
     let e = black_box(v4t((-6954980908, -18276934794, -942863330, -2360400514)));
-    assert!(a.transpose().mul_vec(v) == e);
+    assert!(a.transpose().mul_mat(v) == e);
 }
 
 #[test]

@@ -36,6 +36,7 @@ use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use crate::base::vector3::{Vector3, Vector3InternalTrait, Vector3Trait};
+use crate::base::{MatrixMul, MatrixTrMul};
 use crate::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
 
 /// The singular value decomposition `M = U · diag(singular_values) · v_t` of a `Matrix3<T>`.
@@ -143,7 +144,7 @@ pub impl Svd3Impl<
             Vector3 { x, y, z }
         };
         let v3 = v1.cross(v2);
-        let (w1, w2, w3) = (matrix.mul_vec(v1), matrix.mul_vec(v2), matrix.mul_vec(v3));
+        let (w1, w2, w3) = (matrix.mul_mat(v1), matrix.mul_mat(v2), matrix.mul_mat(v3));
         let s1 = R::norm3(w1.x, w1.y, w1.z);
         let s2 = R::norm3(w2.x, w2.y, w2.z);
         let s3 = R::norm3(w3.x, w3.y, w3.z);
@@ -283,13 +284,13 @@ pub impl Svd3Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let y = self.u.tr_mul_vec(b);
+        let y = self.u.tr_mul(b);
         let z = Vector3 {
             x: Svd3InternalTrait::divided(y.x, self.singular_values.x, eps),
             y: Svd3InternalTrait::divided(y.y, self.singular_values.y, eps),
             z: Svd3InternalTrait::divided(y.z, self.singular_values.z, eps),
         };
-        Some(self.v_t.tr_mul_vec(z))
+        Some(self.v_t.tr_mul(z))
     }
 
     /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ` is
@@ -441,6 +442,7 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
+    use crate::base::MatrixMul;
     use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_m3, excess, int, m3, max_abs_v3, max_ulp_diff3, max_ulp_diff_v3, oracle_tol,
@@ -489,9 +491,9 @@ mod tests {
         let f = Svd3Trait::new(m);
         let v = f.v_t.transpose();
         let s = f.singular_values;
-        let c1 = normalised_or_axis(m.mul_vec(v.column1()), s.x, 0);
-        let c2 = normalised_or_axis(m.mul_vec(v.column2()), s.y, 1);
-        let c3 = normalised_or_axis(m.mul_vec(v.column3()), s.z, 2);
+        let c1 = normalised_or_axis(m.mul_mat(v.column1()), s.x, 0);
+        let c2 = normalised_or_axis(m.mul_mat(v.column2()), s.y, 1);
+        let c3 = normalised_or_axis(m.mul_mat(v.column3()), s.z, 2);
         Matrix3Trait::from_columns(c1, c2, c3)
     }
 
@@ -792,7 +794,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let x = Svd3Trait::new(m3(a)).solve(b, Real::default_epsilon()).unwrap();
-            let e = m3(a).try_inverse().unwrap().mul_vec(b);
+            let e = m3(a).try_inverse().unwrap().mul_mat(b);
             worst = core::cmp::max(worst, max_ulp_diff_v3(x, e));
         }
         // Measured gap to `Matrix3::try_inverse` * b over the 30 well-conditioned vectors.

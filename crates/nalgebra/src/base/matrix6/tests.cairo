@@ -20,7 +20,7 @@ use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix_test_utils::{
     fx, int, m6, m6_block11, m6_block12, m6_block21, m6_block22, m6_from_blocks, m6i, v6, v6i, v6t,
 };
-use crate::base::oracle_dim6_matrix as oracle;
+use crate::base::{MatrixMul, MatrixTrMul, oracle_dim6_matrix as oracle};
 use super::{Matrix6, Matrix6Trait};
 
 
@@ -267,18 +267,18 @@ fn test_mul_overflow_panics() {
 #[test]
 fn test_mul_vec_and_tr_mul_vec_exact() {
     let v = v6i(1, 0, 0, 0, 0, 2);
-    assert!(a6().mul_vec(v) == v6i(13, 31, 49, 67, 85, 103));
-    assert!(a6().tr_mul_vec(v) == v6i(63, 66, 69, 72, 75, 78));
-    // `tr_mul_vec` is `transpose().mul_vec()`, without forming the transpose.
-    assert!(a6().tr_mul_vec(v) == a6().transpose().mul_vec(v));
-    assert!(Matrix6Trait::<Fixed>::identity().mul_vec(v) == v);
+    assert!(a6().mul_mat(v) == v6i(13, 31, 49, 67, 85, 103));
+    assert!(a6().tr_mul(v) == v6i(63, 66, 69, 72, 75, 78));
+    // `tr_mul` by a vector is `transpose().mul_mat()`, without forming the transpose.
+    assert!(a6().tr_mul(v) == a6().transpose().mul_mat(v));
+    assert!(Matrix6Trait::<Fixed>::identity().mul_mat(v) == v);
 }
 
 #[test]
 #[should_panic(expected: 'Fixed: overflow')]
 fn test_mul_vec_overflow_panics() {
     let m = black_box(Matrix6Trait::from_diagonal_element(int(65536)));
-    let _ = m.mul_vec(black_box(v6i(65536, 0, 0, 0, 0, 0)));
+    let _ = m.mul_mat(black_box(v6i(65536, 0, 0, 0, 0, 0)));
 }
 
 #[test]
@@ -422,8 +422,8 @@ fn test_mul_vec_oracle() {
     while let Some(case) = cases.pop_front() {
         let (a, v, expected, tol) = *case;
         assert!(tol == 0);
-        assert!(m6(a).mul_vec(v6t(v)) == v6t(expected));
-        assert!(m6(a).transpose().tr_mul_vec(v6t(v)) == v6t(expected));
+        assert!(m6(a).mul_mat(v6t(v)) == v6t(expected));
+        assert!(m6(a).transpose().tr_mul(v6t(v)) == v6t(expected));
     }
 }
 

@@ -529,6 +529,7 @@ mod tests {
     use fixed::wide::{NormTrait, RecipTrait, norm3_wide};
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
+    use crate::base::MatrixMul;
     use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_s3, fx, int, m3, max_ulp_diff_s3, max_ulp_diff_v3, s3i, s3r, ulp_diff, v3i, v3t,
@@ -588,13 +589,13 @@ mod tests {
             e.eigenvectors.column1(), e.eigenvectors.column2(), e.eigenvectors.column3(),
         );
         let zero = Vector3Trait::zeros();
-        let mut r = max_ulp_diff_v3(s.to_matrix().mul_vec(c1) - c1.scale(e.eigenvalues.x), zero);
+        let mut r = max_ulp_diff_v3(s.to_matrix().mul_mat(c1) - c1.scale(e.eigenvalues.x), zero);
         r =
             core::cmp::max(
-                r, max_ulp_diff_v3(s.to_matrix().mul_vec(c2) - c2.scale(e.eigenvalues.y), zero),
+                r, max_ulp_diff_v3(s.to_matrix().mul_mat(c2) - c2.scale(e.eigenvalues.y), zero),
             );
         core::cmp::max(
-            r, max_ulp_diff_v3(s.to_matrix().mul_vec(c3) - c3.scale(e.eigenvalues.z), zero),
+            r, max_ulp_diff_v3(s.to_matrix().mul_mat(c3) - c3.scale(e.eigenvalues.z), zero),
         )
     }
 

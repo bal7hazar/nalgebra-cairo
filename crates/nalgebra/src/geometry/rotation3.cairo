@@ -27,6 +27,7 @@ use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::unit::{Unit, UnitTrait};
 use crate::base::vector3::{Vector3, Vector3Trait};
+use crate::base::{MatrixMul, MatrixTrMul};
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
 
 #[cfg(test)]
@@ -126,29 +127,29 @@ pub impl Rotation3Impl<
     /// `transform_vector` (`r * v`).
     #[inline(always)]
     fn transform_vector(self: Rotation3<T>, v: Vector3<T>) -> Vector3<T> {
-        self.matrix.mul_vec(v)
+        self.matrix.mul_mat(v)
     }
 
     /// `transform_vector` of the point's coordinates (a rotation fixes the origin). Upstream:
     /// `transform_point` (`r * p`).
     #[inline(always)]
     fn transform_point(self: Rotation3<T>, p: Point3<T>) -> Point3<T> {
-        let c = self.matrix.mul_vec(Vector3 { x: p.x, y: p.y, z: p.z });
+        let c = self.matrix.mul_mat(Vector3 { x: p.x, y: p.y, z: p.z });
         Point3 { x: c.x, y: c.y, z: c.z }
     }
 
-    /// `self⁻¹ · v = selfᵀ · v`: one `tr_mul_vec`, as cheap as `transform_vector` (the
+    /// `self⁻¹ · v = selfᵀ · v`: one `tr_mul`, as cheap as `transform_vector` (the
     /// transpose is free, it is just another access pattern). Upstream: `inverse_transform_vector`.
     #[inline(always)]
     fn inverse_transform_vector(self: Rotation3<T>, v: Vector3<T>) -> Vector3<T> {
-        self.matrix.tr_mul_vec(v)
+        self.matrix.tr_mul(v)
     }
 
     /// `inverse_transform_vector` of the point's coordinates. Upstream:
     /// `inverse_transform_point`.
     #[inline(always)]
     fn inverse_transform_point(self: Rotation3<T>, p: Point3<T>) -> Point3<T> {
-        let c = self.matrix.tr_mul_vec(Vector3 { x: p.x, y: p.y, z: p.z });
+        let c = self.matrix.tr_mul(Vector3 { x: p.x, y: p.y, z: p.z });
         Point3 { x: c.x, y: c.y, z: c.z }
     }
 

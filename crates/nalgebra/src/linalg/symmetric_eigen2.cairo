@@ -222,6 +222,7 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
+    use crate::base::MatrixMul;
     use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_s2, fx, int, max_ulp_diff_s2, max_ulp_diff_v2, s2i, s2r, ulp_diff, v2i, v2t,
@@ -245,8 +246,8 @@ mod tests {
     /// `|S * c_i - lambda_i * c_i|` over the two columns, in raw units.
     fn residual_error(s: SymMatrix2<Fixed>, e: SymmetricEigen2<Fixed>) -> u128 {
         let (c1, c2) = (e.eigenvectors.column1(), e.eigenvectors.column2());
-        let r1 = s.to_matrix().mul_vec(c1) - c1.scale(e.eigenvalues.x);
-        let r2 = s.to_matrix().mul_vec(c2) - c2.scale(e.eigenvalues.y);
+        let r1 = s.to_matrix().mul_mat(c1) - c1.scale(e.eigenvalues.x);
+        let r2 = s.to_matrix().mul_mat(c2) - c2.scale(e.eigenvalues.y);
         core::cmp::max(
             max_ulp_diff_v2(r1, Vector2Trait::zeros()), max_ulp_diff_v2(r2, Vector2Trait::zeros()),
         )
