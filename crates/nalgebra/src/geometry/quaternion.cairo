@@ -433,7 +433,10 @@ pub impl QuaternionImpl<
     /// The principal square root (the root of non-negative real part), ALGEBRAICALLY:
     /// with `n = |self|`,
     /// - `w >= 0`: `s = sqrt((n + w) / 2)`, root `(s, v / 2s)`;
-    /// - `w < 0`: `t = sqrt((n - w) / 2)` (no cancellation), root `(|v| / 2t, t · v / |v|)`;
+    /// - `w < 0`: `t = sqrt((n - w) / 2)` (no cancellation), root `(|v| / 2t, t · v / |v|)`, the
+    ///   imaginary part as the correctly rounded quotients of the floored `v_i · t` by `|v|`
+    ///   while `n < 2^20` (about one ulp), as `t` times the rounded direction above (a relative
+    ///   error of about 2^-33);
     /// - the negative real `(w < 0, v = 0)` has a whole sphere of roots: `(0, sqrt(-w), 0, 0)`
     ///   is returned, the complex principal root `sqrt(-x) = i·sqrt(x)` (upstream returns NaN
     ///   there, through `ln`).
@@ -462,8 +465,17 @@ pub impl QuaternionImpl<
             if nv == R::zero() {
                 return Quaternion { i: t, j: R::zero(), k: R::zero(), w: R::zero() };
             }
-            let (x, y, z) = R::div3(i, j, k, nv);
-            Quaternion { i: x * t, j: y * t, k: z * t, w: R::div(nv, t + t) }
+            // t · v / |v|: dividing the floored products `v_i · t` keeps the error at about one
+            // ulp; `v_i · t` fits while `|self| < 2^20` (`t <= 2^10`). Beyond that the unit
+            // direction is scaled instead, which keeps a RELATIVE error of about 2^-33 (an
+            // absolute error of up to `t / 2` ulp).
+            let (x, y, z) = if n < R::from_int(0x100000) {
+                R::div3(i * t, j * t, k * t, nv)
+            } else {
+                let (x, y, z) = R::div3(i, j, k, nv);
+                (x * t, y * t, z * t)
+            };
+            Quaternion { i: x, j: y, k: z, w: R::div(nv, t + t) }
         }
     }
 }

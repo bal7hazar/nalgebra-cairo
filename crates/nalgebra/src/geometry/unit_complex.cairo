@@ -277,16 +277,22 @@ pub trait UnitComplexAngleTrait<T> {
     fn scaled_rotation_between_axis(
         a: Unit<Vector2<T>>, b: Unit<Vector2<T>>, s: T,
     ) -> UnitComplex<T>;
-    /// `from_matrix_eps(m, default_epsilon, 0, identity)`. Upstream: `UnitComplex::from_matrix`.
+    /// `from_matrix_eps(m, default_epsilon, 0, identity)`: the closed form. Upstream:
+    /// `UnitComplex::from_matrix`.
     fn from_matrix(m: Matrix2<T>) -> UnitComplex<T>;
-    /// The rotation part of `m` (maximising `tr(Rᵀ m)`), by upstream's 2D Müller iteration from
-    /// `guess`: `δ = (Σ_c r_c ⊥ m_c) / (|Σ_c r_c · m_c| + ε)`, `R ← R(δ) · R` until
-    /// `|δ| <= eps`.
-    /// With `R = (re, im)` both sums are one fused kernel of two products on the exact
-    /// `m21 - m12` and `m11 + m22` (panics when those overflow, entries above about 1e9), then
-    /// one division, one `sin_cos` and one composition per iteration (about 40 000 gas).
-    /// **Bounded:** at most `FROM_MATRIX_MAX_ITER` (16) iterations, also for `max_iter = 0`
-    /// (upstream: unbounded). Upstream: `UnitComplex::from_matrix_eps`.
+    /// The rotation part of `m` (the rotation maximising `tr(Rᵀ m)`).
+    /// - `max_iter = 0` (upstream: iterate until convergence): the LIMIT in closed form, trig-free:
+    ///   `(m11 + m22, m21 - m12)` normalised (one `norm2`, two divisions; the identity when that
+    ///   pair is zero); `eps` and `guess` unused.
+    /// - `max_iter > 0`: upstream's 2D Müller iteration from `guess`,
+    ///   `δ = (Σ_c r_c ⊥ m_c) / (|Σ_c r_c · m_c| + ε)`, `R ← R(δ) · R` until `|δ| <=
+    ///   eps`. With `R = (re, im)` both sums are one fused kernel of two products on the exact `m21
+    ///   - m12`
+    ///   and `m11 + m22` (panics when those overflow, entries above about 1e9), then one division,
+    ///   one `sin_cos` and one composition per iteration (about 40 000 gas). **Bounded:** at most
+    ///   `min(max_iter, FROM_MATRIX_MAX_ITER)` iterations.
+    ///
+    /// Upstream: `UnitComplex::from_matrix_eps`.
     fn from_matrix_eps(
         m: Matrix2<T>, eps: T, max_iter: usize, guess: UnitComplex<T>,
     ) -> UnitComplex<T>;
@@ -659,6 +665,16 @@ pub impl UnitComplexAngleImpl<
     fn from_matrix_eps(
         m: Matrix2<T>, eps: T, max_iter: usize, guess: UnitComplex<T>,
     ) -> UnitComplex<T> {
+        if max_iter == 0 {
+            // The limit in closed form: the angle maximising `tr(Rᵀ m)` is that of
+            // `(m11 + m22, m21 - m12)`.
+            let (re, im) = (m.m11 + m.m22, m.m21 - m.m12);
+            let n = R::norm2(re, im);
+            if n == R::zero() {
+                return UnitComplexTrait::identity();
+            }
+            return UnitComplex { re: R::div(re, n), im: R::div(im, n) };
+        }
         let (r, _) = UnitComplexAngleInternalTrait::from_matrix_eps_count(m, eps, max_iter, guess);
         r
     }

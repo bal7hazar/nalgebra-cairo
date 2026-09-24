@@ -11,6 +11,7 @@ use num_traits::{One, Zero};
 mod base;
 mod geometry;
 mod linalg;
+mod rotation_completion;
 mod scalar;
 
 /// Every suite, in a stable order.
@@ -18,6 +19,7 @@ pub fn all() -> Vec<Suite> {
     let mut suites = vec![scalar::suite()];
     suites.extend(base::suites());
     suites.extend(geometry::suites());
+    suites.extend(rotation_completion::suites());
     suites.extend(linalg::suites());
     suites
 }

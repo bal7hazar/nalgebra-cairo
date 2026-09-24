@@ -63,12 +63,12 @@ pub mod errors {
     pub const EMPTY_MEAN: felt252 = 'nalgebra: mean of nothing';
 }
 
-/// Upper bound of the iterations of `from_matrix_eps` (whatever `max_iter`, and when `max_iter`
-/// is 0, which upstream reads as "until convergence"). Measured on the oracle set
-/// (`test_from_matrix_eps_iterations_on_the_oracle_set`): from the identity, every case reaches
-/// its fixed point in at most 9 iterations; the bound leaves room for adversarial inputs while
-/// keeping the worst case finite (about 100 000 gas per iteration).
-pub const FROM_MATRIX_MAX_ITER: usize = 16;
+/// Upper bound of the Müller iterations of `from_matrix_eps` when `max_iter > 0` (`max_iter = 0`,
+/// upstream's "until convergence", computes the limit in closed form instead). Measured on the
+/// oracle set (`test_from_matrix_eps_iterations_on_the_oracle_set`): from the identity, 17 of the
+/// 24 cases reach the fixed point in 21 to 57 iterations (the convergence is linear) and 7 need
+/// more than 64; the bound keeps the worst case finite (about 100 000 gas per iteration).
+pub const FROM_MATRIX_MAX_ITER: usize = 64;
 
 /// Upper bound of the successive perturbations `from_matrix_eps` tries at a stationary point
 /// before accepting it as the maximum (upstream loops until the distance changes by more than
@@ -908,6 +908,68 @@ pub(crate) impl UnitQuaternionInternalImpl<
         Self::normalized_square(Self::normalized_square(Self::normalized_square(s)))
     }
 
+    /// The rotation maximising `tr(Rᵀ m)` (closest to `m` in Frobenius norm): the unit
+    /// eigenvector of the largest eigenvalue of Horn's symmetric matrix `K(m)`, for which
+    /// `tr(R(q)ᵀ m) = qᵀ K q` (`(w, i, j, k)` order: `K_ww = tr m`, `K_wi = m32 - m23`, ...,
+    /// `K_ii = m11 - m22 - m33`, `K_ij = m12 + m21`, ...; every entry an exact sum of entries of
+    /// `m`). `K` has trace 0 and spectral radius at most `‖K‖_F = 2‖m‖_F`, so `K +
+    /// 2‖m‖_F·I` is positive semi-definite with the same dominant eigenvector; scaled by `1 /
+    /// (8‖m‖_F)` it has trace 1, and `dominant_projector` / `dominant_column` extract the
+    /// eigenvector (the eigenvalue ratio is at most `(λ₂ + c) / (λ₁ + c)` with `λ₁ - λ₂
+    /// = 2(σ₂ + σ₃)`, e.g. 0.85 for a condition number of 8). The identity for the zero
+    /// matrix. Upstream's sign convention is applied by the caller.
+    fn closest_rotation(m: Matrix3<T>) -> UnitQuaternion<T> {
+        let acc = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), m.m11, m.m11), m.m21, m.m21);
+        let acc = R::wide_add_prod(R::wide_add_prod(acc, m.m31, m.m31), m.m12, m.m12);
+        let acc = R::wide_add_prod(R::wide_add_prod(acc, m.m22, m.m22), m.m32, m.m32);
+        let acc = R::wide_add_prod(R::wide_add_prod(acc, m.m13, m.m13), m.m23, m.m23);
+        let f = R::wide_sqrt(R::wide_add_prod(acc, m.m33, m.m33));
+        if f == R::zero() {
+            return UnitQuaternionTrait::identity();
+        }
+        let c = f + f;
+        let r = R::recip(c + c + c + c);
+        let s = Sym4 {
+            ww: (m.m11 + m.m22 + m.m33 + c) * r,
+            wi: (m.m32 - m.m23) * r,
+            wj: (m.m13 - m.m31) * r,
+            wk: (m.m21 - m.m12) * r,
+            ii: (m.m11 - m.m22 - m.m33 + c) * r,
+            ij: (m.m12 + m.m21) * r,
+            ik: (m.m13 + m.m31) * r,
+            jj: (m.m22 - m.m11 - m.m33 + c) * r,
+            jk: (m.m23 + m.m32) * r,
+            kk: (m.m33 - m.m11 - m.m22 + c) * r,
+        };
+        Self::dominant_column(Self::dominant_projector(s))
+    }
+
+    /// `±q` with upstream's `from_rotation_matrix` (Shepperd) sign: `w > 0` when the trace of the
+    /// rotation `3w² - |v|²` is positive, otherwise the component of largest magnitude among
+    /// `i`, `j`, `k` (first in that order on ties, as Shepperd's branches) is made positive.
+    /// Upstream's `from_matrix_eps` ends with that conversion, so its result carries that sign.
+    fn shepperd_sign(q: UnitQuaternion<T>) -> UnitQuaternion<T> {
+        let Quaternion { i, j, k, w } = q.quaternion;
+        let tr = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), w, w), w, w);
+        let tr = R::wide_sub_prod(R::wide_sub_prod(R::wide_add_prod(tr, w, w), i, i), j, j);
+        let tr = R::wide_rescale(R::wide_sub_prod(tr, k, k));
+        let (ai, aj, ak) = (R::abs(i), R::abs(j), R::abs(k));
+        let positive = if tr > R::zero() {
+            R::is_sign_positive(w)
+        } else if ai > aj && ai > ak {
+            R::is_sign_positive(i)
+        } else if aj > ak {
+            R::is_sign_positive(j)
+        } else {
+            R::is_sign_positive(k)
+        };
+        if positive {
+            q
+        } else {
+            UnitQuaternion { quaternion: -q.quaternion }
+        }
+    }
+
     /// The normalised column of largest diagonal entry of a rank-one projector `v vᵀ`: `±v`, the
     /// sign making its largest component positive.
     fn dominant_column(s: Sym4<T>) -> UnitQuaternion<T> {
@@ -1313,39 +1375,52 @@ pub impl UnitQuaternionAngleImpl<
         Self::euler_angles(self)
     }
 
-    /// `from_matrix_eps(m, default_epsilon, 0, identity)`: the rotation closest to `m`. See
-    /// `from_matrix_eps`. Upstream: `UnitQuaternion::from_matrix`.
+    /// `from_matrix_eps(m, default_epsilon, 0, identity)`: the rotation closest to `m`, in closed
+    /// form (see `from_matrix_eps`). Upstream: `UnitQuaternion::from_matrix`.
     #[inline(always)]
     fn from_matrix(m: Matrix3<T>) -> UnitQuaternion<T> {
         Self::from_matrix_eps(m, R::default_epsilon(), 0, UnitQuaternionTrait::identity())
     }
 
     /// The rotation part of the matrix `m` (the rotation `R` maximising `tr(Rᵀ m)`, i.e. closest
-    /// to `m` in Frobenius norm), by Müller et al.'s iteration ("A Robust Method to Extract the
-    /// Rotational Part of Deformations", upstream's algorithm) started from `guess`:
-    /// `ω = Σ_c r_c × m_c / (|Σ_c r_c · m_c| + ε)` over the columns, then `R ← exp(ω) ·
-    /// R`, until `|ω| <= eps`; at that stationary point `R` is perturbed by `max(sqrt(eps),
-    /// eps²)` radians about a cycling axis to escape a maximum of the distance, like upstream.
+    /// to `m` in Frobenius norm; the rotation factor of the polar decomposition when
+    /// `det m > 0`).
     ///
-    /// The rotation is carried as a unit quaternion (4 parameters, renormalised once at the
-    /// end): each iteration is one `to_rotation_matrix`, two fused kernels per component of `ω`
-    /// and its denominator (18 + 9 products, one rounding each), one `norm3`, one `sin_cos`, four
-    /// divisions and one Hamilton product, about 100 000 gas. Carrying the matrix instead, like
-    /// upstream, costs a 3x3 product and an axis-angle matrix per iteration and drifts from
-    /// orthonormality (`bench_unit_quaternion_from_matrix__alt_rotation3`).
+    /// - `max_iter = 0` (upstream: iterate until convergence): the LIMIT is computed directly,
+    ///   as the dominant eigenvector of Horn's 4x4 matrix `K(m)` (`qᵀ K q = tr(R(q)ᵀ m)`) by
+    ///   `MEAN_OF_SQUARINGS` normalised squarings — a fixed cost of about 400 000 gas, no loop,
+    ///   `guess` and `eps` unused. Upstream's iteration converges only LINEARLY: from the
+    ///   identity, 21 to 57 iterations of about 100 000 gas each on 17 of the 24 oracle cases,
+    ///   more than 64 on the other 7 (`test_from_matrix_eps_iterations_on_the_oracle_set`,
+    ///   `bench_unit_quaternion_from_matrix__alt_iterate`).
+    /// - `max_iter > 0`: upstream's algorithm, Müller et al.'s iteration ("A Robust Method to
+    ///   Extract the Rotational Part of Deformations") from `guess`:
+    ///   `ω = Σ_c r_c × m_c / (|Σ_c r_c · m_c| + ε)` over the columns, `R ← exp(ω) · R`,
+    ///   until `|ω| <= eps` (in scalar units; the rounding noise of `ω` is a few ulp, so with
+    ///   `eps = default_epsilon` = 1 ulp the loop runs to its bound), with upstream's perturbation
+    ///   by `max(sqrt(eps), eps²)` radians about a cycling axis at a stationary point. The
+    ///   rotation is carried as a unit quaternion: each iteration is one `to_rotation_matrix`, one
+    ///   fused kernel per component of `ω` (six products) and for its denominator (nine), one
+    ///   `norm3`, one `sin_cos`, four divisions and one Hamilton product, about 100 000 gas.
+    ///   **Bounded:** at most `min(max_iter, FROM_MATRIX_MAX_ITER)` iterations and
+    ///   `FROM_MATRIX_MAX_PERTURBATIONS` successive perturbations.
     ///
-    /// **Bounded:** at most `FROM_MATRIX_MAX_ITER` (16) iterations, also when `max_iter` is 0 or
-    /// larger (upstream loops without bound for 0), and at most `FROM_MATRIX_MAX_PERTURBATIONS`
-    /// (4) successive perturbations per stationary point. `eps` is in scalar units (1 ulp =
-    /// `default_epsilon`). The distance test squares the entries of `m - R`: panics on overflow
-    /// for entries of `m` above about 15 000. Upstream: `UnitQuaternion::from_matrix_eps`.
+    /// Either way the result carries upstream's sign, the one of its final
+    /// `from_rotation_matrix` (Shepperd's branches). The distance test of the perturbation squares
+    /// the entries of `m - R`: panics on overflow for entries above about 15 000. Upstream:
+    /// `UnitQuaternion::from_matrix_eps`.
     fn from_matrix_eps(
         m: Matrix3<T>, eps: T, max_iter: usize, guess: UnitQuaternion<T>,
     ) -> UnitQuaternion<T> {
+        if max_iter == 0 {
+            return UnitQuaternionInternalTrait::shepperd_sign(
+                UnitQuaternionInternalTrait::closest_rotation(m),
+            );
+        }
         let (q, _) = UnitQuaternionAngleInternalTrait::from_matrix_eps_count(
             m, eps, max_iter, guess,
         );
-        q
+        UnitQuaternionInternalTrait::shepperd_sign(q)
     }
 }
 
@@ -1365,7 +1440,8 @@ pub(crate) impl UnitQuaternionAngleInternalImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of UnitQuaternionAngleInternalTrait<T> {
-    /// `from_matrix_eps` and the number of iterations it ran (for the convergence tests).
+    /// Müller's iteration of `from_matrix_eps` (`max_iter > 0`, or 0 for the cap alone) and the
+    /// number of iterations it ran (for the convergence tests). No sign convention applied.
     fn from_matrix_eps_count(
         m: Matrix3<T>, eps: T, max_iter: usize, guess: UnitQuaternion<T>,
     ) -> (UnitQuaternion<T>, usize) {
