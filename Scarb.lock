@@ -18,6 +18,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_shapes_tests_core"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_testing"
 version = "0.1.0"
 dependencies = [
