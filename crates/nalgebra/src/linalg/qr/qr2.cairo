@@ -13,12 +13,21 @@ use crate::base::vector2::Vector2;
 /// `r_ii >= 0` and an exactly zero strict lower triangle. Built by `Qr2Trait::new` or
 /// `Matrix2QrTrait::qr`. Upstream: `nalgebra::linalg::QR`, which packs the Householder reflectors
 /// and the signed diagonal instead and rebuilds the two factors on demand.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Qr2<T> {
     /// The orthonormal factor `Q` (orthonormal iff `is_invertible`, see the module doc).
     pub q: Matrix2<T>,
     /// The upper triangular factor `R`, `r_ii >= 0`.
     pub r: Matrix2<T>,
+}
+
+/// Test-only field-wise equality (upstream `Qr2` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Qr2PartialEq<T, +PartialEq<T>> of PartialEq<Qr2<T>> {
+    fn eq(lhs: @Qr2<T>, rhs: @Qr2<T>) -> bool {
+        lhs.q == rhs.q && lhs.r == rhs.r
+    }
 }
 
 /// Methods of `Qr2<T>` for any `Real` scalar.
@@ -145,7 +154,26 @@ pub impl Qr2Impl<
         let x12 = R::div(R::mul_add(-self.r.m12, x22, self.q.m21), self.r.m11);
         Some(Matrix2 { m11: x11, m21: x21, m12: x12, m22: x22 })
     }
+}
 
+/// Crate-internal kernels of `Qr2<T>` (WP 8.0: the public API is strictly upstream's).
+/// `determinant`
+/// has no upstream counterpart (upstream's `QR::determinant` is commented out); the tests use it to
+/// check the factors.
+#[generate_trait]
+pub(crate) impl Qr2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Qr2InternalTrait<T> {
     /// The determinant: `det(Q) * r11 * r22`. Upstream: `QR::determinant`.
     ///
     /// `R` has a non-negative diagonal, so the sign lives entirely in `det(Q) = ±1`, read off
@@ -202,14 +230,14 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix2::{Matrix2, Matrix2Trait};
+    use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_m2, excess, int, m2, max_abs_m2, max_abs_v2, max_ulp_diff2, max_ulp_diff_v2,
         oracle_tol, orthonormality_error_m2, ulp_diff, v2t,
     };
     use crate::base::vector2::Vector2;
     use crate::linalg::qr::oracle_qr2 as oracle;
-    use super::{Matrix2QrTrait, Qr2, Qr2Trait};
+    use super::{Matrix2QrTrait, Qr2, Qr2InternalTrait, Qr2Trait};
 
     /// The oracle's first `unit` 2x2 case: the benchmark input.
     fn a_bench() -> Matrix2<Fixed> {

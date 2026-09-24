@@ -81,38 +81,7 @@ pub impl Matrix2Impl<
         Matrix2 { m11: r1.x, m21: r2.x, m12: r1.y, m22: r2.y }
     }
 
-    /// The outer product `a * bᵀ`: each component is one floored product. Panics with the
-    /// scalar's overflow error. Upstream: `a * b.transpose()`.
-    #[inline(always)]
-    fn from_outer(a: Vector2<T>, b: Vector2<T>) -> Matrix2<T> {
-        Matrix2 { m11: a.x * b.x, m21: a.y * b.x, m12: a.x * b.y, m22: a.y * b.y }
-    }
-
     // --- accessors -----------------------------------------------------------------------------
-
-    /// First column. Upstream: `column(0)`.
-    #[inline(always)]
-    fn column1(self: Matrix2<T>) -> Vector2<T> {
-        Vector2 { x: self.m11, y: self.m21 }
-    }
-
-    /// Second column. Upstream: `column(1)`.
-    #[inline(always)]
-    fn column2(self: Matrix2<T>) -> Vector2<T> {
-        Vector2 { x: self.m12, y: self.m22 }
-    }
-
-    /// First row, as a (column) vector. Upstream: `row(0).transpose()`.
-    #[inline(always)]
-    fn row1(self: Matrix2<T>) -> Vector2<T> {
-        Vector2 { x: self.m11, y: self.m12 }
-    }
-
-    /// Second row, as a (column) vector. Upstream: `row(1).transpose()`.
-    #[inline(always)]
-    fn row2(self: Matrix2<T>) -> Vector2<T> {
-        Vector2 { x: self.m21, y: self.m22 }
-    }
 
     /// The diagonal `(m11, m22)`. Upstream: `diagonal`.
     #[inline(always)]
@@ -196,17 +165,6 @@ pub impl Matrix2Impl<
         }
     }
 
-    /// `self * selfᵀ` as a symmetric matrix: 3 `sum_prod2` instead of 4, bit-identical to the
-    /// upper triangle of `self * self.transpose()`. Panics on overflow.
-    /// Upstream: `self * self.transpose()`.
-    fn mul_transpose(self: Matrix2<T>) -> SymMatrix2<T> {
-        SymMatrix2 {
-            m11: R::norm_squared2(self.m11, self.m12),
-            m12: R::sum_prod2(self.m11, self.m21, self.m12, self.m22),
-            m22: R::norm_squared2(self.m21, self.m22),
-        }
-    }
-
     // --- norms ---------------------------------------------------------------------------------
 
     /// Squared Frobenius norm, one rounding (`norm_squared4`). Panics on overflow.
@@ -230,14 +188,6 @@ pub impl Matrix2Impl<
     #[inline(always)]
     fn determinant(self: Matrix2<T>) -> T {
         R::diff_prod(self.m11, self.m22, self.m12, self.m21)
-    }
-
-    /// The adjugate (transposed cofactor matrix) `[[m22, -m12], [-m21, m11]]`:
-    /// `self * adjugate = determinant * I`. Exact; panics on the scalar's `MIN`.
-    /// No upstream equivalent (upstream `adjoint` is the conjugate transpose).
-    #[inline(always)]
-    fn adjugate(self: Matrix2<T>) -> Matrix2<T> {
-        Matrix2 { m11: self.m22, m21: -self.m21, m12: -self.m12, m22: self.m11 }
     }
 
     /// The inverse, or `None` when the matrix is singular. Upstream: `try_inverse`.
@@ -308,6 +258,59 @@ pub impl Matrix2Impl<
             && R::abs_diff_eq(self.m21, other.m21, ulps)
             && R::abs_diff_eq(self.m12, other.m12, ulps)
             && R::abs_diff_eq(self.m22, other.m22, ulps)
+    }
+}
+
+/// Crate-internal kernels of `Matrix2<T>` with no upstream method of that name or shape (WP 8.0:
+/// the public API is strictly upstream's). The structured kernels of DESIGN D4 (`from_outer`,
+/// `adjugate`, `mul_transpose` into a `SymMatrix2`) and the unrolled column accessors that stand
+/// for upstream `column(i)` views, used by the decompositions.
+#[generate_trait]
+pub(crate) impl Matrix2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix2InternalTrait<T> {
+    /// The outer product `a * bᵀ`: each component is one floored product. Panics with the
+    /// scalar's overflow error. Upstream: `a * b.transpose()`.
+    #[inline(always)]
+    fn from_outer(a: Vector2<T>, b: Vector2<T>) -> Matrix2<T> {
+        Matrix2 { m11: a.x * b.x, m21: a.y * b.x, m12: a.x * b.y, m22: a.y * b.y }
+    }
+    /// First column. Upstream: `column(0)`.
+    #[inline(always)]
+    fn column1(self: Matrix2<T>) -> Vector2<T> {
+        Vector2 { x: self.m11, y: self.m21 }
+    }
+    /// Second column. Upstream: `column(1)`.
+    #[inline(always)]
+    fn column2(self: Matrix2<T>) -> Vector2<T> {
+        Vector2 { x: self.m12, y: self.m22 }
+    }
+    /// `self * selfᵀ` as a symmetric matrix: 3 `sum_prod2` instead of 4, bit-identical to the
+    /// upper triangle of `self * self.transpose()`. Panics on overflow.
+    /// Upstream: `self * self.transpose()`.
+    fn mul_transpose(self: Matrix2<T>) -> SymMatrix2<T> {
+        SymMatrix2 {
+            m11: R::norm_squared2(self.m11, self.m12),
+            m12: R::sum_prod2(self.m11, self.m21, self.m12, self.m22),
+            m22: R::norm_squared2(self.m21, self.m22),
+        }
+    }
+    /// The adjugate (transposed cofactor matrix) `[[m22, -m12], [-m21, m11]]`:
+    /// `self * adjugate = determinant * I`. Exact; panics on the scalar's `MIN`.
+    /// No upstream equivalent (upstream `adjoint` is the conjugate transpose).
+    #[inline(always)]
+    fn adjugate(self: Matrix2<T>) -> Matrix2<T> {
+        Matrix2 { m11: self.m22, m21: -self.m21, m12: -self.m12, m22: self.m11 }
     }
 }
 
@@ -390,10 +393,10 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix_test_utils::{fx, int, m2, m2i, max_ulp_diff2, s2, v2i, v2t};
+    use crate::base::matrix_test_utils::{fx, int, m2, m2i, max_ulp_diff2, s2, sym2_upper, v2i, v2t};
     use crate::base::sym_matrix2::SymMatrix2Trait;
     use crate::base::{oracle_matrix2, oracle_matrix2_inverse};
-    use super::{Matrix2, Matrix2Trait};
+    use super::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
 
     // --- losing candidates of the determinant / inverse study (kept as evidence) -----------------
 
@@ -494,15 +497,12 @@ mod tests {
     }
 
     #[test]
-    fn test_columns_rows_diagonal() {
+    fn test_columns_diagonal() {
         let m = m2i([[1, 2], [3, 4]]);
         assert!(m.column1() == v2i(1, 3));
         assert!(m.column2() == v2i(2, 4));
-        assert!(m.row1() == v2i(1, 2));
-        assert!(m.row2() == v2i(3, 4));
         assert!(m.diagonal() == v2i(1, 4));
         assert!(Matrix2Trait::from_columns(m.column1(), m.column2()) == m);
-        assert!(Matrix2Trait::from_rows(m.row1(), m.row2()) == m);
     }
 
     // --- exact operations
@@ -660,7 +660,7 @@ mod tests {
         let mut cases = oracle_matrix2::matrix2_outer_cases();
         while let Some(case) = cases.pop_front() {
             let (u, v, expected, _) = *case;
-            assert!(Matrix2Trait::from_outer(v2t(u), v2t(v)) == m2(expected));
+            assert!(Matrix2InternalTrait::from_outer(v2t(u), v2t(v)) == m2(expected));
         }
     }
 
@@ -962,7 +962,7 @@ mod tests {
         let u = black_box(v2t((2347498971, -7037259012)));
         let v = black_box(v2t((-7543252641, 4885438966)));
         let e = black_box(m2([[-4122913306, 2670232892], [12359540590, -8004740671]]));
-        assert!(Matrix2Trait::from_outer(u, v) == e);
+        assert!(Matrix2InternalTrait::from_outer(u, v) == e);
     }
 
     #[test]
@@ -979,22 +979,6 @@ mod tests {
         let a = black_box(m2([[5594399379, 2839048663], [-7444297509, 5944454799]]));
         let e = black_box(v2t((2839048663, 5944454799)));
         assert!(a.column2() == e);
-    }
-
-    #[test]
-    #[inline(never)]
-    fn bench_matrix2_row__baseline() {
-        let _a = black_box(m2([[5594399379, 2839048663], [-7444297509, 5944454799]]));
-        let e = black_box(v2t((-7444297509, 5944454799)));
-        assert!(e == e);
-    }
-
-    #[test]
-    #[inline(never)]
-    fn bench_matrix2_row__second() {
-        let a = black_box(m2([[5594399379, 2839048663], [-7444297509, 5944454799]]));
-        let e = black_box(v2t((-7444297509, 5944454799)));
-        assert!(a.row2() == e);
     }
 
     #[test]
@@ -1293,7 +1277,7 @@ mod tests {
     fn bench_matrix2_mul_transpose__generic() {
         let a = black_box(m2([[5594399379, 2839048663], [-7444297509, 5944454799]]));
         let e = black_box(s2((9163632458, -5767163102, 21130337440)));
-        assert!(SymMatrix2Trait::from_matrix_unchecked(a * a.transpose()) == e);
+        assert!(sym2_upper(a * a.transpose()) == e);
     }
 
     #[test]

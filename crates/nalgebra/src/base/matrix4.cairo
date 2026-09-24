@@ -275,79 +275,7 @@ pub impl Matrix4Impl<
         }
     }
 
-    /// The outer product `a * bᵀ`: each component is one floored product. Panics with the
-    /// scalar's overflow error. Upstream: `a * b.transpose()`.
-    #[inline(always)]
-    fn from_outer(a: Vector4<T>, b: Vector4<T>) -> Matrix4<T> {
-        Matrix4 {
-            m11: a.x * b.x,
-            m21: a.y * b.x,
-            m31: a.z * b.x,
-            m41: a.w * b.x,
-            m12: a.x * b.y,
-            m22: a.y * b.y,
-            m32: a.z * b.y,
-            m42: a.w * b.y,
-            m13: a.x * b.z,
-            m23: a.y * b.z,
-            m33: a.z * b.z,
-            m43: a.w * b.z,
-            m14: a.x * b.w,
-            m24: a.y * b.w,
-            m34: a.z * b.w,
-            m44: a.w * b.w,
-        }
-    }
-
     // --- accessors -----------------------------------------------------------------------------
-
-    /// Column 1. Upstream: `column(0)`.
-    #[inline(always)]
-    fn column1(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 }
-    }
-
-    /// Column 2. Upstream: `column(1)`.
-    #[inline(always)]
-    fn column2(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 }
-    }
-
-    /// Column 3. Upstream: `column(2)`.
-    #[inline(always)]
-    fn column3(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 }
-    }
-
-    /// Column 4. Upstream: `column(3)`.
-    #[inline(always)]
-    fn column4(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 }
-    }
-
-    /// Row 1, as a (column) vector. Upstream: `row(0).transpose()`.
-    #[inline(always)]
-    fn row1(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 }
-    }
-
-    /// Row 2, as a (column) vector. Upstream: `row(1).transpose()`.
-    #[inline(always)]
-    fn row2(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 }
-    }
-
-    /// Row 3, as a (column) vector. Upstream: `row(2).transpose()`.
-    #[inline(always)]
-    fn row3(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 }
-    }
-
-    /// Row 4, as a (column) vector. Upstream: `row(3).transpose()`.
-    #[inline(always)]
-    fn row4(self: Matrix4<T>) -> Vector4<T> {
-        Vector4 { x: self.m41, y: self.m42, z: self.m43, w: self.m44 }
-    }
 
     /// The diagonal. Upstream: `diagonal`.
     #[inline(always)]
@@ -612,15 +540,6 @@ pub impl Matrix4Impl<
         R::wide_rescale(R::wide_add_prod(w, s5, c0))
     }
 
-    /// The adjugate (transposed cofactor matrix): `self * adjugate = determinant * I`. 12
-    /// `diff_prod` (2x2 minors) then 16 exact three-term accumulations: two roundings per
-    /// component. Panics on overflow.
-    /// No upstream equivalent (upstream `adjoint` is the conjugate transpose).
-    fn adjugate(self: Matrix4<T>) -> Matrix4<T> {
-        let (adj, _) = Matrix4Kernels::adjugate_determinant(self);
-        adj
-    }
-
     /// The inverse, or `None` when the matrix is singular. Upstream: `try_inverse`.
     ///
     /// Singularity criterion, like upstream: the computed determinant is EXACTLY zero (no
@@ -732,6 +651,105 @@ pub impl Matrix4Impl<
             && R::abs_diff_eq(self.m24, other.m24, ulps)
             && R::abs_diff_eq(self.m34, other.m34, ulps)
             && R::abs_diff_eq(self.m44, other.m44, ulps)
+    }
+}
+
+/// Crate-internal kernels of `Matrix4<T>` with no upstream method of that name or shape (WP 8.0:
+/// the public API is strictly upstream's). The structured kernels of DESIGN D4 (`from_outer`,
+/// `adjugate`) and the unrolled row / column accessors that stand for upstream `row(i)` /
+/// `column(i)` views, used by the decompositions.
+#[generate_trait]
+pub(crate) impl Matrix4InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix4InternalTrait<T> {
+    /// Column 1. Upstream: `column(0)`.
+    #[inline(always)]
+    fn column1(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 }
+    }
+
+    /// Column 2. Upstream: `column(1)`.
+    #[inline(always)]
+    fn column2(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 }
+    }
+
+    /// Column 3. Upstream: `column(2)`.
+    #[inline(always)]
+    fn column3(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 }
+    }
+
+    /// Column 4. Upstream: `column(3)`.
+    #[inline(always)]
+    fn column4(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 }
+    }
+
+    /// Row 1, as a (column) vector. Upstream: `row(0).transpose()`.
+    #[inline(always)]
+    fn row1(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 }
+    }
+
+    /// Row 2, as a (column) vector. Upstream: `row(1).transpose()`.
+    #[inline(always)]
+    fn row2(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 }
+    }
+
+    /// Row 3, as a (column) vector. Upstream: `row(2).transpose()`.
+    #[inline(always)]
+    fn row3(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 }
+    }
+
+    /// Row 4, as a (column) vector. Upstream: `row(3).transpose()`.
+    #[inline(always)]
+    fn row4(self: Matrix4<T>) -> Vector4<T> {
+        Vector4 { x: self.m41, y: self.m42, z: self.m43, w: self.m44 }
+    }
+
+    /// The outer product `a * bᵀ`: each component is one floored product. Panics with the
+    /// scalar's overflow error. Upstream: `a * b.transpose()`.
+    #[inline(always)]
+    fn from_outer(a: Vector4<T>, b: Vector4<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: a.x * b.x,
+            m21: a.y * b.x,
+            m31: a.z * b.x,
+            m41: a.w * b.x,
+            m12: a.x * b.y,
+            m22: a.y * b.y,
+            m32: a.z * b.y,
+            m42: a.w * b.y,
+            m13: a.x * b.z,
+            m23: a.y * b.z,
+            m33: a.z * b.z,
+            m43: a.w * b.z,
+            m14: a.x * b.w,
+            m24: a.y * b.w,
+            m34: a.z * b.w,
+            m44: a.w * b.w,
+        }
+    }
+    /// The adjugate (transposed cofactor matrix): `self * adjugate = determinant * I`. 12
+    /// `diff_prod` (2x2 minors) then 16 exact three-term accumulations: two roundings per
+    /// component. Panics on overflow.
+    /// No upstream equivalent (upstream `adjoint` is the conjugate transpose).
+    fn adjugate(self: Matrix4<T>) -> Matrix4<T> {
+        let (adj, _) = Matrix4Kernels::adjugate_determinant(self);
+        adj
     }
 }
 
@@ -901,7 +919,7 @@ mod tests {
     use simba::scalar::Real;
     use crate::base::matrix_test_utils::{fx, int, m4, m4i, max_ulp_diff4, ulp_diff, v4i, v4t};
     use crate::base::{oracle_matrix4, oracle_matrix4_inverse};
-    use super::{Matrix4, Matrix4Trait};
+    use super::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
 
     // --- losing candidates of the determinant / inverse study (kept as evidence) -----------------
 
@@ -1296,7 +1314,7 @@ mod tests {
         let mut cases = oracle_matrix4::matrix4_outer_cases();
         while let Some(case) = cases.pop_front() {
             let (u, v, expected, _) = *case;
-            assert!(Matrix4Trait::from_outer(v4t(u), v4t(v)) == m4(expected));
+            assert!(Matrix4InternalTrait::from_outer(v4t(u), v4t(v)) == m4(expected));
         }
     }
 
@@ -1773,7 +1791,7 @@ mod tests {
                 ],
             ),
         );
-        assert!(Matrix4Trait::from_outer(u, v) == e);
+        assert!(Matrix4InternalTrait::from_outer(u, v) == e);
     }
 
     #[test]

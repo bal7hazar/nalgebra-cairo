@@ -264,19 +264,6 @@ fn bench_vector4_from__baseline() {
 
 #[test]
 #[inline(never)]
-fn bench_vector4_from__tuple() {
-    let t: (Fixed, Fixed, Fixed, Fixed) = black_box(
-        (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000), fx(-0x80000000)),
-    );
-    let _r: [Fixed; 4] = black_box(
-        [fx(0x180000000), fx(-0x240000000), fx(0x3c0000000), fx(-0x80000000)],
-    );
-    let e: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, -0x80000000));
-    assert!(t.into() == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_vector4_from__array() {
     let _t: (Fixed, Fixed, Fixed, Fixed) = black_box(
         (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000), fx(-0x80000000)),
@@ -294,15 +281,6 @@ fn bench_vector4_into__baseline() {
     let _a: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, -0x80000000));
     let e: Fixed = black_box(fx(0x180000000));
     assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_vector4_into__tuple() {
-    let a: Vector4<Fixed> = black_box(v4(0x180000000, -0x240000000, 0x3c0000000, -0x80000000));
-    let e: Fixed = black_box(fx(0x180000000));
-    let (x, _, _, _): (Fixed, Fixed, Fixed, Fixed) = a.into();
-    assert!(x == e);
 }
 
 #[test]

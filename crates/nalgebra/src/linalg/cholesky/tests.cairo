@@ -16,11 +16,9 @@ use crate::base::matrix4::Matrix4Trait;
 use crate::base::matrix6::Matrix6Trait;
 use crate::base::matrix_test_utils::{
     int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
-    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2ir, s2r,
-    s3ir, s3r, ulp_diff, v2it, v2t, v3it, v3t, v4it, v4t, v6it, v6t,
+    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, ulp_diff,
+    v2it, v2t, v3it, v3t, v4it, v4t, v6it, v6t,
 };
-use crate::base::sym_matrix2::SymMatrix2Trait;
-use crate::base::sym_matrix3::SymMatrix3Trait;
 use crate::linalg::oracle_cholesky;
 use super::{Cholesky2Trait, Cholesky3Trait, Cholesky4Trait, Cholesky6Trait};
 
@@ -31,18 +29,18 @@ use super::{Cholesky2Trait, Cholesky3Trait, Cholesky4Trait, Cholesky6Trait};
 /// exact in fixed point and can be asserted bit for bit.
 #[test]
 fn test_cholesky2_min_matrix_is_exact() {
-    let f = Cholesky2Trait::new(s2ir([[1, 1], [1, 2]])).unwrap();
+    let f = Cholesky2Trait::new(m2i([[1, 1], [1, 2]])).unwrap();
     assert!(f.l() == m2i([[1, 0], [1, 1]]));
     assert!(f.l() * f.l().transpose() == m2i([[1, 1], [1, 2]]));
     assert!(f.determinant() == int(1));
-    assert!(f.inverse() == s2ir([[2, -1], [-1, 1]]));
+    assert!(f.inverse() == m2i([[2, -1], [-1, 1]]));
     assert!(f.solve(v2it((1, -2))) == v2it((4, -3)));
 }
 
 /// A diagonal matrix of perfect squares factorises exactly to the diagonal of their roots.
 #[test]
 fn test_cholesky2_diagonal_is_exact() {
-    let f = Cholesky2Trait::new(s2ir([[4, 0], [0, 9]])).unwrap();
+    let f = Cholesky2Trait::new(m2i([[4, 0], [0, 9]])).unwrap();
     assert!(f.l() == m2i([[2, 0], [0, 3]]));
     assert!(f.determinant() == int(36));
 }
@@ -50,20 +48,20 @@ fn test_cholesky2_diagonal_is_exact() {
 /// The identity is its own factor; `solve` and `inverse` are then the identity.
 #[test]
 fn test_cholesky2_identity_is_exact() {
-    let f = Cholesky2Trait::new(s2ir([[1, 0], [0, 1]])).unwrap();
+    let f = Cholesky2Trait::new(m2i([[1, 0], [0, 1]])).unwrap();
     assert!(f.l() == Matrix2Trait::identity());
     assert!(f.determinant() == int(1));
     assert!(f.solve(v2it((1, -2))) == v2it((1, -2)));
-    assert!(f.inverse().to_matrix() == Matrix2Trait::identity());
+    assert!(f.inverse() == Matrix2Trait::identity());
 }
 
 /// `None` on a zero matrix (pivot 1 is zero), on a negative diagonal (pivot 1 is negative) and on
 /// the singular all-ones matrix (pivot 2 is zero).
 #[test]
 fn test_cholesky2_rejects_non_positive_definite() {
-    assert!(Cholesky2Trait::new(s2ir([[0, 0], [0, 0]])).is_none());
-    assert!(Cholesky2Trait::new(s2ir([[-1, 0], [0, -1]])).is_none());
-    assert!(Cholesky2Trait::new(s2ir([[1, 1], [1, 1]])).is_none());
+    assert!(Cholesky2Trait::new(m2i([[0, 0], [0, 0]])).is_none());
+    assert!(Cholesky2Trait::new(m2i([[-1, 0], [0, -1]])).is_none());
+    assert!(Cholesky2Trait::new(m2i([[1, 1], [1, 1]])).is_none());
 }
 
 /// The flooring of the pivots makes the criterion STRICTER than upstream's: this matrix is
@@ -74,7 +72,7 @@ fn test_cholesky2_rejects_non_positive_definite() {
 #[test]
 fn test_cholesky2_rejects_a_pivot_lost_to_flooring() {
     assert!(
-        Cholesky2Trait::new(s2r([[128976042375, 81791155117], [81791155117, 51868493809]]))
+        Cholesky2Trait::new(m2([[128976042375, 81791155117], [81791155117, 51868493809]]))
             .is_none(),
     );
 }
@@ -87,7 +85,7 @@ fn test_cholesky2_l_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let f = Cholesky2Trait::new(s2r(a)).unwrap();
+        let f = Cholesky2Trait::new(m2(a)).unwrap();
         let e = max_ulp_diff2(f.l(), m2(expected));
         if e > tol.into() {
             fail += 1;
@@ -105,7 +103,7 @@ fn test_cholesky2_reconstruction() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let l = Cholesky2Trait::new(s2r(a)).unwrap().l();
+        let l = Cholesky2Trait::new(m2(a)).unwrap().l();
         worst = core::cmp::max(worst, max_ulp_diff2(l * l.transpose(), m2(a)));
     }
     assert!(worst <= 9, "chol2_rec worst {}", worst);
@@ -119,7 +117,7 @@ fn test_cholesky2_solve_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let f = Cholesky2Trait::new(s2r(a)).unwrap();
+        let f = Cholesky2Trait::new(m2(a)).unwrap();
         let e = max_ulp_diff_v2(f.solve(v2t(b)), v2t(expected));
         if e > tol.into() {
             fail += 1;
@@ -137,8 +135,8 @@ fn test_cholesky2_inverse_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let f = Cholesky2Trait::new(s2r(a)).unwrap();
-        let e = max_ulp_diff2(f.inverse().to_matrix(), m2(expected));
+        let f = Cholesky2Trait::new(m2(a)).unwrap();
+        let e = max_ulp_diff2(f.inverse(), m2(expected));
         if e > tol.into() {
             fail += 1;
         }
@@ -154,11 +152,8 @@ fn test_cholesky2_inverse_is_a_right_inverse() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let f = Cholesky2Trait::new(s2r(a)).unwrap();
-        worst =
-            core::cmp::max(
-                worst, max_ulp_diff2(m2(a) * f.inverse().to_matrix(), Matrix2Trait::identity()),
-            );
+        let f = Cholesky2Trait::new(m2(a)).unwrap();
+        worst = core::cmp::max(worst, max_ulp_diff2(m2(a) * f.inverse(), Matrix2Trait::identity()));
     }
     assert!(worst <= 88, "chol2_id worst {}", worst);
 }
@@ -171,8 +166,8 @@ fn test_cholesky2_determinant_matches_the_closed_form() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let f = Cholesky2Trait::new(s2r(a)).unwrap();
-        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s2r(a).determinant()));
+        let f = Cholesky2Trait::new(m2(a)).unwrap();
+        worst = core::cmp::max(worst, ulp_diff(f.determinant(), m2(a).determinant()));
     }
     assert!(worst <= 5, "chol2_det worst {}", worst);
 }
@@ -184,18 +179,18 @@ fn test_cholesky2_determinant_matches_the_closed_form() {
 /// exact in fixed point and can be asserted bit for bit.
 #[test]
 fn test_cholesky3_min_matrix_is_exact() {
-    let f = Cholesky3Trait::new(s3ir([[1, 1, 1], [1, 2, 2], [1, 2, 3]])).unwrap();
+    let f = Cholesky3Trait::new(m3i([[1, 1, 1], [1, 2, 2], [1, 2, 3]])).unwrap();
     assert!(f.l() == m3i([[1, 0, 0], [1, 1, 0], [1, 1, 1]]));
     assert!(f.l() * f.l().transpose() == m3i([[1, 1, 1], [1, 2, 2], [1, 2, 3]]));
     assert!(f.determinant() == int(1));
-    assert!(f.inverse() == s3ir([[2, -1, 0], [-1, 2, -1], [0, -1, 1]]));
+    assert!(f.inverse() == m3i([[2, -1, 0], [-1, 2, -1], [0, -1, 1]]));
     assert!(f.solve(v3it((1, -2, 3))) == v3it((4, -8, 5)));
 }
 
 /// A diagonal matrix of perfect squares factorises exactly to the diagonal of their roots.
 #[test]
 fn test_cholesky3_diagonal_is_exact() {
-    let f = Cholesky3Trait::new(s3ir([[4, 0, 0], [0, 9, 0], [0, 0, 16]])).unwrap();
+    let f = Cholesky3Trait::new(m3i([[4, 0, 0], [0, 9, 0], [0, 0, 16]])).unwrap();
     assert!(f.l() == m3i([[2, 0, 0], [0, 3, 0], [0, 0, 4]]));
     assert!(f.determinant() == int(576));
 }
@@ -203,20 +198,20 @@ fn test_cholesky3_diagonal_is_exact() {
 /// The identity is its own factor; `solve` and `inverse` are then the identity.
 #[test]
 fn test_cholesky3_identity_is_exact() {
-    let f = Cholesky3Trait::new(s3ir([[1, 0, 0], [0, 1, 0], [0, 0, 1]])).unwrap();
+    let f = Cholesky3Trait::new(m3i([[1, 0, 0], [0, 1, 0], [0, 0, 1]])).unwrap();
     assert!(f.l() == Matrix3Trait::identity());
     assert!(f.determinant() == int(1));
     assert!(f.solve(v3it((1, -2, 3))) == v3it((1, -2, 3)));
-    assert!(f.inverse().to_matrix() == Matrix3Trait::identity());
+    assert!(f.inverse() == Matrix3Trait::identity());
 }
 
 /// `None` on a zero matrix (pivot 1 is zero), on a negative diagonal (pivot 1 is negative) and on
 /// the singular all-ones matrix (pivot 2 is zero).
 #[test]
 fn test_cholesky3_rejects_non_positive_definite() {
-    assert!(Cholesky3Trait::new(s3ir([[0, 0, 0], [0, 0, 0], [0, 0, 0]])).is_none());
-    assert!(Cholesky3Trait::new(s3ir([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])).is_none());
-    assert!(Cholesky3Trait::new(s3ir([[1, 1, 1], [1, 1, 1], [1, 1, 1]])).is_none());
+    assert!(Cholesky3Trait::new(m3i([[0, 0, 0], [0, 0, 0], [0, 0, 0]])).is_none());
+    assert!(Cholesky3Trait::new(m3i([[-1, 0, 0], [0, -1, 0], [0, 0, -1]])).is_none());
+    assert!(Cholesky3Trait::new(m3i([[1, 1, 1], [1, 1, 1], [1, 1, 1]])).is_none());
 }
 
 /// The flooring of the pivots makes the criterion STRICTER than upstream's: this matrix is
@@ -228,9 +223,7 @@ fn test_cholesky3_rejects_non_positive_definite() {
 fn test_cholesky3_rejects_a_pivot_lost_to_flooring() {
     assert!(
         Cholesky3Trait::new(
-            s3r(
-                [[128976042375, 81791155117, 0], [81791155117, 51868493809, 0], [0, 0, 4294967296]],
-            ),
+            m3([[128976042375, 81791155117, 0], [81791155117, 51868493809, 0], [0, 0, 4294967296]]),
         )
             .is_none(),
     );
@@ -244,7 +237,7 @@ fn test_cholesky3_l_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let f = Cholesky3Trait::new(s3r(a)).unwrap();
+        let f = Cholesky3Trait::new(m3(a)).unwrap();
         let e = max_ulp_diff3(f.l(), m3(expected));
         if e > tol.into() {
             fail += 1;
@@ -262,7 +255,7 @@ fn test_cholesky3_reconstruction() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let l = Cholesky3Trait::new(s3r(a)).unwrap().l();
+        let l = Cholesky3Trait::new(m3(a)).unwrap().l();
         worst = core::cmp::max(worst, max_ulp_diff3(l * l.transpose(), m3(a)));
     }
     assert!(worst <= 11, "chol3_rec worst {}", worst);
@@ -276,7 +269,7 @@ fn test_cholesky3_solve_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, tol) = *case;
-        let f = Cholesky3Trait::new(s3r(a)).unwrap();
+        let f = Cholesky3Trait::new(m3(a)).unwrap();
         let e = max_ulp_diff_v3(f.solve(v3t(b)), v3t(expected));
         if e > tol.into() {
             fail += 1;
@@ -294,8 +287,8 @@ fn test_cholesky3_inverse_oracle() {
     let mut fail = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let f = Cholesky3Trait::new(s3r(a)).unwrap();
-        let e = max_ulp_diff3(f.inverse().to_matrix(), m3(expected));
+        let f = Cholesky3Trait::new(m3(a)).unwrap();
+        let e = max_ulp_diff3(f.inverse(), m3(expected));
         if e > tol.into() {
             fail += 1;
         }
@@ -311,11 +304,8 @@ fn test_cholesky3_inverse_is_a_right_inverse() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let f = Cholesky3Trait::new(s3r(a)).unwrap();
-        worst =
-            core::cmp::max(
-                worst, max_ulp_diff3(m3(a) * f.inverse().to_matrix(), Matrix3Trait::identity()),
-            );
+        let f = Cholesky3Trait::new(m3(a)).unwrap();
+        worst = core::cmp::max(worst, max_ulp_diff3(m3(a) * f.inverse(), Matrix3Trait::identity()));
     }
     assert!(worst <= 56, "chol3_id worst {}", worst);
 }
@@ -328,8 +318,8 @@ fn test_cholesky3_determinant_matches_the_closed_form() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _expected, _tol) = *case;
-        let f = Cholesky3Trait::new(s3r(a)).unwrap();
-        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s3r(a).determinant()));
+        let f = Cholesky3Trait::new(m3(a)).unwrap();
+        worst = core::cmp::max(worst, ulp_diff(f.determinant(), m3(a).determinant()));
     }
     assert!(worst <= 10, "chol3_det worst {}", worst);
 }

@@ -17,7 +17,7 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, m3, r3, r3i, u3t, uqt, v3i, v3t};
 use crate::base::point3::Point3;
 use crate::base::unit::Unit3Trait;

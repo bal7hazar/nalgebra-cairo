@@ -11,9 +11,9 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
-use crate::base::matrix_test_utils::{fx, p2, p2t, p3, v2, v2t, v3};
+use crate::base::matrix_test_utils::{fx, p2, p2t, v2, v2t, v3};
 use crate::base::vector2::{Vector2, Vector2Trait};
-use super::{Point2, Point2Trait, oracle};
+use super::{Point2, Point2InternalTrait, Point2Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;
 const MIN: i64 = -0x8000000000000000;
@@ -63,19 +63,10 @@ fn test_into_conversions() {
     assert!(from_vector == a());
     let to_vector: Vector2<Fixed> = a().into();
     assert!(to_vector == v);
-    let from_tuple: Point2<Fixed> = (fx(0x180000000), fx(-0x240000000)).into();
-    assert!(from_tuple == a());
-    let to_tuple: (Fixed, Fixed) = a().into();
-    assert!(to_tuple == (fx(0x180000000), fx(-0x240000000)));
     let from_array: Point2<Fixed> = [fx(0x180000000), fx(-0x240000000)].into();
     assert!(from_array == a());
     let to_array: [Fixed; 2] = a().into();
     assert!(to_array == [fx(0x180000000), fx(-0x240000000)]);
-}
-
-#[test]
-fn test_push_appends_a_coordinate() {
-    assert!(a().push(fx(0x3c0000000)) == p3(0x180000000, -0x240000000, 0x3c0000000));
 }
 
 // --- homogeneous coordinates

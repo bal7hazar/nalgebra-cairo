@@ -26,10 +26,10 @@
 //!   than a few ulp.
 
 use simba::scalar::Real;
-use crate::base::matrix2::{Matrix2, Matrix2Trait};
+use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
 use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
 use crate::base::vector2::Vector2;
-use crate::linalg::symmetric_eigen2::SymmetricEigen2Trait;
+use crate::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 
 /// The singular value decomposition `M = U · diag(singular_values) · v_t` of a `Matrix2<T>`.
 ///
@@ -47,7 +47,7 @@ use crate::linalg::symmetric_eigen2::SymmetricEigen2Trait;
 /// function of its raw components, as AGENTS.md requires.
 ///
 /// Upstream: `SVD { u: Option<OMatrix>, v_t: Option<OMatrix>, singular_values: OVector }`.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Svd2<T> {
     /// The left singular vectors, as columns. Orthonormal.
     pub u: Matrix2<T>,
@@ -55,6 +55,15 @@ pub struct Svd2<T> {
     pub singular_values: Vector2<T>,
     /// The TRANSPOSE of the right singular vectors, i.e. `v_i` is ROW `i`. Orthonormal.
     pub v_t: Matrix2<T>,
+}
+
+/// Test-only field-wise equality (upstream `Svd2` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Svd2PartialEq<T, +PartialEq<T>> of PartialEq<Svd2<T>> {
+    fn eq(lhs: @Svd2<T>, rhs: @Svd2<T>) -> bool {
+        lhs.u == rhs.u && lhs.singular_values == rhs.singular_values && lhs.v_t == rhs.v_t
+    }
 }
 
 /// Methods of `Svd2<T>` for any `Real` scalar.
@@ -108,13 +117,13 @@ pub impl Svd2Impl<
     /// (well-conditioned matrices, `small` / `unit` / `medium`): singular values within **48 ulp**
     /// of the floored exact result, every case INSIDE the oracle's own tolerance; `U` and `V`
     /// orthonormal within **23 ulp**; `|M - U Σ Vᵀ| <= 6 ulp * max(1, max |m_ij|)`; and
-    /// the polar factors within `|M - R P| <= 7 ulp * max(1, max |m_ij|)` with `|RᵀR - I| <=
-    /// 25 ulp`.
+    /// the left polar factors within `|M - P U| <= 6 ulp * max(1, max |m_ij|)` with
+    /// `|UᵀU - I| <= 24 ulp`.
     ///
     /// Cost: constant. Panics with the scalar's overflow error if a component of `MᵀM` does not
     /// fit (the squares of the entries must be representable, unlike `norm2`).
     fn new(matrix: Matrix2<T>) -> Svd2<T> {
-        let eigen = SymmetricEigen2Trait::new(Self::gram(matrix));
+        let eigen = SymmetricEigen2InternalTrait::new_sym(Svd2InternalTrait::gram(matrix));
         // RENORMALISE the eigenvectors. `SymmetricEigen2` divides the raw eigen direction by its
         // own FLOORED norm, and on a `small` matrix that direction is a tiny vector — the row of
         // `S - λ₁ I` it is read off has a magnitude of a few million raw units — so flooring
@@ -158,34 +167,6 @@ pub impl Svd2Impl<
             singular_values: Vector2 { x: s1, y: s2 },
             v_t: Matrix2Trait::from_rows(v1, v2),
         }
-    }
-
-    /// `MᵀM` as a symmetric matrix: 3 fused kernels instead of 8 products, bit-identical to the
-    /// upper triangle of `m.transpose() * m` and to `m.transpose().mul_transpose()` — which
-    /// would reuse `base` instead of repeating the kernel, and costs the moves of the transpose
-    /// (measured at 2 760 gas in 3x3, `bench_svd3_gram__*`). Panics on overflow.
-    /// Upstream: `m.tr_mul(&m)`.
-    #[inline(always)]
-    fn gram(m: Matrix2<T>) -> SymMatrix2<T> {
-        SymMatrix2 {
-            m11: R::norm_squared2(m.m11, m.m21),
-            m12: R::sum_prod2(m.m11, m.m12, m.m21, m.m22),
-            m22: R::norm_squared2(m.m12, m.m22),
-        }
-    }
-
-    /// The two singular values, descending. Exact: a move. Upstream: the `singular_values` field
-    /// (and `Matrix2::singular_values`).
-    #[inline(always)]
-    fn singular_values(self: Svd2<T>) -> Vector2<T> {
-        self.singular_values
-    }
-
-    /// The right singular vectors as COLUMNS, `V = v_tᵀ`. Exact: moves. No upstream equivalent
-    /// (upstream stores `v_t` and transposes at the call site).
-    #[inline(always)]
-    fn v(self: Svd2<T>) -> Matrix2<T> {
-        self.v_t.transpose()
     }
 
     /// The number of singular values strictly greater than `eps`. `eps` must be non-negative;
@@ -274,19 +255,53 @@ pub impl Svd2Impl<
         Some(self.v_t.tr_mul_vec(Vector2 { x: y1, y: y2 }))
     }
 
-    /// The **polar decomposition** `M = R · P`: `R = U · v_t` is orthonormal (a rotation when
-    /// `det(M) > 0`) and `P = V · diag(σ) · Vᵀ` is symmetric positive semi-definite. Returned
-    /// as `(R, P)` with `P` a `SymMatrix2`, since only its 3 independent components exist.
+    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ` is
+    /// symmetric positive semi-definite and `U = u · v_t` is orthonormal (a rotation when
+    /// `det(M) > 0`). Always `Some`: upstream returns `None` only when `u` or `v_t` was not
+    /// computed, and both always are here.
     ///
-    /// This is the form rapier's deformable bodies need (the rotation that best matches a
-    /// deformation gradient, and the residual stretch). `R` costs one 2x2 product and `P` one
-    /// `SymMatrix2::quadform`; both are two roundings per entry. Panics on overflow.
-    ///
-    /// No upstream equivalent at a fixed size: upstream users compose `svd.u * svd.v_t` and
-    /// `svd.v_t.transpose() * Matrix::from_diagonal(&svd.singular_values) * svd.v_t` by hand.
+    /// `U` costs one 2x2 product and `P` one structured quadratic form (only its 3 independent
+    /// components are computed, then mirrored); both are two roundings per entry. Panics on
+    /// overflow. Upstream: `SVD::to_polar`.
     #[inline(always)]
-    fn to_polar(self: Svd2<T>) -> (Matrix2<T>, SymMatrix2<T>) {
-        (self.u * self.v_t, SymMatrix2Trait::quadform(self.v_t.transpose(), self.singular_values))
+    fn to_polar(self: Svd2<T>) -> Option<(Matrix2<T>, Matrix2<T>)> {
+        Some(
+            (
+                SymMatrix2Trait::quadform(self.u, self.singular_values).to_matrix(),
+                self.u * self.v_t,
+            ),
+        )
+    }
+}
+
+/// Crate-internal kernels of `Svd2<T>` (WP 8.0: the public API is strictly upstream's): the Gram
+/// matrix `MᵀM` as a `SymMatrix2` (the input of the eigen decomposition).
+#[generate_trait]
+pub(crate) impl Svd2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Svd2InternalTrait<T> {
+    /// `MᵀM` as a symmetric matrix: 3 fused kernels instead of 8 products, bit-identical to the
+    /// upper triangle of `m.transpose() * m` and to `m.transpose().mul_transpose()` — which
+    /// would reuse `base` instead of repeating the kernel, and costs the moves of the transpose
+    /// (measured at 2 760 gas in 3x3, `bench_svd3_gram__*`). Panics on overflow.
+    /// Upstream: `m.tr_mul(&m)`.
+    #[inline(always)]
+    fn gram(m: Matrix2<T>) -> SymMatrix2<T> {
+        SymMatrix2 {
+            m11: R::norm_squared2(m.m11, m.m21),
+            m12: R::sum_prod2(m.m11, m.m12, m.m21, m.m22),
+            m22: R::norm_squared2(m.m12, m.m22),
+        }
     }
 }
 
@@ -321,12 +336,6 @@ pub impl Matrix2SvdImpl<
         Svd2Trait::new(self).singular_values
     }
 
-    /// The polar decomposition `M = R · P`, see `Svd2::to_polar`.
-    #[inline(always)]
-    fn polar_decomposition(self: Matrix2<T>) -> (Matrix2<T>, SymMatrix2<T>) {
-        Svd2Trait::new(self).to_polar()
-    }
-
     /// The Moore-Penrose pseudo-inverse, see `Svd2::pseudo_inverse`. Upstream:
     /// `Matrix2::pseudo_inverse`.
     #[inline(always)]
@@ -338,7 +347,7 @@ pub impl Matrix2SvdImpl<
 #[cfg(test)]
 mod tests {
     //! Unit tests of `Svd2`: the exact cases (identity, diagonal, permutation, rank 1, zero), the
-    //! identities (`M = U Σ Vᵀ`, orthonormality, `M = R P`), the oracle vectors of
+    //! identities (`M = U Σ Vᵀ`, orthonormality, `M = P U`), the oracle vectors of
     //! `tools/oracle`
     //! and the two candidates that lost, kept as evidence (AGENTS.md rule 8):
     //!
@@ -352,16 +361,15 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix2::{Matrix2, Matrix2Trait};
+    use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_m2, excess, int, m2, max_abs_v2, max_ulp_diff2, max_ulp_diff_v2, oracle_tol,
         orthonormality_error_m2, v2t,
     };
-    use crate::base::sym_matrix2::SymMatrix2Trait;
     use crate::base::vector2::{Vector2, Vector2Trait};
     use crate::linalg::oracle_svd;
-    use crate::linalg::symmetric_eigen2::SymmetricEigen2Trait;
-    use super::{Matrix2SvdTrait, Svd2, Svd2Trait};
+    use crate::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
+    use super::{Matrix2SvdTrait, Svd2, Svd2InternalTrait, Svd2Trait};
 
     /// An oracle `unit` 2x2 case: the benchmark input.
     fn a_bench() -> Matrix2<Fixed> {
@@ -385,7 +393,7 @@ mod tests {
     /// `σ = sqrt(λ)` from the eigenvalues of `MᵀM` (DESIGN D6's formulation), descending. Kept
     /// as evidence: see `test_singular_values_candidates`.
     fn singular_values_from_sqrt(m: Matrix2<Fixed>) -> Vector2<Fixed> {
-        let e = SymmetricEigen2Trait::eigenvalues(Svd2Trait::gram(m));
+        let e = SymmetricEigen2InternalTrait::eigenvalues(Svd2InternalTrait::gram(m));
         Vector2 { x: e.y.sqrt(), y: e.x.sqrt() }
     }
 
@@ -413,7 +421,7 @@ mod tests {
     #[test]
     fn test_new_identity_is_exact() {
         let f = Svd2Trait::new(Matrix2Trait::<Fixed>::identity());
-        assert!(f.singular_values() == Vector2 { x: int(1), y: int(1) });
+        assert!(f.singular_values == Vector2 { x: int(1), y: int(1) });
         assert!(f.u == Matrix2Trait::identity());
         assert!(f.v_t == Matrix2Trait::identity());
         assert!(f.recompose() == Matrix2Trait::identity());
@@ -459,9 +467,9 @@ mod tests {
     #[test]
     fn test_accessors() {
         let f = f_bench();
-        assert!(f.singular_values() == f.singular_values);
-        assert!(f.v() == f.v_t.transpose());
-        assert!(a_bench().svd() == f);
+        assert!(f.singular_values == f.singular_values);
+        let g = a_bench().svd();
+        assert!(g.u == f.u && g.singular_values == f.singular_values && g.v_t == f.v_t);
         assert!(a_bench().singular_values() == f.singular_values);
     }
 
@@ -581,24 +589,25 @@ mod tests {
         let (mut worst, mut worst_orth) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
-            let (r, p) = Svd2Trait::new(m2(a)).to_polar();
-            // `P` is symmetric by type and positive semi-definite: its determinant is the product
-            // of the singular values.
+            let (p, u) = Svd2Trait::new(m2(a)).to_polar().unwrap();
+            // `P` is symmetric by construction and positive semi-definite: its determinant is the
+            // product of the singular values.
+            assert!(p == p.transpose(), "P is not symmetric");
             assert!(!p.determinant().is_negative(), "P is not positive semi-definite");
-            worst_orth = core::cmp::max(worst_orth, orthonormality_error_m2(r));
-            worst = core::cmp::max(worst, max_ulp_diff2(r * p.to_matrix(), m2(a)) / amax_m2(m2(a)));
+            worst_orth = core::cmp::max(worst_orth, orthonormality_error_m2(u));
+            worst = core::cmp::max(worst, max_ulp_diff2(p * u, m2(a)) / amax_m2(m2(a)));
         }
-        // Measured: `|M - R P| <= worst ulp * max(1, max |m_ij|)`, `|RᵀR - I| <= worst_orth ulp`.
-        assert!((worst, worst_orth) == (7, 24), "regressed: {worst} {worst_orth}");
+        // Measured: `|M - P U| <= worst ulp * max(1, max |m_ij|)`, `|UᵀU - I| <= worst_orth ulp`.
+        assert!((worst, worst_orth) == (6, 24), "regressed: {worst} {worst_orth}");
     }
 
     #[test]
-    fn test_polar_decomposition_of_a_rotation_is_the_rotation() {
+    fn test_to_polar_of_a_rotation_is_the_rotation() {
         // `M = R` exactly: the stretch is the identity.
         let r = Matrix2Trait::new(int(0), int(-1), int(1), int(0));
-        let (q, p) = r.polar_decomposition();
+        let (p, q) = r.svd().to_polar().unwrap();
         assert!(max_ulp_diff2(q, r) <= 2);
-        assert!(max_ulp_diff2(p.to_matrix(), Matrix2Trait::identity()) <= 2);
+        assert!(max_ulp_diff2(p, Matrix2Trait::identity()) <= 2);
     }
 
     #[test]
@@ -749,7 +758,7 @@ mod tests {
     fn bench_svd2_to_polar__quadform() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        let (r, p) = f.to_polar();
-        assert!((r.m11 != Real::ZERO && p.m11 != Real::ZERO) == e);
+        let (p, u) = f.to_polar().unwrap();
+        assert!((u.m11 != Real::ZERO && p.m11 != Real::ZERO) == e);
     }
 }

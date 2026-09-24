@@ -48,10 +48,19 @@ pub use lu6::{Lu6, Lu6Trait, Matrix6LuTrait};
 ///
 /// `p1` is the 1-based index of the row swapped with row 1 (`1` = no swap, `2` = rows 1 and 2
 /// exchanged). Upstream: one entry of a `PermutationSequence`.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Perm2 {
     /// Row swapped with row 1 at step 1, in `1..=2`.
     pub p1: u8,
+}
+
+/// Test-only field-wise equality (upstream `PermutationSequence` has no `PartialEq`): the tests
+/// and the benchmarks compare permutations through it.
+#[cfg(test)]
+impl Perm2PartialEq of PartialEq<Perm2> {
+    fn eq(lhs: @Perm2, rhs: @Perm2) -> bool {
+        lhs.p1 == rhs.p1
+    }
 }
 
 /// The row permutation of a 3x3 factorisation: the transpositions of steps 1 and 2.
@@ -59,7 +68,7 @@ pub struct Perm2 {
 /// `pK` is the 1-based index of the row swapped with row `K` at step `K` (`pK == K` = no swap),
 /// so `P = T2 * T1` and the transpositions are replayed in the order `p1`, `p2`.
 /// Upstream: a `PermutationSequence`.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Perm3 {
     /// Row swapped with row 1 at step 1, in `1..=3`.
     pub p1: u8,
@@ -67,11 +76,20 @@ pub struct Perm3 {
     pub p2: u8,
 }
 
+/// Test-only field-wise equality (upstream `PermutationSequence` has no `PartialEq`): the tests
+/// and the benchmarks compare permutations through it.
+#[cfg(test)]
+impl Perm3PartialEq of PartialEq<Perm3> {
+    fn eq(lhs: @Perm3, rhs: @Perm3) -> bool {
+        lhs.p1 == rhs.p1 && lhs.p2 == rhs.p2
+    }
+}
+
 /// The row permutation of a 4x4 factorisation: the transpositions of steps 1 to 3.
 ///
 /// `pK` is the 1-based index of the row swapped with row `K` at step `K` (`pK == K` = no swap),
 /// so `P = T3 * T2 * T1`. Upstream: a `PermutationSequence`.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Perm4 {
     /// Row swapped with row 1 at step 1, in `1..=4`.
     pub p1: u8,
@@ -81,11 +99,20 @@ pub struct Perm4 {
     pub p3: u8,
 }
 
+/// Test-only field-wise equality (upstream `PermutationSequence` has no `PartialEq`): the tests
+/// and the benchmarks compare permutations through it.
+#[cfg(test)]
+impl Perm4PartialEq of PartialEq<Perm4> {
+    fn eq(lhs: @Perm4, rhs: @Perm4) -> bool {
+        lhs.p1 == rhs.p1 && lhs.p2 == rhs.p2 && lhs.p3 == rhs.p3
+    }
+}
+
 /// The row permutation of a 6x6 factorisation: the transpositions of steps 1 to 5.
 ///
 /// `pK` is the 1-based index of the row swapped with row `K` at step `K` (`pK == K` = no swap),
 /// so `P = T5 * T4 * T3 * T2 * T1`. Upstream: a `PermutationSequence`.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Perm6 {
     /// Row swapped with row 1 at step 1, in `1..=6`.
     pub p1: u8,
@@ -99,30 +126,59 @@ pub struct Perm6 {
     pub p5: u8,
 }
 
-/// Helpers shared by the four permutation types.
+/// Test-only field-wise equality (upstream `PermutationSequence` has no `PartialEq`): the tests
+/// and the benchmarks compare permutations through it.
+#[cfg(test)]
+impl Perm6PartialEq of PartialEq<Perm6> {
+    fn eq(lhs: @Perm6, rhs: @Perm6) -> bool {
+        lhs.p1 == rhs.p1
+            && lhs.p2 == rhs.p2
+            && lhs.p3 == rhs.p3
+            && lhs.p4 == rhs.p4
+            && lhs.p5 == rhs.p5
+    }
+}
+
+/// Methods of `Perm2` (upstream `PermutationSequence<U2>`).
 #[generate_trait]
-pub impl PermImpl of PermTrait {
-    /// The identity permutation of a 2x2 factorisation (no swap).
+pub impl Perm2Impl of Perm2Trait {
+    /// The identity permutation of a 2x2 factorisation (no swap). Upstream:
+    /// `PermutationSequence::identity`.
     #[inline(always)]
-    fn identity2() -> Perm2 {
+    fn identity() -> Perm2 {
         Perm2 { p1: 1 }
     }
+}
 
-    /// The identity permutation of a 3x3 factorisation (no swap).
+/// Methods of `Perm3` (upstream `PermutationSequence<U3>`).
+#[generate_trait]
+pub impl Perm3Impl of Perm3Trait {
+    /// The identity permutation of a 3x3 factorisation (no swap). Upstream:
+    /// `PermutationSequence::identity`.
     #[inline(always)]
-    fn identity3() -> Perm3 {
+    fn identity() -> Perm3 {
         Perm3 { p1: 1, p2: 2 }
     }
+}
 
-    /// The identity permutation of a 4x4 factorisation (no swap).
+/// Methods of `Perm4` (upstream `PermutationSequence<U4>`).
+#[generate_trait]
+pub impl Perm4Impl of Perm4Trait {
+    /// The identity permutation of a 4x4 factorisation (no swap). Upstream:
+    /// `PermutationSequence::identity`.
     #[inline(always)]
-    fn identity4() -> Perm4 {
+    fn identity() -> Perm4 {
         Perm4 { p1: 1, p2: 2, p3: 3 }
     }
+}
 
-    /// The identity permutation of a 6x6 factorisation (no swap).
+/// Methods of `Perm6` (upstream `PermutationSequence<U6>`).
+#[generate_trait]
+pub impl Perm6Impl of Perm6Trait {
+    /// The identity permutation of a 6x6 factorisation (no swap). Upstream:
+    /// `PermutationSequence::identity`.
     #[inline(always)]
-    fn identity6() -> Perm6 {
+    fn identity() -> Perm6 {
         Perm6 { p1: 1, p2: 2, p3: 3, p4: 4, p5: 5 }
     }
 }

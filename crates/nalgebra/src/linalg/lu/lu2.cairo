@@ -29,12 +29,21 @@ use super::Perm2;
 /// `lu` packs both factors (strict lower triangle = `L` without its unit diagonal, upper triangle =
 /// `U`) and `p` is the row permutation. Built by `Lu2Trait::new` or `Matrix2LuTrait::lu`. Upstream:
 /// `nalgebra::linalg::LU`.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Lu2<T> {
     /// `L` (strict lower triangle) and `U` (upper triangle) packed in one matrix.
     pub lu: Matrix2<T>,
     /// The row transpositions applied by partial pivoting.
     pub p: Perm2,
+}
+
+/// Test-only field-wise equality (upstream `Lu2` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Lu2PartialEq<T, +PartialEq<T>> of PartialEq<Lu2<T>> {
+    fn eq(lhs: @Lu2<T>, rhs: @Lu2<T>) -> bool {
+        lhs.lu == rhs.lu && lhs.p == rhs.p
+    }
 }
 
 /// Methods of `Lu2<T>` for any `Real` scalar.
@@ -121,38 +130,6 @@ pub impl Lu2Impl<
         self.p
     }
 
-    /// `P * v`: the transpositions applied to the components of `v`, in factorisation order. Exact:
-    /// moves and comparisons only. Upstream: `LU::p().permute_rows(&mut v)`.
-    fn permute(self: Lu2<T>, v: Vector2<T>) -> Vector2<T> {
-        let mut x1 = v.x;
-        let mut x2 = v.y;
-        if self.p.p1 == 2 {
-            let t = x1;
-            x1 = x2;
-            x2 = t;
-        }
-        Vector2 { x: x1, y: x2 }
-    }
-
-    /// `P * m`: the same transpositions applied to the ROWS of `m`, so that `lu.permute_rows(a)` is
-    /// `lu.l() * lu.u()` up to the rounding of the factorisation (this is how the tests check the
-    /// decomposition). Exact: moves and comparisons only. Upstream: `LU::p().permute_rows(&mut m)`.
-    fn permute_rows(self: Lu2<T>, m: Matrix2<T>) -> Matrix2<T> {
-        let mut a11 = m.m11;
-        let mut a12 = m.m12;
-        let mut a21 = m.m21;
-        let mut a22 = m.m22;
-        if self.p.p1 == 2 {
-            let t = a11;
-            a11 = a21;
-            a21 = t;
-            let t = a12;
-            a12 = a22;
-            a22 = t;
-        }
-        Matrix2 { m11: a11, m21: a21, m12: a12, m22: a22 }
-    }
-
     /// Whether the factorisation is invertible: all 2 diagonal entries of `U` are EXACTLY nonzero
     /// (no epsilon), like upstream's `LU::is_invertible`.
     ///
@@ -187,7 +164,7 @@ pub impl Lu2Impl<
         if !Self::is_invertible(self) {
             return None;
         }
-        let pb = Self::permute(self, b);
+        let pb = Lu2InternalTrait::permute(self, b);
         let y1 = pb.x;
         let y2 = R::mul_add(-self.lu.m21, y1, pb.y);
         let x2 = R::div(y2, self.lu.m22);
@@ -277,6 +254,56 @@ pub impl Lu2Impl<
     }
 }
 
+/// Crate-internal kernels of `Lu2<T>` (WP 8.0: the public API is strictly upstream's): the row
+/// permutation applied to a vector or to the rows of a matrix, upstream's
+/// `lu.p().permute_rows(&mut m)` (to be exposed as `Perm2::permute_rows` by the
+/// `PermutationSequence` completion of docs/API_PARITY.md P14).
+#[generate_trait]
+pub(crate) impl Lu2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Lu2InternalTrait<T> {
+    /// `P * v`: the transpositions applied to the components of `v`, in factorisation order. Exact:
+    /// moves and comparisons only. Upstream: `LU::p().permute_rows(&mut v)`.
+    fn permute(self: Lu2<T>, v: Vector2<T>) -> Vector2<T> {
+        let mut x1 = v.x;
+        let mut x2 = v.y;
+        if self.p.p1 == 2 {
+            let t = x1;
+            x1 = x2;
+            x2 = t;
+        }
+        Vector2 { x: x1, y: x2 }
+    }
+    /// `P * m`: the same transpositions applied to the ROWS of `m`, so that `lu.permute_rows(a)` is
+    /// `lu.l() * lu.u()` up to the rounding of the factorisation (this is how the tests check the
+    /// decomposition). Exact: moves and comparisons only. Upstream: `LU::p().permute_rows(&mut m)`.
+    fn permute_rows(self: Lu2<T>, m: Matrix2<T>) -> Matrix2<T> {
+        let mut a11 = m.m11;
+        let mut a12 = m.m12;
+        let mut a21 = m.m21;
+        let mut a22 = m.m22;
+        if self.p.p1 == 2 {
+            let t = a11;
+            a11 = a21;
+            a21 = t;
+            let t = a12;
+            a12 = a22;
+            a22 = t;
+        }
+        Matrix2 { m11: a11, m21: a21, m12: a12, m22: a22 }
+    }
+}
+
 /// `Matrix2` methods that go through the LU factorisation; upstream carries them on the matrix
 /// itself. Import `Matrix2LuTrait` to use them.
 #[generate_trait]
@@ -332,8 +359,8 @@ mod tests {
         ulp_diff, v2it, v2t,
     };
     use crate::base::vector2::Vector2;
-    use crate::linalg::lu::{Perm2, PermTrait, oracle_lu2 as oracle};
-    use super::{Lu2, Lu2Trait, Matrix2LuTrait};
+    use crate::linalg::lu::{Perm2, Perm2Trait, oracle_lu2 as oracle};
+    use super::{Lu2, Lu2InternalTrait, Lu2Trait, Matrix2LuTrait};
 
     /// The oracle's first `unit` 2x2 case whose factorisation actually swaps rows, so every
     /// benchmark exercises the permutation.
@@ -530,7 +557,7 @@ mod tests {
         assert!(f.permute(v2it((1, 2))) == v2it((2, 1)));
         // the identity factors without a single swap
         let id = Lu2Trait::new(Matrix2Trait::<Fixed>::identity());
-        assert!(id.p() == PermTrait::identity2());
+        assert!(id.p() == Perm2Trait::identity());
         assert!(id.permute(b_bench()) == b_bench());
         assert!(id.permute_rows(a_bench()) == a_bench());
         assert!(id.l() == Matrix2Trait::<Fixed>::identity());
@@ -548,7 +575,7 @@ mod tests {
         assert!(!z.is_invertible());
         assert!(z.try_inverse().is_none());
         assert!(z.determinant() == int(0));
-        assert!(z.p() == PermTrait::identity2());
+        assert!(z.p() == Perm2Trait::identity());
         assert!(Lu2Trait::new(a_bench()).is_invertible());
     }
 

@@ -11,9 +11,8 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
-use crate::base::matrix_test_utils::{fx, int, v3, v6, v6i, v6t};
+use crate::base::matrix_test_utils::{fx, int, v6, v6i, v6t};
 use crate::base::oracle_dim6_vector as oracle;
-use crate::base::vector3::Vector3;
 use super::{Vector6, Vector6Trait};
 
 const MAX: i64 = 0x7fffffffffffffff;
@@ -59,17 +58,6 @@ fn test_zeros_is_zero_and_default() {
 }
 
 #[test]
-fn test_from_blocks_head_tail_roundtrip() {
-    let (h, t) = (
-        v3(0x180000000, -0x240000000, 0x3c0000000), v3(-0x480000000, 0x40000000, 0x200000000),
-    );
-    let v = Vector6Trait::from_blocks(h, t);
-    assert!(v == a());
-    assert!(v.head() == h && v.tail() == t);
-    assert!(Vector6Trait::from_blocks(v.head(), v.tail()) == v);
-}
-
-#[test]
 fn test_serde_is_block_order() {
     let mut out = array![];
     v6i(1, 2, 3, 4, 5, 6).serialize(ref out);
@@ -78,11 +66,7 @@ fn test_serde_is_block_order() {
 }
 
 #[test]
-fn test_into_blocks_and_array() {
-    let (h, t): (Vector3<Fixed>, Vector3<Fixed>) = a().into();
-    assert!(h == a().a && t == a().b);
-    let back: Vector6<Fixed> = (h, t).into();
-    assert!(back == a());
+fn test_into_array() {
     let arr: [Fixed; 6] = a().into();
     let [x, y, z, w, p5, p6] = arr;
     assert!(x == fx(0x180000000) && y == fx(-0x240000000) && z == fx(0x3c0000000));

@@ -3,11 +3,11 @@
 //! soft-body code uses, where a spatial vector is a pair of 3-vectors — angular and linear parts,
 //! in whichever order the caller adopts).
 //!
-//! - `Vector6Trait` / `Vector6Impl`: constructors, block accessors, component-wise operations,
+//! - `Vector6Trait` / `Vector6Impl`: constructors, component-wise operations,
 //!   reductions, the dot product, norms and interpolation, generic over a `simba::scalar::Real`
 //!   scalar;
 //! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a scalar, and
-//!   conversions from / to `(Vector3, Vector3)` and `[T; 6]`: their impls live in this module,
+//!   conversions from / to `[T; 6]`: their impls live in this module,
 //!   where the compiler finds them without any import.
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel. The
@@ -28,8 +28,8 @@ mod tests;
 ///
 /// Upstream `Vector6` names its six components `x, y, z, w, a, b`; here they live in the blocks:
 /// `x, y, z` are `self.a.x, self.a.y, self.a.z` and `w, a, b` are `self.b.x, self.b.y, self.b.z`.
-/// `new` still takes them in the upstream order, and `head` / `tail` return the blocks (upstream
-/// `fixed_rows::<3>(0)` / `fixed_rows::<3>(3)`).
+/// `new` still takes them in the upstream order; the blocks are read through the public fields
+/// (upstream `fixed_rows::<3>(0)` / `fixed_rows::<3>(3)`).
 ///
 /// `Serde` writes the first block then the second, which for a column vector is exactly upstream's
 /// storage order.
@@ -47,14 +47,6 @@ pub trait Vector6Trait<T> {
     fn new(x: T, y: T, z: T, w: T, a: T, b: T) -> Vector6<T>;
     /// The zero vector. Upstream: `Vector6::zeros`.
     fn zeros() -> Vector6<T>;
-    /// The vector whose rows 1 to 3 are `a` and whose rows 4 to 6 are `b`. Upstream: the two
-    /// halves of `Vector6::from_iterator` / `fixed_rows_mut` assignments; rapier builds spatial
-    /// vectors this way.
-    fn from_blocks(a: Vector3<T>, b: Vector3<T>) -> Vector6<T>;
-    /// Rows 1 to 3. Upstream: `fixed_rows::<3>(0)`.
-    fn head(self: Vector6<T>) -> Vector3<T>;
-    /// Rows 4 to 6. Upstream: `fixed_rows::<3>(3)`.
-    fn tail(self: Vector6<T>) -> Vector3<T>;
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale`
     /// (`self * k`).
     fn scale(self: Vector6<T>, k: T) -> Vector6<T>;
@@ -133,21 +125,6 @@ pub impl Vector6Impl<
             a: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO },
             b: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO },
         }
-    }
-
-    #[inline(always)]
-    fn from_blocks(a: Vector3<T>, b: Vector3<T>) -> Vector6<T> {
-        Vector6 { a, b }
-    }
-
-    #[inline(always)]
-    fn head(self: Vector6<T>) -> Vector3<T> {
-        self.a
-    }
-
-    #[inline(always)]
-    fn tail(self: Vector6<T>) -> Vector3<T> {
-        self.b
     }
 
     #[inline(always)]
@@ -299,24 +276,6 @@ pub impl Vector6DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<V
             self.a.x, self.a.y, self.a.z, self.b.x, self.b.y, self.b.z, rhs,
         );
         self = Vector6 { a: Vector3 { x: ax, y: ay, z: az }, b: Vector3 { x: bx, y: by, z: bz } };
-    }
-}
-
-/// `(head, tail).into()`: the two blocks as a `Vector6`.
-pub impl Vector6FromBlocks<T> of Into<(Vector3<T>, Vector3<T>), Vector6<T>> {
-    #[inline(always)]
-    fn into(self: (Vector3<T>, Vector3<T>)) -> Vector6<T> {
-        let (a, b) = self;
-        Vector6 { a, b }
-    }
-}
-
-/// The two blocks as a tuple `(head, tail)`.
-pub impl Vector6IntoBlocks<T> of Into<Vector6<T>, (Vector3<T>, Vector3<T>)> {
-    #[inline(always)]
-    fn into(self: Vector6<T>) -> (Vector3<T>, Vector3<T>) {
-        let Vector6 { a, b } = self;
-        (a, b)
     }
 }
 

@@ -157,14 +157,6 @@ pub trait Vector3Trait<T> {
     /// floor rounding). `t` is not clamped; `t = 0` gives `self` and `t = 1` gives `rhs` exactly.
     /// Panics on overflow of the result. Upstream: `lerp` (`self * (1 - t) + rhs * t`).
     fn lerp(self: Vector3<T>, rhs: Vector3<T>, t: T) -> Vector3<T>;
-    /// Two unit vectors `(u, w)` orthogonal to `self` and to each other, with `u x w = self`.
-    /// `self` MUST be a unit vector (not checked). Branches on the sign of `z` only (Duff et
-    /// al., "Building an Orthonormal Basis, Revisited"): two divisions by `1 + |z|` in `[1, 2]`
-    /// and fused products, every component is within about 3 ulp. Upstream:
-    /// `Vector3::orthonormal_subspace_basis(&[v], ..)` (rapier: `orthonormal_basis`, glam:
-    /// `any_orthonormal_pair`). The upstream construction is kept as a benchmark
-    /// (`bench_vector3_orthonormal_basis__alt_upstream`).
-    fn orthonormal_basis(self: Vector3<T>) -> (Vector3<T>, Vector3<T>);
 }
 
 /// `angle` needs inverse trigonometry, hence its own trait: scalars may implement `Real` only.
@@ -436,7 +428,34 @@ pub impl Vector3Impl<
             z: R::lerp(self.z, rhs.z, t),
         }
     }
+}
 
+/// Crate-internal kernels of `Vector3<T>` with no upstream METHOD of that shape (WP 8.0: the public
+/// API is strictly upstream's). `orthonormal_basis` is the fixed-cost form of upstream's
+/// callback-based `orthonormal_subspace_basis`, used by `Svd3`.
+pub(crate) trait Vector3InternalTrait<T> {
+    /// Two unit vectors `(u, w)` orthogonal to `self` and to each other, with `u x w = self`.
+    /// `self` MUST be a unit vector (not checked). Branches on the sign of `z` only (Duff et
+    /// al., "Building an Orthonormal Basis, Revisited"): two divisions by `1 + |z|` in `[1, 2]`
+    /// and fused products, every component is within about 3 ulp. Upstream:
+    /// `Vector3::orthonormal_subspace_basis(&[v], ..)` (rapier: `orthonormal_basis`, glam:
+    /// `any_orthonormal_pair`). The upstream construction is kept as a benchmark
+    /// (`bench_vector3_orthonormal_basis__alt_upstream`).
+    fn orthonormal_basis(self: Vector3<T>) -> (Vector3<T>, Vector3<T>);
+}
+
+pub(crate) impl Vector3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+    +Copy<T>,
+    +Drop<T>,
+> of Vector3InternalTrait<T> {
     #[inline(always)]
     fn orthonormal_basis(self: Vector3<T>) -> (Vector3<T>, Vector3<T>) {
         // With d = 1 + |z|, p = x^2 / d, q = x * y / d, r = y^2 / d (Duff et al., signs folded):
@@ -538,24 +557,6 @@ pub impl Vector3DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<V
     fn div_assign(ref self: Vector3<T>, rhs: T) {
         let (x, y, z) = R::div3(self.x, self.y, self.z, rhs);
         self = Vector3 { x, y, z };
-    }
-}
-
-/// `(x, y, z).into()`. Upstream: `From<(T, T, T)>`-style construction (`From<[T; 3]>`).
-pub impl Vector3FromTuple<T> of Into<(T, T, T), Vector3<T>> {
-    #[inline(always)]
-    fn into(self: (T, T, T)) -> Vector3<T> {
-        let (x, y, z) = self;
-        Vector3 { x, y, z }
-    }
-}
-
-/// The components as a tuple `(x, y, z)`.
-pub impl Vector3IntoTuple<T> of Into<Vector3<T>, (T, T, T)> {
-    #[inline(always)]
-    fn into(self: Vector3<T>) -> (T, T, T) {
-        let Vector3 { x, y, z } = self;
-        (x, y, z)
     }
 }
 

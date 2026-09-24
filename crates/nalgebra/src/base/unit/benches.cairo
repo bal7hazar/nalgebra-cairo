@@ -284,16 +284,6 @@ fn bench_unit3_dot__dot() {
 
 #[test]
 #[inline(never)]
-fn bench_unit3_dot__dot_vector() {
-    let u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
-    let _w: Unit<Vector3<Fixed>> = black_box(u3(0xcfa4b71c, -0x7c960778, 0x530eafa4));
-    let v: Vector3<Fixed> = black_box(v3(0xcfa4b71c, -0x7c960778, 0x530eafa4));
-    let e: Fixed = black_box(fx(0xc35e50d6));
-    assert!(u.dot_vector(v) == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_unit3_dot__alt_unfused() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
     let w: Unit<Vector3<Fixed>> = black_box(u3(0xcfa4b71c, -0x7c960778, 0x530eafa4));
@@ -388,26 +378,6 @@ fn bench_unit3_axes__z_axis() {
 
 #[test]
 #[inline(never)]
-fn bench_unit3_orthonormal_basis__baseline() {
-    let _u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
-    let e: (Unit<Vector3<Fixed>>, Unit<Vector3<Fixed>>) = black_box(
-        (u3(0xf11efd44, 0x1651841b, -0x530eafa4), u3(0x1651841b, 0xde85b9d8, 0x7c960778)),
-    );
-    assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_unit3_orthonormal_basis__orthonormal_basis() {
-    let u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
-    let e: (Unit<Vector3<Fixed>>, Unit<Vector3<Fixed>>) = black_box(
-        (u3(0xf11efd44, 0x1651841b, -0x530eafa4), u3(0x1651841b, 0xde85b9d8, 0x7c960778)),
-    );
-    assert!(u.orthonormal_basis() == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_unit3_into_inner__baseline() {
     let _u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
     let e: Vector3<Fixed> = black_box(v3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
@@ -420,14 +390,6 @@ fn bench_unit3_into_inner__into_inner() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
     let e: Vector3<Fixed> = black_box(v3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
     assert!(u.into_inner() == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_unit3_into_inner__as_ref() {
-    let u: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
-    let e: Vector3<Fixed> = black_box(v3(0x530eafa4, -0x7c960778, 0xcfa4b71c));
-    assert!(u.as_ref() == e);
 }
 
 #[test]

@@ -471,24 +471,6 @@ pub impl Vector2DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<V
     }
 }
 
-/// `(x, y).into()`. Upstream: `From<(T, T)>`-style construction (`From<[T; 2]>`).
-pub impl Vector2FromTuple<T> of Into<(T, T), Vector2<T>> {
-    #[inline(always)]
-    fn into(self: (T, T)) -> Vector2<T> {
-        let (x, y) = self;
-        Vector2 { x, y }
-    }
-}
-
-/// The components as a tuple `(x, y)`.
-pub impl Vector2IntoTuple<T> of Into<Vector2<T>, (T, T)> {
-    #[inline(always)]
-    fn into(self: Vector2<T>) -> (T, T) {
-        let Vector2 { x, y } = self;
-        (x, y)
-    }
-}
-
 /// `[x, y].into()`. Upstream: `From<[T; 2]>`.
 pub impl Vector2FromArray<T> of Into<[T; 2], Vector2<T>> {
     #[inline(always)]

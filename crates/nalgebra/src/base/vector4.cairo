@@ -529,24 +529,6 @@ pub impl Vector4DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<V
     }
 }
 
-/// `(x, y, z, w).into()`. Upstream: `From<(T, T, T, T)>`-style construction (`From<[T; 4]>`).
-pub impl Vector4FromTuple<T> of Into<(T, T, T, T), Vector4<T>> {
-    #[inline(always)]
-    fn into(self: (T, T, T, T)) -> Vector4<T> {
-        let (x, y, z, w) = self;
-        Vector4 { x, y, z, w }
-    }
-}
-
-/// The components as a tuple `(x, y, z, w)`.
-pub impl Vector4IntoTuple<T> of Into<Vector4<T>, (T, T, T, T)> {
-    #[inline(always)]
-    fn into(self: Vector4<T>) -> (T, T, T, T) {
-        let Vector4 { x, y, z, w } = self;
-        (x, y, z, w)
-    }
-}
-
 /// `[x, y, z, w].into()`. Upstream: `From<[T; 4]>`.
 pub impl Vector4FromArray<T> of Into<[T; 4], Vector4<T>> {
     #[inline(always)]

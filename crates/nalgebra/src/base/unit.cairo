@@ -19,7 +19,7 @@
 
 use simba::scalar::Real;
 use super::vector2::Vector2;
-use super::vector3::{Vector3, Vector3Trait};
+use super::vector3::Vector3;
 use super::vector4::Vector4;
 
 #[cfg(test)]
@@ -190,9 +190,6 @@ pub trait UnitTrait<V, T> {
     fn try_new_and_get(v: V, min_norm: T) -> Option<(Unit<V>, T)>;
     /// The wrapped vector. Upstream: `Unit::into_inner`.
     fn into_inner(self: Unit<V>) -> V;
-    /// The wrapped vector (a copy: everything is by value here). Upstream: `Unit::as_ref`
-    /// (`AsRef`), a reference in Rust.
-    fn as_ref(self: Unit<V>) -> V;
     /// Renormalizes exactly: `Unit::new_normalize(self.value)`, i.e. one norm and one exactly
     /// correctly rounded division per component. Panics on a zero norm. Upstream:
     /// `Unit::renormalize` (which also returns the previous norm and works in place).
@@ -221,9 +218,6 @@ pub trait UnitTrait<V, T> {
     /// Dot product of two unit vectors: the cosine of the angle between them, fused (floored
     /// once). Cannot overflow (`|cos| <= 1` up to a few ulp). Upstream: `dot` (through `Deref`).
     fn dot(self: Unit<V>, rhs: Unit<V>) -> T;
-    /// Dot product with any vector: the signed length of the projection of `rhs` on `self`,
-    /// fused (floored once). Panics on overflow. Upstream: `dot` (through `Deref`).
-    fn dot_vector(self: Unit<V>, rhs: V) -> T;
     /// `self * k`, a vector of norm `|k|` along `self`, each component floored once. Panics on
     /// overflow. Upstream: `Unit * k` (through `Deref`, e.g. the scaled axis of a rotation).
     fn scale(self: Unit<V>, k: T) -> V;
@@ -289,11 +283,6 @@ pub impl UnitImpl<
     }
 
     #[inline(always)]
-    fn as_ref(self: Unit<V>) -> V {
-        self.value
-    }
-
-    #[inline(always)]
     fn renormalize(self: Unit<V>) -> Unit<V> {
         Unit { value: N::unscale(self.value, N::norm(self.value)) }
     }
@@ -309,11 +298,6 @@ pub impl UnitImpl<
     #[inline(always)]
     fn dot(self: Unit<V>, rhs: Unit<V>) -> T {
         N::dot(self.value, rhs.value)
-    }
-
-    #[inline(always)]
-    fn dot_vector(self: Unit<V>, rhs: V) -> T {
-        N::dot(self.value, rhs)
     }
 
     #[inline(always)]
@@ -355,8 +339,7 @@ pub impl Unit2Impl<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Unit2Trait<T> {
     }
 }
 
-/// The axes of space as unit vectors, and the orthonormal basis of a unit vector. Upstream:
-/// `Vector3::x_axis`, ..., `Vector3::orthonormal_subspace_basis`.
+/// The axes of space as unit vectors. Upstream: `Vector3::x_axis`, ..., `Vector3::z_axis`.
 pub trait Unit3Trait<T> {
     /// The unit axis `(1, 0, 0)`. Exact. Upstream: `Vector3::x_axis`.
     fn x_axis() -> Unit<Vector3<T>>;
@@ -364,11 +347,6 @@ pub trait Unit3Trait<T> {
     fn y_axis() -> Unit<Vector3<T>>;
     /// The unit axis `(0, 0, 1)`. Exact. Upstream: `Vector3::z_axis`.
     fn z_axis() -> Unit<Vector3<T>>;
-    /// Two unit vectors `(u, w)` orthogonal to `self` and to each other, with `u x w = self`,
-    /// each within about 3 ulp: `Vector3Trait::orthonormal_basis` of the wrapped vector (the
-    /// invariant that the vector is unit is the one of `Unit`). Upstream:
-    /// `Vector3::orthonormal_subspace_basis(&[v], ..)`.
-    fn orthonormal_basis(self: Unit<Vector3<T>>) -> (Unit<Vector3<T>>, Unit<Vector3<T>>);
 }
 
 pub impl Unit3Impl<
@@ -396,12 +374,6 @@ pub impl Unit3Impl<
     #[inline(always)]
     fn z_axis() -> Unit<Vector3<T>> {
         Unit { value: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ONE } }
-    }
-
-    #[inline(always)]
-    fn orthonormal_basis(self: Unit<Vector3<T>>) -> (Unit<Vector3<T>>, Unit<Vector3<T>>) {
-        let (u, w) = Vector3Trait::<T>::orthonormal_basis(self.value);
-        (Unit { value: u }, Unit { value: w })
     }
 }
 

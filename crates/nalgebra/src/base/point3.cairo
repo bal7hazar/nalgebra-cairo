@@ -11,9 +11,10 @@
 //! | `p * k`, `p / k` | `p.scale(k)`, `p.unscale(k)` (and `p *= k`, `p /= k`) |
 //! | `-p`, `Point::from(v)`, `p.coords` | `-p`, `v.into()` / `from_coordinates`, `p.coords()` |
 //!
-//! - `Point3Trait` / `Point3Impl`: constructors, conversions, affine operations, interpolation and
-//!   distances, generic over a `simba::scalar::Real` scalar;
-//! - operators and conversions from / to `(T, T, T)`, `[T; 3]` and `Vector3<T>`: their impls live
+//! - `Point3Trait` / `Point3Impl`: constructors, conversions, affine operations and
+//!   interpolation, generic over a `simba::scalar::Real` scalar (the distances and the midpoint
+//!   are upstream's crate-root free functions, crate-internal kernels here until they are ported);
+//! - operators and conversions from / to `[T; 3]` and `Vector3<T>`: their impls live
 //!   in this module, where the compiler finds them without any import.
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
@@ -96,23 +97,6 @@ pub trait Point3Trait<T> {
     /// floor rounding). `t` is not clamped; `t = 0` gives `self` and `t = 1` gives `rhs`
     /// exactly. Panics on overflow of the result. Upstream: `lerp`.
     fn lerp(self: Point3<T>, rhs: Point3<T>, t: T) -> Point3<T>;
-    /// The midpoint of `self` and `rhs`: the exact floor of `(self + rhs) / 2` per coordinate (a
-    /// fused `sum_prod2` with the constant `1/2`, so the sum cannot overflow). Upstream:
-    /// `nalgebra::center` (free function, `(p + q) * 0.5`).
-    ///
-    /// Measured (Sierra gas net of the baseline): 6 050, against 6 350 for `lerp(rhs, 1/2)`,
-    /// 7 670 for upstream's `(p + q) * 1/2` and 8 570 for `(p + q) / 2` (both of which also
-    /// overflow on the sum). The candidates are kept as benchmarks
-    /// (`bench_point3_center__alt_*`).
-    fn center(self: Point3<T>, rhs: Point3<T>) -> Point3<T>;
-    /// Squared distance to `rhs`, fused (floored once). Panics when a coordinate difference
-    /// overflows, and on overflow of the result: above a distance of about 46 340 (Q32.32) only
-    /// `distance` works. Upstream: `nalgebra::distance_squared` (free function).
-    fn distance_squared(self: Point3<T>, rhs: Point3<T>) -> T;
-    /// Distance to `rhs` (`Real::norm3` of the coordinate differences: square root of the
-    /// UNSCALED exact sum of squares, floored once). No intermediate overflow: only the result
-    /// and the differences must fit. Upstream: `nalgebra::distance` (free function).
-    fn distance(self: Point3<T>, rhs: Point3<T>) -> T;
 }
 
 pub impl Point3Impl<
@@ -227,7 +211,44 @@ pub impl Point3Impl<
             z: R::lerp(self.z, rhs.z, t),
         }
     }
+}
 
+/// Kernels of upstream's crate-root free functions `nalgebra::center`, `nalgebra::distance_squared`
+/// and `nalgebra::distance` (docs/API_PARITY.md, P21): crate-internal until those free functions
+/// are ported, since upstream has no such METHOD on `Point` (WP 8.0: the public API is strictly
+/// upstream's).
+pub(crate) trait Point3InternalTrait<T> {
+    /// The midpoint of `self` and `rhs`: the exact floor of `(self + rhs) / 2` per coordinate (a
+    /// fused `sum_prod2` with the constant `1/2`, so the sum cannot overflow). Upstream:
+    /// `nalgebra::center` (free function, `(p + q) * 0.5`).
+    ///
+    /// Measured (Sierra gas net of the baseline): 6 050, against 6 350 for `lerp(rhs, 1/2)`,
+    /// 7 670 for upstream's `(p + q) * 1/2` and 8 570 for `(p + q) / 2` (both of which also
+    /// overflow on the sum). The candidates are kept as benchmarks
+    /// (`bench_point3_center__alt_*`).
+    fn center(self: Point3<T>, rhs: Point3<T>) -> Point3<T>;
+    /// Squared distance to `rhs`, fused (floored once). Panics when a coordinate difference
+    /// overflows, and on overflow of the result: above a distance of about 46 340 (Q32.32) only
+    /// `distance` works. Upstream: `nalgebra::distance_squared` (free function).
+    fn distance_squared(self: Point3<T>, rhs: Point3<T>) -> T;
+    /// Distance to `rhs` (`Real::norm3` of the coordinate differences: square root of the
+    /// UNSCALED exact sum of squares, floored once). No intermediate overflow: only the result
+    /// and the differences must fit. Upstream: `nalgebra::distance` (free function).
+    fn distance(self: Point3<T>, rhs: Point3<T>) -> T;
+}
+
+pub(crate) impl Point3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+    +Copy<T>,
+    +Drop<T>,
+> of Point3InternalTrait<T> {
     #[inline(always)]
     fn center(self: Point3<T>, rhs: Point3<T>) -> Point3<T> {
         Point3 {
@@ -236,12 +257,10 @@ pub impl Point3Impl<
             z: R::sum_prod2(self.z, R::HALF, rhs.z, R::HALF),
         }
     }
-
     #[inline(always)]
     fn distance_squared(self: Point3<T>, rhs: Point3<T>) -> T {
         R::norm_squared3(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
     }
-
     #[inline(always)]
     fn distance(self: Point3<T>, rhs: Point3<T>) -> T {
         R::norm3(self.x - rhs.x, self.y - rhs.y, self.z - rhs.z)
@@ -307,24 +326,6 @@ pub impl Point3IntoVector<T> of Into<Point3<T>, Vector3<T>> {
     fn into(self: Point3<T>) -> Vector3<T> {
         let Point3 { x, y, z } = self;
         Vector3 { x, y, z }
-    }
-}
-
-/// `(x, y, z).into()`. Upstream: `From<(T, T, T)>`-style construction (`From<[T; 3]>`).
-pub impl Point3FromTuple<T> of Into<(T, T, T), Point3<T>> {
-    #[inline(always)]
-    fn into(self: (T, T, T)) -> Point3<T> {
-        let (x, y, z) = self;
-        Point3 { x, y, z }
-    }
-}
-
-/// The coordinates as a tuple `(x, y, z)`.
-pub impl Point3IntoTuple<T> of Into<Point3<T>, (T, T, T)> {
-    #[inline(always)]
-    fn into(self: Point3<T>) -> (T, T, T) {
-        let Point3 { x, y, z } = self;
-        (x, y, z)
     }
 }
 

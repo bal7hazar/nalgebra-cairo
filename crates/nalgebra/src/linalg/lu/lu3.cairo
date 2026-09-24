@@ -29,12 +29,21 @@ use super::Perm3;
 /// `lu` packs both factors (strict lower triangle = `L` without its unit diagonal, upper triangle =
 /// `U`) and `p` is the row permutation. Built by `Lu3Trait::new` or `Matrix3LuTrait::lu`. Upstream:
 /// `nalgebra::linalg::LU`.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Lu3<T> {
     /// `L` (strict lower triangle) and `U` (upper triangle) packed in one matrix.
     pub lu: Matrix3<T>,
     /// The row transpositions applied by partial pivoting.
     pub p: Perm3,
+}
+
+/// Test-only field-wise equality (upstream `Lu3` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Lu3PartialEq<T, +PartialEq<T>> of PartialEq<Lu3<T>> {
+    fn eq(lhs: @Lu3<T>, rhs: @Lu3<T>) -> bool {
+        lhs.lu == rhs.lu && lhs.p == rhs.p
+    }
 }
 
 /// Methods of `Lu3<T>` for any `Real` scalar.
@@ -209,87 +218,6 @@ pub impl Lu3Impl<
         self.p
     }
 
-    /// `P * v`: the transpositions applied to the components of `v`, in factorisation order. Exact:
-    /// moves and comparisons only. Upstream: `LU::p().permute_rows(&mut v)`.
-    fn permute(self: Lu3<T>, v: Vector3<T>) -> Vector3<T> {
-        let mut x1 = v.x;
-        let mut x2 = v.y;
-        let mut x3 = v.z;
-        if self.p.p1 == 2 {
-            let t = x1;
-            x1 = x2;
-            x2 = t;
-        } else if self.p.p1 == 3 {
-            let t = x1;
-            x1 = x3;
-            x3 = t;
-        }
-        if self.p.p2 == 3 {
-            let t = x2;
-            x2 = x3;
-            x3 = t;
-        }
-        Vector3 { x: x1, y: x2, z: x3 }
-    }
-
-    /// `P * m`: the same transpositions applied to the ROWS of `m`, so that `lu.permute_rows(a)` is
-    /// `lu.l() * lu.u()` up to the rounding of the factorisation (this is how the tests check the
-    /// decomposition). Exact: moves and comparisons only. Upstream: `LU::p().permute_rows(&mut m)`.
-    fn permute_rows(self: Lu3<T>, m: Matrix3<T>) -> Matrix3<T> {
-        let mut a11 = m.m11;
-        let mut a12 = m.m12;
-        let mut a13 = m.m13;
-        let mut a21 = m.m21;
-        let mut a22 = m.m22;
-        let mut a23 = m.m23;
-        let mut a31 = m.m31;
-        let mut a32 = m.m32;
-        let mut a33 = m.m33;
-        if self.p.p1 == 2 {
-            let t = a11;
-            a11 = a21;
-            a21 = t;
-            let t = a12;
-            a12 = a22;
-            a22 = t;
-            let t = a13;
-            a13 = a23;
-            a23 = t;
-        } else if self.p.p1 == 3 {
-            let t = a11;
-            a11 = a31;
-            a31 = t;
-            let t = a12;
-            a12 = a32;
-            a32 = t;
-            let t = a13;
-            a13 = a33;
-            a33 = t;
-        }
-        if self.p.p2 == 3 {
-            let t = a21;
-            a21 = a31;
-            a31 = t;
-            let t = a22;
-            a22 = a32;
-            a32 = t;
-            let t = a23;
-            a23 = a33;
-            a33 = t;
-        }
-        Matrix3 {
-            m11: a11,
-            m21: a21,
-            m31: a31,
-            m12: a12,
-            m22: a22,
-            m32: a32,
-            m13: a13,
-            m23: a23,
-            m33: a33,
-        }
-    }
-
     /// Whether the factorisation is invertible: all 3 diagonal entries of `U` are EXACTLY nonzero
     /// (no epsilon), like upstream's `LU::is_invertible`.
     ///
@@ -324,7 +252,7 @@ pub impl Lu3Impl<
         if !Self::is_invertible(self) {
             return None;
         }
-        let pb = Self::permute(self, b);
+        let pb = Lu3InternalTrait::permute(self, b);
         let y1 = pb.x;
         let y2 = R::mul_add(-self.lu.m21, y1, pb.y);
         let y3 = R::wide_rescale(
@@ -506,6 +434,105 @@ pub impl Lu3Impl<
     }
 }
 
+/// Crate-internal kernels of `Lu3<T>` (WP 8.0: the public API is strictly upstream's): the row
+/// permutation applied to a vector or to the rows of a matrix, upstream's
+/// `lu.p().permute_rows(&mut m)` (to be exposed as `Perm3::permute_rows` by the
+/// `PermutationSequence` completion of docs/API_PARITY.md P14).
+#[generate_trait]
+pub(crate) impl Lu3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Lu3InternalTrait<T> {
+    /// `P * v`: the transpositions applied to the components of `v`, in factorisation order. Exact:
+    /// moves and comparisons only. Upstream: `LU::p().permute_rows(&mut v)`.
+    fn permute(self: Lu3<T>, v: Vector3<T>) -> Vector3<T> {
+        let mut x1 = v.x;
+        let mut x2 = v.y;
+        let mut x3 = v.z;
+        if self.p.p1 == 2 {
+            let t = x1;
+            x1 = x2;
+            x2 = t;
+        } else if self.p.p1 == 3 {
+            let t = x1;
+            x1 = x3;
+            x3 = t;
+        }
+        if self.p.p2 == 3 {
+            let t = x2;
+            x2 = x3;
+            x3 = t;
+        }
+        Vector3 { x: x1, y: x2, z: x3 }
+    }
+    /// `P * m`: the same transpositions applied to the ROWS of `m`, so that `lu.permute_rows(a)` is
+    /// `lu.l() * lu.u()` up to the rounding of the factorisation (this is how the tests check the
+    /// decomposition). Exact: moves and comparisons only. Upstream: `LU::p().permute_rows(&mut m)`.
+    fn permute_rows(self: Lu3<T>, m: Matrix3<T>) -> Matrix3<T> {
+        let mut a11 = m.m11;
+        let mut a12 = m.m12;
+        let mut a13 = m.m13;
+        let mut a21 = m.m21;
+        let mut a22 = m.m22;
+        let mut a23 = m.m23;
+        let mut a31 = m.m31;
+        let mut a32 = m.m32;
+        let mut a33 = m.m33;
+        if self.p.p1 == 2 {
+            let t = a11;
+            a11 = a21;
+            a21 = t;
+            let t = a12;
+            a12 = a22;
+            a22 = t;
+            let t = a13;
+            a13 = a23;
+            a23 = t;
+        } else if self.p.p1 == 3 {
+            let t = a11;
+            a11 = a31;
+            a31 = t;
+            let t = a12;
+            a12 = a32;
+            a32 = t;
+            let t = a13;
+            a13 = a33;
+            a33 = t;
+        }
+        if self.p.p2 == 3 {
+            let t = a21;
+            a21 = a31;
+            a31 = t;
+            let t = a22;
+            a22 = a32;
+            a32 = t;
+            let t = a23;
+            a23 = a33;
+            a33 = t;
+        }
+        Matrix3 {
+            m11: a11,
+            m21: a21,
+            m31: a31,
+            m12: a12,
+            m22: a22,
+            m32: a32,
+            m13: a13,
+            m23: a23,
+            m33: a33,
+        }
+    }
+}
+
 /// `Matrix3` methods that go through the LU factorisation; upstream carries them on the matrix
 /// itself. Import `Matrix3LuTrait` to use them.
 #[generate_trait]
@@ -562,9 +589,9 @@ mod tests {
     };
     use crate::base::vector3::Vector3;
     use crate::linalg::lu::{
-        Perm3, PermTrait, oracle_lu3 as oracle, oracle_matrix3_compare as compare,
+        Perm3, Perm3Trait, oracle_lu3 as oracle, oracle_matrix3_compare as compare,
     };
-    use super::{Lu3, Lu3Trait, Matrix3LuTrait};
+    use super::{Lu3, Lu3InternalTrait, Lu3Trait, Matrix3LuTrait};
 
     /// The oracle's first `unit` 3x3 case whose factorisation actually swaps rows, so every
     /// benchmark exercises the permutation.
@@ -999,7 +1026,7 @@ mod tests {
         assert!(f.permute(v3it((1, 2, 3))) == v3it((3, 1, 2)));
         // the identity factors without a single swap
         let id = Lu3Trait::new(Matrix3Trait::<Fixed>::identity());
-        assert!(id.p() == PermTrait::identity3());
+        assert!(id.p() == Perm3Trait::identity());
         assert!(id.permute(b_bench()) == b_bench());
         assert!(id.permute_rows(a_bench()) == a_bench());
         assert!(id.l() == Matrix3Trait::<Fixed>::identity());
@@ -1017,7 +1044,7 @@ mod tests {
         assert!(!z.is_invertible());
         assert!(z.try_inverse().is_none());
         assert!(z.determinant() == int(0));
-        assert!(z.p() == PermTrait::identity3());
+        assert!(z.p() == Perm3Trait::identity());
         assert!(Lu3Trait::new(a_bench()).is_invertible());
     }
 

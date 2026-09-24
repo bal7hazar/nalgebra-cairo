@@ -240,7 +240,7 @@ fn test_ldlt2_determinant_matches_the_closed_form() {
     while let Some(case) = cases.pop_front() {
         let (a, _l, _d, _tol) = *case;
         let f = Ldlt2Trait::new(s2r(a)).unwrap();
-        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s2r(a).determinant()));
+        worst = core::cmp::max(worst, ulp_diff(f.determinant(), m2(a).determinant()));
     }
     assert!(worst <= 2, "ldlt2_det worst {}", worst);
 }
@@ -441,7 +441,7 @@ fn test_ldlt3_determinant_matches_the_closed_form() {
     while let Some(case) = cases.pop_front() {
         let (a, _l, _d, _tol) = *case;
         let f = Ldlt3Trait::new(s3r(a)).unwrap();
-        worst = core::cmp::max(worst, ulp_diff(f.determinant(), s3r(a).determinant()));
+        worst = core::cmp::max(worst, ulp_diff(f.determinant(), m3(a).determinant()));
     }
     assert!(worst <= 2, "ldlt3_det worst {}", worst);
 }

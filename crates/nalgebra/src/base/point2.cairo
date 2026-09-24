@@ -11,9 +11,10 @@
 //! | `p * k`, `p / k` | `p.scale(k)`, `p.unscale(k)` (and `p *= k`, `p /= k`) |
 //! | `-p`, `Point::from(v)`, `p.coords` | `-p`, `v.into()` / `from_coordinates`, `p.coords()` |
 //!
-//! - `Point2Trait` / `Point2Impl`: constructors, conversions, affine operations, interpolation and
-//!   distances, generic over a `simba::scalar::Real` scalar;
-//! - operators and conversions from / to `(T, T)`, `[T; 2]` and `Vector2<T>`: their impls live in
+//! - `Point2Trait` / `Point2Impl`: constructors, conversions, affine operations and
+//!   interpolation, generic over a `simba::scalar::Real` scalar (the distances and the midpoint
+//!   are upstream's crate-root free functions, crate-internal kernels here until they are ported);
+//! - operators and conversions from / to `[T; 2]` and `Vector2<T>`: their impls live in
 //!   this module, where the compiler finds them without any import.
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
@@ -21,7 +22,6 @@
 
 use core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
 use simba::scalar::Real;
-use super::point3::Point3;
 use super::vector2::Vector2;
 use super::vector3::Vector3;
 
@@ -50,9 +50,6 @@ pub trait Point2Trait<T> {
     fn from_coordinates(v: Vector2<T>) -> Point2<T>;
     /// The position vector of the point (its coordinates). Upstream: the `coords` field.
     fn coords(self: Point2<T>) -> Vector2<T>;
-    /// `(x, y, z)`: appends a coordinate, giving a `Point3`. Upstream: no direct equivalent
-    /// (`Point2::from(v.push(z))`, `Vector2::push` on the coordinates).
-    fn push(self: Point2<T>, z: T) -> Point3<T>;
     /// `(x, y, 1)`: homogeneous coordinates of a point (as opposed to a vector, whose last
     /// component is `0`). Upstream: `to_homogeneous`.
     fn to_homogeneous(self: Point2<T>) -> Vector3<T>;
@@ -96,23 +93,6 @@ pub trait Point2Trait<T> {
     /// floor rounding). `t` is not clamped; `t = 0` gives `self` and `t = 1` gives `rhs`
     /// exactly. Panics on overflow of the result. Upstream: `lerp`.
     fn lerp(self: Point2<T>, rhs: Point2<T>, t: T) -> Point2<T>;
-    /// The midpoint of `self` and `rhs`: the exact floor of `(self + rhs) / 2` per coordinate (a
-    /// fused `sum_prod2` with the constant `1/2`, so the sum cannot overflow). Upstream:
-    /// `nalgebra::center` (free function, `(p + q) * 0.5`).
-    ///
-    /// Measured (Sierra gas net of the baseline): 4 000, against 4 200 for `lerp(rhs, 1/2)`,
-    /// 5 080 for upstream's `(p + q) * 1/2` and 5 680 for `(p + q) / 2` (both of which also
-    /// overflow on the sum). The candidates are kept as benchmarks
-    /// (`bench_point2_center__alt_*`).
-    fn center(self: Point2<T>, rhs: Point2<T>) -> Point2<T>;
-    /// Squared distance to `rhs`, fused (floored once). Panics when a coordinate difference
-    /// overflows, and on overflow of the result: above a distance of about 46 340 (Q32.32) only
-    /// `distance` works. Upstream: `nalgebra::distance_squared` (free function).
-    fn distance_squared(self: Point2<T>, rhs: Point2<T>) -> T;
-    /// Distance to `rhs` (`Real::norm2` of the coordinate differences: square root of the
-    /// UNSCALED exact sum of squares, floored once). No intermediate overflow: only the result
-    /// and the differences must fit. Upstream: `nalgebra::distance` (free function).
-    fn distance(self: Point2<T>, rhs: Point2<T>) -> T;
 }
 
 pub impl Point2Impl<
@@ -145,11 +125,6 @@ pub impl Point2Impl<
     #[inline(always)]
     fn coords(self: Point2<T>) -> Vector2<T> {
         Vector2 { x: self.x, y: self.y }
-    }
-
-    #[inline(always)]
-    fn push(self: Point2<T>, z: T) -> Point3<T> {
-        Point3 { x: self.x, y: self.y, z }
     }
 
     #[inline(always)]
@@ -215,7 +190,44 @@ pub impl Point2Impl<
     fn lerp(self: Point2<T>, rhs: Point2<T>, t: T) -> Point2<T> {
         Point2 { x: R::lerp(self.x, rhs.x, t), y: R::lerp(self.y, rhs.y, t) }
     }
+}
 
+/// Kernels of upstream's crate-root free functions `nalgebra::center`, `nalgebra::distance_squared`
+/// and `nalgebra::distance` (docs/API_PARITY.md, P21): crate-internal until those free functions
+/// are ported, since upstream has no such METHOD on `Point` (WP 8.0: the public API is strictly
+/// upstream's).
+pub(crate) trait Point2InternalTrait<T> {
+    /// The midpoint of `self` and `rhs`: the exact floor of `(self + rhs) / 2` per coordinate (a
+    /// fused `sum_prod2` with the constant `1/2`, so the sum cannot overflow). Upstream:
+    /// `nalgebra::center` (free function, `(p + q) * 0.5`).
+    ///
+    /// Measured (Sierra gas net of the baseline): 4 000, against 4 200 for `lerp(rhs, 1/2)`,
+    /// 5 080 for upstream's `(p + q) * 1/2` and 5 680 for `(p + q) / 2` (both of which also
+    /// overflow on the sum). The candidates are kept as benchmarks
+    /// (`bench_point2_center__alt_*`).
+    fn center(self: Point2<T>, rhs: Point2<T>) -> Point2<T>;
+    /// Squared distance to `rhs`, fused (floored once). Panics when a coordinate difference
+    /// overflows, and on overflow of the result: above a distance of about 46 340 (Q32.32) only
+    /// `distance` works. Upstream: `nalgebra::distance_squared` (free function).
+    fn distance_squared(self: Point2<T>, rhs: Point2<T>) -> T;
+    /// Distance to `rhs` (`Real::norm2` of the coordinate differences: square root of the
+    /// UNSCALED exact sum of squares, floored once). No intermediate overflow: only the result
+    /// and the differences must fit. Upstream: `nalgebra::distance` (free function).
+    fn distance(self: Point2<T>, rhs: Point2<T>) -> T;
+}
+
+pub(crate) impl Point2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+    +Copy<T>,
+    +Drop<T>,
+> of Point2InternalTrait<T> {
     #[inline(always)]
     fn center(self: Point2<T>, rhs: Point2<T>) -> Point2<T> {
         Point2 {
@@ -223,12 +235,10 @@ pub impl Point2Impl<
             y: R::sum_prod2(self.y, R::HALF, rhs.y, R::HALF),
         }
     }
-
     #[inline(always)]
     fn distance_squared(self: Point2<T>, rhs: Point2<T>) -> T {
         R::norm_squared2(self.x - rhs.x, self.y - rhs.y)
     }
-
     #[inline(always)]
     fn distance(self: Point2<T>, rhs: Point2<T>) -> T {
         R::norm2(self.x - rhs.x, self.y - rhs.y)
@@ -293,24 +303,6 @@ pub impl Point2IntoVector<T> of Into<Point2<T>, Vector2<T>> {
     fn into(self: Point2<T>) -> Vector2<T> {
         let Point2 { x, y } = self;
         Vector2 { x, y }
-    }
-}
-
-/// `(x, y).into()`. Upstream: `From<(T, T)>`-style construction (`From<[T; 2]>`).
-pub impl Point2FromTuple<T> of Into<(T, T), Point2<T>> {
-    #[inline(always)]
-    fn into(self: (T, T)) -> Point2<T> {
-        let (x, y) = self;
-        Point2 { x, y }
-    }
-}
-
-/// The coordinates as a tuple `(x, y)`.
-pub impl Point2IntoTuple<T> of Into<Point2<T>, (T, T)> {
-    #[inline(always)]
-    fn into(self: Point2<T>) -> (T, T) {
-        let Point2 { x, y } = self;
-        (x, y)
     }
 }
 

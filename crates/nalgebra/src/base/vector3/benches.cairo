@@ -10,7 +10,7 @@ use simba::scalar::{Real, Transcendental};
 use crate::base::matrix_test_utils::{fx, v2, v3, v4};
 use crate::base::vector2::Vector2;
 use crate::base::vector4::Vector4;
-use super::{Vector3, Vector3AngleTrait, Vector3Trait};
+use super::{Vector3, Vector3AngleTrait, Vector3InternalTrait, Vector3Trait};
 
 // --- alternative implementations (losers)
 
@@ -276,15 +276,6 @@ fn bench_vector3_from__baseline() {
 
 #[test]
 #[inline(never)]
-fn bench_vector3_from__tuple() {
-    let t: (Fixed, Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)));
-    let _r: [Fixed; 3] = black_box([fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)]);
-    let e: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
-    assert!(t.into() == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_vector3_from__array() {
     let _t: (Fixed, Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)));
     let r: [Fixed; 3] = black_box([fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)]);
@@ -298,15 +289,6 @@ fn bench_vector3_into__baseline() {
     let _a: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
     let e: Fixed = black_box(fx(0x180000000));
     assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_vector3_into__tuple() {
-    let a: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
-    let e: Fixed = black_box(fx(0x180000000));
-    let (x, _, _): (Fixed, Fixed, Fixed) = a.into();
-    assert!(x == e);
 }
 
 #[test]

@@ -33,10 +33,10 @@
 //! `test_one_sided_jacobi_candidate`).
 
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
-use crate::base::vector3::{Vector3, Vector3Trait};
-use crate::linalg::symmetric_eigen3::SymmetricEigen3Trait;
+use crate::base::vector3::{Vector3, Vector3InternalTrait, Vector3Trait};
+use crate::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
 
 /// The singular value decomposition `M = U · diag(singular_values) · v_t` of a `Matrix3<T>`.
 ///
@@ -54,7 +54,7 @@ use crate::linalg::symmetric_eigen3::SymmetricEigen3Trait;
 /// deterministic function of its raw components, as AGENTS.md requires.
 ///
 /// Upstream: `SVD { u: Option<OMatrix>, v_t: Option<OMatrix>, singular_values: OVector }`.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Svd3<T> {
     /// The left singular vectors, as columns. Orthonormal.
     pub u: Matrix3<T>,
@@ -62,6 +62,15 @@ pub struct Svd3<T> {
     pub singular_values: Vector3<T>,
     /// The TRANSPOSE of the right singular vectors, i.e. `v_i` is ROW `i`. Orthonormal.
     pub v_t: Matrix3<T>,
+}
+
+/// Test-only field-wise equality (upstream `Svd3` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Svd3PartialEq<T, +PartialEq<T>> of PartialEq<Svd3<T>> {
+    fn eq(lhs: @Svd3<T>, rhs: @Svd3<T>) -> bool {
+        lhs.u == rhs.u && lhs.singular_values == rhs.singular_values && lhs.v_t == rhs.v_t
+    }
 }
 
 /// Methods of `Svd3<T>` for any `Real` scalar.
@@ -107,14 +116,14 @@ pub impl Svd3Impl<
     /// (well-conditioned matrices, `small` / `unit` / `medium`): singular values within **47 ulp**
     /// of the floored exact result, every case INSIDE the oracle's own tolerance; `U` and `V`
     /// orthonormal within **67 ulp**; `|M - U Σ Vᵀ| <= 64 ulp * max(1, max |m_ij|)`; and
-    /// the polar factors within `|M - R P| <= 66 ulp * max(1, max |m_ij|)` with `|RᵀR - I| <=
-    /// 65 ulp`.
+    /// the left polar factors within `|M - P U| <= 65 ulp * max(1, max |m_ij|)` with
+    /// `|UᵀU - I| <= 65 ulp`.
     ///
     /// Cost: constant — four Jacobi sweeps whatever the input, no convergence test, no iteration
     /// count. Panics with the scalar's overflow error if a component of `MᵀM` does not fit (the
     /// squares of the entries must be representable, unlike `norm3`).
     fn new(matrix: Matrix3<T>) -> Svd3<T> {
-        let eigen = SymmetricEigen3Trait::new(Self::gram(matrix));
+        let eigen = SymmetricEigen3InternalTrait::new_sym(Svd3InternalTrait::gram(matrix));
         // RENORMALISE the eigenvectors. `SymmetricEigen3` divides each accumulated column by its
         // own FLOORED norm, and on a `small` matrix those columns are tiny in raw units, so the
         // floor costs `1 / |u|_raw` RELATIVE — up to 1.4e-7 on the oracle vectors. That bias
@@ -214,38 +223,6 @@ pub impl Svd3Impl<
         }
     }
 
-    /// `MᵀM` as a symmetric matrix: 6 fused kernels instead of 27 products, bit-identical to the
-    /// upper triangle of `m.transpose() * m` and to `m.transpose().mul_transpose()`. The latter
-    /// would reuse `base` instead of repeating the kernel, and it is NOT free: the transpose
-    /// costs 2 760 gas of moves that Sierra does not elide (13 500 against 16 260, measured,
-    /// `bench_svd3_gram__fused` against `bench_svd3_gram__transpose_mul_transpose`). Panics on
-    /// overflow. Upstream: `m.tr_mul(&m)`.
-    #[inline(always)]
-    fn gram(m: Matrix3<T>) -> SymMatrix3<T> {
-        SymMatrix3 {
-            m11: R::norm_squared3(m.m11, m.m21, m.m31),
-            m12: R::sum_prod3(m.m11, m.m12, m.m21, m.m22, m.m31, m.m32),
-            m13: R::sum_prod3(m.m11, m.m13, m.m21, m.m23, m.m31, m.m33),
-            m22: R::norm_squared3(m.m12, m.m22, m.m32),
-            m23: R::sum_prod3(m.m12, m.m13, m.m22, m.m23, m.m32, m.m33),
-            m33: R::norm_squared3(m.m13, m.m23, m.m33),
-        }
-    }
-
-    /// The three singular values, descending. Exact: a move. Upstream: the `singular_values`
-    /// field (and `Matrix3::singular_values`).
-    #[inline(always)]
-    fn singular_values(self: Svd3<T>) -> Vector3<T> {
-        self.singular_values
-    }
-
-    /// The right singular vectors as COLUMNS, `V = v_tᵀ`. Exact: moves. No upstream equivalent
-    /// (upstream stores `v_t` and transposes at the call site).
-    #[inline(always)]
-    fn v(self: Svd3<T>) -> Matrix3<T> {
-        self.v_t.transpose()
-    }
-
     /// The number of singular values strictly greater than `eps`. Upstream: `SVD::rank`.
     #[inline(always)]
     fn rank(self: Svd3<T>, eps: T) -> u32 {
@@ -270,24 +247,7 @@ pub impl Svd3Impl<
     /// Upstream: `SVD::recompose`, which returns a `Result` because `u` / `v_t` may be missing;
     /// here they never are.
     fn recompose(self: Svd3<T>) -> Matrix3<T> {
-        Self::scale_columns(self.u, self.singular_values) * self.v_t
-    }
-
-    /// `m * diag(d)`: each column of `m` scaled by the matching component of `d`, 9 floored
-    /// products. No upstream equivalent (upstream materialises `Matrix::from_diagonal`).
-    #[inline(always)]
-    fn scale_columns(m: Matrix3<T>, d: Vector3<T>) -> Matrix3<T> {
-        Matrix3 {
-            m11: m.m11 * d.x,
-            m21: m.m21 * d.x,
-            m31: m.m31 * d.x,
-            m12: m.m12 * d.y,
-            m22: m.m22 * d.y,
-            m32: m.m32 * d.y,
-            m13: m.m13 * d.z,
-            m23: m.m23 * d.z,
-            m33: m.m33 * d.z,
-        }
+        Svd3InternalTrait::scale_columns(self.u, self.singular_values) * self.v_t
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ`, where `σ⁺_i = 1 / σ_i` when
@@ -306,21 +266,11 @@ pub impl Svd3Impl<
             return None;
         }
         let r = Vector3 {
-            x: Self::inverted(self.singular_values.x, eps),
-            y: Self::inverted(self.singular_values.y, eps),
-            z: Self::inverted(self.singular_values.z, eps),
+            x: Svd3InternalTrait::inverted(self.singular_values.x, eps),
+            y: Svd3InternalTrait::inverted(self.singular_values.y, eps),
+            z: Svd3InternalTrait::inverted(self.singular_values.z, eps),
         };
-        Some(Self::scale_columns(self.v_t.transpose(), r) * self.u.transpose())
-    }
-
-    /// `1 / s` when `s > eps`, `0` otherwise: upstream's `pseudo_inverse` filter.
-    #[inline(always)]
-    fn inverted(s: T, eps: T) -> T {
-        if s > eps {
-            s.recip()
-        } else {
-            R::ZERO
-        }
+        Some(Svd3InternalTrait::scale_columns(self.v_t.transpose(), r) * self.u.transpose())
     }
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
@@ -335,13 +285,91 @@ pub impl Svd3Impl<
         }
         let y = self.u.tr_mul_vec(b);
         let z = Vector3 {
-            x: Self::divided(y.x, self.singular_values.x, eps),
-            y: Self::divided(y.y, self.singular_values.y, eps),
-            z: Self::divided(y.z, self.singular_values.z, eps),
+            x: Svd3InternalTrait::divided(y.x, self.singular_values.x, eps),
+            y: Svd3InternalTrait::divided(y.y, self.singular_values.y, eps),
+            z: Svd3InternalTrait::divided(y.z, self.singular_values.z, eps),
         };
         Some(self.v_t.tr_mul_vec(z))
     }
 
+    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ` is
+    /// symmetric positive semi-definite and `U = u · v_t` is orthonormal (a rotation when
+    /// `det(M) > 0`). Always `Some`: upstream returns `None` only when `u` or `v_t` was not
+    /// computed, and both always are here.
+    ///
+    /// `U` costs one 3x3 product and `P` one structured quadratic form (only its 6 independent
+    /// components are computed, then mirrored); both are two roundings per entry. Panics on
+    /// overflow. Upstream: `SVD::to_polar`.
+    #[inline(always)]
+    fn to_polar(self: Svd3<T>) -> Option<(Matrix3<T>, Matrix3<T>)> {
+        Some(
+            (
+                SymMatrix3Trait::quadform(self.u, self.singular_values).to_matrix(),
+                self.u * self.v_t,
+            ),
+        )
+    }
+}
+
+/// Crate-internal kernels of `Svd3<T>` (WP 8.0: the public API is strictly upstream's): the Gram
+/// matrix `MᵀM` as a `SymMatrix3` (the input of the eigen decomposition), and the column scaling
+/// and the guarded reciprocal / quotient shared by `recompose`, `pseudo_inverse` and `solve`.
+#[generate_trait]
+pub(crate) impl Svd3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Svd3InternalTrait<T> {
+    /// `MᵀM` as a symmetric matrix: 6 fused kernels instead of 27 products, bit-identical to the
+    /// upper triangle of `m.transpose() * m` and to `m.transpose().mul_transpose()`. The latter
+    /// would reuse `base` instead of repeating the kernel, and it is NOT free: the transpose
+    /// costs 2 760 gas of moves that Sierra does not elide (13 500 against 16 260, measured,
+    /// `bench_svd3_gram__fused` against `bench_svd3_gram__transpose_mul_transpose`). Panics on
+    /// overflow. Upstream: `m.tr_mul(&m)`.
+    #[inline(always)]
+    fn gram(m: Matrix3<T>) -> SymMatrix3<T> {
+        SymMatrix3 {
+            m11: R::norm_squared3(m.m11, m.m21, m.m31),
+            m12: R::sum_prod3(m.m11, m.m12, m.m21, m.m22, m.m31, m.m32),
+            m13: R::sum_prod3(m.m11, m.m13, m.m21, m.m23, m.m31, m.m33),
+            m22: R::norm_squared3(m.m12, m.m22, m.m32),
+            m23: R::sum_prod3(m.m12, m.m13, m.m22, m.m23, m.m32, m.m33),
+            m33: R::norm_squared3(m.m13, m.m23, m.m33),
+        }
+    }
+    /// `m * diag(d)`: each column of `m` scaled by the matching component of `d`, 9 floored
+    /// products. No upstream equivalent (upstream materialises `Matrix::from_diagonal`).
+    #[inline(always)]
+    fn scale_columns(m: Matrix3<T>, d: Vector3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: m.m11 * d.x,
+            m21: m.m21 * d.x,
+            m31: m.m31 * d.x,
+            m12: m.m12 * d.y,
+            m22: m.m22 * d.y,
+            m32: m.m32 * d.y,
+            m13: m.m13 * d.z,
+            m23: m.m23 * d.z,
+            m33: m.m33 * d.z,
+        }
+    }
+    /// `1 / s` when `s > eps`, `0` otherwise: upstream's `pseudo_inverse` filter.
+    #[inline(always)]
+    fn inverted(s: T, eps: T) -> T {
+        if s > eps {
+            s.recip()
+        } else {
+            R::ZERO
+        }
+    }
     /// `y / s` when `s > eps`, `0` otherwise: upstream's `solve` filter.
     #[inline(always)]
     fn divided(y: T, s: T, eps: T) -> T {
@@ -350,21 +378,6 @@ pub impl Svd3Impl<
         } else {
             R::ZERO
         }
-    }
-
-    /// The **polar decomposition** `M = R · P`: `R = U · v_t` is orthonormal (a rotation when
-    /// `det(M) > 0`) and `P = V · diag(σ) · Vᵀ` is symmetric positive semi-definite. Returned
-    /// as `(R, P)` with `P` a `SymMatrix3`, since only its 6 independent components exist.
-    ///
-    /// This is the form rapier's deformable bodies need (the rotation that best matches a
-    /// deformation gradient, and the residual stretch). `R` costs one 3x3 product and `P` one
-    /// `SymMatrix3::quadform`; both are two roundings per entry. Panics on overflow.
-    ///
-    /// No upstream equivalent at a fixed size: upstream users compose `svd.u * svd.v_t` and
-    /// `svd.v_t.transpose() * Matrix::from_diagonal(&svd.singular_values) * svd.v_t` by hand.
-    #[inline(always)]
-    fn to_polar(self: Svd3<T>) -> (Matrix3<T>, SymMatrix3<T>) {
-        (self.u * self.v_t, SymMatrix3Trait::quadform(self.v_t.transpose(), self.singular_values))
     }
 }
 
@@ -399,12 +412,6 @@ pub impl Matrix3SvdImpl<
         Svd3Trait::new(self).singular_values
     }
 
-    /// The polar decomposition `M = R · P`, see `Svd3::to_polar`.
-    #[inline(always)]
-    fn polar_decomposition(self: Matrix3<T>) -> (Matrix3<T>, SymMatrix3<T>) {
-        Svd3Trait::new(self).to_polar()
-    }
-
     /// The Moore-Penrose pseudo-inverse, see `Svd3::pseudo_inverse`. Upstream:
     /// `Matrix3::pseudo_inverse`.
     #[inline(always)]
@@ -416,7 +423,7 @@ pub impl Matrix3SvdImpl<
 #[cfg(test)]
 mod tests {
     //! Unit tests of `Svd3`: the exact cases (identity, diagonal, permutation, rank 1, rank 2,
-    //! zero), the identities (`M = U Σ Vᵀ`, orthonormality, `M = R P`), the oracle vectors of
+    //! zero), the identities (`M = U Σ Vᵀ`, orthonormality, `M = P U`), the oracle vectors of
     //! `tools/oracle`, and the three candidates that lost, kept as evidence (AGENTS.md rule 8):
     //!
     //! - `alt_sqrt_eigenvalues`: `σ = sqrt(λ)` from the eigenvalues of `MᵀM`, the formulation
@@ -434,16 +441,15 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix3::{Matrix3, Matrix3Trait};
+    use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_m3, excess, int, m3, max_abs_v3, max_ulp_diff3, max_ulp_diff_v3, oracle_tol,
         orthonormality_error_m3, v3t,
     };
-    use crate::base::sym_matrix3::SymMatrix3Trait;
     use crate::base::vector3::{Vector3, Vector3Trait};
     use crate::linalg::oracle_svd;
-    use crate::linalg::symmetric_eigen3::SymmetricEigen3Trait;
-    use super::{Matrix3SvdTrait, Svd3, Svd3Trait};
+    use crate::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
+    use super::{Matrix3SvdTrait, Svd3, Svd3InternalTrait, Svd3Trait};
 
     /// An oracle `unit` 3x3 case: the benchmark input.
     fn a_bench() -> Matrix3<Fixed> {
@@ -474,7 +480,7 @@ mod tests {
 
     /// `σ = sqrt(λ)` from the eigenvalues of `MᵀM` (DESIGN D6's formulation), descending.
     fn singular_values_from_sqrt(m: Matrix3<Fixed>) -> Vector3<Fixed> {
-        let e = SymmetricEigen3Trait::eigenvalues(Svd3Trait::gram(m));
+        let e = SymmetricEigen3InternalTrait::eigenvalues(Svd3InternalTrait::gram(m));
         Vector3 { x: e.z.sqrt(), y: e.y.sqrt(), z: e.x.sqrt() }
     }
 
@@ -635,7 +641,7 @@ mod tests {
     #[test]
     fn test_new_identity_is_exact() {
         let f = Svd3Trait::new(Matrix3Trait::<Fixed>::identity());
-        assert!(f.singular_values() == Vector3 { x: int(1), y: int(1), z: int(1) });
+        assert!(f.singular_values == Vector3 { x: int(1), y: int(1), z: int(1) });
         assert!(f.recompose() == Matrix3Trait::identity());
         assert!(f.rank(Real::ZERO) == 3);
         assert!(orthonormality_error_m3(f.u) == 0);
@@ -684,9 +690,9 @@ mod tests {
     #[test]
     fn test_accessors() {
         let f = f_bench();
-        assert!(f.singular_values() == f.singular_values);
-        assert!(f.v() == f.v_t.transpose());
-        assert!(a_bench().svd() == f);
+        assert!(f.singular_values == f.singular_values);
+        let g = a_bench().svd();
+        assert!(g.u == f.u && g.singular_values == f.singular_values && g.v_t == f.v_t);
         assert!(a_bench().singular_values() == f.singular_values);
     }
 
@@ -820,23 +826,26 @@ mod tests {
         let (mut worst, mut worst_orth) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
-            let (r, p) = Svd3Trait::new(m3(a)).to_polar();
+            let (p, u) = Svd3Trait::new(m3(a)).to_polar().unwrap();
+            // `P` is symmetric by construction and positive semi-definite: its determinant is the
+            // product of the singular values.
+            assert!(p == p.transpose(), "P is not symmetric");
             assert!(!p.determinant().is_negative(), "P is not positive semi-definite");
-            worst_orth = core::cmp::max(worst_orth, orthonormality_error_m3(r));
-            worst = core::cmp::max(worst, max_ulp_diff3(r * p.to_matrix(), m3(a)) / amax_m3(m3(a)));
+            worst_orth = core::cmp::max(worst_orth, orthonormality_error_m3(u));
+            worst = core::cmp::max(worst, max_ulp_diff3(p * u, m3(a)) / amax_m3(m3(a)));
         }
-        // Measured: `|M - R P| <= worst ulp * max(1, max |m_ij|)`, `|RᵀR - I| <= worst_orth ulp`.
-        assert!((worst, worst_orth) == (66, 65), "regressed: {worst} {worst_orth}");
+        // Measured: `|M - P U| <= worst ulp * max(1, max |m_ij|)`, `|UᵀU - I| <= worst_orth ulp`.
+        assert!((worst, worst_orth) == (65, 65), "regressed: {worst} {worst_orth}");
     }
 
     #[test]
-    fn test_polar_decomposition_of_a_rotation_is_the_rotation() {
+    fn test_to_polar_of_a_rotation_is_the_rotation() {
         let r = Matrix3Trait::new(
             int(0), int(0), int(1), int(1), int(0), int(0), int(0), int(1), int(0),
         );
-        let (q, p) = r.polar_decomposition();
+        let (p, q) = r.svd().to_polar().unwrap();
         assert!(max_ulp_diff3(q, r) <= 4);
-        assert!(max_ulp_diff3(p.to_matrix(), Matrix3Trait::identity()) <= 4);
+        assert!(max_ulp_diff3(p, Matrix3Trait::identity()) <= 4);
     }
 
     #[test]
@@ -930,7 +939,7 @@ mod tests {
     fn bench_svd3_gram__fused() {
         let a = black_box(a_bench());
         let e = black_box(true);
-        assert!((Svd3Trait::gram(a).m11 != Real::ZERO) == e);
+        assert!((Svd3InternalTrait::gram(a).m11 != Real::ZERO) == e);
     }
 
     #[test]
@@ -1020,7 +1029,7 @@ mod tests {
     fn bench_svd3_to_polar__quadform() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        let (r, p) = f.to_polar();
-        assert!((r.m11 != Real::ZERO && p.m11 != Real::ZERO) == e);
+        let (p, u) = f.to_polar().unwrap();
+        assert!((u.m11 != Real::ZERO && p.m11 != Real::ZERO) == e);
     }
 }

@@ -5,8 +5,8 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
-use crate::base::matrix_test_utils::{fx, v3, v6};
-use crate::base::vector3::{Vector3, Vector3Trait};
+use crate::base::matrix_test_utils::{fx, v6};
+use crate::base::vector3::Vector3Trait;
 use super::{Vector6, Vector6Trait};
 
 // --- alternative implementations (losers)
@@ -117,23 +117,6 @@ fn bench_vector6_fill__zeros() {
     let _s: Fixed = black_box(fx(0x280000000));
     let e: Vector6<Fixed> = black_box(v6(0, 0, 0, 0, 0, 0));
     assert!(black_box(Vector6Trait::<Fixed>::zeros()) == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_vector6_blocks__baseline() {
-    let a: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
-    let b: Vector3<Fixed> = black_box(v3(-0x480000000, 0x40000000, 0x200000000));
-    assert!(a == a && b == b);
-}
-
-#[test]
-#[inline(never)]
-fn bench_vector6_blocks__from_blocks() {
-    let a: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
-    let b: Vector3<Fixed> = black_box(v3(-0x480000000, 0x40000000, 0x200000000));
-    let v = Vector6Trait::from_blocks(a, b);
-    assert!(v.head() == a && v.tail() == b);
 }
 
 #[test]

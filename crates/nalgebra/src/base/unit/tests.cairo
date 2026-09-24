@@ -157,9 +157,9 @@ fn test_try_new_and_get() {
 }
 
 #[test]
-fn test_into_inner_and_as_ref() {
+fn test_into_inner() {
     assert!(np().into_inner() == np().value);
-    assert!(np().as_ref() == v3(991146299, -1321528399, 3964585196));
+    assert!(np().into_inner() == v3(991146299, -1321528399, 3964585196));
 }
 
 // --- renormalization
@@ -264,12 +264,12 @@ fn test_dot_of_units() {
 #[test]
 fn test_dot_with_a_vector() {
     // The signed length of the projection of (3, -4, 12) on the axes, and of a on `na`.
-    assert!(Unit3Trait::<Fixed>::x_axis().dot_vector(p()) == fx(0x300000000));
-    assert!(Unit3Trait::<Fixed>::y_axis().dot_vector(p()) == fx(-0x400000000));
-    assert!(Unit3Trait::<Fixed>::z_axis().dot_vector(p()) == fx(0xc00000000));
-    assert!(na().dot_vector(a()) == fx(19856967404));
-    assert!(u2(0x100000000, 0).dot_vector(v2(0x300000000, 5)) == fx(0x300000000));
-    assert!(u4(0, 0, 0, 0x100000000).dot_vector(v4(1, 2, 3, 0x400000000)) == fx(0x400000000));
+    assert!(Unit3Trait::<Fixed>::x_axis().into_inner().dot(p()) == fx(0x300000000));
+    assert!(Unit3Trait::<Fixed>::y_axis().into_inner().dot(p()) == fx(-0x400000000));
+    assert!(Unit3Trait::<Fixed>::z_axis().into_inner().dot(p()) == fx(0xc00000000));
+    assert!(na().into_inner().dot(a()) == fx(19856967404));
+    assert!(u2(0x100000000, 0).into_inner().dot(v2(0x300000000, 5)) == fx(0x300000000));
+    assert!(u4(0, 0, 0, 0x100000000).into_inner().dot(v4(1, 2, 3, 0x400000000)) == fx(0x400000000));
 }
 
 #[test]
@@ -328,34 +328,6 @@ fn test_axes_match_the_vector_axes() {
     assert!(Unit2Trait::<Fixed>::x_axis().value == Vector2Trait::<Fixed>::x());
     assert!(Unit2Trait::<Fixed>::y_axis().value == Vector2Trait::<Fixed>::y());
     assert!(Unit4Trait::<Fixed>::w_axis().value == Vector4Trait::<Fixed>::w());
-}
-
-// --- orthonormal basis
-
-#[test]
-fn test_orthonormal_basis_delegates_to_the_vector() {
-    let (u, w) = na().orthonormal_basis();
-    let (eu, ew) = na().value.orthonormal_basis();
-    assert!(u.value == eu && w.value == ew);
-    let (u, w) = Unit3Trait::<Fixed>::z_axis().orthonormal_basis();
-    assert!(u == Unit3Trait::<Fixed>::x_axis() && w == Unit3Trait::<Fixed>::y_axis());
-}
-
-#[test]
-fn test_orthonormal_basis_is_orthonormal() {
-    // Within a few ulp, for one vector of each octant of z and of the branch.
-    let mut dirs = array![
-        na(), -na(), np(), -np(), Unit3Trait::<Fixed>::x_axis(), -Unit3Trait::<Fixed>::z_axis(),
-    ]
-        .span();
-    while let Some(dir) = dirs.pop_front() {
-        let (u, w) = (*dir).orthonormal_basis();
-        assert!(u.dot(w).abs_diff_eq(Real::ZERO, 8));
-        assert!(u.dot(*dir).abs_diff_eq(Real::ZERO, 8));
-        assert!(w.dot(*dir).abs_diff_eq(Real::ZERO, 8));
-        assert!(u.dot(u).abs_diff_eq(Real::ONE, 8));
-        assert!(w.dot(w).abs_diff_eq(Real::ONE, 8));
-    }
 }
 
 // --- oracle vectors (upstream nalgebra on the same raw inputs; `tol` in ulp)

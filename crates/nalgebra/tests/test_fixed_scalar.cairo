@@ -3,14 +3,15 @@
 //!
 //! The kernels that map one-to-one onto a `fixed` call are checked against that call (`dot` is
 //! `fixed::wide::dot3`, `normalize` divides by the norm with `fixed`'s `/` (to nearest), ...); the
-//! composite ones (`quadform`, the Hamilton product, isometries) are pinned to their raw values.
+//! composite ones (the quadratic form of `recompose`, the Hamilton product, isometries) are pinned
+//! to their raw values.
 //! Panics carry `fixed`'s messages.
 
 use fixed::{Fixed, wide};
 use nalgebra::base::vector3::Vector3Trait;
 use nalgebra::{
-    Isometry3, Isometry3Trait, Matrix3Trait, Point3, Quaternion, QuaternionTrait, SymMatrix3,
-    SymMatrix3Trait, Translation3, UnitQuaternion, UnitQuaternionTrait, Vector3,
+    Isometry3, Isometry3Trait, Matrix3Trait, Point3, Quaternion, QuaternionTrait, SymmetricEigen3,
+    SymmetricEigen3Trait, Translation3, UnitQuaternion, UnitQuaternionTrait, Vector3,
 };
 use simba::prelude::*;
 
@@ -161,14 +162,17 @@ fn test_unit_quaternion_kernels() {
     );
 }
 
-// --- SymMatrix3 ----------------------------------------------------------------------------
+// --- SymmetricEigen3::recompose --------------------------------------------------------------
 
-/// `quadform` (`R diag(d) Rᵀ`, fused products) and `try_inverse` (one `recip` of the
-/// determinant), pinned.
+/// `SymmetricEigen3::recompose` (`R diag(d) Rᵀ` through the crate-internal structured quadratic
+/// form, fused products) and `Matrix3::try_inverse` of the result, pinned (the same raw values as
+/// the former public `SymMatrix3::quadform` / `try_inverse`, which were bit-identical to them).
 #[test]
-fn test_sym_matrix3_quadform_and_inverse() {
+fn test_recompose_quadform_and_inverse() {
     let m = Matrix3Trait::new(g(AX), g(AY), g(AZ), g(BX), g(BY), g(BZ), g(AZ), g(BX), g(AY));
-    let s: SymMatrix3<Fixed> = SymMatrix3Trait::quadform(m, gv(AX, BY, BZ));
+    let e = SymmetricEigen3 { eigenvalues: gv(AX, BY, BZ), eigenvectors: m };
+    let s = e.recompose();
+    assert!(s == s.transpose(), "recompose is symmetric");
     assert_vector(
         gv(s.m11.raw, s.m12.raw, s.m13.raw),
         (85010153472, -94359257088, 10871635968),
@@ -179,7 +183,7 @@ fn test_sym_matrix3_quadform_and_inverse() {
         (137129623552, -28449964032, 28613541888),
         "quadform rows 2-3",
     );
-    let i = s.try_inverse().unwrap();
+    let i = Matrix3Trait::try_inverse(s).unwrap();
     assert_vector(
         gv(i.m11.raw, i.m12.raw, i.m13.raw), (1101637383, 845641358, 422242925), "inverse row 1",
     );

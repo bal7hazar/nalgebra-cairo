@@ -13,7 +13,7 @@ use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, p2, p3, p3t, v3, v3t, v4};
 use crate::base::vector3::{Vector3, Vector3Trait};
-use super::{Point3, Point3Trait, oracle};
+use super::{Point3, Point3InternalTrait, Point3Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;
 const MIN: i64 = -0x8000000000000000;
@@ -63,10 +63,6 @@ fn test_into_conversions() {
     assert!(from_vector == a());
     let to_vector: Vector3<Fixed> = a().into();
     assert!(to_vector == v);
-    let from_tuple: Point3<Fixed> = (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)).into();
-    assert!(from_tuple == a());
-    let to_tuple: (Fixed, Fixed, Fixed) = a().into();
-    assert!(to_tuple == (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)));
     let from_array: Point3<Fixed> = [fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)].into();
     assert!(from_array == a());
     let to_array: [Fixed; 3] = a().into();

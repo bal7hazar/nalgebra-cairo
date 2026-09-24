@@ -20,16 +20,15 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
+use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
 use crate::base::matrix6::Matrix6;
 use crate::base::matrix_test_utils::{
     fx, int, m2, m2i, m3, m3i, m4, m4i, m6, m6i, max_ulp_diff2, max_ulp_diff3, max_ulp_diff4,
-    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, s2ir, s2r,
-    s3ir, s3r, ulp_diff, v2it, v2t, v3it, v3t, v4it, v4t, v6it, v6t,
+    max_ulp_diff6, max_ulp_diff_v2, max_ulp_diff_v3, max_ulp_diff_v4, max_ulp_diff_v6, ulp_diff,
+    v2it, v2t, v3it, v3t, v4it, v4t, v6it, v6t,
 };
-use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
-use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
@@ -43,8 +42,8 @@ use super::{
 // --- size 2 -------------------------------------------------------------------------------------
 
 /// The benchmark input `a_ij = min(i, j)`.
-fn a2() -> SymMatrix2<Fixed> {
-    s2ir([[1, 1], [1, 2]])
+fn a2() -> Matrix2<Fixed> {
+    m2i([[1, 1], [1, 2]])
 }
 
 /// Its Cholesky factor: the all-ones lower triangle.
@@ -63,8 +62,8 @@ fn x2() -> Vector2<Fixed> {
 }
 
 /// `a2()⁻¹`: tridiagonal, exactly.
-fn inv2() -> SymMatrix2<Fixed> {
-    s2ir([[2, -1], [-1, 1]])
+fn inv2() -> Matrix2<Fixed> {
+    m2i([[2, -1], [-1, 1]])
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
@@ -90,7 +89,7 @@ fn solve2_recip(f: Cholesky2<Fixed>, b: Vector2<Fixed>) -> Vector2<Fixed> {
 /// LOSER. `inverse` reusing the already-computed `q_ii = recip(l_ii)` as a multiplier for the
 /// sub-diagonal entries of `l⁻¹` instead of dividing by `l_ii`. Cheaper (the reciprocal is free
 /// here) but less accurate, and accuracy wins.
-fn inverse2_recip(f: Cholesky2<Fixed>) -> SymMatrix2<Fixed> {
+fn inverse2_recip(f: Cholesky2<Fixed>) -> Matrix2<Fixed> {
     let q11 = Real::recip(f.l11);
     let q22 = Real::recip(f.l22);
     let w = Real::<Fixed>::wide_zero();
@@ -103,7 +102,7 @@ fn inverse2_recip(f: Cholesky2<Fixed>) -> SymMatrix2<Fixed> {
     let r11 = Real::wide_rescale(w);
     let r12 = q21 * q22;
     let r22 = Real::sqr(q22);
-    SymMatrix2 { m11: r11, m12: r12, m22: r22 }
+    Matrix2 { m11: r11, m21: r12, m12: r12, m22: r22 }
 }
 
 /// Worst error in ulp of a `solve` candidate over the oracle's `cholesky2_solve` vectors.
@@ -112,7 +111,7 @@ fn solve2_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, _tol) = *case;
-        let f = Cholesky2Trait::new(s2r(a)).unwrap();
+        let f = Cholesky2Trait::new(m2(a)).unwrap();
         let got = if variant == 0 {
             f.solve(v2t(b))
         } else {
@@ -129,13 +128,13 @@ fn inverse2_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, _tol) = *case;
-        let f = Cholesky2Trait::new(s2r(a)).unwrap();
+        let f = Cholesky2Trait::new(m2(a)).unwrap();
         let got = if variant == 0 {
             f.inverse()
         } else {
             inverse2_recip(f)
         };
-        worst = core::cmp::max(worst, max_ulp_diff2(got.to_matrix(), m2(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff2(got, m2(expected)));
     }
     worst
 }
@@ -257,8 +256,8 @@ fn bench_cholesky2_determinant__diagonal_product() {
 // --- size 3 -------------------------------------------------------------------------------------
 
 /// The benchmark input `a_ij = min(i, j)`.
-fn a3() -> SymMatrix3<Fixed> {
-    s3ir([[1, 1, 1], [1, 2, 2], [1, 2, 3]])
+fn a3() -> Matrix3<Fixed> {
+    m3i([[1, 1, 1], [1, 2, 2], [1, 2, 3]])
 }
 
 /// Its Cholesky factor: the all-ones lower triangle.
@@ -277,8 +276,8 @@ fn x3() -> Vector3<Fixed> {
 }
 
 /// `a3()⁻¹`: tridiagonal, exactly.
-fn inv3() -> SymMatrix3<Fixed> {
-    s3ir([[2, -1, 0], [-1, 2, -1], [0, -1, 1]])
+fn inv3() -> Matrix3<Fixed> {
+    m3i([[2, -1, 0], [-1, 2, -1], [0, -1, 1]])
 }
 
 /// LOSER. `solve` with one reciprocal per pivot and multiplications instead of the two exactly
@@ -315,7 +314,7 @@ fn solve3_recip(f: Cholesky3<Fixed>, b: Vector3<Fixed>) -> Vector3<Fixed> {
 /// LOSER. `inverse` reusing the already-computed `q_ii = recip(l_ii)` as a multiplier for the
 /// sub-diagonal entries of `l⁻¹` instead of dividing by `l_ii`. Cheaper (the reciprocal is free
 /// here) but less accurate, and accuracy wins.
-fn inverse3_recip(f: Cholesky3<Fixed>) -> SymMatrix3<Fixed> {
+fn inverse3_recip(f: Cholesky3<Fixed>) -> Matrix3<Fixed> {
     let q11 = Real::recip(f.l11);
     let q22 = Real::recip(f.l22);
     let q33 = Real::recip(f.l33);
@@ -348,7 +347,9 @@ fn inverse3_recip(f: Cholesky3<Fixed>) -> SymMatrix3<Fixed> {
     let r22 = Real::wide_rescale(w);
     let r23 = q32 * q33;
     let r33 = Real::sqr(q33);
-    SymMatrix3 { m11: r11, m12: r12, m13: r13, m22: r22, m23: r23, m33: r33 }
+    Matrix3 {
+        m11: r11, m21: r12, m31: r13, m12: r12, m22: r22, m32: r23, m13: r13, m23: r23, m33: r33,
+    }
 }
 
 /// Worst error in ulp of a `solve` candidate over the oracle's `cholesky3_solve` vectors.
@@ -357,7 +358,7 @@ fn solve3_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, b, expected, _tol) = *case;
-        let f = Cholesky3Trait::new(s3r(a)).unwrap();
+        let f = Cholesky3Trait::new(m3(a)).unwrap();
         let got = if variant == 0 {
             f.solve(v3t(b))
         } else {
@@ -374,13 +375,13 @@ fn inverse3_worst(variant: u8) -> u128 {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, expected, _tol) = *case;
-        let f = Cholesky3Trait::new(s3r(a)).unwrap();
+        let f = Cholesky3Trait::new(m3(a)).unwrap();
         let got = if variant == 0 {
             f.inverse()
         } else {
             inverse3_recip(f)
         };
-        worst = core::cmp::max(worst, max_ulp_diff3(got.to_matrix(), m3(expected)));
+        worst = core::cmp::max(worst, max_ulp_diff3(got, m3(expected)));
     }
     worst
 }

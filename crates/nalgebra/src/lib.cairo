@@ -9,8 +9,7 @@ pub mod linalg;
 
 pub use base::{Matrix2, Matrix3, Matrix4, Point2, Point3, Unit, Vector2, Vector3, Vector4};
 pub use base::{
-    Matrix2Trait, Matrix3Trait, Matrix4Trait, Matrix6, Matrix6Trait, SymMatrix2, SymMatrix2Trait,
-    SymMatrix3, SymMatrix3Trait, Vector6, Vector6Trait,
+    Matrix2Trait, Matrix3Trait, Matrix4Trait, Matrix6, Matrix6Trait, Vector6, Vector6Trait,
 };
 pub use geometry::{
     Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3, Isometry3AngleTrait, Isometry3Trait,
@@ -22,10 +21,9 @@ pub use geometry::{
 };
 pub use linalg::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
-    Cholesky6Trait, Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait, Ldlt6, Ldlt6Trait, Lu2,
-    Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix2QrTrait,
-    Matrix2SvdTrait, Matrix3LuTrait, Matrix3QrTrait, Matrix3SvdTrait, Matrix4LuTrait,
-    Matrix4QrTrait, Matrix6LuTrait, Perm2, Perm3, Perm4, Perm6, PermTrait, Qr2, Qr2Trait, Qr3,
-    Qr3Trait, Qr4, Qr4Trait, Svd2, Svd2Trait, Svd3, Svd3Trait, SymmetricEigen2,
-    SymmetricEigen2Trait, SymmetricEigen3, SymmetricEigen3Trait,
+    Cholesky6Trait, Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait,
+    Matrix2QrTrait, Matrix2SvdTrait, Matrix3LuTrait, Matrix3QrTrait, Matrix3SvdTrait,
+    Matrix4LuTrait, Matrix4QrTrait, Matrix6LuTrait, Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4,
+    Perm4Trait, Perm6, Perm6Trait, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait, Svd2, Svd2Trait,
+    Svd3, Svd3Trait, SymmetricEigen2, SymmetricEigen2Trait, SymmetricEigen3, SymmetricEigen3Trait,
 };

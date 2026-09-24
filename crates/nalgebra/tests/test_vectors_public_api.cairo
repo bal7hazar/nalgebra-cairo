@@ -12,7 +12,7 @@ fn f(v: i32) -> Fixed {
 #[test]
 fn test_api_operators_and_conversions_need_no_import() {
     let a = Vector3 { x: f(1), y: f(-2), z: f(3) };
-    let b: Vector3<Fixed> = (f(4), f(5), f(-6)).into();
+    let b: Vector3<Fixed> = [f(4), f(5), f(-6)].into();
     assert!(a + b == Vector3 { x: f(5), y: f(3), z: f(-3) });
     assert!(a - b == Vector3 { x: f(-3), y: f(-7), z: f(9) });
     assert!(-a == Vector3 { x: f(-1), y: f(2), z: f(-3) });
@@ -27,7 +27,7 @@ fn test_api_operators_and_conversions_need_no_import() {
     let [x, y]: [Fixed; 2] = Vector2 { x: f(7), y: f(8) }.into();
     assert!(x == f(7) && y == f(8));
     let d: Vector4<Fixed> = [f(1), f(2), f(3), f(4)].into();
-    let (_, _, _, w): (Fixed, Fixed, Fixed, Fixed) = d.into();
+    let [_, _, _, w]: [Fixed; 4] = d.into();
     assert!(w == f(4));
     assert!(d == Vector4 { x: f(1), y: f(2), z: f(3), w: f(4) });
     assert!(Default::default() == Vector2 { x: f(0), y: f(0) });
@@ -75,8 +75,6 @@ mod with_traits {
             },
         );
         assert!(position.try_normalize(f(100)).is_none());
-        let (u, w) = normal.orthonormal_basis();
-        assert!(u.cross(w) == normal);
     }
 
     /// Downstream code can stay generic over the scalar with the documented bounds.

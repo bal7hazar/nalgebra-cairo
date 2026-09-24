@@ -4,7 +4,7 @@
 //! convention of upstream's unpacked `q()` / `r()`, see the module doc of `linalg::qr`.
 
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 use crate::base::vector3::Vector3;
 
 /// The QR factorisation of a `Matrix3<T>`: `A = Q * R`.
@@ -13,12 +13,21 @@ use crate::base::vector3::Vector3;
 /// and an exactly zero strict lower triangle. Built by `Qr3Trait::new` or `Matrix3QrTrait::qr`.
 /// Upstream: `nalgebra::linalg::QR`, which packs the Householder reflectors and the signed
 /// diagonal instead and rebuilds the two factors on demand.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Qr3<T> {
     /// The orthonormal factor `Q` (orthonormal iff `is_invertible`, see the module doc).
     pub q: Matrix3<T>,
     /// The upper triangular factor `R`, `r_ii >= 0`.
     pub r: Matrix3<T>,
+}
+
+/// Test-only field-wise equality (upstream `Qr3` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Qr3PartialEq<T, +PartialEq<T>> of PartialEq<Qr3<T>> {
+    fn eq(lhs: @Qr3<T>, rhs: @Qr3<T>) -> bool {
+        lhs.q == rhs.q && lhs.r == rhs.r
+    }
 }
 
 /// Methods of `Qr3<T>` for any `Real` scalar.
@@ -192,13 +201,31 @@ pub impl Qr3Impl<
             return None;
         }
         let (c1, c2, c3) = (
-            Self::back_substitute(self, self.q.row1()),
-            Self::back_substitute(self, self.q.row2()),
-            Self::back_substitute(self, self.q.row3()),
+            Qr3InternalTrait::back_substitute(self, self.q.row1()),
+            Qr3InternalTrait::back_substitute(self, self.q.row2()),
+            Qr3InternalTrait::back_substitute(self, self.q.row3()),
         );
         Some(Matrix3Trait::from_columns(c1, c2, c3))
     }
+}
 
+/// Crate-internal kernels of `Qr3<T>` (WP 8.0: the public API is strictly upstream's). The back
+/// substitution shared by `solve` and `try_inverse`, and `determinant` (upstream's
+/// `QR::determinant` is commented out), which the tests use to check the factors.
+#[generate_trait]
+pub(crate) impl Qr3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Qr3InternalTrait<T> {
     /// `R^-1 * y` by back substitution, the shared body of `solve` and `try_inverse`. The caller
     /// guarantees a nonzero diagonal. No upstream equivalent (upstream substitutes in place).
     #[inline(always)]
@@ -209,7 +236,6 @@ pub impl Qr3Impl<
         let x1 = R::div(R::wide_rescale(R::wide_sub_prod(w, self.r.m13, x3)), self.r.m11);
         Vector3 { x: x1, y: x2, z: x3 }
     }
-
     /// The determinant: `det(Q) * r11 * r22 * r33`. Upstream: `QR::determinant`.
     ///
     /// `R` has a non-negative diagonal, so the sign lives entirely in `det(Q) = ±1`, read off
@@ -285,14 +311,14 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix3::{Matrix3, Matrix3Trait};
+    use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_m3, excess, int, m3, max_abs_m3, max_abs_v3, max_ulp_diff3, max_ulp_diff_v3,
         oracle_tol, orthonormality_error_m3, ulp_diff, v3t,
     };
-    use crate::base::vector3::{Vector3, Vector3Trait};
+    use crate::base::vector3::{Vector3, Vector3InternalTrait, Vector3Trait};
     use crate::linalg::qr::oracle_qr3 as oracle;
-    use super::{Matrix3QrTrait, Qr3, Qr3Trait};
+    use super::{Matrix3QrTrait, Qr3, Qr3InternalTrait, Qr3Trait};
 
     /// The oracle's first 3x3 case: the benchmark input.
     fn a_bench() -> Matrix3<Fixed> {
