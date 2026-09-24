@@ -5,12 +5,12 @@
 //! measurement and the oracle vectors of `tools/oracle` (upstream nalgebra 0.35 on the same raw
 //! inputs, tolerance in ulp).
 //!
-//! `ext_oracle.cairo` is emitted from `tools/oracle` (committed vectors, at most 8 cases per
+//! `oracle_ext.cairo` is emitted from `tools/oracle` (committed vectors, at most 8 cases per
 //! distribution):
 //!
 //! ```text
 //! cargo run --release -- emit-cairo unit_complex_completion --from vectors --max-per-dist 8 \
-//!     --out crates/nalgebra/src/geometry/unit_complex/ext_oracle.cairo
+//!     --out crates/nalgebra/src/geometry/unit_complex/oracle_ext.cairo
 //! ```
 
 use core::num::traits::One;
@@ -26,7 +26,7 @@ use crate::geometry::similarity2::Similarity2;
 use crate::geometry::translation2::Translation2;
 use super::{
     FROM_MATRIX_MAX_ITER, UnitComplex, UnitComplexAngleInternalTrait, UnitComplexAngleTrait,
-    UnitComplexTrait, ext_oracle,
+    UnitComplexTrait, oracle_ext,
 };
 
 /// The excess of `err` over `tol`, printed when positive.
@@ -64,7 +64,7 @@ fn c() -> UnitComplex<Fixed> {
 
 #[test]
 fn test_div_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::unit_complex_div_cases();
+    let mut cases = oracle_ext::unit_complex_div_cases();
     while let Some(case) = cases.pop_front() {
         let (a, b, e, _) = *case;
         let got = uct(a) / uct(b);
@@ -75,7 +75,7 @@ fn test_div_oracle_is_bit_exact() {
 
 #[test]
 fn test_mul_rotation_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::unit_complex_mul_rotation_cases();
+    let mut cases = oracle_ext::unit_complex_mul_rotation_cases();
     while let Some(case) = cases.pop_front() {
         let (a, r, e, _) = *case;
         assert!(uct(a).mul_rotation(r2(r)) == uct(e));
@@ -84,7 +84,7 @@ fn test_mul_rotation_oracle_is_bit_exact() {
 
 #[test]
 fn test_div_rotation_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::unit_complex_div_rotation_cases();
+    let mut cases = oracle_ext::unit_complex_div_rotation_cases();
     while let Some(case) = cases.pop_front() {
         let (a, r, e, _) = *case;
         assert!(uct(a).div_rotation(r2(r)) == uct(e));
@@ -93,7 +93,7 @@ fn test_div_rotation_oracle_is_bit_exact() {
 
 #[test]
 fn test_mul_translation_oracle() {
-    let mut cases = ext_oracle::unit_complex_mul_translation_cases();
+    let mut cases = oracle_ext::unit_complex_mul_translation_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, t, e, tol) = *case;
@@ -106,7 +106,7 @@ fn test_mul_translation_oracle() {
 
 #[test]
 fn test_mul_isometry_oracle() {
-    let mut cases = ext_oracle::unit_complex_mul_isometry_cases();
+    let mut cases = oracle_ext::unit_complex_mul_isometry_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, i, e, tol) = *case;
@@ -119,7 +119,7 @@ fn test_mul_isometry_oracle() {
 
 #[test]
 fn test_mul_similarity_oracle() {
-    let mut cases = ext_oracle::unit_complex_mul_similarity_cases();
+    let mut cases = oracle_ext::unit_complex_mul_similarity_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, s, e, tol) = *case;
@@ -136,7 +136,7 @@ fn test_mul_similarity_oracle() {
 
 #[test]
 fn test_from_complex_oracle() {
-    let mut cases = ext_oracle::unit_complex_from_complex_cases();
+    let mut cases = oracle_ext::unit_complex_from_complex_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -153,7 +153,7 @@ fn test_from_complex_oracle() {
 
 #[test]
 fn test_rotation_between_axis_oracle() {
-    let mut cases = ext_oracle::unit_complex_rotation_between_axis_cases();
+    let mut cases = oracle_ext::unit_complex_rotation_between_axis_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -174,7 +174,7 @@ fn test_rotation_between_axis_oracle() {
 
 #[test]
 fn test_from_matrix_oracle() {
-    let mut cases = ext_oracle::unit_complex_from_matrix_cases();
+    let mut cases = oracle_ext::unit_complex_from_matrix_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (m, e, tol) = *case;
@@ -191,7 +191,7 @@ fn test_from_matrix_oracle() {
 /// floor until the bound, 3 ulp from the closed form.
 #[test]
 fn test_from_matrix_eps_iterations_on_the_oracle_set() {
-    let mut cases = ext_oracle::unit_complex_from_matrix_cases();
+    let mut cases = oracle_ext::unit_complex_from_matrix_cases();
     let (mut worst, mut most, mut stopped) = (0, 0, 0);
     while let Some(case) = cases.pop_front() {
         let (m, e, tol) = *case;

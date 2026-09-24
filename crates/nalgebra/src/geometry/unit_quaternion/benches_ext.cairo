@@ -1,12 +1,12 @@
 //! Gas benchmarks of the WP 8.4-P08 completion of `UnitQuaternion`
 //! (`bench_unit_quaternion_<op>__<variant>`, net = raw - `baseline` of the group), and the
 //! alternative implementations that lost (`alt_*` variants, upstream's literal formulations),
-//! kept as evidence together with the tests showing why (AGENTS.md rule 8; `ext_tests.cairo`).
+//! kept as evidence together with the tests showing why (AGENTS.md rule 8; `tests_ext.cairo`).
 //!
 //! The inputs are the unit quaternions `a`, `b` of `benches.cairo`, the vector `(1.5, -2.25,
 //! 3.75)`, the isometry `(v, b)`, the similarity `((v, b), 2)` and a well-conditioned matrix.
 //! Expected values are the results of the kernels themselves, all of which are checked against
-//! upstream nalgebra in `ext_tests.cairo`.
+//! upstream nalgebra in `tests_ext.cairo`.
 
 use core::num::traits::One;
 use fixed::Fixed;

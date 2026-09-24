@@ -5,12 +5,12 @@
 //! and `MEAN_OF_SQUARINGS`, and the oracle vectors of `tools/oracle` (upstream nalgebra 0.35 on
 //! the same raw inputs, tolerance in ulp).
 //!
-//! `ext_oracle.cairo` is emitted from `tools/oracle` (committed vectors, at most 8 cases per
+//! `oracle_ext.cairo` is emitted from `tools/oracle` (committed vectors, at most 8 cases per
 //! distribution):
 //!
 //! ```text
 //! cargo run --release -- emit-cairo unit_quaternion_completion --from vectors --max-per-dist 8 \
-//!     --out crates/nalgebra/src/geometry/unit_quaternion/ext_oracle.cairo
+//!     --out crates/nalgebra/src/geometry/unit_quaternion/oracle_ext.cairo
 //! ```
 
 use core::num::traits::One;
@@ -30,7 +30,7 @@ use crate::geometry::similarity3::{Similarity3, Similarity3Trait};
 use crate::geometry::translation3::Translation3;
 use super::{
     FROM_MATRIX_MAX_ITER, Sym4, UnitQuaternion, UnitQuaternionAngleInternalTrait,
-    UnitQuaternionAngleTrait, UnitQuaternionInternalTrait, UnitQuaternionTrait, ext_oracle,
+    UnitQuaternionAngleTrait, UnitQuaternionInternalTrait, UnitQuaternionTrait, oracle_ext,
 };
 
 const HALF_RAW: i64 = 0x80000000;
@@ -74,7 +74,7 @@ fn err_up_to_sign(a: Quaternion<Fixed>, b: Quaternion<Fixed>) -> u128 {
 
 #[test]
 fn test_div_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::unit_quaternion_div_cases();
+    let mut cases = oracle_ext::unit_quaternion_div_cases();
     while let Some(case) = cases.pop_front() {
         let (a, b, e, _) = *case;
         let got = uqt(a) / uqt(b);
@@ -86,7 +86,7 @@ fn test_div_oracle_is_bit_exact() {
 
 #[test]
 fn test_mul_rotation_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_mul_rotation_cases();
+    let mut cases = oracle_ext::unit_quaternion_mul_rotation_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, r, e, tol) = *case;
@@ -99,7 +99,7 @@ fn test_mul_rotation_oracle() {
 
 #[test]
 fn test_div_rotation_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_div_rotation_cases();
+    let mut cases = oracle_ext::unit_quaternion_div_rotation_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, r, e, tol) = *case;
@@ -112,7 +112,7 @@ fn test_div_rotation_oracle() {
 
 #[test]
 fn test_mul_translation_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_mul_translation_cases();
+    let mut cases = oracle_ext::unit_quaternion_mul_translation_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, t, e, tol) = *case;
@@ -125,7 +125,7 @@ fn test_mul_translation_oracle() {
 
 #[test]
 fn test_mul_isometry_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_mul_isometry_cases();
+    let mut cases = oracle_ext::unit_quaternion_mul_isometry_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, i, e, tol) = *case;
@@ -138,7 +138,7 @@ fn test_mul_isometry_oracle() {
 
 #[test]
 fn test_div_isometry_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_div_isometry_cases();
+    let mut cases = oracle_ext::unit_quaternion_div_isometry_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, i, e, tol) = *case;
@@ -151,7 +151,7 @@ fn test_div_isometry_oracle() {
 
 #[test]
 fn test_mul_similarity_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_mul_similarity_cases();
+    let mut cases = oracle_ext::unit_quaternion_mul_similarity_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, s, e, tol) = *case;
@@ -164,7 +164,7 @@ fn test_mul_similarity_oracle() {
 
 #[test]
 fn test_div_similarity_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_div_similarity_cases();
+    let mut cases = oracle_ext::unit_quaternion_div_similarity_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, s, e, tol) = *case;
@@ -178,7 +178,7 @@ fn test_div_similarity_oracle() {
 /// The fused `div_isometry` agrees with upstream's literal `q * iso.inverse()` to a few ulp.
 #[test]
 fn test_div_isometry_alt_inverse_then_mul_agrees() {
-    let mut cases = ext_oracle::unit_quaternion_div_isometry_cases();
+    let mut cases = oracle_ext::unit_quaternion_div_isometry_cases();
     while let Some(case) = cases.pop_front() {
         let (q, i, _, tol) = *case;
         let fused = uqt(q).div_isometry(iso(i));
@@ -192,7 +192,7 @@ fn test_div_isometry_alt_inverse_then_mul_agrees() {
 
 #[test]
 fn test_rotation_between_axis_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_rotation_between_axis_cases();
+    let mut cases = oracle_ext::unit_quaternion_rotation_between_axis_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -209,7 +209,7 @@ fn test_rotation_between_axis_oracle() {
 
 #[test]
 fn test_scaled_rotation_between_axis_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_scaled_rotation_between_axis_cases();
+    let mut cases = oracle_ext::unit_quaternion_scaled_rotation_between_axis_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, s, e, tol) = *case;
@@ -229,7 +229,7 @@ fn test_scaled_rotation_between_axis_oracle() {
 
 #[test]
 fn test_face_towards_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_face_towards_cases();
+    let mut cases = oracle_ext::unit_quaternion_face_towards_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (d, u, e, tol) = *case;
@@ -246,7 +246,7 @@ fn test_face_towards_oracle() {
 
 #[test]
 fn test_look_at_rh_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_look_at_rh_cases();
+    let mut cases = oracle_ext::unit_quaternion_look_at_rh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (d, u, e, tol) = *case;
@@ -262,7 +262,7 @@ fn test_look_at_rh_oracle() {
 
 #[test]
 fn test_look_at_lh_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_look_at_lh_cases();
+    let mut cases = oracle_ext::unit_quaternion_look_at_lh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (d, u, e, tol) = *case;
@@ -278,7 +278,7 @@ fn test_look_at_lh_oracle() {
 
 #[test]
 fn test_from_matrix_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_from_matrix_cases();
+    let mut cases = oracle_ext::unit_quaternion_from_matrix_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (m, e, tol) = *case;
@@ -299,7 +299,7 @@ fn test_from_matrix_oracle() {
 /// the other 7.
 #[test]
 fn test_from_matrix_eps_iterations_on_the_oracle_set() {
-    let mut cases = ext_oracle::unit_quaternion_from_matrix_cases();
+    let mut cases = oracle_ext::unit_quaternion_from_matrix_cases();
     let (mut converged, mut fewest, mut most) = (0, FROM_MATRIX_MAX_ITER, 0);
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
@@ -326,7 +326,7 @@ fn test_from_matrix_eps_iterations_on_the_oracle_set() {
 /// The measurement behind `MEAN_OF_SQUARINGS` for `from_matrix`.
 #[test]
 fn test_from_matrix_squarings_on_the_oracle_set() {
-    let mut cases = ext_oracle::unit_quaternion_from_matrix_cases();
+    let mut cases = oracle_ext::unit_quaternion_from_matrix_cases();
     let mut worst: u128 = 0;
     while let Some(case) = cases.pop_front() {
         let (m, e, tol) = *case;
@@ -375,7 +375,7 @@ fn test_from_matrix_ignores_a_uniform_scaling() {
 
 #[test]
 fn test_mean_of_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_mean_of_cases();
+    let mut cases = oracle_ext::unit_quaternion_mean_of_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let ((a, b, c), e, tol) = *case;
@@ -396,7 +396,7 @@ fn test_mean_of_oracle() {
 fn test_mean_of_squarings_on_the_oracle_set() {
     let mut k: usize = 4;
     while k <= 16 {
-        let mut cases = ext_oracle::unit_quaternion_mean_of_cases();
+        let mut cases = oracle_ext::unit_quaternion_mean_of_cases();
         let mut worst: u128 = 0;
         let mut over: u128 = 0;
         while let Some(case) = cases.pop_front() {
@@ -449,7 +449,7 @@ fn test_mean_of_empty_panics() {
 
 #[test]
 fn test_ln_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_ln_cases();
+    let mut cases = oracle_ext::unit_quaternion_ln_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -461,7 +461,7 @@ fn test_ln_oracle() {
 
 #[test]
 fn test_exp_oracle() {
-    let mut cases = ext_oracle::unit_quaternion_exp_cases();
+    let mut cases = oracle_ext::unit_quaternion_exp_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;

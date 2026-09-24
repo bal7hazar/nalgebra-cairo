@@ -41,15 +41,15 @@ use crate::base::vector4::Vector4;
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod ext_benches;
-#[cfg(test)]
-mod ext_oracle;
-#[cfg(test)]
-mod ext_tests;
+mod benches_ext;
 #[cfg(test)]
 mod oracle;
 #[cfg(test)]
+mod oracle_ext;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_ext;
 
 /// Panic messages of the quaternion algebra (stable API).
 pub mod errors {
@@ -326,9 +326,10 @@ pub impl QuaternionImpl<
     // --- P08 completion: algebra ---------------------------------------------------------------
 
     /// `self / 2`, each component the correctly rounded quotient (nearest, ties to even, like
-    /// upstream's `self / 2.0`): one `div4`. Multiplying by `1/2` instead is cheaper but floors
-    /// the odd raw values (`bench_quaternion_half__alt_scale_half`,
-    /// `test_half_alt_scale_half_floors_odd_raws`). Cannot overflow. Upstream: `half`.
+    /// upstream's `self / 2.0`): one `div4`, 11 270 gas. Multiplying by `1/2` instead costs 6 620
+    /// but floors the odd raw values, a different result from upstream's `/ 2`
+    /// (`bench_quaternion_half__alt_scale_half`, `test_half_alt_scale_half_floors_odd_raws`).
+    /// Cannot overflow. Upstream: `half`.
     #[inline(always)]
     fn half(self: Quaternion<T>) -> Quaternion<T> {
         let (i, j, k, w) = R::div4(self.i, self.j, self.k, self.w, R::TWO);
@@ -338,8 +339,8 @@ pub impl QuaternionImpl<
     /// `self * self` in its reduced form `(w² - |v|², 2w·v)` (the cross product of `v` with
     /// itself vanishes): one fused kernel per component, 10 products instead of the 16 of the
     /// Hamilton product, each component the exactly floored square — the same bits as `self *
-    /// self`
-    /// (`test_squared_matches_the_hamilton_product`, `bench_quaternion_squared__alt_mul`).
+    /// self`, 9 950 gas against 11 550 (`test_squared_matches_the_hamilton_product`,
+    /// `bench_quaternion_squared__alt_mul`).
     /// Panics on overflow of a component. Upstream: `squared`.
     fn squared(self: Quaternion<T>) -> Quaternion<T> {
         let Quaternion { i, j, k, w } = self;
@@ -356,7 +357,8 @@ pub impl QuaternionImpl<
     /// The symmetric part of the product, `(self * other + other * self) / 2`, in its reduced
     /// form `(w₁w₂ - v₁·v₂, w₁v₂ + w₂v₁)` (the cross products cancel): one fused
     /// kernel per component, each the exactly floored result, where upstream rounds two Hamilton
-    /// products and halves. Panics on overflow. Upstream: `inner`.
+    /// products and halves: 10 350 gas against 44 000 (`bench_quaternion_inner__alt_products`,
+    /// within 1 ulp: `test_inner_alt_products_agrees`). Panics on overflow. Upstream: `inner`.
     fn inner(self: Quaternion<T>, other: Quaternion<T>) -> Quaternion<T> {
         let w = R::wide_sub_prod(
             R::wide_add_prod(R::wide_zero(), self.w, other.w), self.i, other.i,
@@ -389,10 +391,13 @@ pub impl QuaternionImpl<
     /// `self * other⁻¹`, or `None` when `|other|²` floors to zero (like `try_inverse`).
     /// Computed as `(self * conj(other)) / |other|²`: one fused Hamilton product with the
     /// conjugate's signs folded in (floored once per component), then one correctly rounded
-    /// division per component — never the rounded inverse, so the error does not grow with
-    /// `|self|`
-    /// (`bench_quaternion_right_div__alt_inverse_then_mul`). Panics on overflow (of `|other|²`
-    /// above a norm of about 46 340, or of the product). Upstream: `right_div`.
+    /// division per component — never the rounded inverse, whose half-ulp errors upstream's
+    /// `self * other⁻¹` multiplies by `|self|`: 1 ulp against 2 500 on a quotient of norm ~1 300
+    /// (`test_right_div_alt_inverse_then_mul_loses_bits_on_large_quotients`). The price: 34 020
+    /// gas against 27 630 for the loser on the bench inputs (the divisions of the larger
+    /// numerators are dearer, `bench_quaternion_right_div__alt_inverse_then_mul`). Panics on
+    /// overflow (of `|other|²` above a norm of about 46 340, or of the product). Upstream:
+    /// `right_div`.
     fn right_div(self: Quaternion<T>, other: Quaternion<T>) -> Option<Quaternion<T>> {
         let n2 = R::norm_squared4(other.i, other.j, other.k, other.w);
         if n2 == R::zero() {
@@ -442,9 +447,9 @@ pub impl QuaternionImpl<
     ///   there, through `ln`).
     ///
     /// `(n ± w) / 2` is one fused kernel (exactly floored, no overflow of the intermediate sum),
-    /// then one square root and at most one norm and four divisions: about 18 000 gas, where
-    /// upstream's `powf(1/2)` = `exp(ln(q) / 2)` costs a `ln`, an `atan2`, an `exp` and a `sin_cos`
-    /// (`bench_quaternion_sqrt__alt_powf`, 9x dearer, and less accurate: the exponential
+    /// then one square root and at most one norm and four divisions: 35 510 gas, where upstream's
+    /// `powf(1/2)` = `exp(ln(q) / 2)` costs a `ln`, an `atan2`, an `exp` and a `sin_cos`: 148 110
+    /// (`bench_quaternion_sqrt__alt_powf`, 4.2x dearer, and less accurate: the exponential
     /// amplifies the error of the logarithm). The two agree to the tolerance of the oracle
     /// (`test_sqrt_alt_powf_agrees`). The zero quaternion gives zero. Upstream: `sqrt`.
     fn sqrt(self: Quaternion<T>) -> Quaternion<T> {
@@ -599,7 +604,7 @@ pub(crate) impl ApproxEqImpl<
 /// The inverse functions (`acos`, `asin`, `atan`, `asinh`, `acosh`, `atanh`) are upstream's
 /// compositions of `ln`, `sqrt` and products, in upstream's order; every intermediate rounds,
 /// so their error is a few hundred ulp on moderate inputs (oracle tolerances in
-/// `ext_tests.cairo`). `acos`, `asin` and `atan` normalise the imaginary part: they panic with
+/// `tests_ext.cairo`). `acos`, `asin` and `atan` normalise the imaginary part: they panic with
 /// `Fixed: division by zero` on a real quaternion (upstream returns NaN).
 #[generate_trait]
 pub impl QuaternionTranscendentalImpl<
@@ -692,8 +697,9 @@ pub impl QuaternionTranscendentalImpl<
     ///
     /// `θ` is computed as `atan2(|v|, w)` — the same angle, but well conditioned where
     /// `acos(w / n)` is not (near `w = ±n`, i.e. a small imaginary part, `acos` loses half the
-    /// bits) and with no division: `bench_quaternion_ln__alt_acos` measures the upstream form,
-    /// `test_ln_alt_acos_loses_precision_near_the_real_axis` shows why it lost. The direction is
+    /// bits) and with no division: 73 770 gas against 75 370 for the upstream form
+    /// (`bench_quaternion_ln__alt_acos`; `test_ln_alt_acos_loses_precision_near_the_real_axis`
+    /// shows the accuracy it loses). The direction is
     /// `v / |v|` (three correctly rounded divisions), then scaled by `θ`, like
     /// `UnitQuaternion::scaled_axis`.
     ///
@@ -779,8 +785,10 @@ pub impl QuaternionTranscendentalImpl<
 
     /// `sinh(self) = (sinh w · cos|v|, v · cosh w · sin|v| / |v|)`: the closed form of
     /// upstream's `(exp(self) - exp(-self)) / 2`, sharing one `sin_cos` and two scalar `exp`
-    /// between the two exponentials (`bench_quaternion_sinh__alt_exp_difference`: upstream's
-    /// composition costs two full quaternion `exp`). Panics for `|w|` above about 21.49. Upstream:
+    /// between the two exponentials: 94 150 gas against 157 140 for upstream's composition of
+    /// two full quaternion `exp` (`bench_quaternion_sinh__alt_exp_difference`, agreeing to the
+    /// oracle tolerance: `test_sinh_alt_exp_difference_agrees`). Panics for `|w|` above about
+    /// 21.49. Upstream:
     /// `sinh`.
     fn sinh(self: Quaternion<T>) -> Quaternion<T> {
         let (ch, sh) = QuaternionTranscendentalInternalTrait::<T>::cosh_sinh(self.w);

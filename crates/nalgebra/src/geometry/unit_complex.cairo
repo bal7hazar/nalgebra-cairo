@@ -37,15 +37,15 @@ use super::translation2::Translation2;
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod ext_benches;
-#[cfg(test)]
-mod ext_oracle;
-#[cfg(test)]
-mod ext_tests;
+mod benches_ext;
 #[cfg(test)]
 mod oracle;
 #[cfg(test)]
+mod oracle_ext;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_ext;
 
 /// Upper bound of the iterations of `UnitComplex::from_matrix_eps` when `max_iter > 0`
 /// (`max_iter = 0`, upstream's "until convergence", is the closed form). The 2D iteration
@@ -285,7 +285,8 @@ pub trait UnitComplexAngleTrait<T> {
     /// The rotation part of `m` (the rotation maximising `tr(Rᵀ m)`).
     /// - `max_iter = 0` (upstream: iterate until convergence): the LIMIT in closed form, trig-free:
     ///   `(m11 + m22, m21 - m12)` normalised (one `norm2`, two divisions; the identity when that
-    ///   pair is zero); `eps` and `guess` unused.
+    ///   pair is zero), 11 550 gas; `eps` and `guess` unused. Iterating instead costs 160 970 on
+    ///   the bench matrix (`bench_unit_complex_from_matrix__alt_iterate`).
     /// - `max_iter > 0`: upstream's 2D Müller iteration from `guess`,
     ///   `δ = (Σ_c r_c ⊥ m_c) / (|Σ_c r_c · m_c| + ε)`, `R ← R(δ) · R` until `|δ| <=
     ///   eps`. With `R = (re, im)` both sums are one fused kernel of two products on the exact `m21

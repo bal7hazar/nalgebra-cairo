@@ -1,17 +1,17 @@
 //! Gas benchmarks of the WP 8.4-P08 completion of `Quaternion` (`bench_quaternion_<op>__<variant>`,
 //! net = raw - `baseline` of the group), and the alternative implementations that lost (`alt_*`),
-//! kept as evidence together with the tests showing why (AGENTS.md rule 8; `ext_tests.cairo`).
+//! kept as evidence together with the tests showing why (AGENTS.md rule 8; `tests_ext.cairo`).
 //!
 //! The inputs are `s = 0.5 + 0.25i - 0.5j + 0.75k` and `t = -0.25 + 0.5i + 0.125j - 0.375k`.
 //! Expected values are the results of the kernels themselves, all of which are checked against
-//! upstream nalgebra in `ext_tests.cairo`.
+//! upstream nalgebra in `tests_ext.cairo`.
 
 use core::num::traits::One;
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, qt, u3t, v3t};
-use super::ext_tests::alt_ln_acos;
+use super::tests_ext::alt_ln_acos;
 use super::{Quaternion, QuaternionTrait, QuaternionTranscendentalTrait};
 
 /// `0.5 + 0.25i - 0.5j + 0.75k`.

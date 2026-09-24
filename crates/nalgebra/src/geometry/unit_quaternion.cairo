@@ -46,15 +46,15 @@ use super::translation3::Translation3;
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod ext_benches;
-#[cfg(test)]
-mod ext_oracle;
-#[cfg(test)]
-mod ext_tests;
+mod benches_ext;
 #[cfg(test)]
 mod oracle;
 #[cfg(test)]
+mod oracle_ext;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_ext;
 
 /// Panic messages of `UnitQuaternion` (stable API).
 pub mod errors {
@@ -67,7 +67,7 @@ pub mod errors {
 /// upstream's "until convergence", computes the limit in closed form instead). Measured on the
 /// oracle set (`test_from_matrix_eps_iterations_on_the_oracle_set`): from the identity, 17 of the
 /// 24 cases reach the fixed point in 21 to 57 iterations (the convergence is linear) and 7 need
-/// more than 64; the bound keeps the worst case finite (about 100 000 gas per iteration).
+/// more than 64; the bound keeps the worst case finite (about 115 000 gas per iteration).
 pub const FROM_MATRIX_MAX_ITER: usize = 64;
 
 /// Upper bound of the successive perturbations `from_matrix_eps` tries at a stationary point
@@ -508,6 +508,7 @@ pub impl UnitQuaternionImpl<
     /// `a · b < 0` (exactly antiparallel). Upstream computes `scaled_rotation_between_axis(a, b,
     /// 1)` through `acos` and `from_axis_angle`; the two agree to the oracle tolerance. Upstream:
     /// `UnitQuaternion::rotation_between_axis`.
+    #[inline(always)]
     fn rotation_between_axis(
         a: Unit<Vector3<T>>, b: Unit<Vector3<T>>,
     ) -> Option<UnitQuaternion<T>> {
@@ -711,8 +712,10 @@ pub impl UnitQuaternionImpl<
     /// `self / iso = self * iso⁻¹`, WITHOUT forming the inverse isometry: with `q = self *
     /// iso.rotation⁻¹` (one fused product with the conjugate), the rotation is `q` and the
     /// translation `q · (-iso.translation)` — one vector rotation where upstream's `self *
-    /// iso.inverse()` rotates twice (`bench_unit_quaternion_div_isometry__alt_inverse_then_mul`,
-    /// agreeing to a few ulp: `test_div_isometry_alt_inverse_then_mul_agrees`). Panics on
+    /// iso.inverse()` rotates twice: 35 620 gas against 57 790
+    /// (`bench_unit_quaternion_div_isometry__alt_inverse_then_mul`, the same rotation bit for bit
+    /// and the translation within the oracle tolerance:
+    /// `test_div_isometry_alt_inverse_then_mul_agrees`). Panics on
     /// overflow (`-MIN` of a translation component). Upstream: `Div<Isometry3> for
     /// UnitQuaternion`.
     fn div_isometry(self: UnitQuaternion<T>, iso: Isometry3<T>) -> Isometry3<T> {
@@ -736,9 +739,10 @@ pub impl UnitQuaternionImpl<
     /// `self / sim = self * sim⁻¹`, without forming the inverse: with `q = self *
     /// sim.rotation⁻¹`, the translation is `q · (-sim.translation) / sim.scaling` (one
     /// rotation, three correctly rounded divisions) and the scaling `1 / sim.scaling` (correctly
-    /// rounded, as in `Similarity3::inverse`). Panics with `Fixed: division by zero` on a zero
-    /// scaling.
-    /// Upstream: `Div<Similarity3> for UnitQuaternion`.
+    /// rounded, as in `Similarity3::inverse`): 54 890 gas against 77 460 for upstream's `self *
+    /// sim.inverse()` (`bench_unit_quaternion_div_similarity__alt_inverse_then_mul`). Panics with
+    /// `Fixed: division by zero` on a zero scaling. Upstream: `Div<Similarity3> for
+    /// UnitQuaternion`.
     fn div_similarity(self: UnitQuaternion<T>, sim: Similarity3<T>) -> Similarity3<T> {
         let iso = Self::div_isometry(self, sim.isometry);
         let v = iso.translation.vector;
@@ -764,6 +768,8 @@ pub impl UnitQuaternionImpl<
     /// rank-one projector `v vᵀ` to within `(λ₂ / λ₁)^4096` — and its column of largest
     /// diagonal is normalised. Upstream runs a symmetric eigendecomposition (at most 10 QR sweeps);
     /// there is no 4x4 eigensolver here, and the dominant eigenvector is all the mean needs.
+    /// 469 510 gas for three rotations (`bench_unit_quaternion_mean_of__squarings`), of which
+    /// about 30 000 per squaring.
     ///
     /// **Deviation:** upstream builds its result with `Quaternion::new(v[0], v[1], v[2], v[3])`
     /// from an eigenvector stored in `(i, j, k, w)` order, which permutes the components (its mean
@@ -1304,6 +1310,7 @@ pub impl UnitQuaternionAngleImpl<
     /// floors to zero with `a · b < 0`, the identity when it floors to zero with `a · b >= 0`.
     /// Upstream: `UnitQuaternion::scaled_rotation_between_axis` (which tests `|a × b|` against
     /// `default_epsilon`, here 1 ulp: the same as the exact-zero test once the norm floors).
+    #[inline(always)]
     fn scaled_rotation_between_axis(
         a: Unit<Vector3<T>>, b: Unit<Vector3<T>>, s: T,
     ) -> Option<UnitQuaternion<T>> {
@@ -1391,11 +1398,12 @@ pub impl UnitQuaternionAngleImpl<
     ///
     /// - `max_iter = 0` (upstream: iterate until convergence): the LIMIT is computed directly,
     ///   as the dominant eigenvector of Horn's 4x4 matrix `K(m)` (`qᵀ K q = tr(R(q)ᵀ m)`) by
-    ///   `MEAN_OF_SQUARINGS` normalised squarings — a fixed cost of about 400 000 gas, no loop,
+    ///   `MEAN_OF_SQUARINGS` normalised squarings — a fixed cost of 490 260 gas, no loop,
     ///   `guess` and `eps` unused. Upstream's iteration converges only LINEARLY: from the
-    ///   identity, 21 to 57 iterations of about 100 000 gas each on 17 of the 24 oracle cases,
-    ///   more than 64 on the other 7 (`test_from_matrix_eps_iterations_on_the_oracle_set`,
-    ///   `bench_unit_quaternion_from_matrix__alt_iterate`).
+    ///   identity, 21 to 57 iterations of about 115 000 gas each on 17 of the 24 oracle cases,
+    ///   more than 64 on the other 7 (`test_from_matrix_eps_iterations_on_the_oracle_set`); on
+    ///   the bench matrix the iteration costs 2 394 800 gas, 4.9x the closed form
+    ///   (`bench_unit_quaternion_from_matrix__alt_iterate`).
     /// - `max_iter > 0`: upstream's algorithm, Müller et al.'s iteration ("A Robust Method to
     ///   Extract the Rotational Part of Deformations") from `guess`:
     ///   `ω = Σ_c r_c × m_c / (|Σ_c r_c · m_c| + ε)` over the columns, `R ← exp(ω) · R`,
@@ -1404,7 +1412,8 @@ pub impl UnitQuaternionAngleImpl<
     ///   by `max(sqrt(eps), eps²)` radians about a cycling axis at a stationary point. The
     ///   rotation is carried as a unit quaternion: each iteration is one `to_rotation_matrix`, one
     ///   fused kernel per component of `ω` (six products) and for its denominator (nine), one
-    ///   `norm3`, one `sin_cos`, four divisions and one Hamilton product, about 100 000 gas.
+    ///   `norm3`, one `sin_cos`, four divisions and one Hamilton product, about 115 000 gas
+    ///   (`bench_unit_quaternion_from_matrix_eps__muller_8`: 918 740 for 8 iterations).
     ///   **Bounded:** at most `min(max_iter, FROM_MATRIX_MAX_ITER)` iterations and
     ///   `FROM_MATRIX_MAX_PERTURBATIONS` successive perturbations.
     ///
@@ -1575,8 +1584,9 @@ pub(crate) impl UnitQuaternionNeg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<UnitQua
 
 /// `a / b = a * b⁻¹`: the rotation `r` with `r * b = a`. ONE fused Hamilton product with `b`'s
 /// conjugate signs folded into the accumulation (`QuaternionInternalTrait::mul_conj`): bit for
-/// bit `a * b.inverse()`, without the three negations
-/// (`bench_unit_quaternion_div__alt_inverse_then_mul`). Upstream: `Div for UnitQuaternion`.
+/// bit `a * b.inverse()` and at the same price (12 150 gas both,
+/// `bench_unit_quaternion_div__alt_inverse_then_mul`), but a component of `b` equal to the
+/// scalar's `MIN` no longer panics on the negation. Upstream: `Div for UnitQuaternion`.
 pub impl UnitQuaternionDiv<
     T,
     impl R: Real<T>,

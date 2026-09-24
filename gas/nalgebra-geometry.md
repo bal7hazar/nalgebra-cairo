@@ -457,6 +457,237 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `struct` | 17840 | 300 | x1.00 |
 
+## nalgebra::geometry::quaternion::benches_ext
+
+### quaternion_acos
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 171060 | 153020 | x1.00 |
+
+### quaternion_acosh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 180020 | 161980 | x1.00 |
+
+### quaternion_asin
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 185230 | 167190 | x1.00 |
+
+### quaternion_asinh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 141970 | 123930 | x1.00 |
+
+### quaternion_atan
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 173060 | 155020 | x1.00 |
+
+### quaternion_atanh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 190280 | 172240 | x1.00 |
+
+### quaternion_cast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `into` | 18040 | 0 | - |
+
+### quaternion_cos
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 112390 | 94350 | x1.00 |
+
+### quaternion_cosh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 112190 | 94150 | x1.00 |
+
+### quaternion_exp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 85960 | 67920 | x1.00 |
+
+### quaternion_exp_eps
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 85960 | 67920 | x1.00 |
+
+### quaternion_from_array
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `into` | 18440 | 400 | x1.00 |
+
+### quaternion_from_polar_decomposition
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 58590 | 39950 | x1.00 |
+
+### quaternion_half
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_scale_half` | 24660 | 6620 | x1.00 |
+| `div4` | 29310 | 11270 | x1.70 |
+
+### quaternion_index
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `match` | 16540 | 0 | - |
+
+### quaternion_inner
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reduced` | 29390 | 10350 | x1.00 |
+| `alt_products` | 63040 | 44000 | x4.25 |
+
+### quaternion_is_pure
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compare` | 16940 | 300 | x1.00 |
+
+### quaternion_left_div
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 52460 | 33420 | x1.00 |
+
+### quaternion_ln
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 91810 | 73770 | x1.00 |
+| `alt_acos` | 93410 | 75370 | x1.02 |
+
+### quaternion_magnitude
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `norm4` | 18960 | 2420 | x1.00 |
+
+### quaternion_magnitude_squared
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 18720 | 2180 | x1.00 |
+
+### quaternion_one
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16540 | -500 | - |
+
+### quaternion_outer
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `cross` | 24380 | 5340 | x1.00 |
+
+### quaternion_polar_decomposition
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 69760 | 51220 | x1.00 |
+
+### quaternion_powf
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `exp_ln` | 166150 | 148110 | x1.00 |
+
+### quaternion_project
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `right_div` | 63510 | 44470 | x1.00 |
+
+### quaternion_pure
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18140 | 100 | x1.00 |
+
+### quaternion_reject
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `right_div` | 58400 | 39360 | x1.00 |
+
+### quaternion_relative_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `components` | 31110 | 13470 | x1.00 |
+
+### quaternion_right_div
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_inverse_then_mul` | 46670 | 27630 | x1.00 |
+| `fused` | 53060 | 34020 | x1.23 |
+
+### quaternion_sin
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 112090 | 94050 | x1.00 |
+
+### quaternion_sinh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 112190 | 94150 | x1.00 |
+| `alt_exp_difference` | 175180 | 157140 | x1.67 |
+
+### quaternion_sqrt
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `algebraic` | 53550 | 35510 | x1.00 |
+| `alt_powf` | 166150 | 148110 | x4.17 |
+
+### quaternion_squared
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reduced` | 27990 | 9950 | x1.00 |
+| `alt_mul` | 29590 | 11550 | x1.16 |
+
+### quaternion_tan
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 240660 | 222620 | x1.00 |
+
+### quaternion_tanh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `upstream` | 240560 | 222520 | x1.00 |
+
+### quaternion_ulps_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `components` | 24300 | 6660 | x1.00 |
+
 ## nalgebra::geometry::rotation2::benches
 
 ### rotation2_abs_diff_eq
@@ -1041,6 +1272,159 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fused` | 20900 | 3660 | x1.00 |
 
+## nalgebra::geometry::unit_complex::benches_ext
+
+### unit_complex_axis_angle
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 47240 | 30600 | x1.00 |
+
+### unit_complex_cast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `into` | 16640 | 0 | - |
+
+### unit_complex_default
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 15940 | -100 | - |
+
+### unit_complex_div
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 20900 | 3660 | x1.00 |
+
+### unit_complex_div_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `kernels` | 21300 | 3660 | x1.00 |
+
+### unit_complex_from_basis_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `first_column` | 17240 | 200 | x1.00 |
+
+### unit_complex_from_complex
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `normalize` | 25390 | 8750 | x1.00 |
+
+### unit_complex_from_complex_and_get
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `normalize` | 25990 | 8850 | x1.00 |
+
+### unit_complex_from_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 28590 | 11550 | x1.00 |
+| `alt_iterate` | 178010 | 160970 | x13.94 |
+
+### unit_complex_from_matrix_eps
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `muller_4` | 178010 | 160970 | x1.00 |
+
+### unit_complex_from_scaled_axis
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `sin_cos` | 47640 | 31200 | x1.00 |
+
+### unit_complex_into_isometry
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 17440 | -200 | - |
+
+### unit_complex_into_similarity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 18040 | -100 | - |
+
+### unit_complex_inverse_transform_unit_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `inverse_transform_vector` | 20900 | 3660 | x1.00 |
+
+### unit_complex_mul_isometry
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 26060 | 7420 | x1.00 |
+
+### unit_complex_mul_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `kernels` | 21300 | 3660 | x1.00 |
+
+### unit_complex_mul_similarity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 26860 | 7520 | x1.00 |
+
+### unit_complex_mul_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `rotate` | 22100 | 3860 | x1.00 |
+
+### unit_complex_one
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 15940 | -100 | - |
+
+### unit_complex_relative_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `components` | 28830 | 11990 | x1.00 |
+
+### unit_complex_rotation_between_axis
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `algebraic` | 33900 | 16660 | x1.00 |
+
+### unit_complex_scaled_axis
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 45570 | 29430 | x1.00 |
+
+### unit_complex_scaled_rotation_between_axis
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `atan2` | 85110 | 67470 | x1.00 |
+
+### unit_complex_transform_unit_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transform_vector` | 20900 | 3660 | x1.00 |
+
+### unit_complex_ulps_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `components` | 22820 | 5980 | x1.00 |
+
 ## nalgebra::geometry::unit_quaternion::benches
 
 ### unit_quaternion_abs_diff_eq
@@ -1192,7 +1576,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `algebraic` | 81510 | 62870 | x1.00 |
-| `alt_axis_angle` | 146520 | 127880 | x2.03 |
+| `alt_axis_angle` | 146320 | 127680 | x2.03 |
 
 ### unit_quaternion_rotation_to
 
@@ -1211,7 +1595,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `acos` | 146520 | 127880 | x1.00 |
+| `acos` | 146320 | 127680 | x1.00 |
 
 ### unit_quaternion_slerp
 
@@ -1259,4 +1643,220 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `via_matrix` | 60090 | 41750 | x1.00 |
 | `expanded` | 85770 | 67430 | x1.62 |
+
+## nalgebra::geometry::unit_quaternion::benches_ext
+
+### unit_quaternion_cast
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `into` | 18040 | 0 | - |
+
+### unit_quaternion_default
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16540 | -500 | - |
+
+### unit_quaternion_div
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_inverse_then_mul` | 31190 | 12150 | x1.00 |
+| `fused` | 31190 | 12150 | x1.00 |
+
+### unit_quaternion_div_isometry
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 56760 | 35620 | x1.00 |
+| `alt_inverse_then_mul` | 78930 | 57790 | x1.62 |
+
+### unit_quaternion_div_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `convert_then_mul_conj` | 75320 | 40330 | x1.00 |
+
+### unit_quaternion_div_similarity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `fused` | 76730 | 54890 | x1.00 |
+| `alt_inverse_then_mul` | 99300 | 77460 | x1.41 |
+
+### unit_quaternion_exp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quaternion_exp` | 85960 | 67920 | x1.00 |
+
+### unit_quaternion_face_towards
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `rotation3` | 90890 | 72250 | x1.00 |
+
+### unit_quaternion_from_basis_unchecked
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `shepperd` | 62070 | 28080 | x1.00 |
+
+### unit_quaternion_from_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `closed_form` | 509300 | 490260 | x1.00 |
+| `alt_iterate` | 2413840 | 2394800 | x4.88 |
+
+### unit_quaternion_from_matrix_eps
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `muller_8` | 937780 | 918740 | x1.00 |
+
+### unit_quaternion_from_quaternion
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `normalize` | 33360 | 15320 | x1.00 |
+
+### unit_quaternion_from_scaled_axis_eps
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `new_eps` | 68380 | 50540 | x1.00 |
+
+### unit_quaternion_into_isometry
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 19340 | -200 | - |
+
+### unit_quaternion_into_similarity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `struct` | 19940 | -100 | - |
+
+### unit_quaternion_inverse_transform_unit_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `inverse_transform_vector` | 40410 | 22070 | x1.00 |
+
+### unit_quaternion_lerp
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `quaternion_lerp` | 26860 | 7820 | x1.00 |
+
+### unit_quaternion_ln
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `scaled_axis` | 72850 | 54810 | x1.00 |
+
+### unit_quaternion_look_at_lh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `face_towards` | 91890 | 73250 | x1.00 |
+
+### unit_quaternion_look_at_rh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `face_towards` | 92490 | 73850 | x1.00 |
+
+### unit_quaternion_mean_of
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `squarings` | 489650 | 469510 | x1.00 |
+
+### unit_quaternion_mul_isometry
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 55560 | 34420 | x1.00 |
+
+### unit_quaternion_mul_rotation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `convert_then_mul` | 74720 | 39730 | x1.00 |
+
+### unit_quaternion_mul_similarity
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `compose` | 56360 | 34520 | x1.00 |
+
+### unit_quaternion_mul_translation
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `rotate` | 43110 | 22770 | x1.00 |
+
+### unit_quaternion_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `from_scaled_axis` | 67810 | 49970 | x1.00 |
+
+### unit_quaternion_new_eps
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `threshold` | 68380 | 50540 | x1.00 |
+
+### unit_quaternion_new_observer_frames
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `face_towards` | 90890 | 72250 | x1.00 |
+
+### unit_quaternion_one
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `const` | 16540 | -500 | - |
+
+### unit_quaternion_relative_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `components` | 24340 | 6700 | x1.00 |
+
+### unit_quaternion_rotation_between_axis
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `algebraic` | 42080 | 23440 | x1.00 |
+
+### unit_quaternion_scaled_rotation_between_axis
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `acos` | 109830 | 90790 | x1.00 |
+
+### unit_quaternion_to_euler_angles
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `euler_angles` | 119520 | 101980 | x1.00 |
+
+### unit_quaternion_transform_unit_vector
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `transform_vector` | 40410 | 22070 | x1.00 |
+
+### unit_quaternion_ulps_eq
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `components` | 22860 | 5220 | x1.00 |
 

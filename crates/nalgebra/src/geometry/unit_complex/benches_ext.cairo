@@ -1,12 +1,12 @@
 //! Gas benchmarks of the WP 8.4-P08 completion of `UnitComplex`
 //! (`bench_unit_complex_<op>__<variant>`, net = raw - `baseline` of the group), and the
 //! alternative implementations that lost (`alt_*` variants), kept as evidence together with the
-//! tests showing why (AGENTS.md rule 8; `ext_tests.cairo`).
+//! tests showing why (AGENTS.md rule 8; `tests_ext.cairo`).
 //!
 //! The inputs are `c = new(0.4 rad)` and `d = new(-1/6 rad)` of `benches.cairo`, the vector
 //! `(1.5, -2.25)`, the isometry `(v, d)`, the similarity `((v, d), 2)` and a well-conditioned
 //! matrix. Expected values are the results of the kernels themselves, all of which are checked
-//! against upstream nalgebra in `ext_tests.cairo`.
+//! against upstream nalgebra in `tests_ext.cairo`.
 
 use core::num::traits::One;
 use fixed::Fixed;

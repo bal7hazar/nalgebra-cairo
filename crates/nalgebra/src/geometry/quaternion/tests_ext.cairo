@@ -4,12 +4,12 @@
 //! exact cases, identities, panics, and the oracle vectors of `tools/oracle` (upstream nalgebra
 //! 0.35 on the same raw inputs, tolerance in ulp).
 //!
-//! `ext_oracle.cairo` is emitted from `tools/oracle` (committed vectors, at most 8 cases per
+//! `oracle_ext.cairo` is emitted from `tools/oracle` (committed vectors, at most 8 cases per
 //! distribution):
 //!
 //! ```text
 //! cargo run --release -- emit-cairo quaternion_functions --from vectors --max-per-dist 8 \
-//!     --out crates/nalgebra/src/geometry/quaternion/ext_oracle.cairo
+//!     --out crates/nalgebra/src/geometry/quaternion/oracle_ext.cairo
 //! ```
 //!
 //! Every oracle test checks EVERY case and prints the ones that leave the tolerance (with the
@@ -24,7 +24,7 @@ use crate::base::matrix_test_utils::{
 use crate::base::unit::Unit;
 use crate::base::vector3::Vector3;
 use crate::geometry::quaternion::QuaternionInternalTrait;
-use super::{Quaternion, QuaternionTrait, QuaternionTranscendentalTrait, ext_oracle};
+use super::{Quaternion, QuaternionTrait, QuaternionTranscendentalTrait, oracle_ext};
 
 const HALF_RAW: i64 = 0x80000000;
 const QUARTER_RAW: i64 = 0x40000000;
@@ -64,7 +64,7 @@ fn check_q(
 
 #[test]
 fn test_exp_oracle() {
-    let mut cases = ext_oracle::quaternion_exp_cases();
+    let mut cases = oracle_ext::quaternion_exp_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -77,7 +77,7 @@ fn test_exp_oracle() {
 
 #[test]
 fn test_ln_oracle() {
-    let mut cases = ext_oracle::quaternion_ln_cases();
+    let mut cases = oracle_ext::quaternion_ln_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -90,7 +90,7 @@ fn test_ln_oracle() {
 
 #[test]
 fn test_powf_oracle() {
-    let mut cases = ext_oracle::quaternion_powf_cases();
+    let mut cases = oracle_ext::quaternion_powf_cases();
     let mut worst = 0;
     let mut index = 0;
     while let Some(case) = cases.pop_front() {
@@ -104,7 +104,7 @@ fn test_powf_oracle() {
 
 #[test]
 fn test_sqrt_oracle() {
-    let mut cases = ext_oracle::quaternion_sqrt_cases();
+    let mut cases = oracle_ext::quaternion_sqrt_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -117,7 +117,7 @@ fn test_sqrt_oracle() {
 
 #[test]
 fn test_squared_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::quaternion_squared_cases();
+    let mut cases = oracle_ext::quaternion_squared_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -130,7 +130,7 @@ fn test_squared_oracle_is_bit_exact() {
 
 #[test]
 fn test_half_oracle() {
-    let mut cases = ext_oracle::quaternion_half_cases();
+    let mut cases = oracle_ext::quaternion_half_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -143,7 +143,7 @@ fn test_half_oracle() {
 
 #[test]
 fn test_inner_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::quaternion_inner_cases();
+    let mut cases = oracle_ext::quaternion_inner_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -156,7 +156,7 @@ fn test_inner_oracle_is_bit_exact() {
 
 #[test]
 fn test_outer_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::quaternion_outer_cases();
+    let mut cases = oracle_ext::quaternion_outer_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -169,7 +169,7 @@ fn test_outer_oracle_is_bit_exact() {
 
 #[test]
 fn test_mul_conj_oracle_is_bit_exact() {
-    let mut cases = ext_oracle::quaternion_mul_conj_cases();
+    let mut cases = oracle_ext::quaternion_mul_conj_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -182,7 +182,7 @@ fn test_mul_conj_oracle_is_bit_exact() {
 
 #[test]
 fn test_right_div_oracle() {
-    let mut cases = ext_oracle::quaternion_right_div_cases();
+    let mut cases = oracle_ext::quaternion_right_div_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -195,7 +195,7 @@ fn test_right_div_oracle() {
 
 #[test]
 fn test_left_div_oracle() {
-    let mut cases = ext_oracle::quaternion_left_div_cases();
+    let mut cases = oracle_ext::quaternion_left_div_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -208,7 +208,7 @@ fn test_left_div_oracle() {
 
 #[test]
 fn test_project_oracle() {
-    let mut cases = ext_oracle::quaternion_project_cases();
+    let mut cases = oracle_ext::quaternion_project_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -221,7 +221,7 @@ fn test_project_oracle() {
 
 #[test]
 fn test_reject_oracle() {
-    let mut cases = ext_oracle::quaternion_reject_cases();
+    let mut cases = oracle_ext::quaternion_reject_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, b, e, tol) = *case;
@@ -234,7 +234,7 @@ fn test_reject_oracle() {
 
 #[test]
 fn test_polar_decomposition_oracle() {
-    let mut cases = ext_oracle::quaternion_polar_decomposition_cases();
+    let mut cases = oracle_ext::quaternion_polar_decomposition_cases();
     let mut worst = 0;
     let mut index = 0;
     while let Some(case) = cases.pop_front() {
@@ -250,7 +250,7 @@ fn test_polar_decomposition_oracle() {
 
 #[test]
 fn test_from_polar_decomposition_oracle() {
-    let mut cases = ext_oracle::quaternion_from_polar_decomposition_cases();
+    let mut cases = oracle_ext::quaternion_from_polar_decomposition_cases();
     let mut worst = 0;
     let mut index = 0;
     while let Some(case) = cases.pop_front() {
@@ -267,7 +267,7 @@ fn test_from_polar_decomposition_oracle() {
 
 #[test]
 fn test_cos_oracle() {
-    let mut cases = ext_oracle::quaternion_cos_cases();
+    let mut cases = oracle_ext::quaternion_cos_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -280,7 +280,7 @@ fn test_cos_oracle() {
 
 #[test]
 fn test_sin_oracle() {
-    let mut cases = ext_oracle::quaternion_sin_cases();
+    let mut cases = oracle_ext::quaternion_sin_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -293,7 +293,7 @@ fn test_sin_oracle() {
 
 #[test]
 fn test_tan_oracle() {
-    let mut cases = ext_oracle::quaternion_tan_cases();
+    let mut cases = oracle_ext::quaternion_tan_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -306,7 +306,7 @@ fn test_tan_oracle() {
 
 #[test]
 fn test_sinh_oracle() {
-    let mut cases = ext_oracle::quaternion_sinh_cases();
+    let mut cases = oracle_ext::quaternion_sinh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -319,7 +319,7 @@ fn test_sinh_oracle() {
 
 #[test]
 fn test_cosh_oracle() {
-    let mut cases = ext_oracle::quaternion_cosh_cases();
+    let mut cases = oracle_ext::quaternion_cosh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -332,7 +332,7 @@ fn test_cosh_oracle() {
 
 #[test]
 fn test_tanh_oracle() {
-    let mut cases = ext_oracle::quaternion_tanh_cases();
+    let mut cases = oracle_ext::quaternion_tanh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -345,7 +345,7 @@ fn test_tanh_oracle() {
 
 #[test]
 fn test_acos_oracle() {
-    let mut cases = ext_oracle::quaternion_acos_cases();
+    let mut cases = oracle_ext::quaternion_acos_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -358,7 +358,7 @@ fn test_acos_oracle() {
 
 #[test]
 fn test_asin_oracle() {
-    let mut cases = ext_oracle::quaternion_asin_cases();
+    let mut cases = oracle_ext::quaternion_asin_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -371,7 +371,7 @@ fn test_asin_oracle() {
 
 #[test]
 fn test_atan_oracle() {
-    let mut cases = ext_oracle::quaternion_atan_cases();
+    let mut cases = oracle_ext::quaternion_atan_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -384,7 +384,7 @@ fn test_atan_oracle() {
 
 #[test]
 fn test_asinh_oracle() {
-    let mut cases = ext_oracle::quaternion_asinh_cases();
+    let mut cases = oracle_ext::quaternion_asinh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -397,7 +397,7 @@ fn test_asinh_oracle() {
 
 #[test]
 fn test_acosh_oracle() {
-    let mut cases = ext_oracle::quaternion_acosh_cases();
+    let mut cases = oracle_ext::quaternion_acosh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -410,7 +410,7 @@ fn test_acosh_oracle() {
 
 #[test]
 fn test_atanh_oracle() {
-    let mut cases = ext_oracle::quaternion_atanh_cases();
+    let mut cases = oracle_ext::quaternion_atanh_cases();
     let (mut worst, mut n) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -449,7 +449,7 @@ fn test_squared_matches_the_hamilton_product() {
     assert!(s().squared() == s() * s());
     // (1 + 2i - 3j + 4k)² = (1 - 29, 4i - 6j + 8k).
     assert!(a().squared() == qi(-28, 4, -6, 8));
-    let mut cases = ext_oracle::quaternion_sqrt_cases();
+    let mut cases = oracle_ext::quaternion_sqrt_cases();
     while let Some(case) = cases.pop_front() {
         let (q, _, _) = *case;
         if max_ulp_diff_q(qt(q), Zero::zero()) < 0x100000000000 {
@@ -526,7 +526,7 @@ fn test_sqrt_exact_cases() {
 /// `sqrt(q)² = q` on the oracle inputs, in both branches (`w >= 0` and `w < 0`).
 #[test]
 fn test_sqrt_squares_back() {
-    let mut cases = ext_oracle::quaternion_sqrt_cases();
+    let mut cases = oracle_ext::quaternion_sqrt_cases();
     let mut n: usize = 0;
     while let Some(case) = cases.pop_front() {
         let (q, _, _) = *case;
@@ -542,7 +542,7 @@ fn test_sqrt_squares_back() {
 /// tolerance of the oracle, at nine times the cost (`bench_quaternion_sqrt__alt_powf`).
 #[test]
 fn test_sqrt_alt_powf_agrees() {
-    let mut cases = ext_oracle::quaternion_sqrt_cases();
+    let mut cases = oracle_ext::quaternion_sqrt_cases();
     let mut n: usize = 0;
     while let Some(case) = cases.pop_front() {
         let (q, e, tol) = *case;
@@ -770,25 +770,25 @@ fn test_from_array_is_the_storage_order() {
     assert!(x == a());
 }
 
-// --- the losers of `ext_benches.cairo`
+// --- the losers of `benches_ext.cairo`
 
 /// Upstream's `(a * b + b * a) / 2` rounds two Hamilton products and halves: within 1 ulp of the
 /// reduced form, for twice the products.
 #[test]
 fn test_inner_alt_products_agrees() {
     let t = qt((-0x40000000, 0x80000000, 0x20000000, -0x60000000));
-    assert!(super::ext_benches::alt_inner_products(s(), t).abs_diff_eq(s().inner(t), 1));
-    assert!(super::ext_benches::alt_inner_products(a(), b()) == a().inner(b()));
+    assert!(super::benches_ext::alt_inner_products(s(), t).abs_diff_eq(s().inner(t), 1));
+    assert!(super::benches_ext::alt_inner_products(a(), b()) == a().inner(b()));
 }
 
 /// Upstream's `(exp(q) - exp(-q)) / 2` agrees with the closed form to a few ulp.
 #[test]
 fn test_sinh_alt_exp_difference_agrees() {
-    assert!(super::ext_benches::alt_sinh_exp_difference(s()).abs_diff_eq(s().sinh(), 8));
-    let mut cases = ext_oracle::quaternion_sinh_cases();
+    assert!(super::benches_ext::alt_sinh_exp_difference(s()).abs_diff_eq(s().sinh(), 8));
+    let mut cases = oracle_ext::quaternion_sinh_cases();
     while let Some(case) = cases.pop_front() {
         let (q, _, tol) = *case;
-        let alt = super::ext_benches::alt_sinh_exp_difference(qt(q));
+        let alt = super::benches_ext::alt_sinh_exp_difference(qt(q));
         assert!(alt.abs_diff_eq(qt(q).sinh(), tol));
     }
 }
@@ -800,4 +800,23 @@ fn test_right_div_alt_inverse_then_mul_agrees() {
     let t = qt((-0x40000000, 0x80000000, 0x20000000, -0x60000000));
     let alt = s() * t.try_inverse().unwrap();
     assert!(alt.abs_diff_eq(s().right_div(t).unwrap(), 4));
+}
+
+/// Why `right_div` keeps the fused form although upstream's `a * b⁻¹` is cheaper on the bench
+/// inputs (27 630 against 34 020 gas): the rounded inverse carries half an ulp per component,
+/// which the product then multiplies by `|a|`. With `b = 1 + i + j` (`|b|² = 3` exact, `b⁻¹ =
+/// (1 - i - j) / 3` not representable) and `a` of norm ~2 300, `3 · (a / b)` must be the integer
+/// quaternion `a · conj(b)`: the fused form is within 2 ulp of it, the loser thousands of ulp.
+#[test]
+fn test_right_div_alt_inverse_then_mul_loses_bits_on_large_quotients() {
+    let x = qi(1000, 2000, -500, 300);
+    let y = qi(1, 1, 1, 0);
+    let exact = x * y.conjugate();
+    let fused = x.right_div(y).unwrap().scale(int(3));
+    let alt = (x * y.try_inverse().unwrap()).scale(int(3));
+    let fused_err = max_ulp_diff_q(fused, exact);
+    let alt_err = max_ulp_diff_q(alt, exact);
+    println!("right_div: fused {fused_err} ulp, inverse then mul {alt_err} ulp");
+    assert!(fused_err <= 2);
+    assert!(alt_err > 1000);
 }
