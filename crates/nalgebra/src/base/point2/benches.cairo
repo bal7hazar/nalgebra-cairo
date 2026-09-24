@@ -7,11 +7,10 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
-use crate::base::matrix_test_utils::{fx, p2, p3, v2, v3};
-use crate::base::point3::Point3;
+use crate::base::matrix_test_utils::{fx, p2, v2, v3};
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
-use super::{Point2, Point2Trait};
+use super::{Point2, Point2InternalTrait, Point2Trait};
 
 // --- alternative implementations (losers)
 
@@ -196,17 +195,6 @@ fn bench_point2_from__vector() {
 
 #[test]
 #[inline(never)]
-fn bench_point2_from__tuple() {
-    let _v: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
-    let t: (Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000)));
-    let _arr: [Fixed; 2] = black_box([fx(0x180000000), fx(-0x240000000)]);
-    let e: Point2<Fixed> = black_box(p2(0x180000000, -0x240000000));
-    let res: Point2<Fixed> = t.into();
-    assert!(res == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_point2_from__array() {
     let _v: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let _t: (Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000)));
@@ -251,39 +239,12 @@ fn bench_point2_into__baseline() {
 
 #[test]
 #[inline(never)]
-fn bench_point2_into__tuple() {
-    let p: Point2<Fixed> = black_box(p2(0x180000000, -0x240000000));
-    let e: Fixed = black_box(fx(0x180000000));
-    let (x, _): (Fixed, Fixed) = p.into();
-    assert!(x == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_point2_into__array() {
     let p: Point2<Fixed> = black_box(p2(0x180000000, -0x240000000));
     let e: Fixed = black_box(fx(0x180000000));
     let r: [Fixed; 2] = p.into();
     let [x, _] = r;
     assert!(x == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_point2_push__baseline() {
-    let _p: Point2<Fixed> = black_box(p2(0x180000000, -0x240000000));
-    let _z: Fixed = black_box(fx(0x3c0000000));
-    let e: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
-    assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_point2_push__push() {
-    let p: Point2<Fixed> = black_box(p2(0x180000000, -0x240000000));
-    let z: Fixed = black_box(fx(0x3c0000000));
-    let e: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
-    assert!(p.push(z) == e);
 }
 
 #[test]

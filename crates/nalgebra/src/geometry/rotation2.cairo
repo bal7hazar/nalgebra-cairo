@@ -87,9 +87,6 @@ pub trait Rotation2Trait<T> {
     /// 4 000 gas: the matrix stores `-sin θ` where the complex negates inside the kernel. Panics
     /// on overflow. Upstream: `transform_vector` (`self * v`).
     fn transform_vector(self: Rotation2<T>, v: Vector2<T>) -> Vector2<T>;
-    /// Alias of `transform_vector` (`self * v`), named like the heterogeneous products of the
-    /// matrix types. Upstream: `Mul<Vector2>`.
-    fn mul_vec(self: Rotation2<T>, v: Vector2<T>) -> Vector2<T>;
     /// `self * p`: `p` rotated around the origin by `θ`. Upstream: `transform_point`.
     fn transform_point(self: Rotation2<T>, p: Point2<T>) -> Point2<T>;
     /// `Rᵀ v`: `v` rotated by `-θ`, two fused kernels. Never forms the inverse rotation.
@@ -100,15 +97,11 @@ pub trait Rotation2Trait<T> {
     /// The same rotation as a 3x3 homogeneous matrix (the rotation block, then `(0, 0, 1)`).
     /// Exact. Upstream: `to_homogeneous`.
     fn to_homogeneous(self: Rotation2<T>) -> Matrix3<T>;
-    /// The same rotation as a unit complex number: the first column of the matrix. Exact.
-    /// Upstream: `UnitComplex::from_rotation_matrix` (there is no `Rotation2::to_unit_complex`;
-    /// upstream goes through `From`, which is also available here as `r.into()`).
-    fn to_unit_complex(self: Rotation2<T>) -> UnitComplex<T>;
     /// Renormalizes exactly: normalizes the first column (one `norm2` and two exactly floored
     /// divisions), then rebuilds the matrix from it, so `Rᵀ R = I` within a few ulp again.
     /// Panics with `Fixed: division by zero` when that column is zero. Upstream:
     /// `Rotation2::renormalize` (which does the same through `UnitComplex`, in place).
-    fn renormalize(self: Rotation2<T>) -> Rotation2<T>;
+    fn renormalize(ref self: Rotation2<T>);
     /// `true` when every component is within `ulps` smallest units (raw units for fixed point) of
     /// the matching component of `other`; cannot overflow. Upstream:
     /// `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp instead of a float
@@ -215,14 +208,6 @@ pub impl Rotation2Impl<
     }
 
     #[inline(always)]
-    fn mul_vec(self: Rotation2<T>, v: Vector2<T>) -> Vector2<T> {
-        Vector2 {
-            x: R::sum_prod2(self.matrix.m11, v.x, self.matrix.m12, v.y),
-            y: R::sum_prod2(self.matrix.m21, v.x, self.matrix.m22, v.y),
-        }
-    }
-
-    #[inline(always)]
     fn transform_point(self: Rotation2<T>, p: Point2<T>) -> Point2<T> {
         Point2 {
             x: R::sum_prod2(self.matrix.m11, p.x, self.matrix.m12, p.y),
@@ -262,15 +247,10 @@ pub impl Rotation2Impl<
     }
 
     #[inline(always)]
-    fn to_unit_complex(self: Rotation2<T>) -> UnitComplex<T> {
-        UnitComplex { re: self.matrix.m11, im: self.matrix.m21 }
-    }
-
-    #[inline(always)]
-    fn renormalize(self: Rotation2<T>) -> Rotation2<T> {
+    fn renormalize(ref self: Rotation2<T>) {
         let n = R::norm2(self.matrix.m11, self.matrix.m21);
         let (re, im) = (R::div(self.matrix.m11, n), R::div(self.matrix.m21, n));
-        Rotation2 { matrix: Matrix2 { m11: re, m21: im, m12: -im, m22: re } }
+        self = Rotation2 { matrix: Matrix2 { m11: re, m21: im, m12: -im, m22: re } };
     }
 
     #[inline(always)]
@@ -279,6 +259,21 @@ pub impl Rotation2Impl<
             && R::abs_diff_eq(self.matrix.m21, other.matrix.m21, ulps)
             && R::abs_diff_eq(self.matrix.m12, other.matrix.m12, ulps)
             && R::abs_diff_eq(self.matrix.m22, other.matrix.m22, ulps)
+    }
+}
+
+/// Crate-internal by-value forms of the in-place `renormalize` (WP 8.0: the
+/// public methods are upstream's `&mut self` ones), for the tests and the value-style call sites.
+#[generate_trait]
+pub(crate) impl Rotation2InternalImpl<
+    T, impl R: Real<T>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
+> of Rotation2InternalTrait<T> {
+    /// `self` renormalized exactly (`Rotation2Trait::renormalize`), by value.
+    #[inline(always)]
+    fn renormalized(self: Rotation2<T>) -> Rotation2<T> {
+        let mut r = self;
+        Rotation2Trait::renormalize(ref r);
+        r
     }
 }
 

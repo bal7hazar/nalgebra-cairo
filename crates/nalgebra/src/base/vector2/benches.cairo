@@ -229,15 +229,6 @@ fn bench_vector2_from__baseline() {
 
 #[test]
 #[inline(never)]
-fn bench_vector2_from__tuple() {
-    let t: (Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000)));
-    let _r: [Fixed; 2] = black_box([fx(0x180000000), fx(-0x240000000)]);
-    let e: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
-    assert!(t.into() == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_vector2_from__array() {
     let _t: (Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000)));
     let r: [Fixed; 2] = black_box([fx(0x180000000), fx(-0x240000000)]);
@@ -251,15 +242,6 @@ fn bench_vector2_into__baseline() {
     let _a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let e: Fixed = black_box(fx(0x180000000));
     assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_vector2_into__tuple() {
-    let a: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
-    let e: Fixed = black_box(fx(0x180000000));
-    let (x, _): (Fixed, Fixed) = a.into();
-    assert!(x == e);
 }
 
 #[test]

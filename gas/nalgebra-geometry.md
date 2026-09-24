@@ -40,12 +40,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `wrap` | 18640 | 400 | x1.00 |
 
-### isometry2_from_rotation
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `pure` | 17440 | -200 | - |
-
 ### isometry2_from_translation
 
 | variant | raw | net | vs best |
@@ -205,12 +199,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `wrap` | 21040 | 700 | x1.00 |
-
-### isometry3_from_rotation
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `pure` | 19340 | -200 | - |
 
 ### isometry3_from_translation
 
@@ -600,8 +588,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_unit_complex` | 25660 | 8020 | x1.00 |
-| `matrix` | 25660 | 8020 | x1.00 |
+| `alt_unit_complex` | 21300 | 3660 | x1.00 |
+| `matrix` | 21300 | 3660 | x1.00 |
 
 ## nalgebra::geometry::rotation3::benches
 
@@ -750,13 +738,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 ## nalgebra::geometry::similarity2::benches
 
-### similarity2_inv_mul
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `direct` | 48600 | 29860 | x1.00 |
-| `alt_inverse_then_mul` | 53040 | 34300 | x1.15 |
-
 ### similarity2_inverse_transform_point
 
 | variant | raw | net | vs best |
@@ -785,13 +766,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `scale_after_rotate` | 24860 | 7020 | x1.00 |
 
 ## nalgebra::geometry::similarity3::benches
-
-### similarity3_inv_mul
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `direct` | 86020 | 65180 | x1.00 |
-| `alt_inverse_then_mul` | 119870 | 99030 | x1.52 |
 
 ### similarity3_inverse_transform_point
 
@@ -951,14 +925,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fused_atan2` | 49730 | 32990 | x1.00 |
 
-### unit_complex_append_axisangle_linearized
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `alt_renormalize_fast` | 28020 | 10980 | x1.00 |
-| `renormalize` | 29580 | 12540 | x1.14 |
-| `alt_sin_cos` | 51800 | 34760 | x3.17 |
-
 ### unit_complex_from_rotation_matrix
 
 | variant | raw | net | vs best |
@@ -1073,7 +1039,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 25260 | 8020 | x1.00 |
+| `fused` | 20900 | 3660 | x1.00 |
 
 ## nalgebra::geometry::unit_quaternion::benches
 

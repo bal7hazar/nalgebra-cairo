@@ -6,7 +6,7 @@
 //! alternatives (Householder, classical Gram-Schmidt, completed basis) lives there.
 
 use simba::scalar::Real;
-use crate::base::matrix4::{Matrix4, Matrix4Trait};
+use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
 use crate::base::vector4::Vector4;
 
 /// The QR factorisation of a `Matrix4<T>`: `A = Q * R`.
@@ -14,12 +14,21 @@ use crate::base::vector4::Vector4;
 /// `q` is orthonormal and `r` is upper triangular with `r_ii >= 0` and an exactly zero strict
 /// lower triangle. Built by `Qr4Trait::new` or `Matrix4QrTrait::qr`.
 /// Upstream: `nalgebra::linalg::QR`.
-#[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Qr4<T> {
     /// The orthonormal factor `Q` (orthonormal iff `is_invertible`, see the module doc).
     pub q: Matrix4<T>,
     /// The upper triangular factor `R`, `r_ii >= 0`.
     pub r: Matrix4<T>,
+}
+
+/// Test-only field-wise equality (upstream `Qr4` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Qr4PartialEq<T, +PartialEq<T>> of PartialEq<Qr4<T>> {
+    fn eq(lhs: @Qr4<T>, rhs: @Qr4<T>) -> bool {
+        lhs.q == rhs.q && lhs.r == rhs.r
+    }
 }
 
 /// Methods of `Qr4<T>` for any `Real` scalar.
@@ -61,25 +70,25 @@ pub impl Qr4Impl<
             matrix.column1(), matrix.column2(), matrix.column3(), matrix.column4(),
         );
         let r11 = R::norm4(a1.x, a1.y, a1.z, a1.w);
-        let q1 = Self::unit(a1, r11);
+        let q1 = Qr4InternalTrait::unit(a1, r11);
         let r12 = R::sum_prod4(q1.x, a2.x, q1.y, a2.y, q1.z, a2.z, q1.w, a2.w);
         let r13 = R::sum_prod4(q1.x, a3.x, q1.y, a3.y, q1.z, a3.z, q1.w, a3.w);
         let r14 = R::sum_prod4(q1.x, a4.x, q1.y, a4.y, q1.z, a4.z, q1.w, a4.w);
-        let b2 = Self::project_out(a2, q1, r12);
-        let b3 = Self::project_out(a3, q1, r13);
-        let b4 = Self::project_out(a4, q1, r14);
+        let b2 = Qr4InternalTrait::project_out(a2, q1, r12);
+        let b3 = Qr4InternalTrait::project_out(a3, q1, r13);
+        let b4 = Qr4InternalTrait::project_out(a4, q1, r14);
         let r22 = R::norm4(b2.x, b2.y, b2.z, b2.w);
-        let q2 = Self::unit(b2, r22);
+        let q2 = Qr4InternalTrait::unit(b2, r22);
         let r23 = R::sum_prod4(q2.x, b3.x, q2.y, b3.y, q2.z, b3.z, q2.w, b3.w);
         let r24 = R::sum_prod4(q2.x, b4.x, q2.y, b4.y, q2.z, b4.z, q2.w, b4.w);
-        let c3 = Self::project_out(b3, q2, r23);
-        let c4 = Self::project_out(b4, q2, r24);
+        let c3 = Qr4InternalTrait::project_out(b3, q2, r23);
+        let c4 = Qr4InternalTrait::project_out(b4, q2, r24);
         let r33 = R::norm4(c3.x, c3.y, c3.z, c3.w);
-        let q3 = Self::unit(c3, r33);
+        let q3 = Qr4InternalTrait::unit(c3, r33);
         let r34 = R::sum_prod4(q3.x, c4.x, q3.y, c4.y, q3.z, c4.z, q3.w, c4.w);
-        let d4 = Self::project_out(c4, q3, r34);
+        let d4 = Qr4InternalTrait::project_out(c4, q3, r34);
         let r44 = R::norm4(d4.x, d4.y, d4.z, d4.w);
-        let q4 = Self::unit(d4, r44);
+        let q4 = Qr4InternalTrait::unit(d4, r44);
         Qr4 {
             q: Matrix4Trait::from_columns(q1, q2, q3, q4),
             r: Matrix4Trait::new(
@@ -100,31 +109,6 @@ pub impl Qr4Impl<
                 R::ZERO,
                 r44,
             ),
-        }
-    }
-
-    /// `v / n`, or the zero vector when `n` is exactly zero (the rank-deficient fallback of the
-    /// module doc). One correctly rounded division per component. No upstream equivalent.
-    #[inline(always)]
-    fn unit(v: Vector4<T>, n: T) -> Vector4<T> {
-        if n == R::ZERO {
-            Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO }
-        } else {
-            {
-                let (x, y, z, w) = R::div4(v.x, v.y, v.z, v.w, n);
-                Vector4 { x, y, z, w }
-            }
-        }
-    }
-
-    /// `v - c * q`, one fused `mul_add` per component (one rounding each). No upstream equivalent.
-    #[inline(always)]
-    fn project_out(v: Vector4<T>, q: Vector4<T>, c: T) -> Vector4<T> {
-        Vector4 {
-            x: R::mul_add(-c, q.x, v.x),
-            y: R::mul_add(-c, q.y, v.y),
-            z: R::mul_add(-c, q.z, v.z),
-            w: R::mul_add(-c, q.w, v.w),
         }
     }
 
@@ -165,7 +149,7 @@ pub impl Qr4Impl<
         if !Self::is_invertible(self) {
             return None;
         }
-        Some(Self::back_substitute(self, self.q.tr_mul_vec(b)))
+        Some(Qr4InternalTrait::back_substitute(self, self.q.tr_mul_vec(b)))
     }
 
     /// The inverse, or `None` when a diagonal entry of `R` is exactly zero (`is_invertible`).
@@ -176,14 +160,56 @@ pub impl Qr4Impl<
         }
         Some(
             Matrix4Trait::from_columns(
-                Self::back_substitute(self, self.q.row1()),
-                Self::back_substitute(self, self.q.row2()),
-                Self::back_substitute(self, self.q.row3()),
-                Self::back_substitute(self, self.q.row4()),
+                Qr4InternalTrait::back_substitute(self, self.q.row1()),
+                Qr4InternalTrait::back_substitute(self, self.q.row2()),
+                Qr4InternalTrait::back_substitute(self, self.q.row3()),
+                Qr4InternalTrait::back_substitute(self, self.q.row4()),
             ),
         )
     }
+}
 
+/// Crate-internal kernels of `Qr4<T>` (WP 8.0: the public API is strictly upstream's). The
+/// Gram-Schmidt steps of `new` (`unit`, `project_out`), the back substitution shared by `solve` and
+/// `try_inverse`, and `determinant` (upstream's `QR::determinant` is commented out), which the
+/// tests use to check the factors.
+#[generate_trait]
+pub(crate) impl Qr4InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Qr4InternalTrait<T> {
+    /// `v / n`, or the zero vector when `n` is exactly zero (the rank-deficient fallback of the
+    /// module doc). One correctly rounded division per component. No upstream equivalent.
+    #[inline(always)]
+    fn unit(v: Vector4<T>, n: T) -> Vector4<T> {
+        if n == R::ZERO {
+            Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO }
+        } else {
+            {
+                let (x, y, z, w) = R::div4(v.x, v.y, v.z, v.w, n);
+                Vector4 { x, y, z, w }
+            }
+        }
+    }
+    /// `v - c * q`, one fused `mul_add` per component (one rounding each). No upstream equivalent.
+    #[inline(always)]
+    fn project_out(v: Vector4<T>, q: Vector4<T>, c: T) -> Vector4<T> {
+        Vector4 {
+            x: R::mul_add(-c, q.x, v.x),
+            y: R::mul_add(-c, q.y, v.y),
+            z: R::mul_add(-c, q.z, v.z),
+            w: R::mul_add(-c, q.w, v.w),
+        }
+    }
     /// `R^-1 * y` by back substitution, the shared body of `solve` and `try_inverse`. The caller
     /// guarantees a nonzero diagonal. Two roundings per component: the numerator, accumulated
     /// exactly in `Real::Wide`, then the correctly rounded division. No upstream equivalent.
@@ -197,7 +223,6 @@ pub impl Qr4Impl<
         let x1 = R::div(R::wide_rescale(R::wide_sub_prod(w, self.r.m14, x4)), self.r.m11);
         Vector4 { x: x1, y: x2, z: x3, w: x4 }
     }
-
     /// The determinant: `det(Q) * r11 * r22 * r33 * r44`, see `Qr3::determinant` for the sign
     /// convention and the rounding of the product chain. Upstream: `QR::determinant`.
     ///
@@ -244,14 +269,14 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix4::{Matrix4, Matrix4Trait};
+    use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
     use crate::base::matrix_test_utils::{
         amax_m4, excess, int, m4, max_abs_m4, max_abs_v4, max_ulp_diff4, max_ulp_diff_v4,
         oracle_tol, orthonormality_error_m4, v4t,
     };
     use crate::base::vector4::{Vector4, Vector4Trait};
     use crate::linalg::qr::oracle_qr4 as oracle;
-    use super::{Matrix4QrTrait, Qr4, Qr4Trait};
+    use super::{Matrix4QrTrait, Qr4, Qr4InternalTrait, Qr4Trait};
 
     /// An oracle `unit` 4x4 case: the benchmark input.
     fn a_bench() -> Matrix4<Fixed> {

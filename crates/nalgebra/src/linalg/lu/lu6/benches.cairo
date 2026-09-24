@@ -20,7 +20,7 @@ use crate::base::matrix_test_utils::{fx, int, m6, v6t};
 use crate::base::vector3::Vector3;
 use crate::base::vector6::Vector6;
 use crate::linalg::lu::Perm6;
-use super::{Lu6, Lu6Trait, Matrix6LuTrait};
+use super::{Lu6, Lu6InternalTrait, Lu6Trait, Matrix6LuTrait};
 
 /// The oracle's first `unit` 6x6 case whose factorisation actually swaps rows (all the benchmarks
 /// share it, so their inputs exercise the permutation).
@@ -1800,15 +1800,4 @@ fn bench_matrix6_lu__try_inverse() {
         ),
     );
     assert!(a.try_inverse() == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_matrix6_lu__solve() {
-    let a = black_box(a_bench());
-    let b = black_box(b_bench());
-    let e = black_box(
-        Some(v6t((-11208158820, -7248812512, 3383102671, 4212967583, 4206763124, -9649832811))),
-    );
-    assert!(a.solve(b) == e);
 }

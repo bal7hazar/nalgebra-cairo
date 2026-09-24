@@ -5,14 +5,16 @@
 //! position, collider placement and contact frame is an isometry (docs/research/01, §3).
 //!
 //! - `Isometry2Trait` / `Isometry2Impl`: construction from parts, composition, inverse, `inv_mul`,
-//!   transforms, append / prepend, `to_homogeneous`, renormalisation and the trigonometry-free
-//!   interpolation — everything that is algebraic, hence available for any `simba::scalar::Real`
-//!   scalar;
+//!   transforms, the in-place `append_*_mut`, the operator forms `mul_translation` /
+//!   `mul_unit_complex` (Cairo's `Mul` is homogeneous) and `to_homogeneous` — everything that is
+//!   algebraic, hence available for any `simba::scalar::Real` scalar (the fused kernels, the
+//!   renormalisation of the rotation part and the trigonometry-free interpolation are
+//!   crate-internal, WP 8.0);
 //! - `Isometry2AngleTrait` / `Isometry2AngleImpl`: the constructors and the interpolation that go
 //!   through an ANGLE (`new`, `rotation`, `lerp_slerp`), which additionally need
 //!   `simba::scalar::Transcendental`;
-//! - `a * b` (composition) and the conversions from a `Translation2` / a `UnitComplex`: their
-//!   impls live in this module, where the compiler finds them without any import.
+//! - `a * b` (composition) and the conversion from a `Translation2`: their impls live in this
+//!   module, where the compiler finds them without any import.
 //!
 //! The rotation is a `UnitComplex`, never a `Rotation2`: the two hold the same information, but the
 //! complex form composes for 4 000 gas against 10 260 for the matrix and transforms a vector for
@@ -98,21 +100,6 @@ pub impl Isometry2Impl<
         }
     }
 
-    /// The pure translation by `v`. Exact. Upstream: `Isometry2::from(Translation2::from(v))`.
-    #[inline(always)]
-    fn from_translation(t: Translation2<T>) -> Isometry2<T> {
-        Isometry2 { rotation: UnitComplex { re: R::ONE, im: R::ZERO }, translation: t }
-    }
-
-    /// The pure rotation `r` (no translation). Exact. Upstream: `Isometry2::from(r)`
-    /// (`From<UnitComplex>`), also available as `r.into()`.
-    #[inline(always)]
-    fn from_rotation(r: UnitComplex<T>) -> Isometry2<T> {
-        Isometry2 {
-            rotation: r, translation: Translation2 { vector: Vector2 { x: R::ZERO, y: R::ZERO } },
-        }
-    }
-
     // --- inverse and composition --------------------------------------------------------------
 
     /// The inverse isometry: the rotation is conjugated (exact) and the translation becomes
@@ -152,39 +139,11 @@ pub impl Isometry2Impl<
 
     // --- transforms ----------------------------------------------------------------------------
 
-    /// `r · v + t`, the kernel every "rotate then translate" of this type goes through: the two
-    /// products AND the translation are accumulated exactly, then floored once per component.
-    ///
-    /// It gives the same bits as rotating and adding afterwards, since `floor(x + t) =
-    /// floor(x) + t` for an integral `t` in raw units, for 4 400 gas instead of 5 680 (1.29x):
-    /// a `Fixed` addition costs an overflow check (640 gas) that the accumulator does not pay.
-    /// It also cannot overflow on the intermediate rotated vector, only on the result. Evidence:
-    /// `bench_isometry2_transform_point__alt_rotate_then_add` and
-    /// `test_transform_point_fused_and_composed_agree_bit_for_bit`.
-    ///
-    /// Not an upstream method: upstream writes `rotation * v + translation`, which in fixed point
-    /// is exactly this kernel.
-    #[inline(always)]
-    fn rotate_translate(r: UnitComplex<T>, v: Vector2<T>, t: Vector2<T>) -> Vector2<T> {
-        Vector2 {
-            x: R::wide_rescale(
-                R::wide_add(
-                    R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), r.re, v.x), r.im, v.y), t.x,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add(
-                    R::wide_add_prod(R::wide_add_prod(R::wide_zero(), r.im, v.x), r.re, v.y), t.y,
-                ),
-            ),
-        }
-    }
-
     /// `self * p = rotation · p + translation`, through `rotate_translate`: one rounding per
     /// component. Panics on overflow. Upstream: `transform_point` (`iso * p`).
     #[inline(always)]
     fn transform_point(self: Isometry2<T>, p: Point2<T>) -> Point2<T> {
-        let c = Self::rotate_translate(
+        let c = Isometry2InternalTrait::rotate_translate(
             self.rotation, Vector2 { x: p.x, y: p.y }, self.translation.vector,
         );
         Point2 { x: c.x, y: c.y }
@@ -214,76 +173,85 @@ pub impl Isometry2Impl<
         self.rotation.inverse_transform_vector(v)
     }
 
-    // --- append / prepend -----------------------------------------------------------------------
+    // --- append (in place) and the operator forms ----------------------------------------------
 
     /// `Translation(t) ∘ self`: the same rotation, the translation shifted by `t` (an exact
-    /// addition). Upstream: `append_translation_mut` (by value here, like the rest of this port).
+    /// addition), in place. Upstream: `append_translation_mut`.
     #[inline(always)]
-    fn append_translation(self: Isometry2<T>, t: Translation2<T>) -> Isometry2<T> {
-        Isometry2 {
-            rotation: self.rotation,
-            translation: Translation2 {
-                vector: Vector2 {
-                    x: self.translation.vector.x + t.vector.x,
-                    y: self.translation.vector.y + t.vector.y,
+    fn append_translation_mut(ref self: Isometry2<T>, t: Translation2<T>) {
+        self =
+            Isometry2 {
+                rotation: self.rotation,
+                translation: Translation2 {
+                    vector: Vector2 {
+                        x: self.translation.vector.x + t.vector.x,
+                        y: self.translation.vector.y + t.vector.y,
+                    },
                 },
-            },
-        }
+            };
     }
 
-    /// `self ∘ Translation(t)`: the same rotation, the translation shifted by `rotation · t`
-    /// (one `rotate_translate`). It is also `self * Isometry2::from(t)`, the `Mul<Translation2>`
-    /// of upstream. Upstream: `prepend_translation_mut`.
+    /// `self * t = self ∘ Translation(t)`: the same rotation, the translation shifted by
+    /// `rotation · t` (one `rotate_translate`). Upstream: `Mul<Translation2> for Isometry2` — a
+    /// named method because Cairo's `Mul` is homogeneous (a documented rename,
+    /// `scripts/api_parity.py`).
     #[inline(always)]
-    fn prepend_translation(self: Isometry2<T>, t: Translation2<T>) -> Isometry2<T> {
+    fn mul_translation(self: Isometry2<T>, t: Translation2<T>) -> Isometry2<T> {
         Isometry2 {
             rotation: self.rotation,
             translation: Translation2 {
-                vector: Self::rotate_translate(self.rotation, t.vector, self.translation.vector),
+                vector: Isometry2InternalTrait::rotate_translate(
+                    self.rotation, t.vector, self.translation.vector,
+                ),
             },
         }
     }
 
     /// `Rotation(r) ∘ self`: a rotation about the ORIGIN applied after `self`, so the translation
-    /// is rotated too (`r · translation`) and the rotation becomes `r · rotation`. Upstream:
+    /// is rotated too (`r · translation`) and the rotation becomes `r · rotation`, in place.
+    /// Upstream:
     /// `append_rotation_mut`.
     #[inline(always)]
-    fn append_rotation(self: Isometry2<T>, r: UnitComplex<T>) -> Isometry2<T> {
-        Isometry2 {
-            rotation: r * self.rotation,
-            translation: Translation2 { vector: r.transform_vector(self.translation.vector) },
-        }
+    fn append_rotation_mut(ref self: Isometry2<T>, r: UnitComplex<T>) {
+        self =
+            Isometry2 {
+                rotation: r * self.rotation,
+                translation: Translation2 { vector: r.transform_vector(self.translation.vector) },
+            };
     }
 
-    /// `self ∘ Rotation(r)`: a rotation applied BEFORE `self`, which leaves the translation
-    /// untouched (`self * Isometry2::from(r)`, upstream's `Mul<UnitComplex>`). Two fused kernels.
+    /// `self * r = self ∘ Rotation(r)`: a rotation applied BEFORE `self`, which leaves the
+    /// translation untouched. Two fused kernels. Upstream: `Mul<UnitComplex> for Isometry2` — a
+    /// named method because Cairo's `Mul` is homogeneous (a documented rename,
+    /// `scripts/api_parity.py`).
     #[inline(always)]
-    fn prepend_rotation(self: Isometry2<T>, r: UnitComplex<T>) -> Isometry2<T> {
+    fn mul_unit_complex(self: Isometry2<T>, r: UnitComplex<T>) -> Isometry2<T> {
         Isometry2 { rotation: self.rotation * r, translation: self.translation }
     }
 
     /// The rotation `r` applied about the point `p` (which stays fixed): the translation becomes
-    /// `r · (translation - p) + p`, the rotation `r · rotation`. One exact subtraction, one
-    /// `rotate_translate` and two fused kernels. Upstream: `append_rotation_wrt_point_mut`.
-    fn append_rotation_wrt_point(
-        self: Isometry2<T>, r: UnitComplex<T>, p: Point2<T>,
-    ) -> Isometry2<T> {
+    /// `r · (translation - p) + p`, the rotation `r · rotation`, in place. One exact subtraction,
+    /// one `rotate_translate` and two fused kernels. Upstream: `append_rotation_wrt_point_mut`.
+    fn append_rotation_wrt_point_mut(ref self: Isometry2<T>, r: UnitComplex<T>, p: Point2<T>) {
         let d = Vector2 { x: self.translation.vector.x - p.x, y: self.translation.vector.y - p.y };
-        Isometry2 {
-            rotation: r * self.rotation,
-            translation: Translation2 {
-                vector: Self::rotate_translate(r, d, Vector2 { x: p.x, y: p.y }),
-            },
-        }
+        self =
+            Isometry2 {
+                rotation: r * self.rotation,
+                translation: Translation2 {
+                    vector: Isometry2InternalTrait::rotate_translate(
+                        r, d, Vector2 { x: p.x, y: p.y },
+                    ),
+                },
+            };
     }
 
     /// The rotation `r` applied about the isometry's own centre (the point `translation`): the
     /// translation is unchanged and the rotation becomes `r · rotation`, i.e. two fused kernels
-    /// and nothing else (`append_rotation_wrt_point` with `p = translation`, where the subtraction
-    /// and the addition cancel exactly). Upstream: `append_rotation_wrt_center_mut`.
+    /// and nothing else (`append_rotation_wrt_point_mut` with `p = translation`, where the
+    /// subtraction and the addition cancel exactly). Upstream: `append_rotation_wrt_center_mut`.
     #[inline(always)]
-    fn append_rotation_wrt_center(self: Isometry2<T>, r: UnitComplex<T>) -> Isometry2<T> {
-        Isometry2 { rotation: r * self.rotation, translation: self.translation }
+    fn append_rotation_wrt_center_mut(ref self: Isometry2<T>, r: UnitComplex<T>) {
+        self = Isometry2 { rotation: r * self.rotation, translation: self.translation };
     }
 
     // --- conversions, renormalisation, comparison, interpolation -------------------------------
@@ -305,25 +273,6 @@ pub impl Isometry2Impl<
         }
     }
 
-    /// Renormalises the rotation exactly (`UnitComplex::renormalize`: one `norm2` and two exactly
-    /// correctly rounded divisions), leaving the translation untouched. Call it after a long chain
-    /// of compositions, each of which lets the norm of the complex drift by up to 2 ulp. Panics
-    /// with `Fixed: division by zero` on a zero rotation. Upstream: `Rotation::renormalize` applied
-    /// to the rotation part (upstream has no `Isometry::renormalize`).
-    #[inline(always)]
-    fn renormalize(self: Isometry2<T>) -> Isometry2<T> {
-        Isometry2 { rotation: self.rotation.renormalize(), translation: self.translation }
-    }
-
-    /// Renormalises the rotation with one Newton step (`UnitComplex::renormalize_fast`: no square
-    /// root, no division), for a norm already within about `2^-16` of 1. Saves 1.3 % over
-    /// `renormalize` in Q32.32 — prefer `renormalize`, which converges from any norm. Upstream:
-    /// `Unit::renormalize_fast` applied to the rotation part.
-    #[inline(always)]
-    fn renormalize_fast(self: Isometry2<T>) -> Isometry2<T> {
-        Isometry2 { rotation: self.rotation.renormalize_fast(), translation: self.translation }
-    }
-
     /// `true` when the two translations and the two rotations are within `ulps` smallest units
     /// (raw units for fixed point) of each other, component by component; cannot overflow. Note
     /// that `-rotation` is the same rotation and is NOT `abs_diff_eq` to it. Upstream:
@@ -334,7 +283,73 @@ pub impl Isometry2Impl<
         self.translation.abs_diff_eq(other.translation, ulps)
             && self.rotation.abs_diff_eq(other.rotation, ulps)
     }
+}
 
+/// Crate-internal kernels of `Isometry2<T>` (WP 8.0: the public API is strictly upstream's): the
+/// fused `rotate_translate` behind every "rotate then translate" (DESIGN D6), the renormalisation
+/// of the rotation part (upstream renormalizes `iso.rotation` itself, in place) and the
+/// trigonometry-free `lerp_nlerp` (upstream has `lerp_slerp` only).
+#[generate_trait]
+pub(crate) impl Isometry2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of Isometry2InternalTrait<T> {
+    /// `r · v + t`, the kernel every "rotate then translate" of this type goes through: the two
+    /// products AND the translation are accumulated exactly, then floored once per component.
+    ///
+    /// It gives the same bits as rotating and adding afterwards, since `floor(x + t) =
+    /// floor(x) + t` for an integral `t` in raw units, for 4 400 gas instead of 5 680 (1.29x):
+    /// a `Fixed` addition costs an overflow check (640 gas) that the accumulator does not pay.
+    /// It also cannot overflow on the intermediate rotated vector, only on the result. Evidence:
+    /// `bench_isometry2_transform_point__alt_rotate_then_add` and
+    /// `test_transform_point_fused_and_composed_agree_bit_for_bit`.
+    ///
+    /// Not an upstream method: upstream writes `rotation * v + translation`, which in fixed point
+    /// is exactly this kernel.
+    #[inline(always)]
+    fn rotate_translate(r: UnitComplex<T>, v: Vector2<T>, t: Vector2<T>) -> Vector2<T> {
+        Vector2 {
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), r.re, v.x), r.im, v.y), t.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add_prod(R::wide_add_prod(R::wide_zero(), r.im, v.x), r.re, v.y), t.y,
+                ),
+            ),
+        }
+    }
+    /// Renormalises the rotation exactly (`UnitComplex::renormalize`: one `norm2` and two exactly
+    /// correctly rounded divisions), leaving the translation untouched. Call it after a long chain
+    /// of compositions, each of which lets the norm of the complex drift by up to 2 ulp. Panics
+    /// with `Fixed: division by zero` on a zero rotation. Upstream: `Rotation::renormalize` applied
+    /// to the rotation part (upstream has no `Isometry::renormalize`).
+    #[inline(always)]
+    fn renormalize(self: Isometry2<T>) -> Isometry2<T> {
+        let mut rotation = self.rotation;
+        let _ = rotation.renormalize();
+        Isometry2 { rotation, translation: self.translation }
+    }
+    /// Renormalises the rotation with one Newton step (`UnitComplex::renormalize_fast`: no square
+    /// root, no division), for a norm already within about `2^-16` of 1. Saves 1.3 % over
+    /// `renormalize` in Q32.32 — prefer `renormalize`, which converges from any norm. Upstream:
+    /// `Unit::renormalize_fast` applied to the rotation part.
+    #[inline(always)]
+    fn renormalize_fast(self: Isometry2<T>) -> Isometry2<T> {
+        let mut rotation = self.rotation;
+        rotation.renormalize_fast();
+        Isometry2 { rotation, translation: self.translation }
+    }
     /// Interpolation WITHOUT trigonometry: the translations are interpolated linearly and the
     /// rotations by a normalised linear interpolation of the `(re, im)` pairs (the 2D counterpart
     /// of `UnitQuaternion::nlerp`, which `UnitComplex` does not provide). `t` is not clamped.
@@ -412,9 +427,9 @@ pub impl Isometry2AngleImpl<
     /// (`UnitComplex::slerp`, which takes the SHORTEST arc and walks it at constant angular
     /// velocity). `t` is not clamped; `t = 0` gives `self` exactly.
     ///
-    /// 50 690 gas, dominated by one `atan2` and one `sin_cos`. `lerp_nlerp` gives the same path
-    /// within a fraction of a degree for 18 520 — use `lerp_slerp` for rendering and animation,
-    /// where the parametrisation is visible, and `lerp_nlerp` inside a step. Upstream:
+    /// 50 690 gas, dominated by one `atan2` and one `sin_cos`. The trigonometry-free
+    /// normalized-lerp interpolation (crate-internal `lerp_nlerp`, benchmarked) gives the same path
+    /// within a fraction of a degree for 18 520. Upstream:
     /// `Isometry2::lerp_slerp`. (Upstream has no `try_lerp_slerp` in 2D and neither does this
     /// port: `UnitComplex::slerp` is total, where `UnitQuaternion::try_slerp` can fail.)
     fn lerp_slerp(self: Isometry2<T>, other: Isometry2<T>, t: T) -> Isometry2<T> {
@@ -449,7 +464,7 @@ pub impl Isometry2Mul<
         Isometry2 {
             rotation: lhs.rotation * rhs.rotation,
             translation: Translation2 {
-                vector: Isometry2Trait::rotate_translate(
+                vector: Isometry2InternalTrait::rotate_translate(
                     lhs.rotation, rhs.translation.vector, lhs.translation.vector,
                 ),
             },
@@ -464,18 +479,5 @@ pub impl Isometry2FromTranslation<
     #[inline(always)]
     fn into(self: Translation2<T>) -> Isometry2<T> {
         Isometry2 { rotation: UnitComplex { re: R::ONE, im: R::ZERO }, translation: self }
-    }
-}
-
-/// `r.into()`: the pure rotation as an isometry. Upstream: `From<UnitComplex> for Isometry2`.
-pub impl Isometry2FromRotation<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
-> of Into<UnitComplex<T>, Isometry2<T>> {
-    #[inline(always)]
-    fn into(self: UnitComplex<T>) -> Isometry2<T> {
-        Isometry2 {
-            rotation: self,
-            translation: Translation2 { vector: Vector2 { x: R::ZERO, y: R::ZERO } },
-        }
     }
 }

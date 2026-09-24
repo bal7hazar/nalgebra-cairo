@@ -11,11 +11,13 @@
 //! quaternion_try_inverse --out crates/nalgebra/src/geometry/quaternion/oracle.cairo
 //! ```
 
+use core::num::traits::Zero;
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, qi, qt, v3};
 use crate::base::vector4::Vector4;
+use crate::geometry::quaternion::QuaternionInternalTrait;
 use super::{Quaternion, QuaternionTrait, oracle};
 
 const MIN: i64 = -0x8000000000000000;
@@ -57,8 +59,6 @@ fn test_as_vector_is_imag_first() {
     let back: Quaternion<Fixed> = a().as_vector().into();
     assert!(back == a());
     assert!(QuaternionTrait::from_vector(a().as_vector()) == a());
-    let coords: Vector4<Fixed> = a().into();
-    assert!(coords == a().as_vector());
 }
 
 // --- constructors and parts
@@ -66,7 +66,7 @@ fn test_as_vector_is_imag_first() {
 #[test]
 fn test_identity_zero_and_from_real() {
     assert!(QuaternionTrait::<Fixed>::identity() == qi(1, 0, 0, 0));
-    assert!(QuaternionTrait::<Fixed>::zero() == qi(0, 0, 0, 0));
+    assert!(Zero::<Quaternion<Fixed>>::zero() == qi(0, 0, 0, 0));
     assert!(QuaternionTrait::from_real(int(-5)) == qi(-5, 0, 0, 0));
     assert!(QuaternionTrait::<Fixed>::identity() == Default::default() + qi(1, 0, 0, 0));
 }
@@ -92,8 +92,8 @@ fn test_add_sub_neg_are_exact() {
     assert!(a() + b() == qi(-1, 3, 2, 3));
     assert!(a() - b() == qi(3, 1, -8, 5));
     assert!(-a() == qi(-1, -2, 3, -4));
-    assert!(a() + (-a()) == QuaternionTrait::zero());
-    assert!(a() - a() == QuaternionTrait::zero());
+    assert!(a() + (-a()) == Zero::zero());
+    assert!(a() - a() == Zero::zero());
 }
 
 #[test]
@@ -283,7 +283,7 @@ fn test_dot_is_fused() {
 #[test]
 fn test_scale_and_unscale() {
     assert!(a().scale(int(2)) == qi(2, 4, -6, 8));
-    assert!(a().scale(Real::ZERO) == QuaternionTrait::zero());
+    assert!(a().scale(Real::ZERO) == Zero::zero());
     assert!(a().unscale(int(2)) == qt((ONE_RAW / 2, ONE_RAW, -3 * ONE_RAW / 2, 2 * ONE_RAW)));
     // Floor division: -1 / 2 = -0.5 exactly, -1 / 3 rounds down.
     assert!(qi(-1, 0, 0, 0).unscale(int(3)) == qt((-1431655765, 0, 0, 0)));
@@ -311,7 +311,7 @@ fn test_normalize_exact_and_oracle() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_normalize_zero_panics() {
-    let _ = black_box(QuaternionTrait::<Fixed>::zero()).normalize();
+    let _ = black_box(Zero::<Quaternion<Fixed>>::zero()).normalize();
 }
 
 #[test]
@@ -340,7 +340,7 @@ fn test_try_inverse_product_is_identity() {
 
 #[test]
 fn test_try_inverse_none_on_zero() {
-    assert!(QuaternionTrait::<Fixed>::zero().try_inverse() == None);
+    assert!(Zero::<Quaternion<Fixed>>::zero().try_inverse() == None);
     // A quaternion so short that its squared norm floors to zero (norm < 2^-16).
     assert!(qt((1, -1, 0, 0)).try_inverse() == None);
 }

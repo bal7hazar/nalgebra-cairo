@@ -11,7 +11,7 @@ use crate::base::matrix_test_utils::{fx, p2, p3, v3, v4};
 use crate::base::point2::Point2;
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
-use super::{Point3, Point3Trait};
+use super::{Point3, Point3InternalTrait, Point3Trait};
 
 // --- alternative implementations (losers)
 
@@ -203,17 +203,6 @@ fn bench_point3_from__vector() {
 
 #[test]
 #[inline(never)]
-fn bench_point3_from__tuple() {
-    let _v: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
-    let t: (Fixed, Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)));
-    let _arr: [Fixed; 3] = black_box([fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)]);
-    let e: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
-    let res: Point3<Fixed> = t.into();
-    assert!(res == e);
-}
-
-#[test]
-#[inline(never)]
 fn bench_point3_from__array() {
     let _v: Vector3<Fixed> = black_box(v3(0x180000000, -0x240000000, 0x3c0000000));
     let _t: (Fixed, Fixed, Fixed) = black_box((fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)));
@@ -254,15 +243,6 @@ fn bench_point3_into__baseline() {
     let _p: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
     let e: Fixed = black_box(fx(0x180000000));
     assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_point3_into__tuple() {
-    let p: Point3<Fixed> = black_box(p3(0x180000000, -0x240000000, 0x3c0000000));
-    let e: Fixed = black_box(fx(0x180000000));
-    let (x, _, _): (Fixed, Fixed, Fixed) = p.into();
-    assert!(x == e);
 }
 
 #[test]

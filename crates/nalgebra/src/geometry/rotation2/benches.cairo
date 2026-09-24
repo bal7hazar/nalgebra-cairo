@@ -198,7 +198,6 @@ fn bench_rotation2_transform_vector__matrix() {
     let v: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let e: Vector2<Fixed> = black_box(v2(9697103119, -6392026840));
     assert!(r.transform_vector(v) == e);
-    assert!(r.mul_vec(v) == e);
 }
 
 #[test]
@@ -207,8 +206,7 @@ fn bench_rotation2_transform_vector__alt_unit_complex() {
     let r: Rotation2<Fixed> = black_box(r());
     let v: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let e: Vector2<Fixed> = black_box(v2(9697103119, -6392026840));
-    assert!(r.to_unit_complex().transform_vector(v) == e);
-    assert!(r.to_unit_complex().mul_vec(v) == e);
+    assert!(UnitComplexTrait::from_rotation_matrix(r).transform_vector(v) == e);
 }
 
 #[test]
@@ -235,7 +233,7 @@ fn bench_rotation2_transform_point__alt_unit_complex() {
     let r: Rotation2<Fixed> = black_box(r());
     let p: Point2<Fixed> = black_box(p2(0x180000000, -0x240000000));
     let e: Point2<Fixed> = black_box(p2(9697103119, -6392026840));
-    assert!(r.to_unit_complex().transform_point(p) == e);
+    assert!(UnitComplexTrait::from_rotation_matrix(r).transform_point(p) == e);
 }
 
 #[test]
@@ -313,7 +311,7 @@ fn bench_rotation2_to_unit_complex__baseline() {
 fn bench_rotation2_to_unit_complex__first_column() {
     let r: Rotation2<Fixed> = black_box(r());
     let e: UnitComplex<Fixed> = black_box(UnitComplex { re: fx(3955926847), im: fx(1672539044) });
-    assert!(r.to_unit_complex() == e);
+    assert!(UnitComplexTrait::from_rotation_matrix(r) == e);
     let into: UnitComplex<Fixed> = r.into();
     assert!(into == e);
 }
@@ -463,7 +461,9 @@ fn bench_rotation2_renormalize__baseline() {
 fn bench_rotation2_renormalize__first_column() {
     let r: Rotation2<Fixed> = black_box(r2([[3955930943, -1672539044], [1672543140, 3955926847]]));
     let e: Rotation2<Fixed> = black_box(r2([[3955926000, -1672541050], [1672541050, 3955926000]]));
-    assert!(r.renormalize() == e);
+    let mut renormalized = r;
+    renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]

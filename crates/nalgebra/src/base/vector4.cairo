@@ -5,7 +5,7 @@
 //! - `Vector4AngleTrait` / `Vector4AngleImpl`: `angle`, which additionally needs
 //!   `simba::scalar::Transcendental`;
 //! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a scalar, and
-//!   conversions from / to `(T, T, T, T)` and `[T; 4]`: their impls live in this module, where the
+//!   conversions from / to `[T; 4]`: their impls live in this module, where the
 //!   compiler finds them without any import.
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
@@ -526,24 +526,6 @@ pub impl Vector4DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<V
     fn div_assign(ref self: Vector4<T>, rhs: T) {
         let (x, y, z, w) = R::div4(self.x, self.y, self.z, self.w, rhs);
         self = Vector4 { x, y, z, w };
-    }
-}
-
-/// `(x, y, z, w).into()`. Upstream: `From<(T, T, T, T)>`-style construction (`From<[T; 4]>`).
-pub impl Vector4FromTuple<T> of Into<(T, T, T, T), Vector4<T>> {
-    #[inline(always)]
-    fn into(self: (T, T, T, T)) -> Vector4<T> {
-        let (x, y, z, w) = self;
-        Vector4 { x, y, z, w }
-    }
-}
-
-/// The components as a tuple `(x, y, z, w)`.
-pub impl Vector4IntoTuple<T> of Into<Vector4<T>, (T, T, T, T)> {
-    #[inline(always)]
-    fn into(self: Vector4<T>) -> (T, T, T, T) {
-        let Vector4 { x, y, z, w } = self;
-        (x, y, z, w)
     }
 }
 

@@ -63,7 +63,7 @@ mod tests;
 /// `Ldlt2Trait::new`; the fields are public so that a factor computed elsewhere can be
 /// re-assembled, and nothing checks that they form a valid factor.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
-pub struct Ldlt2<T> {
+pub(crate) struct Ldlt2<T> {
     /// Row 2, column 1 of the unit lower triangular factor.
     pub l21: T,
     /// The diagonal of `diag(d)`.
@@ -79,7 +79,7 @@ pub struct Ldlt2<T> {
 /// `Ldlt3Trait::new`; the fields are public so that a factor computed elsewhere can be
 /// re-assembled, and nothing checks that they form a valid factor.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
-pub struct Ldlt3<T> {
+pub(crate) struct Ldlt3<T> {
     /// Row 2, column 1 of the unit lower triangular factor.
     pub l21: T,
     /// Row 3, column 1 of the unit lower triangular factor.
@@ -99,7 +99,7 @@ pub struct Ldlt3<T> {
 /// `Ldlt4Trait::new`; the fields are public so that a factor computed elsewhere can be
 /// re-assembled, and nothing checks that they form a valid factor.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
-pub struct Ldlt4<T> {
+pub(crate) struct Ldlt4<T> {
     /// Row 2, column 1 of the unit lower triangular factor.
     pub l21: T,
     /// Row 3, column 1 of the unit lower triangular factor.
@@ -125,7 +125,7 @@ pub struct Ldlt4<T> {
 /// `Ldlt6Trait::new`; the fields are public so that a factor computed elsewhere can be
 /// re-assembled, and nothing checks that they form a valid factor.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
-pub struct Ldlt6<T> {
+pub(crate) struct Ldlt6<T> {
     /// Row 2, column 1 of the unit lower triangular factor.
     pub l21: T,
     /// Row 3, column 1 of the unit lower triangular factor.
@@ -162,7 +162,7 @@ pub struct Ldlt6<T> {
 
 /// Methods of `Ldlt2<T>` for any `Real` scalar.
 #[generate_trait]
-pub impl Ldlt2Impl<
+pub(crate) impl Ldlt2Impl<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -295,7 +295,7 @@ pub impl Ldlt2Impl<
 
 /// Methods of `Ldlt3<T>` for any `Real` scalar.
 #[generate_trait]
-pub impl Ldlt3Impl<
+pub(crate) impl Ldlt3Impl<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -477,7 +477,7 @@ pub impl Ldlt3Impl<
 
 /// Methods of `Ldlt4<T>` for any `Real` scalar.
 #[generate_trait]
-pub impl Ldlt4Impl<
+pub(crate) impl Ldlt4Impl<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -741,7 +741,7 @@ pub impl Ldlt4Impl<
 
 /// Methods of `Ldlt6<T>` for any `Real` scalar.
 #[generate_trait]
-pub impl Ldlt6Impl<
+pub(crate) impl Ldlt6Impl<
     T,
     impl R: Real<T>,
     +Copy<T>,

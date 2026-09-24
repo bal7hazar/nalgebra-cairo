@@ -4,12 +4,14 @@
 //!
 //! Expected values come from a bit-exact integer model of the Q32.32 kernels (floor rounding).
 
+use core::num::traits::Zero;
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, q};
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
+use crate::geometry::quaternion::QuaternionInternalTrait;
 use super::{Quaternion, QuaternionTrait};
 
 
@@ -138,7 +140,7 @@ fn test_try_inverse_alt_recip_is_less_accurate() {
     // floor).
     assert!(!approx.abs_diff_eq(exact, 1));
     assert!(approx.abs_diff_eq(exact, 2));
-    assert!(alt_try_inverse_recip(QuaternionTrait::<Fixed>::zero()) == None);
+    assert!(alt_try_inverse_recip(Zero::<Quaternion<Fixed>>::zero()) == None);
 }
 
 // --- constructors and parts

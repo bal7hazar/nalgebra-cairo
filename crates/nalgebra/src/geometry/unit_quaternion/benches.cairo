@@ -17,6 +17,7 @@ use crate::base::unit::Unit;
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::geometry::quaternion::{Quaternion, QuaternionTrait};
 use crate::geometry::rotation3::{Rotation3, Rotation3Trait};
+use crate::geometry::unit_quaternion::UnitQuaternionInternalTrait;
 use super::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
 /// A unit quaternion of negative real part (so the sign conventions of `axis` and `angle` are
@@ -452,7 +453,9 @@ fn bench_unit_quaternion_renormalize__baseline() {
 fn bench_unit_quaternion_renormalize__exact() {
     let q = black_box(a());
     let e = black_box(uqt((-1509276477, -2563574021, -2263667720, 2114881862)));
-    assert!(q.renormalize() == e);
+    let mut renormalized = q;
+    let _ = renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -468,7 +471,9 @@ fn bench_unit_quaternion_renormalize_fast__baseline() {
 fn bench_unit_quaternion_renormalize_fast__newton() {
     let q = black_box(a());
     let e = black_box(a());
-    assert!(q.renormalize_fast() == e);
+    let mut renormalized = q;
+    renormalized.renormalize_fast();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -476,7 +481,9 @@ fn bench_unit_quaternion_renormalize_fast__newton() {
 fn bench_unit_quaternion_renormalize_fast__alt_exact() {
     let q = black_box(a());
     let e = black_box(uqt((-1509276477, -2563574021, -2263667720, 2114881862)));
-    assert!(q.renormalize() == e);
+    let mut renormalized = q;
+    let _ = renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]

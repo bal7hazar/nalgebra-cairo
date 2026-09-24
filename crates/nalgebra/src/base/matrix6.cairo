@@ -172,16 +172,6 @@ pub impl Matrix6Impl<
         Matrix6 { m11: i, m21: z, m12: z, m22: i }
     }
 
-    /// The matrix made of the four given 3x3 blocks. No upstream equivalent (upstream assigns
-    /// `fixed_view_mut::<3, 3>(r, c)`); rapier builds spatial inertia and Jacobian matrices this
-    /// way.
-    #[inline(always)]
-    fn from_blocks(
-        m11: Matrix3<T>, m12: Matrix3<T>, m21: Matrix3<T>, m22: Matrix3<T>,
-    ) -> Matrix6<T> {
-        Matrix6 { m11, m21, m12, m22 }
-    }
-
     /// The diagonal matrix `diag(d)`. Upstream: `Matrix6::from_diagonal`.
     #[inline(always)]
     fn from_diagonal(d: Vector6<T>) -> Matrix6<T> {
@@ -203,30 +193,6 @@ pub impl Matrix6Impl<
     }
 
     // --- accessors -----------------------------------------------------------------------------
-
-    /// The block of rows 1-3, columns 1-3. Upstream: `fixed_view::<3, 3>(0, 0)`.
-    #[inline(always)]
-    fn block11(self: Matrix6<T>) -> Matrix3<T> {
-        self.m11
-    }
-
-    /// The block of rows 1-3, columns 4-6. Upstream: `fixed_view::<3, 3>(0, 3)`.
-    #[inline(always)]
-    fn block12(self: Matrix6<T>) -> Matrix3<T> {
-        self.m12
-    }
-
-    /// The block of rows 4-6, columns 1-3. Upstream: `fixed_view::<3, 3>(3, 0)`.
-    #[inline(always)]
-    fn block21(self: Matrix6<T>) -> Matrix3<T> {
-        self.m21
-    }
-
-    /// The block of rows 4-6, columns 4-6. Upstream: `fixed_view::<3, 3>(3, 3)`.
-    #[inline(always)]
-    fn block22(self: Matrix6<T>) -> Matrix3<T> {
-        self.m22
-    }
 
     /// The diagonal, as a `Vector6`. Upstream: `diagonal`.
     #[inline(always)]

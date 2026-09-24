@@ -4,9 +4,9 @@
 //! - `Normalizable<V, T>`: the few operations `Unit` needs from a vector type `V` over the scalar
 //!   `T`, implemented for `Vector2<T>`, `Vector3<T>` and `Vector4<T>`;
 //! - `UnitTrait` / `UnitImpl`: construction (`new_normalize`, `try_new`, `new_unchecked`, ...),
-//!   renormalization and products, generic over any `Normalizable` vector;
-//! - `Unit2Trait` / `Unit3Trait` / `Unit4Trait`: the axes (`x_axis`, ...) and, in 3D, the
-//!   orthonormal basis;
+//!   in-place renormalization (upstream's `&mut self` methods) and the products upstream reaches
+//!   through `Deref`, generic over any `Normalizable` vector;
+//! - `Unit2Trait` / `Unit3Trait` / `Unit4Trait`: the axes (`x_axis`, ...);
 //! - `-u` (exact, a negated unit vector is a unit vector).
 //!
 //! The `value` field is public: unlike upstream there is no `Deref`, so vector operations are
@@ -19,7 +19,7 @@
 
 use simba::scalar::Real;
 use super::vector2::Vector2;
-use super::vector3::{Vector3, Vector3Trait};
+use super::vector3::Vector3;
 use super::vector4::Vector4;
 
 #[cfg(test)]
@@ -190,15 +190,13 @@ pub trait UnitTrait<V, T> {
     fn try_new_and_get(v: V, min_norm: T) -> Option<(Unit<V>, T)>;
     /// The wrapped vector. Upstream: `Unit::into_inner`.
     fn into_inner(self: Unit<V>) -> V;
-    /// The wrapped vector (a copy: everything is by value here). Upstream: `Unit::as_ref`
-    /// (`AsRef`), a reference in Rust.
-    fn as_ref(self: Unit<V>) -> V;
-    /// Renormalizes exactly: `Unit::new_normalize(self.value)`, i.e. one norm and one exactly
-    /// correctly rounded division per component. Panics on a zero norm. Upstream:
-    /// `Unit::renormalize` (which also returns the previous norm and works in place).
-    fn renormalize(self: Unit<V>) -> Unit<V>;
-    /// Renormalizes a vector that already has a norm close to 1 (accumulated rounding errors,
-    /// e.g. an axis rotated every step): one Newton step for the inverse square root,
+    /// Renormalizes exactly, in place: `self` becomes `Unit::new_normalize(self.value)`, i.e. one
+    /// norm and one exactly correctly rounded division per component, and the norm it had is
+    /// returned. Panics on a zero norm. Upstream: `Unit::renormalize` (`&mut self`, returns the
+    /// previous norm).
+    fn renormalize(ref self: Unit<V>) -> T;
+    /// Renormalizes, in place, a vector that already has a norm close to 1 (accumulated rounding
+    /// errors, e.g. an axis rotated every step): one Newton step for the inverse square root,
     /// `v * (3 - |v|²) / 2`. One fused `norm_squared`, the factor `(3 - |v|²) / 2` as ONE fused
     /// kernel (`mul_add(|v|², -1/2, 3/2)`, floored once, bit-identical to upstream's
     /// `1/2 * (3 - |v|²)`), then one product per component. No square root, no division.
@@ -217,13 +215,10 @@ pub trait UnitTrait<V, T> {
     /// a `lerp` per component 12 590. All the variants give the same bits and are kept as
     /// benchmarks (`bench_unit3_renormalize_fast__alt_*`). Use `renormalize` where the norm may be
     /// far from 1.
-    fn renormalize_fast(self: Unit<V>) -> Unit<V>;
+    fn renormalize_fast(ref self: Unit<V>);
     /// Dot product of two unit vectors: the cosine of the angle between them, fused (floored
     /// once). Cannot overflow (`|cos| <= 1` up to a few ulp). Upstream: `dot` (through `Deref`).
     fn dot(self: Unit<V>, rhs: Unit<V>) -> T;
-    /// Dot product with any vector: the signed length of the projection of `rhs` on `self`,
-    /// fused (floored once). Panics on overflow. Upstream: `dot` (through `Deref`).
-    fn dot_vector(self: Unit<V>, rhs: V) -> T;
     /// `self * k`, a vector of norm `|k|` along `self`, each component floored once. Panics on
     /// overflow. Upstream: `Unit * k` (through `Deref`, e.g. the scaled axis of a rotation).
     fn scale(self: Unit<V>, k: T) -> V;
@@ -289,31 +284,23 @@ pub impl UnitImpl<
     }
 
     #[inline(always)]
-    fn as_ref(self: Unit<V>) -> V {
-        self.value
+    fn renormalize(ref self: Unit<V>) -> T {
+        let n = N::norm(self.value);
+        self = Unit { value: N::unscale(self.value, n) };
+        n
     }
 
     #[inline(always)]
-    fn renormalize(self: Unit<V>) -> Unit<V> {
-        Unit { value: N::unscale(self.value, N::norm(self.value)) }
-    }
-
-    #[inline(always)]
-    fn renormalize_fast(self: Unit<V>) -> Unit<V> {
+    fn renormalize_fast(ref self: Unit<V>) {
         // (3 - |v|²) / 2 = floor(-|v|² * 1/2 + 3/2): one fused kernel, bit-identical to
         // `HALF * (THREE - s)`.
         let f = R::mul_add(N::norm_squared(self.value), -R::HALF, R::HALF + R::ONE);
-        Unit { value: N::scale(self.value, f) }
+        self = Unit { value: N::scale(self.value, f) };
     }
 
     #[inline(always)]
     fn dot(self: Unit<V>, rhs: Unit<V>) -> T {
         N::dot(self.value, rhs.value)
-    }
-
-    #[inline(always)]
-    fn dot_vector(self: Unit<V>, rhs: V) -> T {
-        N::dot(self.value, rhs)
     }
 
     #[inline(always)]
@@ -324,6 +311,40 @@ pub impl UnitImpl<
     #[inline(always)]
     fn abs_diff_eq(self: Unit<V>, other: Unit<V>, ulps: u64) -> bool {
         N::abs_diff_eq(self.value, other.value, ulps)
+    }
+}
+
+/// Crate-internal by-value forms of the in-place `renormalize` / `renormalize_fast` (WP 8.0: the
+/// public methods are upstream's `&mut self` ones), for the tests and the value-style call sites.
+#[generate_trait]
+pub(crate) impl UnitInternalImpl<
+    V,
+    T,
+    impl N: Normalizable<V, T>,
+    impl R: Real<T>,
+    +Add<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialOrd<T>,
+    +Copy<V>,
+    +Drop<V>,
+    +Copy<T>,
+    +Drop<T>,
+> of UnitInternalTrait<V, T> {
+    /// `self` renormalized exactly (`UnitTrait::renormalize`), by value.
+    #[inline(always)]
+    fn renormalized(self: Unit<V>) -> Unit<V> {
+        let mut u = self;
+        let _ = UnitTrait::renormalize(ref u);
+        u
+    }
+
+    /// `self` renormalized by one Newton step (`UnitTrait::renormalize_fast`), by value.
+    #[inline(always)]
+    fn renormalized_fast(self: Unit<V>) -> Unit<V> {
+        let mut u = self;
+        UnitTrait::renormalize_fast(ref u);
+        u
     }
 }
 
@@ -355,8 +376,7 @@ pub impl Unit2Impl<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Unit2Trait<T> {
     }
 }
 
-/// The axes of space as unit vectors, and the orthonormal basis of a unit vector. Upstream:
-/// `Vector3::x_axis`, ..., `Vector3::orthonormal_subspace_basis`.
+/// The axes of space as unit vectors. Upstream: `Vector3::x_axis`, ..., `Vector3::z_axis`.
 pub trait Unit3Trait<T> {
     /// The unit axis `(1, 0, 0)`. Exact. Upstream: `Vector3::x_axis`.
     fn x_axis() -> Unit<Vector3<T>>;
@@ -364,11 +384,6 @@ pub trait Unit3Trait<T> {
     fn y_axis() -> Unit<Vector3<T>>;
     /// The unit axis `(0, 0, 1)`. Exact. Upstream: `Vector3::z_axis`.
     fn z_axis() -> Unit<Vector3<T>>;
-    /// Two unit vectors `(u, w)` orthogonal to `self` and to each other, with `u x w = self`,
-    /// each within about 3 ulp: `Vector3Trait::orthonormal_basis` of the wrapped vector (the
-    /// invariant that the vector is unit is the one of `Unit`). Upstream:
-    /// `Vector3::orthonormal_subspace_basis(&[v], ..)`.
-    fn orthonormal_basis(self: Unit<Vector3<T>>) -> (Unit<Vector3<T>>, Unit<Vector3<T>>);
 }
 
 pub impl Unit3Impl<
@@ -396,12 +411,6 @@ pub impl Unit3Impl<
     #[inline(always)]
     fn z_axis() -> Unit<Vector3<T>> {
         Unit { value: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ONE } }
-    }
-
-    #[inline(always)]
-    fn orthonormal_basis(self: Unit<Vector3<T>>) -> (Unit<Vector3<T>>, Unit<Vector3<T>>) {
-        let (u, w) = Vector3Trait::<T>::orthonormal_basis(self.value);
-        (Unit { value: u }, Unit { value: w })
     }
 }
 

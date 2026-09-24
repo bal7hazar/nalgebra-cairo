@@ -24,10 +24,6 @@
       "baseline": 18240,
       "wrap": 18640
     },
-    "isometry2_from_rotation": {
-      "baseline": 17640,
-      "pure": 17440
-    },
     "isometry2_from_translation": {
       "baseline": 17640,
       "pure": 17740
@@ -135,10 +131,6 @@
     "isometry3_from_parts": {
       "baseline": 20340,
       "wrap": 21040
-    },
-    "isometry3_from_rotation": {
-      "baseline": 19540,
-      "pure": 19340
     },
     "isometry3_from_translation": {
       "baseline": 19340,
@@ -403,9 +395,9 @@
       "matrix": 21300
     },
     "rotation2_transform_vector": {
-      "alt_unit_complex": 25660,
+      "alt_unit_complex": 21300,
       "baseline": 17640,
-      "matrix": 25660
+      "matrix": 21300
     }
   },
   "nalgebra::geometry::rotation3::benches": {
@@ -508,11 +500,6 @@
     }
   },
   "nalgebra::geometry::similarity2::benches": {
-    "similarity2_inv_mul": {
-      "alt_inverse_then_mul": 53040,
-      "baseline": 18740,
-      "direct": 48600
-    },
     "similarity2_inverse_transform_point": {
       "alt_reciprocal": 34610,
       "baseline": 17840,
@@ -534,11 +521,6 @@
     }
   },
   "nalgebra::geometry::similarity3::benches": {
-    "similarity3_inv_mul": {
-      "alt_inverse_then_mul": 119870,
-      "baseline": 20840,
-      "direct": 86020
-    },
     "similarity3_inverse_transform_point": {
       "alt_reciprocal": 60080,
       "baseline": 19140,
@@ -649,12 +631,6 @@
       "baseline": 16740,
       "fused_atan2": 49730
     },
-    "unit_complex_append_axisangle_linearized": {
-      "alt_renormalize_fast": 28020,
-      "alt_sin_cos": 51800,
-      "baseline": 17040,
-      "renormalize": 29580
-    },
     "unit_complex_from_rotation_matrix": {
       "baseline": 17040,
       "first_column": 17240
@@ -733,7 +709,7 @@
     },
     "unit_complex_transform_vector": {
       "baseline": 17240,
-      "fused": 25260
+      "fused": 20900
     }
   },
   "nalgebra::geometry::unit_quaternion::benches": {

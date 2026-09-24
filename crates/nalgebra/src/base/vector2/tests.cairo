@@ -76,14 +76,6 @@ fn test_to_homogeneous_appends_zero() {
 }
 
 #[test]
-fn test_tuple_conversions_roundtrip() {
-    let r: Vector2<Fixed> = (fx(0x180000000), fx(-0x240000000)).into();
-    assert!(r == a());
-    let t: (Fixed, Fixed) = r.into();
-    assert!(t == (fx(0x180000000), fx(-0x240000000)));
-}
-
-#[test]
 fn test_array_conversions_roundtrip() {
     let r: Vector2<Fixed> = [fx(0x180000000), fx(-0x240000000)].into();
     assert!(r == a());

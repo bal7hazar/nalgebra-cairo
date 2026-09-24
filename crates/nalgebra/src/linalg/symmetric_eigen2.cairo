@@ -29,12 +29,21 @@ use crate::base::vector2::{Vector2, Vector2Trait};
 /// the numeric contract of AGENTS.md.
 ///
 /// Upstream: `SymmetricEigen { eigenvalues: OVector, eigenvectors: OMatrix }`.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct SymmetricEigen2<T> {
     /// The two eigenvalues, ascending.
     pub eigenvalues: Vector2<T>,
     /// The matching unit eigenvectors, as columns (`det = +1`).
     pub eigenvectors: Matrix2<T>,
+}
+
+/// Test-only field-wise equality (upstream `SymmetricEigen2` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl SymmetricEigen2PartialEq<T, +PartialEq<T>> of PartialEq<SymmetricEigen2<T>> {
+    fn eq(lhs: @SymmetricEigen2<T>, rhs: @SymmetricEigen2<T>) -> bool {
+        lhs.eigenvalues == rhs.eigenvalues && lhs.eigenvectors == rhs.eigenvectors
+    }
 }
 
 /// Methods of `SymmetricEigen2<T>` for any `Real` scalar.
@@ -52,7 +61,7 @@ pub impl SymmetricEigen2Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of SymmetricEigen2Trait<T> {
-    /// The eigendecomposition of `s`, in closed form.
+    /// The eigendecomposition of the symmetric `m`, in closed form.
     ///
     /// With `mean = (m11 + m22) / 2`, `d = (m11 - m22) / 2` and `r = sqrt(d² + m12²)` the
     /// eigenvalues are `mean - r <= mean + r`. The eigenvector of the *smaller* eigenvalue is
@@ -79,8 +88,46 @@ pub impl SymmetricEigen2Impl<
     /// matrices included.
     ///
     /// Panics on overflow of `mean ± r` (`|m11| + |m22|` beyond the scalar's range).
+    /// Like upstream, only the LOWER triangle of `m` is read (the entries at row `i`, column `j`
+    /// with `i >= j`): the strictly upper triangle is ignored and the symmetry of `m` is NOT
+    /// checked.
     /// Upstream: `SymmetricEigen::new`.
-    fn new(s: SymMatrix2<T>) -> SymmetricEigen2<T> {
+    #[inline(always)]
+    fn new(m: Matrix2<T>) -> SymmetricEigen2<T> {
+        SymmetricEigen2InternalTrait::new_sym(SymMatrix2 { m11: m.m11, m12: m.m21, m22: m.m22 })
+    }
+
+    /// `V * diag(eigenvalues) * Vᵀ`, the symmetric matrix the decomposition came from, up to the
+    /// rounding of the decomposition. Only the 3 independent components are computed (a
+    /// structured quadratic form), then mirrored. Panics on overflow. Upstream:
+    /// `SymmetricEigen::recompose`.
+    #[inline(always)]
+    fn recompose(self: SymmetricEigen2<T>) -> Matrix2<T> {
+        SymMatrix2Trait::quadform(self.eigenvectors, self.eigenvalues).to_matrix()
+    }
+}
+
+/// Crate-internal kernels of `SymmetricEigen2<T>` (WP 8.0: the public API is strictly
+/// upstream's): the decomposition and the eigenvalues of a `SymMatrix2` (the 3 independent
+/// components the SVD's Gram matrix is built as), the symmetric reconstruction and the sign
+/// convention of the eigenvectors.
+#[generate_trait]
+pub(crate) impl SymmetricEigen2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of SymmetricEigen2InternalTrait<T> {
+    /// The kernel of `SymmetricEigen2Trait::new` on the 3 independent components of `s`, the
+    /// form the SVD builds its Gram matrix in. Documented (cost, accuracy) on `new`.
+    fn new_sym(s: SymMatrix2<T>) -> SymmetricEigen2<T> {
         let mean = R::sum_prod2(s.m11, R::HALF, s.m22, R::HALF);
         let d = R::diff_prod(s.m11, R::HALF, s.m22, R::HALF);
         let r = R::norm2(d, s.m12);
@@ -96,29 +143,20 @@ pub impl SymmetricEigen2Impl<
         } else {
             Vector2 { x: d - r, y: s.m12 }
         };
-        let c1 = Self::canonical_sign(u.normalize());
+        let c1 = SymmetricEigen2InternalTrait::canonical_sign(u.normalize());
         SymmetricEigen2 {
             eigenvalues, eigenvectors: Matrix2 { m11: c1.x, m21: c1.y, m12: -c1.y, m22: c1.x },
         }
     }
-
-    /// The eigendecomposition of `m`, **assumed symmetric**: only the upper triangle
-    /// (`m11`, `m12`, `m22`) is read, `m21` is ignored. Upstream: `Matrix2::symmetric_eigen`
-    /// (which likewise reads a single triangle).
-    #[inline(always)]
-    fn from_matrix(m: Matrix2<T>) -> SymmetricEigen2<T> {
-        Self::new(SymMatrix2Trait::from_matrix_unchecked(m))
-    }
-
     /// The eigenvalues of `s` alone, ascending, without the eigenvectors (half the cost: no
-    /// normalisation). Upstream: `Matrix2::symmetric_eigenvalues`.
+    /// normalisation). The kernel of
+    /// `Matrix2SymmetricEigenTrait::symmetric_eigenvalues`.
     #[inline(always)]
     fn eigenvalues(s: SymMatrix2<T>) -> Vector2<T> {
         let mean = R::sum_prod2(s.m11, R::HALF, s.m22, R::HALF);
         let r = R::norm2(R::diff_prod(s.m11, R::HALF, s.m22, R::HALF), s.m12);
         Vector2 { x: mean - r, y: mean + r }
     }
-
     /// `v` with the sign that makes its component of largest absolute value positive (ties go to
     /// `x`); `v` unchanged when it is zero. This is the sign convention of `eigenvectors`,
     /// documented on the struct. No upstream equivalent.
@@ -135,23 +173,47 @@ pub impl SymmetricEigen2Impl<
             v
         }
     }
-
     /// `V * diag(eigenvalues) * Vᵀ`, the symmetric matrix the decomposition came from, up to the
     /// rounding of the decomposition (measured: **4 ulp per unit of `max |m_ij|`** on the generic
     /// oracle vectors, 15 on the near-isotropic SPD ones, see `new`). Goes through
     /// `SymMatrix2::quadform`, so only the 3 independent components are computed. Panics on
-    /// overflow. Upstream: `SymmetricEigen::recompose` (which returns the full matrix, see
-    /// `recompose_matrix`).
+    /// overflow. The kernel of `recompose`, which mirrors it.
     #[inline(always)]
-    fn recompose(self: SymmetricEigen2<T>) -> SymMatrix2<T> {
+    fn recompose_sym(self: SymmetricEigen2<T>) -> SymMatrix2<T> {
         SymMatrix2Trait::quadform(self.eigenvectors, self.eigenvalues)
     }
+}
 
-    /// `recompose()` as a full `Matrix2`, bit-identical to it by symmetry.
-    /// Upstream: `SymmetricEigen::recompose`.
+/// Upstream's `SquareMatrix` methods that go through the symmetric eigen decomposition, on
+/// `Matrix2`. Import `Matrix2SymmetricEigenTrait` to use them.
+#[generate_trait]
+pub impl Matrix2SymmetricEigenImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix2SymmetricEigenTrait<T> {
+    /// The eigendecomposition of the symmetric `self` (lower triangle read), see
+    /// `SymmetricEigen2Trait::new`. Upstream: `Matrix::symmetric_eigen`.
     #[inline(always)]
-    fn recompose_matrix(self: SymmetricEigen2<T>) -> Matrix2<T> {
-        Self::recompose(self).to_matrix()
+    fn symmetric_eigen(self: Matrix2<T>) -> SymmetricEigen2<T> {
+        SymmetricEigen2Trait::new(self)
+    }
+
+    /// The eigenvalues of the symmetric `self` alone (lower triangle read), ascending, without the
+    /// eigenvectors (half the cost: no normalisation). Upstream:
+    /// `Matrix::symmetric_eigenvalues`.
+    #[inline(always)]
+    fn symmetric_eigenvalues(self: Matrix2<T>) -> Vector2<T> {
+        let m = self;
+        SymmetricEigen2InternalTrait::eigenvalues(SymMatrix2 { m11: m.m11, m12: m.m21, m22: m.m22 })
     }
 }
 
@@ -160,14 +222,17 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix2::{Matrix2, Matrix2Trait};
+    use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_s2, fx, int, max_ulp_diff_s2, max_ulp_diff_v2, s2i, s2r, ulp_diff, v2i, v2t,
     };
     use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
     use crate::base::vector2::{Vector2, Vector2Trait};
     use crate::linalg::oracle_symmetric_eigen;
-    use super::{SymmetricEigen2, SymmetricEigen2Trait};
+    use super::{
+        Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2InternalTrait,
+        SymmetricEigen2Trait,
+    };
 
     /// `|<c_i, c_j> - delta_ij|` over the two columns, in raw units.
     fn orthonormality_error(v: Matrix2<Fixed>) -> u128 {
@@ -180,8 +245,8 @@ mod tests {
     /// `|S * c_i - lambda_i * c_i|` over the two columns, in raw units.
     fn residual_error(s: SymMatrix2<Fixed>, e: SymmetricEigen2<Fixed>) -> u128 {
         let (c1, c2) = (e.eigenvectors.column1(), e.eigenvectors.column2());
-        let r1 = s.mul_vec(c1) - c1.scale(e.eigenvalues.x);
-        let r2 = s.mul_vec(c2) - c2.scale(e.eigenvalues.y);
+        let r1 = s.to_matrix().mul_vec(c1) - c1.scale(e.eigenvalues.x);
+        let r2 = s.to_matrix().mul_vec(c2) - c2.scale(e.eigenvalues.y);
         core::cmp::max(
             max_ulp_diff_v2(r1, Vector2Trait::zeros()), max_ulp_diff_v2(r2, Vector2Trait::zeros()),
         )
@@ -192,25 +257,25 @@ mod tests {
     #[test]
     fn test_new_diagonal_is_exact() {
         // Already ordered: columns are the axes, in order.
-        let e = SymmetricEigen2Trait::new(s2i((2, 0, 7)));
+        let e = SymmetricEigen2InternalTrait::new_sym(s2i((2, 0, 7)));
         assert!(e.eigenvalues == v2i(2, 7));
         assert!(e.eigenvectors == Matrix2Trait::identity());
         // Reversed: the permutation that sorts ascending must keep `det = +1`.
-        let e = SymmetricEigen2Trait::new(s2i((7, 0, 2)));
+        let e = SymmetricEigen2InternalTrait::new_sym(s2i((7, 0, 2)));
         assert!(e.eigenvalues == v2i(2, 7));
         assert!(e.eigenvectors == Matrix2Trait::new(int(0), int(-1), int(1), int(0)));
         assert!(e.eigenvectors.determinant() == Real::ONE);
-        assert!(e.recompose() == s2i((7, 0, 2)));
+        assert!(e.recompose_sym() == s2i((7, 0, 2)));
     }
 
     #[test]
     fn test_new_isotropic_is_exact() {
-        let e = SymmetricEigen2Trait::new(s2i((3, 0, 3)));
+        let e = SymmetricEigen2InternalTrait::new_sym(s2i((3, 0, 3)));
         assert!(e.eigenvalues == v2i(3, 3));
         assert!(e.eigenvectors == Matrix2Trait::identity());
-        assert!(e.recompose() == s2i((3, 0, 3)));
+        assert!(e.recompose_sym() == s2i((3, 0, 3)));
         // Zero is isotropic too, and must not divide by zero.
-        let e = SymmetricEigen2Trait::new(s2i((0, 0, 0)));
+        let e = SymmetricEigen2InternalTrait::new_sym(s2i((0, 0, 0)));
         assert!(e.eigenvalues == v2i(0, 0));
         assert!(e.eigenvectors == Matrix2Trait::identity());
     }
@@ -218,7 +283,7 @@ mod tests {
     #[test]
     fn test_new_anti_diagonal_is_exact() {
         // [[0, 1], [1, 0]]: eigenvalues -1, 1 for (1, -1)/sqrt(2), (1, 1)/sqrt(2).
-        let e = SymmetricEigen2Trait::new(s2i((0, 1, 0)));
+        let e = SymmetricEigen2InternalTrait::new_sym(s2i((0, 1, 0)));
         assert!(e.eigenvalues == v2i(-1, 1));
         // `1/sqrt(2)` reached through a floored `norm2` and a correctly rounded division: 2 ulp of
         // the rounded constant.
@@ -231,7 +296,7 @@ mod tests {
     #[test]
     fn test_new_integer_case_is_exact() {
         // [[5, 2], [2, 2]]: mean 3.5, d 1.5, r = sqrt(2.25 + 4) = 2.5 -> eigenvalues 1 and 6.
-        let e = SymmetricEigen2Trait::new(s2i((5, 2, 2)));
+        let e = SymmetricEigen2InternalTrait::new_sym(s2i((5, 2, 2)));
         assert!(e.eigenvalues == v2i(1, 6));
         // The eigenvectors are (-1, 2)/sqrt(5) and (2, 1)/sqrt(5), irrational: 4 ulp of residual.
         assert!(residual_error(s2i((5, 2, 2)), e) <= 4);
@@ -243,8 +308,8 @@ mod tests {
         // on the dominant component (here `y`), so the columns mirror in `x` and the result is
         // reproducible rather than merely "some" basis. Floor rounding is not sign-symmetric
         // (`floor(-x) != -floor(x)`), so the mirrored component is only equal to 1 ulp.
-        let a = SymmetricEigen2Trait::new(s2i((5, 2, 2)));
-        let b = SymmetricEigen2Trait::new(s2i((5, -2, 2)));
+        let a = SymmetricEigen2InternalTrait::new_sym(s2i((5, 2, 2)));
+        let b = SymmetricEigen2InternalTrait::new_sym(s2i((5, -2, 2)));
         assert!(a.eigenvalues == b.eigenvalues);
         assert!(ulp_diff(a.eigenvectors.column1().x, -b.eigenvectors.column1().x) <= 1);
         assert!(a.eigenvectors.column1().y == b.eigenvectors.column1().y);
@@ -252,18 +317,25 @@ mod tests {
 
     #[test]
     fn test_canonical_sign_picks_the_dominant_component() {
-        assert!(SymmetricEigen2Trait::canonical_sign(v2i(-3, 1)) == v2i(3, -1));
-        assert!(SymmetricEigen2Trait::canonical_sign(v2i(1, -3)) == v2i(-1, 3));
+        assert!(SymmetricEigen2InternalTrait::canonical_sign(v2i(-3, 1)) == v2i(3, -1));
+        assert!(SymmetricEigen2InternalTrait::canonical_sign(v2i(1, -3)) == v2i(-1, 3));
         // Tie (|x| == |y|): `x` decides.
-        assert!(SymmetricEigen2Trait::canonical_sign(v2i(-1, 1)) == v2i(1, -1));
-        assert!(SymmetricEigen2Trait::canonical_sign(v2i(0, -1)) == v2i(0, 1));
-        assert!(SymmetricEigen2Trait::<Fixed>::canonical_sign(v2i(0, 0)) == v2i(0, 0));
+        assert!(SymmetricEigen2InternalTrait::canonical_sign(v2i(-1, 1)) == v2i(1, -1));
+        assert!(SymmetricEigen2InternalTrait::canonical_sign(v2i(0, -1)) == v2i(0, 1));
+        assert!(SymmetricEigen2InternalTrait::<Fixed>::canonical_sign(v2i(0, 0)) == v2i(0, 0));
     }
 
     #[test]
-    fn test_from_matrix_reads_the_upper_triangle() {
-        let m = Matrix2Trait::new(int(5), int(2), int(-9), int(2));
-        assert!(SymmetricEigen2Trait::from_matrix(m).eigenvalues == v2i(1, 6));
+    fn test_new_reads_the_lower_triangle() {
+        // Lower triangle [[5, .], [2, 2]]; the upper entry -9 is ignored, like upstream.
+        let m = Matrix2Trait::new(int(5), int(-9), int(2), int(2));
+        let e = SymmetricEigen2Trait::new(m);
+        assert!(e.eigenvalues == v2i(1, 6));
+        let s = SymmetricEigen2InternalTrait::new_sym(s2i((5, 2, 2)));
+        assert!(e.eigenvalues == s.eigenvalues && e.eigenvectors == s.eigenvectors);
+        assert!(m.symmetric_eigen().eigenvalues == e.eigenvalues);
+        assert!(m.symmetric_eigenvalues() == e.eigenvalues);
+        assert!(e.recompose() == e.recompose_sym().to_matrix());
     }
 
     #[test]
@@ -273,7 +345,10 @@ mod tests {
             let (a, _expected, _tol) = *case;
             let s = s2r(a);
             assert!(
-                SymmetricEigen2Trait::eigenvalues(s) == SymmetricEigen2Trait::new(s).eigenvalues,
+                SymmetricEigen2InternalTrait::eigenvalues(
+                    s,
+                ) == SymmetricEigen2InternalTrait::new_sym(s)
+                    .eigenvalues,
             );
         }
     }
@@ -286,7 +361,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen2_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen2Trait::new(s2r(a)).eigenvalues;
+            let got = SymmetricEigen2InternalTrait::new_sym(s2r(a)).eigenvalues;
             let e = max_ulp_diff_v2(got, v2t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
@@ -301,7 +376,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen2_eigenvalues_spd_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen2Trait::new(s2r(a)).eigenvalues;
+            let got = SymmetricEigen2InternalTrait::new_sym(s2r(a)).eigenvalues;
             let e = max_ulp_diff_v2(got, v2t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
@@ -317,15 +392,15 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
             let s = s2r(a);
-            let e = SymmetricEigen2Trait::new(s);
+            let e = SymmetricEigen2InternalTrait::new_sym(s);
             // `det = +1` only up to the rounding of the normalised column.
             assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
             let orth = orthonormality_error(e.eigenvectors);
             assert!(orth <= 8, "columns are not orthonormal");
-            let rec = max_ulp_diff_s2(e.recompose(), s) / amax_s2(s);
+            let rec = max_ulp_diff_s2(e.recompose_sym(), s) / amax_s2(s);
             assert!(rec <= 8, "reconstruction is off");
             assert!(residual_error(s, e) <= 4 * amax_s2(s));
-            assert!(e.recompose_matrix() == e.recompose().to_matrix());
+            assert!(e.recompose() == e.recompose_sym().to_matrix());
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
         }
@@ -345,11 +420,11 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
             let s = s2r(a);
-            let e = SymmetricEigen2Trait::new(s);
+            let e = SymmetricEigen2InternalTrait::new_sym(s);
             assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 128);
             let orth = orthonormality_error(e.eigenvectors);
             assert!(orth <= 64, "columns are not orthonormal");
-            let rec = max_ulp_diff_s2(e.recompose(), s) / amax_s2(s);
+            let rec = max_ulp_diff_s2(e.recompose_sym(), s) / amax_s2(s);
             assert!(rec <= 32, "reconstruction is off");
             assert!(residual_error(s, e) <= 4 * amax_s2(s));
             worst_rec = core::cmp::max(worst_rec, rec);
@@ -365,7 +440,7 @@ mod tests {
     fn test_new_overflow_panics() {
         // `mean + r` leaves the representable range.
         let s = black_box(SymMatrix2 { m11: Real::<Fixed>::MAX, m12: Real::MAX, m22: Real::MAX });
-        SymmetricEigen2Trait::new(s);
+        SymmetricEigen2InternalTrait::new_sym(s);
     }
 
     // --- gas -----------------------------------------------------------------------------------
@@ -386,7 +461,27 @@ mod tests {
     #[inline(never)]
     fn bench_symmetric_eigen2_new__closed_form() {
         let s = black_box(bench_input());
-        let d = SymmetricEigen2Trait::new(s);
+        let d = SymmetricEigen2InternalTrait::new_sym(s);
+        assert!(d.eigenvalues.x < d.eigenvalues.y);
+        assert!(d.eigenvectors.m11 != Real::ZERO);
+    }
+
+    /// The public entry point, `SymmetricEigen2::new` on a full `Matrix2` (lower triangle
+    /// read): an inlined wrapper around the kernel measured by `new__closed_form`, which it
+    /// should match (WP 8.0).
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen2_new_matrix__baseline() {
+        let _m = black_box(bench_input().to_matrix());
+        let e = black_box(fx(0x100000000));
+        assert!(e == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen2_new_matrix__public() {
+        let m = black_box(bench_input().to_matrix());
+        let d = SymmetricEigen2Trait::new(m);
         assert!(d.eigenvalues.x < d.eigenvalues.y);
         assert!(d.eigenvectors.m11 != Real::ZERO);
     }
@@ -403,14 +498,14 @@ mod tests {
     #[inline(never)]
     fn bench_symmetric_eigen2_eigenvalues__closed_form() {
         let s = black_box(bench_input());
-        let v = SymmetricEigen2Trait::eigenvalues(s);
+        let v = SymmetricEigen2InternalTrait::eigenvalues(s);
         assert!(v.x < v.y);
     }
 
     #[test]
     #[inline(never)]
     fn bench_symmetric_eigen2_recompose__baseline() {
-        let _d = black_box(SymmetricEigen2Trait::new(bench_input()));
+        let _d = black_box(SymmetricEigen2InternalTrait::new_sym(bench_input()));
         let e = black_box(fx(0x100000000));
         assert!(e == e);
     }
@@ -418,8 +513,8 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_symmetric_eigen2_recompose__quadform() {
-        let d = black_box(SymmetricEigen2Trait::new(bench_input()));
-        let s = d.recompose();
+        let d = black_box(SymmetricEigen2InternalTrait::new_sym(bench_input()));
+        let s = d.recompose_sym();
         assert!(s.m11 != Real::ZERO);
     }
 }

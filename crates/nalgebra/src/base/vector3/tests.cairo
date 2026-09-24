@@ -13,7 +13,7 @@ use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, v2, v3, v3t, v4};
 use crate::base::vector2::Vector2Trait;
 use crate::base::vector4::Vector4Trait;
-use super::{Vector3, Vector3AngleTrait, Vector3Trait, oracle};
+use super::{Vector3, Vector3AngleTrait, Vector3InternalTrait, Vector3Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;
 const MIN: i64 = -0x8000000000000000;
@@ -96,14 +96,6 @@ fn test_to_homogeneous_appends_zero() {
 fn test_push_xy_roundtrip() {
     assert!(a().push(fx(1)).xyz() == a());
     assert!(v2(0x180000000, -0x240000000).push(fx(0x3c0000000)) == a());
-}
-
-#[test]
-fn test_tuple_conversions_roundtrip() {
-    let r: Vector3<Fixed> = (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)).into();
-    assert!(r == a());
-    let t: (Fixed, Fixed, Fixed) = r.into();
-    assert!(t == (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)));
 }
 
 #[test]

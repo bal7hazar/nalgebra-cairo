@@ -20,6 +20,7 @@
 //!     --out crates/nalgebra/src/geometry/unit_quaternion/oracle.cairo
 //! ```
 
+use core::num::traits::Zero;
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
@@ -30,8 +31,9 @@ use crate::base::matrix_test_utils::{
 use crate::base::point3::Point3;
 use crate::base::unit::Unit3Trait;
 use crate::base::vector3::Vector3Trait;
-use crate::geometry::quaternion::QuaternionTrait;
+use crate::geometry::quaternion::{Quaternion, QuaternionTrait};
 use crate::geometry::rotation3::Rotation3Trait;
+use crate::geometry::unit_quaternion::UnitQuaternionInternalTrait;
 use super::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait, oracle};
 
 /// 1/2 in raw units.
@@ -77,7 +79,7 @@ fn test_imag_and_quaternion_accessors() {
     assert!(third().quaternion().scalar() == fx(HALF_RAW));
     assert!(third().into_inner() == third().quaternion);
     assert!(UnitQuaternionTrait::try_new(third().quaternion, Real::ZERO) == Some(third()));
-    assert!(UnitQuaternionTrait::try_new(QuaternionTrait::<Fixed>::zero(), Real::ZERO) == None);
+    assert!(UnitQuaternionTrait::try_new(Zero::<Quaternion<Fixed>>::zero(), Real::ZERO) == None);
 }
 
 // --- conjugate, inverse, composition
@@ -856,11 +858,11 @@ fn test_renormalize_fast_on_a_drifted_rotation() {
     }
     let n = q.quaternion.norm();
     assert!(n.abs_diff_eq(Real::ONE, 64));
-    let fixed = q.renormalize_fast();
+    let fixed = q.renormalized_fast();
     assert!(fixed.quaternion.norm().abs_diff_eq(Real::ONE, 2));
-    assert!(q.renormalize().quaternion.norm().abs_diff_eq(Real::ONE, 2));
+    assert!(q.renormalized().quaternion.norm().abs_diff_eq(Real::ONE, 2));
     // Both renormalisations agree to 1 ulp on such a small drift.
-    assert!(fixed.quaternion.abs_diff_eq(q.renormalize().quaternion, 2));
+    assert!(fixed.quaternion.abs_diff_eq(q.renormalized().quaternion, 2));
 }
 
 #[test]
@@ -869,7 +871,7 @@ fn test_renormalize_fast_fixes_a_scaled_quaternion() {
     let s = fx(HALF_RAW + 2147483);
     let drifted = uqt((s.raw, s.raw, s.raw, s.raw));
     assert!(!drifted.quaternion.norm().abs_diff_eq(Real::ONE, 1000));
-    let once = drifted.renormalize_fast();
+    let once = drifted.renormalized_fast();
     assert!(once.quaternion.norm().abs_diff_eq(Real::ONE, 8000));
-    assert!(once.renormalize_fast().quaternion.norm().abs_diff_eq(Real::ONE, 4));
+    assert!(once.renormalized_fast().quaternion.norm().abs_diff_eq(Real::ONE, 4));
 }

@@ -14,7 +14,7 @@ use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::isometry3::{Isometry3, Isometry3Trait};
-use super::translation3::{Translation3, Translation3Trait};
+use super::translation3::Translation3;
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
 #[cfg(test)]
@@ -91,11 +91,11 @@ pub impl Similarity3Impl<
         self.scaling
     }
 
-    /// Returns the same isometry with a new nonzero scale. Panics with
-    /// `nalgebra: zero scale` on zero. Upstream: `set_scaling` (by value here).
+    /// Sets a new nonzero scale, in place (the isometry is unchanged). Panics with
+    /// `nalgebra: zero scale` on zero. Upstream: `set_scaling`.
     #[inline(always)]
-    fn with_scaling(self: Similarity3<T>, scaling: T) -> Similarity3<T> {
-        Self::from_isometry(self.isometry, scaling)
+    fn set_scaling(ref self: Similarity3<T>, scaling: T) {
+        self = Self::from_isometry(self.isometry, scaling);
     }
 
     /// Applies scale `s` BEFORE `self`: only the stored scale changes. Panics on zero `s`.
@@ -130,26 +130,6 @@ pub impl Similarity3Impl<
         }
     }
 
-    /// `scaling * v + t`, fused as one product plus one add in the wide accumulator. This preserves
-    /// upstream's `rotate`-then-`scale` rounding when `v` is already rotated. Panics on overflow.
-    #[inline(always)]
-    fn scale_translate(v: Vector3<T>, scaling: T, t: Vector3<T>) -> Vector3<T> {
-        Vector3 {
-            x: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.x, scaling), t.x)),
-            y: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.y, scaling), t.y)),
-            z: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.z, scaling), t.z)),
-        }
-    }
-
-    /// `scaling * (rotation · v) + t`: a quaternion rotation, then a fused
-    /// scale-plus-translation per component. Upstream writes this as `translation *
-    /// (rotation * point * scaling)`.
-    fn rotate_scale_translate(
-        rotation: UnitQuaternion<T>, v: Vector3<T>, scaling: T, t: Vector3<T>,
-    ) -> Vector3<T> {
-        Self::scale_translate(rotation.transform_vector(v), scaling, t)
-    }
-
     /// The inverse similarity. The inverse scale is computed once, then the inverse isometry
     /// translation is divided by the original scale component-wise. Panics only as scalar division
     /// or negation can. Upstream: `inverse`.
@@ -174,35 +154,10 @@ pub impl Similarity3Impl<
         }
     }
 
-    /// `self⁻¹ * other` without materialising `self.inverse()`: the relative translation is
-    /// `rotation⁻¹ · (other.t - self.t) / self.scaling`, the rotation is `self.r⁻¹ ·
-    /// other.r` (`UnitQuaternion::conj_mul`, no negation), and the scale is `other.scaling /
-    /// self.scaling`. Upstream: `inv_mul`.
-    fn inv_mul(self: Similarity3<T>, other: Similarity3<T>) -> Similarity3<T> {
-        let d = Vector3 {
-            x: other.isometry.translation.vector.x - self.isometry.translation.vector.x,
-            y: other.isometry.translation.vector.y - self.isometry.translation.vector.y,
-            z: other.isometry.translation.vector.z - self.isometry.translation.vector.z,
-        };
-        let r = self.isometry.rotation.inverse_transform_vector(d);
-        Similarity3 {
-            isometry: Isometry3 {
-                rotation: self.isometry.rotation.conj_mul(other.isometry.rotation),
-                translation: Translation3 {
-                    vector: {
-                        let (x, y, z) = R::div3(r.x, r.y, r.z, self.scaling);
-                        Vector3 { x, y, z }
-                    },
-                },
-            },
-            scaling: R::div(other.scaling, self.scaling),
-        }
-    }
-
     /// `self * p = translation + scaling * (rotation · p)`. Panics on overflow. Upstream:
     /// `transform_point` (`sim * p`).
     fn transform_point(self: Similarity3<T>, p: Point3<T>) -> Point3<T> {
-        let c = Self::rotate_scale_translate(
+        let c = Similarity3InternalTrait::rotate_scale_translate(
             self.isometry.rotation,
             Vector3 { x: p.x, y: p.y, z: p.z },
             self.scaling,
@@ -244,18 +199,20 @@ pub impl Similarity3Impl<
     /// `Translation(t) ∘ self`: the translation shifts exactly; scale and rotation are unchanged.
     /// Upstream: `append_translation_mut`.
     #[inline(always)]
-    fn append_translation(self: Similarity3<T>, t: Translation3<T>) -> Similarity3<T> {
-        Similarity3 { isometry: self.isometry.append_translation(t), scaling: self.scaling }
+    fn append_translation_mut(ref self: Similarity3<T>, t: Translation3<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_translation_mut(t);
+        self = Similarity3 { isometry, scaling: self.scaling };
     }
 
     /// `self ∘ Translation(t)`: the translation shifts by `scaling * (rotation · t)`. Upstream:
     /// `Mul<Translation3>` for similarities.
-    fn prepend_translation(self: Similarity3<T>, t: Translation3<T>) -> Similarity3<T> {
+    fn mul_translation(self: Similarity3<T>, t: Translation3<T>) -> Similarity3<T> {
         Similarity3 {
             isometry: Isometry3 {
                 rotation: self.isometry.rotation,
                 translation: Translation3 {
-                    vector: Self::rotate_scale_translate(
+                    vector: Similarity3InternalTrait::rotate_scale_translate(
                         self.isometry.rotation,
                         t.vector,
                         self.scaling,
@@ -269,32 +226,34 @@ pub impl Similarity3Impl<
 
     /// `Rotation(r) ∘ self`: the isometry part handles the rotation about the origin; scale is
     /// unchanged. Upstream: `append_rotation_mut`.
-    fn append_rotation(self: Similarity3<T>, r: UnitQuaternion<T>) -> Similarity3<T> {
-        Similarity3 { isometry: self.isometry.append_rotation(r), scaling: self.scaling }
+    fn append_rotation_mut(ref self: Similarity3<T>, r: UnitQuaternion<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_rotation_mut(r);
+        self = Similarity3 { isometry, scaling: self.scaling };
     }
 
     /// `self ∘ Rotation(r)`: rotation before the similarity; translation and scale are unchanged.
     /// Upstream: `Mul<UnitQuaternion>`.
     #[inline(always)]
-    fn prepend_rotation(self: Similarity3<T>, r: UnitQuaternion<T>) -> Similarity3<T> {
-        Similarity3 { isometry: self.isometry.prepend_rotation(r), scaling: self.scaling }
+    fn mul_unit_quaternion(self: Similarity3<T>, r: UnitQuaternion<T>) -> Similarity3<T> {
+        Similarity3 { isometry: self.isometry.mul_unit_quaternion(r), scaling: self.scaling }
     }
 
     /// Appends a rotation about point `p`; the scale is unchanged. Upstream:
     /// `append_rotation_wrt_point_mut`.
-    fn append_rotation_wrt_point(
-        self: Similarity3<T>, r: UnitQuaternion<T>, p: Point3<T>,
-    ) -> Similarity3<T> {
-        Similarity3 {
-            isometry: self.isometry.append_rotation_wrt_point(r, p), scaling: self.scaling,
-        }
+    fn append_rotation_wrt_point_mut(ref self: Similarity3<T>, r: UnitQuaternion<T>, p: Point3<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_rotation_wrt_point_mut(r, p);
+        self = Similarity3 { isometry, scaling: self.scaling };
     }
 
     /// Appends a rotation about the similarity centre; the translation and scale are unchanged.
     /// Upstream: `append_rotation_wrt_center_mut`.
     #[inline(always)]
-    fn append_rotation_wrt_center(self: Similarity3<T>, r: UnitQuaternion<T>) -> Similarity3<T> {
-        Similarity3 { isometry: self.isometry.append_rotation_wrt_center(r), scaling: self.scaling }
+    fn append_rotation_wrt_center_mut(ref self: Similarity3<T>, r: UnitQuaternion<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_rotation_wrt_center_mut(r);
+        self = Similarity3 { isometry, scaling: self.scaling };
     }
 
     /// The homogeneous matrix with `scaling * rotation_matrix` in the 3x3 block and translation in
@@ -330,6 +289,42 @@ pub impl Similarity3Impl<
     }
 }
 
+/// Crate-internal kernels of `Similarity3<T>` (WP 8.0: the public API is strictly upstream's): the
+/// fused scale-plus-translation behind `transform_point`, `*` and `mul_translation`.
+#[generate_trait]
+pub(crate) impl Similarity3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Similarity3InternalTrait<T> {
+    /// `scaling * v + t`, fused as one product plus one add in the wide accumulator. This preserves
+    /// upstream's `rotate`-then-`scale` rounding when `v` is already rotated. Panics on overflow.
+    #[inline(always)]
+    fn scale_translate(v: Vector3<T>, scaling: T, t: Vector3<T>) -> Vector3<T> {
+        Vector3 {
+            x: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.x, scaling), t.x)),
+            y: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.y, scaling), t.y)),
+            z: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.z, scaling), t.z)),
+        }
+    }
+    /// `scaling * (rotation · v) + t`: a quaternion rotation, then a fused
+    /// scale-plus-translation per component. Upstream writes this as `translation *
+    /// (rotation * point * scaling)`.
+    fn rotate_scale_translate(
+        rotation: UnitQuaternion<T>, v: Vector3<T>, scaling: T, t: Vector3<T>,
+    ) -> Vector3<T> {
+        Self::scale_translate(rotation.transform_vector(v), scaling, t)
+    }
+}
+
 /// Operations of `Similarity3<T>` that go through an axis-angle vector, hence their own trait.
 #[generate_trait]
 pub impl Similarity3AngleImpl<
@@ -356,16 +351,6 @@ pub impl Similarity3AngleImpl<
             scaling,
         )
     }
-
-    /// The pure rotation from a scaled axis-angle with nonzero scale. Panics with
-    /// `nalgebra: zero scale` on zero scale. Upstream: `Similarity3::rotation`.
-    fn rotation(axisangle: Vector3<T>, scaling: T) -> Similarity3<T> {
-        Similarity3Trait::from_parts(
-            Translation3Trait::identity(),
-            UnitQuaternionAngleTrait::from_scaled_axis(axisangle),
-            scaling,
-        )
-    }
 }
 
 /// `a * b`: composition of two similarities, with `b` applied first. Translation is
@@ -388,7 +373,7 @@ pub impl Similarity3Mul<
             isometry: Isometry3 {
                 rotation: lhs.isometry.rotation * rhs.isometry.rotation,
                 translation: Translation3 {
-                    vector: Similarity3Trait::rotate_scale_translate(
+                    vector: Similarity3InternalTrait::rotate_scale_translate(
                         lhs.isometry.rotation,
                         rhs.isometry.translation.vector,
                         lhs.scaling,
@@ -398,15 +383,5 @@ pub impl Similarity3Mul<
             },
             scaling: lhs.scaling * rhs.scaling,
         }
-    }
-}
-
-/// `iso.into()`: the isometry with unit scale. Upstream: `From<Isometry3> for Similarity3`.
-pub impl Similarity3FromIsometry<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
-> of Into<Isometry3<T>, Similarity3<T>> {
-    #[inline(always)]
-    fn into(self: Isometry3<T>) -> Similarity3<T> {
-        Similarity3 { isometry: self, scaling: R::ONE }
     }
 }

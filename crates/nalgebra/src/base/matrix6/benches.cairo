@@ -16,7 +16,6 @@ use crate::base::vector3::Vector3;
 use crate::base::vector6::Vector6;
 use super::{Matrix6, Matrix6Trait};
 
-
 /// `[[1, .., 6], .., [31, .., 36]]`.
 fn a6() -> Matrix6<Fixed> {
     m6i(
@@ -238,23 +237,6 @@ fn bench_matrix6_from_diagonal__blocks() {
         ),
     );
     assert!(Matrix6Trait::from_diagonal(d) == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_matrix6_blocks__baseline() {
-    let a = black_box(a6());
-    let e = black_box(a.m12);
-    assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_matrix6_blocks__from_blocks() {
-    let a = black_box(a6());
-    let e = black_box(a.m12);
-    let r = Matrix6Trait::from_blocks(a.block11(), a.block12(), a.block21(), a.block22());
-    assert!(r.block12() == e);
 }
 
 #[test]

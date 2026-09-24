@@ -5,17 +5,17 @@
       "diagonal_product": 19600
     },
     "cholesky2_inverse": {
-      "alt_recip": 35590,
-      "baseline": 17340,
-      "triangular": 38250
+      "alt_recip": 36190,
+      "baseline": 17840,
+      "triangular": 38850
     },
     "cholesky2_l": {
       "baseline": 17840,
       "expand": 17940
     },
     "cholesky2_new": {
-      "baseline": 17340,
-      "factorize": 31040
+      "baseline": 17540,
+      "factorize": 31240
     },
     "cholesky2_solve": {
       "alt_recip": 37670,
@@ -27,17 +27,17 @@
       "diagonal_product": 21880
     },
     "cholesky3_inverse": {
-      "alt_recip": 54710,
-      "baseline": 19440,
-      "triangular": 62690
+      "alt_recip": 56510,
+      "baseline": 20940,
+      "triangular": 64490
     },
     "cholesky3_l": {
       "baseline": 20940,
       "expand": 20940
     },
     "cholesky3_new": {
-      "baseline": 19440,
-      "factorize": 48970
+      "baseline": 20040,
+      "factorize": 49570
     },
     "cholesky3_solve": {
       "alt_recip": 50750,
@@ -399,7 +399,6 @@
     "matrix6_lu": {
       "baseline": 22940,
       "determinant": 290740,
-      "solve": 348800,
       "try_inverse": 573340
     }
   },
@@ -575,6 +574,10 @@
       "baseline": 16340,
       "closed_form": 43670
     },
+    "symmetric_eigen2_new_matrix": {
+      "baseline": 16540,
+      "public": 43870
+    },
     "symmetric_eigen2_recompose": {
       "baseline": 43800,
       "quadform": 58390
@@ -595,6 +598,10 @@
       "jacobi_6_sweeps": 873370,
       "no_renormalisation": 576070
     },
+    "symmetric_eigen3_new_matrix": {
+      "baseline": 17540,
+      "public": 607630
+    },
     "symmetric_eigen3_recompose": {
       "baseline": 608190,
       "quadform": 638620
@@ -603,6 +610,24 @@
       "baseline": 18740,
       "three_rotations": 151710,
       "three_rotations_without_eigenvectors": 94990
+    }
+  },
+  "nalgebra::linalg::udu::benches": {
+    "udu2_new": {
+      "baseline": 17250,
+      "reversed_ldlt": 27100
+    },
+    "udu3_new": {
+      "baseline": 18250,
+      "reversed_ldlt": 42240
+    },
+    "udu4_new": {
+      "baseline": 25420,
+      "reversed_ldlt": 72970
+    },
+    "udu6_new": {
+      "baseline": 33620,
+      "reversed_ldlt": 147850
     }
   }
 }

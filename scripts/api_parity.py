@@ -1098,7 +1098,7 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "UnitQuaternion": ["UnitQuaternion"],
     "UnitComplex": ["UnitComplex"],
     "Cholesky": ["Cholesky2", "Cholesky3", "Cholesky4", "Cholesky6"],
-    "UDU": ["Ldlt2", "Ldlt3", "Ldlt4", "Ldlt6"],
+    "UDU": ["Udu2", "Udu3", "Udu4", "Udu6"],
     "LU": ["Lu2", "Lu3", "Lu4", "Lu6"],
     "QR": ["Qr2", "Qr3", "Qr4"],
     "SVD": ["Svd2", "Svd3"],
@@ -1192,10 +1192,51 @@ RENAMES = (
     rule(r"Isometry[23]?|Similarity[23]?|Rotation[23]?|UnitQuaternion|UnitComplex",
          r"impl:Mul<Unit<Matrix>>", "transform_unit_vector",
          "heterogeneous operators are named methods"),
-    rule(r"UDU", r"new", "new", "Cairo's LDLᵀ (`Ldlt2/3/4/6`) mirrors upstream's `UDU`"),
-    rule(r"PermutationSequence", r"identity", r"Perm::identity2",
-         "`PermTrait::identity2/3/4/6`"),
+    rule(r"Point", r"impl:Add<Matrix>", "add_vector",
+         "`p + v`: Cairo's `Add` is homogeneous, the heterogeneous operator is a named method"),
+    rule(r"Point", r"impl:Sub<Matrix>", "sub_vector",
+         "`p - v`: Cairo's `Sub` is homogeneous, the heterogeneous operator is a named method"),
+    rule(r"Point", r"impl:Sub<Point>", "sub_point",
+         "`p - q` (a vector): Cairo's `Sub` is homogeneous, the heterogeneous operator is a named "
+         "method"),
+    rule(r"Isometry|Similarity", r"impl:Mul<Translation>", "mul_translation",
+         "`iso * t`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method"),
+    rule(r"Isometry2|Similarity2", r"impl:Mul<UnitComplex>", "mul_unit_complex",
+         "`iso * r`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method"),
+    rule(r"Isometry3|Similarity3", r"impl:Mul<UnitQuaternion>", "mul_unit_quaternion",
+         "`iso * r`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method"),
 )
+
+# Cairo-imposed forms (WP 8.0, owner's rule of 2026-09-24): public Cairo items that spell an
+# upstream operator, field or `Deref` access that has no single upstream ITEM to rename (the
+# upstream item is shared with another Cairo spelling, or is a field / a method reached through
+# `Deref`). They are listed in their own section and are not counted as extras.  (owner, rendered
+# item, upstream spelling, reason) — fullmatch regexes on the Cairo owner and rendered item.
+CAIRO_FORMS = (
+    (r"Matrix[2-6]", r"mul_vec", "`m * v`",
+     "upstream `Mul<Matrix>` with a column vector on the right; Cairo's `Mul` is homogeneous and "
+     "`Mul<Matrix>` is the matrix product"),
+    (r"Matrix[2-6]", r"tr_mul_vec", "`m.tr_mul(&v)`",
+     "upstream's `tr_mul` takes any right-hand matrix; Cairo has no overloading and `tr_mul` is "
+     "the matrix form"),
+    (r"Point[23]", r"coords", "`p.coords`",
+     "an upstream public field; Cairo's points store `x, y(, z)` as fields (upstream's `Deref` "
+     "view), so the vector is a method"),
+    (r"Unit", r"dot|scale", "`u.dot(&w)`, `u * k`",
+     "`Vector` methods reached through upstream's `Deref<Target = Vector>`"),
+    (r"UnitComplex", r"re|im", "`c.re`, `c.im`",
+     "the fields of upstream's `Complex`, reached through `Deref`"),
+    (r"UnitQuaternion", r"dot|imag|scalar", "`q.dot(&r)`, `q.imag()`, `q.scalar()`",
+     "`Quaternion` methods reached through upstream's `Deref<Target = Quaternion>`"),
+)
+
+
+def cairo_form(item: Item) -> tuple[str, str] | None:
+    r = rendered(item)
+    for owner, name, spelling, reason in CAIRO_FORMS:
+        if re.fullmatch(owner, item.owner) and re.fullmatch(name, r):
+            return spelling, reason
+    return None
 
 
 def exclude(owner: str, item: str, reason: str) -> Rule:
@@ -1559,48 +1600,11 @@ EXTRA_RATIONALE = (
     (r"\w+", r"impl:(?:Copy|PartialEq|Serde|Default|Debug|Hash)",
      "Standard Cairo derive set (`Copy, Drop, PartialEq, Serde, Default, Debug, Hash`) on a "
      "type whose upstream counterpart lacks this trait."),
-    (r"SymMatrix[23]", r".*",
-     "DESIGN D4: first-class symmetric type (rapier's `SdpMatrix3`); upstream uses a full "
-     "`Matrix3` plus `symmetric_*` / `quadform` methods."),
     (r"simba::\w+", r".*",
      "Scalar layer (DESIGN D2-D3): mirrors simba's `RealField` / `ComplexField`, not nalgebra-rs; "
      "fused kernels (`sum_prod*`, `diff_prod`, `norm*`, `wide_*`), prepared divisors "
-     "(`div3..div16`) and ulp comparisons are Cairo-only by design."),
-    (r"Ldlt\d", r".*",
-     "`LDLᵀ` mirrors upstream `UDU` (DESIGN D6: no square root, indefinite accepted); `l`, "
-     "`solve`, `inverse`, `determinant` go beyond upstream `UDU` (which only has `u`, `d`, "
-     "`d_matrix`)."),
-    (r"Perm\d?", r".*",
-     "Row permutation of the unrolled LU (upstream `PermutationSequence`, dynamic)."),
-    (r"Matrix\d|Rotation2|UnitComplex|SymMatrix\d", r"(?:mul_vec|tr_mul_vec)",
-     "DESIGN D4: heterogeneous `*` is a named method (`m * v`, `m.tr_mul(v)`)."),
-    (r"Matrix\d", r"(?:row|column)\d",
-     "Unrolled accessors standing for upstream `row(i)` / `column(i)` (views)."),
-    (r"Matrix6|Vector6", r"(?:block\d\d|from_blocks|head|tail|impl:.*)",
-     "DESIGN D4: spatial-algebra layout (`Matrix6` as 3x3 blocks, `Vector6` as two "
-     "`Vector3`); upstream reaches them with `fixed_view` / `fixed_rows`."),
-    (r"Matrix\d|SymMatrix\d", r"(?:adjugate|from_outer|from_outer_self|mul_transpose|"
-     r"cross_matrix_mul|mul_cross_matrix|polar_decomposition|quadform\w*|solve|mul_matrix|"
-     r"add_diagonal|inverse_unchecked|from_matrix_unchecked|to_matrix)",
-     "DESIGN D4 structured kernels (never materialize skew / diagonal / outer products)."),
-    (r"\w+", r"impl:(?:From|Into)<\(.*\)>",
-     "Tuple conversions: Cairo has no array-based `From` blanket; convenience, no upstream "
-     "counterpart."),
-    (r"\w+", r"conj_mul", "WP 4.5 fused `a.conjugate() * b` kernel (saves 3 negations)."),
-    (r"Isometry\d|Similarity\d", r"(?:lerp_nlerp|rotate_translate|rotate_scale_translate|"
-     r"scale_translate|renormalize\w*|from_rotation|from_translation|with_scaling|"
-     r"append_\w+|prepend_\w+|rotation)",
-     "DESIGN D6 fused kernels / rapier helpers; upstream spells some as operators "
-     "(`Translation * Isometry`) or fields (`iso.rotation`)."),
-    (r"UnitComplex|UnitQuaternion|Unit|Rotation\d|Vector3", r"(?:append_axisangle_linearized|"
-     r"renormalize\w*|orthonormal_basis|to_unit_\w+|from_unit_\w+|re|im|imag|scalar|dot\w*|"
-     r"scale|as_ref)",
-     "Accessors / rapier helpers (`orthonormal_basis` = upstream `orthonormal_subspace_basis`, "
-     "`re` / `im` = `complex().re` ...)."),
-    (r"Point\d|Translation\d|Quaternion", r"(?:add_vector|sub_point|sub_vector|scale|unscale|"
-     r"center|coords|distance\w*|vector|new|zero|push|impl:.*)",
-     "Named forms of upstream operators / free functions (`p + v`, `p - q`, "
-     "`nalgebra::distance`), fields (`p.coords`, `t.vector`) or Cairo-side conversions."),
+     "(`div3..div16`) and ulp comparisons are Cairo-only by design (WP 8.0: the owner rules on "
+     "them with the gas figures of the WP 8.0 report; `crates/simba` is out of that WP's scope)."),
 )
 
 
@@ -1666,6 +1670,8 @@ def dimension_grid(types: set[str]) -> list[str]:
 
 def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
     results, extras = classify(rust, cairo)
+    forms = [i for i in extras if cairo_form(i)]
+    extras = [i for i in extras if not cairo_form(i)]
     cairo_types = {i.name for i in cairo if i.kind == "type"}
     todo = [i for i in rust if results[i].status in ("missing", "partial")]
     wp_of = {i: assign_wp(i) for i in todo}
@@ -1732,7 +1738,9 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
                f"**{total['missing']}** | **{total['excluded']}** | **{n}** | "
                f"**{pct(total['ported'], n - total['excluded'])}** |")
     out += ["", f"nalgebra.cairo items with no upstream counterpart: **{len(extras)}** "
-            "([list](#items-in-nalgebracairo-but-not-upstream)).", ""]
+            "([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream "
+            f"operators, fields and `Deref` access: **{len(forms)}** "
+            "([list](#cairo-imposed-forms)).", ""]
 
     # Work packages.
     out += [
@@ -1815,6 +1823,21 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
         "(packages P16, P17, P18, P20, P21).",
         "",
     ]
+
+    # Cairo-imposed forms.
+    out += ["## Cairo-imposed forms", "",
+            "Public Cairo items that spell an upstream operator, field or `Deref` access Cairo "
+            "cannot express the same way, where no single upstream item can carry the rename "
+            "(`CAIRO_FORMS`; the ones that can are `RENAMES`, shown in the inventory). They are "
+            "the only admissible differences besides the renames (owner, 2026-09-24).", "",
+            "| Owner | Items | Upstream | Reason |", "|---|---|---|---|"]
+    fgrouped: dict[tuple[str, str, str], list[str]] = {}
+    for item in forms:
+        spelling, reason = cairo_form(item)
+        fgrouped.setdefault((item.owner, spelling, reason), []).append(f"`{md(rendered(item))}`")
+    for (owner, spelling, reason), names in sorted(fgrouped.items()):
+        out.append(f"| {md(owner)} | {', '.join(sorted(names))} | {md(spelling)} | {md(reason)} |")
+    out.append("")
 
     # Extras.
     out += ["## Items in nalgebra.cairo but not upstream", "",

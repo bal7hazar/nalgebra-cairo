@@ -100,15 +100,6 @@ fn test_xyz_keeps_first_components() {
 }
 
 #[test]
-fn test_tuple_conversions_roundtrip() {
-    let r: Vector4<Fixed> = (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000), fx(-0x80000000))
-        .into();
-    assert!(r == a());
-    let t: (Fixed, Fixed, Fixed, Fixed) = r.into();
-    assert!(t == (fx(0x180000000), fx(-0x240000000), fx(0x3c0000000), fx(-0x80000000)));
-}
-
-#[test]
 fn test_array_conversions_roundtrip() {
     let r: Vector4<Fixed> = [fx(0x180000000), fx(-0x240000000), fx(0x3c0000000), fx(-0x80000000)]
         .into();

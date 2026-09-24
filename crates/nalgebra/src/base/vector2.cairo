@@ -5,7 +5,7 @@
 //! - `Vector2AngleTrait` / `Vector2AngleImpl`: `angle`, which additionally needs
 //!   `simba::scalar::Transcendental`;
 //! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a scalar, and
-//!   conversions from / to `(T, T)` and `[T; 2]`: their impls live in this module, where the
+//!   conversions from / to `[T; 2]`: their impls live in this module, where the
 //!   compiler finds them without any import.
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
@@ -468,24 +468,6 @@ pub impl Vector2DivAssign<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of DivAssign<V
     #[inline(always)]
     fn div_assign(ref self: Vector2<T>, rhs: T) {
         self = Vector2 { x: R::div(self.x, rhs), y: R::div(self.y, rhs) };
-    }
-}
-
-/// `(x, y).into()`. Upstream: `From<(T, T)>`-style construction (`From<[T; 2]>`).
-pub impl Vector2FromTuple<T> of Into<(T, T), Vector2<T>> {
-    #[inline(always)]
-    fn into(self: (T, T)) -> Vector2<T> {
-        let (x, y) = self;
-        Vector2 { x, y }
-    }
-}
-
-/// The components as a tuple `(x, y)`.
-pub impl Vector2IntoTuple<T> of Into<Vector2<T>, (T, T)> {
-    #[inline(always)]
-    fn into(self: Vector2<T>) -> (T, T) {
-        let Vector2 { x, y } = self;
-        (x, y)
     }
 }
 

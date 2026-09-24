@@ -57,13 +57,6 @@ pub impl Translation3Impl<
         Translation3 { vector: v }
     }
 
-    /// The translation vector (a copy: everything is by value here). Upstream: the `vector`
-    /// field.
-    #[inline(always)]
-    fn vector(self: Translation3<T>) -> Vector3<T> {
-        self.vector
-    }
-
     /// The inverse translation, by `-vector`. Exact; panics on overflow (`-MIN`). Upstream:
     /// `inverse`.
     #[inline(always)]
@@ -141,13 +134,5 @@ pub impl Translation3FromVector<T> of Into<Vector3<T>, Translation3<T>> {
     #[inline(always)]
     fn into(self: Vector3<T>) -> Translation3<T> {
         Translation3 { vector: self }
-    }
-}
-
-/// `t.into()`: the translation vector. Upstream: the `vector` field.
-pub impl Translation3IntoVector<T> of Into<Translation3<T>, Vector3<T>> {
-    #[inline(always)]
-    fn into(self: Translation3<T>) -> Vector3<T> {
-        self.vector
     }
 }

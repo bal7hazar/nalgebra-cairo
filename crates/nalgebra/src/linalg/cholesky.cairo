@@ -28,9 +28,8 @@
 //! effective mass every step) and the dynamic `insert_column` / `remove_column`, which have no
 //! meaning for a statically sized factor.
 //!
-//! When no square root is wanted — and none is needed to solve a system — prefer
-//! `crate::linalg::ldlt` (DESIGN D6): `LDLᵀ` has the same shape, no `sqrt`, a cheaper `solve`,
-//! and it also factorises indefinite symmetric matrices.
+//! When no square root is wanted, upstream's `UDU` (`crate::linalg::udu`, on the crate-internal
+//! `LDLᵀ` kernel of DESIGN D6) factorises without one, indefinite symmetric matrices included.
 
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
@@ -57,7 +56,7 @@ mod tests;
 /// `l11, l21, .., l21, l22, ..` — the lower triangle in the column-major order upstream stores a
 /// matrix in. Build one with `Cholesky2Trait::new`; the fields are public so that a factor
 /// computed elsewhere can be re-assembled, and nothing checks that they form a valid factor.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Cholesky2<T> {
     /// Row 1, column 1 of the lower triangular factor.
     pub l11: T,
@@ -65,6 +64,15 @@ pub struct Cholesky2<T> {
     pub l21: T,
     /// Row 2, column 2 of the lower triangular factor.
     pub l22: T,
+}
+
+/// Test-only field-wise equality (upstream `Cholesky2` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Cholesky2PartialEq<T, +PartialEq<T>> of PartialEq<Cholesky2<T>> {
+    fn eq(lhs: @Cholesky2<T>, rhs: @Cholesky2<T>) -> bool {
+        lhs.l11 == rhs.l11 && lhs.l21 == rhs.l21 && lhs.l22 == rhs.l22
+    }
 }
 
 /// The Cholesky factorisation `a = l * lᵀ` of a symmetric positive-definite 3x3 matrix:
@@ -75,7 +83,7 @@ pub struct Cholesky2<T> {
 /// `l11, l21, .., l31, l22, ..` — the lower triangle in the column-major order upstream stores a
 /// matrix in. Build one with `Cholesky3Trait::new`; the fields are public so that a factor
 /// computed elsewhere can be re-assembled, and nothing checks that they form a valid factor.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Cholesky3<T> {
     /// Row 1, column 1 of the lower triangular factor.
     pub l11: T,
@@ -91,6 +99,20 @@ pub struct Cholesky3<T> {
     pub l33: T,
 }
 
+/// Test-only field-wise equality (upstream `Cholesky3` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Cholesky3PartialEq<T, +PartialEq<T>> of PartialEq<Cholesky3<T>> {
+    fn eq(lhs: @Cholesky3<T>, rhs: @Cholesky3<T>) -> bool {
+        lhs.l11 == rhs.l11
+            && lhs.l21 == rhs.l21
+            && lhs.l31 == rhs.l31
+            && lhs.l22 == rhs.l22
+            && lhs.l32 == rhs.l32
+            && lhs.l33 == rhs.l33
+    }
+}
+
 /// The Cholesky factorisation `a = l * lᵀ` of a symmetric positive-definite 4x4 matrix:
 /// the 10 components of the LOWER triangular factor `l`, `l44` last.
 ///
@@ -99,7 +121,7 @@ pub struct Cholesky3<T> {
 /// `l11, l21, .., l41, l22, ..` — the lower triangle in the column-major order upstream stores a
 /// matrix in. Build one with `Cholesky4Trait::new`; the fields are public so that a factor
 /// computed elsewhere can be re-assembled, and nothing checks that they form a valid factor.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Cholesky4<T> {
     /// Row 1, column 1 of the lower triangular factor.
     pub l11: T,
@@ -123,6 +145,24 @@ pub struct Cholesky4<T> {
     pub l44: T,
 }
 
+/// Test-only field-wise equality (upstream `Cholesky4` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Cholesky4PartialEq<T, +PartialEq<T>> of PartialEq<Cholesky4<T>> {
+    fn eq(lhs: @Cholesky4<T>, rhs: @Cholesky4<T>) -> bool {
+        lhs.l11 == rhs.l11
+            && lhs.l21 == rhs.l21
+            && lhs.l31 == rhs.l31
+            && lhs.l41 == rhs.l41
+            && lhs.l22 == rhs.l22
+            && lhs.l32 == rhs.l32
+            && lhs.l42 == rhs.l42
+            && lhs.l33 == rhs.l33
+            && lhs.l43 == rhs.l43
+            && lhs.l44 == rhs.l44
+    }
+}
+
 /// The Cholesky factorisation `a = l * lᵀ` of a symmetric positive-definite 6x6 matrix:
 /// the 21 components of the LOWER triangular factor `l`, `l66` last.
 ///
@@ -131,7 +171,7 @@ pub struct Cholesky4<T> {
 /// `l11, l21, .., l61, l22, ..` — the lower triangle in the column-major order upstream stores a
 /// matrix in. Build one with `Cholesky6Trait::new`; the fields are public so that a factor
 /// computed elsewhere can be re-assembled, and nothing checks that they form a valid factor.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct Cholesky6<T> {
     /// Row 1, column 1 of the lower triangular factor.
     pub l11: T,
@@ -177,6 +217,35 @@ pub struct Cholesky6<T> {
     pub l66: T,
 }
 
+/// Test-only field-wise equality (upstream `Cholesky6` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl Cholesky6PartialEq<T, +PartialEq<T>> of PartialEq<Cholesky6<T>> {
+    fn eq(lhs: @Cholesky6<T>, rhs: @Cholesky6<T>) -> bool {
+        lhs.l11 == rhs.l11
+            && lhs.l21 == rhs.l21
+            && lhs.l31 == rhs.l31
+            && lhs.l41 == rhs.l41
+            && lhs.l51 == rhs.l51
+            && lhs.l61 == rhs.l61
+            && lhs.l22 == rhs.l22
+            && lhs.l32 == rhs.l32
+            && lhs.l42 == rhs.l42
+            && lhs.l52 == rhs.l52
+            && lhs.l62 == rhs.l62
+            && lhs.l33 == rhs.l33
+            && lhs.l43 == rhs.l43
+            && lhs.l53 == rhs.l53
+            && lhs.l63 == rhs.l63
+            && lhs.l44 == rhs.l44
+            && lhs.l54 == rhs.l54
+            && lhs.l64 == rhs.l64
+            && lhs.l55 == rhs.l55
+            && lhs.l65 == rhs.l65
+            && lhs.l66 == rhs.l66
+    }
+}
+
 /// Methods of `Cholesky2<T>` for any `Real` scalar.
 #[generate_trait]
 pub impl Cholesky2Impl<
@@ -195,8 +264,9 @@ pub impl Cholesky2Impl<
     /// The Cholesky factorisation `a = l * lᵀ` of the symmetric positive-definite `a`, or `None`
     /// when `a` is not positive definite. Upstream: `Cholesky::new`.
     ///
-    /// `a` is a `SymMatrix2`, so there is no triangle to choose: its 3 independent
-    /// components ARE the matrix.
+    /// Like upstream, only the LOWER triangle of `a` is read (the entries at row `i`,
+    /// column `j` with `i >= j`): the strictly upper triangle is ignored and the symmetry
+    /// of `a` is NOT checked.
     ///
     /// Column by column (j = 1..2): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of
@@ -213,21 +283,9 @@ pub impl Cholesky2Impl<
     /// same way, but only when it drives a pivot to zero: `new` is not a definiteness test.
     ///
     /// Panics on overflow of a pivot or a numerator; never wraps.
-    fn new(a: SymMatrix2<T>) -> Option<Cholesky2<T>> {
-        let p1 = a.m11;
-        if p1 <= R::ZERO {
-            return None;
-        }
-        let l11 = R::sqrt(p1);
-        let l21 = R::div(a.m12, l11);
-        let w = R::wide_add(R::wide_zero(), a.m22);
-        let w = R::wide_sub_prod(w, l21, l21);
-        let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
-            return None;
-        }
-        let l22 = R::sqrt(p2);
-        Some(Cholesky2 { l11, l21, l22 })
+    #[inline(always)]
+    fn new(a: Matrix2<T>) -> Option<Cholesky2<T>> {
+        Cholesky2InternalTrait::new_sym(SymMatrix2 { m11: a.m11, m12: a.m21, m22: a.m22 })
     }
 
     /// The lower triangular factor, with explicit zeros above the diagonal. Upstream:
@@ -261,8 +319,7 @@ pub impl Cholesky2Impl<
         Vector2 { x: x1, y: x2 }
     }
 
-    /// `a⁻¹ = l⁻ᵀ · l⁻¹`, as its 3 independent components (upstream returns the full
-    /// matrix).
+    /// `a⁻¹ = l⁻ᵀ · l⁻¹`, as a full (symmetric) `Matrix2`, like upstream.
     /// Upstream: `Cholesky::inverse`.
     ///
     /// `q = l⁻¹` (lower triangular) is built column by column — `q_jj = recip(l_jj)` (the
@@ -276,7 +333,7 @@ pub impl Cholesky2Impl<
     /// The result is symmetric by construction (one accumulation per unordered pair), so only its
     /// upper triangle is computed. Panics on overflow, which for an ill-conditioned `a` happens
     /// well before the mathematical inverse stops fitting in the scalar.
-    fn inverse(self: Cholesky2<T>) -> SymMatrix2<T> {
+    fn inverse(self: Cholesky2<T>) -> Matrix2<T> {
         let q11 = R::recip(self.l11);
         let q22 = R::recip(self.l22);
         let w = R::wide_zero();
@@ -289,7 +346,7 @@ pub impl Cholesky2Impl<
         let r11 = R::wide_rescale(w);
         let r12 = q21 * q22;
         let r22 = R::sqr(q22);
-        SymMatrix2 { m11: r11, m12: r12, m22: r22 }
+        Matrix2 { m11: r11, m21: r12, m12: r12, m22: r22 }
     }
 
     /// `det(a) = Π l_jj²`, computed as `(Π l_jj)²`: a balanced product tree (1 floored
@@ -303,6 +360,43 @@ pub impl Cholesky2Impl<
     #[inline(always)]
     fn determinant(self: Cholesky2<T>) -> T {
         R::sqr(self.l11 * self.l22)
+    }
+}
+
+/// Crate-internal kernel of `Cholesky2<T>`: `new` on the 3 independent components of the
+/// symmetric matrix (the public `new` takes upstream's full `Matrix2` and is inlined around it, so
+/// the call passes 3 scalars instead of 4: WP 8.0 keeps the gas of the former `SymMatrix2`
+/// signature).
+#[generate_trait]
+pub(crate) impl Cholesky2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Cholesky2InternalTrait<T> {
+    /// The factorisation of the symmetric matrix of upper triangle `a`; see `Cholesky2Trait::new`.
+    fn new_sym(a: SymMatrix2<T>) -> Option<Cholesky2<T>> {
+        let p1 = a.m11;
+        if p1 <= R::ZERO {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let l21 = R::div(a.m12, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        if p2 <= R::ZERO {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        Some(Cholesky2 { l11, l21, l22 })
     }
 }
 
@@ -324,8 +418,9 @@ pub impl Cholesky3Impl<
     /// The Cholesky factorisation `a = l * lᵀ` of the symmetric positive-definite `a`, or `None`
     /// when `a` is not positive definite. Upstream: `Cholesky::new`.
     ///
-    /// `a` is a `SymMatrix3`, so there is no triangle to choose: its 6 independent
-    /// components ARE the matrix.
+    /// Like upstream, only the LOWER triangle of `a` is read (the entries at row `i`,
+    /// column `j` with `i >= j`): the strictly upper triangle is ignored and the symmetry
+    /// of `a` is NOT checked.
     ///
     /// Column by column (j = 1..3): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of
@@ -342,34 +437,11 @@ pub impl Cholesky3Impl<
     /// same way, but only when it drives a pivot to zero: `new` is not a definiteness test.
     ///
     /// Panics on overflow of a pivot or a numerator; never wraps.
-    fn new(a: SymMatrix3<T>) -> Option<Cholesky3<T>> {
-        let p1 = a.m11;
-        if p1 <= R::ZERO {
-            return None;
-        }
-        let l11 = R::sqrt(p1);
-        let l21 = R::div(a.m12, l11);
-        let l31 = R::div(a.m13, l11);
-        let w = R::wide_add(R::wide_zero(), a.m22);
-        let w = R::wide_sub_prod(w, l21, l21);
-        let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
-            return None;
-        }
-        let l22 = R::sqrt(p2);
-        let w = R::wide_add(R::wide_zero(), a.m23);
-        let w = R::wide_sub_prod(w, l31, l21);
-        let n32 = R::wide_rescale(w);
-        let l32 = R::div(n32, l22);
-        let w = R::wide_add(R::wide_zero(), a.m33);
-        let w = R::wide_sub_prod(w, l31, l31);
-        let w = R::wide_sub_prod(w, l32, l32);
-        let p3 = R::wide_rescale(w);
-        if p3 <= R::ZERO {
-            return None;
-        }
-        let l33 = R::sqrt(p3);
-        Some(Cholesky3 { l11, l21, l31, l22, l32, l33 })
+    #[inline(always)]
+    fn new(a: Matrix3<T>) -> Option<Cholesky3<T>> {
+        Cholesky3InternalTrait::new_sym(
+            SymMatrix3 { m11: a.m11, m12: a.m21, m13: a.m31, m22: a.m22, m23: a.m32, m33: a.m33 },
+        )
     }
 
     /// The lower triangular factor, with explicit zeros above the diagonal. Upstream:
@@ -423,8 +495,7 @@ pub impl Cholesky3Impl<
         Vector3 { x: x1, y: x2, z: x3 }
     }
 
-    /// `a⁻¹ = l⁻ᵀ · l⁻¹`, as its 6 independent components (upstream returns the full
-    /// matrix).
+    /// `a⁻¹ = l⁻ᵀ · l⁻¹`, as a full (symmetric) `Matrix3`, like upstream.
     /// Upstream: `Cholesky::inverse`.
     ///
     /// `q = l⁻¹` (lower triangular) is built column by column — `q_jj = recip(l_jj)` (the
@@ -438,7 +509,7 @@ pub impl Cholesky3Impl<
     /// The result is symmetric by construction (one accumulation per unordered pair), so only its
     /// upper triangle is computed. Panics on overflow, which for an ill-conditioned `a` happens
     /// well before the mathematical inverse stops fitting in the scalar.
-    fn inverse(self: Cholesky3<T>) -> SymMatrix3<T> {
+    fn inverse(self: Cholesky3<T>) -> Matrix3<T> {
         let q11 = R::recip(self.l11);
         let q22 = R::recip(self.l22);
         let q33 = R::recip(self.l33);
@@ -471,7 +542,17 @@ pub impl Cholesky3Impl<
         let r22 = R::wide_rescale(w);
         let r23 = q32 * q33;
         let r33 = R::sqr(q33);
-        SymMatrix3 { m11: r11, m12: r12, m13: r13, m22: r22, m23: r23, m33: r33 }
+        Matrix3 {
+            m11: r11,
+            m21: r12,
+            m31: r13,
+            m12: r12,
+            m22: r22,
+            m32: r23,
+            m13: r13,
+            m23: r23,
+            m33: r33,
+        }
     }
 
     /// `det(a) = Π l_jj²`, computed as `(Π l_jj)²`: a balanced product tree (2 floored
@@ -485,6 +566,56 @@ pub impl Cholesky3Impl<
     #[inline(always)]
     fn determinant(self: Cholesky3<T>) -> T {
         R::sqr(self.l11 * (self.l22 * self.l33))
+    }
+}
+
+/// Crate-internal kernel of `Cholesky3<T>`: `new` on the 6 independent components of the
+/// symmetric matrix (the public `new` takes upstream's full `Matrix3` and is inlined around it, so
+/// the call passes 6 scalars instead of 9: WP 8.0 keeps the gas of the former `SymMatrix3`
+/// signature).
+#[generate_trait]
+pub(crate) impl Cholesky3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Cholesky3InternalTrait<T> {
+    /// The factorisation of the symmetric matrix of upper triangle `a`; see `Cholesky3Trait::new`.
+    fn new_sym(a: SymMatrix3<T>) -> Option<Cholesky3<T>> {
+        let p1 = a.m11;
+        if p1 <= R::ZERO {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let l21 = R::div(a.m12, l11);
+        let l31 = R::div(a.m13, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        if p2 <= R::ZERO {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m23);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        if p3 <= R::ZERO {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        Some(Cholesky3 { l11, l21, l31, l22, l32, l33 })
     }
 }
 
@@ -508,8 +639,7 @@ pub impl Cholesky4Impl<
     ///
     /// Like upstream, only the LOWER triangle of `a` is read (the entries at row `i`,
     /// column `j` with `i >= j`): the strictly upper triangle is ignored and the symmetry
-    /// of `a` is NOT checked. There is no `SymMatrix4` type, so a symmetric 4x4
-    /// matrix travels as a plain `Matrix4`.
+    /// of `a` is NOT checked.
     ///
     /// Column by column (j = 1..4): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of
@@ -774,8 +904,7 @@ pub impl Cholesky6Impl<
     ///
     /// Like upstream, only the LOWER triangle of `a` is read (the entries at row `i`,
     /// column `j` with `i >= j`): the strictly upper triangle is ignored and the symmetry
-    /// of `a` is NOT checked. There is no `SymMatrix6` type, so a symmetric 6x6
-    /// matrix travels as a plain `Matrix6`.
+    /// of `a` is NOT checked.
     ///
     /// Column by column (j = 1..6): the pivot `p_j = a_jj - Σ_(k<j) l_jk²` is accumulated
     /// exactly in the wide accumulator and floored ONCE, then `l_jj = sqrt(p_j)` (exact floor of

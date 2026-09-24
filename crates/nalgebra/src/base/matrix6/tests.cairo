@@ -101,21 +101,21 @@ fn test_zeros_identity_default() {
 }
 
 #[test]
-fn test_from_blocks_and_block_accessors() {
+fn test_blocks_are_the_fields() {
     let m = a6();
-    let r = Matrix6Trait::from_blocks(m.block11(), m.block12(), m.block21(), m.block22());
+    let r = Matrix6 { m11: m.m11, m21: m.m21, m12: m.m12, m22: m.m22 };
     assert!(r == m);
     // Block (1, 2) holds rows 1-3, columns 4-6.
     assert!(
         m
-            .block12() == Matrix3Trait::new(
+            .m12 == Matrix3Trait::new(
                 int(4), int(5), int(6), int(10), int(11), int(12), int(16), int(17), int(18),
             ),
     );
     // Block (2, 1) holds rows 4-6, columns 1-3.
     assert!(
         m
-            .block21() == Matrix3Trait::new(
+            .m21 == Matrix3Trait::new(
                 int(19), int(20), int(21), int(25), int(26), int(27), int(31), int(32), int(33),
             ),
     );
@@ -154,7 +154,7 @@ fn test_transpose_swaps_blocks() {
     );
     assert!(t.transpose() == a6());
     // The off-diagonal blocks are swapped, each transposed.
-    assert!(t.block12() == a6().block21().transpose());
+    assert!(t.m12 == a6().m21.transpose());
 }
 
 #[test]
@@ -306,9 +306,9 @@ fn test_abs_diff_eq_and_is_identity_count_raw_units() {
     assert!(!i.abs_diff_eq(off, 2));
     assert!(a6().abs_diff_eq(a6(), 0));
     // An off-diagonal block is compared too.
-    let skew = Matrix6Trait::from_blocks(
-        Matrix3Trait::identity(),
-        Matrix3 {
+    let skew = Matrix6 {
+        m11: Matrix3Trait::identity(),
+        m12: Matrix3 {
             m11: fx(4),
             m21: fx(0),
             m31: fx(0),
@@ -319,9 +319,9 @@ fn test_abs_diff_eq_and_is_identity_count_raw_units() {
             m23: fx(0),
             m33: fx(0),
         },
-        Matrix3Trait::zeros(),
-        Matrix3Trait::identity(),
-    );
+        m21: Matrix3Trait::zeros(),
+        m22: Matrix3Trait::identity(),
+    };
     assert!(skew.is_identity(4));
     assert!(!skew.is_identity(3));
 }

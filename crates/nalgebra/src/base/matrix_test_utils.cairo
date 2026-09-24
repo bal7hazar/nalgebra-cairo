@@ -101,9 +101,9 @@
 
 use fixed::Fixed;
 use simba::scalar::Real;
-use crate::base::matrix2::{Matrix2, Matrix2Trait};
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
-use crate::base::matrix4::{Matrix4, Matrix4Trait};
+use crate::base::matrix2::{Matrix2, Matrix2InternalTrait};
+use crate::base::matrix3::{Matrix3, Matrix3InternalTrait};
+use crate::base::matrix4::{Matrix4, Matrix4InternalTrait};
 use crate::base::matrix6::Matrix6;
 use crate::base::point2::Point2;
 use crate::base::point3::Point3;
@@ -539,6 +539,20 @@ pub fn s3r(rows: [[i64; 3]; 3]) -> SymMatrix3<Fixed> {
     SymMatrix3 {
         m11: fx(m11), m12: fx(m12), m13: fx(m13), m22: fx(m22), m23: fx(m23), m33: fx(m33),
     }
+}
+
+/// The `SymMatrix2` view of a `Matrix2`: its UPPER triangle (the former
+/// `SymMatrix2::from_matrix_unchecked`, a test helper since WP 8.0).
+#[inline(always)]
+pub fn sym2_upper(m: Matrix2<Fixed>) -> SymMatrix2<Fixed> {
+    SymMatrix2 { m11: m.m11, m12: m.m12, m22: m.m22 }
+}
+
+/// The `SymMatrix3` view of a `Matrix3`: its UPPER triangle (the former
+/// `SymMatrix3::from_matrix_unchecked`, a test helper since WP 8.0).
+#[inline(always)]
+pub fn sym3_upper(m: Matrix3<Fixed>) -> SymMatrix3<Fixed> {
+    SymMatrix3 { m11: m.m11, m12: m.m12, m13: m.m13, m22: m.m22, m23: m.m23, m33: m.m33 }
 }
 
 /// The `SymMatrix2` view of an integer ROW-major matrix: its UPPER triangle.

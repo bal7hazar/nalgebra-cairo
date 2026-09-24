@@ -146,25 +146,8 @@ pub impl Matrix3Impl<
         }
     }
 
-    /// The outer product `a * bᵀ`: each component is one floored product. Panics with the
-    /// scalar's overflow error. Upstream: `a * b.transpose()`.
-    #[inline(always)]
-    fn from_outer(a: Vector3<T>, b: Vector3<T>) -> Matrix3<T> {
-        Matrix3 {
-            m11: a.x * b.x,
-            m21: a.y * b.x,
-            m31: a.z * b.x,
-            m12: a.x * b.y,
-            m22: a.y * b.y,
-            m32: a.z * b.y,
-            m13: a.x * b.z,
-            m23: a.y * b.z,
-            m33: a.z * b.z,
-        }
-    }
-
     /// The skew-symmetric matrix `[v]×` such that `[v]× * u = v × u`. Exact; panics on the
-    /// scalar's `MIN`. Prefer `cross_matrix_mul` / `mul_cross_matrix`, which never materialise it.
+    /// scalar's `MIN`.
     /// Upstream: `Vector3::cross_matrix`.
     #[inline(always)]
     fn cross_matrix(v: Vector3<T>) -> Matrix3<T> {
@@ -181,60 +164,7 @@ pub impl Matrix3Impl<
         }
     }
 
-    /// `[v]× * m` without materialising `[v]×`: column `j` is `v × column_j(m)`, 9 `diff_prod`
-    /// (one rounding per component), bit-identical to `cross_matrix(v) * m`. Panics on overflow.
-    /// Upstream: `v.cross_matrix() * m`; rapier: `gcross_matrix`.
-    fn cross_matrix_mul(v: Vector3<T>, m: Matrix3<T>) -> Matrix3<T> {
-        Matrix3 {
-            m11: R::diff_prod(v.y, m.m31, v.z, m.m21),
-            m21: R::diff_prod(v.z, m.m11, v.x, m.m31),
-            m31: R::diff_prod(v.x, m.m21, v.y, m.m11),
-            m12: R::diff_prod(v.y, m.m32, v.z, m.m22),
-            m22: R::diff_prod(v.z, m.m12, v.x, m.m32),
-            m32: R::diff_prod(v.x, m.m22, v.y, m.m12),
-            m13: R::diff_prod(v.y, m.m33, v.z, m.m23),
-            m23: R::diff_prod(v.z, m.m13, v.x, m.m33),
-            m33: R::diff_prod(v.x, m.m23, v.y, m.m13),
-        }
-    }
-
     // --- accessors -----------------------------------------------------------------------------
-
-    /// Column 1. Upstream: `column(0)`.
-    #[inline(always)]
-    fn column1(self: Matrix3<T>) -> Vector3<T> {
-        Vector3 { x: self.m11, y: self.m21, z: self.m31 }
-    }
-
-    /// Column 2. Upstream: `column(1)`.
-    #[inline(always)]
-    fn column2(self: Matrix3<T>) -> Vector3<T> {
-        Vector3 { x: self.m12, y: self.m22, z: self.m32 }
-    }
-
-    /// Column 3. Upstream: `column(2)`.
-    #[inline(always)]
-    fn column3(self: Matrix3<T>) -> Vector3<T> {
-        Vector3 { x: self.m13, y: self.m23, z: self.m33 }
-    }
-
-    /// Row 1, as a (column) vector. Upstream: `row(0).transpose()`.
-    #[inline(always)]
-    fn row1(self: Matrix3<T>) -> Vector3<T> {
-        Vector3 { x: self.m11, y: self.m12, z: self.m13 }
-    }
-
-    /// Row 2, as a (column) vector. Upstream: `row(1).transpose()`.
-    #[inline(always)]
-    fn row2(self: Matrix3<T>) -> Vector3<T> {
-        Vector3 { x: self.m21, y: self.m22, z: self.m23 }
-    }
-
-    /// Row 3, as a (column) vector. Upstream: `row(2).transpose()`.
-    #[inline(always)]
-    fn row3(self: Matrix3<T>) -> Vector3<T> {
-        Vector3 { x: self.m31, y: self.m32, z: self.m33 }
-    }
 
     /// The diagonal. Upstream: `diagonal`.
     #[inline(always)]
@@ -356,37 +286,6 @@ pub impl Matrix3Impl<
         }
     }
 
-    /// `self * [v]×` without materialising `[v]×`: 9 `diff_prod` (one rounding per component),
-    /// bit-identical to `self * cross_matrix(v)`. Panics on overflow.
-    /// Upstream: `self * v.cross_matrix()`.
-    fn mul_cross_matrix(self: Matrix3<T>, v: Vector3<T>) -> Matrix3<T> {
-        Matrix3 {
-            m11: R::diff_prod(self.m12, v.z, self.m13, v.y),
-            m21: R::diff_prod(self.m22, v.z, self.m23, v.y),
-            m31: R::diff_prod(self.m32, v.z, self.m33, v.y),
-            m12: R::diff_prod(self.m13, v.x, self.m11, v.z),
-            m22: R::diff_prod(self.m23, v.x, self.m21, v.z),
-            m32: R::diff_prod(self.m33, v.x, self.m31, v.z),
-            m13: R::diff_prod(self.m11, v.y, self.m12, v.x),
-            m23: R::diff_prod(self.m21, v.y, self.m22, v.x),
-            m33: R::diff_prod(self.m31, v.y, self.m32, v.x),
-        }
-    }
-
-    /// `self * selfᵀ` as a symmetric matrix: 6 fused kernels instead of 9, bit-identical to the
-    /// upper triangle of `self * self.transpose()`. Panics on overflow.
-    /// Upstream: `self * self.transpose()`.
-    fn mul_transpose(self: Matrix3<T>) -> SymMatrix3<T> {
-        SymMatrix3 {
-            m11: R::norm_squared3(self.m11, self.m12, self.m13),
-            m12: R::sum_prod3(self.m11, self.m21, self.m12, self.m22, self.m13, self.m23),
-            m13: R::sum_prod3(self.m11, self.m31, self.m12, self.m32, self.m13, self.m33),
-            m22: R::norm_squared3(self.m21, self.m22, self.m23),
-            m23: R::sum_prod3(self.m21, self.m31, self.m22, self.m32, self.m23, self.m33),
-            m33: R::norm_squared3(self.m31, self.m32, self.m33),
-        }
-    }
-
     // --- norms ---------------------------------------------------------------------------------
 
     /// Squared Frobenius norm: the 9 squares are accumulated exactly (wide accumulator) and
@@ -436,24 +335,6 @@ pub impl Matrix3Impl<
         )
     }
 
-    /// The adjugate (transposed cofactor matrix): `self * adjugate = determinant * I`. 9
-    /// `diff_prod`, one rounding per component. Panics on overflow.
-    /// No upstream equivalent (upstream `adjoint` is the conjugate transpose).
-    #[inline(always)]
-    fn adjugate(self: Matrix3<T>) -> Matrix3<T> {
-        Matrix3 {
-            m11: R::diff_prod(self.m22, self.m33, self.m23, self.m32),
-            m21: R::diff_prod(self.m23, self.m31, self.m21, self.m33),
-            m31: R::diff_prod(self.m21, self.m32, self.m22, self.m31),
-            m12: R::diff_prod(self.m13, self.m32, self.m12, self.m33),
-            m22: R::diff_prod(self.m11, self.m33, self.m13, self.m31),
-            m32: R::diff_prod(self.m12, self.m31, self.m11, self.m32),
-            m13: R::diff_prod(self.m12, self.m23, self.m13, self.m22),
-            m23: R::diff_prod(self.m13, self.m21, self.m11, self.m23),
-            m33: R::diff_prod(self.m11, self.m22, self.m12, self.m21),
-        }
-    }
-
     /// The inverse, or `None` when the matrix is singular. Upstream: `try_inverse`.
     ///
     /// Singularity criterion, like upstream: the computed determinant is EXACTLY zero (no
@@ -480,7 +361,7 @@ pub impl Matrix3Impl<
     /// charged gas is that of the costliest branch (the pre-scaled one): the three
     /// `bench_matrix3_try_inverse__prescaled_*` benchmarks measure the same figure.
     fn try_inverse(self: Matrix3<T>) -> Option<Matrix3<T>> {
-        let adj = Self::adjugate(self);
+        let adj = Matrix3InternalTrait::adjugate(self);
         let det = R::sum_prod3(self.m11, adj.m11, self.m12, adj.m21, self.m13, adj.m31);
         if det < R::HALF && det > -R::HALF {
             let f = Self::norm(self);
@@ -490,7 +371,7 @@ pub impl Matrix3Impl<
             let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let b = Self::scale(self, k);
-                let adj_b = Self::adjugate(b);
+                let adj_b = Matrix3InternalTrait::adjugate(b);
                 let det_b = R::sum_prod3(b.m11, adj_b.m11, b.m12, adj_b.m21, b.m13, adj_b.m31);
                 if det_b == R::ZERO {
                     return None;
@@ -535,6 +416,119 @@ pub impl Matrix3Impl<
             && R::abs_diff_eq(self.m13, other.m13, ulps)
             && R::abs_diff_eq(self.m23, other.m23, ulps)
             && R::abs_diff_eq(self.m33, other.m33, ulps)
+    }
+}
+
+/// Crate-internal kernels of `Matrix3<T>` with no upstream method of that name or shape (WP 8.0:
+/// the public API is strictly upstream's). The structured kernels of DESIGN D4 (`from_outer`,
+/// `cross_matrix_mul` = `v.cross_matrix() * m` without the skew matrix, `adjugate`, `mul_transpose`
+/// into a `SymMatrix3`) and the unrolled row / column accessors that stand for upstream `row(i)` /
+/// `column(i)` views, used by the decompositions.
+#[generate_trait]
+pub(crate) impl Matrix3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix3InternalTrait<T> {
+    /// The outer product `a * bᵀ`: each component is one floored product. Panics with the
+    /// scalar's overflow error. Upstream: `a * b.transpose()`.
+    #[inline(always)]
+    fn from_outer(a: Vector3<T>, b: Vector3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: a.x * b.x,
+            m21: a.y * b.x,
+            m31: a.z * b.x,
+            m12: a.x * b.y,
+            m22: a.y * b.y,
+            m32: a.z * b.y,
+            m13: a.x * b.z,
+            m23: a.y * b.z,
+            m33: a.z * b.z,
+        }
+    }
+    /// `[v]× * m` without materialising `[v]×`: column `j` is `v × column_j(m)`, 9 `diff_prod`
+    /// (one rounding per component), bit-identical to `cross_matrix(v) * m`. Panics on overflow.
+    /// Upstream: `v.cross_matrix() * m`; rapier: `gcross_matrix`.
+    fn cross_matrix_mul(v: Vector3<T>, m: Matrix3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: R::diff_prod(v.y, m.m31, v.z, m.m21),
+            m21: R::diff_prod(v.z, m.m11, v.x, m.m31),
+            m31: R::diff_prod(v.x, m.m21, v.y, m.m11),
+            m12: R::diff_prod(v.y, m.m32, v.z, m.m22),
+            m22: R::diff_prod(v.z, m.m12, v.x, m.m32),
+            m32: R::diff_prod(v.x, m.m22, v.y, m.m12),
+            m13: R::diff_prod(v.y, m.m33, v.z, m.m23),
+            m23: R::diff_prod(v.z, m.m13, v.x, m.m33),
+            m33: R::diff_prod(v.x, m.m23, v.y, m.m13),
+        }
+    }
+    /// Column 1. Upstream: `column(0)`.
+    #[inline(always)]
+    fn column1(self: Matrix3<T>) -> Vector3<T> {
+        Vector3 { x: self.m11, y: self.m21, z: self.m31 }
+    }
+    /// Column 2. Upstream: `column(1)`.
+    #[inline(always)]
+    fn column2(self: Matrix3<T>) -> Vector3<T> {
+        Vector3 { x: self.m12, y: self.m22, z: self.m32 }
+    }
+    /// Column 3. Upstream: `column(2)`.
+    #[inline(always)]
+    fn column3(self: Matrix3<T>) -> Vector3<T> {
+        Vector3 { x: self.m13, y: self.m23, z: self.m33 }
+    }
+    /// Row 1, as a (column) vector. Upstream: `row(0).transpose()`.
+    #[inline(always)]
+    fn row1(self: Matrix3<T>) -> Vector3<T> {
+        Vector3 { x: self.m11, y: self.m12, z: self.m13 }
+    }
+    /// Row 2, as a (column) vector. Upstream: `row(1).transpose()`.
+    #[inline(always)]
+    fn row2(self: Matrix3<T>) -> Vector3<T> {
+        Vector3 { x: self.m21, y: self.m22, z: self.m23 }
+    }
+    /// Row 3, as a (column) vector. Upstream: `row(2).transpose()`.
+    #[inline(always)]
+    fn row3(self: Matrix3<T>) -> Vector3<T> {
+        Vector3 { x: self.m31, y: self.m32, z: self.m33 }
+    }
+    /// `self * selfᵀ` as a symmetric matrix: 6 fused kernels instead of 9, bit-identical to the
+    /// upper triangle of `self * self.transpose()`. Panics on overflow.
+    /// Upstream: `self * self.transpose()`.
+    fn mul_transpose(self: Matrix3<T>) -> SymMatrix3<T> {
+        SymMatrix3 {
+            m11: R::norm_squared3(self.m11, self.m12, self.m13),
+            m12: R::sum_prod3(self.m11, self.m21, self.m12, self.m22, self.m13, self.m23),
+            m13: R::sum_prod3(self.m11, self.m31, self.m12, self.m32, self.m13, self.m33),
+            m22: R::norm_squared3(self.m21, self.m22, self.m23),
+            m23: R::sum_prod3(self.m21, self.m31, self.m22, self.m32, self.m23, self.m33),
+            m33: R::norm_squared3(self.m31, self.m32, self.m33),
+        }
+    }
+    /// The adjugate (transposed cofactor matrix): `self * adjugate = determinant * I`. 9
+    /// `diff_prod`, one rounding per component. Panics on overflow.
+    /// No upstream equivalent (upstream `adjoint` is the conjugate transpose).
+    #[inline(always)]
+    fn adjugate(self: Matrix3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: R::diff_prod(self.m22, self.m33, self.m23, self.m32),
+            m21: R::diff_prod(self.m23, self.m31, self.m21, self.m33),
+            m31: R::diff_prod(self.m21, self.m32, self.m22, self.m31),
+            m12: R::diff_prod(self.m13, self.m32, self.m12, self.m33),
+            m22: R::diff_prod(self.m11, self.m33, self.m13, self.m31),
+            m32: R::diff_prod(self.m12, self.m31, self.m11, self.m32),
+            m13: R::diff_prod(self.m12, self.m23, self.m13, self.m22),
+            m23: R::diff_prod(self.m13, self.m21, self.m11, self.m23),
+            m33: R::diff_prod(self.m11, self.m22, self.m12, self.m21),
+        }
     }
 }
 
@@ -642,10 +636,12 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix_test_utils::{fx, int, m3, m3i, max_ulp_diff3, s3, ulp_diff, v3i, v3t};
+    use crate::base::matrix_test_utils::{
+        fx, int, m3, m3i, max_ulp_diff3, s3, sym3_upper, ulp_diff, v3i, v3t,
+    };
     use crate::base::sym_matrix3::SymMatrix3Trait;
     use crate::base::{oracle_matrix3, oracle_matrix3_inverse};
-    use super::{Matrix3, Matrix3Trait};
+    use super::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 
     // --- losing candidates of the determinant / inverse study (kept as evidence) -----------------
 
@@ -951,7 +947,7 @@ mod tests {
         let mut cases = oracle_matrix3::matrix3_outer_cases();
         while let Some(case) = cases.pop_front() {
             let (u, v, expected, _) = *case;
-            assert!(Matrix3Trait::from_outer(v3t(u), v3t(v)) == m3(expected));
+            assert!(Matrix3InternalTrait::from_outer(v3t(u), v3t(v)) == m3(expected));
         }
     }
 
@@ -970,14 +966,12 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, v, _, _) = *case;
             let cm = Matrix3Trait::cross_matrix(v3t(v));
-            assert!(Matrix3Trait::cross_matrix_mul(v3t(v), m3(a)) == cm * m3(a));
-            assert!(m3(a).mul_cross_matrix(v3t(v)) == m3(a) * cm);
+            assert!(Matrix3InternalTrait::cross_matrix_mul(v3t(v), m3(a)) == cm * m3(a));
         }
         // [x]× * I = [x]× = I * [x]×
         let x = v3i(1, 2, 3);
         let expected = m3i([[0, -3, 2], [3, 0, -1], [-2, 1, 0]]);
-        assert!(Matrix3Trait::cross_matrix_mul(x, Matrix3Trait::identity()) == expected);
-        assert!(Matrix3Trait::identity().mul_cross_matrix(x) == expected);
+        assert!(Matrix3InternalTrait::cross_matrix_mul(x, Matrix3Trait::identity()) == expected);
     }
 
     #[test]
@@ -1371,7 +1365,7 @@ mod tests {
                 ],
             ),
         );
-        assert!(Matrix3Trait::from_outer(u, v) == e);
+        assert!(Matrix3InternalTrait::from_outer(u, v) == e);
     }
 
     #[test]
@@ -1447,7 +1441,7 @@ mod tests {
                 ],
             ),
         );
-        assert!(Matrix3Trait::cross_matrix_mul(v, a) == e);
+        assert!(Matrix3InternalTrait::cross_matrix_mul(v, a) == e);
     }
 
     #[test]
@@ -1471,78 +1465,6 @@ mod tests {
             ),
         );
         assert!(Matrix3Trait::cross_matrix(v) * a == e);
-    }
-
-    #[test]
-    #[inline(never)]
-    fn bench_matrix3_mul_cross_matrix__baseline() {
-        let _a = black_box(
-            m3(
-                [
-                    [-8333418062, -3562322882, -7141719772], [-6195210852, 8037214559, 5406550886],
-                    [2873393302, -6638673079, 4752733287],
-                ],
-            ),
-        );
-        let _v = black_box(v3t((6422282562, 6202159288, 2324644860)));
-        let e = black_box(
-            m3(
-                [
-                    [8384917871, -6168592929, -6707138873],
-                    [-3457213818, 11437587099, -20964291747],
-                    [-10456369759, 5551561978, 14076167090],
-                ],
-            ),
-        );
-        assert!(e == e);
-    }
-
-    #[test]
-    #[inline(never)]
-    fn bench_matrix3_mul_cross_matrix__structured() {
-        let a = black_box(
-            m3(
-                [
-                    [-8333418062, -3562322882, -7141719772], [-6195210852, 8037214559, 5406550886],
-                    [2873393302, -6638673079, 4752733287],
-                ],
-            ),
-        );
-        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
-        let e = black_box(
-            m3(
-                [
-                    [8384917871, -6168592929, -6707138873],
-                    [-3457213818, 11437587099, -20964291747],
-                    [-10456369759, 5551561978, 14076167090],
-                ],
-            ),
-        );
-        assert!(a.mul_cross_matrix(v) == e);
-    }
-
-    #[test]
-    #[inline(never)]
-    fn bench_matrix3_mul_cross_matrix__materialised() {
-        let a = black_box(
-            m3(
-                [
-                    [-8333418062, -3562322882, -7141719772], [-6195210852, 8037214559, 5406550886],
-                    [2873393302, -6638673079, 4752733287],
-                ],
-            ),
-        );
-        let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
-        let e = black_box(
-            m3(
-                [
-                    [8384917871, -6168592929, -6707138873],
-                    [-3457213818, 11437587099, -20964291747],
-                    [-10456369759, 5551561978, 14076167090],
-                ],
-            ),
-        );
-        assert!(a * Matrix3Trait::cross_matrix(v) == e);
     }
 
     #[test]
@@ -2399,7 +2321,7 @@ mod tests {
         let e = black_box(
             s3((30999109664, -3635869986, -7971837166, 30782131443, -10584905494, 17442936779)),
         );
-        assert!(SymMatrix3Trait::from_matrix_unchecked(a * a.transpose()) == e);
+        assert!(sym3_upper(a * a.transpose()) == e);
     }
 
     #[test]

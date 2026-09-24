@@ -16,8 +16,9 @@ use crate::base::point3::Point3;
 use crate::base::unit::{Unit, Unit3Trait, UnitTrait};
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::geometry::quaternion::Quaternion;
+use crate::geometry::rotation3::Rotation3InternalTrait;
 use crate::geometry::unit_quaternion::{
-    UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
+    UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionInternalTrait, UnitQuaternionTrait,
 };
 use super::{Rotation3, Rotation3AngleTrait, Rotation3Trait};
 
@@ -81,7 +82,7 @@ fn alt_angle_quaternion(r: Rotation3<Fixed>) -> Fixed {
 
 /// `renormalize` through the quaternion: `from_rotation_matrix`, one Newton step, back to a matrix.
 fn alt_renormalize_quaternion(r: Rotation3<Fixed>) -> Rotation3<Fixed> {
-    UnitQuaternionTrait::from_rotation_matrix(r).renormalize_fast().to_rotation_matrix()
+    UnitQuaternionTrait::from_rotation_matrix(r).renormalized_fast().to_rotation_matrix()
 }
 
 /// `renormalize` by one Newton step of the polar decomposition, `R · (3I - RᵀR) / 2`: two 3x3
@@ -167,7 +168,7 @@ fn test_renormalize_alts_restore_orthonormality() {
     for _ in 0_u32..64 {
         r = r * step;
     }
-    let gs = r.renormalize();
+    let gs = r.renormalized();
     let qn = alt_renormalize_quaternion(r);
     let nw = alt_renormalize_newton(r);
     assert!((gs.matrix * gs.matrix.transpose()).is_identity(4));
@@ -182,7 +183,9 @@ fn test_renormalize_alts_restore_orthonormality() {
 #[test]
 fn test_renormalize_alt_newton_only_converges() {
     let scaled = Rotation3 { matrix: a().matrix.scale(Real::ONE + fx(4294967)) };
-    assert!((scaled.renormalize().matrix * scaled.renormalize().matrix.transpose()).is_identity(4));
+    assert!(
+        (scaled.renormalized().matrix * scaled.renormalized().matrix.transpose()).is_identity(4),
+    );
     let once = alt_renormalize_newton(scaled);
     assert!(!(once.matrix * once.matrix.transpose()).is_identity(0x1000));
 }
@@ -390,7 +393,7 @@ fn bench_rotation3_to_unit_quaternion__shepperd() {
             },
         },
     );
-    assert!(r.to_unit_quaternion() == e);
+    assert!(UnitQuaternionTrait::from_rotation_matrix(r) == e);
 }
 
 #[test]
@@ -406,7 +409,7 @@ fn bench_rotation3_from_unit_quaternion__baseline() {
 fn bench_rotation3_from_unit_quaternion__fused() {
     let x = black_box(q());
     let e = black_box(a());
-    assert!(Rotation3Trait::from_unit_quaternion(x) == e);
+    assert!(UnitQuaternionTrait::to_rotation_matrix(x) == e);
 }
 
 // --- axis and angle
@@ -775,7 +778,9 @@ fn bench_rotation3_renormalize__gram_schmidt() {
             ],
         ),
     );
-    assert!(r.renormalize() == e);
+    let mut renormalized = r;
+    renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]

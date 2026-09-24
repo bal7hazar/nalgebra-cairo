@@ -104,9 +104,6 @@ pub trait UnitComplexTrait<T> {
     /// floor rounding per output component, so the result is the exactly floored rotation of `v`).
     /// Panics on overflow. Upstream: `transform_vector` (`self * v`).
     fn transform_vector(self: UnitComplex<T>, v: Vector2<T>) -> Vector2<T>;
-    /// Alias of `transform_vector` (`self * v`), named like the heterogeneous products of the
-    /// matrix types. Upstream: `Mul<Vector2>`.
-    fn mul_vec(self: UnitComplex<T>, v: Vector2<T>) -> Vector2<T>;
     /// `self * p`: `p` rotated around the origin by `θ`. Same kernels, same rounding and panics
     /// as `transform_vector`. Upstream: `transform_point` (`self * p`).
     fn transform_point(self: UnitComplex<T>, p: Point2<T>) -> Point2<T>;
@@ -122,13 +119,14 @@ pub trait UnitComplexTrait<T> {
     /// The same rotation as a 3x3 homogeneous matrix (the rotation block, then `(0, 0, 1)`).
     /// Exact. Upstream: `to_homogeneous`.
     fn to_homogeneous(self: UnitComplex<T>) -> Matrix3<T>;
-    /// Renormalizes exactly: divides `(re, im)` by their norm (one `norm2`, then one exactly
-    /// correctly rounded division per component), so the result is unit within about `1 + 1/|c|`
-    /// ulp whatever the drift. Panics with `Fixed: division by zero` on the zero pair. Upstream:
-    /// `Unit::renormalize` (which also returns the previous norm and works in place).
-    fn renormalize(self: UnitComplex<T>) -> UnitComplex<T>;
-    /// Renormalizes a pair whose norm is already close to 1 (the usual case: rounding accumulated
-    /// by repeated compositions): one Newton step for the inverse square root,
+    /// Renormalizes exactly, in place: divides `(re, im)` by their norm (one `norm2`, then one
+    /// exactly correctly rounded division per component), so the result is unit within about
+    /// `1 + 1/|c|` ulp whatever the drift, and returns the norm it had. Panics with
+    /// `Fixed: division by zero` on the zero pair. Upstream: `Unit::renormalize` (`&mut self`,
+    /// returns the previous norm).
+    fn renormalize(ref self: UnitComplex<T>) -> T;
+    /// Renormalizes, in place, a pair whose norm is already close to 1 (the usual case: rounding
+    /// accumulated by repeated compositions): one Newton step for the inverse square root,
     /// `c * (3 - |c|²) / 2`, with the factor as ONE fused kernel (`mul_add(|c|², -1/2, 3/2)`,
     /// floored once) and one product per component. No square root, no division. Upstream:
     /// `Unit::renormalize_fast`.
@@ -145,27 +143,7 @@ pub trait UnitComplexTrait<T> {
     /// percent matters. The other formulations are benchmarked as
     /// `bench_unit_complex_renormalize_fast__alt_*` and give the same bits: upstream's literal
     /// `1/2 · (3 - |c|²)` 8 440, a `lerp` per component 8 000, `c + c·(1 - |c|²)/2` 8 000.
-    fn renormalize_fast(self: UnitComplex<T>) -> UnitComplex<T>;
-    /// `self` composed with the rotation of (small) angle `angle`, linearized:
-    /// `c · (1 + i·angle)` (two fused `mul_add`), then `renormalize`. This is the 2D counterpart
-    /// of upstream's `UnitQuaternion::append_axisangle_linearized`
-    /// (`Unit::new_normalize(q + Quaternion::from_imag(axisangle/2) * q)`), the form rigid-body
-    /// integration uses to advance an orientation by `ω·dt` without trigonometry.
-    ///
-    /// The linearization multiplies the norm by `sqrt(1 + angle²)` and rotates by
-    /// `atan(angle)` instead of `angle`: the angular error is `angle³/3` (1.7e-4 rad for
-    /// `angle = 0.08`, i.e. a body spinning at 5 rad/s at 60 Hz), which is the price of skipping
-    /// `sin_cos` — 12 540 gas against 34 760 for the exact `self * new(angle)`
-    /// (`bench_unit_complex_append_axisangle_linearized__alt_sin_cos`).
-    ///
-    /// The exact `renormalize` is used rather than `renormalize_fast` because `|c|² - 1 = angle²`
-    /// is far outside the radius where one Newton step converges: the fast variant leaves
-    /// `3·angle⁴/4` of squared-norm error (6e-9 at `angle = 0.01`, 2.6e-5 at `angle = 0.08`) and
-    /// saves 1 560 gas out of 12 540, 12 % on `fixed` 0.3.0, whose division rounds to nearest
-    /// (`bench_unit_complex_append_axisangle_linearized__alt_renormalize_fast`; re-ranked in
-    /// WP 7.2: the accuracy failure decides, and upstream's quaternion counterpart normalises
-    /// exactly with `Unit::new_normalize`). Panics on overflow.
-    fn append_axisangle_linearized(self: UnitComplex<T>, angle: T) -> UnitComplex<T>;
+    fn renormalize_fast(ref self: UnitComplex<T>);
     /// `true` when `re` and `im` are both within `ulps` smallest units (raw units for fixed
     /// point) of `other`'s; cannot overflow. Note that `-c` is the same rotation as `c` turned by
     /// `2π`, and is NOT `abs_diff_eq` to it. Upstream: `approx::AbsDiffEq::abs_diff_eq`, the
@@ -300,14 +278,6 @@ pub impl UnitComplexImpl<
     }
 
     #[inline(always)]
-    fn mul_vec(self: UnitComplex<T>, v: Vector2<T>) -> Vector2<T> {
-        Vector2 {
-            x: R::diff_prod(self.re, v.x, self.im, v.y),
-            y: R::sum_prod2(self.im, v.x, self.re, v.y),
-        }
-    }
-
-    #[inline(always)]
     fn transform_point(self: UnitComplex<T>, p: Point2<T>) -> Point2<T> {
         Point2 {
             x: R::diff_prod(self.re, p.x, self.im, p.y),
@@ -352,30 +322,45 @@ pub impl UnitComplexImpl<
     }
 
     #[inline(always)]
-    fn renormalize(self: UnitComplex<T>) -> UnitComplex<T> {
+    fn renormalize(ref self: UnitComplex<T>) -> T {
         let n = R::norm2(self.re, self.im);
-        UnitComplex { re: R::div(self.re, n), im: R::div(self.im, n) }
+        self = UnitComplex { re: R::div(self.re, n), im: R::div(self.im, n) };
+        n
     }
 
     #[inline(always)]
-    fn renormalize_fast(self: UnitComplex<T>) -> UnitComplex<T> {
+    fn renormalize_fast(ref self: UnitComplex<T>) {
         // (3 - |c|²) / 2 = floor(-|c|² * 1/2 + 3/2): one fused kernel.
         let f = R::mul_add(R::norm_squared2(self.re, self.im), -R::HALF, R::HALF + R::ONE);
-        UnitComplex { re: self.re * f, im: self.im * f }
-    }
-
-    #[inline(always)]
-    fn append_axisangle_linearized(self: UnitComplex<T>, angle: T) -> UnitComplex<T> {
-        // c · (1 + i·angle) = (re - im·angle, im + re·angle), then normalized exactly.
-        let re = R::mul_add(-self.im, angle, self.re);
-        let im = R::mul_add(self.re, angle, self.im);
-        let n = R::norm2(re, im);
-        UnitComplex { re: R::div(re, n), im: R::div(im, n) }
+        self = UnitComplex { re: self.re * f, im: self.im * f };
     }
 
     #[inline(always)]
     fn abs_diff_eq(self: UnitComplex<T>, other: UnitComplex<T>, ulps: u64) -> bool {
         R::abs_diff_eq(self.re, other.re, ulps) && R::abs_diff_eq(self.im, other.im, ulps)
+    }
+}
+
+/// Crate-internal by-value forms of the in-place `renormalize` / `renormalize_fast` (WP 8.0: the
+/// public methods are upstream's `&mut self` ones), for the tests and the value-style call sites.
+#[generate_trait]
+pub(crate) impl UnitComplexInternalImpl<
+    T, impl R: Real<T>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
+> of UnitComplexInternalTrait<T> {
+    /// `self` renormalized exactly (`UnitComplexTrait::renormalize`), by value.
+    #[inline(always)]
+    fn renormalized(self: UnitComplex<T>) -> UnitComplex<T> {
+        let mut r = self;
+        let _ = UnitComplexTrait::renormalize(ref r);
+        r
+    }
+
+    /// `self` renormalized by one Newton step (`UnitComplexTrait::renormalize_fast`), by value.
+    #[inline(always)]
+    fn renormalized_fast(self: UnitComplex<T>) -> UnitComplex<T> {
+        let mut r = self;
+        UnitComplexTrait::renormalize_fast(ref r);
+        r
     }
 }
 

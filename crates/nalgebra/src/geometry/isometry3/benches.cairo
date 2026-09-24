@@ -15,6 +15,7 @@ use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{fx, iso3, p3, uq, v3};
 use crate::base::point3::{Point3, Point3Trait};
 use crate::base::vector3::Vector3;
+use crate::geometry::isometry3::Isometry3InternalTrait;
 use crate::geometry::translation3::Translation3;
 use crate::geometry::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
 use super::{Isometry3, Isometry3AngleTrait, Isometry3Trait};
@@ -173,7 +174,7 @@ fn bench_isometry3_from_translation__baseline() {
     assert!(e == e);
 }
 
-/// `Isometry3::from_translation(t)`, which is also `t.into()` (the same code).
+/// `t.into()` (upstream `From<Translation3> for Isometry3`).
 #[test]
 #[inline(never)]
 fn bench_isometry3_from_translation__pure() {
@@ -181,24 +182,8 @@ fn bench_isometry3_from_translation__pure() {
     let e: Isometry3<Fixed> = black_box(
         iso3((0x140000000, -0x60000000, 0x280000000), (0x100000000, 0, 0, 0)),
     );
-    assert!(Isometry3Trait::from_translation(u) == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_isometry3_from_rotation__baseline() {
-    let _q: UnitQuaternion<Fixed> = black_box(r());
-    let e: Isometry3<Fixed> = black_box(iso3((0, 0, 0), (0, 0, 0x100000000, 0)));
-    assert!(e == e);
-}
-
-/// `Isometry3::from_rotation(r)`, which is also `r.into()` (the same code).
-#[test]
-#[inline(never)]
-fn bench_isometry3_from_rotation__pure() {
-    let q: UnitQuaternion<Fixed> = black_box(r());
-    let e: Isometry3<Fixed> = black_box(iso3((0, 0, 0), (0, 0, 0x100000000, 0)));
-    assert!(Isometry3Trait::from_rotation(q) == e);
+    let r: Isometry3<Fixed> = u.into();
+    assert!(r == e);
 }
 
 #[test]
@@ -473,7 +458,9 @@ fn bench_isometry3_append_translation__add() {
             (4234293283, 534340439, -400755330, 267170219),
         ),
     );
-    assert!(x.append_translation(u) == e);
+    let mut m = x;
+    m.append_translation_mut(u);
+    assert!(m == e);
 }
 
 #[test]
@@ -501,7 +488,7 @@ fn bench_isometry3_prepend_translation__rotate_add() {
             (4234293283, 534340439, -400755330, 267170219),
         ),
     );
-    assert!(x.prepend_translation(u) == e);
+    assert!(x.mul_translation(u) == e);
 }
 
 #[test]
@@ -529,7 +516,9 @@ fn bench_isometry3_append_rotation__compose_rotate() {
             (400755330, 267170219, 4234293283, -534340439),
         ),
     );
-    assert!(x.append_rotation(q) == e);
+    let mut m = x;
+    m.append_rotation_mut(q);
+    assert!(m == e);
 }
 
 #[test]
@@ -555,7 +544,7 @@ fn bench_isometry3_prepend_rotation__compose() {
             (6442450944, -9663676416, 16106127360), (400755330, -267170219, 4234293283, 534340439),
         ),
     );
-    assert!(x.prepend_rotation(q) == e);
+    assert!(x.mul_unit_quaternion(q) == e);
 }
 
 #[test]
@@ -585,7 +574,9 @@ fn bench_isometry3_append_rotation_wrt_point__shift_rotate() {
             (400755330, 267170219, 4234293283, -534340439),
         ),
     );
-    assert!(x.append_rotation_wrt_point(q, c) == e);
+    let mut m = x;
+    m.append_rotation_wrt_point_mut(q, c);
+    assert!(m == e);
 }
 
 #[test]
@@ -611,7 +602,9 @@ fn bench_isometry3_append_rotation_wrt_center__compose() {
             (6442450944, -9663676416, 16106127360), (400755330, 267170219, 4234293283, -534340439),
         ),
     );
-    assert!(x.append_rotation_wrt_center(q) == e);
+    let mut m = x;
+    m.append_rotation_wrt_center_mut(q);
+    assert!(m == e);
 }
 
 #[test]

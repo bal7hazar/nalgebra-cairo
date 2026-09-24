@@ -62,14 +62,6 @@ fn test_inverse_transform_point_recip_loses_ulp() {
 }
 
 #[test]
-fn test_inv_mul_alt_inverse_then_mul_agrees_with_extra_rounding() {
-    let got = x().inv_mul(x());
-    let alt = x().inverse() * x();
-    assert!(got.abs_diff_eq(id(), 0));
-    assert!(alt.abs_diff_eq(id(), 1));
-}
-
-#[test]
 #[inline(never)]
 fn bench_similarity3_transform_point__baseline() {
     let _s: Similarity3<Fixed> = black_box(x());
@@ -121,30 +113,6 @@ fn bench_similarity3_inverse_transform_point__alt_reciprocal() {
     let q: Point3<Fixed> = black_box(expected_point());
     let e: Point3<Fixed> = black_box(p());
     assert!(alt_inverse_transform_point_recip(s, q).abs_diff_eq(e, 16));
-}
-
-#[test]
-#[inline(never)]
-fn bench_similarity3_inv_mul__baseline() {
-    let _s: Similarity3<Fixed> = black_box(x());
-    let e: Similarity3<Fixed> = black_box(id());
-    assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_similarity3_inv_mul__direct() {
-    let s: Similarity3<Fixed> = black_box(x());
-    let e: Similarity3<Fixed> = black_box(id());
-    assert!(s.inv_mul(s).abs_diff_eq(e, 0));
-}
-
-#[test]
-#[inline(never)]
-fn bench_similarity3_inv_mul__alt_inverse_then_mul() {
-    let s: Similarity3<Fixed> = black_box(x());
-    let e: Similarity3<Fixed> = black_box(id());
-    assert!((s.inverse() * s).abs_diff_eq(e, 1));
 }
 
 #[test]

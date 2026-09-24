@@ -7,14 +7,16 @@
 //! §3).
 //!
 //! - `Isometry3Trait` / `Isometry3Impl`: construction from parts, composition, inverse, `inv_mul`,
-//!   transforms, append / prepend, `to_homogeneous`, the observer frames, renormalisation and the
-//!   trigonometry-free interpolation — everything that is algebraic, hence available for any
-//!   `simba::scalar::Real` scalar;
+//!   transforms, the in-place `append_*_mut`, the operator forms `mul_translation` /
+//!   `mul_unit_quaternion` (Cairo's `Mul` is homogeneous), `to_homogeneous` and the observer
+//!   frames — everything that is algebraic, hence available for any `simba::scalar::Real` scalar
+//!   (the fused kernels, the renormalisation of the rotation part and the trigonometry-free
+//!   interpolation are crate-internal, WP 8.0);
 //! - `Isometry3AngleTrait` / `Isometry3AngleImpl`: the constructors that take a rotation VECTOR
 //!   (`new`, `rotation`) and the spherical interpolation (`lerp_slerp`, `try_lerp_slerp`), which
 //!   additionally need `simba::scalar::Transcendental`;
-//! - `a * b` (composition) and the conversions from a `Translation3` / a `UnitQuaternion`: their
-//!   impls live in this module, where the compiler finds them without any import.
+//! - `a * b` (composition) and the conversion from a `Translation3`: their impls live in this
+//!   module, where the compiler finds them without any import.
 //!
 //! **Representation of the rotation.** The quaternion form is the right one for a pose that is
 //! composed and renormalised every step: composition costs 11 860 gas against 23 310 for a
@@ -40,6 +42,7 @@ use simba::scalar::{Real, Transcendental};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::{Vector3, Vector3Trait};
+use crate::geometry::unit_quaternion::UnitQuaternionInternalTrait;
 use super::quaternion::Quaternion;
 use super::rotation3::{Rotation3, Rotation3Trait};
 use super::translation3::{Translation3, Translation3Trait};
@@ -105,20 +108,6 @@ pub impl Isometry3Impl<
         }
     }
 
-    /// The pure translation `t`. Exact. Upstream: `Isometry3::from(t)` (`From<Translation3>`),
-    /// also available as `t.into()`.
-    #[inline(always)]
-    fn from_translation(t: Translation3<T>) -> Isometry3<T> {
-        Isometry3 { rotation: UnitQuaternionTrait::identity(), translation: t }
-    }
-
-    /// The pure rotation `r` (no translation). Exact. Upstream: `Isometry3::from(r)`
-    /// (`From<UnitQuaternion>`), also available as `r.into()`.
-    #[inline(always)]
-    fn from_rotation(r: UnitQuaternion<T>) -> Isometry3<T> {
-        Isometry3 { rotation: r, translation: Translation3Trait::identity() }
-    }
-
     // --- inverse and composition --------------------------------------------------------------
 
     /// The inverse isometry: the rotation is conjugated (three negations, exact) and the
@@ -166,57 +155,10 @@ pub impl Isometry3Impl<
 
     // --- transforms ----------------------------------------------------------------------------
 
-    /// `r · v + t`, the kernel every "rotate then translate" of this type goes through: the
-    /// quaternion sandwich `v + 2w·(u × v) + 2u × (u × v)` of
-    /// `UnitQuaternion::transform_vector` with the translation folded into its wide accumulation,
-    /// so each output component is floored ONCE for the whole expression (15 products, 3
-    /// roundings, no division).
-    ///
-    /// It gives the same bits as rotating and adding afterwards, since `floor(x + t) =
-    /// floor(x) + t` for an integral `t` in raw units, for 24 430 gas instead of 25 750 (5 %
-    /// cheaper): a `Fixed` addition costs an overflow check (540 gas) that the accumulator does
-    /// not pay. It also cannot overflow on the intermediate rotated vector, only on the result.
-    /// Duplicating the sandwich (instead of calling `UnitQuaternion::transform_vector` and
-    /// adding) is the price of that single rounding; it is written once here and reused by
-    /// `transform_point`, `Mul`, `prepend_translation` and `append_rotation_wrt_point`.
-    /// Evidence: `bench_isometry3_transform_point__alt_rotate_then_add` and
-    /// `test_transform_point_fused_and_composed_agree_bit_for_bit`.
-    ///
-    /// Not an upstream method: upstream writes `rotation * v + translation`, which in fixed point
-    /// is exactly this kernel. Panics on overflow of an intermediate doubling (`|v|` above about
-    /// `2^30`).
-    fn rotate_translate(r: UnitQuaternion<T>, v: Vector3<T>, t: Vector3<T>) -> Vector3<T> {
-        let u = r.imag();
-        let c = u.cross(v);
-        let d = Vector3 { x: c.x + c.x, y: c.y + c.y, z: c.z + c.z };
-        let uxd = u.cross(d);
-        let w = r.quaternion.w;
-        Vector3 {
-            x: R::wide_rescale(
-                R::wide_add(
-                    R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, d.x), uxd.x), v.x),
-                    t.x,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add(
-                    R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, d.y), uxd.y), v.y),
-                    t.y,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add(
-                    R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, d.z), uxd.z), v.z),
-                    t.z,
-                ),
-            ),
-        }
-    }
-
     /// `self * p = rotation · p + translation`, through `rotate_translate`: one rounding per
     /// component. Panics on overflow. Upstream: `transform_point` (`iso * p`).
     fn transform_point(self: Isometry3<T>, p: Point3<T>) -> Point3<T> {
-        let c = Self::rotate_translate(
+        let c = Isometry3InternalTrait::rotate_translate(
             self.rotation, Vector3 { x: p.x, y: p.y, z: p.z }, self.translation.vector,
         );
         Point3 { x: c.x, y: c.y, z: c.z }
@@ -251,81 +193,89 @@ pub impl Isometry3Impl<
         self.rotation.inverse_transform_vector(v)
     }
 
-    // --- append / prepend -----------------------------------------------------------------------
+    // --- append (in place) and the operator forms ----------------------------------------------
 
     /// `Translation(t) ∘ self`: the same rotation, the translation shifted by `t` (an exact
-    /// addition). Upstream: `append_translation_mut` (by value here, like the rest of this port).
+    /// addition), in place. Upstream: `append_translation_mut`.
     #[inline(always)]
-    fn append_translation(self: Isometry3<T>, t: Translation3<T>) -> Isometry3<T> {
-        Isometry3 {
-            rotation: self.rotation,
-            translation: Translation3 {
-                vector: Vector3 {
-                    x: self.translation.vector.x + t.vector.x,
-                    y: self.translation.vector.y + t.vector.y,
-                    z: self.translation.vector.z + t.vector.z,
+    fn append_translation_mut(ref self: Isometry3<T>, t: Translation3<T>) {
+        self =
+            Isometry3 {
+                rotation: self.rotation,
+                translation: Translation3 {
+                    vector: Vector3 {
+                        x: self.translation.vector.x + t.vector.x,
+                        y: self.translation.vector.y + t.vector.y,
+                        z: self.translation.vector.z + t.vector.z,
+                    },
                 },
-            },
-        }
+            };
     }
 
-    /// `self ∘ Translation(t)`: the same rotation, the translation shifted by `rotation · t`
-    /// (one `rotate_translate`). It is also `self * Isometry3::from(t)`, the `Mul<Translation3>`
-    /// of upstream. Upstream: `prepend_translation_mut`.
-    fn prepend_translation(self: Isometry3<T>, t: Translation3<T>) -> Isometry3<T> {
+    /// `self * t = self ∘ Translation(t)`: the same rotation, the translation shifted by
+    /// `rotation · t` (one `rotate_translate`). Upstream: `Mul<Translation3> for Isometry3` — a
+    /// named method because Cairo's `Mul` is homogeneous (a documented rename,
+    /// `scripts/api_parity.py`).
+    fn mul_translation(self: Isometry3<T>, t: Translation3<T>) -> Isometry3<T> {
         Isometry3 {
             rotation: self.rotation,
             translation: Translation3 {
-                vector: Self::rotate_translate(self.rotation, t.vector, self.translation.vector),
+                vector: Isometry3InternalTrait::rotate_translate(
+                    self.rotation, t.vector, self.translation.vector,
+                ),
             },
         }
     }
 
     /// `Rotation(r) ∘ self`: a rotation about the ORIGIN applied after `self`, so the translation
-    /// is rotated too (`r · translation`) and the rotation becomes `r · rotation`. Upstream:
+    /// is rotated too (`r · translation`) and the rotation becomes `r · rotation`, in place.
+    /// Upstream:
     /// `append_rotation_mut`.
-    fn append_rotation(self: Isometry3<T>, r: UnitQuaternion<T>) -> Isometry3<T> {
-        Isometry3 {
-            rotation: r * self.rotation,
-            translation: Translation3 { vector: r.transform_vector(self.translation.vector) },
-        }
+    fn append_rotation_mut(ref self: Isometry3<T>, r: UnitQuaternion<T>) {
+        self =
+            Isometry3 {
+                rotation: r * self.rotation,
+                translation: Translation3 { vector: r.transform_vector(self.translation.vector) },
+            };
     }
 
-    /// `self ∘ Rotation(r)`: a rotation applied BEFORE `self`, which leaves the translation
-    /// untouched (`self * Isometry3::from(r)`, upstream's `Mul<UnitQuaternion>`). One Hamilton
-    /// product.
+    /// `self * r = self ∘ Rotation(r)`: a rotation applied BEFORE `self`, which leaves the
+    /// translation untouched. One Hamilton product. Upstream: `Mul<UnitQuaternion> for Isometry3`
+    /// — a named method because Cairo's `Mul` is homogeneous (a documented rename,
+    /// `scripts/api_parity.py`).
     #[inline(always)]
-    fn prepend_rotation(self: Isometry3<T>, r: UnitQuaternion<T>) -> Isometry3<T> {
+    fn mul_unit_quaternion(self: Isometry3<T>, r: UnitQuaternion<T>) -> Isometry3<T> {
         Isometry3 { rotation: self.rotation * r, translation: self.translation }
     }
 
     /// The rotation `r` applied about the point `p` (which stays fixed): the translation becomes
-    /// `r · (translation - p) + p`, the rotation `r · rotation`. One exact subtraction, one
-    /// `rotate_translate` and one Hamilton product. Upstream:
+    /// `r · (translation - p) + p`, the rotation `r · rotation`, in place. One exact subtraction,
+    /// one `rotate_translate` and one Hamilton product. Upstream:
     /// `append_rotation_wrt_point_mut`.
-    fn append_rotation_wrt_point(
-        self: Isometry3<T>, r: UnitQuaternion<T>, p: Point3<T>,
-    ) -> Isometry3<T> {
+    fn append_rotation_wrt_point_mut(ref self: Isometry3<T>, r: UnitQuaternion<T>, p: Point3<T>) {
         let d = Vector3 {
             x: self.translation.vector.x - p.x,
             y: self.translation.vector.y - p.y,
             z: self.translation.vector.z - p.z,
         };
-        Isometry3 {
-            rotation: r * self.rotation,
-            translation: Translation3 {
-                vector: Self::rotate_translate(r, d, Vector3 { x: p.x, y: p.y, z: p.z }),
-            },
-        }
+        self =
+            Isometry3 {
+                rotation: r * self.rotation,
+                translation: Translation3 {
+                    vector: Isometry3InternalTrait::rotate_translate(
+                        r, d, Vector3 { x: p.x, y: p.y, z: p.z },
+                    ),
+                },
+            };
     }
 
     /// The rotation `r` applied about the isometry's own centre (the point `translation`): the
     /// translation is unchanged and the rotation becomes `r · rotation`, i.e. one Hamilton product
-    /// and nothing else (`append_rotation_wrt_point` with `p = translation`, where the subtraction
-    /// and the addition cancel exactly). Upstream: `append_rotation_wrt_center_mut`.
+    /// and nothing else (`append_rotation_wrt_point_mut` with `p = translation`, where the
+    /// subtraction and the addition cancel exactly). Upstream: `append_rotation_wrt_center_mut`.
     #[inline(always)]
-    fn append_rotation_wrt_center(self: Isometry3<T>, r: UnitQuaternion<T>) -> Isometry3<T> {
-        Isometry3 { rotation: r * self.rotation, translation: self.translation }
+    fn append_rotation_wrt_center_mut(ref self: Isometry3<T>, r: UnitQuaternion<T>) {
+        self = Isometry3 { rotation: r * self.rotation, translation: self.translation };
     }
 
     // --- observer frames ------------------------------------------------------------------------
@@ -388,25 +338,6 @@ pub impl Isometry3Impl<
         }
     }
 
-    /// Renormalises the rotation exactly (`UnitQuaternion::renormalize`: one norm and four exactly
-    /// correctly rounded divisions), leaving the translation untouched. Panics with
-    /// `Fixed: division by zero` on a zero rotation. Upstream: `Unit::renormalize` applied to the
-    /// rotation part (upstream has no `Isometry::renormalize`).
-    #[inline(always)]
-    fn renormalize(self: Isometry3<T>) -> Isometry3<T> {
-        Isometry3 { rotation: self.rotation.renormalize(), translation: self.translation }
-    }
-
-    /// Renormalises the rotation with one Newton step (`UnitQuaternion::renormalize_fast`: no
-    /// square root, no division, 15 % cheaper than `renormalize`), for a norm already within about
-    /// `2^-16` of 1 — which is what a pose composed every step drifts to. This is the call a
-    /// rigid-body integrator makes once per body per step. Upstream: `Unit::renormalize_fast`
-    /// applied to the rotation part.
-    #[inline(always)]
-    fn renormalize_fast(self: Isometry3<T>) -> Isometry3<T> {
-        Isometry3 { rotation: self.rotation.renormalize_fast(), translation: self.translation }
-    }
-
     /// `true` when the two translations and the two rotations are within `ulps` smallest units
     /// (raw units for fixed point) of each other, component by component; cannot overflow. Note
     /// that `-rotation` is the same rotation and is NOT `abs_diff_eq` to it. Upstream:
@@ -417,7 +348,93 @@ pub impl Isometry3Impl<
         self.translation.abs_diff_eq(other.translation, ulps)
             && self.rotation.abs_diff_eq(other.rotation, ulps)
     }
+}
 
+/// Crate-internal kernels of `Isometry3<T>` (WP 8.0: the public API is strictly upstream's): the
+/// fused `rotate_translate` behind every "rotate then translate" (DESIGN D6), the renormalisation
+/// of the rotation part (upstream renormalizes `iso.rotation` itself, in place) and the
+/// trigonometry-free `lerp_nlerp` (upstream has `lerp_slerp` only).
+#[generate_trait]
+pub(crate) impl Isometry3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Isometry3InternalTrait<T> {
+    /// `r · v + t`, the kernel every "rotate then translate" of this type goes through: the
+    /// quaternion sandwich `v + 2w·(u × v) + 2u × (u × v)` of
+    /// `UnitQuaternion::transform_vector` with the translation folded into its wide accumulation,
+    /// so each output component is floored ONCE for the whole expression (15 products, 3
+    /// roundings, no division).
+    ///
+    /// It gives the same bits as rotating and adding afterwards, since `floor(x + t) =
+    /// floor(x) + t` for an integral `t` in raw units, for 24 430 gas instead of 25 750 (5 %
+    /// cheaper): a `Fixed` addition costs an overflow check (540 gas) that the accumulator does
+    /// not pay. It also cannot overflow on the intermediate rotated vector, only on the result.
+    /// Duplicating the sandwich (instead of calling `UnitQuaternion::transform_vector` and
+    /// adding) is the price of that single rounding; it is written once here and reused by
+    /// `transform_point`, `Mul`, `mul_translation` and `append_rotation_wrt_point_mut`.
+    /// Evidence: `bench_isometry3_transform_point__alt_rotate_then_add` and
+    /// `test_transform_point_fused_and_composed_agree_bit_for_bit`.
+    ///
+    /// Not an upstream method: upstream writes `rotation * v + translation`, which in fixed point
+    /// is exactly this kernel. Panics on overflow of an intermediate doubling (`|v|` above about
+    /// `2^30`).
+    fn rotate_translate(r: UnitQuaternion<T>, v: Vector3<T>, t: Vector3<T>) -> Vector3<T> {
+        let u = r.imag();
+        let c = u.cross(v);
+        let d = Vector3 { x: c.x + c.x, y: c.y + c.y, z: c.z + c.z };
+        let uxd = u.cross(d);
+        let w = r.quaternion.w;
+        Vector3 {
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, d.x), uxd.x), v.x),
+                    t.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, d.y), uxd.y), v.y),
+                    t.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(R::wide_add(R::wide_add_prod(R::wide_zero(), w, d.z), uxd.z), v.z),
+                    t.z,
+                ),
+            ),
+        }
+    }
+    /// Renormalises the rotation exactly (`UnitQuaternion::renormalize`: one norm and four exactly
+    /// correctly rounded divisions), leaving the translation untouched. Panics with
+    /// `Fixed: division by zero` on a zero rotation. Upstream: `Unit::renormalize` applied to the
+    /// rotation part (upstream has no `Isometry::renormalize`).
+    #[inline(always)]
+    fn renormalize(self: Isometry3<T>) -> Isometry3<T> {
+        let mut rotation = self.rotation;
+        let _ = rotation.renormalize();
+        Isometry3 { rotation, translation: self.translation }
+    }
+    /// Renormalises the rotation with one Newton step (`UnitQuaternion::renormalize_fast`: no
+    /// square root, no division, 15 % cheaper than `renormalize`), for a norm already within about
+    /// `2^-16` of 1 — which is what a pose composed every step drifts to. This is the call a
+    /// rigid-body integrator makes once per body per step. Upstream: `Unit::renormalize_fast`
+    /// applied to the rotation part.
+    #[inline(always)]
+    fn renormalize_fast(self: Isometry3<T>) -> Isometry3<T> {
+        let mut rotation = self.rotation;
+        rotation.renormalize_fast();
+        Isometry3 { rotation, translation: self.translation }
+    }
     /// Interpolation WITHOUT trigonometry: the translations linearly, the rotations by
     /// `UnitQuaternion::nlerp` (four fused lerps, one norm, four divisions). `t` is not clamped.
     ///
@@ -446,8 +463,9 @@ pub impl Isometry3Impl<
 }
 
 /// Operations of `Isometry3<T>` that need trigonometry, hence their own trait: scalars may
-/// implement `Real` only (the whole rapier hot path — composition, `inv_mul`, transforms,
-/// `renormalize_fast` — is in `Isometry3Trait` and needs no trigonometry at all).
+/// implement `Real` only (the whole rapier hot path — composition, `inv_mul`, transforms — is
+/// in `Isometry3Trait`, and `UnitQuaternion::renormalize_fast` on the rotation, none of which needs
+/// trigonometry).
 #[generate_trait]
 pub impl Isometry3AngleImpl<
     T,
@@ -488,7 +506,9 @@ pub impl Isometry3AngleImpl<
     ///
     /// 91 650 gas, dominated by one `acos` and two `sin`. Panics with `nalgebra: ambiguous slerp`
     /// only for a scalar whose resolution makes `sqrt(1 - cos²)` vanish (never in Q32.32, see
-    /// `UnitQuaternion::slerp`). Prefer `lerp_nlerp` (31 610) inside a physics step. Upstream:
+    /// `UnitQuaternion::slerp`). The trigonometry-free alternative, `UnitQuaternion::nlerp` on the
+    /// rotation and a lerp on the translation, costs 31 610 (`bench_isometry3_lerp_slerp__*`).
+    /// Upstream:
     /// `Isometry3::lerp_slerp`.
     fn lerp_slerp(self: Isometry3<T>, other: Isometry3<T>, t: T) -> Isometry3<T> {
         Isometry3 {
@@ -548,7 +568,7 @@ pub impl Isometry3Mul<
         Isometry3 {
             rotation: lhs.rotation * rhs.rotation,
             translation: Translation3 {
-                vector: Isometry3Trait::rotate_translate(
+                vector: Isometry3InternalTrait::rotate_translate(
                     lhs.rotation, rhs.translation.vector, lhs.translation.vector,
                 ),
             },
@@ -567,20 +587,6 @@ pub impl Isometry3FromTranslation<
                 quaternion: Quaternion { i: R::ZERO, j: R::ZERO, k: R::ZERO, w: R::ONE },
             },
             translation: self,
-        }
-    }
-}
-
-/// `r.into()`: the pure rotation as an isometry. Upstream:
-/// `From<UnitQuaternion> for Isometry3`.
-pub impl Isometry3FromRotation<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
-> of Into<UnitQuaternion<T>, Isometry3<T>> {
-    #[inline(always)]
-    fn into(self: UnitQuaternion<T>) -> Isometry3<T> {
-        Isometry3 {
-            rotation: self,
-            translation: Translation3 { vector: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO } },
         }
     }
 }

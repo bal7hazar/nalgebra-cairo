@@ -13,9 +13,9 @@ use crate::base::matrix_test_utils::{
     ulp_diff, v6it, v6t,
 };
 use crate::base::vector6::Vector6;
-use crate::linalg::lu::{Perm6, PermTrait, oracle_lu6 as oracle};
+use crate::linalg::lu::{Perm6, Perm6Trait, oracle_lu6 as oracle};
 use super::benches::{new_no_pivot, solve_recip, try_inverse_recip, try_inverse_solve_columns};
-use super::{Lu6, Lu6Trait, Matrix6LuTrait};
+use super::{Lu6, Lu6InternalTrait, Lu6Trait, Matrix6LuTrait};
 
 /// The oracle's first `unit` 6x6 case whose factorisation actually swaps rows (all the benchmarks
 /// share it, so their inputs exercise the permutation).
@@ -220,7 +220,7 @@ fn test_factors_permutation_and_accessors() {
     assert!(f.permute(v6it((1, 2, 3, 4, 5, 6))) == v6it((6, 5, 1, 2, 3, 4)));
     // the identity factors without a single swap
     let id = Lu6Trait::new(Matrix6Trait::<Fixed>::identity());
-    assert!(id.p() == PermTrait::identity6());
+    assert!(id.p() == Perm6Trait::identity());
     assert!(id.permute(b_bench()) == b_bench());
     assert!(id.permute_rows(a_bench()) == a_bench());
     assert!(id.l() == Matrix6Trait::<Fixed>::identity());
@@ -238,7 +238,7 @@ fn test_singular_is_rejected() {
     assert!(!z.is_invertible());
     assert!(z.try_inverse().is_none());
     assert!(z.determinant() == int(0));
-    assert!(z.p() == PermTrait::identity6());
+    assert!(z.p() == Perm6Trait::identity());
     assert!(Lu6Trait::new(a_bench()).is_invertible());
 }
 

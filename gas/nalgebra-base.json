@@ -91,10 +91,6 @@
       "baseline": 16540,
       "fused": 18720
     },
-    "matrix2_row": {
-      "baseline": 17040,
-      "second": 17240
-    },
     "matrix2_scale": {
       "baseline": 18440,
       "products": 25060
@@ -216,11 +212,6 @@
       "assign": 45690,
       "baseline": 23540,
       "fused": 45690
-    },
-    "matrix3_mul_cross_matrix": {
-      "baseline": 22340,
-      "materialised": 45090,
-      "structured": 42090
     },
     "matrix3_mul_transpose": {
       "baseline": 20040,
@@ -447,10 +438,6 @@
       "baseline": 52740,
       "operator": 82880
     },
-    "matrix6_blocks": {
-      "baseline": 26940,
-      "from_blocks": 26940
-    },
     "matrix6_diagonal": {
       "baseline": 25440,
       "blocks": 26040
@@ -553,7 +540,6 @@
       "array": 18040,
       "baseline": 17840,
       "from_coordinates": 18040,
-      "tuple": 18040,
       "vector": 18040
     },
     "point2_from_homogeneous": {
@@ -569,8 +555,7 @@
     },
     "point2_into": {
       "array": 16140,
-      "baseline": 16140,
-      "tuple": 16140
+      "baseline": 16140
     },
     "point2_lerp": {
       "baseline": 17640,
@@ -587,10 +572,6 @@
     "point2_origin": {
       "baseline": 16840,
       "origin": 17040
-    },
-    "point2_push": {
-      "baseline": 17540,
-      "push": 17840
     },
     "point2_scale": {
       "baseline": 17040,
@@ -653,7 +634,6 @@
       "array": 19240,
       "baseline": 18940,
       "from_coordinates": 19240,
-      "tuple": 19240,
       "vector": 19240
     },
     "point3_from_homogeneous": {
@@ -669,8 +649,7 @@
     },
     "point3_into": {
       "array": 16340,
-      "baseline": 16340,
-      "tuple": 16340
+      "baseline": 16340
     },
     "point3_lerp": {
       "baseline": 18540,
@@ -717,228 +696,25 @@
     }
   },
   "nalgebra::base::sym_matrix2::tests": {
-    "sym_matrix2_abs_diff_eq": {
-      "all_compared": 21710,
-      "baseline": 17150
-    },
-    "sym_matrix2_add": {
-      "assign": 20560,
-      "baseline": 18140,
-      "generic": 21300,
-      "operator": 20560
-    },
-    "sym_matrix2_add_diagonal": {
-      "baseline": 17740,
-      "sum": 19420
-    },
-    "sym_matrix2_determinant": {
-      "baseline": 16340,
-      "generic": 18120,
-      "structured": 18120
-    },
-    "sym_matrix2_diagonal": {
-      "baseline": 16840,
-      "struct": 17040
-    },
-    "sym_matrix2_from_diagonal": {
-      "baseline": 17140,
-      "struct": 17140
-    },
-    "sym_matrix2_from_diagonal_element": {
-      "baseline": 16940,
-      "struct": 16940
-    },
-    "sym_matrix2_from_matrix_unchecked": {
-      "baseline": 17540,
-      "struct": 17840
-    },
-    "sym_matrix2_from_outer_self": {
-      "baseline": 17140,
-      "generic": 23660,
-      "structured": 22080
-    },
-    "sym_matrix2_identity": {
-      "baseline": 16540,
-      "const": 16540
-    },
-    "sym_matrix2_inverse_unchecked": {
-      "baseline": 17340,
-      "structured": 47150
-    },
-    "sym_matrix2_mul_matrix": {
-      "baseline": 18840,
-      "generic": 28790,
-      "structured": 28690
-    },
-    "sym_matrix2_mul_vec": {
-      "baseline": 17440,
-      "generic": 21100,
-      "structured": 21100
-    },
-    "sym_matrix2_neg": {
-      "baseline": 17340,
-      "operator": 18240
-    },
-    "sym_matrix2_new": {
-      "baseline": 17340,
-      "struct": 17340
-    },
-    "sym_matrix2_norm": {
-      "baseline": 16340,
-      "fused": 18760
-    },
     "sym_matrix2_quadform": {
       "baseline": 18140,
       "generic": 38440,
       "structured": 32730
     },
-    "sym_matrix2_quadform_sym": {
-      "baseline": 18340,
-      "generic": 38640,
-      "structured": 33830
-    },
-    "sym_matrix2_scale": {
-      "baseline": 17740,
-      "generic": 24260,
-      "structured": 22680
-    },
-    "sym_matrix2_sub": {
-      "assign": 20560,
-      "baseline": 18140,
-      "operator": 20560
-    },
     "sym_matrix2_to_matrix": {
       "baseline": 17840,
       "struct": 18240
-    },
-    "sym_matrix2_trace": {
-      "baseline": 16340,
-      "sum": 16980
-    },
-    "sym_matrix2_try_inverse": {
-      "baseline": 17340,
-      "generic": 51610,
-      "structured": 47550,
-      "structured_prescaled": 47550
-    },
-    "sym_matrix2_zeros": {
-      "baseline": 16540,
-      "const": 15940
     }
   },
   "nalgebra::base::sym_matrix3::tests": {
-    "sym_matrix3_abs_diff_eq": {
-      "all_compared": 27850,
-      "baseline": 18350
-    },
-    "sym_matrix3_add": {
-      "assign": 25780,
-      "baseline": 20840,
-      "generic": 28000,
-      "operator": 25780
-    },
-    "sym_matrix3_add_diagonal": {
-      "baseline": 19840,
-      "sum": 22560
-    },
-    "sym_matrix3_adjugate": {
-      "baseline": 19440,
-      "generic": 35960,
-      "structured": 30620
-    },
-    "sym_matrix3_determinant": {
-      "baseline": 16940,
-      "generic": 27290,
-      "structured": 26990
-    },
-    "sym_matrix3_diagonal": {
-      "baseline": 17940,
-      "struct": 18240
-    },
-    "sym_matrix3_from_diagonal": {
-      "baseline": 18840,
-      "struct": 18540
-    },
-    "sym_matrix3_from_diagonal_element": {
-      "baseline": 18440,
-      "struct": 18140
-    },
-    "sym_matrix3_from_matrix_unchecked": {
-      "baseline": 20040,
-      "struct": 20640
-    },
-    "sym_matrix3_from_outer_self": {
-      "baseline": 18840,
-      "generic": 33560,
-      "structured": 28820
-    },
-    "sym_matrix3_identity": {
-      "baseline": 18040,
-      "const": 17740
-    },
-    "sym_matrix3_inverse_unchecked": {
-      "baseline": 19440,
-      "structured": 86040
-    },
-    "sym_matrix3_mul_matrix": {
-      "baseline": 22940,
-      "generic": 45090,
-      "structured": 44790
-    },
-    "sym_matrix3_mul_vec": {
-      "baseline": 18740,
-      "generic": 24880,
-      "structured": 24880
-    },
-    "sym_matrix3_neg": {
-      "baseline": 19440,
-      "operator": 21240
-    },
-    "sym_matrix3_new": {
-      "baseline": 19440,
-      "struct": 19440
-    },
-    "sym_matrix3_norm": {
-      "baseline": 16940,
-      "wide": 22480
-    },
     "sym_matrix3_quadform": {
       "baseline": 20840,
       "generic": 65840,
       "structured": 51270
     },
-    "sym_matrix3_quadform_sym": {
-      "baseline": 21440,
-      "generic": 66440,
-      "structured": 55770
-    },
-    "sym_matrix3_scale": {
-      "baseline": 19840,
-      "generic": 34560,
-      "structured": 29820
-    },
-    "sym_matrix3_sub": {
-      "assign": 25780,
-      "baseline": 20840,
-      "operator": 25780
-    },
     "sym_matrix3_to_matrix": {
       "baseline": 20940,
       "struct": 21840
-    },
-    "sym_matrix3_trace": {
-      "baseline": 16940,
-      "sum": 18320
-    },
-    "sym_matrix3_try_inverse": {
-      "baseline": 19440,
-      "generic": 108400,
-      "structured": 86440,
-      "structured_prescaled": 86440
-    },
-    "sym_matrix3_zeros": {
-      "baseline": 18040,
-      "const": 16840
     }
   },
   "nalgebra::base::unit::benches": {
@@ -973,11 +749,9 @@
     "unit3_dot": {
       "alt_unfused": 24360,
       "baseline": 17940,
-      "dot": 19920,
-      "dot_vector": 19920
+      "dot": 19920
     },
     "unit3_into_inner": {
-      "as_ref": 17340,
       "baseline": 17340,
       "into_inner": 17340
     },
@@ -995,10 +769,6 @@
     "unit3_new_unchecked": {
       "baseline": 17340,
       "new_unchecked": 17340
-    },
-    "unit3_orthonormal_basis": {
-      "baseline": 18840,
-      "orthonormal_basis": 34730
     },
     "unit3_renormalize": {
       "baseline": 17340,
@@ -1085,8 +855,7 @@
     },
     "vector2_from": {
       "array": 17440,
-      "baseline": 17240,
-      "tuple": 17440
+      "baseline": 17240
     },
     "vector2_imin": {
       "baseline": 16140,
@@ -1106,8 +875,7 @@
     },
     "vector2_into": {
       "array": 16140,
-      "baseline": 16140,
-      "tuple": 16140
+      "baseline": 16140
     },
     "vector2_is_zero": {
       "baseline": 16240,
@@ -1240,8 +1008,7 @@
     },
     "vector3_from": {
       "array": 18440,
-      "baseline": 18140,
-      "tuple": 18440
+      "baseline": 18140
     },
     "vector3_imin": {
       "baseline": 16340,
@@ -1261,8 +1028,7 @@
     },
     "vector3_into": {
       "array": 16340,
-      "baseline": 16340,
-      "tuple": 16340
+      "baseline": 16340
     },
     "vector3_is_zero": {
       "baseline": 16440,
@@ -1403,8 +1169,7 @@
     },
     "vector4_from": {
       "array": 19440,
-      "baseline": 19040,
-      "tuple": 19440
+      "baseline": 19040
     },
     "vector4_imin": {
       "baseline": 16540,
@@ -1424,8 +1189,7 @@
     },
     "vector4_into": {
       "array": 16540,
-      "baseline": 16540,
-      "tuple": 16540
+      "baseline": 16540
     },
     "vector4_is_zero": {
       "baseline": 16640,
@@ -1517,10 +1281,6 @@
       "assign": 26680,
       "baseline": 21740,
       "operator": 26680
-    },
-    "vector6_blocks": {
-      "baseline": 18240,
-      "from_blocks": 18240
     },
     "vector6_component_mul": {
       "baseline": 21740,

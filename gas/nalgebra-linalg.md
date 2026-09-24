@@ -14,8 +14,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 35590 | 18250 | x1.00 |
-| `triangular` | 38250 | 20910 | x1.15 |
+| `alt_recip` | 36190 | 18350 | x1.00 |
+| `triangular` | 38850 | 21010 | x1.14 |
 
 ### cholesky2_l
 
@@ -27,7 +27,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 31040 | 13700 | x1.00 |
+| `factorize` | 31240 | 13700 | x1.00 |
 
 ### cholesky2_solve
 
@@ -46,8 +46,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 54710 | 35270 | x1.00 |
-| `triangular` | 62690 | 43250 | x1.23 |
+| `alt_recip` | 56510 | 35570 | x1.00 |
+| `triangular` | 64490 | 43550 | x1.22 |
 
 ### cholesky3_l
 
@@ -59,7 +59,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 48970 | 29530 | x1.00 |
+| `factorize` | 49570 | 29530 | x1.00 |
 
 ### cholesky3_solve
 
@@ -577,7 +577,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `determinant` | 290740 | 267800 | x1.00 |
-| `solve` | 348800 | 325860 | x1.22 |
 | `try_inverse` | 573340 | 550400 | x2.06 |
 
 ## nalgebra::linalg::qr::qr2::tests
@@ -829,6 +828,12 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `closed_form` | 43670 | 27330 | x1.00 |
 
+### symmetric_eigen2_new_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `public` | 43870 | 27330 | x1.00 |
+
 ### symmetric_eigen2_recompose
 
 | variant | raw | net | vs best |
@@ -855,6 +860,12 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `jacobi_5_sweeps` | 740200 | 723260 | x1.58 |
 | `jacobi_6_sweeps` | 873370 | 856430 | x1.87 |
 
+### symmetric_eigen3_new_matrix
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `public` | 607630 | 590090 | x1.00 |
+
 ### symmetric_eigen3_recompose
 
 | variant | raw | net | vs best |
@@ -867,4 +878,30 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `three_rotations_without_eigenvectors` | 94990 | 76250 | x1.00 |
 | `three_rotations` | 151710 | 132970 | x1.74 |
+
+## nalgebra::linalg::udu::benches
+
+### udu2_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reversed_ldlt` | 27100 | 9850 | x1.00 |
+
+### udu3_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reversed_ldlt` | 42240 | 23990 | x1.00 |
+
+### udu4_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reversed_ldlt` | 72970 | 47550 | x1.00 |
+
+### udu6_new
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `reversed_ldlt` | 147850 | 114230 | x1.00 |
 

@@ -24,7 +24,7 @@
 //! count is a constant, so the gas of the decomposition is a constant.
 
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use crate::base::vector3::{Vector3, Vector3Trait};
 
@@ -42,12 +42,21 @@ use crate::base::vector3::{Vector3, Vector3Trait};
 /// deterministic function of its raw components, as required by AGENTS.md.
 ///
 /// Upstream: `SymmetricEigen { eigenvalues: OVector, eigenvectors: OMatrix }`.
-#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
+#[derive(Copy, Drop, Serde, Debug)]
 pub struct SymmetricEigen3<T> {
     /// The three eigenvalues, ascending.
     pub eigenvalues: Vector3<T>,
     /// The matching unit eigenvectors, as columns (`det = +1`).
     pub eigenvectors: Matrix3<T>,
+}
+
+/// Test-only field-wise equality (upstream `SymmetricEigen3` has no `PartialEq`): the tests and the
+/// benchmarks compare factors through it.
+#[cfg(test)]
+impl SymmetricEigen3PartialEq<T, +PartialEq<T>> of PartialEq<SymmetricEigen3<T>> {
+    fn eq(lhs: @SymmetricEigen3<T>, rhs: @SymmetricEigen3<T>) -> bool {
+        lhs.eigenvalues == rhs.eigenvalues && lhs.eigenvectors == rhs.eigenvectors
+    }
 }
 
 /// The running state of the Jacobi iteration: the partially diagonalised matrix `s` and the
@@ -382,7 +391,7 @@ pub impl SymmetricEigen3Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of SymmetricEigen3Trait<T> {
-    /// The eigendecomposition of `s` by **four** cyclic Jacobi sweeps, unrolled.
+    /// The eigendecomposition of the symmetric `m` by **four** cyclic Jacobi sweeps, unrolled.
     ///
     /// Cost: **constant**, 550 770 gas — 12 plane rotations, whatever the input. The early exit
     /// of `rotate12_s` on an exactly zero off-diagonal entry is a correctness guard, not a saving
@@ -412,25 +421,55 @@ pub impl SymmetricEigen3Impl<
     /// Rounding: 4 roundings per rotation for `(c, s)` and one per updated component. Panics on
     /// overflow; a rotation never grows a component by more than `sqrt(2)`, so an input whose
     /// entries fit with one bit to spare cannot overflow.
+    /// Like upstream, only the LOWER triangle of `m` is read (the entries at row `i`, column `j`
+    /// with `i >= j`): the strictly upper triangle is ignored and the symmetry of `m` is NOT
+    /// checked.
     /// Upstream: `SymmetricEigen::new` (iterative QR, different algorithm and different order).
-    fn new(s: SymMatrix3<T>) -> SymmetricEigen3<T> {
+    #[inline(always)]
+    fn new(m: Matrix3<T>) -> SymmetricEigen3<T> {
+        SymmetricEigen3InternalTrait::new_sym(
+            SymMatrix3 { m11: m.m11, m12: m.m21, m13: m.m31, m22: m.m22, m23: m.m32, m33: m.m33 },
+        )
+    }
+
+    /// `V * diag(eigenvalues) * Vᵀ`, the symmetric matrix the decomposition came from, up to the
+    /// rounding of the decomposition. Only the 6 independent components are computed (a
+    /// structured quadratic form), then mirrored. Panics on overflow. Upstream:
+    /// `SymmetricEigen::recompose`.
+    #[inline(always)]
+    fn recompose(self: SymmetricEigen3<T>) -> Matrix3<T> {
+        SymMatrix3Trait::quadform(self.eigenvectors, self.eigenvalues).to_matrix()
+    }
+}
+
+/// Crate-internal kernels of `SymmetricEigen3<T>` (WP 8.0: the public API is strictly
+/// upstream's): the decomposition and the eigenvalues of a `SymMatrix3` (the 6 independent
+/// components the SVD's Gram matrix is built as), the symmetric reconstruction.
+#[generate_trait]
+pub(crate) impl SymmetricEigen3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of SymmetricEigen3InternalTrait<T> {
+    /// The kernel of `SymmetricEigen3Trait::new` on the 6 independent components of `s`, the
+    /// form the SVD builds its Gram matrix in. Documented (cost, accuracy) on `new`.
+    fn new_sym(s: SymMatrix3<T>) -> SymmetricEigen3<T> {
         Jacobi3Impl::<T>::start(s).sweep().sweep().sweep().sweep().finish()
     }
-
-    /// The eigendecomposition of `m`, **assumed symmetric**: only the upper triangle is read, the
-    /// lower one is ignored. Upstream: `Matrix3::symmetric_eigen` (which likewise reads a single
-    /// triangle).
-    #[inline(always)]
-    fn from_matrix(m: Matrix3<T>) -> SymmetricEigen3<T> {
-        Self::new(SymMatrix3Trait::from_matrix_unchecked(m))
-    }
-
     /// The eigenvalues of `s` alone, ascending: the same four sweeps as `new`, with the
     /// accumulation of the rotation dropped. Bit-identical to `new(s).eigenvalues` (the rotation
     /// never feeds back into the matrix), and measured **45 % cheaper** (303 470 against 550 770
     /// gas): 6 fused products per
     /// rotation and the two final `norm3` / six divisions disappear.
-    /// Upstream: `Matrix3::symmetric_eigenvalues`.
+    /// The kernel of `Matrix3SymmetricEigenTrait::symmetric_eigenvalues`.
     fn eigenvalues(s: SymMatrix3<T>) -> Vector3<T> {
         let s = Jacobi3Impl::<T>::sweep_s(s);
         let s = Jacobi3Impl::<T>::sweep_s(s);
@@ -438,22 +477,49 @@ pub impl SymmetricEigen3Impl<
         let s = Jacobi3Impl::<T>::sweep_s(s);
         Jacobi3Impl::<T>::sorted_triple(s.m11, s.m22, s.m33)
     }
-
     /// `V * diag(eigenvalues) * Vᵀ`, the symmetric matrix the decomposition came from, up to the
     /// rounding of the decomposition (measured: **31 ulp per unit of `max |m_ij|`**). Goes through
     /// `SymMatrix3::quadform`, so only the 6 independent components are computed. Panics on
-    /// overflow. Upstream: `SymmetricEigen::recompose` (which returns the full matrix, see
-    /// `recompose_matrix`).
+    /// overflow. The kernel of `recompose`, which mirrors it.
     #[inline(always)]
-    fn recompose(self: SymmetricEigen3<T>) -> SymMatrix3<T> {
+    fn recompose_sym(self: SymmetricEigen3<T>) -> SymMatrix3<T> {
         SymMatrix3Trait::quadform(self.eigenvectors, self.eigenvalues)
     }
+}
 
-    /// `recompose()` as a full `Matrix3`, bit-identical to it by symmetry.
-    /// Upstream: `SymmetricEigen::recompose`.
+/// Upstream's `SquareMatrix` methods that go through the symmetric eigen decomposition, on
+/// `Matrix3`. Import `Matrix3SymmetricEigenTrait` to use them.
+#[generate_trait]
+pub impl Matrix3SymmetricEigenImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix3SymmetricEigenTrait<T> {
+    /// The eigendecomposition of the symmetric `self` (lower triangle read), see
+    /// `SymmetricEigen3Trait::new`. Upstream: `Matrix::symmetric_eigen`.
     #[inline(always)]
-    fn recompose_matrix(self: SymmetricEigen3<T>) -> Matrix3<T> {
-        Self::recompose(self).to_matrix()
+    fn symmetric_eigen(self: Matrix3<T>) -> SymmetricEigen3<T> {
+        SymmetricEigen3Trait::new(self)
+    }
+
+    /// The eigenvalues of the symmetric `self` alone (lower triangle read), ascending, without the
+    /// eigenvectors: the same four sweeps as `new` with the accumulation of the
+    /// rotation dropped, bit-identical to `new(self).eigenvalues` and 45 % cheaper. Upstream:
+    /// `Matrix::symmetric_eigenvalues`.
+    #[inline(always)]
+    fn symmetric_eigenvalues(self: Matrix3<T>) -> Vector3<T> {
+        let m = self;
+        SymmetricEigen3InternalTrait::eigenvalues(
+            SymMatrix3 { m11: m.m11, m12: m.m21, m13: m.m31, m22: m.m22, m23: m.m32, m33: m.m33 },
+        )
     }
 }
 
@@ -463,13 +529,14 @@ mod tests {
     use fixed::wide::{NormTrait, RecipTrait, norm3_wide};
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
-    use crate::base::matrix3::{Matrix3, Matrix3Trait};
+    use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_s3, fx, int, m3, max_ulp_diff_s3, max_ulp_diff_v3, s3i, s3r, ulp_diff, v3i, v3t,
     };
     use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
     use crate::base::vector3::{Vector3, Vector3Trait};
     use crate::linalg::oracle_symmetric_eigen;
+    use crate::linalg::symmetric_eigen3::{Matrix3SymmetricEigenTrait, SymmetricEigen3InternalTrait};
     use super::{Jacobi3, Jacobi3Impl, Jacobi3Trait, SymmetricEigen3, SymmetricEigen3Trait};
 
     // --- the losing candidates of the sweep-count study (kept as evidence) ----------------------
@@ -521,9 +588,14 @@ mod tests {
             e.eigenvectors.column1(), e.eigenvectors.column2(), e.eigenvectors.column3(),
         );
         let zero = Vector3Trait::zeros();
-        let mut r = max_ulp_diff_v3(s.mul_vec(c1) - c1.scale(e.eigenvalues.x), zero);
-        r = core::cmp::max(r, max_ulp_diff_v3(s.mul_vec(c2) - c2.scale(e.eigenvalues.y), zero));
-        core::cmp::max(r, max_ulp_diff_v3(s.mul_vec(c3) - c3.scale(e.eigenvalues.z), zero))
+        let mut r = max_ulp_diff_v3(s.to_matrix().mul_vec(c1) - c1.scale(e.eigenvalues.x), zero);
+        r =
+            core::cmp::max(
+                r, max_ulp_diff_v3(s.to_matrix().mul_vec(c2) - c2.scale(e.eigenvalues.y), zero),
+            );
+        core::cmp::max(
+            r, max_ulp_diff_v3(s.to_matrix().mul_vec(c3) - c3.scale(e.eigenvalues.z), zero),
+        )
     }
 
     /// Largest `|off-diagonal|` of the partially diagonalised matrix, in raw units.
@@ -537,10 +609,10 @@ mod tests {
 
     #[test]
     fn test_new_diagonal_is_exact() {
-        let e = SymmetricEigen3Trait::new(s3i((-2, 0, 0, 1, 0, 7)));
+        let e = SymmetricEigen3InternalTrait::new_sym(s3i((-2, 0, 0, 1, 0, 7)));
         assert!(e.eigenvalues == v3i(-2, 1, 7));
         assert!(e.eigenvectors == Matrix3Trait::identity());
-        assert!(e.recompose() == s3i((-2, 0, 0, 1, 0, 7)));
+        assert!(e.recompose_sym() == s3i((-2, 0, 0, 1, 0, 7)));
     }
 
     #[test]
@@ -552,22 +624,22 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, b, c) = *case;
             let s = s3i((a, 0, 0, b, 0, c));
-            let e = SymmetricEigen3Trait::new(s);
+            let e = SymmetricEigen3InternalTrait::new_sym(s);
             assert!(e.eigenvalues == v3i(-2, 1, 7));
             assert!(e.eigenvectors.determinant() == Real::ONE);
-            assert!(e.recompose() == s);
+            assert!(e.recompose_sym() == s);
             assert!(residual_error(s, e) == 0);
         }
     }
 
     #[test]
     fn test_new_isotropic_is_exact() {
-        let e = SymmetricEigen3Trait::new(s3i((3, 0, 0, 3, 0, 3)));
+        let e = SymmetricEigen3InternalTrait::new_sym(s3i((3, 0, 0, 3, 0, 3)));
         assert!(e.eigenvalues == v3i(3, 3, 3));
         assert!(e.eigenvectors == Matrix3Trait::identity());
-        assert!(e.recompose() == s3i((3, 0, 0, 3, 0, 3)));
+        assert!(e.recompose_sym() == s3i((3, 0, 0, 3, 0, 3)));
         // Zero is isotropic too, and must not divide by zero.
-        let e = SymmetricEigen3Trait::new(s3i((0, 0, 0, 0, 0, 0)));
+        let e = SymmetricEigen3InternalTrait::new_sym(s3i((0, 0, 0, 0, 0, 0)));
         assert!(e.eigenvalues == v3i(0, 0, 0));
         assert!(e.eigenvectors == Matrix3Trait::identity());
     }
@@ -576,18 +648,18 @@ mod tests {
     fn test_new_repeated_eigenvalues_is_exact() {
         // diag(5, 3, 3): the (2, 3) eigenspace is a plane, any orthonormal basis of it is valid.
         let s = s3i((5, 0, 0, 3, 0, 3));
-        let e = SymmetricEigen3Trait::new(s);
+        let e = SymmetricEigen3InternalTrait::new_sym(s);
         assert!(e.eigenvalues == v3i(3, 3, 5));
         assert!(e.eigenvectors.determinant() == Real::ONE);
         assert!(residual_error(s, e) == 0);
-        assert!(e.recompose() == s);
+        assert!(e.recompose_sym() == s);
     }
 
     #[test]
     fn test_new_rank_one_matrix() {
         // The all-ones matrix: eigenvalues 0, 0, 3 with (1, 1, 1)/sqrt(3) for 3.
         let s = s3i((1, 1, 1, 1, 1, 1));
-        let e = SymmetricEigen3Trait::new(s);
+        let e = SymmetricEigen3InternalTrait::new_sym(s);
         assert!(max_ulp_diff_v3(e.eigenvalues, v3i(0, 0, 3)) <= 2);
         // 1/sqrt(3) through `fixed`'s normalisation path (it has no `inv_sqrt`).
         let third = norm3_wide(Real::ONE, Real::ONE, Real::ONE).recip().mul(Real::ONE);
@@ -601,7 +673,7 @@ mod tests {
     fn test_new_block_diagonal_case_is_exact() {
         // [[5, 2, 0], [2, 2, 0], [0, 0, 4]]: the 2x2 block has eigenvalues 1 and 6.
         let s = s3i((5, 2, 0, 2, 0, 4));
-        let e = SymmetricEigen3Trait::new(s);
+        let e = SymmetricEigen3InternalTrait::new_sym(s);
         assert!(e.eigenvalues == v3i(1, 4, 6));
         // The eigenvectors of the block are irrational, so `det` is only +1 up to their rounding.
         assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
@@ -620,11 +692,17 @@ mod tests {
     }
 
     #[test]
-    fn test_from_matrix_reads_the_upper_triangle() {
+    fn test_new_reads_the_lower_triangle() {
+        // Lower triangle [[5, ., .], [2, 2, .], [0, 0, 4]]; the upper entries -9 are ignored, like
+        // upstream.
         let m = Matrix3Trait::new(
-            int(5), int(2), int(0), int(-9), int(2), int(0), int(-9), int(-9), int(4),
+            int(5), int(-9), int(-9), int(2), int(2), int(-9), int(0), int(0), int(4),
         );
-        assert!(SymmetricEigen3Trait::from_matrix(m).eigenvalues == v3i(1, 4, 6));
+        let e = SymmetricEigen3Trait::new(m);
+        assert!(e.eigenvalues == v3i(1, 4, 6));
+        assert!(m.symmetric_eigen().eigenvalues == e.eigenvalues);
+        assert!(m.symmetric_eigenvalues() == e.eigenvalues);
+        assert!(e.recompose() == e.recompose_sym().to_matrix());
     }
 
     #[test]
@@ -634,7 +712,10 @@ mod tests {
             let (a, _expected, _tol) = *case;
             let s = s3r(a);
             assert!(
-                SymmetricEigen3Trait::eigenvalues(s) == SymmetricEigen3Trait::new(s).eigenvalues,
+                SymmetricEigen3InternalTrait::eigenvalues(
+                    s,
+                ) == SymmetricEigen3InternalTrait::new_sym(s)
+                    .eigenvalues,
             );
         }
     }
@@ -672,7 +753,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
             let s = s3r(a);
-            let four = SymmetricEigen3Trait::new(s);
+            let four = SymmetricEigen3InternalTrait::new_sym(s);
             assert!(eigen_sweeps5(s) == four, "a fifth sweep changed the result");
             assert!(eigen_sweeps6(s) == four, "a sixth sweep changed the result");
         }
@@ -688,8 +769,9 @@ mod tests {
             let (a, _expected, _tol) = *case;
             let s = s3r(a);
             let scale = amax_s3(s);
-            let e3 = max_ulp_diff_s3(eigen_sweeps3(s).recompose(), s) / scale;
-            let e4 = max_ulp_diff_s3(SymmetricEigen3Trait::new(s).recompose(), s) / scale;
+            let e3 = max_ulp_diff_s3(eigen_sweeps3(s).recompose_sym(), s) / scale;
+            let e4 = max_ulp_diff_s3(SymmetricEigen3InternalTrait::new_sym(s).recompose_sym(), s)
+                / scale;
             worst3 = core::cmp::max(worst3, e3);
             worst4 = core::cmp::max(worst4, e4);
         }
@@ -724,7 +806,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen3Trait::new(s3r(a)).eigenvalues;
+            let got = SymmetricEigen3InternalTrait::new_sym(s3r(a)).eigenvalues;
             let e = max_ulp_diff_v3(got, v3t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
@@ -739,7 +821,7 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_spd_cases();
         while let Some(case) = cases.pop_front() {
             let (a, expected, tol) = *case;
-            let got = SymmetricEigen3Trait::new(s3r(a)).eigenvalues;
+            let got = SymmetricEigen3InternalTrait::new_sym(s3r(a)).eigenvalues;
             let e = max_ulp_diff_v3(got, v3t(expected));
             assert!(e <= tol.into(), "eigenvalues off by more than the oracle tolerance");
             worst = core::cmp::max(worst, e);
@@ -755,13 +837,13 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
             let s = s3r(a);
-            let e = SymmetricEigen3Trait::new(s);
+            let e = SymmetricEigen3InternalTrait::new_sym(s);
             assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
             let orth = orthonormality_error(e.eigenvectors);
             assert!(orth <= 32, "columns are not orthonormal");
-            let rec = max_ulp_diff_s3(e.recompose(), s) / amax_s3(s);
+            let rec = max_ulp_diff_s3(e.recompose_sym(), s) / amax_s3(s);
             assert!(rec <= 32, "reconstruction is off");
-            assert!(e.recompose_matrix() == e.recompose().to_matrix());
+            assert!(e.recompose() == e.recompose_sym().to_matrix());
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
         }
@@ -775,8 +857,8 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
             let s = s3r(a);
-            let e = SymmetricEigen3Trait::new(s);
-            assert!(max_ulp_diff_s3(e.recompose(), s) / amax_s3(s) <= 32);
+            let e = SymmetricEigen3InternalTrait::new_sym(s);
+            assert!(max_ulp_diff_s3(e.recompose_sym(), s) / amax_s3(s) <= 32);
             assert!(orthonormality_error(e.eigenvectors) <= 32);
             assert!(residual_error(s, e) <= 32 * amax_s3(s));
         }
@@ -787,7 +869,10 @@ mod tests {
         let mut cases = oracle_symmetric_eigen::symmetric_eigen3_eigenvalues_cases();
         while let Some(case) = cases.pop_front() {
             let (a, _expected, _tol) = *case;
-            assert!(SymmetricEigen3Trait::from_matrix(m3(a)) == SymmetricEigen3Trait::new(s3r(a)));
+            let (e, f) = (
+                SymmetricEigen3Trait::new(m3(a)), SymmetricEigen3InternalTrait::new_sym(s3r(a)),
+            );
+            assert!(e.eigenvalues == f.eigenvalues && e.eigenvectors == f.eigenvectors);
         }
     }
 
@@ -806,7 +891,7 @@ mod tests {
                 m33: Real::MAX,
             },
         );
-        SymmetricEigen3Trait::new(s);
+        SymmetricEigen3InternalTrait::new_sym(s);
     }
 
     // --- gas -----------------------------------------------------------------------------------
@@ -843,7 +928,26 @@ mod tests {
     #[inline(never)]
     fn bench_symmetric_eigen3_new__jacobi_4_sweeps() {
         let s = black_box(bench_input());
-        let d = SymmetricEigen3Trait::new(s);
+        let d = SymmetricEigen3InternalTrait::new_sym(s);
+        assert!(d.eigenvalues.x <= d.eigenvalues.y && d.eigenvalues.y <= d.eigenvalues.z);
+    }
+
+    /// The public entry point, `SymmetricEigen3::new` on a full `Matrix3` (lower triangle
+    /// read): an inlined wrapper around the kernel measured by `new__jacobi_4_sweeps`, which it
+    /// should match (WP 8.0).
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen3_new_matrix__baseline() {
+        let _m = black_box(bench_input().to_matrix());
+        let e = black_box(fx(0x100000000));
+        assert!(e == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen3_new_matrix__public() {
+        let m = black_box(bench_input().to_matrix());
+        let d = SymmetricEigen3Trait::new(m);
         assert!(d.eigenvalues.x <= d.eigenvalues.y && d.eigenvalues.y <= d.eigenvalues.z);
     }
 
@@ -876,8 +980,8 @@ mod tests {
     #[inline(never)]
     fn bench_symmetric_eigen3_new__diagonal_input() {
         // Every rotation is skipped: the cost of the early exits alone.
-        let s = black_box(SymMatrix3Trait::from_diagonal(v3i(7, -2, 1)));
-        let d = SymmetricEigen3Trait::new(s);
+        let s = black_box(s3i((7, 0, 0, -2, 0, 1)));
+        let d = SymmetricEigen3InternalTrait::new_sym(s);
         assert!(d.eigenvalues == v3i(-2, 1, 7));
     }
 
@@ -893,7 +997,7 @@ mod tests {
     #[inline(never)]
     fn bench_symmetric_eigen3_eigenvalues__without_eigenvectors() {
         let s = black_box(bench_input());
-        let v = SymmetricEigen3Trait::eigenvalues(s);
+        let v = SymmetricEigen3InternalTrait::eigenvalues(s);
         assert!(v.x <= v.y && v.y <= v.z);
     }
 
@@ -901,7 +1005,7 @@ mod tests {
     #[inline(never)]
     fn bench_symmetric_eigen3_eigenvalues__via_new() {
         let s = black_box(bench_input());
-        let v = SymmetricEigen3Trait::new(s).eigenvalues;
+        let v = SymmetricEigen3InternalTrait::new_sym(s).eigenvalues;
         assert!(v.x <= v.y && v.y <= v.z);
     }
 
@@ -933,7 +1037,7 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_symmetric_eigen3_recompose__baseline() {
-        let _d = black_box(SymmetricEigen3Trait::new(bench_input()));
+        let _d = black_box(SymmetricEigen3InternalTrait::new_sym(bench_input()));
         let e = black_box(fx(0x100000000));
         assert!(e == e);
     }
@@ -941,8 +1045,8 @@ mod tests {
     #[test]
     #[inline(never)]
     fn bench_symmetric_eigen3_recompose__quadform() {
-        let d = black_box(SymmetricEigen3Trait::new(bench_input()));
-        let s = d.recompose();
+        let d = black_box(SymmetricEigen3InternalTrait::new_sym(bench_input()));
+        let s = d.recompose_sym();
         assert!(s.m11 != Real::ZERO);
     }
 }

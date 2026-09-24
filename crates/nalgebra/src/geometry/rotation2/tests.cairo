@@ -15,6 +15,7 @@ use simba::scalar::Real;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::matrix_test_utils::{ONE_RAW, fx, m2, p2t, r2, uct, ulp_diff, v2t};
 use crate::base::vector2::{Vector2, Vector2Trait};
+use crate::geometry::rotation2::Rotation2InternalTrait;
 use crate::geometry::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 use super::{Rotation2, Rotation2AngleTrait, Rotation2Trait, oracle};
 
@@ -72,7 +73,7 @@ fn test_from_matrix_normalizes_the_first_column() {
     let m = Matrix2 { m11: c.re * four, m21: c.im * four, m12: Real::ZERO, m22: Real::ZERO };
     let r = Rotation2Trait::from_matrix(m);
     assert!(r.abs_diff_eq(c.to_rotation_matrix(), 2));
-    assert!(r.renormalize().abs_diff_eq(r, 2));
+    assert!(r.renormalized().abs_diff_eq(r, 2));
     // An exact rotation is a fixed point of `from_matrix`.
     assert!(Rotation2Trait::from_matrix(quarter().matrix) == quarter());
 }
@@ -135,7 +136,8 @@ fn test_mul_matches_the_unit_complex_product_up_to_one_ulp() {
         Rotation2AngleTrait::<Fixed>::new(fx(-0x2aaaaaaa)),
     );
     let m = a * b;
-    let c = (a.to_unit_complex() * b.to_unit_complex()).to_rotation_matrix();
+    let c = (UnitComplexTrait::from_rotation_matrix(a) * UnitComplexTrait::from_rotation_matrix(b))
+        .to_rotation_matrix();
     assert!(m.matrix.m11 == c.matrix.m11 && m.matrix.m22 == c.matrix.m22);
     assert!(m.matrix.m21 == c.matrix.m21);
     assert!(ulp_diff(m.matrix.m12, c.matrix.m12) <= 1);
@@ -147,7 +149,6 @@ fn test_mul_matches_the_unit_complex_product_up_to_one_ulp() {
 fn test_transform_vector_quarter_turn_is_exact() {
     let v = v2t((0x300000000, -0x400000000));
     assert!(quarter().transform_vector(v) == v2t((0x400000000, 0x300000000)));
-    assert!(quarter().mul_vec(v) == quarter().transform_vector(v));
     assert!(id().transform_vector(v) == v);
 }
 
@@ -185,7 +186,7 @@ fn test_unit_complex_round_trip_is_exact() {
     let c = uct((0x80000000, -0xdd6a9c1));
     let r: Rotation2<Fixed> = c.into();
     assert!(r == c.to_rotation_matrix());
-    assert!(r.to_unit_complex() == c);
+    assert!(UnitComplexTrait::from_rotation_matrix(r) == c);
     let back: UnitComplex<Fixed> = r.into();
     assert!(back == c);
     assert!(UnitComplexTrait::from_rotation_matrix(r) == c);
@@ -199,7 +200,7 @@ fn test_to_homogeneous() {
     assert!(h.m21 == r.matrix.m21 && h.m22 == r.matrix.m22);
     assert!(h.m13 == Real::ZERO && h.m23 == Real::ZERO);
     assert!(h.m31 == Real::ZERO && h.m32 == Real::ZERO && h.m33 == Real::ONE);
-    assert!(h == r.to_unit_complex().to_homogeneous());
+    assert!(h == UnitComplexTrait::from_rotation_matrix(r).to_homogeneous());
 }
 
 // --- rotation_between, angles
@@ -237,7 +238,13 @@ fn test_angle_round_trip_and_angle_to() {
         Rotation2AngleTrait::<Fixed>::new(fx(0x66666666)),
         Rotation2AngleTrait::<Fixed>::new(fx(0x1999999a)),
     );
-    assert!(ulp_diff(x.angle_to(y), x.to_unit_complex().angle_to(y.to_unit_complex())) == 0);
+    assert!(
+        ulp_diff(
+            x.angle_to(y),
+            UnitComplexTrait::from_rotation_matrix(x)
+                .angle_to(UnitComplexTrait::from_rotation_matrix(y)),
+        ) == 0,
+    );
     assert!(ulp_diff(x.angle_to(y), fx(0x1999999a) - fx(0x66666666)) <= 16);
 }
 
@@ -254,8 +261,8 @@ fn test_powf() {
 
 #[test]
 fn test_renormalize_is_exact_on_a_rotation() {
-    assert!(quarter().renormalize() == quarter());
-    assert!(id().renormalize() == id());
+    assert!(quarter().renormalized() == quarter());
+    assert!(id().renormalized() == id());
 }
 
 #[test]
@@ -270,7 +277,7 @@ fn test_renormalize_recovers_orthogonality() {
     };
     let p = drifted * drifted.inverse();
     assert!(!p.abs_diff_eq(id(), 0x1000));
-    let r = drifted.renormalize();
+    let r = drifted.renormalized();
     assert!((r * r.inverse()).abs_diff_eq(id(), 2));
 }
 
@@ -278,7 +285,7 @@ fn test_renormalize_recovers_orthogonality() {
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_of_a_zero_first_column_panics() {
     let m = Matrix2 { m11: Real::<Fixed>::ZERO, m21: Real::ZERO, m12: Real::ONE, m22: Real::ONE };
-    let _ = black_box(Rotation2Trait::from_matrix_unchecked(m)).renormalize();
+    let _ = black_box(Rotation2Trait::from_matrix_unchecked(m)).renormalized();
 }
 
 // --- approximate equality

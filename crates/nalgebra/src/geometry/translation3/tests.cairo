@@ -31,7 +31,7 @@ fn id() -> Translation3<Fixed> {
 #[test]
 fn test_identity_is_exact() {
     assert!(id() == t3t((0, 0, 0)));
-    assert!(id().vector() == Vector3 { x: Real::ZERO, y: Real::ZERO, z: Real::ZERO });
+    assert!(id().vector == Vector3 { x: Real::ZERO, y: Real::ZERO, z: Real::ZERO });
 }
 
 #[test]
@@ -39,8 +39,7 @@ fn test_new_from_vector_and_accessor() {
     let t = Translation3Trait::new(fx(3 * ONE_RAW), fx(-5 * ONE_RAW), fx(ONE_RAW));
     assert!(t == t3t((3 * ONE_RAW, -5 * ONE_RAW, ONE_RAW)));
     assert!(Translation3Trait::from_vector(v3t((3 * ONE_RAW, -5 * ONE_RAW, ONE_RAW))) == t);
-    assert!(t.vector() == v3t((3 * ONE_RAW, -5 * ONE_RAW, ONE_RAW)));
-    assert!(t.vector == t.vector());
+    assert!(t.vector == v3t((3 * ONE_RAW, -5 * ONE_RAW, ONE_RAW)));
 }
 
 // --- inverse
@@ -142,8 +141,7 @@ fn test_into_conversions_round_trip() {
     let v = v3t((0x140000000, -0x60000000, 0x280000000));
     let t: Translation3<Fixed> = v.into();
     assert!(t == t3t((0x140000000, -0x60000000, 0x280000000)));
-    let back: Vector3<Fixed> = t.into();
-    assert!(back == v);
+    assert!(t.vector == v);
 }
 
 // --- oracle vectors (upstream nalgebra 0.35, tolerance 0: bit for bit)
