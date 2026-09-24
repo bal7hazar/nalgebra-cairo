@@ -8,22 +8,22 @@
 //! directly: `norm` (Euclidean), `lp_norm(p)`, `one_norm` and `amax` (uniform norm).
 
 /// The Euclidean (Frobenius) norm, `m.norm()`. Upstream: `EuclideanNorm`.
-#[derive(Copy, Drop, PartialEq, Debug)]
+#[derive(Copy, Drop, Debug)]
 pub struct EuclideanNorm {}
 
 /// The entrywise Lp norm of exponent `p`, `m.lp_norm(p)`. Upstream: `LpNorm(pub i32)` (a tuple
 /// struct: Cairo has none, the field is named).
-#[derive(Copy, Drop, PartialEq, Debug)]
+#[derive(Copy, Drop, Debug)]
 pub struct LpNorm {
     /// The exponent `p`.
     pub p: i32,
 }
 
 /// The induced 1-norm (largest absolute column sum), `m.one_norm()`. Upstream: `OneNorm`.
-#[derive(Copy, Drop, PartialEq, Debug)]
+#[derive(Copy, Drop, Debug)]
 pub struct OneNorm {}
 
 /// The uniform (infinity) norm, the largest absolute component, `m.amax()`. Upstream:
 /// `UniformNorm`.
-#[derive(Copy, Drop, PartialEq, Debug)]
+#[derive(Copy, Drop, Debug)]
 pub struct UniformNorm {}

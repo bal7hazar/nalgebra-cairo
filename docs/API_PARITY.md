@@ -17,7 +17,7 @@ How to read it:
 
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
-| base | 228 | 11 | 265 | 300 | 804 | 45.2% |
+| base | 228 | 11 | 256 | 309 | 804 | 46.1% |
 | geometry | 491 | 2 | 437 | 118 | 1048 | 52.8% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
@@ -26,9 +26,9 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **795** | **19** | **1072** | **550** | **2436** | **42.2%** |
+| **total** | **795** | **19** | **1063** | **559** | **2436** | **42.4%** |
 
-nalgebra.cairo items with no upstream counterpart (undocumented extras): **4** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **22** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
+nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **22** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
 ## Proposed work packages
 
@@ -37,7 +37,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | WP | Title | Items | Tier | Depends on | Main upstream files |
 |---|---|---:|---|---|---|
 | [P01](#p01-rectangular-and-remaining-static-shapes) | Rectangular and remaining static shapes | 1 | mechanical | — | `base/matrix.rs` (1) |
-| [P02](#p02-static-base-completion-vector-matrix-2-6) | Static base completion (Vector / Matrix 2-6) | 21 | mechanical | — | `base/unit.rs` (9), `base/matrix.rs` (3), `base/ops.rs` (3), `base/conversion.rs` (2), `base/helper.rs` (2) |
+| [P02](#p02-static-base-completion-vector-matrix-2-6) | Static base completion (Vector / Matrix 2-6) | 12 | mechanical | — | `base/unit.rs` (8), `base/ops.rs` (3), `geometry/scale_conversion.rs` (1) |
 | [P03](#p03-functional-and-in-place-variants) | Functional and in-place variants | 101 | mechanical | — | `base/matrix.rs` (25), `base/edition.rs` (16), `geometry/quaternion_ops.rs` (9), `base/matrix_view.rs` (7), `base/ops.rs` (6) |
 | [P04](#p04-swizzles) | Swizzles | 71 | mechanical | P01 (Vector2/3 results) | `base/swizzle.rs` (36), `geometry/swizzle.rs` (35) |
 | [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 28 | mechanical | P01 | `base/matrix_view.rs` (14), `base/matrix.rs` (4), `base/properties.rs` (4), `base/edition.rs` (3), `base/construction.rs` (2) |
@@ -68,14 +68,11 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 
 ### P02 Static base completion (Vector / Matrix 2-6)
 
-the operations upstream has on every `Matrix` that nalgebra.cairo only has on some types (`norm`, `normalize`, `component_*`, `inf` / `sup`, `amax`..., `scale`, `dot` on matrices, `Vector6` gaps), construction (`from_fn`, `from_row_slice`, arrays, `from_partial_diagonal`), conversions, `Index`, `RelativeEq` / `UlpsEq`, `PartialOrd`, `Sum`, scalar-on-the-left `*`, `Unit` gaps, `cast`. Tier: mechanical. Depends on: —. 21 items (`*` = partial):
+the operations upstream has on every `Matrix` that nalgebra.cairo only has on some types (`norm`, `normalize`, `component_*`, `inf` / `sup`, `amax`..., `scale`, `dot` on matrices, `Vector6` gaps), construction (`from_fn`, `from_row_slice`, arrays, `from_partial_diagonal`), conversions, `Index`, `RelativeEq` / `UlpsEq`, `PartialOrd`, `Sum`, scalar-on-the-left `*`, `Unit` gaps, `cast`. Tier: mechanical. Depends on: —. 12 items (`*` = partial):
 
-- **Matrix**: `impl:From<Matrix>`, `impl:From<[Matrix; N]>`, `impl:Sum<Matrix>`, `type:MatrixComponentOp`, `type:MatrixCross`, `type:MatrixSum`
+- **Matrix**: `impl:Sum<Matrix>`
 - **SquareMatrix**: `impl:From<Scale>`, `impl:Product`, `impl:Product<Matrix>`
 - **Unit**: `from_ref_unchecked`, `into_inner`*, `new_and_get`*, `new_normalize`*, `new_unchecked`*, `try_new`*, `try_new_and_get`*, `unwrap`
-- **Unit<Vector>**: `impl:From<[Unit<Matrix>; N]>`
-- **Vector**: `type:VectorSum`
-- **nalgebra::base**: `reject`, `reject_rand`
 
 ### P03 Functional and in-place variants
 
@@ -330,15 +327,15 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 
 | Reason | Items | Justification |
 |---|---:|---|
-| `simd` | 10 | SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar path is the only path. |
+| `simd` | 12 | SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar path is the only path. |
 | `rayon` | 4 | `rayon` parallel iterators: a Cairo program is sequential. |
 | `unsafe` | 39 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
-| `borrow` | 43 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
+| `borrow` | 44 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
 | `fmt` | 42 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
 | `glue` | 44 | Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, `encase`, the `serde` visitor types). |
-| `random` | 63 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
+| `random` | 65 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
 | `interop` | 68 | Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` scalar, and the `glam` types glam.cairo does not have: f64 `D*`, aligned `*A`, `i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam.cairo has are in scope. |
-| `generic-dim` | 237 | Generic-dimension machinery subsumed by concrete types: `Dim`, `DimName`, `Const`, `Dyn`, typenum `U*`, `Storage` / `RawStorage` / `ArrayStorage` / `VecStorage`, `Allocator`, `DefaultAllocator`, `ShapeConstraint`, views / slices / iterators as types, `*_generic` constructors, `into_owned` / `clone_owned` (identity on owned types). |
+| `generic-dim` | 241 | Generic-dimension machinery subsumed by concrete types: `Dim`, `DimName`, `Const`, `Dyn`, typenum `U*`, `Storage` / `RawStorage` / `ArrayStorage` / `VecStorage`, `Allocator`, `DefaultAllocator`, `ShapeConstraint`, views / slices / iterators as types, `*_generic` constructors, `into_owned` / `clone_owned` (identity on owned types). |
 
 `docs/PLAN.md` "Out of scope" also lists sparse, macros, complex numbers, Schur, Hessenberg, matrix exponential and convolution. They are NOT excluded here: they belong to nalgebra-rs's API, hence to the 0.1.0 target, until the owner decides otherwise (packages P16, P17, P18, P20, P21).
 
@@ -372,10 +369,7 @@ Public Cairo items that spell an upstream operator, field or `Deref` access Cair
 
 | Owner | Items | Rationale |
 |---|---|---|
-| EuclideanNorm | `impl:PartialEq` | Standard Cairo derive set (`Copy, Drop, PartialEq, Serde, Default, Debug, Hash`) on a type whose upstream counterpart lacks this trait. |
-| LpNorm | `impl:PartialEq` | Standard Cairo derive set (`Copy, Drop, PartialEq, Serde, Default, Debug, Hash`) on a type whose upstream counterpart lacks this trait. |
-| OneNorm | `impl:PartialEq` | Standard Cairo derive set (`Copy, Drop, PartialEq, Serde, Default, Debug, Hash`) on a type whose upstream counterpart lacks this trait. |
-| UniformNorm | `impl:PartialEq` | Standard Cairo derive set (`Copy, Drop, PartialEq, Serde, Default, Debug, Hash`) on a type whose upstream counterpart lacks this trait. |
+| none | | |
 
 ## Scalar layer (simba)
 
@@ -662,7 +656,7 @@ Cairo: LpNorm · ported 4, partial 0, missing 0, excluded 0.
 
 #### Matrix (base)
 
-Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 135, partial 3, missing 151, excluded 122.
+Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 135, partial 3, missing 146, excluded 127.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -685,8 +679,8 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | impl `Div<T>` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::unscale | renamed `unscale`: heterogeneous operators are named methods (DESIGN D4) | `base/ops.rs` |
 | impl `DivAssign<T>` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 (impl `DivAssign<T>`) |  | `base/ops.rs` |
 | impl `Eq` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `base/matrix.rs` |
-| impl `From<Matrix>` | missing |  | P02 | `base/conversion.rs` |
-| impl `From<[Matrix; N]>` | missing |  | P02 | `base/conversion.rs` |
+| impl `From<Matrix>` | excluded |  | borrow | `base/conversion.rs` |
+| impl `From<[Matrix; N]>` | excluded |  | simd | `base/conversion.rs` |
 | impl `From<[[T; N]; N]>` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 (impl `From<[[T; N]; N]>`) |  | `base/conversion.rs` |
 | impl `Hash` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 (impl `Hash`) |  | `base/matrix.rs` |
 | impl `Index<(usize, usize)>` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 (impl `Index<(usize, usize)>`) |  | `base/ops.rs` |
@@ -1046,11 +1040,11 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | type `Matrix6x4` | ported | Matrix6x4 |  | `base/alias.rs` |
 | type `Matrix6x5` | ported | Matrix6x5 |  | `base/alias.rs` |
 | type `Matrix6xX` | missing |  | P13 | `base/alias.rs` |
-| type `MatrixComponentOp` | missing |  | P02 | `base/componentwise.rs` |
-| type `MatrixCross` | missing |  | P02 | `base/matrix.rs` |
+| type `MatrixComponentOp` | excluded |  | generic-dim | `base/componentwise.rs` |
+| type `MatrixCross` | excluded |  | generic-dim | `base/matrix.rs` |
 | type `MatrixMN` | excluded |  | generic-dim | `base/alias.rs` |
 | type `MatrixN` | excluded |  | generic-dim | `base/alias.rs` |
-| type `MatrixSum` | missing |  | P02 | `base/matrix.rs` |
+| type `MatrixSum` | excluded |  | generic-dim | `base/matrix.rs` |
 | type `MatrixVec` | excluded |  | generic-dim | `base/vec_storage.rs` |
 | type `MatrixXx1` | missing |  | P13 | `base/alias.rs` |
 | type `MatrixXx2` | missing |  | P13 | `base/alias.rs` |
@@ -1463,14 +1457,14 @@ Cairo: Unit, UnitComplex, UnitQuaternion · ported 9, partial 6, missing 2, excl
 
 #### Unit<Vector> (base)
 
-Cairo: Unit · ported 15, partial 0, missing 1, excluded 1.
+Cairo: Unit · ported 15, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `AbsDiffEq` | ported | Unit::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `base/matrix.rs` |
 | impl `Distribution` | excluded |  | random | `base/construction.rs` |
 | impl `Eq` | ported | Unit (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `base/unit.rs` |
-| impl `From<[Unit<Matrix>; N]>` | missing |  | P02 | `base/unit.rs` |
+| impl `From<[Unit<Matrix>; N]>` | excluded |  | simd | `base/unit.rs` |
 | impl `Neg` | ported | Unit (impl `Neg`) |  | `base/norm.rs` |
 | impl `PartialEq` | ported | Unit (impl `PartialEq`) |  | `base/unit.rs` |
 | impl `RelativeEq` | ported | Unit::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `base/matrix.rs` |
@@ -1512,7 +1506,7 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 18.
 
 #### Vector (base)
 
-Cairo: Matrix1, Vector2/3/4/5/6 · ported 38, partial 2, missing 42, excluded 7.
+Cairo: Matrix1, Vector2/3/4/5/6 · ported 38, partial 2, missing 41, excluded 8.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -1602,7 +1596,7 @@ Cairo: Matrix1, Vector2/3/4/5/6 · ported 38, partial 2, missing 42, excluded 7.
 | type `Vector5` | ported | Vector5 |  | `base/alias.rs` |
 | type `Vector6` | ported | Vector6 |  | `base/alias.rs` |
 | type `VectorN` | excluded |  | generic-dim | `base/alias.rs` |
-| type `VectorSum` | missing |  | P02 | `base/matrix.rs` |
+| type `VectorSum` | excluded |  | generic-dim | `base/matrix.rs` |
 | unsafe-method `vget_unchecked` | excluded |  | unsafe | `base/matrix.rs` |
 | unsafe-method `vget_unchecked_mut` | excluded |  | unsafe | `base/matrix.rs` |
 
@@ -1650,15 +1644,15 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 1.
 
 #### nalgebra::base (base)
 
-Cairo: none · ported 0, partial 0, missing 2, excluded 3.
+Cairo: none · ported 0, partial 0, missing 0, excluded 5.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | function `axcpy_uninit` | excluded |  | unsafe | `base/blas_uninit.rs` |
 | function `gemm_uninit` | excluded |  | unsafe | `base/blas_uninit.rs` |
 | function `gemv_uninit` | excluded |  | unsafe | `base/blas_uninit.rs` |
-| function `reject` | missing |  | P02 | `base/helper.rs` |
-| function `reject_rand` | missing |  | P02 | `base/helper.rs` |
+| function `reject` | excluded |  | random | `base/helper.rs` |
+| function `reject_rand` | excluded |  | random | `base/helper.rs` |
 
 ### Module `geometry`
 

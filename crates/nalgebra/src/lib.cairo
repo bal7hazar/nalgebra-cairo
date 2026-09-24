@@ -36,7 +36,7 @@ pub use base::{
     Vector6AngleTrait, Vector6Trait,
 };
 // shapegen: end
-pub use base::{Point2, Point3, Unit};
+pub use base::{Normed, Point2, Point3, Unit, UnitTrait};
 pub use geometry::{
     AbstractRotation, Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3,
     Isometry3AngleTrait, Isometry3Trait, Point1, Point1Trait, Point2ExtTrait, Point2Index,

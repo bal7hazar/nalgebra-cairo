@@ -26,7 +26,7 @@ pub mod unit;
 
 pub use point2::Point2;
 pub use point3::Point3;
-pub use unit::Unit;
+pub use unit::{Normed, Unit, UnitTrait};
 
 // shapegen: begin
 pub mod errors;
