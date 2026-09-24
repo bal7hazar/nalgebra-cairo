@@ -10,383 +10,450 @@ use crate::matrix3::Matrix3;
 use crate::matrix3x2::Matrix3x2;
 use crate::row_vector2::RowVector2;
 use crate::row_vector3::RowVector3;
+use crate::row_vector6::RowVector6;
 use crate::vector2::Vector2;
 use crate::vector3::Vector3;
 use crate::vector6::Vector6;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
+use super::{fx, load};
 
 #[test]
 fn test_matrix1_index() {
-    let a = Matrix1 { x: fx(-33495762814) };
-    assert!(a[0] == fx(-33495762814));
-    assert!(a[(0, 0)] == fx(-33495762814));
+    let a: Matrix1<Fixed> = load(array![-33495762814].span());
+    let e = array![-33495762814].span();
+    let mut i: usize = 0;
+    while i < 1 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 1 {
+        let mut i: usize = 0;
+        while i < 1 {
+            assert!(a[(i, j)] == fx(*e[i + j * 1]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix1_index_linear_out_of_bounds_panics() {
-    let a = Matrix1 { x: fx(-33495762814) };
+    let a: Matrix1<Fixed> = load(array![-33495762814].span());
     let _ = a[1];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix1_index_row_out_of_bounds_panics() {
-    let a = Matrix1 { x: fx(-33495762814) };
+    let a: Matrix1<Fixed> = load(array![-33495762814].span());
     let _ = a[(1, 0)];
 }
 
 #[test]
 fn test_matrix2_index() {
-    let a = Matrix2 {
-        m11: fx(-47111063617), m21: fx(26698759682), m12: fx(-55039974758), m22: fx(-25156634923),
-    };
-    assert!(a[0] == fx(-47111063617));
-    assert!(a[1] == fx(26698759682));
-    assert!(a[2] == fx(-55039974758));
-    assert!(a[3] == fx(-25156634923));
-    assert!(a[(0, 0)] == fx(-47111063617));
-    assert!(a[(0, 1)] == fx(-55039974758));
-    assert!(a[(1, 0)] == fx(26698759682));
-    assert!(a[(1, 1)] == fx(-25156634923));
+    let a: Matrix2<Fixed> = load(
+        array![-47111063617, 26698759682, -55039974758, -25156634923].span(),
+    );
+    let e = array![-47111063617, 26698759682, -55039974758, -25156634923].span();
+    let mut i: usize = 0;
+    while i < 4 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 2 {
+        let mut i: usize = 0;
+        while i < 2 {
+            assert!(a[(i, j)] == fx(*e[i + j * 2]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix2_index_linear_out_of_bounds_panics() {
-    let a = Matrix2 {
-        m11: fx(-47111063617), m21: fx(26698759682), m12: fx(-55039974758), m22: fx(-25156634923),
-    };
+    let a: Matrix2<Fixed> = load(
+        array![-47111063617, 26698759682, -55039974758, -25156634923].span(),
+    );
     let _ = a[4];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix2_index_row_out_of_bounds_panics() {
-    let a = Matrix2 {
-        m11: fx(-47111063617), m21: fx(26698759682), m12: fx(-55039974758), m22: fx(-25156634923),
-    };
+    let a: Matrix2<Fixed> = load(
+        array![-47111063617, 26698759682, -55039974758, -25156634923].span(),
+    );
     let _ = a[(2, 0)];
 }
 
 #[test]
 fn test_matrix3_index() {
-    let a = Matrix3 {
-        m11: fx(-55135576232),
-        m21: fx(45987105977),
-        m31: fx(-20603133059),
-        m12: fx(-45706728641),
-        m22: fx(-17302562604),
-        m32: fx(-6495708024),
-        m13: fx(-61949050762),
-        m23: fx(-26085188934),
-        m33: fx(55769868349),
-    };
-    assert!(a[0] == fx(-55135576232));
-    assert!(a[1] == fx(45987105977));
-    assert!(a[2] == fx(-20603133059));
-    assert!(a[3] == fx(-45706728641));
-    assert!(a[4] == fx(-17302562604));
-    assert!(a[5] == fx(-6495708024));
-    assert!(a[6] == fx(-61949050762));
-    assert!(a[7] == fx(-26085188934));
-    assert!(a[8] == fx(55769868349));
-    assert!(a[(0, 0)] == fx(-55135576232));
-    assert!(a[(0, 1)] == fx(-45706728641));
-    assert!(a[(0, 2)] == fx(-61949050762));
-    assert!(a[(1, 0)] == fx(45987105977));
-    assert!(a[(1, 1)] == fx(-17302562604));
-    assert!(a[(1, 2)] == fx(-26085188934));
-    assert!(a[(2, 0)] == fx(-20603133059));
-    assert!(a[(2, 1)] == fx(-6495708024));
-    assert!(a[(2, 2)] == fx(55769868349));
+    let a: Matrix3<Fixed> = load(
+        array![
+            -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+            -61949050762, -26085188934, 55769868349,
+        ]
+            .span(),
+    );
+    let e = array![
+        -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+        -61949050762, -26085188934, 55769868349,
+    ]
+        .span();
+    let mut i: usize = 0;
+    while i < 9 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 3 {
+        let mut i: usize = 0;
+        while i < 3 {
+            assert!(a[(i, j)] == fx(*e[i + j * 3]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix3_index_linear_out_of_bounds_panics() {
-    let a = Matrix3 {
-        m11: fx(-55135576232),
-        m21: fx(45987105977),
-        m31: fx(-20603133059),
-        m12: fx(-45706728641),
-        m22: fx(-17302562604),
-        m32: fx(-6495708024),
-        m13: fx(-61949050762),
-        m23: fx(-26085188934),
-        m33: fx(55769868349),
-    };
+    let a: Matrix3<Fixed> = load(
+        array![
+            -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+            -61949050762, -26085188934, 55769868349,
+        ]
+            .span(),
+    );
     let _ = a[9];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix3_index_row_out_of_bounds_panics() {
-    let a = Matrix3 {
-        m11: fx(-55135576232),
-        m21: fx(45987105977),
-        m31: fx(-20603133059),
-        m12: fx(-45706728641),
-        m22: fx(-17302562604),
-        m32: fx(-6495708024),
-        m13: fx(-61949050762),
-        m23: fx(-26085188934),
-        m33: fx(55769868349),
-    };
+    let a: Matrix3<Fixed> = load(
+        array![
+            -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+            -61949050762, -26085188934, 55769868349,
+        ]
+            .span(),
+    );
     let _ = a[(3, 0)];
 }
 
 #[test]
 fn test_matrix2x3_index() {
-    let a = Matrix2x3 {
-        m11: fx(-6119115503),
-        m21: fx(46221905395),
-        m12: fx(-58231430588),
-        m22: fx(5327765407),
-        m13: fx(26982524674),
-        m23: fx(-30380078124),
-    };
-    assert!(a[0] == fx(-6119115503));
-    assert!(a[1] == fx(46221905395));
-    assert!(a[2] == fx(-58231430588));
-    assert!(a[3] == fx(5327765407));
-    assert!(a[4] == fx(26982524674));
-    assert!(a[5] == fx(-30380078124));
-    assert!(a[(0, 0)] == fx(-6119115503));
-    assert!(a[(0, 1)] == fx(-58231430588));
-    assert!(a[(0, 2)] == fx(26982524674));
-    assert!(a[(1, 0)] == fx(46221905395));
-    assert!(a[(1, 1)] == fx(5327765407));
-    assert!(a[(1, 2)] == fx(-30380078124));
+    let a: Matrix2x3<Fixed> = load(
+        array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+            .span(),
+    );
+    let e = array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+        .span();
+    let mut i: usize = 0;
+    while i < 6 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 3 {
+        let mut i: usize = 0;
+        while i < 2 {
+            assert!(a[(i, j)] == fx(*e[i + j * 2]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix2x3_index_linear_out_of_bounds_panics() {
-    let a = Matrix2x3 {
-        m11: fx(-6119115503),
-        m21: fx(46221905395),
-        m12: fx(-58231430588),
-        m22: fx(5327765407),
-        m13: fx(26982524674),
-        m23: fx(-30380078124),
-    };
+    let a: Matrix2x3<Fixed> = load(
+        array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+            .span(),
+    );
     let _ = a[6];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix2x3_index_row_out_of_bounds_panics() {
-    let a = Matrix2x3 {
-        m11: fx(-6119115503),
-        m21: fx(46221905395),
-        m12: fx(-58231430588),
-        m22: fx(5327765407),
-        m13: fx(26982524674),
-        m23: fx(-30380078124),
-    };
+    let a: Matrix2x3<Fixed> = load(
+        array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+            .span(),
+    );
     let _ = a[(2, 0)];
 }
 
 #[test]
 fn test_matrix3x2_index() {
-    let a = Matrix3x2 {
-        m11: fx(63874405710),
-        m21: fx(-33407840772),
-        m31: fx(-38695145741),
-        m12: fx(-39963023294),
-        m22: fx(-24512368659),
-        m32: fx(27039177520),
-    };
-    assert!(a[0] == fx(63874405710));
-    assert!(a[1] == fx(-33407840772));
-    assert!(a[2] == fx(-38695145741));
-    assert!(a[3] == fx(-39963023294));
-    assert!(a[4] == fx(-24512368659));
-    assert!(a[5] == fx(27039177520));
-    assert!(a[(0, 0)] == fx(63874405710));
-    assert!(a[(0, 1)] == fx(-39963023294));
-    assert!(a[(1, 0)] == fx(-33407840772));
-    assert!(a[(1, 1)] == fx(-24512368659));
-    assert!(a[(2, 0)] == fx(-38695145741));
-    assert!(a[(2, 1)] == fx(27039177520));
+    let a: Matrix3x2<Fixed> = load(
+        array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+            .span(),
+    );
+    let e = array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+        .span();
+    let mut i: usize = 0;
+    while i < 6 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 2 {
+        let mut i: usize = 0;
+        while i < 3 {
+            assert!(a[(i, j)] == fx(*e[i + j * 3]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix3x2_index_linear_out_of_bounds_panics() {
-    let a = Matrix3x2 {
-        m11: fx(63874405710),
-        m21: fx(-33407840772),
-        m31: fx(-38695145741),
-        m12: fx(-39963023294),
-        m22: fx(-24512368659),
-        m32: fx(27039177520),
-    };
+    let a: Matrix3x2<Fixed> = load(
+        array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+            .span(),
+    );
     let _ = a[6];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_matrix3x2_index_row_out_of_bounds_panics() {
-    let a = Matrix3x2 {
-        m11: fx(63874405710),
-        m21: fx(-33407840772),
-        m31: fx(-38695145741),
-        m12: fx(-39963023294),
-        m22: fx(-24512368659),
-        m32: fx(27039177520),
-    };
+    let a: Matrix3x2<Fixed> = load(
+        array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+            .span(),
+    );
     let _ = a[(3, 0)];
 }
 
 #[test]
 fn test_vector2_index() {
-    let a = Vector2 { x: fx(-8627526528), y: fx(-17317444201) };
-    assert!(a[0] == fx(-8627526528));
-    assert!(a[1] == fx(-17317444201));
-    assert!(a[(0, 0)] == fx(-8627526528));
-    assert!(a[(1, 0)] == fx(-17317444201));
+    let a: Vector2<Fixed> = load(array![-8627526528, -17317444201].span());
+    let e = array![-8627526528, -17317444201].span();
+    let mut i: usize = 0;
+    while i < 2 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 1 {
+        let mut i: usize = 0;
+        while i < 2 {
+            assert!(a[(i, j)] == fx(*e[i + j * 2]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_vector2_index_linear_out_of_bounds_panics() {
-    let a = Vector2 { x: fx(-8627526528), y: fx(-17317444201) };
+    let a: Vector2<Fixed> = load(array![-8627526528, -17317444201].span());
     let _ = a[2];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_vector2_index_row_out_of_bounds_panics() {
-    let a = Vector2 { x: fx(-8627526528), y: fx(-17317444201) };
+    let a: Vector2<Fixed> = load(array![-8627526528, -17317444201].span());
     let _ = a[(2, 0)];
 }
 
 #[test]
 fn test_vector3_index() {
-    let a = Vector3 { x: fx(67932750098), y: fx(-65732508510), z: fx(-65408285637) };
-    assert!(a[0] == fx(67932750098));
-    assert!(a[1] == fx(-65732508510));
-    assert!(a[2] == fx(-65408285637));
-    assert!(a[(0, 0)] == fx(67932750098));
-    assert!(a[(1, 0)] == fx(-65732508510));
-    assert!(a[(2, 0)] == fx(-65408285637));
+    let a: Vector3<Fixed> = load(array![67932750098, -65732508510, -65408285637].span());
+    let e = array![67932750098, -65732508510, -65408285637].span();
+    let mut i: usize = 0;
+    while i < 3 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 1 {
+        let mut i: usize = 0;
+        while i < 3 {
+            assert!(a[(i, j)] == fx(*e[i + j * 3]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_vector3_index_linear_out_of_bounds_panics() {
-    let a = Vector3 { x: fx(67932750098), y: fx(-65732508510), z: fx(-65408285637) };
+    let a: Vector3<Fixed> = load(array![67932750098, -65732508510, -65408285637].span());
     let _ = a[3];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_vector3_index_row_out_of_bounds_panics() {
-    let a = Vector3 { x: fx(67932750098), y: fx(-65732508510), z: fx(-65408285637) };
+    let a: Vector3<Fixed> = load(array![67932750098, -65732508510, -65408285637].span());
     let _ = a[(3, 0)];
 }
 
 #[test]
 fn test_vector6_index() {
-    let a = Vector6 {
-        x: fx(41859180941),
-        y: fx(-48784508214),
-        z: fx(53380679005),
-        w: fx(-47951209092),
-        a: fx(-41426484110),
-        b: fx(-67150524207),
-    };
-    assert!(a[0] == fx(41859180941));
-    assert!(a[1] == fx(-48784508214));
-    assert!(a[2] == fx(53380679005));
-    assert!(a[3] == fx(-47951209092));
-    assert!(a[4] == fx(-41426484110));
-    assert!(a[5] == fx(-67150524207));
-    assert!(a[(0, 0)] == fx(41859180941));
-    assert!(a[(1, 0)] == fx(-48784508214));
-    assert!(a[(2, 0)] == fx(53380679005));
-    assert!(a[(3, 0)] == fx(-47951209092));
-    assert!(a[(4, 0)] == fx(-41426484110));
-    assert!(a[(5, 0)] == fx(-67150524207));
+    let a: Vector6<Fixed> = load(
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
+    );
+    let e = array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+        .span();
+    let mut i: usize = 0;
+    while i < 6 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 1 {
+        let mut i: usize = 0;
+        while i < 6 {
+            assert!(a[(i, j)] == fx(*e[i + j * 6]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_vector6_index_linear_out_of_bounds_panics() {
-    let a = Vector6 {
-        x: fx(41859180941),
-        y: fx(-48784508214),
-        z: fx(53380679005),
-        w: fx(-47951209092),
-        a: fx(-41426484110),
-        b: fx(-67150524207),
-    };
+    let a: Vector6<Fixed> = load(
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
+    );
     let _ = a[6];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_vector6_index_row_out_of_bounds_panics() {
-    let a = Vector6 {
-        x: fx(41859180941),
-        y: fx(-48784508214),
-        z: fx(53380679005),
-        w: fx(-47951209092),
-        a: fx(-41426484110),
-        b: fx(-67150524207),
-    };
+    let a: Vector6<Fixed> = load(
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
+    );
     let _ = a[(6, 0)];
 }
 
 #[test]
 fn test_row_vector2_index() {
-    let a = RowVector2 { x: fx(13940393936), y: fx(-59723694302) };
-    assert!(a[0] == fx(13940393936));
-    assert!(a[1] == fx(-59723694302));
-    assert!(a[(0, 0)] == fx(13940393936));
-    assert!(a[(0, 1)] == fx(-59723694302));
+    let a: RowVector2<Fixed> = load(array![13940393936, -59723694302].span());
+    let e = array![13940393936, -59723694302].span();
+    let mut i: usize = 0;
+    while i < 2 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 2 {
+        let mut i: usize = 0;
+        while i < 1 {
+            assert!(a[(i, j)] == fx(*e[i + j * 1]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_row_vector2_index_linear_out_of_bounds_panics() {
-    let a = RowVector2 { x: fx(13940393936), y: fx(-59723694302) };
+    let a: RowVector2<Fixed> = load(array![13940393936, -59723694302].span());
     let _ = a[2];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_row_vector2_index_row_out_of_bounds_panics() {
-    let a = RowVector2 { x: fx(13940393936), y: fx(-59723694302) };
+    let a: RowVector2<Fixed> = load(array![13940393936, -59723694302].span());
     let _ = a[(1, 0)];
 }
 
 #[test]
 fn test_row_vector3_index() {
-    let a = RowVector3 { x: fx(34940046252), y: fx(37951812004), z: fx(-33439940917) };
-    assert!(a[0] == fx(34940046252));
-    assert!(a[1] == fx(37951812004));
-    assert!(a[2] == fx(-33439940917));
-    assert!(a[(0, 0)] == fx(34940046252));
-    assert!(a[(0, 1)] == fx(37951812004));
-    assert!(a[(0, 2)] == fx(-33439940917));
+    let a: RowVector3<Fixed> = load(array![34940046252, 37951812004, -33439940917].span());
+    let e = array![34940046252, 37951812004, -33439940917].span();
+    let mut i: usize = 0;
+    while i < 3 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 3 {
+        let mut i: usize = 0;
+        while i < 1 {
+            assert!(a[(i, j)] == fx(*e[i + j * 1]));
+            i += 1;
+        }
+        j += 1;
+    }
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_row_vector3_index_linear_out_of_bounds_panics() {
-    let a = RowVector3 { x: fx(34940046252), y: fx(37951812004), z: fx(-33439940917) };
+    let a: RowVector3<Fixed> = load(array![34940046252, 37951812004, -33439940917].span());
     let _ = a[3];
 }
 
 #[should_panic(expected: 'Matrix index out of bounds')]
 #[test]
 fn test_row_vector3_index_row_out_of_bounds_panics() {
-    let a = RowVector3 { x: fx(34940046252), y: fx(37951812004), z: fx(-33439940917) };
+    let a: RowVector3<Fixed> = load(array![34940046252, 37951812004, -33439940917].span());
+    let _ = a[(1, 0)];
+}
+
+#[test]
+fn test_row_vector6_index() {
+    let a: RowVector6<Fixed> = load(
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
+    let e = array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+        .span();
+    let mut i: usize = 0;
+    while i < 6 {
+        assert!(a[i] == fx(*e[i]));
+        i += 1;
+    }
+    let mut j: usize = 0;
+    while j < 6 {
+        let mut i: usize = 0;
+        while i < 1 {
+            assert!(a[(i, j)] == fx(*e[i + j * 1]));
+            i += 1;
+        }
+        j += 1;
+    }
+}
+
+#[should_panic(expected: 'Matrix index out of bounds')]
+#[test]
+fn test_row_vector6_index_linear_out_of_bounds_panics() {
+    let a: RowVector6<Fixed> = load(
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
+    let _ = a[6];
+}
+
+#[should_panic(expected: 'Matrix index out of bounds')]
+#[test]
+fn test_row_vector6_index_row_out_of_bounds_panics() {
+    let a: RowVector6<Fixed> = load(
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
     let _ = a[(1, 0)];
 }

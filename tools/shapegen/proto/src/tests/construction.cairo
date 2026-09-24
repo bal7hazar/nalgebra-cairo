@@ -3,309 +3,219 @@
 //! kernels (floor once per output scalar).
 
 use fixed::Fixed;
-use crate::matrix1::{Matrix1, Matrix1Trait};
+use crate::matrix1::{Matrix1, Matrix1Trait, RowVector1, Vector1};
 use crate::matrix2::{Matrix2, Matrix2Trait};
 use crate::matrix2x3::{Matrix2x3, Matrix2x3Trait};
 use crate::matrix3::{Matrix3, Matrix3Trait};
 use crate::matrix3x2::{Matrix3x2, Matrix3x2Trait};
-use crate::row_vector2::{RowVector2, RowVector2Trait};
-use crate::row_vector3::{RowVector3, RowVector3Trait};
-use crate::vector2::{Vector2, Vector2Trait};
-use crate::vector3::{Vector3, Vector3Trait};
-use crate::vector6::{Vector6, Vector6Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
+use crate::row_vector2::{Matrix1x2, RowVector2, RowVector2Trait};
+use crate::row_vector3::{Matrix1x3, RowVector3, RowVector3Trait};
+use crate::row_vector6::{Matrix1x6, RowVector6, RowVector6Trait};
+use crate::vector2::{Matrix2x1, Vector2, Vector2Trait};
+use crate::vector3::{Matrix3x1, Vector3, Vector3Trait};
+use crate::vector6::{Matrix6x1, Vector6, Vector6Trait};
+use super::{assert_raws, fx};
 
 #[test]
 fn test_matrix1_new_zeros_from_element() {
-    let m = Matrix1Trait::new(fx(-33495762814));
-    assert!(m == Matrix1 { x: fx(-33495762814) });
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![-33495762814];
-    assert!(out.len() == 1);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
+    assert_raws(Matrix1Trait::new(fx(-33495762814)), array![-33495762814].span());
     let z: Matrix1<Fixed> = Matrix1Trait::zeros();
-    assert!(z == Matrix1 { x: fx(0) });
+    assert_raws(z, array![0].span());
     let e: Matrix1<Fixed> = Matrix1Trait::from_element(fx(53007424169));
-    assert!(e == Matrix1Trait::repeat(fx(53007424169)));
-    assert!(e == Matrix1 { x: fx(53007424169) });
+    assert_raws(e, array![53007424169].span());
+    assert_raws(Matrix1Trait::repeat(fx(53007424169)), array![53007424169].span());
     let id: Matrix1<Fixed> = Matrix1Trait::identity();
-    assert!(id == Matrix1 { x: fx(4294967296) });
+    assert_raws(id, array![4294967296].span());
+    let al: Vector1<Fixed> = Matrix1Trait::new(fx(-33495762814));
+    let same: Matrix1<Fixed> = al;
+    assert_raws(same, array![-33495762814].span());
+    let al: RowVector1<Fixed> = Matrix1Trait::new(fx(-33495762814));
+    let same: Matrix1<Fixed> = al;
+    assert_raws(same, array![-33495762814].span());
 }
 
 #[test]
 fn test_matrix2_new_zeros_from_element() {
-    let m = Matrix2Trait::new(
-        fx(-47111063617), fx(-55039974758), fx(26698759682), fx(-25156634923),
+    assert_raws(
+        Matrix2Trait::new(fx(-47111063617), fx(-55039974758), fx(26698759682), fx(-25156634923)),
+        array![-47111063617, 26698759682, -55039974758, -25156634923].span(),
     );
-    assert!(
-        m == Matrix2 {
-            m11: fx(-47111063617),
-            m21: fx(26698759682),
-            m12: fx(-55039974758),
-            m22: fx(-25156634923),
-        },
-    );
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![-47111063617, 26698759682, -55039974758, -25156634923];
-    assert!(out.len() == 4);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
     let z: Matrix2<Fixed> = Matrix2Trait::zeros();
-    assert!(z == Matrix2 { m11: fx(0), m21: fx(0), m12: fx(0), m22: fx(0) });
+    assert_raws(z, array![0, 0, 0, 0].span());
     let e: Matrix2<Fixed> = Matrix2Trait::from_element(fx(-1490797924));
-    assert!(e == Matrix2Trait::repeat(fx(-1490797924)));
-    assert!(
-        e == Matrix2 {
-            m11: fx(-1490797924), m21: fx(-1490797924), m12: fx(-1490797924), m22: fx(-1490797924),
-        },
+    assert_raws(e, array![-1490797924, -1490797924, -1490797924, -1490797924].span());
+    assert_raws(
+        Matrix2Trait::repeat(fx(-1490797924)),
+        array![-1490797924, -1490797924, -1490797924, -1490797924].span(),
     );
     let id: Matrix2<Fixed> = Matrix2Trait::identity();
-    assert!(id == Matrix2 { m11: fx(4294967296), m21: fx(0), m12: fx(0), m22: fx(4294967296) });
+    assert_raws(id, array![4294967296, 0, 0, 4294967296].span());
 }
 
 #[test]
 fn test_matrix3_new_zeros_from_element() {
-    let m = Matrix3Trait::new(
-        fx(-55135576232),
-        fx(-45706728641),
-        fx(-61949050762),
-        fx(45987105977),
-        fx(-17302562604),
-        fx(-26085188934),
-        fx(-20603133059),
-        fx(-6495708024),
-        fx(55769868349),
+    assert_raws(
+        Matrix3Trait::new(
+            fx(-55135576232),
+            fx(-45706728641),
+            fx(-61949050762),
+            fx(45987105977),
+            fx(-17302562604),
+            fx(-26085188934),
+            fx(-20603133059),
+            fx(-6495708024),
+            fx(55769868349),
+        ),
+        array![
+            -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+            -61949050762, -26085188934, 55769868349,
+        ]
+            .span(),
     );
-    assert!(
-        m == Matrix3 {
-            m11: fx(-55135576232),
-            m21: fx(45987105977),
-            m31: fx(-20603133059),
-            m12: fx(-45706728641),
-            m22: fx(-17302562604),
-            m32: fx(-6495708024),
-            m13: fx(-61949050762),
-            m23: fx(-26085188934),
-            m33: fx(55769868349),
-        },
-    );
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![
-        -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
-        -61949050762, -26085188934, 55769868349,
-    ];
-    assert!(out.len() == 9);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
     let z: Matrix3<Fixed> = Matrix3Trait::zeros();
-    assert!(
-        z == Matrix3 {
-            m11: fx(0),
-            m21: fx(0),
-            m31: fx(0),
-            m12: fx(0),
-            m22: fx(0),
-            m32: fx(0),
-            m13: fx(0),
-            m23: fx(0),
-            m33: fx(0),
-        },
-    );
+    assert_raws(z, array![0, 0, 0, 0, 0, 0, 0, 0, 0].span());
     let e: Matrix3<Fixed> = Matrix3Trait::from_element(fx(-1771456346));
-    assert!(e == Matrix3Trait::repeat(fx(-1771456346)));
-    assert!(
-        e == Matrix3 {
-            m11: fx(-1771456346),
-            m21: fx(-1771456346),
-            m31: fx(-1771456346),
-            m12: fx(-1771456346),
-            m22: fx(-1771456346),
-            m32: fx(-1771456346),
-            m13: fx(-1771456346),
-            m23: fx(-1771456346),
-            m33: fx(-1771456346),
-        },
+    assert_raws(
+        e,
+        array![
+            -1771456346, -1771456346, -1771456346, -1771456346, -1771456346, -1771456346,
+            -1771456346, -1771456346, -1771456346,
+        ]
+            .span(),
+    );
+    assert_raws(
+        Matrix3Trait::repeat(fx(-1771456346)),
+        array![
+            -1771456346, -1771456346, -1771456346, -1771456346, -1771456346, -1771456346,
+            -1771456346, -1771456346, -1771456346,
+        ]
+            .span(),
     );
     let id: Matrix3<Fixed> = Matrix3Trait::identity();
-    assert!(
-        id == Matrix3 {
-            m11: fx(4294967296),
-            m21: fx(0),
-            m31: fx(0),
-            m12: fx(0),
-            m22: fx(4294967296),
-            m32: fx(0),
-            m13: fx(0),
-            m23: fx(0),
-            m33: fx(4294967296),
-        },
-    );
+    assert_raws(id, array![4294967296, 0, 0, 0, 4294967296, 0, 0, 0, 4294967296].span());
 }
 
 #[test]
 fn test_matrix2x3_new_zeros_from_element() {
-    let m = Matrix2x3Trait::new(
-        fx(-6119115503),
-        fx(-58231430588),
-        fx(26982524674),
-        fx(46221905395),
-        fx(5327765407),
-        fx(-30380078124),
+    assert_raws(
+        Matrix2x3Trait::new(
+            fx(-6119115503),
+            fx(-58231430588),
+            fx(26982524674),
+            fx(46221905395),
+            fx(5327765407),
+            fx(-30380078124),
+        ),
+        array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+            .span(),
     );
-    assert!(
-        m == Matrix2x3 {
-            m11: fx(-6119115503),
-            m21: fx(46221905395),
-            m12: fx(-58231430588),
-            m22: fx(5327765407),
-            m13: fx(26982524674),
-            m23: fx(-30380078124),
-        },
-    );
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![
-        -6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124,
-    ];
-    assert!(out.len() == 6);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
     let z: Matrix2x3<Fixed> = Matrix2x3Trait::zeros();
-    assert!(
-        z == Matrix2x3 { m11: fx(0), m21: fx(0), m12: fx(0), m22: fx(0), m13: fx(0), m23: fx(0) },
-    );
+    assert_raws(z, array![0, 0, 0, 0, 0, 0].span());
     let e: Matrix2x3<Fixed> = Matrix2x3Trait::from_element(fx(-11395723737));
-    assert!(e == Matrix2x3Trait::repeat(fx(-11395723737)));
-    assert!(
-        e == Matrix2x3 {
-            m11: fx(-11395723737),
-            m21: fx(-11395723737),
-            m12: fx(-11395723737),
-            m22: fx(-11395723737),
-            m13: fx(-11395723737),
-            m23: fx(-11395723737),
-        },
+    assert_raws(
+        e,
+        array![-11395723737, -11395723737, -11395723737, -11395723737, -11395723737, -11395723737]
+            .span(),
+    );
+    assert_raws(
+        Matrix2x3Trait::repeat(fx(-11395723737)),
+        array![-11395723737, -11395723737, -11395723737, -11395723737, -11395723737, -11395723737]
+            .span(),
     );
 }
 
 #[test]
 fn test_matrix3x2_new_zeros_from_element() {
-    let m = Matrix3x2Trait::new(
-        fx(63874405710),
-        fx(-39963023294),
-        fx(-33407840772),
-        fx(-24512368659),
-        fx(-38695145741),
-        fx(27039177520),
+    assert_raws(
+        Matrix3x2Trait::new(
+            fx(63874405710),
+            fx(-39963023294),
+            fx(-33407840772),
+            fx(-24512368659),
+            fx(-38695145741),
+            fx(27039177520),
+        ),
+        array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+            .span(),
     );
-    assert!(
-        m == Matrix3x2 {
-            m11: fx(63874405710),
-            m21: fx(-33407840772),
-            m31: fx(-38695145741),
-            m12: fx(-39963023294),
-            m22: fx(-24512368659),
-            m32: fx(27039177520),
-        },
-    );
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![
-        63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520,
-    ];
-    assert!(out.len() == 6);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
     let z: Matrix3x2<Fixed> = Matrix3x2Trait::zeros();
-    assert!(
-        z == Matrix3x2 { m11: fx(0), m21: fx(0), m31: fx(0), m12: fx(0), m22: fx(0), m32: fx(0) },
-    );
+    assert_raws(z, array![0, 0, 0, 0, 0, 0].span());
     let e: Matrix3x2<Fixed> = Matrix3x2Trait::from_element(fx(12097559131));
-    assert!(e == Matrix3x2Trait::repeat(fx(12097559131)));
-    assert!(
-        e == Matrix3x2 {
-            m11: fx(12097559131),
-            m21: fx(12097559131),
-            m31: fx(12097559131),
-            m12: fx(12097559131),
-            m22: fx(12097559131),
-            m32: fx(12097559131),
-        },
+    assert_raws(
+        e,
+        array![12097559131, 12097559131, 12097559131, 12097559131, 12097559131, 12097559131].span(),
+    );
+    assert_raws(
+        Matrix3x2Trait::repeat(fx(12097559131)),
+        array![12097559131, 12097559131, 12097559131, 12097559131, 12097559131, 12097559131].span(),
     );
 }
 
 #[test]
 fn test_vector2_new_zeros_from_element() {
-    let m = Vector2Trait::new(fx(-8627526528), fx(-17317444201));
-    assert!(m == Vector2 { x: fx(-8627526528), y: fx(-17317444201) });
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![-8627526528, -17317444201];
-    assert!(out.len() == 2);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
+    assert_raws(
+        Vector2Trait::new(fx(-8627526528), fx(-17317444201)),
+        array![-8627526528, -17317444201].span(),
+    );
     let z: Vector2<Fixed> = Vector2Trait::zeros();
-    assert!(z == Vector2 { x: fx(0), y: fx(0) });
+    assert_raws(z, array![0, 0].span());
     let e: Vector2<Fixed> = Vector2Trait::from_element(fx(-67199126774));
-    assert!(e == Vector2Trait::repeat(fx(-67199126774)));
-    assert!(e == Vector2 { x: fx(-67199126774), y: fx(-67199126774) });
+    assert_raws(e, array![-67199126774, -67199126774].span());
+    assert_raws(Vector2Trait::repeat(fx(-67199126774)), array![-67199126774, -67199126774].span());
+    let al: Matrix2x1<Fixed> = Vector2Trait::new(fx(-8627526528), fx(-17317444201));
+    let same: Vector2<Fixed> = al;
+    assert_raws(same, array![-8627526528, -17317444201].span());
 }
 
 #[test]
 fn test_vector3_new_zeros_from_element() {
-    let m = Vector3Trait::new(fx(67932750098), fx(-65732508510), fx(-65408285637));
-    assert!(m == Vector3 { x: fx(67932750098), y: fx(-65732508510), z: fx(-65408285637) });
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![67932750098, -65732508510, -65408285637];
-    assert!(out.len() == 3);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
+    assert_raws(
+        Vector3Trait::new(fx(67932750098), fx(-65732508510), fx(-65408285637)),
+        array![67932750098, -65732508510, -65408285637].span(),
+    );
     let z: Vector3<Fixed> = Vector3Trait::zeros();
-    assert!(z == Vector3 { x: fx(0), y: fx(0), z: fx(0) });
+    assert_raws(z, array![0, 0, 0].span());
     let e: Vector3<Fixed> = Vector3Trait::from_element(fx(-29269966425));
-    assert!(e == Vector3Trait::repeat(fx(-29269966425)));
-    assert!(e == Vector3 { x: fx(-29269966425), y: fx(-29269966425), z: fx(-29269966425) });
+    assert_raws(e, array![-29269966425, -29269966425, -29269966425].span());
+    assert_raws(
+        Vector3Trait::repeat(fx(-29269966425)),
+        array![-29269966425, -29269966425, -29269966425].span(),
+    );
+    let al: Matrix3x1<Fixed> = Vector3Trait::new(
+        fx(67932750098), fx(-65732508510), fx(-65408285637),
+    );
+    let same: Vector3<Fixed> = al;
+    assert_raws(same, array![67932750098, -65732508510, -65408285637].span());
 }
 
 #[test]
 fn test_vector6_new_zeros_from_element() {
-    let m = Vector6Trait::new(
+    assert_raws(
+        Vector6Trait::new(
+            fx(41859180941),
+            fx(-48784508214),
+            fx(53380679005),
+            fx(-47951209092),
+            fx(-41426484110),
+            fx(-67150524207),
+        ),
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
+    );
+    let z: Vector6<Fixed> = Vector6Trait::zeros();
+    assert_raws(z, array![0, 0, 0, 0, 0, 0].span());
+    let e: Vector6<Fixed> = Vector6Trait::from_element(fx(-23872480844));
+    assert_raws(
+        e,
+        array![-23872480844, -23872480844, -23872480844, -23872480844, -23872480844, -23872480844]
+            .span(),
+    );
+    assert_raws(
+        Vector6Trait::repeat(fx(-23872480844)),
+        array![-23872480844, -23872480844, -23872480844, -23872480844, -23872480844, -23872480844]
+            .span(),
+    );
+    let al: Matrix6x1<Fixed> = Vector6Trait::new(
         fx(41859180941),
         fx(-48784508214),
         fx(53380679005),
@@ -313,82 +223,90 @@ fn test_vector6_new_zeros_from_element() {
         fx(-41426484110),
         fx(-67150524207),
     );
-    assert!(
-        m == Vector6 {
-            x: fx(41859180941),
-            y: fx(-48784508214),
-            z: fx(53380679005),
-            w: fx(-47951209092),
-            a: fx(-41426484110),
-            b: fx(-67150524207),
-        },
-    );
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![
-        41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207,
-    ];
-    assert!(out.len() == 6);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
-    let z: Vector6<Fixed> = Vector6Trait::zeros();
-    assert!(z == Vector6 { x: fx(0), y: fx(0), z: fx(0), w: fx(0), a: fx(0), b: fx(0) });
-    let e: Vector6<Fixed> = Vector6Trait::from_element(fx(-23872480844));
-    assert!(e == Vector6Trait::repeat(fx(-23872480844)));
-    assert!(
-        e == Vector6 {
-            x: fx(-23872480844),
-            y: fx(-23872480844),
-            z: fx(-23872480844),
-            w: fx(-23872480844),
-            a: fx(-23872480844),
-            b: fx(-23872480844),
-        },
+    let same: Vector6<Fixed> = al;
+    assert_raws(
+        same,
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
     );
 }
 
 #[test]
 fn test_row_vector2_new_zeros_from_element() {
-    let m = RowVector2Trait::new(fx(13940393936), fx(-59723694302));
-    assert!(m == RowVector2 { x: fx(13940393936), y: fx(-59723694302) });
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![13940393936, -59723694302];
-    assert!(out.len() == 2);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
+    assert_raws(
+        RowVector2Trait::new(fx(13940393936), fx(-59723694302)),
+        array![13940393936, -59723694302].span(),
+    );
     let z: RowVector2<Fixed> = RowVector2Trait::zeros();
-    assert!(z == RowVector2 { x: fx(0), y: fx(0) });
+    assert_raws(z, array![0, 0].span());
     let e: RowVector2<Fixed> = RowVector2Trait::from_element(fx(49071557370));
-    assert!(e == RowVector2Trait::repeat(fx(49071557370)));
-    assert!(e == RowVector2 { x: fx(49071557370), y: fx(49071557370) });
+    assert_raws(e, array![49071557370, 49071557370].span());
+    assert_raws(RowVector2Trait::repeat(fx(49071557370)), array![49071557370, 49071557370].span());
+    let al: Matrix1x2<Fixed> = RowVector2Trait::new(fx(13940393936), fx(-59723694302));
+    let same: RowVector2<Fixed> = al;
+    assert_raws(same, array![13940393936, -59723694302].span());
 }
 
 #[test]
 fn test_row_vector3_new_zeros_from_element() {
-    let m = RowVector3Trait::new(fx(34940046252), fx(37951812004), fx(-33439940917));
-    assert!(m == RowVector3 { x: fx(34940046252), y: fx(37951812004), z: fx(-33439940917) });
-    let mut out: Array<felt252> = array![];
-    m.serialize(ref out);
-    let raws: Array<i64> = array![34940046252, 37951812004, -33439940917];
-    assert!(out.len() == 3);
-    let mut i = 0;
-    while i < raws.len() {
-        let raw: i64 = *raws[i];
-        assert!(*out[i] == raw.into());
-        i += 1;
-    }
+    assert_raws(
+        RowVector3Trait::new(fx(34940046252), fx(37951812004), fx(-33439940917)),
+        array![34940046252, 37951812004, -33439940917].span(),
+    );
     let z: RowVector3<Fixed> = RowVector3Trait::zeros();
-    assert!(z == RowVector3 { x: fx(0), y: fx(0), z: fx(0) });
+    assert_raws(z, array![0, 0, 0].span());
     let e: RowVector3<Fixed> = RowVector3Trait::from_element(fx(29281682265));
-    assert!(e == RowVector3Trait::repeat(fx(29281682265)));
-    assert!(e == RowVector3 { x: fx(29281682265), y: fx(29281682265), z: fx(29281682265) });
+    assert_raws(e, array![29281682265, 29281682265, 29281682265].span());
+    assert_raws(
+        RowVector3Trait::repeat(fx(29281682265)),
+        array![29281682265, 29281682265, 29281682265].span(),
+    );
+    let al: Matrix1x3<Fixed> = RowVector3Trait::new(
+        fx(34940046252), fx(37951812004), fx(-33439940917),
+    );
+    let same: RowVector3<Fixed> = al;
+    assert_raws(same, array![34940046252, 37951812004, -33439940917].span());
+}
+
+#[test]
+fn test_row_vector6_new_zeros_from_element() {
+    assert_raws(
+        RowVector6Trait::new(
+            fx(-67427646167),
+            fx(10099562307),
+            fx(-10156048308),
+            fx(55925540724),
+            fx(-11353076942),
+            fx(-24942827157),
+        ),
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
+    let z: RowVector6<Fixed> = RowVector6Trait::zeros();
+    assert_raws(z, array![0, 0, 0, 0, 0, 0].span());
+    let e: RowVector6<Fixed> = RowVector6Trait::from_element(fx(-15530847540));
+    assert_raws(
+        e,
+        array![-15530847540, -15530847540, -15530847540, -15530847540, -15530847540, -15530847540]
+            .span(),
+    );
+    assert_raws(
+        RowVector6Trait::repeat(fx(-15530847540)),
+        array![-15530847540, -15530847540, -15530847540, -15530847540, -15530847540, -15530847540]
+            .span(),
+    );
+    let al: Matrix1x6<Fixed> = RowVector6Trait::new(
+        fx(-67427646167),
+        fx(10099562307),
+        fx(-10156048308),
+        fx(55925540724),
+        fx(-11353076942),
+        fx(-24942827157),
+    );
+    let same: RowVector6<Fixed> = al;
+    assert_raws(
+        same,
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
 }

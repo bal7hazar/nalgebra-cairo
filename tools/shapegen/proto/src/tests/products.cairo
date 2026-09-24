@@ -11,499 +11,390 @@ use crate::matrix3::{Matrix3, Matrix3Trait};
 use crate::matrix3x2::Matrix3x2;
 use crate::row_vector2::RowVector2;
 use crate::row_vector3::RowVector3;
+use crate::row_vector6::RowVector6;
 use crate::vector2::Vector2;
 use crate::vector3::Vector3;
 use crate::vector6::Vector6;
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
+use super::{assert_raws, load};
 
 #[test]
 fn test_matrix1_mul_matrix1() {
-    let a = Matrix1 { x: fx(-35695060896) };
-    let b = Matrix1 { x: fx(-16271803257) };
-    let e = Matrix1 { x: fx(135233394835) };
-    assert!(a.mul_mat(b) == e);
-    assert!(a * b == e);
+    let a: Matrix1<Fixed> = load(array![-35695060896].span());
+    let b: Matrix1<Fixed> = load(array![-16271803257].span());
+    let e = array![135233394835].span();
+    assert_raws(a.mul_mat(b), e);
+    assert_raws(a * b, e);
     let mut c = a;
     c *= b;
-    assert!(c == e);
+    assert_raws(c, e);
 }
 
 #[test]
 fn test_matrix1_mul_row_vector2() {
-    let a = Matrix1 { x: fx(-58445968934) };
-    let b = RowVector2 { x: fx(-35500103312), y: fx(22602521218) };
-    let e = RowVector2 { x: fx(483085851959), y: fx(-307575392756) };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix1<Fixed> = load(array![-58445968934].span());
+    let b: RowVector2<Fixed> = load(array![-35500103312, 22602521218].span());
+    let e = array![483085851959, -307575392756].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix1_mul_row_vector3() {
-    let a = Matrix1 { x: fx(14910218376) };
-    let b = RowVector3 { x: fx(708549392), y: fx(41664110506), z: fx(6327505258) };
-    let e = RowVector3 { x: fx(2459768709), y: fx(144639282041), z: fx(21966287207) };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix1<Fixed> = load(array![14910218376].span());
+    let b: RowVector3<Fixed> = load(array![708549392, 41664110506, 6327505258].span());
+    let e = array![2459768709, 144639282041, 21966287207].span();
+    assert_raws(a.mul_mat(b), e);
+}
+
+#[test]
+fn test_matrix1_mul_row_vector6() {
+    let a: Matrix1<Fixed> = load(array![-54269967043].span());
+    let b: RowVector6<Fixed> = load(
+        array![16222874240, 60126835192, -18359793100, 49459312354, -33372791547, 13867496562]
+            .span(),
+    );
+    let e = array![
+        -204987556289, -759745334338, 231989046198, -624953594856, 421688961188, -175225683812,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix2_mul_vector2() {
-    let a = Matrix2 {
-        m11: fx(41814044745), m21: fx(60725947777), m12: fx(46679635893), m22: fx(-12690432785),
-    };
-    let b = Vector2 { x: fx(66504647164), y: fx(43248350391) };
-    let e = Vector2 { x: fx(1117504560735), y: fx(812513159334) };
-    assert!(a.mul_mat(b) == e);
-    assert!(a.mul_vec(b) == e);
+    let a: Matrix2<Fixed> = load(
+        array![41814044745, 60725947777, 46679635893, -12690432785].span(),
+    );
+    let b: Vector2<Fixed> = load(array![66504647164, 43248350391].span());
+    let e = array![1117504560735, 812513159334].span();
+    assert_raws(a.mul_mat(b), e);
+    assert_raws(a.mul_vec(b), e);
 }
 
 #[test]
 fn test_matrix2_mul_matrix2() {
-    let a = Matrix2 {
-        m11: fx(32937927634), m21: fx(32372620936), m12: fx(59267102783), m22: fx(-10272088219),
-    };
-    let b = Matrix2 {
-        m11: fx(50466862721), m21: fx(56133423918), m12: fx(-38250273757), m22: fx(51630572230),
-    };
-    let e = Matrix2 {
-        m11: fx(1161624509172),
-        m21: fx(246133919380),
-        m12: fx(419120695933),
-        m22: fx(-411787863304),
-    };
-    assert!(a.mul_mat(b) == e);
-    assert!(a * b == e);
+    let a: Matrix2<Fixed> = load(
+        array![32937927634, 32372620936, 59267102783, -10272088219].span(),
+    );
+    let b: Matrix2<Fixed> = load(
+        array![50466862721, 56133423918, -38250273757, 51630572230].span(),
+    );
+    let e = array![1161624509172, 246133919380, 419120695933, -411787863304].span();
+    assert_raws(a.mul_mat(b), e);
+    assert_raws(a * b, e);
     let mut c = a;
     c *= b;
-    assert!(c == e);
+    assert_raws(c, e);
 }
 
 #[test]
 fn test_matrix2_mul_matrix2x3() {
-    let a = Matrix2 {
-        m11: fx(26431544722), m21: fx(-53590982884), m12: fx(45549850640), m22: fx(53155641491),
-    };
-    let b = Matrix2x3 {
-        m11: fx(-35392572862),
-        m21: fx(-22898441376),
-        m12: fx(-27620430744),
-        m22: fx(-34211521295),
-        m13: fx(37500580764),
-        m23: fx(-43101489111),
-    };
-    let e = Matrix2x3 {
-        m11: fx(-460655651287),
-        m21: fx(158218067601),
-        m12: fx(-532805066464),
-        m22: fx(-78773435571),
-        m13: fx(-226327244613),
-        m23: fx(-1001353441919),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix2<Fixed> = load(
+        array![26431544722, -53590982884, 45549850640, 53155641491].span(),
+    );
+    let b: Matrix2x3<Fixed> = load(
+        array![-35392572862, -22898441376, -27620430744, -34211521295, 37500580764, -43101489111]
+            .span(),
+    );
+    let e = array![
+        -460655651287, 158218067601, -532805066464, -78773435571, -226327244613, -1001353441919,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix3_mul_vector3() {
-    let a = Matrix3 {
-        m11: fx(18095625643),
-        m21: fx(-53825787369),
-        m31: fx(-45688050399),
-        m12: fx(-52273038665),
-        m22: fx(43185605670),
-        m32: fx(-65378460223),
-        m13: fx(17566214540),
-        m23: fx(-14672324458),
-        m33: fx(-34450661407),
-    };
-    let b = Vector3 { x: fx(50323422704), y: fx(48323241754), z: fx(-61531878879) };
-    let e = Vector3 { x: fx(-627769867829), y: fx(65422222102), z: fx(-777343354797) };
-    assert!(a.mul_mat(b) == e);
-    assert!(a.mul_vec(b) == e);
+    let a: Matrix3<Fixed> = load(
+        array![
+            18095625643, -53825787369, -45688050399, -52273038665, 43185605670, -65378460223,
+            17566214540, -14672324458, -34450661407,
+        ]
+            .span(),
+    );
+    let b: Vector3<Fixed> = load(array![50323422704, 48323241754, -61531878879].span());
+    let e = array![-627769867829, 65422222102, -777343354797].span();
+    assert_raws(a.mul_mat(b), e);
+    assert_raws(a.mul_vec(b), e);
 }
 
 #[test]
 fn test_matrix3_mul_matrix3x2() {
-    let a = Matrix3 {
-        m11: fx(30952581718),
-        m21: fx(-40000055916),
-        m31: fx(-61064681452),
-        m12: fx(-28762717033),
-        m22: fx(15503118593),
-        m32: fx(-68254359715),
-        m13: fx(-15632486395),
-        m23: fx(30913558688),
-        m33: fx(50714469305),
-    };
-    let b = Matrix3x2 {
-        m11: fx(-2466131593),
-        m21: fx(62489058216),
-        m31: fx(16213791667),
-        m12: fx(4909454101),
-        m22: fx(61897875167),
-        m32: fx(-67949792414),
-    };
-    let e = Matrix3x2 {
-        m11: fx(-495265730758),
-        m21: fx(365229016672),
-        m31: fx(-766544434654),
-        m12: fx(-131820930091),
-        m22: fx(-311373321996),
-        m32: fx(-1855807320607),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix3<Fixed> = load(
+        array![
+            30952581718, -40000055916, -61064681452, -28762717033, 15503118593, -68254359715,
+            -15632486395, 30913558688, 50714469305,
+        ]
+            .span(),
+    );
+    let b: Matrix3x2<Fixed> = load(
+        array![-2466131593, 62489058216, 16213791667, 4909454101, 61897875167, -67949792414].span(),
+    );
+    let e = array![
+        -495265730758, 365229016672, -766544434654, -131820930091, -311373321996, -1855807320607,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix3_mul_matrix3() {
-    let a = Matrix3 {
-        m11: fx(-44317671850),
-        m21: fx(-256491639),
-        m31: fx(39356668904),
-        m12: fx(-17518849982),
-        m22: fx(-25162203340),
-        m32: fx(-32695393326),
-        m13: fx(23886186901),
-        m23: fx(60219096130),
-        m33: fx(57447932258),
-    };
-    let b = Matrix3 {
-        m11: fx(-6801713686),
-        m21: fx(4433630075),
-        m31: fx(18821289121),
-        m12: fx(21829558427),
-        m22: fx(14917996642),
-        m32: fx(10269749959),
-        m13: fx(43890151033),
-        m23: fx(-53021126237),
-        m33: fx(-10026095751),
-    };
-    let e = Matrix3 {
-        m11: fx(156772519614),
-        m21: fx(238322117384),
-        m31: fx(155668721941),
-        m12: fx(-228983393231),
-        m22: fx(55289430511),
-        m32: fx(223835193421),
-        m13: fx(-292371341843),
-        m23: fx(167430490040),
-        m33: fx(671702029589),
-    };
-    assert!(a.mul_mat(b) == e);
-    assert!(a * b == e);
+    let a: Matrix3<Fixed> = load(
+        array![
+            -44317671850, -256491639, 39356668904, -17518849982, -25162203340, -32695393326,
+            23886186901, 60219096130, 57447932258,
+        ]
+            .span(),
+    );
+    let b: Matrix3<Fixed> = load(
+        array![
+            -6801713686, 4433630075, 18821289121, 21829558427, 14917996642, 10269749959,
+            43890151033, -53021126237, -10026095751,
+        ]
+            .span(),
+    );
+    let e = array![
+        156772519614, 238322117384, 155668721941, -228983393231, 55289430511, 223835193421,
+        -292371341843, 167430490040, 671702029589,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
+    assert_raws(a * b, e);
     let mut c = a;
     c *= b;
-    assert!(c == e);
+    assert_raws(c, e);
 }
 
 #[test]
 fn test_matrix2x3_mul_vector3() {
-    let a = Matrix2x3 {
-        m11: fx(-27095690240),
-        m21: fx(20827654570),
-        m12: fx(60326588677),
-        m22: fx(12427066721),
-        m13: fx(18457716834),
-        m23: fx(-26902692810),
-    };
-    let b = Vector3 { x: fx(-17645833853), y: fx(53995225115), z: fx(-22246498366) };
-    let e = Vector2 { x: fx(774127947342), y: fx(210006638585) };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix2x3<Fixed> = load(
+        array![-27095690240, 20827654570, 60326588677, 12427066721, 18457716834, -26902692810]
+            .span(),
+    );
+    let b: Vector3<Fixed> = load(array![-17645833853, 53995225115, -22246498366].span());
+    let e = array![774127947342, 210006638585].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix2x3_mul_matrix3x2() {
-    let a = Matrix2x3 {
-        m11: fx(-33384019023),
-        m21: fx(39265729710),
-        m12: fx(-16227140740),
-        m22: fx(462668250),
-        m13: fx(-56570980161),
-        m23: fx(39881132045),
-    };
-    let b = Matrix3x2 {
-        m11: fx(65235534703),
-        m21: fx(31530277473),
-        m31: fx(-60156068237),
-        m12: fx(50626067286),
-        m22: fx(-66797490900),
-        m32: fx(63741557562),
-    };
-    let e = Matrix2 {
-        m11: fx(166151942958), m21: fx(41214942645), m12: fx(-980704020638), m22: fx(1047516677062),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix2x3<Fixed> = load(
+        array![-33384019023, 39265729710, -16227140740, 462668250, -56570980161, 39881132045]
+            .span(),
+    );
+    let b: Matrix3x2<Fixed> = load(
+        array![65235534703, 31530277473, -60156068237, 50626067286, -66797490900, 63741557562]
+            .span(),
+    );
+    let e = array![166151942958, 41214942645, -980704020638, 1047516677062].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix2x3_mul_matrix3() {
-    let a = Matrix2x3 {
-        m11: fx(-31826139661),
-        m21: fx(44408752274),
-        m12: fx(60795664736),
-        m22: fx(64832201113),
-        m13: fx(-67545377178),
-        m23: fx(-58597690047),
-    };
-    let b = Matrix3 {
-        m11: fx(26935818195),
-        m21: fx(-24843855365),
-        m31: fx(20029921654),
-        m12: fx(-27885215375),
-        m22: fx(-48741928391),
-        m32: fx(-16097169191),
-        m13: fx(12117628984),
-        m23: fx(-60566290018),
-        m33: fx(-46857083131),
-    };
-    let e = Matrix2x3 {
-        m11: fx(-866267463715),
-        m21: fx(-369782301289),
-        m12: fx(-230160032758),
-        m22: fx(-804461816999),
-        m13: fx(-210210182960),
-        m23: fx(-149663602375),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix2x3<Fixed> = load(
+        array![-31826139661, 44408752274, 60795664736, 64832201113, -67545377178, -58597690047]
+            .span(),
+    );
+    let b: Matrix3<Fixed> = load(
+        array![
+            26935818195, -24843855365, 20029921654, -27885215375, -48741928391, -16097169191,
+            12117628984, -60566290018, -46857083131,
+        ]
+            .span(),
+    );
+    let e = array![
+        -866267463715, -369782301289, -230160032758, -804461816999, -210210182960, -149663602375,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix3x2_mul_vector2() {
-    let a = Matrix3x2 {
-        m11: fx(68440825689),
-        m21: fx(59566908676),
-        m31: fx(63347792494),
-        m12: fx(54935607802),
-        m22: fx(25559338938),
-        m32: fx(-58067098670),
-    };
-    let b = Vector2 { x: fx(-27669000243), y: fx(-21385934207) };
-    let e = Vector3 { x: fx(-714449797919), y: fx(-511009048562), z: fx(-118965034877) };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix3x2<Fixed> = load(
+        array![68440825689, 59566908676, 63347792494, 54935607802, 25559338938, -58067098670]
+            .span(),
+    );
+    let b: Vector2<Fixed> = load(array![-27669000243, -21385934207].span());
+    let e = array![-714449797919, -511009048562, -118965034877].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix3x2_mul_matrix2() {
-    let a = Matrix3x2 {
-        m11: fx(-55867902368),
-        m21: fx(-4375837793),
-        m31: fx(-5298112784),
-        m12: fx(20668667304),
-        m22: fx(49322316252),
-        m32: fx(65480682715),
-    };
-    let b = Matrix2 {
-        m11: fx(-24889069201), m21: fx(-15637508481), m12: fx(67825660168), m22: fx(33181378361),
-    };
-    let e = Matrix3x2 {
-        m11: fx(248498662350),
-        m21: fx(-154219476751),
-        m31: fx(-207705804050),
-        m12: fx(-722581169168),
-        m22: fx(311943783913),
-        m32: fx(422213066202),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix3x2<Fixed> = load(
+        array![-55867902368, -4375837793, -5298112784, 20668667304, 49322316252, 65480682715]
+            .span(),
+    );
+    let b: Matrix2<Fixed> = load(
+        array![-24889069201, -15637508481, 67825660168, 33181378361].span(),
+    );
+    let e = array![
+        248498662350, -154219476751, -207705804050, -722581169168, 311943783913, 422213066202,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_matrix3x2_mul_matrix2x3() {
-    let a = Matrix3x2 {
-        m11: fx(-11591126433),
-        m21: fx(2365157877),
-        m31: fx(-31702568551),
-        m12: fx(19434662457),
-        m22: fx(-45193608473),
-        m32: fx(-15529385471),
-    };
-    let b = Matrix2x3 {
-        m11: fx(62718752706),
-        m21: fx(-43594461972),
-        m12: fx(-3922640808),
-        m22: fx(-46296490926),
-        m13: fx(40815325443),
-        m23: fx(13333095552),
-    };
-    let e = Matrix3 {
-        m11: fx(-366527737528),
-        m21: fx(493258889287),
-        m31: fx(-305322546683),
-        m12: fx(-198904622471),
-        m22: fx(484992708027),
-        m32: fx(196349304788),
-        m13: fx(-49819095539),
-        m23: fx(-117820690302),
-        m33: fx(-349480061126),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Matrix3x2<Fixed> = load(
+        array![-11591126433, 2365157877, -31702568551, 19434662457, -45193608473, -15529385471]
+            .span(),
+    );
+    let b: Matrix2x3<Fixed> = load(
+        array![62718752706, -43594461972, -3922640808, -46296490926, 40815325443, 13333095552]
+            .span(),
+    );
+    let e = array![
+        -366527737528, 493258889287, -305322546683, -198904622471, 484992708027, 196349304788,
+        -49819095539, -117820690302, -349480061126,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_vector2_mul_matrix1() {
-    let a = Vector2 { x: fx(-55621493451), y: fx(47964553040) };
-    let b = Matrix1 { x: fx(-62518530302) };
-    let e = Vector2 { x: fx(809639232177), y: fx(-698183049135) };
-    assert!(a.mul_mat(b) == e);
+    let a: Vector2<Fixed> = load(array![-55621493451, 47964553040].span());
+    let b: Matrix1<Fixed> = load(array![-62518530302].span());
+    let e = array![809639232177, -698183049135].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_vector2_mul_row_vector2() {
-    let a = Vector2 { x: fx(1044169852), y: fx(-28494854567) };
-    let b = RowVector2 { x: fx(67203102890), y: fx(41977472685) };
-    let e = Matrix2 {
-        m11: fx(16338064800), m21: fx(-445857328201), m12: fx(10205342304), m22: fx(-278498506931),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Vector2<Fixed> = load(array![1044169852, -28494854567].span());
+    let b: RowVector2<Fixed> = load(array![67203102890, 41977472685].span());
+    let e = array![16338064800, -445857328201, 10205342304, -278498506931].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_vector2_mul_row_vector3() {
-    let a = Vector2 { x: fx(-12928967337), y: fx(-57059917251) };
-    let b = RowVector3 { x: fx(14073400269), y: fx(-19493148275), z: fx(35242021772) };
-    let e = Matrix2x3 {
-        m11: fx(-42364590895),
-        m21: fx(-186969306039),
-        m12: fx(58679440371),
-        m22: fx(258972269374),
-        m13: fx(-106087640948),
-        m23: fx(-468200735299),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Vector2<Fixed> = load(array![-12928967337, -57059917251].span());
+    let b: RowVector3<Fixed> = load(array![14073400269, -19493148275, 35242021772].span());
+    let e = array![
+        -42364590895, -186969306039, 58679440371, 258972269374, -106087640948, -468200735299,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_vector3_mul_matrix1() {
-    let a = Vector3 { x: fx(-26425317110), y: fx(-34252563363), z: fx(-23939072793) };
-    let b = Matrix1 { x: fx(-43638810820) };
-    let e = Vector3 { x: fx(268493176955), y: fx(348021540021), z: fx(243231809888) };
-    assert!(a.mul_mat(b) == e);
+    let a: Vector3<Fixed> = load(array![-26425317110, -34252563363, -23939072793].span());
+    let b: Matrix1<Fixed> = load(array![-43638810820].span());
+    let e = array![268493176955, 348021540021, 243231809888].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_vector3_mul_row_vector2() {
-    let a = Vector3 { x: fx(61052899604), y: fx(25835262190), z: fx(39649820281) };
-    let b = RowVector2 { x: fx(-19569054615), y: fx(-61053309488) };
-    let e = Matrix3x2 {
-        m11: fx(-278173835659),
-        m21: fx(-117712574264),
-        m31: fx(-180655507966),
-        m12: fx(-867871934237),
-        m22: fx(-367250353608),
-        m32: fx(-563625420621),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Vector3<Fixed> = load(array![61052899604, 25835262190, 39649820281].span());
+    let b: RowVector2<Fixed> = load(array![-19569054615, -61053309488].span());
+    let e = array![
+        -278173835659, -117712574264, -180655507966, -867871934237, -367250353608, -563625420621,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_vector3_mul_row_vector3() {
-    let a = Vector3 { x: fx(45032798839), y: fx(64109923166), z: fx(10036759290) };
-    let b = RowVector3 { x: fx(-55741005310), y: fx(28370138295), z: fx(-58005286484) };
-    let e = Matrix3 {
-        m11: fx(-584445306848),
-        m21: fx(-832032311620),
-        m31: fx(-130259211380),
-        m12: fx(297461340872),
-        m22: fx(423474094434),
-        m32: fx(66297186792),
-        m13: fx(-608186330142),
-        m23: fx(-865830681220),
-        m33: fx(-135550531091),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Vector3<Fixed> = load(array![45032798839, 64109923166, 10036759290].span());
+    let b: RowVector3<Fixed> = load(array![-55741005310, 28370138295, -58005286484].span());
+    let e = array![
+        -584445306848, -832032311620, -130259211380, 297461340872, 423474094434, 66297186792,
+        -608186330142, -865830681220, -135550531091,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_vector6_mul_matrix1() {
-    let a = Vector6 {
-        x: fx(30623486392),
-        y: fx(60442530661),
-        z: fx(-48997873797),
-        w: fx(65475958225),
-        a: fx(52733501881),
-        b: fx(-54211971513),
-    };
-    let b = Matrix1 { x: fx(-54982530368) };
-    let e = Vector6 {
-        x: fx(-392030172638),
-        y: fx(-773762184565),
-        z: fx(627252059991),
-        w: fx(-838198201145),
-        a: fx(-675074143471),
-        b: fx(694000946828),
-    };
-    assert!(a.mul_mat(b) == e);
+    let a: Vector6<Fixed> = load(
+        array![30623486392, 60442530661, -48997873797, 65475958225, 52733501881, -54211971513]
+            .span(),
+    );
+    let b: Matrix1<Fixed> = load(array![-54982530368].span());
+    let e = array![
+        -392030172638, -773762184565, 627252059991, -838198201145, -675074143471, 694000946828,
+    ]
+        .span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_row_vector2_mul_vector2() {
-    let a = RowVector2 { x: fx(3423760796), y: fx(25002991296) };
-    let b = Vector2 { x: fx(19317879789), y: fx(45530218871) };
-    let e = Matrix1 { x: fx(280451836441) };
-    assert!(a.mul_mat(b) == e);
+    let a: RowVector2<Fixed> = load(array![3423760796, 25002991296].span());
+    let b: Vector2<Fixed> = load(array![19317879789, 45530218871].span());
+    let e = array![280451836441].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_row_vector2_mul_matrix2() {
-    let a = RowVector2 { x: fx(66732134493), y: fx(61154647652) };
-    let b = Matrix2 {
-        m11: fx(68395753607), m21: fx(637726847), m12: fx(24333117348), m22: fx(23124341848),
-    };
-    let e = RowVector2 { x: fx(1071764759039), y: fx(707330609997) };
-    assert!(a.mul_mat(b) == e);
+    let a: RowVector2<Fixed> = load(array![66732134493, 61154647652].span());
+    let b: Matrix2<Fixed> = load(array![68395753607, 637726847, 24333117348, 23124341848].span());
+    let e = array![1071764759039, 707330609997].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_row_vector2_mul_matrix2x3() {
-    let a = RowVector2 { x: fx(-66688265201), y: fx(-42867156850) };
-    let b = Matrix2x3 {
-        m11: fx(-26226978231),
-        m21: fx(65501429311),
-        m12: fx(-9529540797),
-        m22: fx(60210551332),
-        m13: fx(453409620),
-        m23: fx(47755328381),
-    };
-    let e = RowVector3 { x: fx(-246527689622), y: fx(-452982868082), z: fx(-483675918802) };
-    assert!(a.mul_mat(b) == e);
+    let a: RowVector2<Fixed> = load(array![-66688265201, -42867156850].span());
+    let b: Matrix2x3<Fixed> = load(
+        array![-26226978231, 65501429311, -9529540797, 60210551332, 453409620, 47755328381].span(),
+    );
+    let e = array![-246527689622, -452982868082, -483675918802].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_row_vector3_mul_vector3() {
-    let a = RowVector3 { x: fx(22513009580), y: fx(-21107150537), z: fx(40910690217) };
-    let b = Vector3 { x: fx(47221012965), y: fx(33152485558), z: fx(-23857006868) };
-    let e = Matrix1 { x: fx(-142649282602) };
-    assert!(a.mul_mat(b) == e);
+    let a: RowVector3<Fixed> = load(array![22513009580, -21107150537, 40910690217].span());
+    let b: Vector3<Fixed> = load(array![47221012965, 33152485558, -23857006868].span());
+    let e = array![-142649282602].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_row_vector3_mul_matrix3x2() {
-    let a = RowVector3 { x: fx(19123273207), y: fx(23719349084), z: fx(-3372527637) };
-    let b = Matrix3x2 {
-        m11: fx(-38704240137),
-        m21: fx(7949635300),
-        m31: fx(10999327780),
-        m12: fx(-38764613632),
-        m22: fx(-66346785917),
-        m32: fx(-65768831010),
-    };
-    let e = RowVector2 { x: fx(-137064401192), y: fx(-487361492771) };
-    assert!(a.mul_mat(b) == e);
+    let a: RowVector3<Fixed> = load(array![19123273207, 23719349084, -3372527637].span());
+    let b: Matrix3x2<Fixed> = load(
+        array![-38704240137, 7949635300, 10999327780, -38764613632, -66346785917, -65768831010]
+            .span(),
+    );
+    let e = array![-137064401192, -487361492771].span();
+    assert_raws(a.mul_mat(b), e);
 }
 
 #[test]
 fn test_row_vector3_mul_matrix3() {
-    let a = RowVector3 { x: fx(61548157728), y: fx(-42506816328), z: fx(-35433117197) };
-    let b = Matrix3 {
-        m11: fx(46017786553),
-        m21: fx(-42098644616),
-        m31: fx(-60251355907),
-        m12: fx(-19094591865),
-        m22: fx(12097415511),
-        m32: fx(50410212111),
-        m13: fx(-23334330376),
-        m23: fx(-30966126533),
-        m33: fx(-13914202668),
-    };
-    let e = RowVector3 { x: fx(1573162780734), y: fx(-809237948778), z: fx(86871436868) };
-    assert!(a.mul_mat(b) == e);
+    let a: RowVector3<Fixed> = load(array![61548157728, -42506816328, -35433117197].span());
+    let b: Matrix3<Fixed> = load(
+        array![
+            46017786553, -42098644616, -60251355907, -19094591865, 12097415511, 50410212111,
+            -23334330376, -30966126533, -13914202668,
+        ]
+            .span(),
+    );
+    let e = array![1573162780734, -809237948778, 86871436868].span();
+    assert_raws(a.mul_mat(b), e);
+}
+
+#[test]
+fn test_row_vector6_mul_vector6() {
+    let a: RowVector6<Fixed> = load(
+        array![-26685636103, 23494388873, -17241830239, 18429643685, -19210839290, 40457256183]
+            .span(),
+    );
+    let b: Vector6<Fixed> = load(
+        array![-36391978994, 9992792089, -58466422239, 5320122413, -35149190490, 50511107712]
+            .span(),
+    );
+    let e = array![1171329061872].span();
+    assert_raws(a.mul_mat(b), e);
 }

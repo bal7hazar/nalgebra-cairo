@@ -12,6 +12,7 @@ use super::errors;
 use super::matrix_mul::MatrixMul;
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
+use super::row_vector6::RowVector6;
 
 /// A 1x1 matrix. Components are named like upstream's `Deref` targets (`x, y, z, w, a, b`).
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
@@ -191,6 +192,24 @@ pub impl Matrix1MulRowVector3<
     #[inline(always)]
     fn mul_mat(self: Matrix1<T>, rhs: RowVector3<T>) -> RowVector3<T> {
         RowVector3 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z }
+    }
+}
+
+/// `self * rhs`, a `RowVector6`: one floored product per component. Panics on overflow. Upstream:
+/// `Mul<RowVector6> for Vector1`.
+pub impl Matrix1MulRowVector6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix1<T>, RowVector6<T>> {
+    type Output = RowVector6<T>;
+    fn mul_mat(self: Matrix1<T>, rhs: RowVector6<T>) -> RowVector6<T> {
+        RowVector6 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.x * rhs.z,
+            w: self.x * rhs.w,
+            a: self.x * rhs.a,
+            b: self.x * rhs.b,
+        }
     }
 }
 

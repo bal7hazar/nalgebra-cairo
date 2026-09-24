@@ -139,6 +139,8 @@ def shapes_from(spec: str) -> list[Shape]:
         return [Shape(r, c) for r in range(1, 7) for c in range(1, 7)]
     if spec == "proto":
         return PROTO_SHAPES
+    if spec == "none":
+        return []
     out = []
     for token in spec.split(","):
         r, c = token.split("x")
@@ -160,6 +162,7 @@ PROTO_SHAPES = [
     Shape(6, 1),
     Shape(1, 2),
     Shape(1, 3),
+    Shape(1, 6),
 ]
 
 
@@ -168,19 +171,32 @@ PROTO_SHAPES = [
 # --------------------------------------------------------------------------------------------
 
 
-def fused_expr(pairs: list[tuple[str, str]]) -> str:
+# `FUSED_HELPERS`: 5- and 6-term sums of products call the `#[inline(always)]` helpers of the
+# generated `kernels` module (`Fused::sum_prod5/6`, one `Real::Wide` chain each) instead of spelling
+# the chain out at every output component: same Sierra after inlining (equal gas, measured), a
+# third of the library's lines (DESIGN.md, "Compile budget").
+FUSED_HELPERS = True
+
+# `--replicate N` (measurement only): N renamed copies of every trait method of every shape, to
+# measure how the library's compile cost grows with the size of the surface.
+REPLICATE = 1
+
+
+def fused_expr(pairs: list[tuple[str, str]], helpers: bool | None = None) -> str:
     """`sum a_k * b_k` floored ONCE, as one expression.
 
-    1 term: the scalar product; 2-4 terms: `Real::sum_prodN`; 5+ terms: the `Real::Wide`
-    accumulator, nested (the form of the hand-written `Matrix6`).
+    1 term: the scalar product; 2-4 terms: `Real::sum_prodN`; 5-6 terms: `Fused::sum_prodN`
+    (or the nested `Real::Wide` chain, the form of the hand-written `Matrix6`).
     """
     n = len(pairs)
     if n == 1:
         a, b = pairs[0]
         return f"{a} * {b}"
+    args = ", ".join(f"{a}, {b}" for a, b in pairs)
     if n <= 4:
-        args = ", ".join(f"{a}, {b}" for a, b in pairs)
         return f"R::sum_prod{n}({args})"
+    if (FUSED_HELPERS if helpers is None else helpers) and n <= 6:
+        return f"Fused::sum_prod{n}({args})"
     expr = "R::wide_zero()"
     for a, b in pairs:
         expr = f"R::wide_add_prod({expr}, {a}, {b})"
@@ -319,13 +335,13 @@ def family_transpose(s: Shape, shapes: set[Shape], out: ShapeFile):
         f"transpose(self: {s.name}<T>) -> {t.name}<T>", t.lit(values)))
 
 
-def product_kernel(a: Shape, b: Shape, lhs: str, rhs: str) -> str:
+def product_kernel(a: Shape, b: Shape, lhs: str, rhs: str, helpers: bool | None = None) -> str:
     o = Shape(a.r, b.c)
     values = {}
     for i in range(o.r):
         for j in range(o.c):
             pairs = [(f"{lhs}.{a.f(i, k)}", f"{rhs}.{b.f(k, j)}") for k in range(a.c)]
-            values[o.f(i, j)] = fused_expr(pairs)
+            values[o.f(i, j)] = fused_expr(pairs, helpers)
     return o.lit(values)
 
 
@@ -348,6 +364,8 @@ def family_products(s: Shape, shapes: set[Shape], out: ShapeFile):
             if t != s:
                 out.uses.add(f"super::{t.module}::{t.name}")
         out.uses.add("super::matrix_mul::MatrixMul")
+        if FUSED_HELPERS and s.c >= 5:
+            out.uses.add("super::kernels::Fused")
         inline = "#[inline(always)]\n" if product_inline(o) else ""
         bounds = "T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>"
         if s == b == o:
@@ -485,6 +503,12 @@ def render_shape(s: Shape, shapes: set[Shape]) -> str:
             out.methods[names.index(spec.name)] = spec
         else:
             out.methods.append(spec)
+    if REPLICATE > 1:  # compile-budget measurement only (`--replicate`): renamed copies
+        base = list(out.methods)
+        for r in range(2, REPLICATE + 1):
+            out.methods += [Method(f"{m.name}_r{r}", re.sub(rf"\bfn {m.name}\(",
+                                                           f"fn {m.name}_r{r}(", m.code))
+                            for m in base]
     S = s.name
     aliases = "".join(f"\n/// Upstream alias `{a}`: the same type as `{S}`.\n"
                       f"pub type {a}<T> = {S}<T>;\n" for a in s.aliases)
@@ -544,6 +568,29 @@ pub trait MatrixMul<Lhs, Rhs> {{
 """
 
 
+def render_kernels() -> str:
+    def fn(n: int) -> str:
+        params = ", ".join(f"a{i}: T, b{i}: T" for i in range(n))
+        expr = "R::wide_zero()"
+        for i in range(n):
+            expr = f"R::wide_add_prod({expr}, a{i}, b{i})"
+        return (f"    /// `a0 * b0 + .. + a{n - 1} * b{n - 1}`: the exact sum in `Real::Wide`, floored "
+                f"once.\n    #[inline(always)]\n    fn sum_prod{n}({params}) -> T {{\n"
+                f"        R::wide_rescale({expr})\n    }}\n")
+    return f"""{HEADER}//! Private fused kernels of the generated shapes: the 5- and 6-term sums of products that
+//! `simba::Real` does not provide (it stops at `sum_prod4`), as ONE `Real::Wide` chain each.
+//! `#[inline(always)]`: after inlining, a call is the same Sierra as the chain written in place.
+
+use simba::scalar::Real;
+
+/// Sums of 5 and 6 products with one rounding.
+#[generate_trait]
+pub(crate) impl Fused<T, impl R: Real<T>, +Drop<T>, +Drop<R::Wide>> of FusedTrait<T> {{
+{fn(5)}
+{fn(6)}}}
+"""
+
+
 def render_errors() -> str:
     return f"""{HEADER}//! Panic messages of the generated shapes (stable API).
 
@@ -554,10 +601,12 @@ pub const INDEX_OUT_OF_BOUNDS: felt252 = 'Matrix index out of bounds';
 
 def render_lib(shapes: list[Shape], compare: bool) -> str:
     mods = ["errors", "matrix_mul"] + [s.module for s in shapes]
+    if FUSED_HELPERS:
+        mods.append("kernels")
     lines = [HEADER.rstrip(), "//! WP 8.1a prototype of the generated static shapes "
              "(`tools/shapegen/DESIGN.md`).", ""]
     for m in sorted(mods):
-        lines.append(f"pub mod {m};")
+        lines.append(f"mod {m};" if m == "kernels" else f"pub mod {m};")
     if compare:
         lines += ["#[cfg(test)]", "mod compare;"]
     lines += ["#[cfg(test)]", "mod tests;"]
@@ -605,83 +654,96 @@ def test_fn(name: str, body: str) -> str:
     return f"#[test]\nfn {name}() {{\n{body}\n}}"
 
 
+def span(values) -> str:
+    return f"array![{', '.join(str(v) for v in values)}].span()"
+
+
+def col(s: Shape, v: dict[str, int]) -> str:
+    """The column-major raws of a shape value (its `Serde` image), as a `Span<i64>` literal."""
+    return span(v[f] for f in s.fields)
+
+
 def render_tests(shapes: list[Shape]) -> dict[str, str]:
-    """One file per family, every shape of the set: tests/<family>.cairo."""
+    """One file per family, every shape of the set: tests/<family>.cairo.
+
+    Compile budget: shape values are loaded from and compared with column-major raw spans by the
+    two generic helpers of `tests.cairo` (`load`, `assert_raws`), monomorphised once per shape,
+    instead of struct literals and derived `==` expanded at every assertion; indices are checked
+    in loops, so each `match` is expanded once per test instead of once per component.
+    """
     shapeset = set(shapes)
     files: dict[str, list[str]] = {}
     uses: dict[str, set[Shape]] = {}
 
-    def add(family: str, methods_on: list[Shape], name: str, body: str):
+    def add(family: str, methods_on: list[Shape], name: str, body: str, attr: str = ""):
         """`methods_on`: the shapes whose trait methods the body calls with method syntax."""
-        files.setdefault(family, []).append(test_fn(name, body))
+        files.setdefault(family, []).append(attr + test_fn(name, body))
         uses.setdefault(family, set()).update(methods_on)
+
+    def load(s: Shape, var: str, v: dict[str, int]) -> str:
+        return f"let {var}: {s.name}<Fixed> = load({col(s, v)});"
 
     for s in shapes:
         rng = random.Random(f"shapegen/{s.name}")
         a, b = raws(rng, s), raws(rng, s)
         k = rand_raw(rng)
-        m = s.module
-        # construction: `new` is row-major, `Serde` column-major.
-        body = [f"let m = {cairo_new(s, a)};", f"assert!(m == {cairo_lit(s, a)});",
-                "let mut out: Array<felt252> = array![];", "m.serialize(ref out);",
-                f"let raws: Array<i64> = array![{', '.join(str(a[f]) for f in s.fields)}];",
-                f"assert!(out.len() == {s.n});", "let mut i = 0;",
-                "while i < raws.len() {", "    let raw: i64 = *raws[i];",
-                "    assert!(*out[i] == raw.into());", "    i += 1;", "}",
-                f"let z: {s.name}<Fixed> = {s.name}Trait::zeros();",
-                f"assert!(z == {cairo_lit(s, {f: 0 for f in s.fields})});",
-                f"let e: {s.name}<Fixed> = {s.name}Trait::from_element(fx({k}));",
-                f"assert!(e == {s.name}Trait::repeat(fx({k})));",
-                f"assert!(e == {cairo_lit(s, {f: k for f in s.fields})});"]
+        m, S = s.module, s.name
+        # construction: `new` is row-major, `Serde` column-major (checked by `assert_raws`).
+        body = [f"assert_raws({cairo_new(s, a)}, {col(s, a)});",
+                f"let z: {S}<Fixed> = {S}Trait::zeros();",
+                f"assert_raws(z, {span([0] * s.n)});",
+                f"let e: {S}<Fixed> = {S}Trait::from_element(fx({k}));",
+                f"assert_raws(e, {span([k] * s.n)});",
+                f"assert_raws({S}Trait::repeat(fx({k})), {span([k] * s.n)});"]
         if s.is_square:
             ident = {s.f(i, j): (ONE if i == j else 0) for i in range(s.r) for j in range(s.c)}
-            body.append(f"let id: {s.name}<Fixed> = {s.name}Trait::identity();")
-            body.append(f"assert!(id == {cairo_lit(s, ident)});")
+            body.append(f"let id: {S}<Fixed> = {S}Trait::identity();")
+            body.append(f"assert_raws(id, {col(s, ident)});")
+        for alias in s.aliases:  # the upstream aliases are the same type
+            body.append(f"let al: {alias}<Fixed> = {cairo_new(s, a)};")
+            body.append(f"let same: {S}<Fixed> = al;")
+            body.append(f"assert_raws(same, {col(s, a)});")
         add("construction", [], f"test_{m}_new_zeros_from_element", "\n".join(body))
         # arithmetic
-        add_ = {f: a[f] + b[f] for f in s.fields}
-        sub_ = {f: a[f] - b[f] for f in s.fields}
-        neg_ = {f: -a[f] for f in s.fields}
-        sc = {f: floor_scale(a[f] * k) for f in s.fields}
         add("arithmetic", [s], f"test_{m}_add_sub_neg_scale", "\n".join([
-            f"let a = {cairo_lit(s, a)};", f"let b = {cairo_lit(s, b)};",
-            f"assert!(a + b == {cairo_lit(s, add_)});",
-            f"assert!(a - b == {cairo_lit(s, sub_)});",
-            f"assert!(-a == {cairo_lit(s, neg_)});",
-            f"assert!(a.scale(fx({k})) == {cairo_lit(s, sc)});",
-            "let mut c = a;", "c += b;", "c -= b;", "assert!(c == a);"]))
+            load(s, "a", a), load(s, "b", b),
+            f"assert_raws(a + b, {col(s, {f: a[f] + b[f] for f in s.fields})});",
+            f"assert_raws(a - b, {col(s, {f: a[f] - b[f] for f in s.fields})});",
+            f"assert_raws(-a, {col(s, {f: -a[f] for f in s.fields})});",
+            f"assert_raws(a.scale(fx({k})), "
+            f"{col(s, {f: floor_scale(a[f] * k) for f in s.fields})});",
+            "let mut c = a;", "c += b;", f"assert_raws(c, {col(s, {f: a[f] + b[f] for f in s.fields})});",
+            "c -= b;", "c -= b;", f"assert_raws(c, {col(s, {f: a[f] - b[f] for f in s.fields})});"]))
         big = {f: 0 for f in s.fields}
         big[s.fields[-1]] = I64_MAX
         add("arithmetic", [], f"test_{m}_add_overflow_panics",
-            f"let a = {cairo_lit(s, big)};\nlet _ = a + a;")
-        files["arithmetic"][-1] = "#[should_panic]\n" + files["arithmetic"][-1]
+            f"{load(s, 'a', big)}\nlet _ = a + a;", "#[should_panic]\n")
         # transpose
         t = s.transposed()
         if t in shapeset:
             tv = {t.f(j, i): a[s.f(i, j)] for i in range(s.r) for j in range(s.c)}
             add("transpose", [s, t], f"test_{m}_transpose",
-                f"let a = {cairo_lit(s, a)};\nassert!(a.transpose() == {cairo_lit(t, tv)});\n"
-                f"assert!(a.transpose().transpose() == a);")
+                f"{load(s, 'a', a)}\nassert_raws(a.transpose(), {col(t, tv)});\n"
+                f"assert_raws(a.transpose().transpose(), {col(s, a)});")
         # reductions (exact floor of the exact sums)
         dot = floor_scale(sum(a[f] * b[f] for f in s.fields))
         n2 = floor_scale(sum(a[f] * a[f] for f in s.fields))
         add("reductions", [s], f"test_{m}_dot_norm_squared", "\n".join([
-            f"let a = {cairo_lit(s, a)};", f"let b = {cairo_lit(s, b)};",
+            load(s, "a", a), load(s, "b", b),
             f"assert!(a.dot(b) == fx({dot}));", f"assert!(a.norm_squared() == fx({n2}));",
             f"assert!(b.dot(a) == fx({dot}));"]))
-        # index
-        lin = "\n".join(f"assert!(a[{i}] == fx({a[f]}));" for i, f in enumerate(s.fields))
-        two = "\n".join(f"assert!(a[({i}, {j})] == fx({a[s.f(i, j)]}));"
-                        for i in range(s.r) for j in range(s.c))
-        add("index", [], f"test_{m}_index", f"let a = {cairo_lit(s, a)};\n{lin}\n{two}")
+        # index: every component through both impls, in loops
+        add("index", [], f"test_{m}_index", "\n".join([
+            load(s, "a", a), f"let e = {col(s, a)};",
+            "let mut i: usize = 0;", f"while i < {s.n} {{", "assert!(a[i] == fx(*e[i]));",
+            "i += 1;", "}", "let mut j: usize = 0;", f"while j < {s.c} {{",
+            "let mut i: usize = 0;", f"while i < {s.r} {{",
+            f"assert!(a[(i, j)] == fx(*e[i + j * {s.r}]));", "i += 1;", "}", "j += 1;", "}"]))
+        oob = "#[should_panic(expected: 'Matrix index out of bounds')]\n"
         add("index", [], f"test_{m}_index_linear_out_of_bounds_panics",
-            f"let a = {cairo_lit(s, a)};\nlet _ = a[{s.n}];")
-        files["index"][-1] = ("#[should_panic(expected: 'Matrix index out of bounds')]\n"
-                              + files["index"][-1])
+            f"{load(s, 'a', a)}\nlet _ = a[{s.n}];", oob)
         add("index", [], f"test_{m}_index_row_out_of_bounds_panics",
-            f"let a = {cairo_lit(s, a)};\nlet _ = a[({s.r}, 0)];")
-        files["index"][-1] = ("#[should_panic(expected: 'Matrix index out of bounds')]\n"
-                              + files["index"][-1])
+            f"{load(s, 'a', a)}\nlet _ = a[({s.r}, 0)];", oob)
         # products, every conformable pair of the set
         for b_shape in sorted(shapeset):
             o = Shape(s.r, b_shape.c)
@@ -690,23 +752,73 @@ def render_tests(shapes: list[Shape]) -> dict[str, str]:
             rng2 = random.Random(f"shapegen/{s.name}*{b_shape.name}")
             va, vb = raws(rng2, s), raws(rng2, b_shape)
             vo = model_product(s, b_shape, va, vb)
-            body = [f"let a = {cairo_lit(s, va)};", f"let b = {cairo_lit(b_shape, vb)};",
-                    f"let e = {cairo_lit(o, vo)};", "assert!(a.mul_mat(b) == e);"]
+            body = [load(s, "a", va), load(b_shape, "b", vb), f"let e = {col(o, vo)};",
+                    "assert_raws(a.mul_mat(b), e);"]
             if s == b_shape:
-                body.append("assert!(a * b == e);")
-                body.append("let mut c = a;\nc *= b;\nassert!(c == e);")
+                body.append("assert_raws(a * b, e);")
+                body.append("let mut c = a;\nc *= b;\nassert_raws(c, e);")
             if s.is_square and b_shape.c == 1 and b_shape.r > 1:
-                body.append("assert!(a.mul_vec(b) == e);")
+                body.append("assert_raws(a.mul_vec(b), e);")
             add("products", [s] if "mul_vec" in body[-1] else [],
                 f"test_{m}_mul_{b_shape.module}", "\n".join(body))
     out = {}
     for family, fns in files.items():
-        imports = use_lines("\n\n".join(fns), shapes, uses[family], {"fixed::Fixed"})
+        body = "\n\n".join(fns)
+        helpers = [h for h in ("fx", "load", "assert_raws") if re.search(rf"\b{h}\(", body)]
+        imports = use_lines(body, shapes, uses[family],
+                            {"fixed::Fixed", f"super::{{{', '.join(helpers)}}}"})
         out[family] = (f"{HEADER}//! Generated tests of the `{family}` family: exact expectations "
                        f"from the integer model of the kernels (floor once per output scalar)."
-                       f"\n\n{imports}\n\nfn fx(raw: i64) -> Fixed {{\n    Fixed {{ raw }}\n}}\n\n"
-                       + "\n\n".join(fns) + "\n")
+                       f"\n\n{imports}\n\n" + body + "\n")
     return out
+
+
+TESTS_HELPERS = """
+use fixed::Fixed;
+
+/// A `Fixed` from its raw Q32.32 value.
+pub fn fx(raw: i64) -> Fixed {
+    Fixed { raw }
+}
+
+/// The shape value whose column-major raws (its `Serde` image) are `raws`.
+#[inline(never)]
+pub fn load<S, +Serde<S>, +Drop<S>>(raws: Span<i64>) -> S {
+    let mut felts: Array<felt252> = array![];
+    for raw in raws {
+        felts.append((*raw).into());
+    }
+    let mut data = felts.span();
+    Serde::deserialize(ref data).unwrap()
+}
+
+/// Asserts that the column-major raws of `value` (its `Serde` image) are `expected`.
+#[inline(never)]
+pub fn assert_raws<S, +Serde<S>, +Drop<S>>(value: S, expected: Span<i64>) {
+    let mut out: Array<felt252> = array![];
+    value.serialize(ref out);
+    assert!(out.len() == expected.len());
+    let mut i = 0;
+    while i < expected.len() {
+        let raw: i64 = *expected[i];
+        assert!(*out[i] == raw.into(), "component {} differs", i);
+        i += 1;
+    }
+}
+
+#[test]
+fn test_load_assert_raws_round_trip() {
+    let v: (Fixed, Fixed) = load(array![-1, 0x100000000].span());
+    assert!(v == (fx(-1), fx(0x100000000)));
+    assert_raws(v, array![-1, 0x100000000].span());
+}
+
+#[test]
+#[should_panic(expected: "component 1 differs")]
+fn test_assert_raws_detects_a_difference() {
+    assert_raws((fx(1), fx(2)), array![1, 3].span());
+}
+"""
 
 
 def use_lines(body: str, shapes: list[Shape], methods_on: set[Shape], extra: set[str]) -> str:
@@ -717,8 +829,10 @@ def use_lines(body: str, shapes: list[Shape], methods_on: set[Shape], extra: set
         uses.add("crate::MatrixMul")
     if re.search(r"\berrors::", body):
         uses.add("crate::errors")
+    if re.search(r"\bReal::", body):
+        uses.add("simba::scalar::Real")
     for s in shapes:
-        names = [n for n in (s.name,) if re.search(rf"\b{n}\b", body)]
+        names = [n for n in (s.name, *s.aliases) if re.search(rf"\b{n}\b", body)]
         if s in methods_on or re.search(rf"\b{s.name}Trait\b", body):
             names.append(f"{s.name}Trait")
         if names:
@@ -733,7 +847,8 @@ def use_lines(body: str, shapes: list[Shape], methods_on: set[Shape], extra: set
 
 
 def render_tests_root(families: list[str]) -> str:
-    return HEADER + "".join(f"mod {f};\n" for f in sorted(families))
+    return (HEADER + "//! Generated tests, one module per method family, and their helpers.\n\n"
+            + "".join(f"mod {f};\n" for f in sorted(families)) + TESTS_HELPERS)
 
 
 # --------------------------------------------------------------------------------------------
@@ -968,8 +1083,32 @@ def render_index_alternatives(shapes: list[Shape], uses: set[str]) -> list[str]:
 
 
 def render_mul_mat_benches(shapes: list[Shape], uses: set[str]) -> list[str]:
-    """`mul_mat` against `*` (square) and a rectangular product, for the gas table."""
+    """`mul_mat` against `*` (square) and a rectangular product, for the gas table; the 6-term
+    product through `Fused::sum_prod6` against the same chain written in place (`alt_nested`)."""
     out = []
+    a_s, b_s = Shape(1, 6), Shape(6, 1)
+    if a_s in shapes and b_s in shapes and Shape(1, 1) in shapes:
+        kernel = product_kernel(a_s, b_s, "a", "b", helpers=False).replace("R::", "Real::<Fixed>::")
+        out.append(f"/// `RowVector6 * Vector6` with the `Real::Wide` chain written in place (the "
+                   f"form of the\n/// hand-written `Matrix6`), against `Fused::sum_prod6`.\n"
+                   f"fn alt_nested_row_vector6_mul_vector6(a: RowVector6<Fixed>, b: Vector6<Fixed>)"
+                   f" -> Matrix1<Fixed> {{\n{kernel}\n}}")
+        rng = random.Random("nested/RowVector6*Vector6")
+        va, vb = raws(rng, a_s), raws(rng, b_s)
+        vo = model_product(a_s, b_s, va, vb)
+        pre = [f"let a = black_box({cairo_lit(a_s, va)});",
+               f"let b = black_box({cairo_lit(b_s, vb)});",
+               f"let e = black_box({cairo_lit(Shape(1, 1), vo)});"]
+        out.append(test_fn("test_row_vector6_mul_vector6_alt_nested_matches",
+                           "\n".join(pre) + "\nassert!(alt_nested_row_vector6_mul_vector6(a, b) == "
+                           "a.mul_mat(b));\nassert!(a.mul_mat(b) == e);"))
+        group = "row_vector6_mul_vector6"
+        out.append(f"#[test]\n#[inline(never)]\nfn bench_{group}__baseline() {{\n"
+                   + "\n".join(unused(pre[:-1]) + pre[-1:]) + "\nassert!(e == e);\n}")
+        out.append(f"#[test]\n#[inline(never)]\nfn bench_{group}__fused_helper() {{\n"
+                   + "\n".join(pre) + "\nassert!(a.mul_mat(b) == e);\n}")
+        out.append(f"#[test]\n#[inline(never)]\nfn bench_{group}__alt_nested() {{\n"
+                   + "\n".join(pre) + "\nassert!(alt_nested_row_vector6_mul_vector6(a, b) == e);\n}")
     pairs = [(Shape(3, 3), Shape(3, 3)), (Shape(2, 3), Shape(3, 2)), (Shape(3, 2), Shape(2, 3)),
              (Shape(1, 3), Shape(3, 1)), (Shape(3, 1), Shape(1, 3)), (Shape(2, 3), Shape(3, 1))]
     for a_s, b_s in pairs:
@@ -1013,8 +1152,7 @@ simba = {{ path = "{root}/crates/simba" }}
 
 [dev-dependencies]
 fixed = "0.3.0"
-nalgebra = {{ path = "{root}/crates/nalgebra" }}
-nalgebra_testing = {{ path = "{root}/crates/testing" }}
+{nalgebra}nalgebra_testing = {{ path = "{root}/crates/testing" }}
 snforge_std = "0.61.0"
 assert_macros = "2.19.4"
 
@@ -1028,22 +1166,40 @@ allow-prebuilt-plugins = ["snforge_std"]
 
 
 def generate(pkg: Path, shapes: list[Shape], compare: bool, tests: bool, manifest_root: str,
-             name: str):
+             name: str, test_families: set[str] | None = None, integration: bool = False):
     src = pkg / "src"
     if src.exists():
         shutil.rmtree(src)
     (src / "tests").mkdir(parents=True)
-    (pkg / "Scarb.toml").write_text(MANIFEST.format(root=manifest_root, name=name))
+    nalgebra = f'nalgebra = {{ path = "{manifest_root}/crates/nalgebra" }}\n' if compare else ""
+    (pkg / "Scarb.toml").write_text(MANIFEST.format(root=manifest_root, name=name,
+                                                    nalgebra=nalgebra))
     shapeset = set(shapes)
     (src / "lib.cairo").write_text(render_lib(shapes, compare) if tests else
                                    render_lib(shapes, compare).replace(
                                        "#[cfg(test)]\nmod tests;\n", ""))
     (src / "errors.cairo").write_text(render_errors())
     (src / "matrix_mul.cairo").write_text(render_matrix_mul())
+    if FUSED_HELPERS:
+        (src / "kernels.cairo").write_text(render_kernels())
     for s in shapes:
         (src / f"{s.module}.cairo").write_text(render_shape(s, shapeset))
-    if tests:
-        families = render_tests(shapes)
+    if tests and integration:
+        # One integration-test file per family: Scarb compiles each as its own crate.
+        shutil.rmtree(src / "tests")
+        (pkg / "tests").mkdir()
+        (src / "lib.cairo").write_text(render_lib(shapes, compare).replace(
+            "#[cfg(test)]\nmod tests;\n", ""))
+        helpers = TESTS_HELPERS.split("#[test]")[0]
+        for fam, text in render_tests(shapes).items():
+            if test_families is not None and fam not in test_families:
+                continue
+            text = re.sub(r"use super::\{[^}]*\};\n", "", text).replace("crate::", f"{name}::")
+            text = text.replace("use fixed::Fixed;\n", "") + helpers
+            (pkg / "tests" / f"{fam}.cairo").write_text(text)
+    elif tests:
+        families = {f: text for f, text in render_tests(shapes).items()
+                    if test_families is None or f in test_families}
         for fam, text in families.items():
             (src / "tests" / f"{fam}.cairo").write_text(text)
         (src / "tests.cairo").write_text(render_tests_root(list(families)))
@@ -1058,14 +1214,23 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--check", action="store_true", help="fail if the committed output is stale")
     p.add_argument("--out", type=Path, help="write a measurement package there instead")
-    p.add_argument("--shapes", default="proto", help="'proto', 'all' or '2x3,3x1,...'")
+    p.add_argument("--shapes", default="proto", help="'proto', 'all', 'none' or '2x3,3x1,...'")
     p.add_argument("--no-compare", action="store_true", help="omit the comparison module")
     p.add_argument("--no-tests", action="store_true", help="omit the generated tests")
+    p.add_argument("--test-families", help="only these test families ('products,index')")
+    p.add_argument("--replicate", type=int, default=1,
+                   help="measurement: N renamed copies of every trait method")
+    p.add_argument("--integration", action="store_true",
+                   help="generated tests as one integration-test crate per family (tests/)")
     args = p.parse_args()
     shapes = sorted(shapes_from(args.shapes), key=lambda s: (s.r, s.c))
+    global REPLICATE
+    REPLICATE = args.replicate
     if args.out:
         generate(args.out, shapes, not args.no_compare, not args.no_tests, str(ROOT),
-                 args.out.name.replace("-", "_"))
+                 "shapegen_" + re.sub(r"\W", "_", args.out.name.lstrip(".")).lower(),
+                 set(args.test_families.split(",")) if args.test_families else None,
+                 args.integration)
         return 0
     # Generated next to the real package (same depth: the relative path dependencies resolve),
     # formatted by `scarb fmt`, then compared or copied.

@@ -4,6 +4,7 @@
 #[cfg(test)]
 mod compare;
 pub mod errors;
+mod kernels;
 pub mod matrix1;
 pub mod matrix2;
 pub mod matrix2x3;
@@ -12,6 +13,7 @@ pub mod matrix3x2;
 pub mod matrix_mul;
 pub mod row_vector2;
 pub mod row_vector3;
+pub mod row_vector6;
 #[cfg(test)]
 mod tests;
 pub mod vector2;
@@ -26,6 +28,7 @@ pub use matrix3x2::{Matrix3x2, Matrix3x2Trait};
 pub use matrix_mul::MatrixMul;
 pub use row_vector2::{Matrix1x2, RowVector2, RowVector2Trait};
 pub use row_vector3::{Matrix1x3, RowVector3, RowVector3Trait};
+pub use row_vector6::{Matrix1x6, RowVector6, RowVector6Trait};
 pub use vector2::{Matrix2x1, Vector2, Vector2Trait};
 pub use vector3::{Matrix3x1, Vector3, Vector3Trait};
 pub use vector6::{Matrix6x1, Vector6, Vector6Trait};

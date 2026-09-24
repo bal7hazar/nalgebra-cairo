@@ -10,518 +10,439 @@ use crate::matrix3::{Matrix3, Matrix3Trait};
 use crate::matrix3x2::{Matrix3x2, Matrix3x2Trait};
 use crate::row_vector2::{RowVector2, RowVector2Trait};
 use crate::row_vector3::{RowVector3, RowVector3Trait};
+use crate::row_vector6::{RowVector6, RowVector6Trait};
 use crate::vector2::{Vector2, Vector2Trait};
 use crate::vector3::{Vector3, Vector3Trait};
 use crate::vector6::{Vector6, Vector6Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
+use super::{assert_raws, fx, load};
 
 #[test]
 fn test_matrix1_add_sub_neg_scale() {
-    let a = Matrix1 { x: fx(-33495762814) };
-    let b = Matrix1 { x: fx(-58140809808) };
-    assert!(a + b == Matrix1 { x: fx(-91636572622) });
-    assert!(a - b == Matrix1 { x: fx(24645046994) });
-    assert!(-a == Matrix1 { x: fx(33495762814) });
-    assert!(a.scale(fx(53007424169)) == Matrix1 { x: fx(-413396420737) });
+    let a: Matrix1<Fixed> = load(array![-33495762814].span());
+    let b: Matrix1<Fixed> = load(array![-58140809808].span());
+    assert_raws(a + b, array![-91636572622].span());
+    assert_raws(a - b, array![24645046994].span());
+    assert_raws(-a, array![33495762814].span());
+    assert_raws(a.scale(fx(53007424169)), array![-413396420737].span());
     let mut c = a;
     c += b;
+    assert_raws(c, array![-91636572622].span());
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(c, array![24645046994].span());
 }
 
 #[should_panic]
 #[test]
 fn test_matrix1_add_overflow_panics() {
-    let a = Matrix1 { x: fx(9223372036854775807) };
+    let a: Matrix1<Fixed> = load(array![9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_matrix2_add_sub_neg_scale() {
-    let a = Matrix2 {
-        m11: fx(-47111063617), m21: fx(26698759682), m12: fx(-55039974758), m22: fx(-25156634923),
-    };
-    let b = Matrix2 {
-        m11: fx(-4032617886), m21: fx(-57427725697), m12: fx(52537575811), m22: fx(2134488676),
-    };
-    assert!(
-        a
-            + b == Matrix2 {
-                m11: fx(-51143681503),
-                m21: fx(-30728966015),
-                m12: fx(-2502398947),
-                m22: fx(-23022146247),
-            },
+    let a: Matrix2<Fixed> = load(
+        array![-47111063617, 26698759682, -55039974758, -25156634923].span(),
     );
-    assert!(
-        a
-            - b == Matrix2 {
-                m11: fx(-43078445731),
-                m21: fx(84126485379),
-                m12: fx(-107577550569),
-                m22: fx(-27291123599),
-            },
-    );
-    assert!(
-        -a == Matrix2 {
-            m11: fx(47111063617), m21: fx(-26698759682), m12: fx(55039974758), m22: fx(25156634923),
-        },
-    );
-    assert!(
-        a
-            .scale(
-                fx(-1490797924),
-            ) == Matrix2 {
-                m11: fx(16352412253),
-                m21: fx(-9267231335),
-                m12: fx(19104564587),
-                m22: fx(8731954525),
-            },
+    let b: Matrix2<Fixed> = load(array![-4032617886, -57427725697, 52537575811, 2134488676].span());
+    assert_raws(a + b, array![-51143681503, -30728966015, -2502398947, -23022146247].span());
+    assert_raws(a - b, array![-43078445731, 84126485379, -107577550569, -27291123599].span());
+    assert_raws(-a, array![47111063617, -26698759682, 55039974758, 25156634923].span());
+    assert_raws(
+        a.scale(fx(-1490797924)), array![16352412253, -9267231335, 19104564587, 8731954525].span(),
     );
     let mut c = a;
     c += b;
+    assert_raws(c, array![-51143681503, -30728966015, -2502398947, -23022146247].span());
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(c, array![-43078445731, 84126485379, -107577550569, -27291123599].span());
 }
 
 #[should_panic]
 #[test]
 fn test_matrix2_add_overflow_panics() {
-    let a = Matrix2 { m11: fx(0), m21: fx(0), m12: fx(0), m22: fx(9223372036854775807) };
+    let a: Matrix2<Fixed> = load(array![0, 0, 0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_matrix3_add_sub_neg_scale() {
-    let a = Matrix3 {
-        m11: fx(-55135576232),
-        m21: fx(45987105977),
-        m31: fx(-20603133059),
-        m12: fx(-45706728641),
-        m22: fx(-17302562604),
-        m32: fx(-6495708024),
-        m13: fx(-61949050762),
-        m23: fx(-26085188934),
-        m33: fx(55769868349),
-    };
-    let b = Matrix3 {
-        m11: fx(10911796807),
-        m21: fx(-17928219082),
-        m31: fx(-31814012033),
-        m12: fx(-31386881017),
-        m22: fx(60282386875),
-        m32: fx(-646908520),
-        m13: fx(42734764629),
-        m23: fx(-57124049560),
-        m33: fx(44770269502),
-    };
-    assert!(
-        a
-            + b == Matrix3 {
-                m11: fx(-44223779425),
-                m21: fx(28058886895),
-                m31: fx(-52417145092),
-                m12: fx(-77093609658),
-                m22: fx(42979824271),
-                m32: fx(-7142616544),
-                m13: fx(-19214286133),
-                m23: fx(-83209238494),
-                m33: fx(100540137851),
-            },
+    let a: Matrix3<Fixed> = load(
+        array![
+            -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+            -61949050762, -26085188934, 55769868349,
+        ]
+            .span(),
     );
-    assert!(
-        a
-            - b == Matrix3 {
-                m11: fx(-66047373039),
-                m21: fx(63915325059),
-                m31: fx(11210878974),
-                m12: fx(-14319847624),
-                m22: fx(-77584949479),
-                m32: fx(-5848799504),
-                m13: fx(-104683815391),
-                m23: fx(31038860626),
-                m33: fx(10999598847),
-            },
+    let b: Matrix3<Fixed> = load(
+        array![
+            10911796807, -17928219082, -31814012033, -31386881017, 60282386875, -646908520,
+            42734764629, -57124049560, 44770269502,
+        ]
+            .span(),
     );
-    assert!(
-        -a == Matrix3 {
-            m11: fx(55135576232),
-            m21: fx(-45987105977),
-            m31: fx(20603133059),
-            m12: fx(45706728641),
-            m22: fx(17302562604),
-            m32: fx(6495708024),
-            m13: fx(61949050762),
-            m23: fx(26085188934),
-            m33: fx(-55769868349),
-        },
+    assert_raws(
+        a + b,
+        array![
+            -44223779425, 28058886895, -52417145092, -77093609658, 42979824271, -7142616544,
+            -19214286133, -83209238494, 100540137851,
+        ]
+            .span(),
     );
-    assert!(
-        a
-            .scale(
-                fx(-1771456346),
-            ) == Matrix3 {
-                m11: fx(22740630993),
-                m21: fx(-18967350647),
-                m31: fx(8497748245),
-                m12: fx(18851709204),
-                m22: fx(7136430201),
-                m32: fx(2679150365),
-                m13: fx(25550843938),
-                m23: fx(10758818470),
-                m33: fx(-23002244347),
-            },
+    assert_raws(
+        a - b,
+        array![
+            -66047373039, 63915325059, 11210878974, -14319847624, -77584949479, -5848799504,
+            -104683815391, 31038860626, 10999598847,
+        ]
+            .span(),
+    );
+    assert_raws(
+        -a,
+        array![
+            55135576232, -45987105977, 20603133059, 45706728641, 17302562604, 6495708024,
+            61949050762, 26085188934, -55769868349,
+        ]
+            .span(),
+    );
+    assert_raws(
+        a.scale(fx(-1771456346)),
+        array![
+            22740630993, -18967350647, 8497748245, 18851709204, 7136430201, 2679150365, 25550843938,
+            10758818470, -23002244347,
+        ]
+            .span(),
     );
     let mut c = a;
     c += b;
+    assert_raws(
+        c,
+        array![
+            -44223779425, 28058886895, -52417145092, -77093609658, 42979824271, -7142616544,
+            -19214286133, -83209238494, 100540137851,
+        ]
+            .span(),
+    );
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(
+        c,
+        array![
+            -66047373039, 63915325059, 11210878974, -14319847624, -77584949479, -5848799504,
+            -104683815391, 31038860626, 10999598847,
+        ]
+            .span(),
+    );
 }
 
 #[should_panic]
 #[test]
 fn test_matrix3_add_overflow_panics() {
-    let a = Matrix3 {
-        m11: fx(0),
-        m21: fx(0),
-        m31: fx(0),
-        m12: fx(0),
-        m22: fx(0),
-        m32: fx(0),
-        m13: fx(0),
-        m23: fx(0),
-        m33: fx(9223372036854775807),
-    };
+    let a: Matrix3<Fixed> = load(array![0, 0, 0, 0, 0, 0, 0, 0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_matrix2x3_add_sub_neg_scale() {
-    let a = Matrix2x3 {
-        m11: fx(-6119115503),
-        m21: fx(46221905395),
-        m12: fx(-58231430588),
-        m22: fx(5327765407),
-        m13: fx(26982524674),
-        m23: fx(-30380078124),
-    };
-    let b = Matrix2x3 {
-        m11: fx(7128830958),
-        m21: fx(-6115102970),
-        m12: fx(-32246237129),
-        m22: fx(27329720350),
-        m13: fx(3103314030),
-        m23: fx(-29984599983),
-    };
-    assert!(
-        a
-            + b == Matrix2x3 {
-                m11: fx(1009715455),
-                m21: fx(40106802425),
-                m12: fx(-90477667717),
-                m22: fx(32657485757),
-                m13: fx(30085838704),
-                m23: fx(-60364678107),
-            },
+    let a: Matrix2x3<Fixed> = load(
+        array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+            .span(),
     );
-    assert!(
-        a
-            - b == Matrix2x3 {
-                m11: fx(-13247946461),
-                m21: fx(52337008365),
-                m12: fx(-25985193459),
-                m22: fx(-22001954943),
-                m13: fx(23879210644),
-                m23: fx(-395478141),
-            },
+    let b: Matrix2x3<Fixed> = load(
+        array![7128830958, -6115102970, -32246237129, 27329720350, 3103314030, -29984599983].span(),
     );
-    assert!(
-        -a == Matrix2x3 {
-            m11: fx(6119115503),
-            m21: fx(-46221905395),
-            m12: fx(58231430588),
-            m22: fx(-5327765407),
-            m13: fx(-26982524674),
-            m23: fx(30380078124),
-        },
+    assert_raws(
+        a + b,
+        array![1009715455, 40106802425, -90477667717, 32657485757, 30085838704, -60364678107]
+            .span(),
     );
-    assert!(
-        a
-            .scale(
-                fx(-11395723737),
-            ) == Matrix2x3 {
-                m11: fx(16235688186),
-                m21: fx(-122639365606),
-                m12: fx(154503922860),
-                m22: fx(-14136019795),
-                m13: fx(-71592022878),
-                m23: fx(80606662065),
-            },
+    assert_raws(
+        a - b,
+        array![-13247946461, 52337008365, -25985193459, -22001954943, 23879210644, -395478141]
+            .span(),
+    );
+    assert_raws(
+        -a,
+        array![6119115503, -46221905395, 58231430588, -5327765407, -26982524674, 30380078124]
+            .span(),
+    );
+    assert_raws(
+        a.scale(fx(-11395723737)),
+        array![16235688186, -122639365606, 154503922860, -14136019795, -71592022878, 80606662065]
+            .span(),
     );
     let mut c = a;
     c += b;
+    assert_raws(
+        c,
+        array![1009715455, 40106802425, -90477667717, 32657485757, 30085838704, -60364678107]
+            .span(),
+    );
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(
+        c,
+        array![-13247946461, 52337008365, -25985193459, -22001954943, 23879210644, -395478141]
+            .span(),
+    );
 }
 
 #[should_panic]
 #[test]
 fn test_matrix2x3_add_overflow_panics() {
-    let a = Matrix2x3 {
-        m11: fx(0), m21: fx(0), m12: fx(0), m22: fx(0), m13: fx(0), m23: fx(9223372036854775807),
-    };
+    let a: Matrix2x3<Fixed> = load(array![0, 0, 0, 0, 0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_matrix3x2_add_sub_neg_scale() {
-    let a = Matrix3x2 {
-        m11: fx(63874405710),
-        m21: fx(-33407840772),
-        m31: fx(-38695145741),
-        m12: fx(-39963023294),
-        m22: fx(-24512368659),
-        m32: fx(27039177520),
-    };
-    let b = Matrix3x2 {
-        m11: fx(-33316576195),
-        m21: fx(10109608075),
-        m31: fx(17824816061),
-        m12: fx(-8901803355),
-        m22: fx(50243658597),
-        m32: fx(-61668721417),
-    };
-    assert!(
-        a
-            + b == Matrix3x2 {
-                m11: fx(30557829515),
-                m21: fx(-23298232697),
-                m31: fx(-20870329680),
-                m12: fx(-48864826649),
-                m22: fx(25731289938),
-                m32: fx(-34629543897),
-            },
+    let a: Matrix3x2<Fixed> = load(
+        array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+            .span(),
     );
-    assert!(
-        a
-            - b == Matrix3x2 {
-                m11: fx(97190981905),
-                m21: fx(-43517448847),
-                m31: fx(-56519961802),
-                m12: fx(-31061219939),
-                m22: fx(-74756027256),
-                m32: fx(88707898937),
-            },
+    let b: Matrix3x2<Fixed> = load(
+        array![-33316576195, 10109608075, 17824816061, -8901803355, 50243658597, -61668721417]
+            .span(),
     );
-    assert!(
-        -a == Matrix3x2 {
-            m11: fx(-63874405710),
-            m21: fx(33407840772),
-            m31: fx(38695145741),
-            m12: fx(39963023294),
-            m22: fx(24512368659),
-            m32: fx(-27039177520),
-        },
+    assert_raws(
+        a + b,
+        array![30557829515, -23298232697, -20870329680, -48864826649, 25731289938, -34629543897]
+            .span(),
     );
-    assert!(
-        a
-            .scale(
-                fx(12097559131),
-            ) == Matrix3x2 {
-                m11: fx(179913919427),
-                m21: fx(-94099279768),
-                m31: fx(-108991939036),
-                m12: fx(-112563147525),
-                m22: fx(-69043559324),
-                m32: fx(76160777570),
-            },
+    assert_raws(
+        a - b,
+        array![97190981905, -43517448847, -56519961802, -31061219939, -74756027256, 88707898937]
+            .span(),
+    );
+    assert_raws(
+        -a,
+        array![-63874405710, 33407840772, 38695145741, 39963023294, 24512368659, -27039177520]
+            .span(),
+    );
+    assert_raws(
+        a.scale(fx(12097559131)),
+        array![179913919427, -94099279768, -108991939036, -112563147525, -69043559324, 76160777570]
+            .span(),
     );
     let mut c = a;
     c += b;
+    assert_raws(
+        c,
+        array![30557829515, -23298232697, -20870329680, -48864826649, 25731289938, -34629543897]
+            .span(),
+    );
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(
+        c,
+        array![97190981905, -43517448847, -56519961802, -31061219939, -74756027256, 88707898937]
+            .span(),
+    );
 }
 
 #[should_panic]
 #[test]
 fn test_matrix3x2_add_overflow_panics() {
-    let a = Matrix3x2 {
-        m11: fx(0), m21: fx(0), m31: fx(0), m12: fx(0), m22: fx(0), m32: fx(9223372036854775807),
-    };
+    let a: Matrix3x2<Fixed> = load(array![0, 0, 0, 0, 0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_vector2_add_sub_neg_scale() {
-    let a = Vector2 { x: fx(-8627526528), y: fx(-17317444201) };
-    let b = Vector2 { x: fx(3357697460), y: fx(-3314667270) };
-    assert!(a + b == Vector2 { x: fx(-5269829068), y: fx(-20632111471) });
-    assert!(a - b == Vector2 { x: fx(-11985223988), y: fx(-14002776931) });
-    assert!(-a == Vector2 { x: fx(8627526528), y: fx(17317444201) });
-    assert!(a.scale(fx(-67199126774)) == Vector2 { x: fx(134986417577), y: fx(270949008004) });
+    let a: Vector2<Fixed> = load(array![-8627526528, -17317444201].span());
+    let b: Vector2<Fixed> = load(array![3357697460, -3314667270].span());
+    assert_raws(a + b, array![-5269829068, -20632111471].span());
+    assert_raws(a - b, array![-11985223988, -14002776931].span());
+    assert_raws(-a, array![8627526528, 17317444201].span());
+    assert_raws(a.scale(fx(-67199126774)), array![134986417577, 270949008004].span());
     let mut c = a;
     c += b;
+    assert_raws(c, array![-5269829068, -20632111471].span());
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(c, array![-11985223988, -14002776931].span());
 }
 
 #[should_panic]
 #[test]
 fn test_vector2_add_overflow_panics() {
-    let a = Vector2 { x: fx(0), y: fx(9223372036854775807) };
+    let a: Vector2<Fixed> = load(array![0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_vector3_add_sub_neg_scale() {
-    let a = Vector3 { x: fx(67932750098), y: fx(-65732508510), z: fx(-65408285637) };
-    let b = Vector3 { x: fx(-29643394305), y: fx(-60962822156), z: fx(-33897294783) };
-    assert!(a + b == Vector3 { x: fx(38289355793), y: fx(-126695330666), z: fx(-99305580420) });
-    assert!(a - b == Vector3 { x: fx(97576144403), y: fx(-4769686354), z: fx(-31510990854) });
-    assert!(-a == Vector3 { x: fx(-67932750098), y: fx(65732508510), z: fx(65408285637) });
-    assert!(
-        a
-            .scale(
-                fx(-29269966425),
-            ) == Vector3 { x: fx(-462957963936), y: fx(447963438257), z: fx(445753877170) },
+    let a: Vector3<Fixed> = load(array![67932750098, -65732508510, -65408285637].span());
+    let b: Vector3<Fixed> = load(array![-29643394305, -60962822156, -33897294783].span());
+    assert_raws(a + b, array![38289355793, -126695330666, -99305580420].span());
+    assert_raws(a - b, array![97576144403, -4769686354, -31510990854].span());
+    assert_raws(-a, array![-67932750098, 65732508510, 65408285637].span());
+    assert_raws(
+        a.scale(fx(-29269966425)), array![-462957963936, 447963438257, 445753877170].span(),
     );
     let mut c = a;
     c += b;
+    assert_raws(c, array![38289355793, -126695330666, -99305580420].span());
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(c, array![97576144403, -4769686354, -31510990854].span());
 }
 
 #[should_panic]
 #[test]
 fn test_vector3_add_overflow_panics() {
-    let a = Vector3 { x: fx(0), y: fx(0), z: fx(9223372036854775807) };
+    let a: Vector3<Fixed> = load(array![0, 0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_vector6_add_sub_neg_scale() {
-    let a = Vector6 {
-        x: fx(41859180941),
-        y: fx(-48784508214),
-        z: fx(53380679005),
-        w: fx(-47951209092),
-        a: fx(-41426484110),
-        b: fx(-67150524207),
-    };
-    let b = Vector6 {
-        x: fx(27553545502),
-        y: fx(52898870473),
-        z: fx(-39379209285),
-        w: fx(-57387562613),
-        a: fx(-62873695313),
-        b: fx(-1430512836),
-    };
-    assert!(
-        a
-            + b == Vector6 {
-                x: fx(69412726443),
-                y: fx(4114362259),
-                z: fx(14001469720),
-                w: fx(-105338771705),
-                a: fx(-104300179423),
-                b: fx(-68581037043),
-            },
+    let a: Vector6<Fixed> = load(
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
     );
-    assert!(
-        a
-            - b == Vector6 {
-                x: fx(14305635439),
-                y: fx(-101683378687),
-                z: fx(92759888290),
-                w: fx(9436353521),
-                a: fx(21447211203),
-                b: fx(-65720011371),
-            },
+    let b: Vector6<Fixed> = load(
+        array![27553545502, 52898870473, -39379209285, -57387562613, -62873695313, -1430512836]
+            .span(),
     );
-    assert!(
-        -a == Vector6 {
-            x: fx(-41859180941),
-            y: fx(48784508214),
-            z: fx(-53380679005),
-            w: fx(47951209092),
-            a: fx(41426484110),
-            b: fx(67150524207),
-        },
+    assert_raws(
+        a + b,
+        array![69412726443, 4114362259, 14001469720, -105338771705, -104300179423, -68581037043]
+            .span(),
     );
-    assert!(
-        a
-            .scale(
-                fx(-23872480844),
-            ) == Vector6 {
-                x: fx(-232663586541),
-                y: fx(271156252786),
-                z: fx(-296702896475),
-                w: fx(266524572040),
-                a: fx(230258551507),
-                b: fx(373239070828),
-            },
+    assert_raws(
+        a - b,
+        array![14305635439, -101683378687, 92759888290, 9436353521, 21447211203, -65720011371]
+            .span(),
+    );
+    assert_raws(
+        -a,
+        array![-41859180941, 48784508214, -53380679005, 47951209092, 41426484110, 67150524207]
+            .span(),
+    );
+    assert_raws(
+        a.scale(fx(-23872480844)),
+        array![-232663586541, 271156252786, -296702896475, 266524572040, 230258551507, 373239070828]
+            .span(),
     );
     let mut c = a;
     c += b;
+    assert_raws(
+        c,
+        array![69412726443, 4114362259, 14001469720, -105338771705, -104300179423, -68581037043]
+            .span(),
+    );
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(
+        c,
+        array![14305635439, -101683378687, 92759888290, 9436353521, 21447211203, -65720011371]
+            .span(),
+    );
 }
 
 #[should_panic]
 #[test]
 fn test_vector6_add_overflow_panics() {
-    let a = Vector6 {
-        x: fx(0), y: fx(0), z: fx(0), w: fx(0), a: fx(0), b: fx(9223372036854775807),
-    };
+    let a: Vector6<Fixed> = load(array![0, 0, 0, 0, 0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_row_vector2_add_sub_neg_scale() {
-    let a = RowVector2 { x: fx(13940393936), y: fx(-59723694302) };
-    let b = RowVector2 { x: fx(43465681481), y: fx(-3194242212) };
-    assert!(a + b == RowVector2 { x: fx(57406075417), y: fx(-62917936514) });
-    assert!(a - b == RowVector2 { x: fx(-29525287545), y: fx(-56529452090) });
-    assert!(-a == RowVector2 { x: fx(-13940393936), y: fx(59723694302) });
-    assert!(a.scale(fx(49071557370)) == RowVector2 { x: fx(159274051150), y: fx(-682364844552) });
+    let a: RowVector2<Fixed> = load(array![13940393936, -59723694302].span());
+    let b: RowVector2<Fixed> = load(array![43465681481, -3194242212].span());
+    assert_raws(a + b, array![57406075417, -62917936514].span());
+    assert_raws(a - b, array![-29525287545, -56529452090].span());
+    assert_raws(-a, array![-13940393936, 59723694302].span());
+    assert_raws(a.scale(fx(49071557370)), array![159274051150, -682364844552].span());
     let mut c = a;
     c += b;
+    assert_raws(c, array![57406075417, -62917936514].span());
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(c, array![-29525287545, -56529452090].span());
 }
 
 #[should_panic]
 #[test]
 fn test_row_vector2_add_overflow_panics() {
-    let a = RowVector2 { x: fx(0), y: fx(9223372036854775807) };
+    let a: RowVector2<Fixed> = load(array![0, 9223372036854775807].span());
     let _ = a + a;
 }
 
 #[test]
 fn test_row_vector3_add_sub_neg_scale() {
-    let a = RowVector3 { x: fx(34940046252), y: fx(37951812004), z: fx(-33439940917) };
-    let b = RowVector3 { x: fx(-58096091720), y: fx(-53050705969), z: fx(-27787005238) };
-    assert!(a + b == RowVector3 { x: fx(-23156045468), y: fx(-15098893965), z: fx(-61226946155) });
-    assert!(a - b == RowVector3 { x: fx(93036137972), y: fx(91002517973), z: fx(-5652935679) });
-    assert!(-a == RowVector3 { x: fx(-34940046252), y: fx(-37951812004), z: fx(33439940917) });
-    assert!(
-        a
-            .scale(
-                fx(29281682265),
-            ) == RowVector3 { x: fx(238209807471), y: fx(258743041307), z: fx(-227982579939) },
-    );
+    let a: RowVector3<Fixed> = load(array![34940046252, 37951812004, -33439940917].span());
+    let b: RowVector3<Fixed> = load(array![-58096091720, -53050705969, -27787005238].span());
+    assert_raws(a + b, array![-23156045468, -15098893965, -61226946155].span());
+    assert_raws(a - b, array![93036137972, 91002517973, -5652935679].span());
+    assert_raws(-a, array![-34940046252, -37951812004, 33439940917].span());
+    assert_raws(a.scale(fx(29281682265)), array![238209807471, 258743041307, -227982579939].span());
     let mut c = a;
     c += b;
+    assert_raws(c, array![-23156045468, -15098893965, -61226946155].span());
     c -= b;
-    assert!(c == a);
+    c -= b;
+    assert_raws(c, array![93036137972, 91002517973, -5652935679].span());
 }
 
 #[should_panic]
 #[test]
 fn test_row_vector3_add_overflow_panics() {
-    let a = RowVector3 { x: fx(0), y: fx(0), z: fx(9223372036854775807) };
+    let a: RowVector3<Fixed> = load(array![0, 0, 9223372036854775807].span());
+    let _ = a + a;
+}
+
+#[test]
+fn test_row_vector6_add_sub_neg_scale() {
+    let a: RowVector6<Fixed> = load(
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
+    let b: RowVector6<Fixed> = load(
+        array![48678594371, -5268734587, 38679311685, -67374500869, 65607279005, 698313486].span(),
+    );
+    assert_raws(
+        a + b,
+        array![-18749051796, 4830827720, 28523263377, -11448960145, 54254202063, -24244513671]
+            .span(),
+    );
+    assert_raws(
+        a - b,
+        array![-116106240538, 15368296894, -48835359993, 123300041593, -76960355947, -25641140643]
+            .span(),
+    );
+    assert_raws(
+        -a,
+        array![67427646167, -10099562307, 10156048308, -55925540724, 11353076942, 24942827157]
+            .span(),
+    );
+    assert_raws(
+        a.scale(fx(-15530847540)),
+        array![243822227372, -36520595293, 36724851904, -202229955834, 41053375950, 90194690458]
+            .span(),
+    );
+    let mut c = a;
+    c += b;
+    assert_raws(
+        c,
+        array![-18749051796, 4830827720, 28523263377, -11448960145, 54254202063, -24244513671]
+            .span(),
+    );
+    c -= b;
+    c -= b;
+    assert_raws(
+        c,
+        array![-116106240538, 15368296894, -48835359993, 123300041593, -76960355947, -25641140643]
+            .span(),
+    );
+}
+
+#[should_panic]
+#[test]
+fn test_row_vector6_add_overflow_panics() {
+    let a: RowVector6<Fixed> = load(array![0, 0, 0, 0, 0, 9223372036854775807].span());
     let _ = a + a;
 }

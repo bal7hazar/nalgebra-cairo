@@ -13,12 +13,14 @@ use nalgebra::base::vector2::{Vector2 as HVector2, Vector2Trait as HVector2Trait
 use nalgebra::base::vector3::{Vector3 as HVector3, Vector3Trait as HVector3Trait};
 use nalgebra::base::vector6::{Vector6 as HVector6, Vector6Trait as HVector6Trait};
 use nalgebra_testing::black_box;
+use simba::scalar::Real;
 use crate::matrix1::Matrix1;
 use crate::matrix2::{Matrix2, Matrix2Trait};
 use crate::matrix2x3::Matrix2x3;
 use crate::matrix3::{Matrix3, Matrix3Trait};
 use crate::matrix3x2::Matrix3x2;
 use crate::row_vector3::RowVector3;
+use crate::row_vector6::RowVector6;
 use crate::vector2::{Vector2, Vector2Trait};
 use crate::vector3::{Vector3, Vector3Trait};
 use crate::vector6::{Vector6, Vector6Trait};
@@ -5556,6 +5558,156 @@ fn bench_matrix2x3_index1__match() {
     let i = black_box(5);
     let e = black_box(fx(39832644726));
     assert!(a[i] == e);
+}
+
+/// `RowVector6 * Vector6` with the `Real::Wide` chain written in place (the form of the
+/// hand-written `Matrix6`), against `Fused::sum_prod6`.
+fn alt_nested_row_vector6_mul_vector6(a: RowVector6<Fixed>, b: Vector6<Fixed>) -> Matrix1<Fixed> {
+    Matrix1 {
+        x: Real::<
+            Fixed,
+        >::wide_rescale(
+            Real::<
+                Fixed,
+            >::wide_add_prod(
+                Real::<
+                    Fixed,
+                >::wide_add_prod(
+                    Real::<
+                        Fixed,
+                    >::wide_add_prod(
+                        Real::<
+                            Fixed,
+                        >::wide_add_prod(
+                            Real::<
+                                Fixed,
+                            >::wide_add_prod(
+                                Real::<Fixed>::wide_add_prod(Real::<Fixed>::wide_zero(), a.x, b.x),
+                                a.y,
+                                b.y,
+                            ),
+                            a.z,
+                            b.z,
+                        ),
+                        a.w,
+                        b.w,
+                    ),
+                    a.a,
+                    b.a,
+                ),
+                a.b,
+                b.b,
+            ),
+        ),
+    }
+}
+
+#[test]
+fn test_row_vector6_mul_vector6_alt_nested_matches() {
+    let a = black_box(
+        RowVector6 {
+            x: fx(2133509567),
+            y: fx(36108265441),
+            z: fx(-36384114729),
+            w: fx(-51790679102),
+            a: fx(-49675000026),
+            b: fx(-65108936803),
+        },
+    );
+    let b = black_box(
+        Vector6 {
+            x: fx(14231231902),
+            y: fx(54310352163),
+            z: fx(-60734934148),
+            w: fx(17126428978),
+            a: fx(736173859),
+            b: fx(24262640745),
+        },
+    );
+    let e = black_box(Matrix1 { x: fx(395329745216) });
+    assert!(alt_nested_row_vector6_mul_vector6(a, b) == a.mul_mat(b));
+    assert!(a.mul_mat(b) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_row_vector6_mul_vector6__baseline() {
+    let _a = black_box(
+        RowVector6 {
+            x: fx(2133509567),
+            y: fx(36108265441),
+            z: fx(-36384114729),
+            w: fx(-51790679102),
+            a: fx(-49675000026),
+            b: fx(-65108936803),
+        },
+    );
+    let _b = black_box(
+        Vector6 {
+            x: fx(14231231902),
+            y: fx(54310352163),
+            z: fx(-60734934148),
+            w: fx(17126428978),
+            a: fx(736173859),
+            b: fx(24262640745),
+        },
+    );
+    let e = black_box(Matrix1 { x: fx(395329745216) });
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_row_vector6_mul_vector6__fused_helper() {
+    let a = black_box(
+        RowVector6 {
+            x: fx(2133509567),
+            y: fx(36108265441),
+            z: fx(-36384114729),
+            w: fx(-51790679102),
+            a: fx(-49675000026),
+            b: fx(-65108936803),
+        },
+    );
+    let b = black_box(
+        Vector6 {
+            x: fx(14231231902),
+            y: fx(54310352163),
+            z: fx(-60734934148),
+            w: fx(17126428978),
+            a: fx(736173859),
+            b: fx(24262640745),
+        },
+    );
+    let e = black_box(Matrix1 { x: fx(395329745216) });
+    assert!(a.mul_mat(b) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_row_vector6_mul_vector6__alt_nested() {
+    let a = black_box(
+        RowVector6 {
+            x: fx(2133509567),
+            y: fx(36108265441),
+            z: fx(-36384114729),
+            w: fx(-51790679102),
+            a: fx(-49675000026),
+            b: fx(-65108936803),
+        },
+    );
+    let b = black_box(
+        Vector6 {
+            x: fx(14231231902),
+            y: fx(54310352163),
+            z: fx(-60734934148),
+            w: fx(17126428978),
+            a: fx(736173859),
+            b: fx(24262640745),
+        },
+    );
+    let e = black_box(Matrix1 { x: fx(395329745216) });
+    assert!(alt_nested_row_vector6_mul_vector6(a, b) == e);
 }
 
 #[test]

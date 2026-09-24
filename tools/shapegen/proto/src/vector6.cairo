@@ -11,6 +11,7 @@ use simba::scalar::Real;
 use super::errors;
 use super::matrix1::Matrix1;
 use super::matrix_mul::MatrixMul;
+use super::row_vector6::RowVector6;
 
 /// A 6-dimensional column vector. Components are named like upstream's `Deref` targets (`x, y, z,
 /// w, a, b`).
@@ -78,6 +79,12 @@ pub impl Vector6Impl<
             a: self.a * k,
             b: self.b * k,
         }
+    }
+
+    /// The transpose, a `RowVector6`. Exact. Upstream: `transpose`.
+    #[inline(always)]
+    fn transpose(self: Vector6<T>) -> RowVector6<T> {
+        RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
     }
 
     /// Dot product (sum of the component-wise products), fused (the `Real::Wide` accumulator): the

@@ -10,146 +10,156 @@ use crate::matrix3::{Matrix3, Matrix3Trait};
 use crate::matrix3x2::{Matrix3x2, Matrix3x2Trait};
 use crate::row_vector2::{RowVector2, RowVector2Trait};
 use crate::row_vector3::{RowVector3, RowVector3Trait};
+use crate::row_vector6::{RowVector6, RowVector6Trait};
 use crate::vector2::{Vector2, Vector2Trait};
 use crate::vector3::{Vector3, Vector3Trait};
-
-fn fx(raw: i64) -> Fixed {
-    Fixed { raw }
-}
+use crate::vector6::{Vector6, Vector6Trait};
+use super::{assert_raws, load};
 
 #[test]
 fn test_matrix1_transpose() {
-    let a = Matrix1 { x: fx(-33495762814) };
-    assert!(a.transpose() == Matrix1 { x: fx(-33495762814) });
-    assert!(a.transpose().transpose() == a);
+    let a: Matrix1<Fixed> = load(array![-33495762814].span());
+    assert_raws(a.transpose(), array![-33495762814].span());
+    assert_raws(a.transpose().transpose(), array![-33495762814].span());
 }
 
 #[test]
 fn test_matrix2_transpose() {
-    let a = Matrix2 {
-        m11: fx(-47111063617), m21: fx(26698759682), m12: fx(-55039974758), m22: fx(-25156634923),
-    };
-    assert!(
-        a
-            .transpose() == Matrix2 {
-                m11: fx(-47111063617),
-                m21: fx(-55039974758),
-                m12: fx(26698759682),
-                m22: fx(-25156634923),
-            },
+    let a: Matrix2<Fixed> = load(
+        array![-47111063617, 26698759682, -55039974758, -25156634923].span(),
     );
-    assert!(a.transpose().transpose() == a);
+    assert_raws(
+        a.transpose(), array![-47111063617, -55039974758, 26698759682, -25156634923].span(),
+    );
+    assert_raws(
+        a.transpose().transpose(),
+        array![-47111063617, 26698759682, -55039974758, -25156634923].span(),
+    );
 }
 
 #[test]
 fn test_matrix3_transpose() {
-    let a = Matrix3 {
-        m11: fx(-55135576232),
-        m21: fx(45987105977),
-        m31: fx(-20603133059),
-        m12: fx(-45706728641),
-        m22: fx(-17302562604),
-        m32: fx(-6495708024),
-        m13: fx(-61949050762),
-        m23: fx(-26085188934),
-        m33: fx(55769868349),
-    };
-    assert!(
-        a
-            .transpose() == Matrix3 {
-                m11: fx(-55135576232),
-                m21: fx(-45706728641),
-                m31: fx(-61949050762),
-                m12: fx(45987105977),
-                m22: fx(-17302562604),
-                m32: fx(-26085188934),
-                m13: fx(-20603133059),
-                m23: fx(-6495708024),
-                m33: fx(55769868349),
-            },
+    let a: Matrix3<Fixed> = load(
+        array![
+            -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+            -61949050762, -26085188934, 55769868349,
+        ]
+            .span(),
     );
-    assert!(a.transpose().transpose() == a);
+    assert_raws(
+        a.transpose(),
+        array![
+            -55135576232, -45706728641, -61949050762, 45987105977, -17302562604, -26085188934,
+            -20603133059, -6495708024, 55769868349,
+        ]
+            .span(),
+    );
+    assert_raws(
+        a.transpose().transpose(),
+        array![
+            -55135576232, 45987105977, -20603133059, -45706728641, -17302562604, -6495708024,
+            -61949050762, -26085188934, 55769868349,
+        ]
+            .span(),
+    );
 }
 
 #[test]
 fn test_matrix2x3_transpose() {
-    let a = Matrix2x3 {
-        m11: fx(-6119115503),
-        m21: fx(46221905395),
-        m12: fx(-58231430588),
-        m22: fx(5327765407),
-        m13: fx(26982524674),
-        m23: fx(-30380078124),
-    };
-    assert!(
-        a
-            .transpose() == Matrix3x2 {
-                m11: fx(-6119115503),
-                m21: fx(-58231430588),
-                m31: fx(26982524674),
-                m12: fx(46221905395),
-                m22: fx(5327765407),
-                m32: fx(-30380078124),
-            },
+    let a: Matrix2x3<Fixed> = load(
+        array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+            .span(),
     );
-    assert!(a.transpose().transpose() == a);
+    assert_raws(
+        a.transpose(),
+        array![-6119115503, -58231430588, 26982524674, 46221905395, 5327765407, -30380078124]
+            .span(),
+    );
+    assert_raws(
+        a.transpose().transpose(),
+        array![-6119115503, 46221905395, -58231430588, 5327765407, 26982524674, -30380078124]
+            .span(),
+    );
 }
 
 #[test]
 fn test_matrix3x2_transpose() {
-    let a = Matrix3x2 {
-        m11: fx(63874405710),
-        m21: fx(-33407840772),
-        m31: fx(-38695145741),
-        m12: fx(-39963023294),
-        m22: fx(-24512368659),
-        m32: fx(27039177520),
-    };
-    assert!(
-        a
-            .transpose() == Matrix2x3 {
-                m11: fx(63874405710),
-                m21: fx(-39963023294),
-                m12: fx(-33407840772),
-                m22: fx(-24512368659),
-                m13: fx(-38695145741),
-                m23: fx(27039177520),
-            },
+    let a: Matrix3x2<Fixed> = load(
+        array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+            .span(),
     );
-    assert!(a.transpose().transpose() == a);
+    assert_raws(
+        a.transpose(),
+        array![63874405710, -39963023294, -33407840772, -24512368659, -38695145741, 27039177520]
+            .span(),
+    );
+    assert_raws(
+        a.transpose().transpose(),
+        array![63874405710, -33407840772, -38695145741, -39963023294, -24512368659, 27039177520]
+            .span(),
+    );
 }
 
 #[test]
 fn test_vector2_transpose() {
-    let a = Vector2 { x: fx(-8627526528), y: fx(-17317444201) };
-    assert!(a.transpose() == RowVector2 { x: fx(-8627526528), y: fx(-17317444201) });
-    assert!(a.transpose().transpose() == a);
+    let a: Vector2<Fixed> = load(array![-8627526528, -17317444201].span());
+    assert_raws(a.transpose(), array![-8627526528, -17317444201].span());
+    assert_raws(a.transpose().transpose(), array![-8627526528, -17317444201].span());
 }
 
 #[test]
 fn test_vector3_transpose() {
-    let a = Vector3 { x: fx(67932750098), y: fx(-65732508510), z: fx(-65408285637) };
-    assert!(
-        a
-            .transpose() == RowVector3 {
-                x: fx(67932750098), y: fx(-65732508510), z: fx(-65408285637),
-            },
+    let a: Vector3<Fixed> = load(array![67932750098, -65732508510, -65408285637].span());
+    assert_raws(a.transpose(), array![67932750098, -65732508510, -65408285637].span());
+    assert_raws(a.transpose().transpose(), array![67932750098, -65732508510, -65408285637].span());
+}
+
+#[test]
+fn test_vector6_transpose() {
+    let a: Vector6<Fixed> = load(
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
     );
-    assert!(a.transpose().transpose() == a);
+    assert_raws(
+        a.transpose(),
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
+    );
+    assert_raws(
+        a.transpose().transpose(),
+        array![41859180941, -48784508214, 53380679005, -47951209092, -41426484110, -67150524207]
+            .span(),
+    );
 }
 
 #[test]
 fn test_row_vector2_transpose() {
-    let a = RowVector2 { x: fx(13940393936), y: fx(-59723694302) };
-    assert!(a.transpose() == Vector2 { x: fx(13940393936), y: fx(-59723694302) });
-    assert!(a.transpose().transpose() == a);
+    let a: RowVector2<Fixed> = load(array![13940393936, -59723694302].span());
+    assert_raws(a.transpose(), array![13940393936, -59723694302].span());
+    assert_raws(a.transpose().transpose(), array![13940393936, -59723694302].span());
 }
 
 #[test]
 fn test_row_vector3_transpose() {
-    let a = RowVector3 { x: fx(34940046252), y: fx(37951812004), z: fx(-33439940917) };
-    assert!(
-        a.transpose() == Vector3 { x: fx(34940046252), y: fx(37951812004), z: fx(-33439940917) },
+    let a: RowVector3<Fixed> = load(array![34940046252, 37951812004, -33439940917].span());
+    assert_raws(a.transpose(), array![34940046252, 37951812004, -33439940917].span());
+    assert_raws(a.transpose().transpose(), array![34940046252, 37951812004, -33439940917].span());
+}
+
+#[test]
+fn test_row_vector6_transpose() {
+    let a: RowVector6<Fixed> = load(
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
     );
-    assert!(a.transpose().transpose() == a);
+    assert_raws(
+        a.transpose(),
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
+    assert_raws(
+        a.transpose().transpose(),
+        array![-67427646167, 10099562307, -10156048308, 55925540724, -11353076942, -24942827157]
+            .span(),
+    );
 }
