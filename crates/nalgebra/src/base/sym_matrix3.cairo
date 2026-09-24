@@ -114,7 +114,6 @@ mod tests {
     // --- exact operations ----------------------------------------------------------------------
 
     // --- products ------------------------------------------------------------------------------
-
     #[test]
     fn test_quadform_matches_the_generic_product() {
         let mut cases = quadratic_cases();
@@ -141,14 +140,12 @@ mod tests {
     // --- determinant and inverse ---------------------------------------------------------------
 
     // --- approximate equality ------------------------------------------------------------------
-
     // --- gas benchmarks
     // ----------------------------------------------------------------------------
     //
     // Inputs are shared with the `matrix3` benchmarks wherever the same operation exists there, so
     // that the structured kernels and the generic `Matrix3` path can be read side by side. `a` is
     // the `unit` SPD case of the oracle's `udu3` vectors (an inertia tensor).
-
     #[test]
     #[inline(never)]
     fn bench_sym_matrix3_to_matrix__baseline() {

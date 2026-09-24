@@ -29,11 +29,6 @@ use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
 use super::vector6::Vector6;
 
-#[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod tests;
-
 /// A 6x6 matrix. `mRC` is the component at row `R`, column `C`.
 ///
 /// Fields are declared in column-major order, so `Serde` matches upstream's storage order, while

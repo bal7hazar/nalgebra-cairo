@@ -17,12 +17,6 @@ use super::isometry3::{Isometry3, Isometry3Trait};
 use super::translation3::Translation3;
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
-#[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod oracle;
-#[cfg(test)]
-mod tests;
 
 pub mod errors {
     pub const ZERO_SCALING: felt252 = 'nalgebra: zero scale';

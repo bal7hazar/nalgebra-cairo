@@ -96,7 +96,6 @@ mod tests {
     // --- exact operations ----------------------------------------------------------------------
 
     // --- products ------------------------------------------------------------------------------
-
     #[test]
     fn test_quadform_matches_the_generic_product() {
         let mut cases = quadratic_cases();
@@ -122,14 +121,12 @@ mod tests {
     // --- determinant and inverse ---------------------------------------------------------------
 
     // --- approximate equality ------------------------------------------------------------------
-
     // --- gas benchmarks
     // ----------------------------------------------------------------------------
     //
     // Inputs are shared with the `matrix2` benchmarks wherever the same operation exists there, so
     // that the structured kernels and the generic `Matrix2` path can be read side by side. `a` is
     // the `unit` SPD case of the oracle's `udu2` vectors.
-
     #[test]
     #[inline(never)]
     fn bench_sym_matrix2_to_matrix__baseline() {

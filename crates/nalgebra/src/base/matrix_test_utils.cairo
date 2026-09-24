@@ -98,6 +98,9 @@
 //!     --ops svd2_singular_values,svd3_singular_values \
 //!     --out crates/nalgebra/src/linalg/oracle_svd.cairo
 //! ```
+//!
+//! In-crate part (WP 8.1c): the helpers of the in-crate tests only (items on crate-internal types);
+//! the test packages use `crates/tests_utils/src/lib.cairo`.
 
 use fixed::Fixed;
 use simba::scalar::Real;
@@ -119,8 +122,6 @@ use crate::geometry::isometry3::Isometry3;
 use crate::geometry::quaternion::Quaternion;
 use crate::geometry::rotation2::Rotation2;
 use crate::geometry::rotation3::Rotation3;
-use crate::geometry::similarity2::Similarity2;
-use crate::geometry::similarity3::Similarity3;
 use crate::geometry::translation2::Translation2;
 use crate::geometry::translation3::Translation3;
 use crate::geometry::unit_complex::UnitComplex;
@@ -156,11 +157,6 @@ pub fn v3(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
 /// `Vector4` from raw components.
 pub fn v4(x: i64, y: i64, z: i64, w: i64) -> Vector4<Fixed> {
     Vector4 { x: fx(x), y: fx(y), z: fx(z), w: fx(w) }
-}
-
-/// `Vector6` from raw components, in the upstream order `(x, y, z, w, a, b)`.
-pub fn v6(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 { x: fx(x), y: fx(y), z: fx(z), w: fx(w), a: fx(a), b: fx(b) }
 }
 
 /// `Vector2` from a tuple of raw components (oracle layout).
@@ -203,11 +199,6 @@ pub fn v4i(x: i64, y: i64, z: i64, w: i64) -> Vector4<Fixed> {
     Vector4 { x: int(x), y: int(y), z: int(z), w: int(w) }
 }
 
-/// `Vector6` from integers, in the upstream order `(x, y, z, w, a, b)`.
-pub fn v6i(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 { x: int(x), y: int(y), z: int(z), w: int(w), a: int(a), b: int(b) }
-}
-
 /// `Vector2` from a tuple of integers.
 pub fn v2it(t: (i64, i64)) -> Vector2<Fixed> {
     let (x, y) = t;
@@ -245,11 +236,6 @@ pub fn u3(x: i64, y: i64, z: i64) -> Unit<Vector3<Fixed>> {
 /// `Unit<Vector4>` from raw components, WITHOUT normalisation.
 pub fn u4(x: i64, y: i64, z: i64, w: i64) -> Unit<Vector4<Fixed>> {
     Unit { value: v4(x, y, z, w) }
-}
-
-/// `Unit<Vector3>` from a tuple of raw components, WITHOUT normalisation.
-pub fn u3t(t: (i64, i64, i64)) -> Unit<Vector3<Fixed>> {
-    Unit { value: v3t(t) }
 }
 
 // --- points -------------------------------------------------------------------------------------
@@ -442,51 +428,6 @@ pub fn m6_block22(m: Matrix6<Fixed>) -> Matrix3<Fixed> {
     }
 }
 
-/// The `Matrix6` made of four 3x3 blocks (`bIJ`: block-row `I`, block-column `J`).
-#[inline(always)]
-pub fn m6_from_blocks(
-    b11: Matrix3<Fixed>, b21: Matrix3<Fixed>, b12: Matrix3<Fixed>, b22: Matrix3<Fixed>,
-) -> Matrix6<Fixed> {
-    Matrix6 {
-        m11: b11.m11,
-        m21: b11.m21,
-        m31: b11.m31,
-        m41: b21.m11,
-        m51: b21.m21,
-        m61: b21.m31,
-        m12: b11.m12,
-        m22: b11.m22,
-        m32: b11.m32,
-        m42: b21.m12,
-        m52: b21.m22,
-        m62: b21.m32,
-        m13: b11.m13,
-        m23: b11.m23,
-        m33: b11.m33,
-        m43: b21.m13,
-        m53: b21.m23,
-        m63: b21.m33,
-        m14: b12.m11,
-        m24: b12.m21,
-        m34: b12.m31,
-        m44: b22.m11,
-        m54: b22.m21,
-        m64: b22.m31,
-        m15: b12.m12,
-        m25: b12.m22,
-        m35: b12.m32,
-        m45: b22.m12,
-        m55: b22.m22,
-        m65: b22.m32,
-        m16: b12.m13,
-        m26: b12.m23,
-        m36: b12.m33,
-        m46: b22.m13,
-        m56: b22.m23,
-        m66: b22.m33,
-    }
-}
-
 /// Components `x, y, z` of a `Vector6` (upstream `fixed_rows::<3>(0)`).
 #[inline(always)]
 pub fn v6_head(v: Vector6<Fixed>) -> Vector3<Fixed> {
@@ -497,12 +438,6 @@ pub fn v6_head(v: Vector6<Fixed>) -> Vector3<Fixed> {
 #[inline(always)]
 pub fn v6_tail(v: Vector6<Fixed>) -> Vector3<Fixed> {
     Vector3 { x: v.w, y: v.a, z: v.b }
-}
-
-/// The `Vector6` `(head.x, head.y, head.z, tail.x, tail.y, tail.z)`.
-#[inline(always)]
-pub fn v6_from_halves(head: Vector3<Fixed>, tail: Vector3<Fixed>) -> Vector6<Fixed> {
-    Vector6 { x: head.x, y: head.y, z: head.z, w: tail.x, a: tail.y, b: tail.z }
 }
 
 /// `Matrix6` from raw ROW-major rows (oracle layout).
@@ -735,35 +670,9 @@ pub fn r3i(rows: [[i64; 3]; 3]) -> Rotation3<Fixed> {
     Rotation3 { matrix: m3i(rows) }
 }
 
-/// `Translation2` from raw components.
-pub fn t2(x: i64, y: i64) -> Translation2<Fixed> {
-    Translation2 { vector: Vector2 { x: fx(x), y: fx(y) } }
-}
-
-/// `Translation3` from raw components.
-pub fn t3(x: i64, y: i64, z: i64) -> Translation3<Fixed> {
-    Translation3 { vector: Vector3 { x: fx(x), y: fx(y), z: fx(z) } }
-}
-
-/// `Translation2` from a tuple of raw components (oracle layout).
-pub fn t2t(t: (i64, i64)) -> Translation2<Fixed> {
-    Translation2 { vector: v2t(t) }
-}
-
-/// `Translation3` from a tuple of raw components (oracle layout).
-pub fn t3t(t: (i64, i64, i64)) -> Translation3<Fixed> {
-    Translation3 { vector: v3t(t) }
-}
-
 /// `Isometry2` from the raw translation `(tx, ty)` and rotation `(re, im)`.
 pub fn iso2(tx: i64, ty: i64, re: i64, im: i64) -> Isometry2<Fixed> {
     Isometry2 { rotation: uc(re, im), translation: Translation2 { vector: v2(tx, ty) } }
-}
-
-/// `Isometry2` from `((tx, ty), (re, im))` in raw units (oracle layout).
-pub fn iso2t(t: ((i64, i64), (i64, i64))) -> Isometry2<Fixed> {
-    let (tr, rot) = t;
-    Isometry2 { rotation: uct(rot), translation: Translation2 { vector: v2t(tr) } }
 }
 
 /// `Isometry3` from the raw translation `(tx, ty, tz)` and rotation `(w, i, j, k)`.
@@ -771,52 +680,6 @@ pub fn iso3(t: (i64, i64, i64), r: (i64, i64, i64, i64)) -> Isometry3<Fixed> {
     let (tx, ty, tz) = t;
     let (w, i, j, k) = r;
     Isometry3 { rotation: uq(w, i, j, k), translation: Translation3 { vector: v3(tx, ty, tz) } }
-}
-
-/// `Isometry3` from `((tx, ty, tz), (w, i, j, k))` in raw units (oracle layout).
-pub fn iso3t(t: ((i64, i64, i64), (i64, i64, i64, i64))) -> Isometry3<Fixed> {
-    let (tr, rot) = t;
-    Isometry3 { rotation: uqt(rot), translation: Translation3 { vector: v3t(tr) } }
-}
-
-/// `Similarity2` from the raw translation `(tx, ty)`, rotation `(re, im)` and scaling.
-pub fn sim2(tx: i64, ty: i64, re: i64, im: i64, scaling: i64) -> Similarity2<Fixed> {
-    Similarity2 {
-        isometry: Isometry2 {
-            rotation: uc(re, im), translation: Translation2 { vector: v2(tx, ty) },
-        },
-        scaling: fx(scaling),
-    }
-}
-
-/// `Similarity2` from `((tx, ty), (re, im), scaling)` in raw units (oracle layout).
-pub fn sim2t(t: ((i64, i64), (i64, i64), i64)) -> Similarity2<Fixed> {
-    let (tr, rot, scaling) = t;
-    Similarity2 {
-        isometry: Isometry2 { rotation: uct(rot), translation: Translation2 { vector: v2t(tr) } },
-        scaling: fx(scaling),
-    }
-}
-
-/// `Similarity3` from the raw translation `(tx, ty, tz)`, rotation `(w, i, j, k)` and scaling.
-pub fn sim3(t: (i64, i64, i64), r: (i64, i64, i64, i64), scaling: i64) -> Similarity3<Fixed> {
-    let (tx, ty, tz) = t;
-    let (w, i, j, k) = r;
-    Similarity3 {
-        isometry: Isometry3 {
-            rotation: uq(w, i, j, k), translation: Translation3 { vector: v3(tx, ty, tz) },
-        },
-        scaling: fx(scaling),
-    }
-}
-
-/// `Similarity3` from `((tx, ty, tz), (w, i, j, k), scaling)` in raw units (oracle layout).
-pub fn sim3t(t: ((i64, i64, i64), (i64, i64, i64, i64), i64)) -> Similarity3<Fixed> {
-    let (tr, rot, scaling) = t;
-    Similarity3 {
-        isometry: Isometry3 { rotation: uqt(rot), translation: Translation3 { vector: v3t(tr) } },
-        scaling: fx(scaling),
-    }
 }
 
 // --- comparisons in raw units -------------------------------------------------------------------
@@ -1022,14 +885,6 @@ pub fn max_abs_m4(m: Matrix4<Fixed>) -> u128 {
     e = core::cmp::max(e, abs_raw(m.m24));
     e = core::cmp::max(e, abs_raw(m.m34));
     core::cmp::max(e, abs_raw(m.m44))
-}
-
-/// Largest `|m_ij|` in RAW units over the 36 entries (the argument of `oracle_tol`).
-pub fn max_abs_m6(m: Matrix6<Fixed>) -> u128 {
-    let mut e = max_abs_m3(m6_block11(m));
-    e = core::cmp::max(e, max_abs_m3(m6_block21(m)));
-    e = core::cmp::max(e, max_abs_m3(m6_block12(m)));
-    core::cmp::max(e, max_abs_m3(m6_block22(m)))
 }
 
 /// Largest `|v_i|` in RAW units (the argument of `oracle_tol`).

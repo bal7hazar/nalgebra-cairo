@@ -34,11 +34,6 @@ use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
 use super::unit::Unit;
 
-#[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod tests;
-
 /// A 6-dimensional column vector.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
 pub struct Vector6<T> {

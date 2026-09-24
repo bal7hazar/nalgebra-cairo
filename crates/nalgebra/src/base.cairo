@@ -7,10 +7,6 @@
 #[cfg(test)]
 pub(crate) mod matrix_test_utils;
 #[cfg(test)]
-mod oracle_dim6_matrix;
-#[cfg(test)]
-mod oracle_dim6_vector;
-#[cfg(test)]
 mod oracle_matrix2;
 #[cfg(test)]
 mod oracle_matrix2_inverse;
@@ -22,8 +18,6 @@ mod oracle_matrix3_inverse;
 mod oracle_matrix4;
 #[cfg(test)]
 mod oracle_matrix4_inverse;
-#[cfg(test)]
-mod oracle_sym_matrix;
 pub mod point2;
 pub mod point3;
 pub(crate) mod sym_matrix2;

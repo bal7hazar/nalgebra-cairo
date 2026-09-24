@@ -20,12 +20,6 @@ use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 
-#[cfg(test)]
-mod benches;
-#[cfg(test)]
-mod oracle;
-#[cfg(test)]
-mod tests;
 
 /// A 3D translation by `vector`. The field name is upstream's (`Translation { vector }`).
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]

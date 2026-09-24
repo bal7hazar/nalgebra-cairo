@@ -28,12 +28,14 @@ jobs:
         include:
           - { name: simba, package: simba, filters: "simba" }
           - { name: nalgebra_testing, package: nalgebra_testing, filters: "nalgebra_testing" }
-          - { name: "nalgebra::base vectors", package: nalgebra, filters: "nalgebra::base::vector" }
-          - { name: "nalgebra::base matrices", package: nalgebra, filters: "nalgebra::base::matrix nalgebra::base::sym_matrix" }
-          - { name: "nalgebra::base points", package: nalgebra, filters: "nalgebra::base::point nalgebra::base::unit" }
-          - { name: "nalgebra::geometry", package: nalgebra, filters: "nalgebra::geometry" }
-          - { name: "nalgebra::linalg", package: nalgebra, filters: "nalgebra::linalg" }
-          - { name: integration, package: nalgebra, filters: "nalgebra_integrationtest" }
+          # `nalgebra`: only the tests of crate-internal items (and the integration tests); the
+          # public-API tests live in the test-only packages `nalgebra_tests_*` (WP 8.1c).
+          - { name: nalgebra, package: nalgebra, filters: "nalgebra" }
+          - { name: "tests_base vectors", package: nalgebra_tests_base, filters: "nalgebra_tests_base::vector" }
+          - { name: "tests_base matrices", package: nalgebra_tests_base, filters: "nalgebra_tests_base::matrix nalgebra_tests_base::point nalgebra_tests_base::unit" }
+          - { name: "tests_geometry quaternions", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::quaternion nalgebra_tests_geometry::unit_quaternion" }
+          - { name: "tests_geometry poses", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::isometry nalgebra_tests_geometry::rotation nalgebra_tests_geometry::similarity nalgebra_tests_geometry::translation nalgebra_tests_geometry::unit_complex" }
+          - { name: tests_linalg, package: nalgebra_tests_linalg, filters: "nalgebra_tests_linalg" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

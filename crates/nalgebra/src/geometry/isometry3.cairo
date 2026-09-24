@@ -51,8 +51,6 @@ use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuate
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
-mod oracle;
-#[cfg(test)]
 mod tests;
 
 /// A 3D direct isometry: the rotation `rotation` followed by the translation `translation`. The
