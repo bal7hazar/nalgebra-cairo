@@ -119,6 +119,20 @@ def parse_fn(name: str, text: str) -> Fn:
 
 
 @dataclass
+class Extra:
+    """What the generic shape module (`shapes.py`) adds to a shape file of this module: `use`
+    lines, items after the struct (the upstream aliases) and items at the end (the products)."""
+
+    uses: list[str] = field(default_factory=list)
+    struct: list[str] = field(default_factory=list)
+    end: list[str] = field(default_factory=list)
+
+
+def dedup(xs: list[str]) -> list[str]:
+    return list(dict.fromkeys(xs))
+
+
+@dataclass
 class Specs:
     uses: list[str] = field(default_factory=list)
     methods: dict[str, Fn] = field(default_factory=dict)
@@ -171,7 +185,7 @@ def bounds(names: list[str]) -> str:
 
 VECTOR_ORDER = [
     "new", "zeros", "repeat", "from_element", "axes", "swizzles", "push", "to_homogeneous",
-    "scale", "unscale", "component_mul", "component_div", "abs", "inf", "sup", "inf_sup", "min",
+    "transpose", "scale", "unscale", "component_mul", "component_div", "abs", "inf", "sup", "inf_sup", "min",
     "max", "amin", "amax", "imin", "imax", "iamin", "iamax", "sum", "is_zero", "abs_diff_eq",
     "dot", "perp", "cross", "norm_squared", "norm", "magnitude_squared", "magnitude",
     "metric_distance", "normalize", "try_normalize", "cap_magnitude", "lerp",
@@ -186,7 +200,7 @@ MAX_VECTOR = 4
 # The surface of the vectors that do not carry all of `VECTOR_ORDER` (no `angle` either): `Vector6`
 # keeps the methods of the hand-written block type it replaced (WP 8.1b-2); 8.2 widens it.
 VECTOR_SURFACE = {
-    6: ["new", "zeros", "scale", "unscale", "component_mul", "abs", "inf", "sup", "sum",
+    6: ["new", "zeros", "transpose", "scale", "unscale", "component_mul", "abs", "inf", "sup", "sum",
         "abs_diff_eq", "dot", "norm_squared", "norm", "normalize", "lerp"],
 }
 
@@ -288,6 +302,10 @@ def vector_fns(v: Vec) -> dict[str, Fn | list[Fn]]:
             f"Upstream:\n`to_homogeneous`.",
             f"fn to_homogeneous(self: {T}) -> {up.ty()}",
             up.lit(lambda c: "R::zero()" if c == new else f"self.{c}"))
+    out["transpose"] = Fn("transpose", f"The transpose, a `RowVector{n}` with the same components. "
+                                       f"Exact. Upstream: `transpose`.",
+                          f"fn transpose(self: {T}) -> RowVector{n}<T>",
+                          lit(f"RowVector{n}", [(c, f"self.{c}") for c in v.c]))
     out["scale"] = Fn("scale", "`self * k`, each component floored once. Panics on overflow. "
                                "Upstream: `scale`\n(`self * k`).",
                       f"fn scale(self: {T}, k: T) -> {T}", v.lit(lambda c: f"self.{c} * k"))
@@ -552,7 +570,7 @@ def vector_surface(n: int, module: str) -> tuple[list[Fn], Fn | None]:
     return fns, specs.methods.get("angle") or vector_angle(Vec(n))
 
 
-def render_vector(n: int, module: str, test_modules: list[str]) -> str:
+def render_vector(n: int, module: str, test_modules: list[str], extra: Extra) -> str:
     v = Vec(n)
     S, T = v.S, v.ty()
     specs = read_specs(module)
@@ -563,7 +581,8 @@ def render_vector(n: int, module: str, test_modules: list[str]) -> str:
         others = sorted({f"super::vector{m}::Vector{m}" for m in range(2, n + 2 if n < MAX_VECTOR
                                                                       else n) if m != n})
     scalar = "simba::scalar::{Real, Transcendental}" if angle else "simba::scalar::Real"
-    uses = ["core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}", scalar] + others + specs.uses
+    uses = dedup(["core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}", scalar] + others
+                 + [f"super::row_vector{n}::RowVector{n}"] + specs.uses + extra.uses)
     mods = "\n".join(f"#[cfg(test)]\nmod {m};" for m in test_modules)
     decls = "\n".join(f.declaration() for f in fns)
     defs = "\n\n".join(f.definition(with_doc=False) for f in fns)
@@ -576,7 +595,9 @@ def render_vector(n: int, module: str, test_modules: list[str]) -> str:
            f"//!   `simba::scalar::Transcendental`;\n" if angle else "")
         + f"//! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a "
         f"scalar, and\n//!   conversions from / to `[T; {n}]`: their impls live in this module, "
-        f"where the\n//!   compiler finds them without any import.\n//!\n"
+        f"where the\n//!   compiler finds them without any import;\n"
+        f"//! - products with every conformable shape: `MatrixMul::mul_mat` (`self * rhs`) and\n"
+        f"//!   `MatrixTrMul::tr_mul` (`selfᵀ * rhs`), impls of this module.\n//!\n"
         f"//! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` "
         f"kernel (one\n//! floor rounding and one overflow check per output scalar); nothing "
         f"wraps silently." + ("\n" + specs.docs["module"] if "module" in specs.docs else ""),
@@ -587,7 +608,7 @@ def render_vector(n: int, module: str, test_modules: list[str]) -> str:
     blocks.append(f"/// A {n}-dimensional column vector.\n"
                   f"#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]\n"
                   f"pub struct {S}<T> {{\n" + "\n".join(f"pub {c}: T," for c in v.c) + "\n}")
-    blocks += items_at(specs, "struct")
+    blocks += items_at(specs, "struct") + extra.struct
     blocks.append(f"/// Operations of `{T}` over a `Real` scalar. By value, unrolled, no loop.\n"
                   f"pub trait {S}Trait<T> {{\n{decls}\n}}")
     if angle:
@@ -601,7 +622,7 @@ def render_vector(n: int, module: str, test_modules: list[str]) -> str:
         blocks.append(f"pub impl {S}AngleImpl<\n{bounds(VECTOR_ANGLE_BOUNDS)}\n> of "
                       f"{S}AngleTrait<T> {{\n{angle.definition(with_doc=False)}\n}}")
     blocks += vector_operators(v)
-    blocks += items_at(specs, "end")
+    blocks += items_at(specs, "end") + extra.end
     return "\n\n".join(blocks) + "\n"
 
 
@@ -616,7 +637,7 @@ MATRIX_ORDER = [
                       "from_columns", "from_rows", "cross_matrix"]),
     ("accessors", ["diagonal"]),
     ("exact operations", ["transpose", "trace", "abs"]),
-    ("products", ["scale", "component_mul", "mul_vec", "tr_mul_vec", "tr_mul"]),
+    ("products", ["scale", "component_mul"]),
     ("norms", ["norm_squared", "norm"]),
     ("determinant and inverse", ["determinant", "try_inverse"]),
     ("approximate equality", ["is_identity", "abs_diff_eq"]),
@@ -635,8 +656,7 @@ MATRIX_INTERNAL_ORDER = {
 # decompositions are the LU / Cholesky kernels of `linalg`, DESIGN D6); 8.2 widens it.
 MATRIX_SURFACE = {
     6: ["new", "zeros", "identity", "from_diagonal", "from_diagonal_element", "diagonal",
-        "transpose", "trace", "abs", "scale", "mul_vec", "tr_mul_vec", "tr_mul", "is_identity",
-        "abs_diff_eq"],
+        "transpose", "trace", "abs", "scale", "is_identity", "abs_diff_eq"],
 }
 
 MATRIX_IMPL_BOUNDS = ["T", "impl R: Real<T>", "+Copy<T>", "+Drop<T>", "+Drop<R::Wide>", "+Add<T>",
@@ -718,47 +738,7 @@ def matrix_fns(m: Mat) -> dict[str, Fn | list[Fn]]:
                          "product. Panics on\noverflow. Upstream: `component_mul`.",
         f"fn component_mul(self: {T}, rhs: {T}) -> {T}",
         m.lit(lambda i, j: f"self.{f(i, j)} * rhs.{f(i, j)}"))
-    sp = f"R::sum_prod{n}"
     wide = n > 4
-    out["mul_vec"] = Fn(
-        "mul_vec", f"`self * v`: one `sum_prod{n}` per component (one rounding each). Panics on "
-                   f"overflow.\nUpstream: `self * v`.", f"fn mul_vec(self: {T}, v: {VT}) -> {VT}",
-        m.V.lit(lambda k: sp + tup(f"self.{f(c.index(k), j)}, v.{c[j]}" for j in range(n))))
-    out["tr_mul_vec"] = Fn(
-        "tr_mul_vec", f"`selfᵀ * v` without forming the transpose: one `sum_prod{n}` per "
-                      f"component. Panics on\noverflow. Upstream: `self.tr_mul(&v)`.",
-        f"fn tr_mul_vec(self: {T}, v: {VT}) -> {VT}",
-        m.V.lit(lambda k: sp + tup(f"self.{f(j, c.index(k))}, v.{c[j]}" for j in range(n))))
-    doc = (f"`selfᵀ * rhs`: {nn} `sum_prod{n}`. Panics on overflow. Upstream: `tr_mul`." if n == 2
-           else f"`selfᵀ * rhs` without forming the transpose: {nn} `sum_prod{n}`. Panics on "
-                f"overflow.\nUpstream: `tr_mul`.")
-    out["tr_mul"] = Fn("tr_mul", doc, f"fn tr_mul(self: {T}, rhs: {T}) -> {T}",
-                       m.lit(lambda i, j: sp + tup(f"self.{f(k, i)}, rhs.{f(k, j)}"
-                                                   for k in range(n))), False)
-    if wide:
-        # Above 4 terms: one nested `Real::Wide` chain per output component, and default inlining
-        # for the matrix-vector products too (their output has more than 4 components).
-        out["mul_vec"] = Fn(
-            "mul_vec", f"`self * v`: each of the {n} output components is the exact sum of the "
-                       f"{n} products of a row\nby `v`, accumulated in `Real::Wide` and rescaled "
-                       f"ONCE. Panics on overflow of a component.\nUpstream: `self * v`.",
-            f"fn mul_vec(self: {T}, v: {VT}) -> {VT}",
-            m.V.lit(lambda k: wide_expr([(f"self.{f(c.index(k), j)}", f"v.{c[j]}")
-                                         for j in range(n)])), False)
-        out["tr_mul_vec"] = Fn(
-            "tr_mul_vec", f"`selfᵀ * v` without forming the transpose: one {n}-term `Real::Wide` "
-                          f"accumulation and ONE\nrescale per component. Panics on overflow. "
-                          f"Upstream: `self.tr_mul(&v)`.",
-            f"fn tr_mul_vec(self: {T}, v: {VT}) -> {VT}",
-            m.V.lit(lambda k: wide_expr([(f"self.{f(j, c.index(k))}", f"v.{c[j]}")
-                                         for j in range(n)])), False)
-        out["tr_mul"] = Fn(
-            "tr_mul", f"`selfᵀ * rhs` without forming the transpose: {nn} {n}-term `Real::Wide` "
-                      f"accumulations, one\nrescale per output component. Panics on overflow. "
-                      f"Upstream: `tr_mul`.",
-            f"fn tr_mul(self: {T}, rhs: {T}) -> {T}",
-            m.lit(lambda i, j: wide_expr([(f"self.{f(k, i)}", f"rhs.{f(k, j)}")
-                                          for k in range(n)])), False)
     cm = [f"self.{f(i, j)}" for i, j in m.col_major]
     if nn <= 4:
         out["norm_squared"] = Fn(
@@ -904,21 +884,23 @@ def surface(shape: tuple[int, int]) -> list[Fn]:
     return [f for _, fns in matrix_sections(shape[0], module) for f in fns]
 
 
-def render_matrix(n: int, module: str, test_modules: list[str]) -> str:
+def render_matrix(n: int, module: str, test_modules: list[str], extra: Extra) -> str:
     m = Mat(n)
     S, T = m.S, m.ty()
     specs = read_specs(module)
     sections = ["\n\n".join([section(title, 94)] + [x.definition() for x in fns])
                 for title, fns in matrix_sections(n, module)]
     internal = slot_fns(MATRIX_INTERNAL_ORDER[n], matrix_internal_fns(m), specs.internal)
-    uses = ["core::ops::{AddAssign, MulAssign, SubAssign}", "simba::scalar::Real",
-            f"super::vector{n}::Vector{n}"] + specs.uses
+    uses = dedup(["core::ops::{AddAssign, MulAssign, SubAssign}", "simba::scalar::Real",
+                  f"super::vector{n}::Vector{n}"] + specs.uses + extra.uses)
     blocks = [
         f"//! `{S}`: a statically sized {n}x{n} matrix (upstream `nalgebra::{S}`).\n//!\n"
         f"//! Every sum of products goes through a fused `Real` kernel: one rounding (floor) and "
         f"one overflow\n//! check per output scalar. Operators (`+`, `-`, unary `-`, `*` between "
         f"matrices and their\n//! assigning forms) are implemented in this module, so they need "
-        f"no import; the other operations\n//! are methods of `{S}Trait`."
+        f"no import; the other operations\n//! are methods of `{S}Trait`, the products with every "
+        f"conformable shape `MatrixMul::mul_mat`\n//! (`self * rhs`) and `MatrixTrMul::tr_mul` "
+        f"(`selfᵀ * rhs`)."
         + ("\n" + specs.docs["module"] if "module" in specs.docs else ""),
         "\n".join(f"use {u};" for u in uses),
     ]
@@ -932,7 +914,7 @@ def render_matrix(n: int, module: str, test_modules: list[str]) -> str:
         f"pub struct {S}<T> {{\n" + "\n".join(f"pub {m.f(i, j)}: T," for i, j in m.col_major)
         + "\n}",
     ]
-    blocks += items_at(specs, "struct")
+    blocks += items_at(specs, "struct") + extra.struct
     blocks.append(f"/// Methods of `{T}` for any `Real` scalar.\n#[generate_trait]\n"
                   f"pub impl {S}Impl<\n{bounds(MATRIX_IMPL_BOUNDS)}\n> of {S}Trait<T> {{\n"
                   + "\n\n".join(sections) + "\n}")
@@ -945,22 +927,24 @@ def render_matrix(n: int, module: str, test_modules: list[str]) -> str:
                       f"{bounds(MATRIX_IMPL_BOUNDS)}\n> of {S}InternalTrait<T> {{\n"
                       + "\n\n".join(x.definition() for x in internal) + "\n}")
     blocks += matrix_operators(m, specs.docs)
-    blocks += items_at(specs, "end")
+    blocks += items_at(specs, "end") + extra.end
     return "\n\n".join(blocks) + "\n"
 
 
-def render(shape: tuple[int, int], tests: bool = True) -> str:
-    """The library file of `shape`; `tests = False` omits its test modules (staging package)."""
+def render(shape: tuple[int, int], tests: bool = True, extra: Extra | None = None) -> str:
+    """The library file of `shape`; `tests = False` omits its test modules (staging package);
+    `extra`: the aliases and products of `shapes.py` (none in the staging package)."""
     module = LIBRARY_SHAPES[shape]
     r, c = shape
     mods = sorted(p.stem for p in (BASE / module).glob("*.cairo")) if tests else []
+    extra = extra or Extra()
     if c == 1:
-        body = render_vector(r, module, mods)
+        body = render_vector(r, module, mods, extra)
     else:
-        body = render_matrix(r, module, mods)
+        body = render_matrix(r, module, mods, extra)
     return HEADER.format(module=module) + body
 
 
 HEADER = """// Generated by tools/shapegen/shapegen.py: do not edit by hand. Templates:
-// tools/shapegen/library.py; kernels: tools/shapegen/specialisations/{module}.cairo.
+// tools/shapegen/library.py, shapes.py; kernels: tools/shapegen/specialisations/{module}.cairo.
 """
