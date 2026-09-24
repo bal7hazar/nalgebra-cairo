@@ -92,13 +92,21 @@ imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progr
 | WP | Content (parity packages) | Depends on |
 |---|---|---|
 | 8.0 ✅ (#25) | Strict removal of the Cairo-only public API (`SymMatrix2/3`, `conj_mul`, fused-kernel helpers, undocumented decomposition extras…), keeping implementation kernels private; ruling needed on `simba::Real`'s fused-kernel hooks (with gas figures) | 7.3 |
-| 8.1 | `tools/shapegen`: generator of the 54 static shapes (`Matrix1..6`, `MatrixRxC`, `Vector1..6`, `RowVector1..6`) from templates, committed output + `--check`; existing shapes migrated bit-identically, gas not worse (P01) | 8.0 |
+| 8.1 (8.1a ✅ #26: design + prototype) | `tools/shapegen`: generator of the 54 static shapes (`Matrix1..6`, `MatrixRxC`, `Vector1..6`, `RowVector1..6`) from templates, committed output + `--check`; existing shapes migrated bit-identically, gas not worse (P01) | 8.0 |
 | 8.2 | Static base completion through the generator: P02 (norms, component-wise, construction, conversions), P03 (`map` / `zip` / in-place), P04 (swizzles), P05 (rows, columns, blocks) | 8.1 |
 | 8.3 | P06 (statistics, BLAS-like), P07 (homogeneous / cg helpers) | 8.2 |
 | 8.4 | Geometry: P08 (quaternions, unit complex) → P09a (rotation, translation, point) → P09b (isometry, similarity, `*Matrix` variants) → P10 (scale, reflection) → P11a/b (transform family, perspective, orthographic) → P12 (dual quaternions) | 8.0 (parallel with 8.1-8.3 where files are disjoint) |
 | 8.5 | Dynamic: P13 (`DMatrix` / `DVector`, macros) → P14 (decomposition API, triangular solves) → P15 (full-pivot LU, col-pivot QR, LBLᵀ) → P16 (Schur, Hessenberg, bidiagonal, tridiagonal, general eigen) → P17 (exp, pow), P18 (convolution) | 8.2 |
 | 8.6 | P19 (glam.cairo conversions, `glam = "0.3.0"`), P20 (sparse `CsMatrix`, Matrix Market from strings), P21 (crate-root functions and macros) | 8.5 |
 | 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `simba` + `nalgebra` 0.1.0 (the owner pushes the tag) | all |
+
+Owner rulings for the shapes (2026-09-24): one heterogeneous-product name, `mul_mat` (every
+conformable product, `M * v` included; `mul_vec` / `tr_mul_vec` removed; `*` stays on square
+shapes); `Vector6` / `Matrix6` flat like upstream (the 3D-block layout goes). 8.1b sequence:
+8.1b-1 migrate the hand-written 2/3/4 shapes into the generator (bit- and gas-identical) → 8.1b-2
+flatten `Vector6` / `Matrix6` → 8.1b-3 the 28 new shapes + `mul_mat` everywhere + parity script →
+8.1b-4 generated test packages + CI jobs (the `nalgebra` unit-test crate already peaks at 13.2 GB on
+16 GB runners: public-API tests move to test-only packages).
 
 Execution: at most two agents at a time (shared machine), Opus 5.5 for numerics and generator
 design, Sonnet for mechanical template work; one PR per WP; parity figures reported per PR.
