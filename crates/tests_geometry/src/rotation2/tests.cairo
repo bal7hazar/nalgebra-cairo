@@ -66,13 +66,14 @@ fn test_new_matches_unit_complex_new() {
     assert!(r == UnitComplexAngleTrait::<Fixed>::new(a).to_rotation_matrix());
 }
 
+/// `(m11 + m22, m21 - m12) = 0`: `tr(Rᵀ m)` is the same for every rotation, and the closed form
+/// returns the identity (upstream's iteration from the identity stops at once).
 #[test]
-#[should_panic(expected: 'Fixed: division by zero')]
-fn test_from_matrix_of_a_zero_first_column_panics() {
+fn test_from_matrix_of_a_degenerate_matrix_is_the_identity() {
     let m = Matrix2 {
-        m11: Real::<Fixed>::zero(), m21: Real::zero(), m12: Real::one(), m22: Real::one(),
+        m11: Real::<Fixed>::one(), m21: Real::one(), m12: Real::one(), m22: Real::NEG_ONE,
     };
-    let _ = Rotation2Trait::from_matrix(black_box(m));
+    assert!(Rotation2Trait::from_matrix(black_box(m)) == Rotation2Trait::identity());
 }
 
 // --- inverse, composition

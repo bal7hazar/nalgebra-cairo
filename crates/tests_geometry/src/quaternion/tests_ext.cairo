@@ -504,13 +504,31 @@ fn test_project_plus_reject_is_self() {
 
 #[test]
 fn test_sqrt_exact_cases() {
-    assert!(qi(4, 0, 0, 0).sqrt() == qi(2, 0, 0, 0));
-    assert!(QuaternionTrait::<Fixed>::identity().sqrt() == QuaternionTrait::identity());
-    assert!(Zero::<Quaternion<Fixed>>::zero().sqrt() == Zero::zero());
-    // The principal root of a negative real: the complex convention, `sqrt(-4) = 2i`.
-    assert!(qi(-4, 0, 0, 0).sqrt() == qi(0, 2, 0, 0));
-    // sqrt(-1 + 0i) along j: (0, 0, 1, 0)² = -1.
+    // sqrt(2j) = 1 + j exactly.
+    assert!(qi(0, 0, 2, 0).sqrt() == qi(1, 0, 1, 0));
     assert!(qi(0, 0, 2, 0).sqrt().squared().abs_diff_eq(qi(0, 0, 2, 0), 2));
+    // sqrt(-2k) = 1 - k exactly.
+    assert!(qi(0, 0, 0, -2).sqrt() == qi(1, 0, 0, -1));
+}
+
+/// Upstream's `powf(1/2)` is `NaN` on every real quaternion (its `ln` normalises the zero
+/// imaginary part): the root panics there (PLAN M8 fidelity rules).
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_sqrt_of_a_positive_real_quaternion_panics() {
+    let _ = qi(4, 0, 0, 0).sqrt();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_sqrt_of_a_negative_real_quaternion_panics() {
+    let _ = qi(-4, 0, 0, 0).sqrt();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_sqrt_of_zero_panics() {
+    let _ = Zero::<Quaternion<Fixed>>::zero().sqrt();
 }
 
 /// `sqrt(q)² = q` on the oracle inputs, in both branches (`w >= 0` and `w < 0`).
@@ -569,10 +587,6 @@ fn test_exp_of_a_real_quaternion_is_real() {
 
 #[test]
 fn test_ln_exact_cases() {
-    assert!(QuaternionTrait::<Fixed>::identity().ln() == Zero::zero());
-    // ln(-1) = iπ (the complex convention; upstream returns NaN).
-    let l = qi(-1, 0, 0, 0).ln();
-    assert!(l == Quaternion { i: Real::pi(), j: fx(0), k: fx(0), w: fx(0) });
     // ln(i) = iπ/2.
     assert!(
         qi(0, 1, 0, 0)
@@ -581,10 +595,30 @@ fn test_ln_exact_cases() {
     );
 }
 
+/// Upstream normalises the zero imaginary part of a real quaternion (`NaN`): `ln` panics on
+/// every real quaternion, the identity and `-1` included (PLAN M8 fidelity rules).
 #[test]
-#[should_panic(expected: ('Fixed: ln domain',))]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
 fn test_ln_of_zero_panics() {
     let _ = Zero::<Quaternion<Fixed>>::zero().ln();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_ln_of_the_identity_panics() {
+    let _ = QuaternionTrait::<Fixed>::identity().ln();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_ln_of_a_negative_real_panics() {
+    let _ = qi(-1, 0, 0, 0).ln();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_powf_of_a_real_quaternion_panics() {
+    let _ = qi(2, 0, 0, 0).powf(Real::TWO);
 }
 
 #[test]
@@ -691,13 +725,31 @@ fn test_hyperbolic_of_a_real_quaternion() {
 }
 
 #[test]
-#[should_panic(expected: ('Fixed: division by zero',))]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
 fn test_acos_of_a_real_quaternion_panics() {
     let _ = qi(2, 0, 0, 0).acos();
 }
 
 #[test]
-#[should_panic(expected: ('Fixed: ln domain',))]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_asin_of_a_real_quaternion_panics() {
+    let _ = qi(-1, 0, 0, 0).asin();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_atan_of_a_real_quaternion_panics() {
+    let _ = qi(1, 0, 0, 0).atan();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
+fn test_asinh_of_a_real_quaternion_panics() {
+    let _ = qi(1, 0, 0, 0).asinh();
+}
+
+#[test]
+#[should_panic(expected: ('nalgebra: real quaternion (NaN)',))]
 fn test_atanh_of_one_panics() {
     let _ = QuaternionTrait::<Fixed>::identity().atanh();
 }
@@ -714,8 +766,14 @@ fn test_relative_eq() {
     assert!(!x.relative_eq(y, 99, Real::zero()));
     assert!(x.relative_eq(y, 100, Real::zero()));
     assert!(x.relative_eq(y, 0, fx(1)));
-    assert!(!x.relative_eq(-x, 0, fx(ONE_RAW)));
     assert!(x.relative_eq(x, 0, Real::zero()));
+    // The double cover, like upstream: `-q` is accepted, component-wise against `-other`.
+    assert!(x.relative_eq(-x, 0, Real::zero()));
+    assert!(x.relative_eq(-y, 100, Real::zero()));
+    assert!(!x.relative_eq(-y, 99, Real::zero()));
+    // Half of the components flipped is neither `q` nor `-q`.
+    let z = Quaternion { i: x.i, j: x.j, k: -x.k, w: -x.w };
+    assert!(!x.relative_eq(z, 0, fx(ONE_RAW / 2)));
 }
 
 #[test]
@@ -727,8 +785,13 @@ fn test_ulps_eq() {
     assert!(x.ulps_eq(y, 0, 2));
     // The ulp budget does not cross zero; the absolute one does.
     let (p, m) = (qt((1, 0, 0, 0)), qt((-1, 0, 0, 0)));
-    assert!(!p.ulps_eq(m, 0, 10));
     assert!(p.ulps_eq(m, 2, 0));
+    // ... but `-q` compares equal (the double cover, like upstream).
+    assert!(p.ulps_eq(m, 0, 0));
+    assert!(x.ulps_eq(-y, 0, 2));
+    assert!(!x.ulps_eq(-y, 1, 1));
+    let z = qt((5, -5, 0, -1));
+    assert!(!x.ulps_eq(z, 1, 1));
 }
 
 // --- trait impls

@@ -103,7 +103,7 @@
   "nalgebra_tests_geometry::isometry3::benches": {
     "isometry3_abs_diff_eq": {
       "baseline": 18750,
-      "ulps": 28680
+      "ulps": 29250
     },
     "isometry3_append_rotation": {
       "baseline": 21140,
@@ -214,7 +214,7 @@
   "nalgebra_tests_geometry::quaternion::benches": {
     "quaternion_abs_diff_eq": {
       "baseline": 17640,
-      "components": 19860
+      "components": 22340
     },
     "quaternion_add": {
       "baseline": 19040,
@@ -304,7 +304,7 @@
   "nalgebra_tests_geometry::quaternion::benches_ext": {
     "quaternion_acos": {
       "baseline": 18040,
-      "upstream": 171060
+      "upstream": 171160
     },
     "quaternion_acosh": {
       "baseline": 18040,
@@ -312,7 +312,7 @@
     },
     "quaternion_asin": {
       "baseline": 18040,
-      "upstream": 185230
+      "upstream": 185330
     },
     "quaternion_asinh": {
       "baseline": 18040,
@@ -320,7 +320,7 @@
     },
     "quaternion_atan": {
       "baseline": 18040,
-      "upstream": 173060
+      "upstream": 173160
     },
     "quaternion_atanh": {
       "baseline": 18040,
@@ -419,7 +419,7 @@
     },
     "quaternion_relative_eq": {
       "baseline": 17640,
-      "components": 31110
+      "components": 38190
     },
     "quaternion_right_div": {
       "alt_inverse_then_mul": 46670,
@@ -455,7 +455,7 @@
     },
     "quaternion_ulps_eq": {
       "baseline": 17640,
-      "components": 24300
+      "components": 29880
     }
   },
   "nalgebra_tests_geometry::rotation2::benches": {
@@ -474,7 +474,7 @@
     },
     "rotation2_from_matrix": {
       "baseline": 18040,
-      "normalize_first_column": 26920
+      "closed_form": 32820
     },
     "rotation2_from_matrix_unchecked": {
       "baseline": 18040,
@@ -966,7 +966,7 @@
   "nalgebra_tests_geometry::unit_quaternion::benches": {
     "unit_quaternion_abs_diff_eq": {
       "baseline": 17640,
-      "components": 19850
+      "components": 22320
     },
     "unit_quaternion_angle": {
       "alt_acos": 48710,
@@ -1236,7 +1236,7 @@
     },
     "unit_quaternion_relative_eq": {
       "baseline": 17640,
-      "components": 24340
+      "components": 38490
     },
     "unit_quaternion_rotation_between_axis": {
       "algebraic": 42080,
@@ -1256,7 +1256,7 @@
     },
     "unit_quaternion_ulps_eq": {
       "baseline": 17640,
-      "components": 22860
+      "components": 29670
     }
   }
 }

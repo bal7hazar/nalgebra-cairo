@@ -337,10 +337,10 @@ pub impl Isometry3Impl<
     }
 
     /// `true` when the two translations and the two rotations are within `ulps` smallest units
-    /// (raw units for fixed point) of each other, component by component; cannot overflow. Note
-    /// that `-rotation` is the same rotation and is NOT `abs_diff_eq` to it. Upstream:
-    /// `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp instead of a float
-    /// epsilon (DESIGN D3).
+    /// (raw units for fixed point) of each other, component by component, the rotations up to
+    /// their sign (`UnitQuaternion::abs_diff_eq`: `q` and `-q` compare equal, like upstream).
+    /// Upstream: `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp instead of a
+    /// float epsilon (DESIGN D3).
     #[inline(always)]
     fn abs_diff_eq(self: Isometry3<T>, other: Isometry3<T>, ulps: u64) -> bool {
         self.translation.abs_diff_eq(other.translation, ulps)

@@ -32,9 +32,9 @@ fn quarter() -> Rotation2<Fixed> {
 }
 
 #[test]
-fn test_from_matrix_normalizes_the_first_column() {
-    // A first column 4 times too long (exact scaling): `from_matrix` divides it back and rebuilds
-    // the second column from it, whatever the garbage that column held.
+fn test_from_matrix_is_the_closest_rotation() {
+    // A first column 4 times too long and a zero second column: the closest rotation is the
+    // direction of `(m11 + m22, m21 - m12)`, i.e. of the first column here.
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let four = Real::<Fixed>::from_int(4);
     let m = Matrix2 { m11: c.re * four, m21: c.im * four, m12: Real::zero(), m22: Real::zero() };

@@ -100,7 +100,7 @@ fn bench_rotation2_from_matrix__baseline() {
 
 #[test]
 #[inline(never)]
-fn bench_rotation2_from_matrix__normalize_first_column() {
+fn bench_rotation2_from_matrix__closed_form() {
     let m: Matrix2<Fixed> = black_box(
         Matrix2 { m11: fx(15823707388), m21: fx(6690156176), m12: Real::zero(), m22: Real::zero() },
     );
