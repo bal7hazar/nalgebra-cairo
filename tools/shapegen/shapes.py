@@ -32,6 +32,7 @@ is a vector of at most 4 components, the default otherwise.
 import re
 import textwrap
 
+import completion as C
 import library as L
 from model import ALL_SHAPES, Shape
 
@@ -180,11 +181,15 @@ def aliases(s: Shape) -> tuple[list[str], list[str]]:
 
 
 def legacy_extra(s: Shape, docs: dict[str, str]) -> L.Extra:
-    """What a shape of `library.py` gets from this module: aliases and products."""
+    """What a shape of `library.py` gets from this module: aliases, products and the base
+    completion (`completion.py`: only the methods the shape does not have)."""
     au, ai = aliases(s)
     pu, pi = products(s, docs)
-    return L.Extra(uses=[u for u in L.dedup(au + pu) if u != use_of(s)], struct=ai,
-                   end=[L.section("products", 100)] + pi)
+    have = {f.name for f in L.surface((s.r, s.c))}
+    return L.Extra(uses=[u for u in L.dedup(au + pu + C.uses(s)) if u != use_of(s)], struct=ai,
+                   end=[L.section("products", 100)] + pi + C.items(s),
+                   methods=C.missing(s, have),
+                   angle=[f for f in C.angle_methods(s) if f.name not in have])
 
 
 # --------------------------------------------------------------------------------------------
@@ -321,8 +326,8 @@ def new_operators(s: Shape) -> list[str]:
 def render_new(s: Shape) -> str:
     S = s.name
     t = s.transposed()
-    uses = ["core::ops::{AddAssign, MulAssign, SubAssign}" if s.is_square else
-            "core::ops::{AddAssign, SubAssign}", "simba::scalar::Real"]
+    uses = ["core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}",
+            "simba::scalar::{Real, Transcendental}"]
     if t != s:
         uses.append(use_of(t))
     if s.is_square and s.r > 1:
@@ -331,7 +336,7 @@ def render_new(s: Shape) -> str:
         uses.append("super::kernels::Fused")
     au, ai = aliases(s)
     pu, pi = products(s, {})
-    uses = [u for u in L.dedup(uses + au + pu) if u != use_of(s)]
+    uses = [u for u in L.dedup(uses + au + pu + C.uses(s)) if u != use_of(s)]
     ops = "`+`, `-`, unary `-`" + (", `*` between matrices" if s.is_square else "")
     conv = f", conversions from / to `[T; {s.n}]`" if s.is_vector else ""
     module_doc = wrap(
@@ -351,12 +356,15 @@ def render_new(s: Shape) -> str:
     struct = item(f"A {s.kind}. {layout}",
                   "#[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]\n"
                   f"pub struct {S}<T> {{\n" + "\n".join(f"pub {k}: T," for k in s.fields) + "\n}")
-    methods = "\n\n".join(m.definition() for m in new_methods(s))
+    base = new_methods(s)
+    fns = base + C.missing(s, {m.name for m in base})
+    methods = "\n\n".join(m.definition() for m in fns)
     impl = (f"/// Methods of `{S}<T>` for any `Real` scalar.\n#[generate_trait]\n"
             f"pub impl {S}Impl<\n{L.bounds(L.MATRIX_IMPL_BOUNDS)}\n> of {S}Trait<T> {{\n"
             f"{methods}\n}}")
     blocks = [module_doc, "\n".join(f"use {u};" for u in uses), struct] + ai + [impl]
-    blocks += new_operators(s) + [L.section("products", 100)] + pi
+    blocks.append(C.angle_impl(s, C.angle_methods(s)))
+    blocks += new_operators(s) + [L.section("products", 100)] + pi + C.items(s)
     return HEADER + "\n\n".join(blocks) + "\n"
 
 
@@ -410,6 +418,12 @@ pub trait MatrixTrMul<Lhs, Rhs> {
     type Output;
     /// `selfᵀ * rhs`.
     fn tr_mul(self: Lhs, rhs: Rhs) -> Self::Output;
+    /// `selfᴴ * rhs`, the adjoint (conjugate transpose) times `rhs`: `tr_mul` for a real scalar.
+    /// Upstream: `ad_mul`.
+    #[inline(always)]
+    fn ad_mul(self: Lhs, rhs: Rhs) -> Self::Output {
+        Self::tr_mul(self, rhs)
+    }
 }
 """
 
@@ -434,33 +448,139 @@ pub(crate) impl Fused<T, impl R: Real<T>, +Drop<T>, +Drop<R::Wide>> of FusedTrai
 
 {fused(6)}
 }}
+
+/// `x^p` for a runtime exponent (`lp_norm`): exponentiation by squaring, each product floored.
+#[generate_trait]
+pub(crate) impl Powi<T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>> of PowiTrait<T> {{
+    /// `x^p`, `x^0 = 1`: `⌊log2 p⌋` squarings and one product per set bit of `p` (the loop runs
+    /// on the bits of the runtime `p`), each floored. Panics on overflow.
+    fn powi(x: T, p: u32) -> T {{
+        let mut acc = R::one();
+        let mut base = x;
+        let mut e = p;
+        while e != 0 {{
+            let (q, r) = DivRem::div_rem(e, 2);
+            if r == 1 {{
+                acc = acc * base;
+            }}
+            e = q;
+            if e != 0 {{
+                base = base * base;
+            }}
+        }}
+        acc
+    }}
+}}
+"""
+
+
+def render_errors() -> str:
+    return HEADER + """//! Panic messages of the generated shapes (stable API: changing one is a breaking change).
+
+/// An index out of the shape (`m[i]`, `m[(i, j)]`, `MatrixIndex::index`, `ith`); upstream panics
+/// with "Matrix index out of bounds.".
+pub const INDEX_OUT_OF_BOUNDS: felt252 = 'nalgebra: index out of bounds';
+/// `from_row_slice` / `from_column_slice` with `data.len()` different from the number of
+/// components (upstream: "Matrix init. error: the slice did not contain the right number of
+/// elements.").
+pub const SLICE_LENGTH: felt252 = 'nalgebra: wrong slice length';
+/// `from_partial_diagonal` with more values than the diagonal has components (upstream: "Too many
+/// diagonal elements provided.").
+pub const TOO_MANY_DIAGONAL: felt252 = 'nalgebra: diagonal too long';
+/// `lp_norm(p)` with `p < 1` (upstream returns meaningless values).
+pub const LP_NORM_P: felt252 = 'nalgebra: lp_norm needs p >= 1';
+/// `Vector3::orthonormal_subspace_basis` of more than 3 vectors (upstream: "The given set of
+/// vectors has no chance of being a free family.").
+pub const NOT_FREE_FAMILY: felt252 = 'nalgebra: not a free family';
+"""
+
+
+def render_matrix_index() -> str:
+    return HEADER + """//! `MatrixIndex`: `get` / `index` with a linear or a `(row, column)` index.
+//!
+//! Upstream's `Matrix::get` / `Matrix::index` take any `MatrixIndex` (`usize` in column-major
+//! storage order, `(usize, usize)`, ranges for views); Cairo has no overloading, so they are the
+//! methods of a trait generic over the shape and the index, implemented in the module of each
+//! shape for `usize` and `(usize, usize)` (views and ranges are P05's owned blocks). The operators
+//! `m[i]` / `m[(i, j)]` are the `IndexView` impls of the same modules.
+
+/// `m.get(i)` / `m.index(i)` for `i: usize` (column-major) or `(usize, usize)` (row, column).
+pub trait MatrixIndex<M, I> {
+    /// The component type.
+    type Output;
+    /// The component at `index`, `None` when it is out of bounds. Upstream: `Matrix::get`.
+    fn get(self: M, index: I) -> Option<Self::Output>;
+    /// The component at `index`; panics with `nalgebra: index out of bounds` when it is out of
+    /// bounds. Upstream: `Matrix::index`.
+    fn index(self: M, index: I) -> Self::Output;
+}
+"""
+
+
+def render_norm() -> str:
+    return HEADER + """//! The norm markers of upstream `base/norm.rs`: `EuclideanNorm`, `LpNorm`, `OneNorm`,
+//! `UniformNorm`.
+//!
+//! Upstream passes them to `Matrix::apply_norm` / `apply_metric_distance` (API_PARITY P03), a
+//! generic `Norm<T>` trait standing for the four; each shape carries the corresponding methods
+//! directly: `norm` (Euclidean), `lp_norm(p)`, `one_norm` and `amax` (uniform norm).
+
+/// The Euclidean (Frobenius) norm, `m.norm()`. Upstream: `EuclideanNorm`.
+#[derive(Copy, Drop, PartialEq, Debug)]
+pub struct EuclideanNorm {}
+
+/// The entrywise Lp norm of exponent `p`, `m.lp_norm(p)`. Upstream: `LpNorm(pub i32)` (a tuple
+/// struct: Cairo has none, the field is named).
+#[derive(Copy, Drop, PartialEq, Debug)]
+pub struct LpNorm {
+    /// The exponent `p`.
+    pub p: i32,
+}
+
+/// The induced 1-norm (largest absolute column sum), `m.one_norm()`. Upstream: `OneNorm`.
+#[derive(Copy, Drop, PartialEq, Debug)]
+pub struct OneNorm {}
+
+/// The uniform (infinity) norm, the largest absolute component, `m.amax()`. Upstream:
+/// `UniformNorm`.
+#[derive(Copy, Drop, PartialEq, Debug)]
+pub struct UniformNorm {}
 """
 
 
 SHARED_MODULES = {"kernels": render_kernels, "matrix_mul": render_matrix_mul,
-                  "matrix_tr_mul": render_matrix_tr_mul}
+                  "matrix_tr_mul": render_matrix_tr_mul, "errors": render_errors,
+                  "matrix_index": render_matrix_index, "norm": render_norm}
 
 
 def exported(s: Shape) -> list[str]:
-    names = [s.name, *s.aliases, f"{s.name}Trait"]
+    names = [s.name, *s.aliases, f"{s.name}Trait"] + C.exported(s)
     if s.unit_alias:
         names.append(s.unit_alias)
     return sorted(names)
+
+
+# Shared modules: (module, visibility, re-exported names).
+SHARED_EXPORTS = {"matrix_mul": ["MatrixMul"], "matrix_tr_mul": ["MatrixTrMul"],
+                  "matrix_index": ["MatrixIndex"],
+                  "norm": ["EuclideanNorm", "LpNorm", "OneNorm", "UniformNorm"]}
+PRIVATE_MODULES = {"kernels"}
 
 
 def base_block() -> list[str]:
     """The generated lines of `base.cairo`: module declarations then re-exports, each run sorted
     (`scarb fmt` sorts `mod` / `use` runs; sorted input keeps the markers in place)."""
     mods = sorted(list(SHARED_MODULES) + [s.module for s in ALL_SHAPES])
-    lines = [f"mod {m};" if m == "kernels" else f"pub mod {m};" for m in mods]
-    uses = [("matrix_mul", "pub use matrix_mul::MatrixMul;"),
-            ("matrix_tr_mul", "pub use matrix_tr_mul::MatrixTrMul;")]
+    lines = [f"mod {m};" if m in PRIVATE_MODULES else f"pub mod {m};" for m in mods]
+    uses = [(m, f"pub use {m}::{names[0]};" if len(names) == 1 else
+             f"pub use {m}::{{{', '.join(names)}}};") for m, names in SHARED_EXPORTS.items()]
     uses += [(s.module, f"pub use {s.module}::{{{', '.join(exported(s))}}};") for s in ALL_SHAPES]
     return lines + [u for _, u in sorted(uses)]
 
 
 def lib_block() -> list[str]:
-    names = sorted(["MatrixMul", "MatrixTrMul"] + [n for s in ALL_SHAPES for n in exported(s)])
+    names = sorted([n for ns in SHARED_EXPORTS.values() for n in ns]
+                   + [n for s in ALL_SHAPES for n in exported(s)])
     return [f"pub use base::{{{', '.join(names)}}};"]
 
 

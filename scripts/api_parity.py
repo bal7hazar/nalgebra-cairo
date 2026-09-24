@@ -922,7 +922,7 @@ TEST_FILE = re.compile(r"^(?:tests|benches|oracle.*|matrix_test_utils)$")
 CAIRO_CORE_TRAITS = {
     "Add", "AddAssign", "Sub", "SubAssign", "Mul", "MulAssign", "Div", "DivAssign", "Neg",
     "Into", "TryInto", "Default", "PartialEq", "PartialOrd", "Hash", "Serde", "Debug", "Display",
-    "IndexView", "Index", "Zero", "One",
+    "IndexView", "Index", "Zero", "One", "Bounded",
 }
 CAIRO_DERIVES = {"Copy", "PartialEq", "Serde", "Default", "Debug", "Hash", "Display"}
 
@@ -1145,6 +1145,8 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "SVD": ["Svd2", "Svd3"],
     "SymmetricEigen": ["SymmetricEigen2", "SymmetricEigen3"],
     "PermutationSequence": ["Perm2", "Perm3", "Perm4", "Perm6"],
+    # The norm markers of `base/norm.rs` (WP 8.2a).
+    **{t: [t] for t in ("EuclideanNorm", "LpNorm", "OneNorm", "UniformNorm", "Normed")},
 }
 
 # Methods upstream declares on a generic family but that only make sense for some dimensions
@@ -1153,9 +1155,26 @@ DIM_ONLY: dict[str, set[str]] = {
     "cross": {"Vector3"},
     "cross_matrix": {"Vector3"},
     "perp": {"Vector2"},
-    "x": set(V), "y": set(V), "z": set(V[1:]), "w": set(V[2:]),
+    # The axes of `construction.rs` exist from the dimension of their coordinate on (`x()` on
+    # `Vector1..6`, `b()` on `Vector6` only).
+    **{a: set(COLUMNS[k:]) for k, a in enumerate("xyzwab")},
     "x_axis": {"Unit"}, "y_axis": {"Unit"}, "z_axis": {"Unit"}, "w_axis": {"Unit"},
-    "a": {"Vector6"}, "b": {"Vector6"}, "xyz": set(V[2:]), "xy": set(V[1:]),
+    "a_axis": {"Unit"}, "b_axis": {"Unit"}, "xyz": set(V[2:]), "xy": set(V[1:]),
+    # One dimension more (`push`, homogeneous coordinates): upstream's aliases, hence the Cairo
+    # shapes, stop at 6, so `Vector6` / `Matrix6` have none. `Matrix1` is both `Vector1` and a
+    # 1x1 square: upstream's two `to_homogeneous` (`Vector1 -> Vector2`, `Matrix1 -> Matrix2`)
+    # are ambiguous on it (a Rust call does not compile), so it has neither.
+    "push": set(COLUMNS[:5]), "from_homogeneous": set(COLUMNS[:5]),
+    "to_homogeneous": set(COLUMNS[1:5] + SQUARES[1:5]),
+    # Upstream names isometries and similarities in 2D and 3D only (`Isometry2/3`,
+    # `IsometryMatrix2/3`, `Similarity2/3`...), so their homogeneous matrices are 3x3 and 4x4.
+    **{name: {"Matrix3", "Matrix4"} for name in ("From<Isometry>", "From<Similarity>")},
+    # `m / r` needs as many columns as the rotation's dimension: `Rotation2` / `Rotation3`
+    # (upstream's `Rotation<D>` aliases stop at 3).
+    "Div<Rotation>": {shape_name(r, c) for r in DIMS for c in (2, 3)},
+    # The homogeneous matrix of `Translation<D>` is `(D + 1)x(D + 1)`: `Matrix2..6` for
+    # `Translation1..5` (no `Translation0`, no 7x7 matrix).
+    "From<Translation>": set(SQUARES[1:]),
     "orthonormal_subspace_basis": {"Vector3"},
     # Square-matrix semantics, generated on the 6 squares (`Matrix1..6`).
     **{name: set(SQUARES) for name in (
@@ -1241,7 +1260,25 @@ RENAMES = (
          "coordinates are named struct fields (`v.x`, `m.m11`)"),
     rule(r"Vector3?", r"cross_matrix", r"Matrix3::cross_matrix",
          "constructor on the matrix side (`Matrix3::cross_matrix(v)`)"),
-    rule(r"Vector", r"(x|y|z|w)_axis", r"Unit::\1_axis", "on `Unit<VectorN>` (`Unit2Trait`...)"),
+    rule(r"Vector", r"(x|y|z|w|a|b)_axis", r"Unit::\1_axis",
+         "on `Unit<VectorN>` (`Unit2Trait`, `UnitVector5Trait`...)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"ad_mul",
+         r"MatrixTrMul::ad_mul", "method of the generic `MatrixTrMul` (`tr_mul` for a real "
+         "scalar)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d",
+         r"(get|index)", r"MatrixIndex::\1", "method of the generic `MatrixIndex` (one impl per "
+         "shape and index type: `usize`, `(usize, usize)`)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<Matrix> for T", "scale",
+         "Cairo-imposed: heterogeneous operator (`k * m` is `m.scale(k)`)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<(?:Point|Rotation)>",
+         r"MatrixMul::mul_mat", "`m * p` / `m * r` is `m.mul_mat(..)` (Cairo's `Mul` is "
+         "homogeneous)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Div<Rotation>", "div_rotation",
+         "Cairo-imposed: heterogeneous operator (`m / r` is `m.div_rotation(r)`)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:SubsetOf<Matrix>", "cast",
+         "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"eq", "impl:PartialEq",
+         "the `PartialEq::eq` of the derived impl (`a == b`)"),
     rule(r"Isometry[23]?|Similarity[23]?|Rotation[23]?|UnitQuaternion|UnitComplex|Translation[23]?",
          r"impl:Mul<Point>", "transform_point", "heterogeneous operators are named methods"),
     rule(r"Isometry[23]?|Similarity[23]?|Rotation[23]?|UnitQuaternion|UnitComplex",

@@ -54,3 +54,26 @@ pub(crate) impl Fused<T, impl R: Real<T>, +Drop<T>, +Drop<R::Wide>> of FusedTrai
         )
     }
 }
+
+/// `x^p` for a runtime exponent (`lp_norm`): exponentiation by squaring, each product floored.
+#[generate_trait]
+pub(crate) impl Powi<T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>> of PowiTrait<T> {
+    /// `x^p`, `x^0 = 1`: `⌊log2 p⌋` squarings and one product per set bit of `p` (the loop runs
+    /// on the bits of the runtime `p`), each floored. Panics on overflow.
+    fn powi(x: T, p: u32) -> T {
+        let mut acc = R::one();
+        let mut base = x;
+        let mut e = p;
+        while e != 0 {
+            let (q, r) = DivRem::div_rem(e, 2);
+            if r == 1 {
+                acc = acc * base;
+            }
+            e = q;
+            if e != 0 {
+                base = base * base;
+            }
+        }
+        acc
+    }
+}
