@@ -28,7 +28,7 @@ How to read it:
 | debug | 0 | 0 | 0 | 12 | 12 | — |
 | **total** | **433** | **55** | **1400** | **548** | **2436** | **22.9%** |
 
-nalgebra.cairo items with no upstream counterpart: **72** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **17** ([list](#cairo-imposed-forms)).
+nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **17** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
 ## Proposed work packages
 
@@ -385,10 +385,27 @@ Public Cairo items that spell an upstream operator, field or `Deref` access Cair
 
 | Owner | Items | Rationale |
 |---|---|---|
-| simba::Real | `const:E`, `const:EPSILON`, `const:FRAC_1_PI`, `const:FRAC_1_SQRT_2`, `const:FRAC_PI_2`, `const:FRAC_PI_3`, `const:FRAC_PI_4`, `const:FRAC_PI_6`, `const:HALF`, `const:LN_10`, `const:LN_2`, `const:MAX`, `const:MIN`, `const:NEG_ONE`, `const:ONE`, `const:PI`, `const:SQRT_2`, `const:TAU`, `const:TWO`, `const:ZERO`, `abs`, `abs_diff_eq`, `clamp`, `diff_prod`, `div`, `div16`, `div3`, `div4`, `div5`, `div6`, `div9`, `floor`, `from_int`, `from_ratio`, `is_negative`, `is_positive`, `lerp`, `max`, `min`, `mul_add`, `norm2`, `norm3`, `norm4`, `norm_squared2`, `norm_squared3`, `norm_squared4`, `recip`, `rem`, `signum`, `sqr`, `sqrt`, `sum_prod2`, `sum_prod3`, `sum_prod4`, `wide_add`, `wide_add_prod`, `wide_mul_scalar`, `wide_rescale`, `wide_sqrt`, `wide_sub`, `wide_sub_prod`, `wide_zero` | Scalar layer (DESIGN D2-D3): mirrors simba's `RealField` / `ComplexField`, not nalgebra-rs; fused kernels (`sum_prod*`, `diff_prod`, `norm*`, `wide_*`), prepared divisors (`div3..div16`) and ulp comparisons are Cairo-only by design (WP 8.0: the owner rules on them with the gas figures of the WP 8.0 report; `crates/simba` is out of that WP's scope). |
-| simba::Transcendental | `acos`, `asin`, `atan`, `atan2`, `cos`, `exp`, `ln`, `sin`, `sin_cos`, `tan` | Scalar layer (DESIGN D2-D3): mirrors simba's `RealField` / `ComplexField`, not nalgebra-rs; fused kernels (`sum_prod*`, `diff_prod`, `norm*`, `wide_*`), prepared divisors (`div3..div16`) and ulp comparisons are Cairo-only by design (WP 8.0: the owner rules on them with the gas figures of the WP 8.0 report; `crates/simba` is out of that WP's scope). |
+| none | | |
 
-Scalar methods with a simba 0.10.2 `RealField` / `ComplexField` / `Field` counterpart of the same name: `abs`, `acos`, `asin`, `atan`, `atan2`, `clamp`, `cos`, `exp`, `floor`, `ln`, `max`, `min`, `mul_add`, `recip`, `signum`, `sin`, `sin_cos`, `sqrt`, `tan`. Without one (Cairo-only kernels): `abs_diff_eq`, `diff_prod`, `div`, `div16`, `div3`, `div4`, `div5`, `div6`, `div9`, `from_int`, `from_ratio`, `is_negative`, `is_positive`, `lerp`, `norm2`, `norm3`, `norm4`, `norm_squared2`, `norm_squared3`, `norm_squared4`, `rem`, `sqr`, `sum_prod2`, `sum_prod3`, `sum_prod4`, `wide_add`, `wide_add_prod`, `wide_mul_scalar`, `wide_rescale`, `wide_sqrt`, `wide_sub`, `wide_sub_prod`, `wide_zero`.
+## Scalar layer (simba)
+
+`crates/simba` is the counterpart of simba-rs 0.10.2's `RealField`: every scalar item that has a simba-rs name carries it (`num::Zero::zero`, `num::One::one`, `RealField::pi`, `RealField::is_sign_negative`, `approx::AbsDiffEq::default_epsilon`, ...), and the rest is the one documented exception below.
+
+### Named as in simba-rs
+
+| Owner | Items | simba-rs trait |
+|---|---|---|
+| simba::Real | `abs`, `clamp`, `e`, `floor`, `frac_1_pi`, `frac_pi_2`, `frac_pi_3`, `frac_pi_4`, `frac_pi_6`, `is_sign_negative`, `is_sign_positive`, `ln_10`, `ln_2`, `max_value`, `max`, `min_value`, `min`, `mul_add`, `pi`, `recip`, `signum`, `sqrt`, `two_pi` | RealField / ComplexField / Field |
+| simba::Real | `default_epsilon` | approx::AbsDiffEq |
+| simba::Real | `one` | num::One |
+| simba::Real | `zero` | num::Zero |
+| simba::Transcendental | `acos`, `asin`, `atan2`, `atan`, `cos`, `exp`, `ln`, `sin_cos`, `sin`, `tan` | RealField / ComplexField / Field |
+
+### Documented exception: fused scalar kernels and constants
+
+| Owner | Items | Rationale |
+|---|---|---|
+| simba::Real | `abs_diff_eq`, `const:FRAC_1_SQRT_2`, `const:HALF`, `const:NEG_ONE`, `const:TWO`, `diff_prod`, `div16`, `div3`, `div4`, `div5`, `div6`, `div9`, `div`, `from_int`, `from_ratio`, `lerp`, `norm2`, `norm3`, `norm4`, `norm_squared2`, `norm_squared3`, `norm_squared4`, `rem`, `sqr`, `sum_prod2`, `sum_prod3`, `sum_prod4`, `wide_add_prod`, `wide_add`, `wide_mul_scalar`, `wide_rescale`, `wide_sqrt`, `wide_sub_prod`, `wide_sub`, `wide_zero` | owner ruling 2026-09-24: fused scalar kernels, the numeric contract of the stack (DESIGN D2-D3); confined to the scalar trait layer, like glam.cairo's `fixed::wide`. Constants without a simba-rs name stay associated constants because Cairo has no `f64` literal conversion such as upstream's `crate::convert(0.5)` |
 
 ## Inventory by module and owner
 

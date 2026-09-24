@@ -1239,6 +1239,44 @@ def cairo_form(item: Item) -> tuple[str, str] | None:
     return None
 
 
+# Names of `simba::Real` methods that come from simba-rs supertraits outside `RealField` /
+# `ComplexField` / `Field` (`parse_simba` reads only those three): `num::Zero::zero`,
+# `num::One::one`, `approx::AbsDiffEq::default_epsilon`.
+SIMBA_SUPERTRAIT_NAMES = {
+    "zero": "num::Zero", "one": "num::One", "default_epsilon": "approx::AbsDiffEq",
+}
+
+# The one documented exception of the scalar layer (owner ruling 2026-09-24): scalar items
+# without a simba-rs name. (owner, rendered item) fullmatch regexes; the rationale is shared.
+SCALAR_KERNELS_WHY = (
+    "owner ruling 2026-09-24: fused scalar kernels, the numeric contract of the stack (DESIGN "
+    "D2-D3); confined to the scalar trait layer, like glam.cairo's `fixed::wide`. Constants "
+    "without a simba-rs name stay associated constants because Cairo has no `f64` literal "
+    "conversion such as upstream's `crate::convert(0.5)`"
+)
+SCALAR_KERNELS = (
+    (r"simba::Real",
+     r"sum_prod[234]|diff_prod|sqr|norm[234]|norm_squared[234]|lerp|abs_diff_eq|"
+     r"div|div(?:3|4|5|6|9|16)|rem|from_int|from_ratio|"
+     r"wide_(?:zero|add|sub|add_prod|sub_prod|rescale|sqrt|mul_scalar)|"
+     r"const:(?:NEG_ONE|TWO|HALF|FRAC_1_SQRT_2)"),
+)
+
+
+def scalar_kernel(item: Item) -> bool:
+    r = rendered(item)
+    return any(re.fullmatch(o, item.owner) and re.fullmatch(n, r) for o, n in SCALAR_KERNELS)
+
+
+def simba_named(item: Item, simba: list[str]) -> str | None:
+    """The simba-rs trait a scalar-layer method is named after (`RealField::pi`...), if any."""
+    if not item.owner.startswith("simba::") or item.kind != "method":
+        return None
+    if item.name in SIMBA_SUPERTRAIT_NAMES:
+        return SIMBA_SUPERTRAIT_NAMES[item.name]
+    return "RealField / ComplexField / Field" if item.name in simba else None
+
+
 def exclude(owner: str, item: str, reason: str) -> Rule:
     assert reason in EXCLUSIONS, reason
     return rule(owner, item, reason)
@@ -1600,11 +1638,6 @@ EXTRA_RATIONALE = (
     (r"\w+", r"impl:(?:Copy|PartialEq|Serde|Default|Debug|Hash)",
      "Standard Cairo derive set (`Copy, Drop, PartialEq, Serde, Default, Debug, Hash`) on a "
      "type whose upstream counterpart lacks this trait."),
-    (r"simba::\w+", r".*",
-     "Scalar layer (DESIGN D2-D3): mirrors simba's `RealField` / `ComplexField`, not nalgebra-rs; "
-     "fused kernels (`sum_prod*`, `diff_prod`, `norm*`, `wide_*`), prepared divisors "
-     "(`div3..div16`) and ulp comparisons are Cairo-only by design (WP 8.0: the owner rules on "
-     "them with the gas figures of the WP 8.0 report; `crates/simba` is out of that WP's scope)."),
 )
 
 
@@ -1672,6 +1705,10 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
     results, extras = classify(rust, cairo)
     forms = [i for i in extras if cairo_form(i)]
     extras = [i for i in extras if not cairo_form(i)]
+    named = [i for i in extras if simba_named(i, simba)]
+    extras = [i for i in extras if not simba_named(i, simba)]
+    kernels = [i for i in extras if scalar_kernel(i)]
+    extras = [i for i in extras if not scalar_kernel(i)]
     cairo_types = {i.name for i in cairo if i.kind == "type"}
     todo = [i for i in rust if results[i].status in ("missing", "partial")]
     wp_of = {i: assign_wp(i) for i in todo}
@@ -1737,10 +1774,12 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
     out.append(f"| **total** | **{total['ported']}** | **{total['partial']}** | "
                f"**{total['missing']}** | **{total['excluded']}** | **{n}** | "
                f"**{pct(total['ported'], n - total['excluded'])}** |")
-    out += ["", f"nalgebra.cairo items with no upstream counterpart: **{len(extras)}** "
-            "([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream "
-            f"operators, fields and `Deref` access: **{len(forms)}** "
-            "([list](#cairo-imposed-forms)).", ""]
+    out += ["", f"nalgebra.cairo items with no upstream counterpart (undocumented extras): "
+            f"**{len(extras)}** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed "
+            f"forms of upstream operators, fields and `Deref` access: **{len(forms)}** "
+            f"([list](#cairo-imposed-forms)); scalar layer: **{len(named)}** items named as in "
+            f"simba-rs, **{len(kernels)}** documented exceptions "
+            "([list](#scalar-layer-simba)).", ""]
 
     # Work packages.
     out += [
@@ -1852,14 +1891,32 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
             f"`{md(rendered(item))}`")
     for (owner, why), names in sorted(grouped.items()):
         out.append(f"| {md(owner)} | {', '.join(names)} | {md(why)} |")
-    marked = sorted(n for n in simba)
-    real = sorted({i.name for i in extras if i.owner.startswith("simba::") and
-                   i.kind == "method"})
-    out += ["",
-            f"Scalar methods with a simba {SIMBA_VERSION} `RealField` / `ComplexField` / `Field` "
-            "counterpart of the same name: " +
-            ", ".join(f"`{n}`" for n in real if n in marked) + ". Without one (Cairo-only "
-            "kernels): " + ", ".join(f"`{n}`" for n in real if n not in marked) + ".", ""]
+    if not grouped:
+        out.append("| none | | |")
+    out.append("")
+
+    # Scalar layer.
+    out += ["## Scalar layer (simba)", "",
+            f"`crates/simba` is the counterpart of simba-rs {SIMBA_VERSION}'s `RealField`: every "
+            "scalar item that has a simba-rs name carries it (`num::Zero::zero`, "
+            "`num::One::one`, `RealField::pi`, `RealField::is_sign_negative`, "
+            "`approx::AbsDiffEq::default_epsilon`, ...), and the rest is the one documented "
+            "exception below.", "",
+            "### Named as in simba-rs", "", "| Owner | Items | simba-rs trait |", "|---|---|---|"]
+    ngrouped: dict[tuple[str, str], list[str]] = {}
+    for item in named:
+        ngrouped.setdefault((item.owner, simba_named(item, simba)), []).append(
+            f"`{md(rendered(item))}`")
+    for (owner, trait), names in sorted(ngrouped.items()):
+        out.append(f"| {md(owner)} | {', '.join(sorted(names))} | {md(trait)} |")
+    out += ["", "### Documented exception: fused scalar kernels and constants", "",
+            "| Owner | Items | Rationale |", "|---|---|---|"]
+    kgrouped: dict[str, list[str]] = {}
+    for item in kernels:
+        kgrouped.setdefault(item.owner, []).append(f"`{md(rendered(item))}`")
+    for owner, names in sorted(kgrouped.items()):
+        out.append(f"| {md(owner)} | {', '.join(sorted(names))} | {md(SCALAR_KERNELS_WHY)} |")
+    out.append("")
 
     # Per owner.
     out += ["## Inventory by module and owner", ""]
