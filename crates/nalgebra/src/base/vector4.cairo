@@ -732,108 +732,80 @@ pub impl Vector4MulRowVector6<
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix1`: one `sum_prod4` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix1`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Vector4TrMulVector4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector4<T>, Vector4<T>> {
     type Output = Matrix1<T>;
     #[inline(always)]
     fn tr_mul(self: Vector4<T>, rhs: Vector4<T>) -> Matrix1<T> {
-        Matrix1 { x: R::sum_prod4(self.x, rhs.x, self.y, rhs.y, self.z, rhs.z, self.w, rhs.w) }
+        MatrixMul::mul_mat(RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector2`: one `sum_prod4` per component
-/// (one rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow.
-/// Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector2`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Vector4TrMulMatrix4x2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector4<T>, Matrix4x2<T>> {
     type Output = RowVector2<T>;
     #[inline(always)]
     fn tr_mul(self: Vector4<T>, rhs: Matrix4x2<T>) -> RowVector2<T> {
-        RowVector2 {
-            x: R::sum_prod4(self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41),
-            y: R::sum_prod4(self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42),
-        }
+        MatrixMul::mul_mat(RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector3`: one `sum_prod4` per component
-/// (one rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow.
-/// Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector3`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Vector4TrMulMatrix4x3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector4<T>, Matrix4x3<T>> {
     type Output = RowVector3<T>;
     #[inline(always)]
     fn tr_mul(self: Vector4<T>, rhs: Matrix4x3<T>) -> RowVector3<T> {
-        RowVector3 {
-            x: R::sum_prod4(self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41),
-            y: R::sum_prod4(self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42),
-            z: R::sum_prod4(self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43),
-        }
+        MatrixMul::mul_mat(RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector4`: one `sum_prod4` per component
-/// (one rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow.
-/// Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector4`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Vector4TrMulMatrix4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector4<T>, Matrix4<T>> {
     type Output = RowVector4<T>;
     #[inline(always)]
     fn tr_mul(self: Vector4<T>, rhs: Matrix4<T>) -> RowVector4<T> {
-        RowVector4 {
-            x: R::sum_prod4(self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41),
-            y: R::sum_prod4(self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42),
-            z: R::sum_prod4(self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43),
-            w: R::sum_prod4(self.x, rhs.m14, self.y, rhs.m24, self.z, rhs.m34, self.w, rhs.m44),
-        }
+        MatrixMul::mul_mat(RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector5`: one `sum_prod4` per component
-/// (one rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow.
-/// Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector5`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Vector4TrMulMatrix4x5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector4<T>, Matrix4x5<T>> {
     type Output = RowVector5<T>;
+    #[inline(always)]
     fn tr_mul(self: Vector4<T>, rhs: Matrix4x5<T>) -> RowVector5<T> {
-        RowVector5 {
-            x: R::sum_prod4(self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41),
-            y: R::sum_prod4(self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42),
-            z: R::sum_prod4(self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43),
-            w: R::sum_prod4(self.x, rhs.m14, self.y, rhs.m24, self.z, rhs.m34, self.w, rhs.m44),
-            a: R::sum_prod4(self.x, rhs.m15, self.y, rhs.m25, self.z, rhs.m35, self.w, rhs.m45),
-        }
+        MatrixMul::mul_mat(RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector6`: one `sum_prod4` per component
-/// (one rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow.
-/// Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector6`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Vector4TrMulMatrix4x6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector4<T>, Matrix4x6<T>> {
     type Output = RowVector6<T>;
+    #[inline(always)]
     fn tr_mul(self: Vector4<T>, rhs: Matrix4x6<T>) -> RowVector6<T> {
-        RowVector6 {
-            x: R::sum_prod4(self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41),
-            y: R::sum_prod4(self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42),
-            z: R::sum_prod4(self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43),
-            w: R::sum_prod4(self.x, rhs.m14, self.y, rhs.m24, self.z, rhs.m34, self.w, rhs.m44),
-            a: R::sum_prod4(self.x, rhs.m15, self.y, rhs.m25, self.z, rhs.m35, self.w, rhs.m45),
-            b: R::sum_prod4(self.x, rhs.m16, self.y, rhs.m26, self.z, rhs.m36, self.w, rhs.m46),
-        }
+        MatrixMul::mul_mat(RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
     }
 }

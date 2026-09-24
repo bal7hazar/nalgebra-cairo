@@ -316,90 +316,80 @@ pub impl Matrix1MulRowVector6<
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix1`: one floored product per component.
-/// Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix1`: `mul_mat` of the transposed components, so one floored product per
+/// component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only
+/// relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix1TrMulMatrix1<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix1<T>, Matrix1<T>> {
     type Output = Matrix1<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix1<T>, rhs: Matrix1<T>) -> Matrix1<T> {
-        Matrix1 { x: self.x * rhs.x }
+        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector2`: one floored product per
-/// component.
-/// Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector2`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix1TrMulRowVector2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix1<T>, RowVector2<T>> {
     type Output = RowVector2<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix1<T>, rhs: RowVector2<T>) -> RowVector2<T> {
-        RowVector2 { x: self.x * rhs.x, y: self.x * rhs.y }
+        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector3`: one floored product per
-/// component.
-/// Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector3`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix1TrMulRowVector3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix1<T>, RowVector3<T>> {
     type Output = RowVector3<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix1<T>, rhs: RowVector3<T>) -> RowVector3<T> {
-        RowVector3 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z }
+        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector4`: one floored product per
-/// component.
-/// Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector4`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix1TrMulRowVector4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix1<T>, RowVector4<T>> {
     type Output = RowVector4<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix1<T>, rhs: RowVector4<T>) -> RowVector4<T> {
-        RowVector4 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z, w: self.x * rhs.w }
+        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector5`: one floored product per
-/// component.
-/// Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector5`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix1TrMulRowVector5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix1<T>, RowVector5<T>> {
     type Output = RowVector5<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix1<T>, rhs: RowVector5<T>) -> RowVector5<T> {
-        RowVector5 {
-            x: self.x * rhs.x,
-            y: self.x * rhs.y,
-            z: self.x * rhs.z,
-            w: self.x * rhs.w,
-            a: self.x * rhs.a,
-        }
+        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector6`: one floored product per
-/// component.
-/// Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector6`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix1TrMulRowVector6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix1<T>, RowVector6<T>> {
     type Output = RowVector6<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix1<T>, rhs: RowVector6<T>) -> RowVector6<T> {
-        RowVector6 {
-            x: self.x * rhs.x,
-            y: self.x * rhs.y,
-            z: self.x * rhs.z,
-            w: self.x * rhs.w,
-            a: self.x * rhs.a,
-            b: self.x * rhs.b,
-        }
+        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
     }
 }

@@ -246,6 +246,46 @@ literals) and none rises. `Matrix6::trace` now sums in upstream's left-to-right 
 `(m11 + m22 + m33) + (m44 + m55 + m66)`: equal whenever both are defined; only an overflowing
 partial sum could panic in one order and not the other.
 
+### 2.5 WP 8.1b-3 outcome: the 36 shapes, `mul_mat` / `tr_mul` everywhere
+
+`shapes.py` (templates of the 28 new shapes, the aliases, the products, the generated blocks) and
+`model.py` (the `Shape` model, shared with the prototype) complete the generator:
+
+- **Shapes**: `Matrix1`, `Matrix5`, `Vector5`, `RowVector2..6` and the 20 `MatrixRxC` get their
+  own file (`base/<module>.cairo`), with the surface that the parity items ported on the former
+  shapes require on every candidate (`OWNER_CANDIDATES` / `DIM_ONLY`): `new`, `zeros`,
+  `transpose`, `abs`, `scale`, `abs_diff_eq`, `+ - -x += -=`; on squares `identity`,
+  `from_diagonal(_element)`, `diagonal`, `trace`, `is_identity`, `* *=`; on column vectors `lerp`;
+  on vectors the `[T; N]` conversions; on `Matrix1` `into_scalar` / `to_scalar` / `as_scalar`
+  (by value). The former `Vector2/3/4/6` gain `transpose` (a `RowVectorN`). The rest of P02-P05
+  comes with 8.2 on all shapes at once.
+- **Aliases**: `Vector1` / `RowVector1` (= `Matrix1`), `MatrixNx1` / `Matrix1xN`, `UnitVector1..6`
+  (= `Unit<VectorN>`), in the file of their shape: all 54 static names of `alias.rs` exist.
+  Upstream has no `Matrix1x1`, so there is none (strict parity).
+- **Products**: `MatrixMul::mul_mat` (216 impls) and the new generic `MatrixTrMul::tr_mul` (216
+  impls, upstream's `tr_mul` taking any operand with as many rows), in the file of the left
+  operand. `mul_vec` / `tr_mul_vec` and the square-only `tr_mul` method are gone (owner ruling Q1
+  below); `*` / `*=` stay on the squares and the square `mul_mat` delegates to `*`. Kernels:
+  `sum_prodK` up to 4 terms, the private `Fused::sum_prod5/6` above (`base/kernels.cairo`), except
+  `Matrix6 * Vector6`, which keeps the nested chain of the former `mul_vec` (`LEGACY_WIDE`).
+  `tr_mul` is `mul_mat` of the transposed fields: the transpose only relabels values, so it costs
+  exactly the former column-reading kernels (`bench_matrix{2,3,4,6}_tr_mul*`, unchanged in
+  `gas/`) for half the product code. `gas/` did not move: every former call site of
+  `mul_vec` / `tr_mul_vec` / `tr_mul` costs what it cost.
+- **Blocks**: the module declarations and re-exports of `base.cairo` / `lib.cairo` are generated
+  between `// shapegen: begin` / `// shapegen: end`. `scarb fmt` sorts every run of `mod` / `use`
+  items and moves a comment with the item it precedes, so each block is its own run, generated
+  already sorted, and the generator checks after formatting that every generated line (and only
+  those) is still between the markers.
+- **Tests**: `tests_core.py` writes the test-only package `crates/shapes_tests_core` (§3.3 Tier
+  A on the 36 shapes, 650 tests + 33 benches), checked by `--check` like the library.
+- `compare.py` / `compare.sh` (the 8.1b-1/2 migration proofs) and the prototype (`proto/`,
+  whose `compare.cairo` calls the former `mul_vec`) are frozen evidence of those WPs: run them
+  against the commit they were written for (`compare.sh 8d7ccec`), not against this tree.
+
+Compile budget (cold builds, this machine, peak RSS): library 1.37 GB / 4.9 s → 2.10 GB / 9.5 s;
+`nalgebra` unit-test crate 12.5 GB / 100 s → 13.3 GB / 117 s; `shapes_tests_core` 7.0 GB / 93 s.
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is
@@ -342,7 +382,7 @@ tools/shapegen/specialisations/<module>.cairo  verbatim hand-written kernels
   e.g. `crates/nalgebra_shapes_tests_<group>/src/{lib,<family>}.cairo`, one per group of families
   (§5). They are outside `crates/nalgebra/src`, so `api_parity.py` never scans them.
 
-### 4.1 `scripts/api_parity.py` changes (orchestrator)
+### 4.1 `scripts/api_parity.py` changes (done in WP 8.1b-3)
 
 Ran the script's Cairo parser on the prototype (`parse_cairo` with `ROOT` redirected to a copy):
 struct types, traits, methods, operators and derives are found per shape, but
@@ -391,7 +431,8 @@ PR that creates it; a package over 6 GB splits by shape group (`R ≤ 3` / `R �
 
 ## 6. Open questions (owner / orchestrator)
 
-- **Q1** product naming: `mul_mat` for every conformable product (square included) and `*` for
+- **Q1** (**decided**, owner 2026-09-24: `mul_mat` everywhere, `mul_vec` / `tr_mul_vec` removed,
+  `*` on the squares; done in WP 8.1b-3, §2.5) product naming: `mul_mat` for every conformable product (square included) and `*` for
   the square operator; does `mul_vec` stay as a second name (today's API, WP 8.0's rename of
   `M * v`) or go (strict parity)? Alternatives considered: `mul_matrix` (longer), per-shape names
   (`mul_3x4`: 216 names), a generic `MatrixMul::mul` (collides with `core::traits::Mul::mul` on
@@ -413,8 +454,11 @@ PR that creates it; a package over 6 GB splits by shape group (`R ≤ 3` / `R �
 ## 7. Usage
 
 ```
-python3 tools/shapegen/shapegen.py            # regenerate tools/shapegen/proto (runs scarb fmt)
+python3 tools/shapegen/shapegen.py            # regenerate the library shapes, the base.cairo /
+                                              # lib.cairo blocks, crates/shapes_tests_core and
+                                              # tools/shapegen/proto (runs scarb fmt)
 python3 tools/shapegen/shapegen.py --check    # fail if the committed output is stale
+snforge test -p nalgebra_shapes_tests_core                 # the generated Tier-A tests
 cd tools/shapegen/proto && scarb build && snforge test     # 345 tests
 tools/shapegen/measure.sh all all36                        # compile budget of all 36 shapes
 tools/shapegen/measure.sh all x8 --no-tests --replicate 8  # library growth with the surface

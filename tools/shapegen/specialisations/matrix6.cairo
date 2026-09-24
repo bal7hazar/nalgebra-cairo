@@ -20,19 +20,19 @@
 /// Summing the rounded products of the 3x3 blocks by the 3-vector halves of `v` rounds twice AND
 /// costs 1.67x more gas (`bench_matrix6_mul_vec__alt_blocks`: 37 770 against 22 560 net).
 // @doc tr_mul Vector6
-/// `selfᵀ * v` without forming the transpose: one 6-term `Real::Wide` accumulation and ONE
-/// rescale per component. Panics on overflow. Upstream: `self.tr_mul(&v)`.
+/// `selfᵀ * v`, a `Vector6`: `mul_mat` of the transposed components, so one 6-term `Real::Wide`
+/// accumulation and ONE rescale per component. Panics on overflow. Upstream: `self.tr_mul(&v)`.
 ///
-/// Bit-identical to `self.transpose().mul_mat(v)` AND exactly as expensive (measured:
-/// `bench_matrix6_tr_mul_vec__fused` and `__alt_transpose_then_mul_vec` are both 22 560 net).
-/// `transpose` only relabels SSA values, so it is free; this impl exists for upstream
-/// parity and readability, not for gas.
+/// Exactly as expensive as a kernel that reads `self` column by column (measured:
+/// `bench_matrix6_tr_mul_vec__fused` and `__alt_transpose_then_mul_vec` are both 21 910 net):
+/// `transpose` only relabels SSA values, so it is free.
 // @doc tr_mul Matrix6
-/// `selfᵀ * rhs` without forming the transpose: 36 six-term `Real::Wide` accumulations, one
-/// rescale per output component. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix6`: `mul_mat` (`*`) of the transposed components, so 36 six-term
+/// `Real::Wide` accumulations and one rescale per output component. Panics on overflow. Upstream:
+/// `tr_mul`.
 ///
-/// Bit-identical to `self.transpose() * rhs` AND exactly as expensive (measured:
-/// `bench_matrix6_tr_mul__fused` and `__alt_transpose_then_mul` are both 114 660 net), for the
+/// Exactly as expensive as a kernel that reads `self` column by column (measured:
+/// `bench_matrix6_tr_mul__fused` and `__alt_transpose_then_mul` are both 108 910 net), for the
 /// same reason as `tr_mul` by a `Vector6`: transposing is free.
 // @doc Mul
 /// `a * b` (matrix product): 36 six-term `Real::Wide` accumulations, ONE rounding and one overflow

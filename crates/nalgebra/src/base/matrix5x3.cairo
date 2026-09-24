@@ -10,7 +10,6 @@
 
 use core::ops::{AddAssign, SubAssign};
 use simba::scalar::Real;
-use super::kernels::Fused;
 use super::matrix3::Matrix3;
 use super::matrix3x2::Matrix3x2;
 use super::matrix3x4::Matrix3x4;
@@ -469,810 +468,200 @@ pub impl Matrix5x3MulMatrix3x6<
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Vector3`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Vector3`: `mul_mat` of the transposed components, so the 5 products of each
+/// component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Matrix5x3TrMulVector5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix5x3<T>, Vector5<T>> {
     type Output = Vector3<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix5x3<T>, rhs: Vector5<T>) -> Vector3<T> {
-        Vector3 {
-            x: Fused::sum_prod5(
-                self.m11, rhs.x, self.m21, rhs.y, self.m31, rhs.z, self.m41, rhs.w, self.m51, rhs.a,
-            ),
-            y: Fused::sum_prod5(
-                self.m12, rhs.x, self.m22, rhs.y, self.m32, rhs.z, self.m42, rhs.w, self.m52, rhs.a,
-            ),
-            z: Fused::sum_prod5(
-                self.m13, rhs.x, self.m23, rhs.y, self.m33, rhs.z, self.m43, rhs.w, self.m53, rhs.a,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix3x5 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m15: self.m51,
+                m25: self.m52,
+                m35: self.m53,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix3x2`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix3x2`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Matrix5x3TrMulMatrix5x2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix5x3<T>, Matrix5x2<T>> {
     type Output = Matrix3x2<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix5x3<T>, rhs: Matrix5x2<T>) -> Matrix3x2<T> {
-        Matrix3x2 {
-            m11: Fused::sum_prod5(
-                self.m11,
-                rhs.m11,
-                self.m21,
-                rhs.m21,
-                self.m31,
-                rhs.m31,
-                self.m41,
-                rhs.m41,
-                self.m51,
-                rhs.m51,
-            ),
-            m21: Fused::sum_prod5(
-                self.m12,
-                rhs.m11,
-                self.m22,
-                rhs.m21,
-                self.m32,
-                rhs.m31,
-                self.m42,
-                rhs.m41,
-                self.m52,
-                rhs.m51,
-            ),
-            m31: Fused::sum_prod5(
-                self.m13,
-                rhs.m11,
-                self.m23,
-                rhs.m21,
-                self.m33,
-                rhs.m31,
-                self.m43,
-                rhs.m41,
-                self.m53,
-                rhs.m51,
-            ),
-            m12: Fused::sum_prod5(
-                self.m11,
-                rhs.m12,
-                self.m21,
-                rhs.m22,
-                self.m31,
-                rhs.m32,
-                self.m41,
-                rhs.m42,
-                self.m51,
-                rhs.m52,
-            ),
-            m22: Fused::sum_prod5(
-                self.m12,
-                rhs.m12,
-                self.m22,
-                rhs.m22,
-                self.m32,
-                rhs.m32,
-                self.m42,
-                rhs.m42,
-                self.m52,
-                rhs.m52,
-            ),
-            m32: Fused::sum_prod5(
-                self.m13,
-                rhs.m12,
-                self.m23,
-                rhs.m22,
-                self.m33,
-                rhs.m32,
-                self.m43,
-                rhs.m42,
-                self.m53,
-                rhs.m52,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix3x5 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m15: self.m51,
+                m25: self.m52,
+                m35: self.m53,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix3`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix3`: `mul_mat` of the transposed components, so the 5 products of each
+/// component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Matrix5x3TrMulMatrix5x3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix5x3<T>, Matrix5x3<T>> {
     type Output = Matrix3<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix5x3<T>, rhs: Matrix5x3<T>) -> Matrix3<T> {
-        Matrix3 {
-            m11: Fused::sum_prod5(
-                self.m11,
-                rhs.m11,
-                self.m21,
-                rhs.m21,
-                self.m31,
-                rhs.m31,
-                self.m41,
-                rhs.m41,
-                self.m51,
-                rhs.m51,
-            ),
-            m21: Fused::sum_prod5(
-                self.m12,
-                rhs.m11,
-                self.m22,
-                rhs.m21,
-                self.m32,
-                rhs.m31,
-                self.m42,
-                rhs.m41,
-                self.m52,
-                rhs.m51,
-            ),
-            m31: Fused::sum_prod5(
-                self.m13,
-                rhs.m11,
-                self.m23,
-                rhs.m21,
-                self.m33,
-                rhs.m31,
-                self.m43,
-                rhs.m41,
-                self.m53,
-                rhs.m51,
-            ),
-            m12: Fused::sum_prod5(
-                self.m11,
-                rhs.m12,
-                self.m21,
-                rhs.m22,
-                self.m31,
-                rhs.m32,
-                self.m41,
-                rhs.m42,
-                self.m51,
-                rhs.m52,
-            ),
-            m22: Fused::sum_prod5(
-                self.m12,
-                rhs.m12,
-                self.m22,
-                rhs.m22,
-                self.m32,
-                rhs.m32,
-                self.m42,
-                rhs.m42,
-                self.m52,
-                rhs.m52,
-            ),
-            m32: Fused::sum_prod5(
-                self.m13,
-                rhs.m12,
-                self.m23,
-                rhs.m22,
-                self.m33,
-                rhs.m32,
-                self.m43,
-                rhs.m42,
-                self.m53,
-                rhs.m52,
-            ),
-            m13: Fused::sum_prod5(
-                self.m11,
-                rhs.m13,
-                self.m21,
-                rhs.m23,
-                self.m31,
-                rhs.m33,
-                self.m41,
-                rhs.m43,
-                self.m51,
-                rhs.m53,
-            ),
-            m23: Fused::sum_prod5(
-                self.m12,
-                rhs.m13,
-                self.m22,
-                rhs.m23,
-                self.m32,
-                rhs.m33,
-                self.m42,
-                rhs.m43,
-                self.m52,
-                rhs.m53,
-            ),
-            m33: Fused::sum_prod5(
-                self.m13,
-                rhs.m13,
-                self.m23,
-                rhs.m23,
-                self.m33,
-                rhs.m33,
-                self.m43,
-                rhs.m43,
-                self.m53,
-                rhs.m53,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix3x5 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m15: self.m51,
+                m25: self.m52,
+                m35: self.m53,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix3x4`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix3x4`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Matrix5x3TrMulMatrix5x4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix5x3<T>, Matrix5x4<T>> {
     type Output = Matrix3x4<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix5x3<T>, rhs: Matrix5x4<T>) -> Matrix3x4<T> {
-        Matrix3x4 {
-            m11: Fused::sum_prod5(
-                self.m11,
-                rhs.m11,
-                self.m21,
-                rhs.m21,
-                self.m31,
-                rhs.m31,
-                self.m41,
-                rhs.m41,
-                self.m51,
-                rhs.m51,
-            ),
-            m21: Fused::sum_prod5(
-                self.m12,
-                rhs.m11,
-                self.m22,
-                rhs.m21,
-                self.m32,
-                rhs.m31,
-                self.m42,
-                rhs.m41,
-                self.m52,
-                rhs.m51,
-            ),
-            m31: Fused::sum_prod5(
-                self.m13,
-                rhs.m11,
-                self.m23,
-                rhs.m21,
-                self.m33,
-                rhs.m31,
-                self.m43,
-                rhs.m41,
-                self.m53,
-                rhs.m51,
-            ),
-            m12: Fused::sum_prod5(
-                self.m11,
-                rhs.m12,
-                self.m21,
-                rhs.m22,
-                self.m31,
-                rhs.m32,
-                self.m41,
-                rhs.m42,
-                self.m51,
-                rhs.m52,
-            ),
-            m22: Fused::sum_prod5(
-                self.m12,
-                rhs.m12,
-                self.m22,
-                rhs.m22,
-                self.m32,
-                rhs.m32,
-                self.m42,
-                rhs.m42,
-                self.m52,
-                rhs.m52,
-            ),
-            m32: Fused::sum_prod5(
-                self.m13,
-                rhs.m12,
-                self.m23,
-                rhs.m22,
-                self.m33,
-                rhs.m32,
-                self.m43,
-                rhs.m42,
-                self.m53,
-                rhs.m52,
-            ),
-            m13: Fused::sum_prod5(
-                self.m11,
-                rhs.m13,
-                self.m21,
-                rhs.m23,
-                self.m31,
-                rhs.m33,
-                self.m41,
-                rhs.m43,
-                self.m51,
-                rhs.m53,
-            ),
-            m23: Fused::sum_prod5(
-                self.m12,
-                rhs.m13,
-                self.m22,
-                rhs.m23,
-                self.m32,
-                rhs.m33,
-                self.m42,
-                rhs.m43,
-                self.m52,
-                rhs.m53,
-            ),
-            m33: Fused::sum_prod5(
-                self.m13,
-                rhs.m13,
-                self.m23,
-                rhs.m23,
-                self.m33,
-                rhs.m33,
-                self.m43,
-                rhs.m43,
-                self.m53,
-                rhs.m53,
-            ),
-            m14: Fused::sum_prod5(
-                self.m11,
-                rhs.m14,
-                self.m21,
-                rhs.m24,
-                self.m31,
-                rhs.m34,
-                self.m41,
-                rhs.m44,
-                self.m51,
-                rhs.m54,
-            ),
-            m24: Fused::sum_prod5(
-                self.m12,
-                rhs.m14,
-                self.m22,
-                rhs.m24,
-                self.m32,
-                rhs.m34,
-                self.m42,
-                rhs.m44,
-                self.m52,
-                rhs.m54,
-            ),
-            m34: Fused::sum_prod5(
-                self.m13,
-                rhs.m14,
-                self.m23,
-                rhs.m24,
-                self.m33,
-                rhs.m34,
-                self.m43,
-                rhs.m44,
-                self.m53,
-                rhs.m54,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix3x5 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m15: self.m51,
+                m25: self.m52,
+                m35: self.m53,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix3x5`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix3x5`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Matrix5x3TrMulMatrix5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix5x3<T>, Matrix5<T>> {
     type Output = Matrix3x5<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix5x3<T>, rhs: Matrix5<T>) -> Matrix3x5<T> {
-        Matrix3x5 {
-            m11: Fused::sum_prod5(
-                self.m11,
-                rhs.m11,
-                self.m21,
-                rhs.m21,
-                self.m31,
-                rhs.m31,
-                self.m41,
-                rhs.m41,
-                self.m51,
-                rhs.m51,
-            ),
-            m21: Fused::sum_prod5(
-                self.m12,
-                rhs.m11,
-                self.m22,
-                rhs.m21,
-                self.m32,
-                rhs.m31,
-                self.m42,
-                rhs.m41,
-                self.m52,
-                rhs.m51,
-            ),
-            m31: Fused::sum_prod5(
-                self.m13,
-                rhs.m11,
-                self.m23,
-                rhs.m21,
-                self.m33,
-                rhs.m31,
-                self.m43,
-                rhs.m41,
-                self.m53,
-                rhs.m51,
-            ),
-            m12: Fused::sum_prod5(
-                self.m11,
-                rhs.m12,
-                self.m21,
-                rhs.m22,
-                self.m31,
-                rhs.m32,
-                self.m41,
-                rhs.m42,
-                self.m51,
-                rhs.m52,
-            ),
-            m22: Fused::sum_prod5(
-                self.m12,
-                rhs.m12,
-                self.m22,
-                rhs.m22,
-                self.m32,
-                rhs.m32,
-                self.m42,
-                rhs.m42,
-                self.m52,
-                rhs.m52,
-            ),
-            m32: Fused::sum_prod5(
-                self.m13,
-                rhs.m12,
-                self.m23,
-                rhs.m22,
-                self.m33,
-                rhs.m32,
-                self.m43,
-                rhs.m42,
-                self.m53,
-                rhs.m52,
-            ),
-            m13: Fused::sum_prod5(
-                self.m11,
-                rhs.m13,
-                self.m21,
-                rhs.m23,
-                self.m31,
-                rhs.m33,
-                self.m41,
-                rhs.m43,
-                self.m51,
-                rhs.m53,
-            ),
-            m23: Fused::sum_prod5(
-                self.m12,
-                rhs.m13,
-                self.m22,
-                rhs.m23,
-                self.m32,
-                rhs.m33,
-                self.m42,
-                rhs.m43,
-                self.m52,
-                rhs.m53,
-            ),
-            m33: Fused::sum_prod5(
-                self.m13,
-                rhs.m13,
-                self.m23,
-                rhs.m23,
-                self.m33,
-                rhs.m33,
-                self.m43,
-                rhs.m43,
-                self.m53,
-                rhs.m53,
-            ),
-            m14: Fused::sum_prod5(
-                self.m11,
-                rhs.m14,
-                self.m21,
-                rhs.m24,
-                self.m31,
-                rhs.m34,
-                self.m41,
-                rhs.m44,
-                self.m51,
-                rhs.m54,
-            ),
-            m24: Fused::sum_prod5(
-                self.m12,
-                rhs.m14,
-                self.m22,
-                rhs.m24,
-                self.m32,
-                rhs.m34,
-                self.m42,
-                rhs.m44,
-                self.m52,
-                rhs.m54,
-            ),
-            m34: Fused::sum_prod5(
-                self.m13,
-                rhs.m14,
-                self.m23,
-                rhs.m24,
-                self.m33,
-                rhs.m34,
-                self.m43,
-                rhs.m44,
-                self.m53,
-                rhs.m54,
-            ),
-            m15: Fused::sum_prod5(
-                self.m11,
-                rhs.m15,
-                self.m21,
-                rhs.m25,
-                self.m31,
-                rhs.m35,
-                self.m41,
-                rhs.m45,
-                self.m51,
-                rhs.m55,
-            ),
-            m25: Fused::sum_prod5(
-                self.m12,
-                rhs.m15,
-                self.m22,
-                rhs.m25,
-                self.m32,
-                rhs.m35,
-                self.m42,
-                rhs.m45,
-                self.m52,
-                rhs.m55,
-            ),
-            m35: Fused::sum_prod5(
-                self.m13,
-                rhs.m15,
-                self.m23,
-                rhs.m25,
-                self.m33,
-                rhs.m35,
-                self.m43,
-                rhs.m45,
-                self.m53,
-                rhs.m55,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix3x5 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m15: self.m51,
+                m25: self.m52,
+                m35: self.m53,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix3x6`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix3x6`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Matrix5x3TrMulMatrix5x6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix5x3<T>, Matrix5x6<T>> {
     type Output = Matrix3x6<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix5x3<T>, rhs: Matrix5x6<T>) -> Matrix3x6<T> {
-        Matrix3x6 {
-            m11: Fused::sum_prod5(
-                self.m11,
-                rhs.m11,
-                self.m21,
-                rhs.m21,
-                self.m31,
-                rhs.m31,
-                self.m41,
-                rhs.m41,
-                self.m51,
-                rhs.m51,
-            ),
-            m21: Fused::sum_prod5(
-                self.m12,
-                rhs.m11,
-                self.m22,
-                rhs.m21,
-                self.m32,
-                rhs.m31,
-                self.m42,
-                rhs.m41,
-                self.m52,
-                rhs.m51,
-            ),
-            m31: Fused::sum_prod5(
-                self.m13,
-                rhs.m11,
-                self.m23,
-                rhs.m21,
-                self.m33,
-                rhs.m31,
-                self.m43,
-                rhs.m41,
-                self.m53,
-                rhs.m51,
-            ),
-            m12: Fused::sum_prod5(
-                self.m11,
-                rhs.m12,
-                self.m21,
-                rhs.m22,
-                self.m31,
-                rhs.m32,
-                self.m41,
-                rhs.m42,
-                self.m51,
-                rhs.m52,
-            ),
-            m22: Fused::sum_prod5(
-                self.m12,
-                rhs.m12,
-                self.m22,
-                rhs.m22,
-                self.m32,
-                rhs.m32,
-                self.m42,
-                rhs.m42,
-                self.m52,
-                rhs.m52,
-            ),
-            m32: Fused::sum_prod5(
-                self.m13,
-                rhs.m12,
-                self.m23,
-                rhs.m22,
-                self.m33,
-                rhs.m32,
-                self.m43,
-                rhs.m42,
-                self.m53,
-                rhs.m52,
-            ),
-            m13: Fused::sum_prod5(
-                self.m11,
-                rhs.m13,
-                self.m21,
-                rhs.m23,
-                self.m31,
-                rhs.m33,
-                self.m41,
-                rhs.m43,
-                self.m51,
-                rhs.m53,
-            ),
-            m23: Fused::sum_prod5(
-                self.m12,
-                rhs.m13,
-                self.m22,
-                rhs.m23,
-                self.m32,
-                rhs.m33,
-                self.m42,
-                rhs.m43,
-                self.m52,
-                rhs.m53,
-            ),
-            m33: Fused::sum_prod5(
-                self.m13,
-                rhs.m13,
-                self.m23,
-                rhs.m23,
-                self.m33,
-                rhs.m33,
-                self.m43,
-                rhs.m43,
-                self.m53,
-                rhs.m53,
-            ),
-            m14: Fused::sum_prod5(
-                self.m11,
-                rhs.m14,
-                self.m21,
-                rhs.m24,
-                self.m31,
-                rhs.m34,
-                self.m41,
-                rhs.m44,
-                self.m51,
-                rhs.m54,
-            ),
-            m24: Fused::sum_prod5(
-                self.m12,
-                rhs.m14,
-                self.m22,
-                rhs.m24,
-                self.m32,
-                rhs.m34,
-                self.m42,
-                rhs.m44,
-                self.m52,
-                rhs.m54,
-            ),
-            m34: Fused::sum_prod5(
-                self.m13,
-                rhs.m14,
-                self.m23,
-                rhs.m24,
-                self.m33,
-                rhs.m34,
-                self.m43,
-                rhs.m44,
-                self.m53,
-                rhs.m54,
-            ),
-            m15: Fused::sum_prod5(
-                self.m11,
-                rhs.m15,
-                self.m21,
-                rhs.m25,
-                self.m31,
-                rhs.m35,
-                self.m41,
-                rhs.m45,
-                self.m51,
-                rhs.m55,
-            ),
-            m25: Fused::sum_prod5(
-                self.m12,
-                rhs.m15,
-                self.m22,
-                rhs.m25,
-                self.m32,
-                rhs.m35,
-                self.m42,
-                rhs.m45,
-                self.m52,
-                rhs.m55,
-            ),
-            m35: Fused::sum_prod5(
-                self.m13,
-                rhs.m15,
-                self.m23,
-                rhs.m25,
-                self.m33,
-                rhs.m35,
-                self.m43,
-                rhs.m45,
-                self.m53,
-                rhs.m55,
-            ),
-            m16: Fused::sum_prod5(
-                self.m11,
-                rhs.m16,
-                self.m21,
-                rhs.m26,
-                self.m31,
-                rhs.m36,
-                self.m41,
-                rhs.m46,
-                self.m51,
-                rhs.m56,
-            ),
-            m26: Fused::sum_prod5(
-                self.m12,
-                rhs.m16,
-                self.m22,
-                rhs.m26,
-                self.m32,
-                rhs.m36,
-                self.m42,
-                rhs.m46,
-                self.m52,
-                rhs.m56,
-            ),
-            m36: Fused::sum_prod5(
-                self.m13,
-                rhs.m16,
-                self.m23,
-                rhs.m26,
-                self.m33,
-                rhs.m36,
-                self.m43,
-                rhs.m46,
-                self.m53,
-                rhs.m56,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix3x5 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m15: self.m51,
+                m25: self.m52,
+                m35: self.m53,
+            },
+            rhs,
+        )
     }
 }

@@ -10,7 +10,6 @@
 
 use core::ops::{AddAssign, SubAssign};
 use simba::scalar::Real;
-use super::kernels::Fused;
 use super::matrix1::Matrix1;
 use super::matrix5::Matrix5;
 use super::matrix5x2::Matrix5x2;
@@ -372,147 +371,98 @@ pub impl Vector5MulRowVector6<
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix1`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix1`: `mul_mat` of the transposed components, so the 5 products of each
+/// component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector5TrMulVector5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector5<T>, Vector5<T>> {
     type Output = Matrix1<T>;
     #[inline(always)]
     fn tr_mul(self: Vector5<T>, rhs: Vector5<T>) -> Matrix1<T> {
-        Matrix1 {
-            x: Fused::sum_prod5(
-                self.x, rhs.x, self.y, rhs.y, self.z, rhs.z, self.w, rhs.w, self.a, rhs.a,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector2`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector2`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector5TrMulMatrix5x2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector5<T>, Matrix5x2<T>> {
     type Output = RowVector2<T>;
     #[inline(always)]
     fn tr_mul(self: Vector5<T>, rhs: Matrix5x2<T>) -> RowVector2<T> {
-        RowVector2 {
-            x: Fused::sum_prod5(
-                self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41, self.a, rhs.m51,
-            ),
-            y: Fused::sum_prod5(
-                self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42, self.a, rhs.m52,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector3`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector3`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector5TrMulMatrix5x3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector5<T>, Matrix5x3<T>> {
     type Output = RowVector3<T>;
     #[inline(always)]
     fn tr_mul(self: Vector5<T>, rhs: Matrix5x3<T>) -> RowVector3<T> {
-        RowVector3 {
-            x: Fused::sum_prod5(
-                self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41, self.a, rhs.m51,
-            ),
-            y: Fused::sum_prod5(
-                self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42, self.a, rhs.m52,
-            ),
-            z: Fused::sum_prod5(
-                self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43, self.a, rhs.m53,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector4`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector4`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector5TrMulMatrix5x4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector5<T>, Matrix5x4<T>> {
     type Output = RowVector4<T>;
     #[inline(always)]
     fn tr_mul(self: Vector5<T>, rhs: Matrix5x4<T>) -> RowVector4<T> {
-        RowVector4 {
-            x: Fused::sum_prod5(
-                self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41, self.a, rhs.m51,
-            ),
-            y: Fused::sum_prod5(
-                self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42, self.a, rhs.m52,
-            ),
-            z: Fused::sum_prod5(
-                self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43, self.a, rhs.m53,
-            ),
-            w: Fused::sum_prod5(
-                self.x, rhs.m14, self.y, rhs.m24, self.z, rhs.m34, self.w, rhs.m44, self.a, rhs.m54,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector5`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector5`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector5TrMulMatrix5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector5<T>, Matrix5<T>> {
     type Output = RowVector5<T>;
+    #[inline(always)]
     fn tr_mul(self: Vector5<T>, rhs: Matrix5<T>) -> RowVector5<T> {
-        RowVector5 {
-            x: Fused::sum_prod5(
-                self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41, self.a, rhs.m51,
-            ),
-            y: Fused::sum_prod5(
-                self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42, self.a, rhs.m52,
-            ),
-            z: Fused::sum_prod5(
-                self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43, self.a, rhs.m53,
-            ),
-            w: Fused::sum_prod5(
-                self.x, rhs.m14, self.y, rhs.m24, self.z, rhs.m34, self.w, rhs.m44, self.a, rhs.m54,
-            ),
-            a: Fused::sum_prod5(
-                self.x, rhs.m15, self.y, rhs.m25, self.z, rhs.m35, self.w, rhs.m45, self.a, rhs.m55,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector6`: the 5 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector6`: `mul_mat` of the transposed components, so the 5 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector5TrMulMatrix5x6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector5<T>, Matrix5x6<T>> {
     type Output = RowVector6<T>;
+    #[inline(always)]
     fn tr_mul(self: Vector5<T>, rhs: Matrix5x6<T>) -> RowVector6<T> {
-        RowVector6 {
-            x: Fused::sum_prod5(
-                self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41, self.a, rhs.m51,
-            ),
-            y: Fused::sum_prod5(
-                self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42, self.a, rhs.m52,
-            ),
-            z: Fused::sum_prod5(
-                self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43, self.a, rhs.m53,
-            ),
-            w: Fused::sum_prod5(
-                self.x, rhs.m14, self.y, rhs.m24, self.z, rhs.m34, self.w, rhs.m44, self.a, rhs.m54,
-            ),
-            a: Fused::sum_prod5(
-                self.x, rhs.m15, self.y, rhs.m25, self.z, rhs.m35, self.w, rhs.m45, self.a, rhs.m55,
-            ),
-            b: Fused::sum_prod5(
-                self.x, rhs.m16, self.y, rhs.m26, self.z, rhs.m36, self.w, rhs.m46, self.a, rhs.m56,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs,
+        )
     }
 }

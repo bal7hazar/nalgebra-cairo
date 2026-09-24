@@ -1117,325 +1117,200 @@ pub impl Matrix4MulMatrix4x6<
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Vector4`: one `sum_prod4` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Vector4`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix4TrMulVector4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix4<T>, Vector4<T>> {
     type Output = Vector4<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix4<T>, rhs: Vector4<T>) -> Vector4<T> {
-        Vector4 {
-            x: R::sum_prod4(self.m11, rhs.x, self.m21, rhs.y, self.m31, rhs.z, self.m41, rhs.w),
-            y: R::sum_prod4(self.m12, rhs.x, self.m22, rhs.y, self.m32, rhs.z, self.m42, rhs.w),
-            z: R::sum_prod4(self.m13, rhs.x, self.m23, rhs.y, self.m33, rhs.z, self.m43, rhs.w),
-            w: R::sum_prod4(self.m14, rhs.x, self.m24, rhs.y, self.m34, rhs.z, self.m44, rhs.w),
-        }
+        MatrixMul::mul_mat(
+            Matrix4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m43: self.m34,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m44: self.m44,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix4x2`: one `sum_prod4` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix4x2`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix4TrMulMatrix4x2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix4<T>, Matrix4x2<T>> {
     type Output = Matrix4x2<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix4<T>, rhs: Matrix4x2<T>) -> Matrix4x2<T> {
-        Matrix4x2 {
-            m11: R::sum_prod4(
-                self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31, self.m41, rhs.m41,
-            ),
-            m21: R::sum_prod4(
-                self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31, self.m42, rhs.m41,
-            ),
-            m31: R::sum_prod4(
-                self.m13, rhs.m11, self.m23, rhs.m21, self.m33, rhs.m31, self.m43, rhs.m41,
-            ),
-            m41: R::sum_prod4(
-                self.m14, rhs.m11, self.m24, rhs.m21, self.m34, rhs.m31, self.m44, rhs.m41,
-            ),
-            m12: R::sum_prod4(
-                self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32, self.m41, rhs.m42,
-            ),
-            m22: R::sum_prod4(
-                self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32, self.m42, rhs.m42,
-            ),
-            m32: R::sum_prod4(
-                self.m13, rhs.m12, self.m23, rhs.m22, self.m33, rhs.m32, self.m43, rhs.m42,
-            ),
-            m42: R::sum_prod4(
-                self.m14, rhs.m12, self.m24, rhs.m22, self.m34, rhs.m32, self.m44, rhs.m42,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m43: self.m34,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m44: self.m44,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix4x3`: one `sum_prod4` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix4x3`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix4TrMulMatrix4x3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix4<T>, Matrix4x3<T>> {
     type Output = Matrix4x3<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix4<T>, rhs: Matrix4x3<T>) -> Matrix4x3<T> {
-        Matrix4x3 {
-            m11: R::sum_prod4(
-                self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31, self.m41, rhs.m41,
-            ),
-            m21: R::sum_prod4(
-                self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31, self.m42, rhs.m41,
-            ),
-            m31: R::sum_prod4(
-                self.m13, rhs.m11, self.m23, rhs.m21, self.m33, rhs.m31, self.m43, rhs.m41,
-            ),
-            m41: R::sum_prod4(
-                self.m14, rhs.m11, self.m24, rhs.m21, self.m34, rhs.m31, self.m44, rhs.m41,
-            ),
-            m12: R::sum_prod4(
-                self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32, self.m41, rhs.m42,
-            ),
-            m22: R::sum_prod4(
-                self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32, self.m42, rhs.m42,
-            ),
-            m32: R::sum_prod4(
-                self.m13, rhs.m12, self.m23, rhs.m22, self.m33, rhs.m32, self.m43, rhs.m42,
-            ),
-            m42: R::sum_prod4(
-                self.m14, rhs.m12, self.m24, rhs.m22, self.m34, rhs.m32, self.m44, rhs.m42,
-            ),
-            m13: R::sum_prod4(
-                self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33, self.m41, rhs.m43,
-            ),
-            m23: R::sum_prod4(
-                self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33, self.m42, rhs.m43,
-            ),
-            m33: R::sum_prod4(
-                self.m13, rhs.m13, self.m23, rhs.m23, self.m33, rhs.m33, self.m43, rhs.m43,
-            ),
-            m43: R::sum_prod4(
-                self.m14, rhs.m13, self.m24, rhs.m23, self.m34, rhs.m33, self.m44, rhs.m43,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m43: self.m34,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m44: self.m44,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix4`: one `sum_prod4` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix4`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix4TrMulMatrix4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix4<T>, Matrix4<T>> {
     type Output = Matrix4<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix4<T>, rhs: Matrix4<T>) -> Matrix4<T> {
-        Matrix4 {
-            m11: R::sum_prod4(
-                self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31, self.m41, rhs.m41,
-            ),
-            m21: R::sum_prod4(
-                self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31, self.m42, rhs.m41,
-            ),
-            m31: R::sum_prod4(
-                self.m13, rhs.m11, self.m23, rhs.m21, self.m33, rhs.m31, self.m43, rhs.m41,
-            ),
-            m41: R::sum_prod4(
-                self.m14, rhs.m11, self.m24, rhs.m21, self.m34, rhs.m31, self.m44, rhs.m41,
-            ),
-            m12: R::sum_prod4(
-                self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32, self.m41, rhs.m42,
-            ),
-            m22: R::sum_prod4(
-                self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32, self.m42, rhs.m42,
-            ),
-            m32: R::sum_prod4(
-                self.m13, rhs.m12, self.m23, rhs.m22, self.m33, rhs.m32, self.m43, rhs.m42,
-            ),
-            m42: R::sum_prod4(
-                self.m14, rhs.m12, self.m24, rhs.m22, self.m34, rhs.m32, self.m44, rhs.m42,
-            ),
-            m13: R::sum_prod4(
-                self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33, self.m41, rhs.m43,
-            ),
-            m23: R::sum_prod4(
-                self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33, self.m42, rhs.m43,
-            ),
-            m33: R::sum_prod4(
-                self.m13, rhs.m13, self.m23, rhs.m23, self.m33, rhs.m33, self.m43, rhs.m43,
-            ),
-            m43: R::sum_prod4(
-                self.m14, rhs.m13, self.m24, rhs.m23, self.m34, rhs.m33, self.m44, rhs.m43,
-            ),
-            m14: R::sum_prod4(
-                self.m11, rhs.m14, self.m21, rhs.m24, self.m31, rhs.m34, self.m41, rhs.m44,
-            ),
-            m24: R::sum_prod4(
-                self.m12, rhs.m14, self.m22, rhs.m24, self.m32, rhs.m34, self.m42, rhs.m44,
-            ),
-            m34: R::sum_prod4(
-                self.m13, rhs.m14, self.m23, rhs.m24, self.m33, rhs.m34, self.m43, rhs.m44,
-            ),
-            m44: R::sum_prod4(
-                self.m14, rhs.m14, self.m24, rhs.m24, self.m34, rhs.m34, self.m44, rhs.m44,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m43: self.m34,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m44: self.m44,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix4x5`: one `sum_prod4` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix4x5`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix4TrMulMatrix4x5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix4<T>, Matrix4x5<T>> {
     type Output = Matrix4x5<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix4<T>, rhs: Matrix4x5<T>) -> Matrix4x5<T> {
-        Matrix4x5 {
-            m11: R::sum_prod4(
-                self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31, self.m41, rhs.m41,
-            ),
-            m21: R::sum_prod4(
-                self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31, self.m42, rhs.m41,
-            ),
-            m31: R::sum_prod4(
-                self.m13, rhs.m11, self.m23, rhs.m21, self.m33, rhs.m31, self.m43, rhs.m41,
-            ),
-            m41: R::sum_prod4(
-                self.m14, rhs.m11, self.m24, rhs.m21, self.m34, rhs.m31, self.m44, rhs.m41,
-            ),
-            m12: R::sum_prod4(
-                self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32, self.m41, rhs.m42,
-            ),
-            m22: R::sum_prod4(
-                self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32, self.m42, rhs.m42,
-            ),
-            m32: R::sum_prod4(
-                self.m13, rhs.m12, self.m23, rhs.m22, self.m33, rhs.m32, self.m43, rhs.m42,
-            ),
-            m42: R::sum_prod4(
-                self.m14, rhs.m12, self.m24, rhs.m22, self.m34, rhs.m32, self.m44, rhs.m42,
-            ),
-            m13: R::sum_prod4(
-                self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33, self.m41, rhs.m43,
-            ),
-            m23: R::sum_prod4(
-                self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33, self.m42, rhs.m43,
-            ),
-            m33: R::sum_prod4(
-                self.m13, rhs.m13, self.m23, rhs.m23, self.m33, rhs.m33, self.m43, rhs.m43,
-            ),
-            m43: R::sum_prod4(
-                self.m14, rhs.m13, self.m24, rhs.m23, self.m34, rhs.m33, self.m44, rhs.m43,
-            ),
-            m14: R::sum_prod4(
-                self.m11, rhs.m14, self.m21, rhs.m24, self.m31, rhs.m34, self.m41, rhs.m44,
-            ),
-            m24: R::sum_prod4(
-                self.m12, rhs.m14, self.m22, rhs.m24, self.m32, rhs.m34, self.m42, rhs.m44,
-            ),
-            m34: R::sum_prod4(
-                self.m13, rhs.m14, self.m23, rhs.m24, self.m33, rhs.m34, self.m43, rhs.m44,
-            ),
-            m44: R::sum_prod4(
-                self.m14, rhs.m14, self.m24, rhs.m24, self.m34, rhs.m34, self.m44, rhs.m44,
-            ),
-            m15: R::sum_prod4(
-                self.m11, rhs.m15, self.m21, rhs.m25, self.m31, rhs.m35, self.m41, rhs.m45,
-            ),
-            m25: R::sum_prod4(
-                self.m12, rhs.m15, self.m22, rhs.m25, self.m32, rhs.m35, self.m42, rhs.m45,
-            ),
-            m35: R::sum_prod4(
-                self.m13, rhs.m15, self.m23, rhs.m25, self.m33, rhs.m35, self.m43, rhs.m45,
-            ),
-            m45: R::sum_prod4(
-                self.m14, rhs.m15, self.m24, rhs.m25, self.m34, rhs.m35, self.m44, rhs.m45,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m43: self.m34,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m44: self.m44,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix4x6`: one `sum_prod4` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix4x6`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix4TrMulMatrix4x6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix4<T>, Matrix4x6<T>> {
     type Output = Matrix4x6<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix4<T>, rhs: Matrix4x6<T>) -> Matrix4x6<T> {
-        Matrix4x6 {
-            m11: R::sum_prod4(
-                self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31, self.m41, rhs.m41,
-            ),
-            m21: R::sum_prod4(
-                self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31, self.m42, rhs.m41,
-            ),
-            m31: R::sum_prod4(
-                self.m13, rhs.m11, self.m23, rhs.m21, self.m33, rhs.m31, self.m43, rhs.m41,
-            ),
-            m41: R::sum_prod4(
-                self.m14, rhs.m11, self.m24, rhs.m21, self.m34, rhs.m31, self.m44, rhs.m41,
-            ),
-            m12: R::sum_prod4(
-                self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32, self.m41, rhs.m42,
-            ),
-            m22: R::sum_prod4(
-                self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32, self.m42, rhs.m42,
-            ),
-            m32: R::sum_prod4(
-                self.m13, rhs.m12, self.m23, rhs.m22, self.m33, rhs.m32, self.m43, rhs.m42,
-            ),
-            m42: R::sum_prod4(
-                self.m14, rhs.m12, self.m24, rhs.m22, self.m34, rhs.m32, self.m44, rhs.m42,
-            ),
-            m13: R::sum_prod4(
-                self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33, self.m41, rhs.m43,
-            ),
-            m23: R::sum_prod4(
-                self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33, self.m42, rhs.m43,
-            ),
-            m33: R::sum_prod4(
-                self.m13, rhs.m13, self.m23, rhs.m23, self.m33, rhs.m33, self.m43, rhs.m43,
-            ),
-            m43: R::sum_prod4(
-                self.m14, rhs.m13, self.m24, rhs.m23, self.m34, rhs.m33, self.m44, rhs.m43,
-            ),
-            m14: R::sum_prod4(
-                self.m11, rhs.m14, self.m21, rhs.m24, self.m31, rhs.m34, self.m41, rhs.m44,
-            ),
-            m24: R::sum_prod4(
-                self.m12, rhs.m14, self.m22, rhs.m24, self.m32, rhs.m34, self.m42, rhs.m44,
-            ),
-            m34: R::sum_prod4(
-                self.m13, rhs.m14, self.m23, rhs.m24, self.m33, rhs.m34, self.m43, rhs.m44,
-            ),
-            m44: R::sum_prod4(
-                self.m14, rhs.m14, self.m24, rhs.m24, self.m34, rhs.m34, self.m44, rhs.m44,
-            ),
-            m15: R::sum_prod4(
-                self.m11, rhs.m15, self.m21, rhs.m25, self.m31, rhs.m35, self.m41, rhs.m45,
-            ),
-            m25: R::sum_prod4(
-                self.m12, rhs.m15, self.m22, rhs.m25, self.m32, rhs.m35, self.m42, rhs.m45,
-            ),
-            m35: R::sum_prod4(
-                self.m13, rhs.m15, self.m23, rhs.m25, self.m33, rhs.m35, self.m43, rhs.m45,
-            ),
-            m45: R::sum_prod4(
-                self.m14, rhs.m15, self.m24, rhs.m25, self.m34, rhs.m35, self.m44, rhs.m45,
-            ),
-            m16: R::sum_prod4(
-                self.m11, rhs.m16, self.m21, rhs.m26, self.m31, rhs.m36, self.m41, rhs.m46,
-            ),
-            m26: R::sum_prod4(
-                self.m12, rhs.m16, self.m22, rhs.m26, self.m32, rhs.m36, self.m42, rhs.m46,
-            ),
-            m36: R::sum_prod4(
-                self.m13, rhs.m16, self.m23, rhs.m26, self.m33, rhs.m36, self.m43, rhs.m46,
-            ),
-            m46: R::sum_prod4(
-                self.m14, rhs.m16, self.m24, rhs.m26, self.m34, rhs.m36, self.m44, rhs.m46,
-            ),
-        }
+        MatrixMul::mul_mat(
+            Matrix4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m43: self.m34,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m44: self.m44,
+            },
+            rhs,
+        )
     }
 }

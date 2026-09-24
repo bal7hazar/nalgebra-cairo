@@ -19,7 +19,6 @@
 
 use core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
 use simba::scalar::Real;
-use super::kernels::Fused;
 use super::matrix1::Matrix1;
 use super::matrix6::Matrix6;
 use super::matrix6x2::Matrix6x2;
@@ -592,378 +591,98 @@ pub impl Vector6MulRowVector6<
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix1`: the 6 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix1`: `mul_mat` of the transposed components, so the 6 products of each
+/// component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector6TrMulVector6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector6<T>, Vector6<T>> {
     type Output = Matrix1<T>;
     #[inline(always)]
     fn tr_mul(self: Vector6<T>, rhs: Vector6<T>) -> Matrix1<T> {
-        Matrix1 {
-            x: Fused::sum_prod6(
-                self.x,
-                rhs.x,
-                self.y,
-                rhs.y,
-                self.z,
-                rhs.z,
-                self.w,
-                rhs.w,
-                self.a,
-                rhs.a,
-                self.b,
-                rhs.b,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector2`: the 6 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector2`: `mul_mat` of the transposed components, so the 6 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector6TrMulMatrix6x2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector6<T>, Matrix6x2<T>> {
     type Output = RowVector2<T>;
     #[inline(always)]
     fn tr_mul(self: Vector6<T>, rhs: Matrix6x2<T>) -> RowVector2<T> {
-        RowVector2 {
-            x: Fused::sum_prod6(
-                self.x,
-                rhs.m11,
-                self.y,
-                rhs.m21,
-                self.z,
-                rhs.m31,
-                self.w,
-                rhs.m41,
-                self.a,
-                rhs.m51,
-                self.b,
-                rhs.m61,
-            ),
-            y: Fused::sum_prod6(
-                self.x,
-                rhs.m12,
-                self.y,
-                rhs.m22,
-                self.z,
-                rhs.m32,
-                self.w,
-                rhs.m42,
-                self.a,
-                rhs.m52,
-                self.b,
-                rhs.m62,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector3`: the 6 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector3`: `mul_mat` of the transposed components, so the 6 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector6TrMulMatrix6x3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector6<T>, Matrix6x3<T>> {
     type Output = RowVector3<T>;
     #[inline(always)]
     fn tr_mul(self: Vector6<T>, rhs: Matrix6x3<T>) -> RowVector3<T> {
-        RowVector3 {
-            x: Fused::sum_prod6(
-                self.x,
-                rhs.m11,
-                self.y,
-                rhs.m21,
-                self.z,
-                rhs.m31,
-                self.w,
-                rhs.m41,
-                self.a,
-                rhs.m51,
-                self.b,
-                rhs.m61,
-            ),
-            y: Fused::sum_prod6(
-                self.x,
-                rhs.m12,
-                self.y,
-                rhs.m22,
-                self.z,
-                rhs.m32,
-                self.w,
-                rhs.m42,
-                self.a,
-                rhs.m52,
-                self.b,
-                rhs.m62,
-            ),
-            z: Fused::sum_prod6(
-                self.x,
-                rhs.m13,
-                self.y,
-                rhs.m23,
-                self.z,
-                rhs.m33,
-                self.w,
-                rhs.m43,
-                self.a,
-                rhs.m53,
-                self.b,
-                rhs.m63,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector4`: the 6 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector4`: `mul_mat` of the transposed components, so the 6 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector6TrMulMatrix6x4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector6<T>, Matrix6x4<T>> {
     type Output = RowVector4<T>;
     #[inline(always)]
     fn tr_mul(self: Vector6<T>, rhs: Matrix6x4<T>) -> RowVector4<T> {
-        RowVector4 {
-            x: Fused::sum_prod6(
-                self.x,
-                rhs.m11,
-                self.y,
-                rhs.m21,
-                self.z,
-                rhs.m31,
-                self.w,
-                rhs.m41,
-                self.a,
-                rhs.m51,
-                self.b,
-                rhs.m61,
-            ),
-            y: Fused::sum_prod6(
-                self.x,
-                rhs.m12,
-                self.y,
-                rhs.m22,
-                self.z,
-                rhs.m32,
-                self.w,
-                rhs.m42,
-                self.a,
-                rhs.m52,
-                self.b,
-                rhs.m62,
-            ),
-            z: Fused::sum_prod6(
-                self.x,
-                rhs.m13,
-                self.y,
-                rhs.m23,
-                self.z,
-                rhs.m33,
-                self.w,
-                rhs.m43,
-                self.a,
-                rhs.m53,
-                self.b,
-                rhs.m63,
-            ),
-            w: Fused::sum_prod6(
-                self.x,
-                rhs.m14,
-                self.y,
-                rhs.m24,
-                self.z,
-                rhs.m34,
-                self.w,
-                rhs.m44,
-                self.a,
-                rhs.m54,
-                self.b,
-                rhs.m64,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector5`: the 6 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector5`: `mul_mat` of the transposed components, so the 6 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector6TrMulMatrix6x5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector6<T>, Matrix6x5<T>> {
     type Output = RowVector5<T>;
+    #[inline(always)]
     fn tr_mul(self: Vector6<T>, rhs: Matrix6x5<T>) -> RowVector5<T> {
-        RowVector5 {
-            x: Fused::sum_prod6(
-                self.x,
-                rhs.m11,
-                self.y,
-                rhs.m21,
-                self.z,
-                rhs.m31,
-                self.w,
-                rhs.m41,
-                self.a,
-                rhs.m51,
-                self.b,
-                rhs.m61,
-            ),
-            y: Fused::sum_prod6(
-                self.x,
-                rhs.m12,
-                self.y,
-                rhs.m22,
-                self.z,
-                rhs.m32,
-                self.w,
-                rhs.m42,
-                self.a,
-                rhs.m52,
-                self.b,
-                rhs.m62,
-            ),
-            z: Fused::sum_prod6(
-                self.x,
-                rhs.m13,
-                self.y,
-                rhs.m23,
-                self.z,
-                rhs.m33,
-                self.w,
-                rhs.m43,
-                self.a,
-                rhs.m53,
-                self.b,
-                rhs.m63,
-            ),
-            w: Fused::sum_prod6(
-                self.x,
-                rhs.m14,
-                self.y,
-                rhs.m24,
-                self.z,
-                rhs.m34,
-                self.w,
-                rhs.m44,
-                self.a,
-                rhs.m54,
-                self.b,
-                rhs.m64,
-            ),
-            a: Fused::sum_prod6(
-                self.x,
-                rhs.m15,
-                self.y,
-                rhs.m25,
-                self.z,
-                rhs.m35,
-                self.w,
-                rhs.m45,
-                self.a,
-                rhs.m55,
-                self.b,
-                rhs.m65,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }, rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `RowVector6`: the 6 products of each component
-/// accumulated exactly in `Real::Wide` and rescaled once. Bit-identical to
-/// `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream: `tr_mul`.
+/// `selfᵀ * rhs`, a `RowVector6`: `mul_mat` of the transposed components, so the 6 products of
+/// each component accumulated exactly in `Real::Wide` and rescaled once; bit-identical to
+/// `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only relabels values). Panics on
+/// overflow. Upstream: `tr_mul`.
 pub impl Vector6TrMulMatrix6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Vector6<T>, Matrix6<T>> {
     type Output = RowVector6<T>;
+    #[inline(always)]
     fn tr_mul(self: Vector6<T>, rhs: Matrix6<T>) -> RowVector6<T> {
-        RowVector6 {
-            x: Fused::sum_prod6(
-                self.x,
-                rhs.m11,
-                self.y,
-                rhs.m21,
-                self.z,
-                rhs.m31,
-                self.w,
-                rhs.m41,
-                self.a,
-                rhs.m51,
-                self.b,
-                rhs.m61,
-            ),
-            y: Fused::sum_prod6(
-                self.x,
-                rhs.m12,
-                self.y,
-                rhs.m22,
-                self.z,
-                rhs.m32,
-                self.w,
-                rhs.m42,
-                self.a,
-                rhs.m52,
-                self.b,
-                rhs.m62,
-            ),
-            z: Fused::sum_prod6(
-                self.x,
-                rhs.m13,
-                self.y,
-                rhs.m23,
-                self.z,
-                rhs.m33,
-                self.w,
-                rhs.m43,
-                self.a,
-                rhs.m53,
-                self.b,
-                rhs.m63,
-            ),
-            w: Fused::sum_prod6(
-                self.x,
-                rhs.m14,
-                self.y,
-                rhs.m24,
-                self.z,
-                rhs.m34,
-                self.w,
-                rhs.m44,
-                self.a,
-                rhs.m54,
-                self.b,
-                rhs.m64,
-            ),
-            a: Fused::sum_prod6(
-                self.x,
-                rhs.m15,
-                self.y,
-                rhs.m25,
-                self.z,
-                rhs.m35,
-                self.w,
-                rhs.m45,
-                self.a,
-                rhs.m55,
-                self.b,
-                rhs.m65,
-            ),
-            b: Fused::sum_prod6(
-                self.x,
-                rhs.m16,
-                self.y,
-                rhs.m26,
-                self.z,
-                rhs.m36,
-                self.w,
-                rhs.m46,
-                self.a,
-                rhs.m56,
-                self.b,
-                rhs.m66,
-            ),
-        }
+        MatrixMul::mul_mat(
+            RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }, rhs,
+        )
     }
 }

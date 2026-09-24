@@ -21,7 +21,11 @@ Families and files (`src/<file>.cairo`, each under ~2,000 lines):
 * `structure`: `transpose` (twice), `trace`, `abs_diff_eq`, `is_identity`, `lerp`, the `[T; N]`
   conversions, `Matrix1`'s scalar accessors;
 * `mul_mat_r<R>` / `tr_mul_r<R>` (by number of rows of the left operand): every conformable
-  pair, `*` and `*=` on squares, and one overflow panic per left operand.
+  pair, `*` and `*=` on squares, and one overflow panic per left operand;
+* `benches`: the gas of `mul_mat` / `tr_mul` on a sample covering every kernel size (1 to 6
+  terms) and output kind, `mul_mat` against `*` on squares, `tr_mul` against
+  `transpose().mul_mat()`, and the `Fused::sum_prod6` helper against the same `Real::Wide` chain
+  written in place (`alt_nested`, the form of the former `Matrix6`): `gas/nalgebra_shapes_tests_core`.
 """
 
 import random
@@ -287,6 +291,66 @@ fn test_assert_raws_detects_a_difference() {
 """
 
 
+# (lhs, rhs) of the `mul_mat` benches: every kernel size and output kind, squares included.
+MUL_BENCHES = [(Shape(3, 1), Shape(1, 3)), (Shape(3, 2), Shape(2, 3)), (Shape(1, 3), Shape(3, 1)),
+               (Shape(2, 3), Shape(3, 1)), (Shape(2, 3), Shape(3, 2)), (Shape(4, 4), Shape(4, 4)),
+               (Shape(6, 4), Shape(4, 6)), (Shape(5, 5), Shape(5, 1)), (Shape(5, 5), Shape(5, 5)),
+               (Shape(1, 6), Shape(6, 1))]
+TR_MUL_BENCHES = [(Shape(3, 2), Shape(3, 1)), (Shape(2, 3), Shape(2, 3)),
+                  (Shape(5, 5), Shape(5, 1))]
+
+
+def bench(group: str, variant: str, lines: list[str]) -> str:
+    return f"#[test]\n#[inline(never)]\nfn bench_{group}__{variant}() {{\n" + "\n".join(lines) + "\n}"
+
+
+def render_benches() -> str:
+    fns, names = [], set()
+    bb = lambda s, var, v: f"let {var}: {s.name}<Fixed> = black_box(load({col(s, v)}));"  # noqa: E731
+    for op, pairs in (("mul_mat", MUL_BENCHES), ("tr_mul", TR_MUL_BENCHES)):
+        for a, b in pairs:
+            o = Shape(a.r, b.c) if op == "mul_mat" else Shape(a.c, b.c)
+            names.update({a.name, b.name, o.name})
+            rng = random.Random(f"tests_core/bench/{op}/{a.name}*{b.name}")
+            va, vb = raws(rng, a), raws(rng, b)
+            vo = model_mul(a, b, va, vb) if op == "mul_mat" else model_tr_mul(a, b, va, vb)
+            group = f"{a.module}_{'mul' if op == 'mul_mat' else 'tr_mul'}_{b.module}"
+            pre = [bb(a, "a", va), bb(b, "b", vb), bb(o, "e", vo)]
+            fns.append(bench(group, "baseline", [pre[0].replace("let a:", "let _a:"),
+                                                 pre[1].replace("let b:", "let _b:"), pre[2],
+                                                 "assert!(e == e);"]))
+            fns.append(bench(group, op, pre + [f"assert!(a.{op}(b) == e);"]))
+            if op == "mul_mat" and a == b:
+                fns.append(bench(group, "operator", pre + ["assert!(a * b == e);"]))
+            if op == "tr_mul":
+                names.add(f"{a.name}Trait")
+                fns.append(bench(group, "alt_transpose_then_mul_mat",
+                                 pre + ["assert!(a.transpose().mul_mat(b) == e);"]))
+            if op == "mul_mat" and a.c == 6:
+                pairs6 = [(f"a.{a.f(0, q)}", f"b.{b.f(q, 0)}") for q in range(6)]
+                chain = "RF::wide_zero()"
+                for x, y in pairs6:
+                    chain = f"RF::wide_add_prod({chain}, {x}, {y})"
+                fns.insert(0, f"/// `{a.name} * {b.name}` with the `Real::Wide` chain written in "
+                              f"place (the form of the former\n/// `Matrix6` products), against "
+                              f"the `Fused::sum_prod6` helper of `mul_mat`.\n"
+                              f"fn alt_nested_{group}(a: {a.name}<Fixed>, b: {b.name}<Fixed>) -> "
+                              f"{o.name}<Fixed> {{\n{o.name} {{ x: RF::wide_rescale({chain}) }}\n}}")
+                fns.insert(1, f"#[test]\nfn test_{group}_alt_nested_matches() {{\n"
+                              + "\n".join(pre) + f"\nassert!(alt_nested_{group}(a, b) == "
+                              f"a.mul_mat(b));\nassert!(alt_nested_{group}(a, b) == e);\n}}")
+                fns.append(bench(group, "alt_nested", pre + [f"assert!(alt_nested_{group}(a, b) == e);"]))
+    body = "\n\n".join(fns).replace("RF::", "Real::<Fixed>::")
+    uses = ["use fixed::Fixed;", "use nalgebra_testing::black_box;",
+            "use simba::scalar::Real;",
+            f"use nalgebra::{{{', '.join(sorted(names | {'MatrixMul', 'MatrixTrMul'}))}}};",
+            "use crate::helpers::load;"]
+    return (f"{HEADER}//! Gas of the generated products (`bench_<group>__<variant>`, net of the "
+            f"`baseline`): `mul_mat` /\n//! `tr_mul` on a sample of every kernel size, against "
+            f"`*`, `transpose().mul_mat()` and the chain\n//! written in place.\n\n"
+            + "\n".join(uses) + "\n\n" + body + "\n")
+
+
 def render() -> dict[str, str]:
     """{file name under `src/`: text}."""
     files = {"construction": File("construction", "Generated tests, `construction` family: "
@@ -307,7 +371,8 @@ def render() -> dict[str, str]:
         products(files, s)
     out = {f"{name}.cairo": f.render() for name, f in files.items()}
     out["helpers.cairo"] = HEADER + HELPERS
-    mods = "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(["helpers", *files]))
+    out["benches.cairo"] = render_benches()
+    mods = "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(["benches", "helpers", *files]))
     out["lib.cairo"] = (HEADER + "//! Generated tests of the static shapes, core families "
                         "(`tools/shapegen/tests_core.py`, WP 8.1b-3):\n//! Tier A of "
                         "`tools/shapegen/DESIGN.md` §3.3, one exact case per (shape, family) on "

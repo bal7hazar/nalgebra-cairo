@@ -6,6 +6,8 @@
 #[cfg(test)]
 mod arithmetic;
 #[cfg(test)]
+mod benches;
+#[cfg(test)]
 mod construction;
 #[cfg(test)]
 mod helpers;

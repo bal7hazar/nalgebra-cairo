@@ -323,123 +323,140 @@ pub impl Matrix3x2MulMatrix2x6<
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Vector2`: one `sum_prod3` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Vector2`: `mul_mat` of the transposed components, so one `sum_prod3` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix3x2TrMulVector3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix3x2<T>, Vector3<T>> {
     type Output = Vector2<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix3x2<T>, rhs: Vector3<T>) -> Vector2<T> {
-        Vector2 {
-            x: R::sum_prod3(self.m11, rhs.x, self.m21, rhs.y, self.m31, rhs.z),
-            y: R::sum_prod3(self.m12, rhs.x, self.m22, rhs.y, self.m32, rhs.z),
-        }
+        MatrixMul::mul_mat(
+            Matrix2x3 {
+                m11: self.m11,
+                m21: self.m12,
+                m12: self.m21,
+                m22: self.m22,
+                m13: self.m31,
+                m23: self.m32,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix2`: one `sum_prod3` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix2`: `mul_mat` of the transposed components, so one `sum_prod3` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix3x2TrMulMatrix3x2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix3x2<T>, Matrix3x2<T>> {
     type Output = Matrix2<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix3x2<T>, rhs: Matrix3x2<T>) -> Matrix2<T> {
-        Matrix2 {
-            m11: R::sum_prod3(self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31),
-            m21: R::sum_prod3(self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31),
-            m12: R::sum_prod3(self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32),
-            m22: R::sum_prod3(self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32),
-        }
+        MatrixMul::mul_mat(
+            Matrix2x3 {
+                m11: self.m11,
+                m21: self.m12,
+                m12: self.m21,
+                m22: self.m22,
+                m13: self.m31,
+                m23: self.m32,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix2x3`: one `sum_prod3` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix2x3`: `mul_mat` of the transposed components, so one `sum_prod3` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix3x2TrMulMatrix3<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix3x2<T>, Matrix3<T>> {
     type Output = Matrix2x3<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix3x2<T>, rhs: Matrix3<T>) -> Matrix2x3<T> {
-        Matrix2x3 {
-            m11: R::sum_prod3(self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31),
-            m21: R::sum_prod3(self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31),
-            m12: R::sum_prod3(self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32),
-            m22: R::sum_prod3(self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32),
-            m13: R::sum_prod3(self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33),
-            m23: R::sum_prod3(self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33),
-        }
+        MatrixMul::mul_mat(
+            Matrix2x3 {
+                m11: self.m11,
+                m21: self.m12,
+                m12: self.m21,
+                m22: self.m22,
+                m13: self.m31,
+                m23: self.m32,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix2x4`: one `sum_prod3` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix2x4`: `mul_mat` of the transposed components, so one `sum_prod3` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix3x2TrMulMatrix3x4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix3x2<T>, Matrix3x4<T>> {
     type Output = Matrix2x4<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix3x2<T>, rhs: Matrix3x4<T>) -> Matrix2x4<T> {
-        Matrix2x4 {
-            m11: R::sum_prod3(self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31),
-            m21: R::sum_prod3(self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31),
-            m12: R::sum_prod3(self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32),
-            m22: R::sum_prod3(self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32),
-            m13: R::sum_prod3(self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33),
-            m23: R::sum_prod3(self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33),
-            m14: R::sum_prod3(self.m11, rhs.m14, self.m21, rhs.m24, self.m31, rhs.m34),
-            m24: R::sum_prod3(self.m12, rhs.m14, self.m22, rhs.m24, self.m32, rhs.m34),
-        }
+        MatrixMul::mul_mat(
+            Matrix2x3 {
+                m11: self.m11,
+                m21: self.m12,
+                m12: self.m21,
+                m22: self.m22,
+                m13: self.m31,
+                m23: self.m32,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix2x5`: one `sum_prod3` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix2x5`: `mul_mat` of the transposed components, so one `sum_prod3` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix3x2TrMulMatrix3x5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix3x2<T>, Matrix3x5<T>> {
     type Output = Matrix2x5<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix3x2<T>, rhs: Matrix3x5<T>) -> Matrix2x5<T> {
-        Matrix2x5 {
-            m11: R::sum_prod3(self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31),
-            m21: R::sum_prod3(self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31),
-            m12: R::sum_prod3(self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32),
-            m22: R::sum_prod3(self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32),
-            m13: R::sum_prod3(self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33),
-            m23: R::sum_prod3(self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33),
-            m14: R::sum_prod3(self.m11, rhs.m14, self.m21, rhs.m24, self.m31, rhs.m34),
-            m24: R::sum_prod3(self.m12, rhs.m14, self.m22, rhs.m24, self.m32, rhs.m34),
-            m15: R::sum_prod3(self.m11, rhs.m15, self.m21, rhs.m25, self.m31, rhs.m35),
-            m25: R::sum_prod3(self.m12, rhs.m15, self.m22, rhs.m25, self.m32, rhs.m35),
-        }
+        MatrixMul::mul_mat(
+            Matrix2x3 {
+                m11: self.m11,
+                m21: self.m12,
+                m12: self.m21,
+                m22: self.m22,
+                m13: self.m31,
+                m23: self.m32,
+            },
+            rhs,
+        )
     }
 }
 
-/// `selfᵀ * rhs` without forming the transpose, a `Matrix2x6`: one `sum_prod3` per component (one
-/// rounding each). Bit-identical to `self.transpose().mul_mat(rhs)`. Panics on overflow. Upstream:
-/// `tr_mul`.
+/// `selfᵀ * rhs`, a `Matrix2x6`: `mul_mat` of the transposed components, so one `sum_prod3` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
 pub impl Matrix3x2TrMulMatrix3x6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixTrMul<Matrix3x2<T>, Matrix3x6<T>> {
     type Output = Matrix2x6<T>;
+    #[inline(always)]
     fn tr_mul(self: Matrix3x2<T>, rhs: Matrix3x6<T>) -> Matrix2x6<T> {
-        Matrix2x6 {
-            m11: R::sum_prod3(self.m11, rhs.m11, self.m21, rhs.m21, self.m31, rhs.m31),
-            m21: R::sum_prod3(self.m12, rhs.m11, self.m22, rhs.m21, self.m32, rhs.m31),
-            m12: R::sum_prod3(self.m11, rhs.m12, self.m21, rhs.m22, self.m31, rhs.m32),
-            m22: R::sum_prod3(self.m12, rhs.m12, self.m22, rhs.m22, self.m32, rhs.m32),
-            m13: R::sum_prod3(self.m11, rhs.m13, self.m21, rhs.m23, self.m31, rhs.m33),
-            m23: R::sum_prod3(self.m12, rhs.m13, self.m22, rhs.m23, self.m32, rhs.m33),
-            m14: R::sum_prod3(self.m11, rhs.m14, self.m21, rhs.m24, self.m31, rhs.m34),
-            m24: R::sum_prod3(self.m12, rhs.m14, self.m22, rhs.m24, self.m32, rhs.m34),
-            m15: R::sum_prod3(self.m11, rhs.m15, self.m21, rhs.m25, self.m31, rhs.m35),
-            m25: R::sum_prod3(self.m12, rhs.m15, self.m22, rhs.m25, self.m32, rhs.m35),
-            m16: R::sum_prod3(self.m11, rhs.m16, self.m21, rhs.m26, self.m31, rhs.m36),
-            m26: R::sum_prod3(self.m12, rhs.m16, self.m22, rhs.m26, self.m32, rhs.m36),
-        }
+        MatrixMul::mul_mat(
+            Matrix2x3 {
+                m11: self.m11,
+                m21: self.m12,
+                m12: self.m21,
+                m22: self.m22,
+                m13: self.m31,
+                m23: self.m32,
+            },
+            rhs,
+        )
     }
 }
