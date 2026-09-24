@@ -87,7 +87,7 @@ Target (owner, 2026-09-23/24): publish `simba` and `nalgebra` 0.1.0 on scarbs.xy
 is **strictly nalgebra-rs 0.35.0's, neither more nor less** — every non-excluded item of
 [API_PARITY.md](API_PARITY.md) `ported`, and no Cairo-only public item beyond the renames Cairo
 imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progress is measured by
-`scripts/api_parity.py` (gate: `--check`). Started at 21.9 % (413 / 1,888); 22.9 % after 8.0 (extras 401 → 72, all the scalar-kernel exception). WP 8.0b aligns `simba::Real` names on simba-rs (`is_sign_negative`, `T::pi()`, …).
+`scripts/api_parity.py` (gate: `--check`). Started at 21.9 % (413 / 1,888); 22.9 % after 8.0 (extras 401 → 72, all the scalar-kernel exception); 25.6 % after 8.1b-3; 31.2 % after P08. WP 8.0b aligns `simba::Real` names on simba-rs (`is_sign_negative`, `T::pi()`, …).
 
 | WP | Content (parity packages) | Depends on |
 |---|---|---|
@@ -95,7 +95,7 @@ imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progr
 | 8.1 (8.1a ✅ #26: design + prototype) | `tools/shapegen`: generator of the 54 static shapes (`Matrix1..6`, `MatrixRxC`, `Vector1..6`, `RowVector1..6`) from templates, committed output + `--check`; existing shapes migrated bit-identically, gas not worse (P01) | 8.0 |
 | 8.2 | Static base completion through the generator: P02 (norms, component-wise, construction, conversions), P03 (`map` / `zip` / in-place), P04 (swizzles), P05 (rows, columns, blocks) | 8.1 |
 | 8.3 | P06 (statistics, BLAS-like), P07 (homogeneous / cg helpers) | 8.2 |
-| 8.4 | Geometry: P08 (quaternions, unit complex) → P09a (rotation, translation, point) → P09b (isometry, similarity, `*Matrix` variants) → P10 (scale, reflection) → P11a/b (transform family, perspective, orthographic) → P12 (dual quaternions) | 8.0 (parallel with 8.1-8.3 where files are disjoint) |
+| 8.4 (P08 ✅ #31) | Geometry: P08 (quaternions, unit complex) → P09a (rotation, translation, point) → P09b (isometry, similarity, `*Matrix` variants) → P10 (scale, reflection) → P11a/b (transform family, perspective, orthographic) → P12 (dual quaternions) | 8.0 (parallel with 8.1-8.3 where files are disjoint) |
 | 8.5 | Dynamic: P13 (`DMatrix` / `DVector`, macros) → P14 (decomposition API, triangular solves) → P15 (full-pivot LU, col-pivot QR, LBLᵀ) → P16 (Schur, Hessenberg, bidiagonal, tridiagonal, general eigen) → P17 (exp, pow), P18 (convolution) | 8.2 |
 | 8.6 | P19 (glam.cairo conversions, `glam = "0.3.0"`), P20 (sparse `CsMatrix`, Matrix Market from strings), P21 (crate-root functions and macros) | 8.5 |
 | 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `simba` + `nalgebra` 0.1.0 (the owner pushes the tag) | all |
@@ -107,6 +107,12 @@ shapes); `Vector6` / `Matrix6` flat like upstream (the 3D-block layout goes). 8.
 flatten `Vector6` / `Matrix6` → 8.1b-3 the 28 new shapes + `mul_mat` everywhere + parity script →
 8.1b-4 generated test packages + CI jobs (the `nalgebra` unit-test crate already peaks at 13.2 GB on
 16 GB runners: public-API tests move to test-only packages).
+
+Fidelity rules settled by the orchestrator under the owner's "same as the Rust reference" rule
+(applied by a later sweep, WP 8.4-fix): approximate comparisons of quaternions / unit quaternions
+accept `−q` like upstream's `approx` impls; an upstream result that would be `NaN` (e.g. `ln` of a
+negative real quaternion) panics instead of returning a Cairo-only convention, like `fixed`'s
+`sqrt` of a negative.
 
 Execution: at most two agents at a time (shared machine), Opus 5.5 for numerics and generator
 design, Sonnet for mechanical template work; one PR per WP; parity figures reported per PR.

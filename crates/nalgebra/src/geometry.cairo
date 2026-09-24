@@ -14,7 +14,7 @@ pub mod unit_quaternion;
 
 pub use isometry2::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
 pub use isometry3::{Isometry3, Isometry3AngleTrait, Isometry3Trait};
-pub use quaternion::{Quaternion, QuaternionTrait};
+pub use quaternion::{Quaternion, QuaternionTrait, QuaternionTranscendentalTrait};
 pub use rotation2::{Rotation2, Rotation2AngleTrait, Rotation2Trait};
 pub use rotation3::{Rotation3, Rotation3AngleTrait, Rotation3Trait};
 pub use similarity2::{Similarity2, Similarity2AngleTrait, Similarity2Trait};

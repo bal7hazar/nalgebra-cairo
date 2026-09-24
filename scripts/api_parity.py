@@ -1361,6 +1361,7 @@ EXCLUDE = (
     exclude(r"RandomOrthogonal|RandomSDP|MatrixStrategy|MatrixParameters|DimRange|"
             r"nalgebra::proptest|nalgebra::debug", r".*", "random"),
     exclude(r".*", r"(?:simd_\w+|\w+_simd|type:Simd\w*|trait:Simd\w*)", "simd"),
+    exclude(r"Quaternion|UnitQuaternion|UnitComplex", r"impl:From<\[(?:Quaternion|UnitQuaternion|UnitComplex); N\]>", "simd"),
     exclude(r"ParColumnIter|ParColumnIterMut|ColumnIntoIter", r".*", "rayon"),
     exclude(r".*", r"par_\w+", "rayon"),
     exclude(r".*", r"(?:as_ptr|as_mut_ptr|as_slice_unchecked|as_mut_slice_unchecked|"

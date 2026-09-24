@@ -18,7 +18,7 @@ How to read it:
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
 | base | 117 | 47 | 336 | 304 | 804 | 23.4% |
-| geometry | 396 | 2 | 538 | 112 | 1048 | 42.3% |
+| geometry | 396 | 2 | 535 | 115 | 1048 | 42.4% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
 | io | 0 | 0 | 2 | 0 | 2 | 0.0% |
@@ -26,7 +26,7 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **589** | **55** | **1244** | **548** | **2436** | **31.2%** |
+| **total** | **589** | **55** | **1241** | **551** | **2436** | **31.2%** |
 
 nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **9** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -43,7 +43,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 28 | mechanical | P01 | `base/matrix_view.rs` (14), `base/matrix.rs` (4), `base/properties.rs` (4), `base/edition.rs` (3), `base/construction.rs` (2) |
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 38 | standard numerics | P01, P05 | `base/blas.rs` (22), `base/statistics.rs` (16) |
 | [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 32 | standard numerics | P01 | `base/cg.rs` (32) |
-| [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 6 | standard numerics | — | `geometry/quaternion_conversion.rs` (4), `geometry/unit_complex_conversion.rs` (2) |
+| [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 3 | standard numerics | — | `geometry/quaternion_conversion.rs` (2), `geometry/unit_complex_conversion.rs` (1) |
 | [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 93 | mechanical | P08 | `geometry/rotation_specialization.rs` (17), `geometry/translation_conversion.rs` (10), `geometry/rotation_conversion.rs` (9), `geometry/isometry_ops.rs` (6), `geometry/point.rs` (6) |
 | [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 77 | mechanical | P09a | `geometry/isometry_construction.rs` (19), `geometry/similarity_construction.rs` (17), `geometry/isometry_conversion.rs` (9), `geometry/similarity_ops.rs` (9), `geometry/isometry_ops.rs` (6) |
 | [P10](#p10-scale-and-reflection) | Scale and Reflection | 54 | mechanical | P09a | `geometry/scale.rs` (16), `geometry/reflection.rs` (8), `geometry/scale_conversion.rs` (8), `geometry/reflection_alias.rs` (6), `geometry/scale_alias.rs` (6) |
@@ -133,11 +133,10 @@ the operations upstream has on every `Matrix` that nalgebra.cairo only has on so
 
 ### P08 Quaternion, UnitQuaternion, UnitComplex completion
 
-quaternion transcendental functions (`exp`, `ln`, `powf`, `sqrt`, trig), polar decomposition, `from_matrix` / `*_eps` constructors, `mean_of`, operator impls with rotations / isometries, `Index`, `RelativeEq`, `cast`. Tier: standard numerics. Depends on: —. 6 items (`*` = partial):
+quaternion transcendental functions (`exp`, `ln`, `powf`, `sqrt`, trig), polar decomposition, `from_matrix` / `*_eps` constructors, `mean_of`, operator impls with rotations / isometries, `Index`, `RelativeEq`, `cast`. Tier: standard numerics. Depends on: —. 3 items (`*` = partial):
 
-- **Quaternion**: `impl:From<[Quaternion; N]>`
-- **UnitComplex**: `impl:From<[UnitComplex; N]>`, `impl:SubsetOf<Transform>`
-- **UnitQuaternion**: `impl:From<[UnitQuaternion; N]>`, `impl:SubsetOf<Transform>`, `impl:SubsetOf<UnitDualQuaternion>`
+- **UnitComplex**: `impl:SubsetOf<Transform>`
+- **UnitQuaternion**: `impl:SubsetOf<Transform>`, `impl:SubsetOf<UnitDualQuaternion>`
 
 ### P09a Rotation, Translation, Point completion
 
@@ -342,7 +341,7 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 
 | Reason | Items | Justification |
 |---|---:|---|
-| `simd` | 4 | SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar path is the only path. |
+| `simd` | 7 | SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar path is the only path. |
 | `rayon` | 4 | `rayon` parallel iterators: a Cairo program is sequential. |
 | `unsafe` | 39 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
 | `borrow` | 43 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
@@ -2107,7 +2106,7 @@ Cairo: none · ported 0, partial 0, missing 1, excluded 0.
 
 #### Quaternion (geometry)
 
-Cairo: Quaternion · ported 75, partial 0, missing 10, excluded 13.
+Cairo: Quaternion · ported 75, partial 0, missing 9, excluded 14.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2129,7 +2128,7 @@ Cairo: Quaternion · ported 75, partial 0, missing 10, excluded 13.
 | impl `DivAssign<T>` | missing |  | P03 | `geometry/quaternion_ops.rs` |
 | impl `Eq` | ported | Quaternion (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/quaternion.rs` |
 | impl `From<Matrix>` | ported | Quaternion (impl `From<Matrix>`) |  | `geometry/quaternion_conversion.rs` |
-| impl `From<[Quaternion; N]>` | missing |  | P08 | `geometry/quaternion_conversion.rs` |
+| impl `From<[Quaternion; N]>` | excluded |  | simd | `geometry/quaternion_conversion.rs` |
 | impl `From<[T; N]>` | ported | Quaternion (impl `From<[T; N]>`) |  | `geometry/quaternion_conversion.rs` |
 | impl `Hash` | ported | Quaternion (impl `Hash`) |  | `geometry/quaternion.rs` |
 | impl `Index<usize>` | ported | Quaternion (impl `Index<usize>`) |  | `geometry/quaternion_ops.rs` |
@@ -2725,7 +2724,7 @@ Cairo: Translation2/3 · ported 23, partial 0, missing 31, excluded 8.
 
 #### UnitComplex (geometry)
 
-Cairo: UnitComplex · ported 59, partial 0, missing 9, excluded 3.
+Cairo: UnitComplex · ported 59, partial 0, missing 8, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2740,7 +2739,7 @@ Cairo: UnitComplex · ported 59, partial 0, missing 9, excluded 3.
 | impl `DivAssign<UnitComplex>` | missing |  | P03 | `geometry/unit_complex_ops.rs` |
 | impl `Eq` | ported | UnitComplex (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/unit_complex.rs` |
 | impl `From<Rotation>` | ported | UnitComplex (impl `From<Rotation>`) |  | `geometry/unit_complex_conversion.rs` |
-| impl `From<[UnitComplex; N]>` | missing |  | P08 | `geometry/unit_complex_conversion.rs` |
+| impl `From<[UnitComplex; N]>` | excluded |  | simd | `geometry/unit_complex_conversion.rs` |
 | impl `Mul<Isometry>` | ported | UnitComplex::mul_isometry | renamed `mul_isometry`: Cairo-imposed: heterogeneous operator | `geometry/unit_complex_ops.rs` |
 | impl `Mul<Matrix>` | ported | UnitComplex::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/unit_complex_ops.rs` |
 | impl `Mul<Point>` | ported | UnitComplex::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/unit_complex_ops.rs` |
@@ -2863,7 +2862,7 @@ Cairo: none · ported 0, partial 0, missing 51, excluded 2.
 
 #### UnitQuaternion (geometry)
 
-Cairo: UnitQuaternion · ported 74, partial 0, missing 13, excluded 3.
+Cairo: UnitQuaternion · ported 74, partial 0, missing 12, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2882,7 +2881,7 @@ Cairo: UnitQuaternion · ported 74, partial 0, missing 13, excluded 3.
 | impl `DivAssign<UnitQuaternion>` | missing |  | P03 | `geometry/quaternion_ops.rs` |
 | impl `Eq` | ported | UnitQuaternion (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/quaternion.rs` |
 | impl `From<Rotation>` | ported | UnitQuaternion (impl `From<Rotation>`) |  | `geometry/quaternion_conversion.rs` |
-| impl `From<[UnitQuaternion; N]>` | missing |  | P08 | `geometry/quaternion_conversion.rs` |
+| impl `From<[UnitQuaternion; N]>` | excluded |  | simd | `geometry/quaternion_conversion.rs` |
 | impl `Mul<Isometry>` | ported | UnitQuaternion::mul_isometry | renamed `mul_isometry`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
 | impl `Mul<Matrix>` | ported | UnitQuaternion::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/quaternion_ops.rs` |
 | impl `Mul<Point>` | ported | UnitQuaternion::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/quaternion_ops.rs` |
