@@ -7,10 +7,24 @@ pub mod base;
 pub mod geometry;
 pub mod linalg;
 
-pub use base::{Matrix2, Matrix3, Matrix4, Point2, Point3, Unit, Vector2, Vector3, Vector4};
+// shapegen: begin
 pub use base::{
-    Matrix2Trait, Matrix3Trait, Matrix4Trait, Matrix6, Matrix6Trait, Vector6, Vector6Trait,
+    Matrix1, Matrix1Trait, Matrix1x2, Matrix1x3, Matrix1x4, Matrix1x5, Matrix1x6, Matrix2,
+    Matrix2Trait, Matrix2x1, Matrix2x3, Matrix2x3Trait, Matrix2x4, Matrix2x4Trait, Matrix2x5,
+    Matrix2x5Trait, Matrix2x6, Matrix2x6Trait, Matrix3, Matrix3Trait, Matrix3x1, Matrix3x2,
+    Matrix3x2Trait, Matrix3x4, Matrix3x4Trait, Matrix3x5, Matrix3x5Trait, Matrix3x6, Matrix3x6Trait,
+    Matrix4, Matrix4Trait, Matrix4x1, Matrix4x2, Matrix4x2Trait, Matrix4x3, Matrix4x3Trait,
+    Matrix4x5, Matrix4x5Trait, Matrix4x6, Matrix4x6Trait, Matrix5, Matrix5Trait, Matrix5x1,
+    Matrix5x2, Matrix5x2Trait, Matrix5x3, Matrix5x3Trait, Matrix5x4, Matrix5x4Trait, Matrix5x6,
+    Matrix5x6Trait, Matrix6, Matrix6Trait, Matrix6x1, Matrix6x2, Matrix6x2Trait, Matrix6x3,
+    Matrix6x3Trait, Matrix6x4, Matrix6x4Trait, Matrix6x5, Matrix6x5Trait, MatrixMul, MatrixTrMul,
+    RowVector1, RowVector2, RowVector2Trait, RowVector3, RowVector3Trait, RowVector4,
+    RowVector4Trait, RowVector5, RowVector5Trait, RowVector6, RowVector6Trait, UnitVector1,
+    UnitVector2, UnitVector3, UnitVector4, UnitVector5, UnitVector6, Vector1, Vector2, Vector2Trait,
+    Vector3, Vector3Trait, Vector4, Vector4Trait, Vector5, Vector5Trait, Vector6, Vector6Trait,
 };
+// shapegen: end
+pub use base::{Point2, Point3, Unit};
 pub use geometry::{
     Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3, Isometry3AngleTrait, Isometry3Trait,
     Quaternion, QuaternionTrait, Rotation2, Rotation2AngleTrait, Rotation2Trait, Rotation3,

@@ -14,6 +14,7 @@
 
 use fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::MatrixMul;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, p2t, t2t, v2t};
 use crate::base::point2::Point2Trait;
@@ -122,7 +123,7 @@ fn test_to_homogeneous_is_the_identity_plus_the_last_column() {
 fn test_to_homogeneous_acts_like_transform_point() {
     let t = t2t((0x140000000, -0x60000000));
     let p = p2t((-0x280000000, 0x3c0000000));
-    let h = t.to_homogeneous().mul_vec(p.to_homogeneous());
+    let h = t.to_homogeneous().mul_mat(p.to_homogeneous());
     let got = t.transform_point(p);
     assert!(h.x == got.x && h.y == got.y && h.z == Real::one());
 }
@@ -198,7 +199,7 @@ fn test_to_homogeneous_oracle_consistency() {
     while let Some(case) = cases.pop_front() {
         let (t, p, expected, _) = *case;
         let (ex, ey) = expected;
-        let h = t2t(t).to_homogeneous().mul_vec(p2t(p).to_homogeneous());
+        let h = t2t(t).to_homogeneous().mul_mat(p2t(p).to_homogeneous());
         assert!(h.x == fx(ex) && h.y == fx(ey) && h.z == Real::one());
     }
 }

@@ -3,37 +3,37 @@
 // of the hand-written block type (the block alternatives stay as benchmarks) in the doc comments.
 // @doc module
 //!
-//! The 6-term rows of `mul_vec`, `tr_mul_vec`, `*` and `tr_mul` use the explicit `Real::Wide`
-//! accumulator, so a product is the exact 6x6 product with one rescale per output scalar — NOT
-//! the sum of rounded 3x3 block products (which rounds twice; kept as
+//! The 6-term rows of `*`, `mul_mat` and `tr_mul` (by a `Matrix6` or a `Vector6`) use the
+//! `Real::Wide` accumulator, so a product is the exact 6x6 product with one rescale per output
+//! scalar — NOT the sum of rounded 3x3 block products (which rounds twice; kept as
 //! `bench_matrix6_mul__alt_blocks` with the test showing the drift).
 //!
 //! The determinant, the inverse and the decompositions of a 6x6 are NOT here: they are the LU /
 //! Cholesky kernels of `linalg` (DESIGN D6). No block formula gives them cheaply — `try_inverse`
 //! through the Schur complement needs two 3x3 inversions and four 3x3 products, each rounding
 //! again, and is numerically far worse than a pivoted factorisation.
-// @doc mul_vec
-/// `self * v`: each of the six output components is the exact sum of the six products of a row
-/// by `v`, accumulated in `Real::Wide` and rescaled ONCE. Panics on overflow of a component.
-/// Upstream: `self * v`.
+// @doc mul_mat Vector6
+/// `self * v` (`Matrix6 * Vector6`): each of the six output components is the exact sum of the
+/// six products of a row by `v`, accumulated in `Real::Wide` and rescaled ONCE. Panics on overflow
+/// of a component. Upstream: `self * v`.
 ///
 /// Summing the rounded products of the 3x3 blocks by the 3-vector halves of `v` rounds twice AND
 /// costs 1.67x more gas (`bench_matrix6_mul_vec__alt_blocks`: 37 770 against 22 560 net).
-// @doc tr_mul_vec
-/// `selfᵀ * v` without forming the transpose: one 6-term `Real::Wide` accumulation and ONE
-/// rescale per component. Panics on overflow. Upstream: `self.tr_mul(&v)`.
+// @doc tr_mul Vector6
+/// `selfᵀ * v`, a `Vector6`: `mul_mat` of the transposed components, so one 6-term `Real::Wide`
+/// accumulation and ONE rescale per component. Panics on overflow. Upstream: `self.tr_mul(&v)`.
 ///
-/// Bit-identical to `self.transpose().mul_vec(v)` AND exactly as expensive (measured:
-/// `bench_matrix6_tr_mul_vec__fused` and `__alt_transpose_then_mul_vec` are both 22 560 net).
-/// `transpose` only relabels SSA values, so it is free; this method exists for upstream
-/// parity and readability, not for gas.
-// @doc tr_mul
-/// `selfᵀ * rhs` without forming the transpose: 36 six-term `Real::Wide` accumulations, one
-/// rescale per output component. Panics on overflow. Upstream: `tr_mul`.
+/// Exactly as expensive as a kernel that reads `self` column by column (measured:
+/// `bench_matrix6_tr_mul_vec__fused` and `__alt_transpose_then_mul_vec` are both 21 910 net):
+/// `transpose` only relabels SSA values, so it is free.
+// @doc tr_mul Matrix6
+/// `selfᵀ * rhs`, a `Matrix6`: `mul_mat` (`*`) of the transposed components, so 36 six-term
+/// `Real::Wide` accumulations and one rescale per output component. Panics on overflow. Upstream:
+/// `tr_mul`.
 ///
-/// Bit-identical to `self.transpose() * rhs` AND exactly as expensive (measured:
-/// `bench_matrix6_tr_mul__fused` and `__alt_transpose_then_mul` are both 114 660 net), for the
-/// same reason as `tr_mul_vec`: transposing is free.
+/// Exactly as expensive as a kernel that reads `self` column by column (measured:
+/// `bench_matrix6_tr_mul__fused` and `__alt_transpose_then_mul` are both 108 910 net), for the
+/// same reason as `tr_mul` by a `Vector6`: transposing is free.
 // @doc Mul
 /// `a * b` (matrix product): 36 six-term `Real::Wide` accumulations, ONE rounding and one overflow
 /// check per output scalar. Panics on overflow.

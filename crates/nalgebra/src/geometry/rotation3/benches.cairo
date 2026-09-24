@@ -10,6 +10,7 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::{Real, Transcendental};
+use crate::base::MatrixTrMul;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix_test_utils::{fx, r3, u3t, v3t};
 use crate::base::point3::Point3;

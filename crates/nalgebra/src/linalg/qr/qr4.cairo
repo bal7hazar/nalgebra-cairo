@@ -6,6 +6,7 @@
 //! alternatives (Householder, classical Gram-Schmidt, completed basis) lives there.
 
 use simba::scalar::Real;
+use crate::base::MatrixTrMul;
 use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
 use crate::base::vector4::Vector4;
 
@@ -149,7 +150,7 @@ pub impl Qr4Impl<
         if !Self::is_invertible(self) {
             return None;
         }
-        Some(Qr4InternalTrait::back_substitute(self, self.q.tr_mul_vec(b)))
+        Some(Qr4InternalTrait::back_substitute(self, self.q.tr_mul(b)))
     }
 
     /// The inverse, or `None` when a diagonal entry of `R` is exactly zero (`is_invertible`).

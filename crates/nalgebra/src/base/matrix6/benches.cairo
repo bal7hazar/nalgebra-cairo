@@ -17,6 +17,7 @@ use crate::base::matrix_test_utils::{
     v6_head, v6_tail, v6i,
 };
 use crate::base::vector6::Vector6;
+use crate::base::{MatrixMul, MatrixTrMul};
 use super::{Matrix6, Matrix6Trait};
 
 /// `[[1, .., 6], .., [31, .., 36]]`.
@@ -62,12 +63,12 @@ fn alt_mul_blocks(lhs: Matrix6<Fixed>, rhs: Matrix6<Fixed>) -> Matrix6<Fixed> {
     )
 }
 
-/// `mul_vec` composed from two rounded `Matrix3::mul_vec` per block row: same two-rounding defect.
+/// `m * v` composed from two rounded `Matrix3 * Vector3` per block row: same two-rounding defect.
 fn alt_mul_vec_blocks(m: Matrix6<Fixed>, v: Vector6<Fixed>) -> Vector6<Fixed> {
     let (a, b) = (v6_head(v), v6_tail(v));
     v6_from_halves(
-        Matrix3Trait::mul_vec(m6_block11(m), a) + Matrix3Trait::mul_vec(m6_block12(m), b),
-        Matrix3Trait::mul_vec(m6_block21(m), a) + Matrix3Trait::mul_vec(m6_block22(m), b),
+        MatrixMul::mul_mat(m6_block11(m), a) + MatrixMul::mul_mat(m6_block12(m), b),
+        MatrixMul::mul_mat(m6_block21(m), a) + MatrixMul::mul_mat(m6_block22(m), b),
     )
 }
 
@@ -198,7 +199,7 @@ fn test_mul_vec_alt_blocks_rounds_twice() {
     m.m11 = h;
     m.m14 = h;
     let v = Vector6 { x: fx(1), y: zero, z: zero, w: fx(1), a: zero, b: zero };
-    assert!(m.mul_vec(v).x == fx(1));
+    assert!(m.mul_mat(v).x == fx(1));
     assert!(alt_mul_vec_blocks(m, v).x == zero);
 }
 
@@ -704,7 +705,7 @@ fn bench_matrix6_mul_vec__fused() {
     let a = black_box(a6());
     let v = black_box(v6i(1, 0, 0, 0, 0, 2));
     let e = black_box(v6i(13, 31, 49, 67, 85, 103));
-    assert!(a.mul_vec(v) == e);
+    assert!(a.mul_mat(v) == e);
 }
 
 #[test]
@@ -731,7 +732,7 @@ fn bench_matrix6_tr_mul_vec__fused() {
     let a = black_box(a6());
     let v = black_box(v6i(1, 0, 0, 0, 0, 2));
     let e = black_box(v6i(63, 66, 69, 72, 75, 78));
-    assert!(a.tr_mul_vec(v) == e);
+    assert!(a.tr_mul(v) == e);
 }
 
 #[test]
@@ -740,7 +741,7 @@ fn bench_matrix6_tr_mul_vec__alt_transpose_then_mul_vec() {
     let a = black_box(a6());
     let v = black_box(v6i(1, 0, 0, 0, 0, 2));
     let e = black_box(v6i(63, 66, 69, 72, 75, 78));
-    assert!(a.transpose().mul_vec(v) == e);
+    assert!(a.transpose().mul_mat(v) == e);
 }
 
 #[test]

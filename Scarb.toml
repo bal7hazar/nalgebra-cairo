@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/simba", "crates/nalgebra", "crates/testing"]
+members = ["crates/simba", "crates/nalgebra", "crates/testing", "crates/shapes_tests_core"]
 
 [workspace.package]
 version = "0.1.0"
