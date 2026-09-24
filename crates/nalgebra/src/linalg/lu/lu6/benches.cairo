@@ -14,10 +14,8 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
-use crate::base::matrix3::Matrix3;
 use crate::base::matrix6::Matrix6;
 use crate::base::matrix_test_utils::{fx, int, m6, v6t};
-use crate::base::vector3::Vector3;
 use crate::base::vector6::Vector6;
 use crate::linalg::lu::Perm6;
 use super::{Lu6, Lu6InternalTrait, Lu6Trait, Matrix6LuTrait};
@@ -115,42 +113,42 @@ fn f_singular() -> Lu6<Fixed> {
 /// permuted identity factors with a zero pivot, and nothing bounds `|l_ik|`, which is what keeps
 /// `U` from growing. Upstream has no unpivoted variant either.
 pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
-    let mut a11 = matrix.m11.m11;
-    let mut a12 = matrix.m11.m12;
-    let mut a13 = matrix.m11.m13;
-    let mut a14 = matrix.m12.m11;
-    let mut a15 = matrix.m12.m12;
-    let mut a16 = matrix.m12.m13;
-    let mut a21 = matrix.m11.m21;
-    let mut a22 = matrix.m11.m22;
-    let mut a23 = matrix.m11.m23;
-    let mut a24 = matrix.m12.m21;
-    let mut a25 = matrix.m12.m22;
-    let mut a26 = matrix.m12.m23;
-    let mut a31 = matrix.m11.m31;
-    let mut a32 = matrix.m11.m32;
-    let mut a33 = matrix.m11.m33;
-    let mut a34 = matrix.m12.m31;
-    let mut a35 = matrix.m12.m32;
-    let mut a36 = matrix.m12.m33;
-    let mut a41 = matrix.m21.m11;
-    let mut a42 = matrix.m21.m12;
-    let mut a43 = matrix.m21.m13;
-    let mut a44 = matrix.m22.m11;
-    let mut a45 = matrix.m22.m12;
-    let mut a46 = matrix.m22.m13;
-    let mut a51 = matrix.m21.m21;
-    let mut a52 = matrix.m21.m22;
-    let mut a53 = matrix.m21.m23;
-    let mut a54 = matrix.m22.m21;
-    let mut a55 = matrix.m22.m22;
-    let mut a56 = matrix.m22.m23;
-    let mut a61 = matrix.m21.m31;
-    let mut a62 = matrix.m21.m32;
-    let mut a63 = matrix.m21.m33;
-    let mut a64 = matrix.m22.m31;
-    let mut a65 = matrix.m22.m32;
-    let mut a66 = matrix.m22.m33;
+    let mut a11 = matrix.m11;
+    let mut a12 = matrix.m12;
+    let mut a13 = matrix.m13;
+    let mut a14 = matrix.m14;
+    let mut a15 = matrix.m15;
+    let mut a16 = matrix.m16;
+    let mut a21 = matrix.m21;
+    let mut a22 = matrix.m22;
+    let mut a23 = matrix.m23;
+    let mut a24 = matrix.m24;
+    let mut a25 = matrix.m25;
+    let mut a26 = matrix.m26;
+    let mut a31 = matrix.m31;
+    let mut a32 = matrix.m32;
+    let mut a33 = matrix.m33;
+    let mut a34 = matrix.m34;
+    let mut a35 = matrix.m35;
+    let mut a36 = matrix.m36;
+    let mut a41 = matrix.m41;
+    let mut a42 = matrix.m42;
+    let mut a43 = matrix.m43;
+    let mut a44 = matrix.m44;
+    let mut a45 = matrix.m45;
+    let mut a46 = matrix.m46;
+    let mut a51 = matrix.m51;
+    let mut a52 = matrix.m52;
+    let mut a53 = matrix.m53;
+    let mut a54 = matrix.m54;
+    let mut a55 = matrix.m55;
+    let mut a56 = matrix.m56;
+    let mut a61 = matrix.m61;
+    let mut a62 = matrix.m62;
+    let mut a63 = matrix.m63;
+    let mut a64 = matrix.m64;
+    let mut a65 = matrix.m65;
+    let mut a66 = matrix.m66;
     if a11 != Real::zero() {
         let l = a21 / a11;
         let nl = -l;
@@ -263,50 +261,42 @@ pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
     }
     Lu6 {
         lu: Matrix6 {
-            m11: Matrix3 {
-                m11: a11,
-                m21: a21,
-                m31: a31,
-                m12: a12,
-                m22: a22,
-                m32: a32,
-                m13: a13,
-                m23: a23,
-                m33: a33,
-            },
-            m21: Matrix3 {
-                m11: a41,
-                m21: a51,
-                m31: a61,
-                m12: a42,
-                m22: a52,
-                m32: a62,
-                m13: a43,
-                m23: a53,
-                m33: a63,
-            },
-            m12: Matrix3 {
-                m11: a14,
-                m21: a24,
-                m31: a34,
-                m12: a15,
-                m22: a25,
-                m32: a35,
-                m13: a16,
-                m23: a26,
-                m33: a36,
-            },
-            m22: Matrix3 {
-                m11: a44,
-                m21: a54,
-                m31: a64,
-                m12: a45,
-                m22: a55,
-                m32: a65,
-                m13: a46,
-                m23: a56,
-                m33: a66,
-            },
+            m11: a11,
+            m21: a21,
+            m31: a31,
+            m12: a12,
+            m22: a22,
+            m32: a32,
+            m13: a13,
+            m23: a23,
+            m33: a33,
+            m41: a41,
+            m51: a51,
+            m61: a61,
+            m42: a42,
+            m52: a52,
+            m62: a62,
+            m43: a43,
+            m53: a53,
+            m63: a63,
+            m14: a14,
+            m24: a24,
+            m34: a34,
+            m15: a15,
+            m25: a25,
+            m35: a35,
+            m16: a16,
+            m26: a26,
+            m36: a36,
+            m44: a44,
+            m54: a54,
+            m64: a64,
+            m45: a45,
+            m55: a55,
+            m65: a65,
+            m46: a46,
+            m56: a56,
+            m66: a66,
         },
         p: Perm6 { p1: 1, p2: 2, p3: 3, p4: 4, p5: 5 },
     }
@@ -322,34 +312,30 @@ pub fn solve_recip(f: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
     if !f.is_invertible() {
         return None;
     }
-    let r1 = Real::recip(f.lu.m11.m11);
-    let r2 = Real::recip(f.lu.m11.m22);
-    let r3 = Real::recip(f.lu.m11.m33);
-    let r4 = Real::recip(f.lu.m22.m11);
-    let r5 = Real::recip(f.lu.m22.m22);
-    let r6 = Real::recip(f.lu.m22.m33);
+    let r1 = Real::recip(f.lu.m11);
+    let r2 = Real::recip(f.lu.m22);
+    let r3 = Real::recip(f.lu.m33);
+    let r4 = Real::recip(f.lu.m44);
+    let r5 = Real::recip(f.lu.m55);
+    let r6 = Real::recip(f.lu.m66);
     let pb = f.permute(b);
-    let y1 = pb.a.x;
-    let y2 = Real::mul_add(-f.lu.m11.m21, y1, pb.a.y);
+    let y1 = pb.x;
+    let y2 = Real::mul_add(-f.lu.m21, y1, pb.y);
     let y3 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(
-                Real::wide_add(Real::<Fixed>::wide_zero(), pb.a.z), f.lu.m11.m31, y1,
-            ),
-            f.lu.m11.m32,
+            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), pb.z), f.lu.m31, y1),
+            f.lu.m32,
             y2,
         ),
     );
     let y4 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub_prod(
-                    Real::wide_add(Real::<Fixed>::wide_zero(), pb.b.x), f.lu.m21.m11, y1,
-                ),
-                f.lu.m21.m12,
+                Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), pb.w), f.lu.m41, y1),
+                f.lu.m42,
                 y2,
             ),
-            f.lu.m21.m13,
+            f.lu.m43,
             y3,
         ),
     );
@@ -358,15 +344,15 @@ pub fn solve_recip(f: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_add(Real::<Fixed>::wide_zero(), pb.b.y), f.lu.m21.m21, y1,
+                        Real::wide_add(Real::<Fixed>::wide_zero(), pb.a), f.lu.m51, y1,
                     ),
-                    f.lu.m21.m22,
+                    f.lu.m52,
                     y2,
                 ),
-                f.lu.m21.m23,
+                f.lu.m53,
                 y3,
             ),
-            f.lu.m22.m21,
+            f.lu.m54,
             y4,
         ),
     );
@@ -376,27 +362,27 @@ pub fn solve_recip(f: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
                         Real::wide_sub_prod(
-                            Real::wide_add(Real::<Fixed>::wide_zero(), pb.b.z), f.lu.m21.m31, y1,
+                            Real::wide_add(Real::<Fixed>::wide_zero(), pb.b), f.lu.m61, y1,
                         ),
-                        f.lu.m21.m32,
+                        f.lu.m62,
                         y2,
                     ),
-                    f.lu.m21.m33,
+                    f.lu.m63,
                     y3,
                 ),
-                f.lu.m22.m31,
+                f.lu.m64,
                 y4,
             ),
-            f.lu.m22.m32,
+            f.lu.m65,
             y5,
         ),
     );
     let x6 = y6 * r6;
-    let x5 = Real::mul_add(-f.lu.m22.m23, x6, y5) * r5;
+    let x5 = Real::mul_add(-f.lu.m56, x6, y5) * r5;
     let x4 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y4), f.lu.m22.m12, x5),
-            f.lu.m22.m13,
+            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y4), f.lu.m45, x5),
+            f.lu.m46,
             x6,
         ),
     )
@@ -404,13 +390,11 @@ pub fn solve_recip(f: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
     let x3 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub_prod(
-                    Real::wide_add(Real::<Fixed>::wide_zero(), y3), f.lu.m12.m31, x4,
-                ),
-                f.lu.m12.m32,
+                Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y3), f.lu.m34, x4),
+                f.lu.m35,
                 x5,
             ),
-            f.lu.m12.m33,
+            f.lu.m36,
             x6,
         ),
     )
@@ -420,15 +404,15 @@ pub fn solve_recip(f: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_add(Real::<Fixed>::wide_zero(), y2), f.lu.m11.m23, x3,
+                        Real::wide_add(Real::<Fixed>::wide_zero(), y2), f.lu.m23, x3,
                     ),
-                    f.lu.m12.m21,
+                    f.lu.m24,
                     x4,
                 ),
-                f.lu.m12.m22,
+                f.lu.m25,
                 x5,
             ),
-            f.lu.m12.m23,
+            f.lu.m26,
             x6,
         ),
     )
@@ -439,23 +423,23 @@ pub fn solve_recip(f: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
                         Real::wide_sub_prod(
-                            Real::wide_add(Real::<Fixed>::wide_zero(), y1), f.lu.m11.m12, x2,
+                            Real::wide_add(Real::<Fixed>::wide_zero(), y1), f.lu.m12, x2,
                         ),
-                        f.lu.m11.m13,
+                        f.lu.m13,
                         x3,
                     ),
-                    f.lu.m12.m11,
+                    f.lu.m14,
                     x4,
                 ),
-                f.lu.m12.m12,
+                f.lu.m15,
                 x5,
             ),
-            f.lu.m12.m13,
+            f.lu.m16,
             x6,
         ),
     )
         * r1;
-    Some(Vector6 { a: Vector3 { x: x1, y: x2, z: x3 }, b: Vector3 { x: x4, y: x5, z: x6 } })
+    Some(Vector6 { x: x1, y: x2, z: x3, w: x4, a: x5, b: x6 })
 }
 
 /// `try_inverse` as 6 full calls to `solve` on the unit vectors — the obvious route, and the one
@@ -467,99 +451,61 @@ pub fn try_inverse_solve_columns(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         return None;
     }
     let c1 = f
-        .solve(
-            Vector6 {
-                a: Vector3 { x: int(1), y: int(0), z: int(0) },
-                b: Vector3 { x: int(0), y: int(0), z: int(0) },
-            },
-        )
+        .solve(Vector6 { x: int(1), y: int(0), z: int(0), w: int(0), a: int(0), b: int(0) })
         .unwrap();
     let c2 = f
-        .solve(
-            Vector6 {
-                a: Vector3 { x: int(0), y: int(1), z: int(0) },
-                b: Vector3 { x: int(0), y: int(0), z: int(0) },
-            },
-        )
+        .solve(Vector6 { x: int(0), y: int(1), z: int(0), w: int(0), a: int(0), b: int(0) })
         .unwrap();
     let c3 = f
-        .solve(
-            Vector6 {
-                a: Vector3 { x: int(0), y: int(0), z: int(1) },
-                b: Vector3 { x: int(0), y: int(0), z: int(0) },
-            },
-        )
+        .solve(Vector6 { x: int(0), y: int(0), z: int(1), w: int(0), a: int(0), b: int(0) })
         .unwrap();
     let c4 = f
-        .solve(
-            Vector6 {
-                a: Vector3 { x: int(0), y: int(0), z: int(0) },
-                b: Vector3 { x: int(1), y: int(0), z: int(0) },
-            },
-        )
+        .solve(Vector6 { x: int(0), y: int(0), z: int(0), w: int(1), a: int(0), b: int(0) })
         .unwrap();
     let c5 = f
-        .solve(
-            Vector6 {
-                a: Vector3 { x: int(0), y: int(0), z: int(0) },
-                b: Vector3 { x: int(0), y: int(1), z: int(0) },
-            },
-        )
+        .solve(Vector6 { x: int(0), y: int(0), z: int(0), w: int(0), a: int(1), b: int(0) })
         .unwrap();
     let c6 = f
-        .solve(
-            Vector6 {
-                a: Vector3 { x: int(0), y: int(0), z: int(0) },
-                b: Vector3 { x: int(0), y: int(0), z: int(1) },
-            },
-        )
+        .solve(Vector6 { x: int(0), y: int(0), z: int(0), w: int(0), a: int(0), b: int(1) })
         .unwrap();
     Some(
         Matrix6 {
-            m11: Matrix3 {
-                m11: c1.a.x,
-                m21: c1.a.y,
-                m31: c1.a.z,
-                m12: c2.a.x,
-                m22: c2.a.y,
-                m32: c2.a.z,
-                m13: c3.a.x,
-                m23: c3.a.y,
-                m33: c3.a.z,
-            },
-            m21: Matrix3 {
-                m11: c1.b.x,
-                m21: c1.b.y,
-                m31: c1.b.z,
-                m12: c2.b.x,
-                m22: c2.b.y,
-                m32: c2.b.z,
-                m13: c3.b.x,
-                m23: c3.b.y,
-                m33: c3.b.z,
-            },
-            m12: Matrix3 {
-                m11: c4.a.x,
-                m21: c4.a.y,
-                m31: c4.a.z,
-                m12: c5.a.x,
-                m22: c5.a.y,
-                m32: c5.a.z,
-                m13: c6.a.x,
-                m23: c6.a.y,
-                m33: c6.a.z,
-            },
-            m22: Matrix3 {
-                m11: c4.b.x,
-                m21: c4.b.y,
-                m31: c4.b.z,
-                m12: c5.b.x,
-                m22: c5.b.y,
-                m32: c5.b.z,
-                m13: c6.b.x,
-                m23: c6.b.y,
-                m33: c6.b.z,
-            },
+            m11: c1.x,
+            m21: c1.y,
+            m31: c1.z,
+            m12: c2.x,
+            m22: c2.y,
+            m32: c2.z,
+            m13: c3.x,
+            m23: c3.y,
+            m33: c3.z,
+            m41: c1.w,
+            m51: c1.a,
+            m61: c1.b,
+            m42: c2.w,
+            m52: c2.a,
+            m62: c2.b,
+            m43: c3.w,
+            m53: c3.a,
+            m63: c3.b,
+            m14: c4.x,
+            m24: c4.y,
+            m34: c4.z,
+            m15: c5.x,
+            m25: c5.y,
+            m35: c5.z,
+            m16: c6.x,
+            m26: c6.y,
+            m36: c6.z,
+            m44: c4.w,
+            m54: c4.a,
+            m64: c4.b,
+            m45: c5.w,
+            m55: c5.a,
+            m65: c5.b,
+            m46: c6.w,
+            m56: c6.a,
+            m66: c6.b,
         },
     )
 }
@@ -573,24 +519,22 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
     if !f.is_invertible() {
         return None;
     }
-    let r1 = Real::recip(f.lu.m11.m11);
-    let r2 = Real::recip(f.lu.m11.m22);
-    let r3 = Real::recip(f.lu.m11.m33);
-    let r4 = Real::recip(f.lu.m22.m11);
-    let r5 = Real::recip(f.lu.m22.m22);
-    let r6 = Real::recip(f.lu.m22.m33);
-    let y21 = -f.lu.m11.m21;
+    let r1 = Real::recip(f.lu.m11);
+    let r2 = Real::recip(f.lu.m22);
+    let r3 = Real::recip(f.lu.m33);
+    let r4 = Real::recip(f.lu.m44);
+    let r5 = Real::recip(f.lu.m55);
+    let r6 = Real::recip(f.lu.m66);
+    let y21 = -f.lu.m21;
     let y31 = Real::wide_rescale(
-        Real::wide_sub_prod(
-            Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m11.m31), f.lu.m11.m32, y21,
-        ),
+        Real::wide_sub_prod(Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m31), f.lu.m32, y21),
     );
     let y41 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m11), f.lu.m21.m12, y21,
+                Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m41), f.lu.m42, y21,
             ),
-            f.lu.m21.m13,
+            f.lu.m43,
             y31,
         ),
     );
@@ -598,12 +542,12 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         Real::wide_sub_prod(
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
-                    Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m21), f.lu.m21.m22, y21,
+                    Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m51), f.lu.m52, y21,
                 ),
-                f.lu.m21.m23,
+                f.lu.m53,
                 y31,
             ),
-            f.lu.m22.m21,
+            f.lu.m54,
             y41,
         ),
     );
@@ -612,24 +556,24 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m31), f.lu.m21.m32, y21,
+                        Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m61), f.lu.m62, y21,
                     ),
-                    f.lu.m21.m33,
+                    f.lu.m63,
                     y31,
                 ),
-                f.lu.m22.m31,
+                f.lu.m64,
                 y41,
             ),
-            f.lu.m22.m32,
+            f.lu.m65,
             y51,
         ),
     );
     let x61 = y61 * r6;
-    let x51 = Real::mul_add(-f.lu.m22.m23, x61, y51) * r5;
+    let x51 = Real::mul_add(-f.lu.m56, x61, y51) * r5;
     let x41 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y41), f.lu.m22.m12, x51),
-            f.lu.m22.m13,
+            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y41), f.lu.m45, x51),
+            f.lu.m46,
             x61,
         ),
     )
@@ -637,13 +581,11 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
     let x31 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub_prod(
-                    Real::wide_add(Real::<Fixed>::wide_zero(), y31), f.lu.m12.m31, x41,
-                ),
-                f.lu.m12.m32,
+                Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y31), f.lu.m34, x41),
+                f.lu.m35,
                 x51,
             ),
-            f.lu.m12.m33,
+            f.lu.m36,
             x61,
         ),
     )
@@ -653,15 +595,15 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_add(Real::<Fixed>::wide_zero(), y21), f.lu.m11.m23, x31,
+                        Real::wide_add(Real::<Fixed>::wide_zero(), y21), f.lu.m23, x31,
                     ),
-                    f.lu.m12.m21,
+                    f.lu.m24,
                     x41,
                 ),
-                f.lu.m12.m22,
+                f.lu.m25,
                 x51,
             ),
-            f.lu.m12.m23,
+            f.lu.m26,
             x61,
         ),
     )
@@ -672,34 +614,32 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
                         Real::wide_sub_prod(
-                            Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m11.m12, x21,
+                            Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m12, x21,
                         ),
-                        f.lu.m11.m13,
+                        f.lu.m13,
                         x31,
                     ),
-                    f.lu.m12.m11,
+                    f.lu.m14,
                     x41,
                 ),
-                f.lu.m12.m12,
+                f.lu.m15,
                 x51,
             ),
-            f.lu.m12.m13,
+            f.lu.m16,
             x61,
         ),
     )
         * r1;
-    let y32 = -f.lu.m11.m32;
+    let y32 = -f.lu.m32;
     let y42 = Real::wide_rescale(
-        Real::wide_sub_prod(
-            Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m12), f.lu.m21.m13, y32,
-        ),
+        Real::wide_sub_prod(Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m42), f.lu.m43, y32),
     );
     let y52 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m22), f.lu.m21.m23, y32,
+                Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m52), f.lu.m53, y32,
             ),
-            f.lu.m22.m21,
+            f.lu.m54,
             y42,
         ),
     );
@@ -707,21 +647,21 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         Real::wide_sub_prod(
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
-                    Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m32), f.lu.m21.m33, y32,
+                    Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m62), f.lu.m63, y32,
                 ),
-                f.lu.m22.m31,
+                f.lu.m64,
                 y42,
             ),
-            f.lu.m22.m32,
+            f.lu.m65,
             y52,
         ),
     );
     let x62 = y62 * r6;
-    let x52 = Real::mul_add(-f.lu.m22.m23, x62, y52) * r5;
+    let x52 = Real::mul_add(-f.lu.m56, x62, y52) * r5;
     let x42 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y42), f.lu.m22.m12, x52),
-            f.lu.m22.m13,
+            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y42), f.lu.m45, x52),
+            f.lu.m46,
             x62,
         ),
     )
@@ -729,13 +669,11 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
     let x32 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub_prod(
-                    Real::wide_add(Real::<Fixed>::wide_zero(), y32), f.lu.m12.m31, x42,
-                ),
-                f.lu.m12.m32,
+                Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y32), f.lu.m34, x42),
+                f.lu.m35,
                 x52,
             ),
-            f.lu.m12.m33,
+            f.lu.m36,
             x62,
         ),
     )
@@ -745,15 +683,15 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m11.m23, x32,
+                        Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m23, x32,
                     ),
-                    f.lu.m12.m21,
+                    f.lu.m24,
                     x42,
                 ),
-                f.lu.m12.m22,
+                f.lu.m25,
                 x52,
             ),
-            f.lu.m12.m23,
+            f.lu.m26,
             x62,
         ),
     )
@@ -763,42 +701,40 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m12, x22),
-                        f.lu.m11.m13,
+                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12, x22),
+                        f.lu.m13,
                         x32,
                     ),
-                    f.lu.m12.m11,
+                    f.lu.m14,
                     x42,
                 ),
-                f.lu.m12.m12,
+                f.lu.m15,
                 x52,
             ),
-            f.lu.m12.m13,
+            f.lu.m16,
             x62,
         ),
     )
         * r1;
-    let y43 = -f.lu.m21.m13;
+    let y43 = -f.lu.m43;
     let y53 = Real::wide_rescale(
-        Real::wide_sub_prod(
-            Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m23), f.lu.m22.m21, y43,
-        ),
+        Real::wide_sub_prod(Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m53), f.lu.m54, y43),
     );
     let y63 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m21.m33), f.lu.m22.m31, y43,
+                Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m63), f.lu.m64, y43,
             ),
-            f.lu.m22.m32,
+            f.lu.m65,
             y53,
         ),
     );
     let x63 = y63 * r6;
-    let x53 = Real::mul_add(-f.lu.m22.m23, x63, y53) * r5;
+    let x53 = Real::mul_add(-f.lu.m56, x63, y53) * r5;
     let x43 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y43), f.lu.m22.m12, x53),
-            f.lu.m22.m13,
+            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), y43), f.lu.m45, x53),
+            f.lu.m46,
             x63,
         ),
     )
@@ -807,12 +743,12 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         Real::wide_sub_prod(
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
-                    Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m12.m31, x43,
+                    Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m34, x43,
                 ),
-                f.lu.m12.m32,
+                f.lu.m35,
                 x53,
             ),
-            f.lu.m12.m33,
+            f.lu.m36,
             x63,
         ),
     )
@@ -821,14 +757,12 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         Real::wide_sub_prod(
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
-                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m23, x33),
-                    f.lu.m12.m21,
-                    x43,
+                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m23, x33), f.lu.m24, x43,
                 ),
-                f.lu.m12.m22,
+                f.lu.m25,
                 x53,
             ),
-            f.lu.m12.m23,
+            f.lu.m26,
             x63,
         ),
     )
@@ -838,35 +772,31 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m12, x23),
-                        f.lu.m11.m13,
+                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12, x23),
+                        f.lu.m13,
                         x33,
                     ),
-                    f.lu.m12.m11,
+                    f.lu.m14,
                     x43,
                 ),
-                f.lu.m12.m12,
+                f.lu.m15,
                 x53,
             ),
-            f.lu.m12.m13,
+            f.lu.m16,
             x63,
         ),
     )
         * r1;
-    let y54 = -f.lu.m22.m21;
+    let y54 = -f.lu.m54;
     let y64 = Real::wide_rescale(
-        Real::wide_sub_prod(
-            Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m22.m31), f.lu.m22.m32, y54,
-        ),
+        Real::wide_sub_prod(Real::wide_sub(Real::<Fixed>::wide_zero(), f.lu.m64), f.lu.m65, y54),
     );
     let x64 = y64 * r6;
-    let x54 = Real::mul_add(-f.lu.m22.m23, x64, y54) * r5;
+    let x54 = Real::mul_add(-f.lu.m56, x64, y54) * r5;
     let x44 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(
-                Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m22.m12, x54,
-            ),
-            f.lu.m22.m13,
+            Real::wide_sub_prod(Real::wide_add(Real::<Fixed>::wide_zero(), int(1)), f.lu.m45, x54),
+            f.lu.m46,
             x64,
         ),
     )
@@ -874,11 +804,9 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
     let x34 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12.m31, x44),
-                f.lu.m12.m32,
-                x54,
+                Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m34, x44), f.lu.m35, x54,
             ),
-            f.lu.m12.m33,
+            f.lu.m36,
             x64,
         ),
     )
@@ -887,14 +815,12 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         Real::wide_sub_prod(
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
-                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m23, x34),
-                    f.lu.m12.m21,
-                    x44,
+                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m23, x34), f.lu.m24, x44,
                 ),
-                f.lu.m12.m22,
+                f.lu.m25,
                 x54,
             ),
-            f.lu.m12.m23,
+            f.lu.m26,
             x64,
         ),
     )
@@ -904,38 +830,36 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m12, x24),
-                        f.lu.m11.m13,
+                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12, x24),
+                        f.lu.m13,
                         x34,
                     ),
-                    f.lu.m12.m11,
+                    f.lu.m14,
                     x44,
                 ),
-                f.lu.m12.m12,
+                f.lu.m15,
                 x54,
             ),
-            f.lu.m12.m13,
+            f.lu.m16,
             x64,
         ),
     )
         * r1;
-    let y65 = -f.lu.m22.m32;
+    let y65 = -f.lu.m65;
     let x65 = y65 * r6;
-    let x55 = Real::mul_add(-f.lu.m22.m23, x65, int(1)) * r5;
+    let x55 = Real::mul_add(-f.lu.m56, x65, int(1)) * r5;
     let x45 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m22.m12, x55), f.lu.m22.m13, x65,
+            Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m45, x55), f.lu.m46, x65,
         ),
     )
         * r4;
     let x35 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12.m31, x45),
-                f.lu.m12.m32,
-                x55,
+                Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m34, x45), f.lu.m35, x55,
             ),
-            f.lu.m12.m33,
+            f.lu.m36,
             x65,
         ),
     )
@@ -944,14 +868,12 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         Real::wide_sub_prod(
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
-                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m23, x35),
-                    f.lu.m12.m21,
-                    x45,
+                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m23, x35), f.lu.m24, x45,
                 ),
-                f.lu.m12.m22,
+                f.lu.m25,
                 x55,
             ),
-            f.lu.m12.m23,
+            f.lu.m26,
             x65,
         ),
     )
@@ -961,38 +883,36 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m12, x25),
-                        f.lu.m11.m13,
+                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12, x25),
+                        f.lu.m13,
                         x35,
                     ),
-                    f.lu.m12.m11,
+                    f.lu.m14,
                     x45,
                 ),
-                f.lu.m12.m12,
+                f.lu.m15,
                 x55,
             ),
-            f.lu.m12.m13,
+            f.lu.m16,
             x65,
         ),
     )
         * r1;
     let x66 = int(1) * r6;
-    let x56 = Real::wide_rescale(Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m22.m23, x66))
+    let x56 = Real::wide_rescale(Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m56, x66))
         * r5;
     let x46 = Real::wide_rescale(
         Real::wide_sub_prod(
-            Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m22.m12, x56), f.lu.m22.m13, x66,
+            Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m45, x56), f.lu.m46, x66,
         ),
     )
         * r4;
     let x36 = Real::wide_rescale(
         Real::wide_sub_prod(
             Real::wide_sub_prod(
-                Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12.m31, x46),
-                f.lu.m12.m32,
-                x56,
+                Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m34, x46), f.lu.m35, x56,
             ),
-            f.lu.m12.m33,
+            f.lu.m36,
             x66,
         ),
     )
@@ -1001,14 +921,12 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
         Real::wide_sub_prod(
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
-                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m23, x36),
-                    f.lu.m12.m21,
-                    x46,
+                    Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m23, x36), f.lu.m24, x46,
                 ),
-                f.lu.m12.m22,
+                f.lu.m25,
                 x56,
             ),
-            f.lu.m12.m23,
+            f.lu.m26,
             x66,
         ),
     )
@@ -1018,17 +936,17 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
             Real::wide_sub_prod(
                 Real::wide_sub_prod(
                     Real::wide_sub_prod(
-                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m11.m12, x26),
-                        f.lu.m11.m13,
+                        Real::wide_sub_prod(Real::<Fixed>::wide_zero(), f.lu.m12, x26),
+                        f.lu.m13,
                         x36,
                     ),
-                    f.lu.m12.m11,
+                    f.lu.m14,
                     x46,
                 ),
-                f.lu.m12.m12,
+                f.lu.m15,
                 x56,
             ),
-            f.lu.m12.m13,
+            f.lu.m16,
             x66,
         ),
     )
@@ -1361,50 +1279,42 @@ pub fn try_inverse_recip(f: Lu6<Fixed>) -> Option<Matrix6<Fixed>> {
     }
     Some(
         Matrix6 {
-            m11: Matrix3 {
-                m11: c11,
-                m21: c21,
-                m31: c31,
-                m12: c12,
-                m22: c22,
-                m32: c32,
-                m13: c13,
-                m23: c23,
-                m33: c33,
-            },
-            m21: Matrix3 {
-                m11: c41,
-                m21: c51,
-                m31: c61,
-                m12: c42,
-                m22: c52,
-                m32: c62,
-                m13: c43,
-                m23: c53,
-                m33: c63,
-            },
-            m12: Matrix3 {
-                m11: c14,
-                m21: c24,
-                m31: c34,
-                m12: c15,
-                m22: c25,
-                m32: c35,
-                m13: c16,
-                m23: c26,
-                m33: c36,
-            },
-            m22: Matrix3 {
-                m11: c44,
-                m21: c54,
-                m31: c64,
-                m12: c45,
-                m22: c55,
-                m32: c65,
-                m13: c46,
-                m23: c56,
-                m33: c66,
-            },
+            m11: c11,
+            m21: c21,
+            m31: c31,
+            m12: c12,
+            m22: c22,
+            m32: c32,
+            m13: c13,
+            m23: c23,
+            m33: c33,
+            m41: c41,
+            m51: c51,
+            m61: c61,
+            m42: c42,
+            m52: c52,
+            m62: c62,
+            m43: c43,
+            m53: c53,
+            m63: c63,
+            m14: c14,
+            m24: c24,
+            m34: c34,
+            m15: c15,
+            m25: c25,
+            m35: c35,
+            m16: c16,
+            m26: c26,
+            m36: c36,
+            m44: c44,
+            m54: c54,
+            m64: c64,
+            m45: c45,
+            m55: c55,
+            m65: c65,
+            m46: c46,
+            m56: c56,
+            m66: c66,
         },
     )
 }

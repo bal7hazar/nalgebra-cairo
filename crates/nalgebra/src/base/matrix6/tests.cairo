@@ -17,7 +17,9 @@ use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
-use crate::base::matrix_test_utils::{fx, int, m6, m6i, v6, v6i, v6t};
+use crate::base::matrix_test_utils::{
+    fx, int, m6, m6_block11, m6_block12, m6_block21, m6_block22, m6_from_blocks, m6i, v6, v6i, v6t,
+};
 use crate::base::oracle_dim6_matrix as oracle;
 use super::{Matrix6, Matrix6Trait};
 
@@ -48,29 +50,26 @@ fn b6() -> Matrix6<Fixed> {
 #[test]
 fn test_new_is_row_major() {
     let m = a6();
-    // Row 1 lives in blocks (1, 1) and (1, 2); row 6 in blocks (2, 1) and (2, 2).
-    assert!(m.m11.m11 == int(1) && m.m11.m12 == int(2) && m.m11.m13 == int(3));
-    assert!(m.m12.m11 == int(4) && m.m12.m12 == int(5) && m.m12.m13 == int(6));
-    assert!(m.m21.m31 == int(31) && m.m21.m32 == int(32) && m.m21.m33 == int(33));
-    assert!(m.m22.m31 == int(34) && m.m22.m32 == int(35) && m.m22.m33 == int(36));
-    // The scalar at row 4, column 2 is block (2, 1), local (1, 2).
-    assert!(m.m21.m12 == int(20));
+    // `mRC` is the scalar at row `R`, column `C`.
+    assert!(m.m11 == int(1) && m.m12 == int(2) && m.m13 == int(3));
+    assert!(m.m14 == int(4) && m.m15 == int(5) && m.m16 == int(6));
+    assert!(m.m61 == int(31) && m.m62 == int(32) && m.m63 == int(33));
+    assert!(m.m64 == int(34) && m.m65 == int(35) && m.m66 == int(36));
+    assert!(m.m42 == int(20));
 }
 
 #[test]
-fn test_serde_is_block_order() {
-    // Block by block (m11, m21, m12, m22), each block column-major: NOT upstream's flat
-    // column-major order.
+fn test_serde_is_column_major() {
+    // Upstream's storage order (column-major), like every other shape.
     let mut out = array![];
     a6().serialize(ref out);
     let one: felt252 = 0x100000000;
     assert!(
         out == array![
-            1 * one, 7 * one, 13 * one, 2 * one, 8 * one, 14 * one, 3 * one, 9 * one, 15 * one,
-            19 * one, 25 * one, 31 * one, 20 * one, 26 * one, 32 * one, 21 * one, 27 * one,
-            33 * one, 4 * one, 10 * one, 16 * one, 5 * one, 11 * one, 17 * one, 6 * one, 12 * one,
-            18 * one, 22 * one, 28 * one, 34 * one, 23 * one, 29 * one, 35 * one, 24 * one,
-            30 * one, 36 * one,
+            1 * one, 7 * one, 13 * one, 19 * one, 25 * one, 31 * one, 2 * one, 8 * one, 14 * one,
+            20 * one, 26 * one, 32 * one, 3 * one, 9 * one, 15 * one, 21 * one, 27 * one, 33 * one,
+            4 * one, 10 * one, 16 * one, 22 * one, 28 * one, 34 * one, 5 * one, 11 * one, 17 * one,
+            23 * one, 29 * one, 35 * one, 6 * one, 12 * one, 18 * one, 24 * one, 30 * one, 36 * one,
         ],
     );
 }
@@ -101,23 +100,26 @@ fn test_zeros_identity_default() {
 }
 
 #[test]
-fn test_blocks_are_the_fields() {
+fn test_blocks_of_the_test_helpers() {
+    // The 3x3 blocks the evidence benches read (`m6_block*`, test-only) are the upstream views.
     let m = a6();
-    let r = Matrix6 { m11: m.m11, m21: m.m21, m12: m.m12, m22: m.m22 };
+    let r = m6_from_blocks(m6_block11(m), m6_block21(m), m6_block12(m), m6_block22(m));
     assert!(r == m);
     // Block (1, 2) holds rows 1-3, columns 4-6.
     assert!(
-        m
-            .m12 == Matrix3Trait::new(
-                int(4), int(5), int(6), int(10), int(11), int(12), int(16), int(17), int(18),
-            ),
+        m6_block12(
+            m,
+        ) == Matrix3Trait::new(
+            int(4), int(5), int(6), int(10), int(11), int(12), int(16), int(17), int(18),
+        ),
     );
     // Block (2, 1) holds rows 4-6, columns 1-3.
     assert!(
-        m
-            .m21 == Matrix3Trait::new(
-                int(19), int(20), int(21), int(25), int(26), int(27), int(31), int(32), int(33),
-            ),
+        m6_block21(
+            m,
+        ) == Matrix3Trait::new(
+            int(19), int(20), int(21), int(25), int(26), int(27), int(31), int(32), int(33),
+        ),
     );
 }
 
@@ -154,7 +156,7 @@ fn test_transpose_swaps_blocks() {
     );
     assert!(t.transpose() == a6());
     // The off-diagonal blocks are swapped, each transposed.
-    assert!(t.m12 == a6().m21.transpose());
+    assert!(m6_block12(t) == m6_block21(a6()).transpose());
 }
 
 #[test]
@@ -186,7 +188,7 @@ fn test_add_sub_neg_exact() {
     assert!(a6() + a6() == a6().scale(int(2)));
     assert!(a6() - a6() == Matrix6Trait::zeros());
     assert!(-a6() + a6() == Matrix6Trait::zeros());
-    assert!((-a6()).m22.m33 == int(-36));
+    assert!((-a6()).m66 == int(-36));
 }
 
 #[test]
@@ -252,7 +254,7 @@ fn test_mul_is_a_single_rescale_per_scalar() {
             [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0],
         ],
     );
-    assert!((lhs * rhs).m11.m11 == fx(1));
+    assert!((lhs * rhs).m11 == fx(1));
 }
 
 #[test]
@@ -308,9 +310,10 @@ fn test_abs_diff_eq_and_is_identity_count_raw_units() {
     assert!(!i.abs_diff_eq(off, 2));
     assert!(a6().abs_diff_eq(a6(), 0));
     // An off-diagonal block is compared too.
-    let skew = Matrix6 {
-        m11: Matrix3Trait::identity(),
-        m12: Matrix3 {
+    let skew = m6_from_blocks(
+        Matrix3Trait::identity(),
+        Matrix3Trait::zeros(),
+        Matrix3 {
             m11: fx(4),
             m21: fx(0),
             m31: fx(0),
@@ -321,9 +324,8 @@ fn test_abs_diff_eq_and_is_identity_count_raw_units() {
             m23: fx(0),
             m33: fx(0),
         },
-        m21: Matrix3Trait::zeros(),
-        m22: Matrix3Trait::identity(),
-    };
+        Matrix3Trait::identity(),
+    );
     assert!(skew.is_identity(4));
     assert!(!skew.is_identity(3));
 }
@@ -440,8 +442,8 @@ fn test_mul_vec_matches_mul_by_a_one_column_matrix() {
         );
         let p = m6(a) * col;
         let e = v6t(expected);
-        assert!(p.m11.m11 == e.a.x && p.m11.m21 == e.a.y && p.m11.m31 == e.a.z);
-        assert!(p.m21.m11 == e.b.x && p.m21.m21 == e.b.y && p.m21.m31 == e.b.z);
+        assert!(p.m11 == e.x && p.m21 == e.y && p.m31 == e.z);
+        assert!(p.m41 == e.w && p.m51 == e.a && p.m61 == e.b);
     }
 }
 

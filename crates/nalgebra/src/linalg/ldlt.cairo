@@ -19,8 +19,8 @@
 //!
 //! LDLᵀ is chosen over UDU because `L` unit LOWER is the convention of every other
 //! lower-triangular factor here (`Cholesky::l`) and of rapier's solvers, and because a
-//! factorisation that consumes the leading principal minors in order matches the block layout of
-//! `Matrix6`.
+//! factorisation that consumes the leading principal minors in order matches the spatial-algebra
+//! blocks of a `Matrix6` (its leading 3x3 block first).
 //!
 //! What is stored: the n(n-1)/2 strictly lower components of `L` as flat named fields (the unit
 //! diagonal is implicit and never materialised) plus `D` as a `VectorN`, returned as such by `d()`.
@@ -785,65 +785,65 @@ pub(crate) impl Ldlt6Impl<
     ///
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: Matrix6<T>) -> Option<Ldlt6<T>> {
-        let d1 = a.m11.m11;
+        let d1 = a.m11;
         if d1 == R::zero() {
             return None;
         }
-        let n21 = a.m11.m21;
+        let n21 = a.m21;
         let l21 = R::div(n21, d1);
-        let n31 = a.m11.m31;
+        let n31 = a.m31;
         let l31 = R::div(n31, d1);
-        let n41 = a.m21.m11;
+        let n41 = a.m41;
         let l41 = R::div(n41, d1);
-        let n51 = a.m21.m21;
+        let n51 = a.m51;
         let l51 = R::div(n51, d1);
-        let n61 = a.m21.m31;
+        let n61 = a.m61;
         let l61 = R::div(n61, d1);
-        let w = R::wide_add(R::wide_zero(), a.m11.m22);
+        let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
         if d2 == R::zero() {
             return None;
         }
-        let w = R::wide_add(R::wide_zero(), a.m11.m32);
+        let w = R::wide_add(R::wide_zero(), a.m32);
         let w = R::wide_sub_prod(w, l31, n21);
         let n32 = R::wide_rescale(w);
         let l32 = R::div(n32, d2);
-        let w = R::wide_add(R::wide_zero(), a.m21.m12);
+        let w = R::wide_add(R::wide_zero(), a.m42);
         let w = R::wide_sub_prod(w, l41, n21);
         let n42 = R::wide_rescale(w);
         let l42 = R::div(n42, d2);
-        let w = R::wide_add(R::wide_zero(), a.m21.m22);
+        let w = R::wide_add(R::wide_zero(), a.m52);
         let w = R::wide_sub_prod(w, l51, n21);
         let n52 = R::wide_rescale(w);
         let l52 = R::div(n52, d2);
-        let w = R::wide_add(R::wide_zero(), a.m21.m32);
+        let w = R::wide_add(R::wide_zero(), a.m62);
         let w = R::wide_sub_prod(w, l61, n21);
         let n62 = R::wide_rescale(w);
         let l62 = R::div(n62, d2);
-        let w = R::wide_add(R::wide_zero(), a.m11.m33);
+        let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, n31);
         let w = R::wide_sub_prod(w, l32, n32);
         let d3 = R::wide_rescale(w);
         if d3 == R::zero() {
             return None;
         }
-        let w = R::wide_add(R::wide_zero(), a.m21.m13);
+        let w = R::wide_add(R::wide_zero(), a.m43);
         let w = R::wide_sub_prod(w, l41, n31);
         let w = R::wide_sub_prod(w, l42, n32);
         let n43 = R::wide_rescale(w);
         let l43 = R::div(n43, d3);
-        let w = R::wide_add(R::wide_zero(), a.m21.m23);
+        let w = R::wide_add(R::wide_zero(), a.m53);
         let w = R::wide_sub_prod(w, l51, n31);
         let w = R::wide_sub_prod(w, l52, n32);
         let n53 = R::wide_rescale(w);
         let l53 = R::div(n53, d3);
-        let w = R::wide_add(R::wide_zero(), a.m21.m33);
+        let w = R::wide_add(R::wide_zero(), a.m63);
         let w = R::wide_sub_prod(w, l61, n31);
         let w = R::wide_sub_prod(w, l62, n32);
         let n63 = R::wide_rescale(w);
         let l63 = R::div(n63, d3);
-        let w = R::wide_add(R::wide_zero(), a.m22.m11);
+        let w = R::wide_add(R::wide_zero(), a.m44);
         let w = R::wide_sub_prod(w, l41, n41);
         let w = R::wide_sub_prod(w, l42, n42);
         let w = R::wide_sub_prod(w, l43, n43);
@@ -851,19 +851,19 @@ pub(crate) impl Ldlt6Impl<
         if d4 == R::zero() {
             return None;
         }
-        let w = R::wide_add(R::wide_zero(), a.m22.m21);
+        let w = R::wide_add(R::wide_zero(), a.m54);
         let w = R::wide_sub_prod(w, l51, n41);
         let w = R::wide_sub_prod(w, l52, n42);
         let w = R::wide_sub_prod(w, l53, n43);
         let n54 = R::wide_rescale(w);
         let l54 = R::div(n54, d4);
-        let w = R::wide_add(R::wide_zero(), a.m22.m31);
+        let w = R::wide_add(R::wide_zero(), a.m64);
         let w = R::wide_sub_prod(w, l61, n41);
         let w = R::wide_sub_prod(w, l62, n42);
         let w = R::wide_sub_prod(w, l63, n43);
         let n64 = R::wide_rescale(w);
         let l64 = R::div(n64, d4);
-        let w = R::wide_add(R::wide_zero(), a.m22.m22);
+        let w = R::wide_add(R::wide_zero(), a.m55);
         let w = R::wide_sub_prod(w, l51, n51);
         let w = R::wide_sub_prod(w, l52, n52);
         let w = R::wide_sub_prod(w, l53, n53);
@@ -872,14 +872,14 @@ pub(crate) impl Ldlt6Impl<
         if d5 == R::zero() {
             return None;
         }
-        let w = R::wide_add(R::wide_zero(), a.m22.m32);
+        let w = R::wide_add(R::wide_zero(), a.m65);
         let w = R::wide_sub_prod(w, l61, n51);
         let w = R::wide_sub_prod(w, l62, n52);
         let w = R::wide_sub_prod(w, l63, n53);
         let w = R::wide_sub_prod(w, l64, n54);
         let n65 = R::wide_rescale(w);
         let l65 = R::div(n65, d5);
-        let w = R::wide_add(R::wide_zero(), a.m22.m33);
+        let w = R::wide_add(R::wide_zero(), a.m66);
         let w = R::wide_sub_prod(w, l61, n61);
         let w = R::wide_sub_prod(w, l62, n62);
         let w = R::wide_sub_prod(w, l63, n63);
@@ -906,9 +906,7 @@ pub(crate) impl Ldlt6Impl<
                 l54,
                 l64,
                 l65,
-                d: Vector6 {
-                    a: Vector3 { x: d1, y: d2, z: d3 }, b: Vector3 { x: d4, y: d5, z: d6 },
-                },
+                d: Vector6 { x: d1, y: d2, z: d3, w: d4, a: d5, b: d6 },
             },
         )
     }
@@ -918,50 +916,42 @@ pub(crate) impl Ldlt6Impl<
     #[inline(always)]
     fn l(self: Ldlt6<T>) -> Matrix6<T> {
         Matrix6 {
-            m11: Matrix3 {
-                m11: R::one(),
-                m21: self.l21,
-                m31: self.l31,
-                m12: R::zero(),
-                m22: R::one(),
-                m32: self.l32,
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: R::one(),
-            },
-            m21: Matrix3 {
-                m11: self.l41,
-                m21: self.l51,
-                m31: self.l61,
-                m12: self.l42,
-                m22: self.l52,
-                m32: self.l62,
-                m13: self.l43,
-                m23: self.l53,
-                m33: self.l63,
-            },
-            m12: Matrix3 {
-                m11: R::zero(),
-                m21: R::zero(),
-                m31: R::zero(),
-                m12: R::zero(),
-                m22: R::zero(),
-                m32: R::zero(),
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: R::zero(),
-            },
-            m22: Matrix3 {
-                m11: R::one(),
-                m21: self.l54,
-                m31: self.l64,
-                m12: R::zero(),
-                m22: R::one(),
-                m32: self.l65,
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: R::one(),
-            },
+            m11: R::one(),
+            m21: self.l21,
+            m31: self.l31,
+            m12: R::zero(),
+            m22: R::one(),
+            m32: self.l32,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
+            m41: self.l41,
+            m51: self.l51,
+            m61: self.l61,
+            m42: self.l42,
+            m52: self.l52,
+            m62: self.l62,
+            m43: self.l43,
+            m53: self.l53,
+            m63: self.l63,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m15: R::zero(),
+            m25: R::zero(),
+            m35: R::zero(),
+            m16: R::zero(),
+            m26: R::zero(),
+            m36: R::zero(),
+            m44: R::one(),
+            m54: self.l54,
+            m64: self.l64,
+            m45: R::zero(),
+            m55: R::one(),
+            m65: self.l65,
+            m46: R::zero(),
+            m56: R::zero(),
+            m66: R::one(),
         }
     }
 
@@ -983,38 +973,38 @@ pub(crate) impl Ldlt6Impl<
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
     fn solve(self: Ldlt6<T>, b: Vector6<T>) -> Vector6<T> {
-        let y1 = b.a.x;
-        let w = R::wide_add(R::wide_zero(), b.a.y);
+        let y1 = b.x;
+        let w = R::wide_add(R::wide_zero(), b.y);
         let w = R::wide_sub_prod(w, self.l21, y1);
         let y2 = R::wide_rescale(w);
-        let w = R::wide_add(R::wide_zero(), b.a.z);
+        let w = R::wide_add(R::wide_zero(), b.z);
         let w = R::wide_sub_prod(w, self.l31, y1);
         let w = R::wide_sub_prod(w, self.l32, y2);
         let y3 = R::wide_rescale(w);
-        let w = R::wide_add(R::wide_zero(), b.b.x);
+        let w = R::wide_add(R::wide_zero(), b.w);
         let w = R::wide_sub_prod(w, self.l41, y1);
         let w = R::wide_sub_prod(w, self.l42, y2);
         let w = R::wide_sub_prod(w, self.l43, y3);
         let y4 = R::wide_rescale(w);
-        let w = R::wide_add(R::wide_zero(), b.b.y);
+        let w = R::wide_add(R::wide_zero(), b.a);
         let w = R::wide_sub_prod(w, self.l51, y1);
         let w = R::wide_sub_prod(w, self.l52, y2);
         let w = R::wide_sub_prod(w, self.l53, y3);
         let w = R::wide_sub_prod(w, self.l54, y4);
         let y5 = R::wide_rescale(w);
-        let w = R::wide_add(R::wide_zero(), b.b.z);
+        let w = R::wide_add(R::wide_zero(), b.b);
         let w = R::wide_sub_prod(w, self.l61, y1);
         let w = R::wide_sub_prod(w, self.l62, y2);
         let w = R::wide_sub_prod(w, self.l63, y3);
         let w = R::wide_sub_prod(w, self.l64, y4);
         let w = R::wide_sub_prod(w, self.l65, y5);
         let y6 = R::wide_rescale(w);
-        let z1 = R::div(y1, self.d.a.x);
-        let z2 = R::div(y2, self.d.a.y);
-        let z3 = R::div(y3, self.d.a.z);
-        let z4 = R::div(y4, self.d.b.x);
-        let z5 = R::div(y5, self.d.b.y);
-        let z6 = R::div(y6, self.d.b.z);
+        let z1 = R::div(y1, self.d.x);
+        let z2 = R::div(y2, self.d.y);
+        let z3 = R::div(y3, self.d.z);
+        let z4 = R::div(y4, self.d.w);
+        let z5 = R::div(y5, self.d.a);
+        let z6 = R::div(y6, self.d.b);
         let x6 = z6;
         let w = R::wide_add(R::wide_zero(), z5);
         let w = R::wide_sub_prod(w, self.l65, x6);
@@ -1041,7 +1031,7 @@ pub(crate) impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, self.l51, x5);
         let w = R::wide_sub_prod(w, self.l61, x6);
         let x1 = R::wide_rescale(w);
-        Vector6 { a: Vector3 { x: x1, y: x2, z: x3 }, b: Vector3 { x: x4, y: x5, z: x6 } }
+        Vector6 { x: x1, y: x2, z: x3, w: x4, a: x5, b: x6 }
     }
 
     /// `a⁻¹ = l⁻ᵀ · diag(d)⁻¹ · l⁻¹`, as a full (symmetric) `Matrix6`.
@@ -1101,18 +1091,18 @@ pub(crate) impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, self.l65, q54);
         let q64 = R::wide_rescale(w);
         let q65 = -self.l65;
-        let s11 = R::recip(self.d.a.x);
-        let s21 = R::div(q21, self.d.a.y);
-        let s31 = R::div(q31, self.d.a.z);
-        let (s41, s42, s43) = R::div3(q41, q42, q43, self.d.b.x);
-        let (s51, s52, s53, s54) = R::div4(q51, q52, q53, q54, self.d.b.y);
-        let (s61, s62, s63, s64, s65) = R::div5(q61, q62, q63, q64, q65, self.d.b.z);
-        let s22 = R::recip(self.d.a.y);
-        let s32 = R::div(q32, self.d.a.z);
-        let s33 = R::recip(self.d.a.z);
-        let s44 = R::recip(self.d.b.x);
-        let s55 = R::recip(self.d.b.y);
-        let s66 = R::recip(self.d.b.z);
+        let s11 = R::recip(self.d.x);
+        let s21 = R::div(q21, self.d.y);
+        let s31 = R::div(q31, self.d.z);
+        let (s41, s42, s43) = R::div3(q41, q42, q43, self.d.w);
+        let (s51, s52, s53, s54) = R::div4(q51, q52, q53, q54, self.d.a);
+        let (s61, s62, s63, s64, s65) = R::div5(q61, q62, q63, q64, q65, self.d.b);
+        let s22 = R::recip(self.d.y);
+        let s32 = R::div(q32, self.d.z);
+        let s33 = R::recip(self.d.z);
+        let s44 = R::recip(self.d.w);
+        let s55 = R::recip(self.d.a);
+        let s66 = R::recip(self.d.b);
         let w = R::wide_zero();
         let w = R::wide_add(w, s11);
         let w = R::wide_add_prod(w, q21, s21);
@@ -1200,50 +1190,42 @@ pub(crate) impl Ldlt6Impl<
         let r56 = q65 * s66;
         let r66 = s66;
         Matrix6 {
-            m11: Matrix3 {
-                m11: r11,
-                m21: r12,
-                m31: r13,
-                m12: r12,
-                m22: r22,
-                m32: r23,
-                m13: r13,
-                m23: r23,
-                m33: r33,
-            },
-            m21: Matrix3 {
-                m11: r14,
-                m21: r15,
-                m31: r16,
-                m12: r24,
-                m22: r25,
-                m32: r26,
-                m13: r34,
-                m23: r35,
-                m33: r36,
-            },
-            m12: Matrix3 {
-                m11: r14,
-                m21: r24,
-                m31: r34,
-                m12: r15,
-                m22: r25,
-                m32: r35,
-                m13: r16,
-                m23: r26,
-                m33: r36,
-            },
-            m22: Matrix3 {
-                m11: r44,
-                m21: r45,
-                m31: r46,
-                m12: r45,
-                m22: r55,
-                m32: r56,
-                m13: r46,
-                m23: r56,
-                m33: r66,
-            },
+            m11: r11,
+            m21: r12,
+            m31: r13,
+            m12: r12,
+            m22: r22,
+            m32: r23,
+            m13: r13,
+            m23: r23,
+            m33: r33,
+            m41: r14,
+            m51: r15,
+            m61: r16,
+            m42: r24,
+            m52: r25,
+            m62: r26,
+            m43: r34,
+            m53: r35,
+            m63: r36,
+            m14: r14,
+            m24: r24,
+            m34: r34,
+            m15: r15,
+            m25: r25,
+            m35: r35,
+            m16: r16,
+            m26: r26,
+            m36: r36,
+            m44: r44,
+            m54: r45,
+            m64: r46,
+            m45: r45,
+            m55: r55,
+            m65: r56,
+            m46: r46,
+            m56: r56,
+            m66: r66,
         }
     }
 
@@ -1254,6 +1236,6 @@ pub(crate) impl Ldlt6Impl<
     /// 1 ulp floors to 0), which is the scalar's floor rounding and NOT a singularity report.
     #[inline(always)]
     fn determinant(self: Ldlt6<T>) -> T {
-        (self.d.a.x * (self.d.a.y * self.d.a.z)) * (self.d.b.x * (self.d.b.y * self.d.b.z))
+        (self.d.x * (self.d.y * self.d.z)) * (self.d.w * (self.d.a * self.d.b))
     }
 }

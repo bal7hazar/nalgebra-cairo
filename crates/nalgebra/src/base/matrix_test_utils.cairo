@@ -160,7 +160,7 @@ pub fn v4(x: i64, y: i64, z: i64, w: i64) -> Vector4<Fixed> {
 
 /// `Vector6` from raw components, in the upstream order `(x, y, z, w, a, b)`.
 pub fn v6(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 { a: v3(x, y, z), b: v3(w, a, b) }
+    Vector6 { x: fx(x), y: fx(y), z: fx(z), w: fx(w), a: fx(a), b: fx(b) }
 }
 
 /// `Vector2` from a tuple of raw components (oracle layout).
@@ -185,9 +185,7 @@ pub fn v4t(t: (i64, i64, i64, i64)) -> Vector4<Fixed> {
 /// `(x, y, z, w, a, b)`.
 pub fn v6t(t: (i64, i64, i64, i64, i64, i64)) -> Vector6<Fixed> {
     let (x, y, z, w, a, b) = t;
-    Vector6 {
-        a: Vector3 { x: fx(x), y: fx(y), z: fx(z) }, b: Vector3 { x: fx(w), y: fx(a), z: fx(b) },
-    }
+    Vector6 { x: fx(x), y: fx(y), z: fx(z), w: fx(w), a: fx(a), b: fx(b) }
 }
 
 /// `Vector2` from integers.
@@ -207,10 +205,7 @@ pub fn v4i(x: i64, y: i64, z: i64, w: i64) -> Vector4<Fixed> {
 
 /// `Vector6` from integers, in the upstream order `(x, y, z, w, a, b)`.
 pub fn v6i(x: i64, y: i64, z: i64, w: i64, a: i64, b: i64) -> Vector6<Fixed> {
-    Vector6 {
-        a: Vector3 { x: int(x), y: int(y), z: int(z) },
-        b: Vector3 { x: int(w), y: int(a), z: int(b) },
-    }
+    Vector6 { x: int(x), y: int(y), z: int(z), w: int(w), a: int(a), b: int(b) }
 }
 
 /// `Vector2` from a tuple of integers.
@@ -234,10 +229,7 @@ pub fn v4it(t: (i64, i64, i64, i64)) -> Vector4<Fixed> {
 /// `Vector6` from a tuple of integers, in the upstream order `(x, y, z, w, a, b)`.
 pub fn v6it(t: (i64, i64, i64, i64, i64, i64)) -> Vector6<Fixed> {
     let (x, y, z, w, a, b) = t;
-    Vector6 {
-        a: Vector3 { x: int(x), y: int(y), z: int(z) },
-        b: Vector3 { x: int(w), y: int(a), z: int(b) },
-    }
+    Vector6 { x: int(x), y: int(y), z: int(z), w: int(w), a: int(a), b: int(b) }
 }
 
 /// `Unit<Vector2>` from raw components, WITHOUT normalisation.
@@ -384,7 +376,136 @@ pub fn m4i(rows: [[i64; 4]; 4]) -> Matrix4<Fixed> {
     }
 }
 
-/// `Matrix6` from raw ROW-major rows (oracle layout), laid out as the four 3x3 blocks.
+/// The 3x3 block of rows 1-3, columns 1-3 of a `Matrix6` (upstream `fixed_view::<3, 3>(0, 0)`):
+/// test-only, the 3x3-block formulations kept as evidence (and the block-wise tolerance helpers)
+/// read the flat `Matrix6` through these (moves only).
+#[inline(always)]
+pub fn m6_block11(m: Matrix6<Fixed>) -> Matrix3<Fixed> {
+    Matrix3 {
+        m11: m.m11,
+        m21: m.m21,
+        m31: m.m31,
+        m12: m.m12,
+        m22: m.m22,
+        m32: m.m32,
+        m13: m.m13,
+        m23: m.m23,
+        m33: m.m33,
+    }
+}
+
+/// The 3x3 block of rows 4-6, columns 1-3 of a `Matrix6` (upstream `fixed_view::<3, 3>(3, 0)`).
+#[inline(always)]
+pub fn m6_block21(m: Matrix6<Fixed>) -> Matrix3<Fixed> {
+    Matrix3 {
+        m11: m.m41,
+        m21: m.m51,
+        m31: m.m61,
+        m12: m.m42,
+        m22: m.m52,
+        m32: m.m62,
+        m13: m.m43,
+        m23: m.m53,
+        m33: m.m63,
+    }
+}
+
+/// The 3x3 block of rows 1-3, columns 4-6 of a `Matrix6` (upstream `fixed_view::<3, 3>(0, 3)`).
+#[inline(always)]
+pub fn m6_block12(m: Matrix6<Fixed>) -> Matrix3<Fixed> {
+    Matrix3 {
+        m11: m.m14,
+        m21: m.m24,
+        m31: m.m34,
+        m12: m.m15,
+        m22: m.m25,
+        m32: m.m35,
+        m13: m.m16,
+        m23: m.m26,
+        m33: m.m36,
+    }
+}
+
+/// The 3x3 block of rows 4-6, columns 4-6 of a `Matrix6` (upstream `fixed_view::<3, 3>(3, 3)`).
+#[inline(always)]
+pub fn m6_block22(m: Matrix6<Fixed>) -> Matrix3<Fixed> {
+    Matrix3 {
+        m11: m.m44,
+        m21: m.m54,
+        m31: m.m64,
+        m12: m.m45,
+        m22: m.m55,
+        m32: m.m65,
+        m13: m.m46,
+        m23: m.m56,
+        m33: m.m66,
+    }
+}
+
+/// The `Matrix6` made of four 3x3 blocks (`bIJ`: block-row `I`, block-column `J`).
+#[inline(always)]
+pub fn m6_from_blocks(
+    b11: Matrix3<Fixed>, b21: Matrix3<Fixed>, b12: Matrix3<Fixed>, b22: Matrix3<Fixed>,
+) -> Matrix6<Fixed> {
+    Matrix6 {
+        m11: b11.m11,
+        m21: b11.m21,
+        m31: b11.m31,
+        m41: b21.m11,
+        m51: b21.m21,
+        m61: b21.m31,
+        m12: b11.m12,
+        m22: b11.m22,
+        m32: b11.m32,
+        m42: b21.m12,
+        m52: b21.m22,
+        m62: b21.m32,
+        m13: b11.m13,
+        m23: b11.m23,
+        m33: b11.m33,
+        m43: b21.m13,
+        m53: b21.m23,
+        m63: b21.m33,
+        m14: b12.m11,
+        m24: b12.m21,
+        m34: b12.m31,
+        m44: b22.m11,
+        m54: b22.m21,
+        m64: b22.m31,
+        m15: b12.m12,
+        m25: b12.m22,
+        m35: b12.m32,
+        m45: b22.m12,
+        m55: b22.m22,
+        m65: b22.m32,
+        m16: b12.m13,
+        m26: b12.m23,
+        m36: b12.m33,
+        m46: b22.m13,
+        m56: b22.m23,
+        m66: b22.m33,
+    }
+}
+
+/// Components `x, y, z` of a `Vector6` (upstream `fixed_rows::<3>(0)`).
+#[inline(always)]
+pub fn v6_head(v: Vector6<Fixed>) -> Vector3<Fixed> {
+    Vector3 { x: v.x, y: v.y, z: v.z }
+}
+
+/// Components `w, a, b` of a `Vector6` (upstream `fixed_rows::<3>(3)`).
+#[inline(always)]
+pub fn v6_tail(v: Vector6<Fixed>) -> Vector3<Fixed> {
+    Vector3 { x: v.w, y: v.a, z: v.b }
+}
+
+/// The `Vector6` `(head.x, head.y, head.z, tail.x, tail.y, tail.z)`.
+#[inline(always)]
+pub fn v6_from_halves(head: Vector3<Fixed>, tail: Vector3<Fixed>) -> Vector6<Fixed> {
+    Vector6 { x: head.x, y: head.y, z: head.z, w: tail.x, a: tail.y, b: tail.z }
+}
+
+/// `Matrix6` from raw ROW-major rows (oracle layout).
 pub fn m6(rows: [[i64; 6]; 6]) -> Matrix6<Fixed> {
     let [r1, r2, r3, r4, r5, r6] = rows;
     let [a11, a12, a13, a14, a15, a16] = r1;
@@ -394,54 +515,46 @@ pub fn m6(rows: [[i64; 6]; 6]) -> Matrix6<Fixed> {
     let [a51, a52, a53, a54, a55, a56] = r5;
     let [a61, a62, a63, a64, a65, a66] = r6;
     Matrix6 {
-        m11: Matrix3 {
-            m11: fx(a11),
-            m21: fx(a21),
-            m31: fx(a31),
-            m12: fx(a12),
-            m22: fx(a22),
-            m32: fx(a32),
-            m13: fx(a13),
-            m23: fx(a23),
-            m33: fx(a33),
-        },
-        m21: Matrix3 {
-            m11: fx(a41),
-            m21: fx(a51),
-            m31: fx(a61),
-            m12: fx(a42),
-            m22: fx(a52),
-            m32: fx(a62),
-            m13: fx(a43),
-            m23: fx(a53),
-            m33: fx(a63),
-        },
-        m12: Matrix3 {
-            m11: fx(a14),
-            m21: fx(a24),
-            m31: fx(a34),
-            m12: fx(a15),
-            m22: fx(a25),
-            m32: fx(a35),
-            m13: fx(a16),
-            m23: fx(a26),
-            m33: fx(a36),
-        },
-        m22: Matrix3 {
-            m11: fx(a44),
-            m21: fx(a54),
-            m31: fx(a64),
-            m12: fx(a45),
-            m22: fx(a55),
-            m32: fx(a65),
-            m13: fx(a46),
-            m23: fx(a56),
-            m33: fx(a66),
-        },
+        m11: fx(a11),
+        m21: fx(a21),
+        m31: fx(a31),
+        m12: fx(a12),
+        m22: fx(a22),
+        m32: fx(a32),
+        m13: fx(a13),
+        m23: fx(a23),
+        m33: fx(a33),
+        m41: fx(a41),
+        m51: fx(a51),
+        m61: fx(a61),
+        m42: fx(a42),
+        m52: fx(a52),
+        m62: fx(a62),
+        m43: fx(a43),
+        m53: fx(a53),
+        m63: fx(a63),
+        m14: fx(a14),
+        m24: fx(a24),
+        m34: fx(a34),
+        m15: fx(a15),
+        m25: fx(a25),
+        m35: fx(a35),
+        m16: fx(a16),
+        m26: fx(a26),
+        m36: fx(a36),
+        m44: fx(a44),
+        m54: fx(a54),
+        m64: fx(a64),
+        m45: fx(a45),
+        m55: fx(a55),
+        m65: fx(a65),
+        m46: fx(a46),
+        m56: fx(a56),
+        m66: fx(a66),
     }
 }
 
-/// `Matrix6` from integer ROW-major rows, laid out as the four 3x3 blocks.
+/// `Matrix6` from integer ROW-major rows.
 pub fn m6i(rows: [[i64; 6]; 6]) -> Matrix6<Fixed> {
     let [r1, r2, r3, r4, r5, r6] = rows;
     let [a11, a12, a13, a14, a15, a16] = r1;
@@ -451,50 +564,42 @@ pub fn m6i(rows: [[i64; 6]; 6]) -> Matrix6<Fixed> {
     let [a51, a52, a53, a54, a55, a56] = r5;
     let [a61, a62, a63, a64, a65, a66] = r6;
     Matrix6 {
-        m11: Matrix3 {
-            m11: int(a11),
-            m21: int(a21),
-            m31: int(a31),
-            m12: int(a12),
-            m22: int(a22),
-            m32: int(a32),
-            m13: int(a13),
-            m23: int(a23),
-            m33: int(a33),
-        },
-        m21: Matrix3 {
-            m11: int(a41),
-            m21: int(a51),
-            m31: int(a61),
-            m12: int(a42),
-            m22: int(a52),
-            m32: int(a62),
-            m13: int(a43),
-            m23: int(a53),
-            m33: int(a63),
-        },
-        m12: Matrix3 {
-            m11: int(a14),
-            m21: int(a24),
-            m31: int(a34),
-            m12: int(a15),
-            m22: int(a25),
-            m32: int(a35),
-            m13: int(a16),
-            m23: int(a26),
-            m33: int(a36),
-        },
-        m22: Matrix3 {
-            m11: int(a44),
-            m21: int(a54),
-            m31: int(a64),
-            m12: int(a45),
-            m22: int(a55),
-            m32: int(a65),
-            m13: int(a46),
-            m23: int(a56),
-            m33: int(a66),
-        },
+        m11: int(a11),
+        m21: int(a21),
+        m31: int(a31),
+        m12: int(a12),
+        m22: int(a22),
+        m32: int(a32),
+        m13: int(a13),
+        m23: int(a23),
+        m33: int(a33),
+        m41: int(a41),
+        m51: int(a51),
+        m61: int(a61),
+        m42: int(a42),
+        m52: int(a52),
+        m62: int(a62),
+        m43: int(a43),
+        m53: int(a53),
+        m63: int(a63),
+        m14: int(a14),
+        m24: int(a24),
+        m34: int(a34),
+        m15: int(a15),
+        m25: int(a25),
+        m35: int(a35),
+        m16: int(a16),
+        m26: int(a26),
+        m36: int(a36),
+        m44: int(a44),
+        m54: int(a54),
+        m64: int(a64),
+        m45: int(a45),
+        m55: int(a55),
+        m65: int(a65),
+        m46: int(a46),
+        m56: int(a56),
+        m66: int(a66),
     }
 }
 
@@ -781,10 +886,10 @@ pub fn max_ulp_diff4(a: Matrix4<Fixed>, b: Matrix4<Fixed>) -> u128 {
 
 /// Largest component-wise `|a - b|` in raw units, over the four 3x3 blocks.
 pub fn max_ulp_diff6(a: Matrix6<Fixed>, b: Matrix6<Fixed>) -> u128 {
-    let mut e = max_ulp_diff3(a.m11, b.m11);
-    e = core::cmp::max(e, max_ulp_diff3(a.m21, b.m21));
-    e = core::cmp::max(e, max_ulp_diff3(a.m12, b.m12));
-    core::cmp::max(e, max_ulp_diff3(a.m22, b.m22))
+    let mut e = max_ulp_diff3(m6_block11(a), m6_block11(b));
+    e = core::cmp::max(e, max_ulp_diff3(m6_block21(a), m6_block21(b)));
+    e = core::cmp::max(e, max_ulp_diff3(m6_block12(a), m6_block12(b)));
+    core::cmp::max(e, max_ulp_diff3(m6_block22(a), m6_block22(b)))
 }
 
 /// Largest component-wise `|a - b|` in raw units.
@@ -807,7 +912,7 @@ pub fn max_ulp_diff_v4(a: Vector4<Fixed>, b: Vector4<Fixed>) -> u128 {
 
 /// Largest component-wise `|a - b|` in raw units, over the two 3-blocks.
 pub fn max_ulp_diff_v6(a: Vector6<Fixed>, b: Vector6<Fixed>) -> u128 {
-    core::cmp::max(max_ulp_diff_v3(a.a, b.a), max_ulp_diff_v3(a.b, b.b))
+    core::cmp::max(max_ulp_diff_v3(v6_head(a), v6_head(b)), max_ulp_diff_v3(v6_tail(a), v6_tail(b)))
 }
 
 /// Largest component-wise `|a - b|` in raw units, over the 3 stored components.
@@ -921,10 +1026,10 @@ pub fn max_abs_m4(m: Matrix4<Fixed>) -> u128 {
 
 /// Largest `|m_ij|` in RAW units over the 36 entries (the argument of `oracle_tol`).
 pub fn max_abs_m6(m: Matrix6<Fixed>) -> u128 {
-    let mut e = max_abs_m3(m.m11);
-    e = core::cmp::max(e, max_abs_m3(m.m21));
-    e = core::cmp::max(e, max_abs_m3(m.m12));
-    core::cmp::max(e, max_abs_m3(m.m22))
+    let mut e = max_abs_m3(m6_block11(m));
+    e = core::cmp::max(e, max_abs_m3(m6_block21(m)));
+    e = core::cmp::max(e, max_abs_m3(m6_block12(m)));
+    core::cmp::max(e, max_abs_m3(m6_block22(m)))
 }
 
 /// Largest `|v_i|` in RAW units (the argument of `oracle_tol`).
@@ -945,7 +1050,7 @@ pub fn max_abs_v4(v: Vector4<Fixed>) -> u128 {
 
 /// Largest `|v_i|` in RAW units (the argument of `oracle_tol`).
 pub fn max_abs_v6(v: Vector6<Fixed>) -> u128 {
-    core::cmp::max(max_abs_v3(v.a), max_abs_v3(v.b))
+    core::cmp::max(max_abs_v3(v6_head(v)), max_abs_v3(v6_tail(v)))
 }
 
 /// `max|m_ij|` in raw units, rounded UP to an integer and at least 1.

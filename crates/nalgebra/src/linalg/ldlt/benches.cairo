@@ -29,7 +29,7 @@ use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2Trait;
-use crate::base::matrix3::{Matrix3, Matrix3Trait};
+use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix4::{Matrix4, Matrix4Trait};
 use crate::base::matrix6::{Matrix6, Matrix6Trait};
 use crate::base::matrix_test_utils::{
@@ -1130,58 +1130,58 @@ fn inv6() -> Matrix6<Fixed> {
 /// numerator of column k: n(n-1)/2 extra products, and a pivot that is second order rather than
 /// first order in the rounding of `l_jk`.
 fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
-    let d1 = a.m11.m11;
+    let d1 = a.m11;
     if d1 == Real::<Fixed>::zero() {
         return None;
     }
-    let l21 = a.m11.m21 / d1;
-    let l31 = a.m11.m31 / d1;
-    let l41 = a.m21.m11 / d1;
-    let l51 = a.m21.m21 / d1;
-    let l61 = a.m21.m31 / d1;
+    let l21 = a.m21 / d1;
+    let l31 = a.m31 / d1;
+    let l41 = a.m41 / d1;
+    let l51 = a.m51 / d1;
+    let l61 = a.m61 / d1;
     let t21 = l21 * d1;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m11.m22);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22);
     let w = Real::wide_sub_prod(w, l21, t21);
     let d2 = Real::wide_rescale(w);
     if d2 == Real::<Fixed>::zero() {
         return None;
     }
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m11.m32);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m32);
     let w = Real::wide_sub_prod(w, l31, t21);
     let n32 = Real::wide_rescale(w);
     let l32 = n32 / d2;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m21.m12);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m42);
     let w = Real::wide_sub_prod(w, l41, t21);
     let n42 = Real::wide_rescale(w);
     let l42 = n42 / d2;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m21.m22);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m52);
     let w = Real::wide_sub_prod(w, l51, t21);
     let n52 = Real::wide_rescale(w);
     let l52 = n52 / d2;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m21.m32);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m62);
     let w = Real::wide_sub_prod(w, l61, t21);
     let n62 = Real::wide_rescale(w);
     let l62 = n62 / d2;
     let t31 = l31 * d1;
     let t32 = l32 * d2;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m11.m33);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m33);
     let w = Real::wide_sub_prod(w, l31, t31);
     let w = Real::wide_sub_prod(w, l32, t32);
     let d3 = Real::wide_rescale(w);
     if d3 == Real::<Fixed>::zero() {
         return None;
     }
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m21.m13);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m43);
     let w = Real::wide_sub_prod(w, l41, t31);
     let w = Real::wide_sub_prod(w, l42, t32);
     let n43 = Real::wide_rescale(w);
     let l43 = n43 / d3;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m21.m23);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m53);
     let w = Real::wide_sub_prod(w, l51, t31);
     let w = Real::wide_sub_prod(w, l52, t32);
     let n53 = Real::wide_rescale(w);
     let l53 = n53 / d3;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m21.m33);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m63);
     let w = Real::wide_sub_prod(w, l61, t31);
     let w = Real::wide_sub_prod(w, l62, t32);
     let n63 = Real::wide_rescale(w);
@@ -1189,7 +1189,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let t41 = l41 * d1;
     let t42 = l42 * d2;
     let t43 = l43 * d3;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m11);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m44);
     let w = Real::wide_sub_prod(w, l41, t41);
     let w = Real::wide_sub_prod(w, l42, t42);
     let w = Real::wide_sub_prod(w, l43, t43);
@@ -1197,13 +1197,13 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     if d4 == Real::<Fixed>::zero() {
         return None;
     }
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m21);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m54);
     let w = Real::wide_sub_prod(w, l51, t41);
     let w = Real::wide_sub_prod(w, l52, t42);
     let w = Real::wide_sub_prod(w, l53, t43);
     let n54 = Real::wide_rescale(w);
     let l54 = n54 / d4;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m31);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m64);
     let w = Real::wide_sub_prod(w, l61, t41);
     let w = Real::wide_sub_prod(w, l62, t42);
     let w = Real::wide_sub_prod(w, l63, t43);
@@ -1213,7 +1213,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let t52 = l52 * d2;
     let t53 = l53 * d3;
     let t54 = l54 * d4;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m22);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m55);
     let w = Real::wide_sub_prod(w, l51, t51);
     let w = Real::wide_sub_prod(w, l52, t52);
     let w = Real::wide_sub_prod(w, l53, t53);
@@ -1222,7 +1222,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     if d5 == Real::<Fixed>::zero() {
         return None;
     }
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m32);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m65);
     let w = Real::wide_sub_prod(w, l61, t51);
     let w = Real::wide_sub_prod(w, l62, t52);
     let w = Real::wide_sub_prod(w, l63, t53);
@@ -1234,7 +1234,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let t63 = l63 * d3;
     let t64 = l64 * d4;
     let t65 = l65 * d5;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m33);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m66);
     let w = Real::wide_sub_prod(w, l61, t61);
     let w = Real::wide_sub_prod(w, l62, t62);
     let w = Real::wide_sub_prod(w, l63, t63);
@@ -1261,45 +1261,45 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
             l54,
             l64,
             l65,
-            d: Vector6 { a: Vector3 { x: d1, y: d2, z: d3 }, b: Vector3 { x: d4, y: d5, z: d6 } },
+            d: Vector6 { x: d1, y: d2, z: d3, w: d4, a: d5, b: d6 },
         },
     )
 }
 
 /// LOSER. `solve` with one reciprocal per pivot instead of one correctly rounded division.
 fn solve6_recip(f: Ldlt6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
-    let y1 = b.a.x;
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a.y);
+    let y1 = b.x;
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.y);
     let w = Real::wide_sub_prod(w, f.l21, y1);
     let y2 = Real::wide_rescale(w);
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a.z);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.z);
     let w = Real::wide_sub_prod(w, f.l31, y1);
     let w = Real::wide_sub_prod(w, f.l32, y2);
     let y3 = Real::wide_rescale(w);
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b.x);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.w);
     let w = Real::wide_sub_prod(w, f.l41, y1);
     let w = Real::wide_sub_prod(w, f.l42, y2);
     let w = Real::wide_sub_prod(w, f.l43, y3);
     let y4 = Real::wide_rescale(w);
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b.y);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.a);
     let w = Real::wide_sub_prod(w, f.l51, y1);
     let w = Real::wide_sub_prod(w, f.l52, y2);
     let w = Real::wide_sub_prod(w, f.l53, y3);
     let w = Real::wide_sub_prod(w, f.l54, y4);
     let y5 = Real::wide_rescale(w);
-    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b.z);
+    let w = Real::wide_add(Real::<Fixed>::wide_zero(), b.b);
     let w = Real::wide_sub_prod(w, f.l61, y1);
     let w = Real::wide_sub_prod(w, f.l62, y2);
     let w = Real::wide_sub_prod(w, f.l63, y3);
     let w = Real::wide_sub_prod(w, f.l64, y4);
     let w = Real::wide_sub_prod(w, f.l65, y5);
     let y6 = Real::wide_rescale(w);
-    let z1 = y1 * Real::recip(f.d.a.x);
-    let z2 = y2 * Real::recip(f.d.a.y);
-    let z3 = y3 * Real::recip(f.d.a.z);
-    let z4 = y4 * Real::recip(f.d.b.x);
-    let z5 = y5 * Real::recip(f.d.b.y);
-    let z6 = y6 * Real::recip(f.d.b.z);
+    let z1 = y1 * Real::recip(f.d.x);
+    let z2 = y2 * Real::recip(f.d.y);
+    let z3 = y3 * Real::recip(f.d.z);
+    let z4 = y4 * Real::recip(f.d.w);
+    let z5 = y5 * Real::recip(f.d.a);
+    let z6 = y6 * Real::recip(f.d.b);
     let x6 = z6;
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), z5);
     let w = Real::wide_sub_prod(w, f.l65, x6);
@@ -1326,7 +1326,7 @@ fn solve6_recip(f: Ldlt6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
     let w = Real::wide_sub_prod(w, f.l51, x5);
     let w = Real::wide_sub_prod(w, f.l61, x6);
     let x1 = Real::wide_rescale(w);
-    Vector6 { a: Vector3 { x: x1, y: x2, z: x3 }, b: Vector3 { x: x4, y: x5, z: x6 } }
+    Vector6 { x: x1, y: x2, z: x3, w: x4, a: x5, b: x6 }
 }
 
 /// LOSER. `inverse` scaling `l⁻¹` by `recip(d_k)` instead of dividing by `d_k`.
@@ -1376,12 +1376,12 @@ fn inverse6_recip(f: Ldlt6<Fixed>) -> Matrix6<Fixed> {
     let w = Real::wide_sub_prod(w, f.l65, q54);
     let q64 = Real::wide_rescale(w);
     let q65 = -f.l65;
-    let e1 = Real::recip(f.d.a.x);
-    let e2 = Real::recip(f.d.a.y);
-    let e3 = Real::recip(f.d.a.z);
-    let e4 = Real::recip(f.d.b.x);
-    let e5 = Real::recip(f.d.b.y);
-    let e6 = Real::recip(f.d.b.z);
+    let e1 = Real::recip(f.d.x);
+    let e2 = Real::recip(f.d.y);
+    let e3 = Real::recip(f.d.z);
+    let e4 = Real::recip(f.d.w);
+    let e5 = Real::recip(f.d.a);
+    let e6 = Real::recip(f.d.b);
     let s11 = e1;
     let s21 = q21 * e2;
     let s31 = q31 * e3;
@@ -1490,50 +1490,42 @@ fn inverse6_recip(f: Ldlt6<Fixed>) -> Matrix6<Fixed> {
     let r56 = q65 * s66;
     let r66 = s66;
     Matrix6 {
-        m11: Matrix3 {
-            m11: r11,
-            m21: r12,
-            m31: r13,
-            m12: r12,
-            m22: r22,
-            m32: r23,
-            m13: r13,
-            m23: r23,
-            m33: r33,
-        },
-        m21: Matrix3 {
-            m11: r14,
-            m21: r15,
-            m31: r16,
-            m12: r24,
-            m22: r25,
-            m32: r26,
-            m13: r34,
-            m23: r35,
-            m33: r36,
-        },
-        m12: Matrix3 {
-            m11: r14,
-            m21: r24,
-            m31: r34,
-            m12: r15,
-            m22: r25,
-            m32: r35,
-            m13: r16,
-            m23: r26,
-            m33: r36,
-        },
-        m22: Matrix3 {
-            m11: r44,
-            m21: r45,
-            m31: r46,
-            m12: r45,
-            m22: r55,
-            m32: r56,
-            m13: r46,
-            m23: r56,
-            m33: r66,
-        },
+        m11: r11,
+        m21: r12,
+        m31: r13,
+        m12: r12,
+        m22: r22,
+        m32: r23,
+        m13: r13,
+        m23: r23,
+        m33: r33,
+        m41: r14,
+        m51: r15,
+        m61: r16,
+        m42: r24,
+        m52: r25,
+        m62: r26,
+        m43: r34,
+        m53: r35,
+        m63: r36,
+        m14: r14,
+        m24: r24,
+        m34: r34,
+        m15: r15,
+        m25: r25,
+        m35: r35,
+        m16: r16,
+        m26: r26,
+        m36: r36,
+        m44: r44,
+        m54: r45,
+        m64: r46,
+        m45: r45,
+        m55: r55,
+        m65: r56,
+        m46: r46,
+        m56: r56,
+        m66: r66,
     }
 }
 
