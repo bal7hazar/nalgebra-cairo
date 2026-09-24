@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generator of nalgebra.cairo's static shapes (WP 8.1a prototype, see `DESIGN.md`).
+"""Generator of nalgebra.cairo's static shapes (see `DESIGN.md`).
 
 nalgebra-rs has one generic `Matrix<T, R, C>`; Cairo has no const generics, so every static shape
 is a named-field `Copy` struct with its own impls. This script writes them from ONE model of a
@@ -9,18 +9,20 @@ surface, with the same kernels, the same doc comments and the same tests.
 
 Outputs (committed, reproducible byte for byte, never edited by hand):
 
-* `proto/src/**.cairo`: the prototype package (the shapes of `PROTO_SHAPES`, the `MatrixMul`
-  trait, the generated tests, and the comparison tests / benchmarks against the hand-written
-  shapes of `crates/nalgebra`).
-
-Hand-written kernels that must survive the generation bit for bit (closed-form determinants,
-`cross`, ...) live in `specialisations/<shape>.cairo` and are spliced verbatim (`// @method`
-sections replace or extend the generated methods of the shape).
+* `crates/nalgebra/src/base/{vector2,vector3,vector4,matrix2,matrix3,matrix4}.cairo` (WP 8.1b-1):
+  the library shapes, from the templates of `library.py` and the hand-written kernels of
+  `specialisations/<module>.cairo` spliced verbatim (format: `library.py`);
+* `proto/src/**.cairo`: the WP 8.1a prototype package (the shapes of `PROTO_SHAPES`, the
+  `MatrixMul` trait, the generated tests, and the comparison tests / benchmarks against the
+  hand-written shapes of `crates/nalgebra`), with its own specialisations
+  (`specialisations/proto/`, `// @method` sections only).
 
 Usage (from the repository root):
 
     python3 tools/shapegen/shapegen.py            # write the outputs (runs `scarb fmt`)
     python3 tools/shapegen/shapegen.py --check    # exit 1 if a committed output is stale
+    python3 tools/shapegen/shapegen.py --compare DIR
+                                                   # staging comparison package (`compare.py`)
     python3 tools/shapegen/shapegen.py --out DIR --shapes all --no-compare
                                                    # a measurement package (compile budget)
 """
@@ -35,10 +37,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import compare
+import library
+
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / "tools" / "shapegen"
 PROTO = TOOL / "proto"
-SPECS = TOOL / "specialisations"
+SPECS = TOOL / "specialisations" / "proto"  # the prototype's (the library's: `library.py`)
 
 COORDS = "xyzwab"
 ONE = 1 << 32
@@ -1210,9 +1215,44 @@ def generate(pkg: Path, shapes: list[Shape], compare: bool, tests: bool, manifes
     subprocess.run(["scarb", "fmt"], cwd=pkg, check=True)
 
 
+FMT_MANIFEST = """[package]
+name = "shapegen_library"
+version = "0.1.0"
+edition = "2024_07"
+
+[tool.fmt]
+sort-module-level-items = true
+max-line-length = 100
+"""
+
+
+def library_outputs(pkg: Path) -> dict[Path, Path]:
+    """Writes the library shapes (`library.py`) into `pkg/src`, formats them with `scarb fmt`
+    (the workspace's `[tool.fmt]`), and returns {committed path: generated path}."""
+    src = pkg / "src"
+    src.mkdir(parents=True)
+    (pkg / "Scarb.toml").write_text(FMT_MANIFEST)
+    (src / "lib.cairo").write_text("")
+    out = {}
+    for shape, module in library.LIBRARY_SHAPES.items():
+        (src / f"{module}.cairo").write_text(library.render(shape))
+        out[library.BASE / f"{module}.cairo"] = src / f"{module}.cairo"
+    subprocess.run(["scarb", "fmt"], cwd=pkg, check=True)
+    return out
+
+
+def proto_outputs(pkg: Path) -> dict[Path, Path]:
+    """Writes the prototype package into `pkg` and returns {committed path: generated path}."""
+    generate(pkg, PROTO_SHAPES, True, True, "../../..", "shapegen_proto")
+    rels = {p.relative_to(pkg) for p in (pkg / "src").rglob("*.cairo")} | {Path("Scarb.toml")}
+    return {PROTO / rel: pkg / rel for rel in rels}
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--check", action="store_true", help="fail if the committed output is stale")
+    p.add_argument("--check", action="store_true", help="fail if a committed output is stale")
+    p.add_argument("--compare", type=Path, metavar="DIR",
+                   help="write the staging comparison package there (`compare.py`)")
     p.add_argument("--out", type=Path, help="write a measurement package there instead")
     p.add_argument("--shapes", default="proto", help="'proto', 'all', 'none' or '2x3,3x1,...'")
     p.add_argument("--no-compare", action="store_true", help="omit the comparison module")
@@ -1232,31 +1272,38 @@ def main() -> int:
                  set(args.test_families.split(",")) if args.test_families else None,
                  args.integration)
         return 0
-    # Generated next to the real package (same depth: the relative path dependencies resolve),
+    if args.compare:
+        compare.generate(args.compare, str(ROOT))
+        subprocess.run(["scarb", "fmt"], cwd=args.compare, check=True)
+        print(f"shapegen: staging comparison package written to {args.compare}")
+        return 0
+    # Generated next to the real packages (same depth: the relative path dependencies resolve),
     # formatted by `scarb fmt`, then compared or copied.
-    pkg = TOOL / ".tmp-proto"
+    tmp_proto, tmp_lib = TOOL / ".tmp-proto", TOOL / ".tmp-library"
     try:
-        generate(pkg, PROTO_SHAPES, True, True, "../../..", "shapegen_proto")
-        generated = {p.relative_to(pkg) for p in (pkg / "src").rglob("*.cairo")}
-        generated.add(Path("Scarb.toml"))
-        committed = {p.relative_to(PROTO) for p in (PROTO / "src").rglob("*.cairo")}
-        stale = sorted(rel for rel in generated if not (PROTO / rel).is_file()
-                       or not filecmp.cmp(pkg / rel, PROTO / rel, shallow=False))
-        stale += sorted(committed - generated)
+        for tmp in (tmp_proto, tmp_lib):
+            shutil.rmtree(tmp, ignore_errors=True)
+        outputs = proto_outputs(tmp_proto) | library_outputs(tmp_lib)
+        committed_proto = set((PROTO / "src").rglob("*.cairo"))
+        removed = sorted(committed_proto - set(outputs))
+        stale = sorted(dst for dst, gen in outputs.items()
+                       if not dst.is_file() or not filecmp.cmp(gen, dst, shallow=False))
         if args.check:
-            if stale:
-                print("stale shapegen output: " + ", ".join(map(str, stale)), file=sys.stderr)
+            if stale or removed:
+                names = [str(p.relative_to(ROOT)) for p in stale + removed]
+                print("stale shapegen output: " + ", ".join(names), file=sys.stderr)
                 return 1
-            print("shapegen: output up to date")
+            print(f"shapegen: {len(outputs)} generated files up to date")
             return 0
-        for rel in sorted(committed - generated):
-            (PROTO / rel).unlink()
-        for rel in generated:
-            (PROTO / rel).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(pkg / rel, PROTO / rel)
-        print(f"shapegen: {len(stale)} file(s) updated in {PROTO.relative_to(ROOT)}")
+        for path in removed:
+            path.unlink()
+        for dst in stale:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(outputs[dst], dst)
+        print(f"shapegen: {len(stale) + len(removed)} file(s) updated")
     finally:
-        shutil.rmtree(pkg, ignore_errors=True)
+        for tmp in (tmp_proto, tmp_lib):
+            shutil.rmtree(tmp, ignore_errors=True)
     return 0
 
 
