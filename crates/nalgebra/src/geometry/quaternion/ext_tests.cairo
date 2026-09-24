@@ -769,3 +769,35 @@ fn test_from_array_is_the_storage_order() {
     let x: Quaternion<Fixed> = [int(2), int(-3), int(4), int(1)].into();
     assert!(x == a());
 }
+
+// --- the losers of `ext_benches.cairo`
+
+/// Upstream's `(a * b + b * a) / 2` rounds two Hamilton products and halves: within 1 ulp of the
+/// reduced form, for twice the products.
+#[test]
+fn test_inner_alt_products_agrees() {
+    let t = qt((-0x40000000, 0x80000000, 0x20000000, -0x60000000));
+    assert!(super::ext_benches::alt_inner_products(s(), t).abs_diff_eq(s().inner(t), 1));
+    assert!(super::ext_benches::alt_inner_products(a(), b()) == a().inner(b()));
+}
+
+/// Upstream's `(exp(q) - exp(-q)) / 2` agrees with the closed form to a few ulp.
+#[test]
+fn test_sinh_alt_exp_difference_agrees() {
+    assert!(super::ext_benches::alt_sinh_exp_difference(s()).abs_diff_eq(s().sinh(), 8));
+    let mut cases = ext_oracle::quaternion_sinh_cases();
+    while let Some(case) = cases.pop_front() {
+        let (q, _, tol) = *case;
+        let alt = super::ext_benches::alt_sinh_exp_difference(qt(q));
+        assert!(alt.abs_diff_eq(qt(q).sinh(), tol));
+    }
+}
+
+/// `right_div` divides the fused product once; upstream's `a * b⁻¹` multiplies by the rounded
+/// inverse. They agree to a few ulp on moderate inputs.
+#[test]
+fn test_right_div_alt_inverse_then_mul_agrees() {
+    let t = qt((-0x40000000, 0x80000000, 0x20000000, -0x60000000));
+    let alt = s() * t.try_inverse().unwrap();
+    assert!(alt.abs_diff_eq(s().right_div(t).unwrap(), 4));
+}

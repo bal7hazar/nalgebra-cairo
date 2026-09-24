@@ -47,11 +47,13 @@ mod oracle;
 #[cfg(test)]
 mod tests;
 
-/// Upper bound of the iterations of `UnitComplex::from_matrix_eps` (whatever `max_iter`, and when
-/// `max_iter` is 0, which upstream reads as "until convergence"). The 2D iteration
+/// Upper bound of the iterations of `UnitComplex::from_matrix_eps` when `max_iter > 0`
+/// (`max_iter = 0`, upstream's "until convergence", is the closed form). The 2D iteration
 /// `θ ← θ + tan(φ - θ)` converges cubically once `|φ - θ| < π/2`; measured on the oracle
-/// set (`test_from_matrix_eps_iterations_on_the_oracle_set`), every case reaches its fixed point in
-/// at most 6 iterations from the identity.
+/// set (`test_from_matrix_eps_iterations_on_the_oracle_set`): from the identity with `eps` = 32
+/// ulp, 23 of the 24 cases stop in 4 to 12 iterations, the last one oscillates at the rounding
+/// noise until the bound, 3 ulp from the limit (with `eps` = 1 ulp the loop usually runs to the
+/// bound).
 pub const FROM_MATRIX_MAX_ITER: usize = 16;
 
 /// A 2D rotation of angle `θ`, stored as the unit complex number

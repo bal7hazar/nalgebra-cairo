@@ -22,11 +22,10 @@ use crate::base::matrix_test_utils::{
     v3t,
 };
 use crate::base::point3::{Point3, Point3Trait};
-use crate::base::unit::Unit;
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::geometry::isometry3::{Isometry3, Isometry3Trait};
 use crate::geometry::quaternion::{Quaternion, QuaternionTrait};
-use crate::geometry::rotation3::{Rotation3, Rotation3Trait};
+use crate::geometry::rotation3::Rotation3;
 use crate::geometry::similarity3::{Similarity3, Similarity3Trait};
 use crate::geometry::translation3::Translation3;
 use super::{

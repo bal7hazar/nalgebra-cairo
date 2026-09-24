@@ -75,10 +75,13 @@ pub const FROM_MATRIX_MAX_ITER: usize = 64;
 /// one ulp).
 pub const FROM_MATRIX_MAX_PERTURBATIONS: usize = 4;
 
-/// Number of normalised squarings `S ← S² / tr(S²)` of the `mean_of` matrix: the dominant
-/// eigenvector is extracted from `S^(2^k)`, whose other eigenvalues have shrunk by
-/// `(λ₂ / λ₁)^(2^k)`. Measured on the oracle set
-/// (`test_mean_of_squarings_on_the_oracle_set`).
+/// Number of normalised squarings `S ← S² / tr(S²)` of the `mean_of` and `from_matrix`
+/// matrices:
+/// the dominant eigenvector is extracted from `S^(2^k)`, whose other eigenvalues have shrunk by
+/// `(λ₂ / λ₁)^(2^k)`. Measured on the oracle sets
+/// (`test_mean_of_squarings_on_the_oracle_set`, `test_from_matrix_squarings_on_the_oracle_set`): 8
+/// squarings already meet every tolerance, and each further one adds about one ulp of rounding once
+/// converged; 12 cover eigenvalue ratios up to about 0.99 (`0.99^4096 < 2^-59`).
 pub const MEAN_OF_SQUARINGS: usize = 12;
 
 /// A 3D rotation: a quaternion of unit norm. Nothing enforces the invariant: build it with
