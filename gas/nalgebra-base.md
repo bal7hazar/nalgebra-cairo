@@ -139,12 +139,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `fused` | 18720 | 2180 | x1.00 |
 
-### matrix2_row
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `second` | 17240 | 200 | x1.00 |
-
 ### matrix2_scale
 
 | variant | raw | net | vs best |
@@ -320,13 +314,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `assign` | 45690 | 22150 | x1.00 |
 | `fused` | 45690 | 22150 | x1.00 |
-
-### matrix3_mul_cross_matrix
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 42090 | 19750 | x1.00 |
-| `materialised` | 45090 | 22750 | x1.15 |
 
 ### matrix3_mul_transpose
 
@@ -653,12 +640,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `assign` | 82880 | 30140 | x1.00 |
 | `operator` | 82880 | 30140 | x1.00 |
 
-### matrix6_blocks
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `from_blocks` | 26940 | 0 | - |
-
 ### matrix6_diagonal
 
 | variant | raw | net | vs best |
@@ -803,7 +784,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `array` | 18040 | 200 | x1.00 |
 | `from_coordinates` | 18040 | 200 | x1.00 |
-| `tuple` | 18040 | 200 | x1.00 |
 | `vector` | 18040 | 200 | x1.00 |
 
 ### point2_from_homogeneous
@@ -826,7 +806,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 16140 | 0 | - |
-| `tuple` | 16140 | 0 | - |
 
 ### point2_lerp
 
@@ -851,12 +830,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `origin` | 17040 | 200 | x1.00 |
-
-### point2_push
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `push` | 17840 | 300 | x1.00 |
 
 ### point2_scale
 
@@ -943,7 +916,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `array` | 19240 | 300 | x1.00 |
 | `from_coordinates` | 19240 | 300 | x1.00 |
-| `tuple` | 19240 | 300 | x1.00 |
 | `vector` | 19240 | 300 | x1.00 |
 
 ### point3_from_homogeneous
@@ -966,7 +938,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 16340 | 0 | - |
-| `tuple` | 16340 | 0 | - |
 
 ### point3_lerp
 
@@ -1033,108 +1004,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 ## nalgebra::base::sym_matrix2::tests
 
-### sym_matrix2_abs_diff_eq
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `all_compared` | 21710 | 4560 | x1.00 |
-
-### sym_matrix2_add
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `assign` | 20560 | 2420 | x1.00 |
-| `operator` | 20560 | 2420 | x1.00 |
-| `generic` | 21300 | 3160 | x1.31 |
-
-### sym_matrix2_add_diagonal
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `sum` | 19420 | 1680 | x1.00 |
-
-### sym_matrix2_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `generic` | 18120 | 1780 | x1.00 |
-| `structured` | 18120 | 1780 | x1.00 |
-
-### sym_matrix2_diagonal
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 17040 | 200 | x1.00 |
-
-### sym_matrix2_from_diagonal
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 17140 | 0 | - |
-
-### sym_matrix2_from_diagonal_element
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 16940 | 0 | - |
-
-### sym_matrix2_from_matrix_unchecked
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 17840 | 300 | x1.00 |
-
-### sym_matrix2_from_outer_self
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 22080 | 4940 | x1.00 |
-| `generic` | 23660 | 6520 | x1.32 |
-
-### sym_matrix2_identity
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `const` | 16540 | 0 | - |
-
-### sym_matrix2_inverse_unchecked
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 47150 | 29810 | x1.00 |
-
-### sym_matrix2_mul_matrix
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 28690 | 9850 | x1.00 |
-| `generic` | 28790 | 9950 | x1.01 |
-
-### sym_matrix2_mul_vec
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `generic` | 21100 | 3660 | x1.00 |
-| `structured` | 21100 | 3660 | x1.00 |
-
-### sym_matrix2_neg
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `operator` | 18240 | 900 | x1.00 |
-
-### sym_matrix2_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 17340 | 0 | - |
-
-### sym_matrix2_norm
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `fused` | 18760 | 2420 | x1.00 |
-
 ### sym_matrix2_quadform
 
 | variant | raw | net | vs best |
@@ -1142,163 +1011,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `structured` | 32730 | 14590 | x1.00 |
 | `generic` | 38440 | 20300 | x1.39 |
 
-### sym_matrix2_quadform_sym
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 33830 | 15490 | x1.00 |
-| `generic` | 38640 | 20300 | x1.31 |
-
-### sym_matrix2_scale
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 22680 | 4940 | x1.00 |
-| `generic` | 24260 | 6520 | x1.32 |
-
-### sym_matrix2_sub
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `assign` | 20560 | 2420 | x1.00 |
-| `operator` | 20560 | 2420 | x1.00 |
-
 ### sym_matrix2_to_matrix
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `struct` | 18240 | 400 | x1.00 |
 
-### sym_matrix2_trace
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `sum` | 16980 | 640 | x1.00 |
-
-### sym_matrix2_try_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 47550 | 30210 | x1.00 |
-| `structured_prescaled` | 47550 | 30210 | x1.00 |
-| `generic` | 51610 | 34270 | x1.13 |
-
-### sym_matrix2_zeros
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `const` | 15940 | -600 | - |
-
 ## nalgebra::base::sym_matrix3::tests
-
-### sym_matrix3_abs_diff_eq
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `all_compared` | 27850 | 9500 | x1.00 |
-
-### sym_matrix3_add
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `assign` | 25780 | 4940 | x1.00 |
-| `operator` | 25780 | 4940 | x1.00 |
-| `generic` | 28000 | 7160 | x1.45 |
-
-### sym_matrix3_add_diagonal
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `sum` | 22560 | 2720 | x1.00 |
-
-### sym_matrix3_adjugate
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 30620 | 11180 | x1.00 |
-| `generic` | 35960 | 16520 | x1.48 |
-
-### sym_matrix3_determinant
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 26990 | 10050 | x1.00 |
-| `generic` | 27290 | 10350 | x1.03 |
-
-### sym_matrix3_diagonal
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 18240 | 300 | x1.00 |
-
-### sym_matrix3_from_diagonal
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 18540 | -300 | - |
-
-### sym_matrix3_from_diagonal_element
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 18140 | -300 | - |
-
-### sym_matrix3_from_matrix_unchecked
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 20640 | 600 | x1.00 |
-
-### sym_matrix3_from_outer_self
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 28820 | 9980 | x1.00 |
-| `generic` | 33560 | 14720 | x1.47 |
-
-### sym_matrix3_identity
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `const` | 17740 | -300 | - |
-
-### sym_matrix3_inverse_unchecked
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 86040 | 66600 | x1.00 |
-
-### sym_matrix3_mul_matrix
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 44790 | 21850 | x1.00 |
-| `generic` | 45090 | 22150 | x1.01 |
-
-### sym_matrix3_mul_vec
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `generic` | 24880 | 6140 | x1.00 |
-| `structured` | 24880 | 6140 | x1.00 |
-
-### sym_matrix3_neg
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `operator` | 21240 | 1800 | x1.00 |
-
-### sym_matrix3_new
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `struct` | 19440 | 0 | - |
-
-### sym_matrix3_norm
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `wide` | 22480 | 5540 | x1.00 |
 
 ### sym_matrix3_quadform
 
@@ -1307,52 +1026,11 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `structured` | 51270 | 30430 | x1.00 |
 | `generic` | 65840 | 45000 | x1.48 |
 
-### sym_matrix3_quadform_sym
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 55770 | 34330 | x1.00 |
-| `generic` | 66440 | 45000 | x1.31 |
-
-### sym_matrix3_scale
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 29820 | 9980 | x1.00 |
-| `generic` | 34560 | 14720 | x1.47 |
-
-### sym_matrix3_sub
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `assign` | 25780 | 4940 | x1.00 |
-| `operator` | 25780 | 4940 | x1.00 |
-
 ### sym_matrix3_to_matrix
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `struct` | 21840 | 900 | x1.00 |
-
-### sym_matrix3_trace
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `sum` | 18320 | 1380 | x1.00 |
-
-### sym_matrix3_try_inverse
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `structured` | 86440 | 67000 | x1.00 |
-| `structured_prescaled` | 86440 | 67000 | x1.00 |
-| `generic` | 108400 | 88960 | x1.33 |
-
-### sym_matrix3_zeros
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `const` | 16840 | -1200 | - |
 
 ## nalgebra::base::unit::benches
 
@@ -1401,14 +1079,12 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `dot` | 19920 | 1980 | x1.00 |
-| `dot_vector` | 19920 | 1980 | x1.00 |
 | `alt_unfused` | 24360 | 6420 | x3.24 |
 
 ### unit3_into_inner
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `as_ref` | 17340 | 0 | - |
 | `into_inner` | 17340 | 0 | - |
 
 ### unit3_neg
@@ -1431,12 +1107,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `new_unchecked` | 17340 | 0 | - |
-
-### unit3_orthonormal_basis
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `orthonormal_basis` | 34730 | 15890 | x1.00 |
 
 ### unit3_renormalize
 
@@ -1558,7 +1228,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 17440 | 200 | x1.00 |
-| `tuple` | 17440 | 200 | x1.00 |
 
 ### vector2_imin
 
@@ -1587,7 +1256,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 16140 | 0 | - |
-| `tuple` | 16140 | 0 | - |
 
 ### vector2_is_zero
 
@@ -1775,7 +1443,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 18440 | 300 | x1.00 |
-| `tuple` | 18440 | 300 | x1.00 |
 
 ### vector3_imin
 
@@ -1804,7 +1471,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 16340 | 0 | - |
-| `tuple` | 16340 | 0 | - |
 
 ### vector3_is_zero
 
@@ -2002,7 +1668,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 19440 | 400 | x1.00 |
-| `tuple` | 19440 | 400 | x1.00 |
 
 ### vector4_imin
 
@@ -2031,7 +1696,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `array` | 16540 | 0 | - |
-| `tuple` | 16540 | 0 | - |
 
 ### vector4_is_zero
 
@@ -2161,12 +1825,6 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `assign` | 26680 | 4940 | x1.00 |
 | `operator` | 26680 | 4940 | x1.00 |
-
-### vector6_blocks
-
-| variant | raw | net | vs best |
-|---|---:|---:|---:|
-| `from_blocks` | 18240 | 0 | - |
 
 ### vector6_component_mul
 
