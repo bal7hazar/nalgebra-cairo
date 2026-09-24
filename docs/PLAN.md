@@ -78,7 +78,30 @@ so M5 stays deferred until a consumer exists.
 | WP | Content | Depends on |
 |---|---|---|
 | 7.1 ✅ (#21) | Delete `simba::fixed` (the second Q32.32), `simba` = `Real` / `Transcendental` over glam.cairo's `fixed` (registry, pinned 0.3.0: `wide::Acc` and the `f64`-like nearest division were obtained by escalation), `simba_fixed` merged into `simba`, goldens and gas regenerated, prepared divisors (`Real::div3..div16`) | owner decision 2026-09-22 |
-| 7.2 | Re-rank the measured variants under `fixed` 0.3 (nearest division): several former losers are now cheaper and closer to upstream — e.g. `Matrix3::try_inverse` `alt_div` (per-element `cofactor / det`, exactly nalgebra-rs) 69,930 vs shipped pre-scaled 88,360, Cholesky / LDLᵀ `alt_recip` solves and inverses; keep the cheapest that meets the oracle tolerances | 7.1 |
+| 7.2 ✅ (#22) | Re-rank the measured variants under `fixed` 0.3 (oracle tolerance > upstream formula > gas): no variant switched (each cheaper loser fails an oracle case or is not upstream's formula); bit-identical `divN` refactors (`Lu6::try_inverse` −3.4 %) | 7.1 |
+| 7.3 ✅ (#23) | API parity inventory against nalgebra-rs 0.35.0: `scripts/api_parity.py` + generated `docs/API_PARITY.md` (21.9 % coverage, 23 proposed packages) | 7.1 |
+
+## M8 — Complete coverage of nalgebra-rs 0.35.0, then release 0.1.0
+
+Target (owner, 2026-09-23/24): publish `simba` and `nalgebra` 0.1.0 on scarbs.xyz once the public API
+is **strictly nalgebra-rs 0.35.0's, neither more nor less** — every non-excluded item of
+[API_PARITY.md](API_PARITY.md) `ported`, and no Cairo-only public item beyond the renames Cairo
+imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progress is measured by
+`scripts/api_parity.py` (gate: `--check`). Started at 21.9 % (413 / 1,888).
+
+| WP | Content (parity packages) | Depends on |
+|---|---|---|
+| 8.0 | Strict removal of the Cairo-only public API (`SymMatrix2/3`, `conj_mul`, fused-kernel helpers, undocumented decomposition extras…), keeping implementation kernels private; ruling needed on `simba::Real`'s fused-kernel hooks (with gas figures) | 7.3 |
+| 8.1 | `tools/shapegen`: generator of the 54 static shapes (`Matrix1..6`, `MatrixRxC`, `Vector1..6`, `RowVector1..6`) from templates, committed output + `--check`; existing shapes migrated bit-identically, gas not worse (P01) | 8.0 |
+| 8.2 | Static base completion through the generator: P02 (norms, component-wise, construction, conversions), P03 (`map` / `zip` / in-place), P04 (swizzles), P05 (rows, columns, blocks) | 8.1 |
+| 8.3 | P06 (statistics, BLAS-like), P07 (homogeneous / cg helpers) | 8.2 |
+| 8.4 | Geometry: P08 (quaternions, unit complex) → P09a (rotation, translation, point) → P09b (isometry, similarity, `*Matrix` variants) → P10 (scale, reflection) → P11a/b (transform family, perspective, orthographic) → P12 (dual quaternions) | 8.0 (parallel with 8.1-8.3 where files are disjoint) |
+| 8.5 | Dynamic: P13 (`DMatrix` / `DVector`, macros) → P14 (decomposition API, triangular solves) → P15 (full-pivot LU, col-pivot QR, LBLᵀ) → P16 (Schur, Hessenberg, bidiagonal, tridiagonal, general eigen) → P17 (exp, pow), P18 (convolution) | 8.2 |
+| 8.6 | P19 (glam.cairo conversions, `glam = "0.3.0"`), P20 (sparse `CsMatrix`, Matrix Market from strings), P21 (crate-root functions and macros) | 8.5 |
+| 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `simba` + `nalgebra` 0.1.0 (the owner pushes the tag) | all |
+
+Execution: at most two agents at a time (shared machine), Opus 5.5 for numerics and generator
+design, Sonnet for mechanical template work; one PR per WP; parity figures reported per PR.
 
 ## M6 — Interop and release
 
@@ -93,8 +116,13 @@ PRs that re-run `benchmarks/` and review every ranking).
 
 ## Out of scope
 
-Sparse, lapack, glm, macros, SIMD, complex numbers, generic dimension machinery, Schur,
-Hessenberg, matrix exponential, convolution, serialization glue beyond `Serde`.
+Only what is not part of the `nalgebra` crate 0.35.0 (the separate crates `nalgebra-lapack`,
+`nalgebra-glm`, `nalgebra-sparse`, `nalgebra-macros` internals) and the closed list of exclusion
+reasons of [API_PARITY.md](API_PARITY.md) (SIMD, rayon, unsafe storage, borrowed views, formatting,
+zero-copy glue, random generators, foreign-crate interop, generic-dimension machinery). Everything
+else in nalgebra-rs, including its optional features (`sparse`, `io`), its deprecated items and
+what this plan used to list as out of scope (Schur, Hessenberg, matrix exponential, convolution,
+macros), is in the 0.1.0 target (owner, 2026-09-24).
 
 ## Definition of done (every WP)
 

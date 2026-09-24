@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 scarb fmt --check
+python3 scripts/api_parity.py --check
 scarb lint --deny-warnings
 scarb build
 output=$(snforge test --workspace) || { echo "$output"; exit 1; }
