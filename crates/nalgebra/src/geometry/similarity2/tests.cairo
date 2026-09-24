@@ -33,7 +33,7 @@ fn quarter() -> UnitComplex<Fixed> {
 fn test_identity_and_constructors_are_exact() {
     let i = id();
     assert!(i.isometry == Isometry2Trait::<Fixed>::identity());
-    assert!(i.scaling == Real::ONE);
+    assert!(i.scaling == Real::one());
     assert!(i.transform_point(p2t((0x123, -0x456))) == p2t((0x123, -0x456)));
 
     let t = Translation2Trait::new(fx(0x180000000), fx(-0x240000000));
@@ -50,8 +50,8 @@ fn test_identity_and_constructors_are_exact() {
             m
         }.scaling() == fx(0x180000000),
     );
-    let pure = Similarity2Trait::from_isometry(Isometry2Trait::from_parts(t, r), Real::ONE);
-    assert!(pure.scaling == Real::ONE && pure.isometry == from_parts.isometry);
+    let pure = Similarity2Trait::from_isometry(Isometry2Trait::from_parts(t, r), Real::one());
+    assert!(pure.scaling == Real::one() && pure.isometry == from_parts.isometry);
 }
 
 #[test]
@@ -61,7 +61,7 @@ fn test_pure_scaling_and_quarter_turn_are_exact() {
     assert!(s.transform_vector(v2t((ONE_RAW, -2 * ONE_RAW))) == v2t((3 * ONE_RAW, -6 * ONE_RAW)));
 
     let q = Similarity2Trait::from_parts(
-        Translation2Trait::new(fx(ONE_RAW), Real::ZERO), quarter(), fx(0x200000000),
+        Translation2Trait::new(fx(ONE_RAW), Real::zero()), quarter(), fx(0x200000000),
     );
     assert!(q.transform_point(p2t((ONE_RAW, 0))) == p2t((ONE_RAW, 2 * ONE_RAW)));
     assert!(q.transform_vector(v2t((0, ONE_RAW))) == v2t((-2 * ONE_RAW, 0)));
@@ -101,9 +101,9 @@ fn test_scaling_append_and_prepend_match_upstream_order() {
 #[test]
 fn test_append_and_prepend_translation_rotation_match_composition() {
     let (x, t, r) = (a(), Translation2Trait::new(fx(0x140000000), fx(-0x60000000)), quarter());
-    let ti: Similarity2<Fixed> = Similarity2Trait::from_isometry(t.into(), Real::ONE);
+    let ti: Similarity2<Fixed> = Similarity2Trait::from_isometry(t.into(), Real::one());
     let ri: Similarity2<Fixed> = Similarity2Trait::from_isometry(
-        Isometry2Trait::from_parts(Translation2Trait::identity(), r), Real::ONE,
+        Isometry2Trait::from_parts(Translation2Trait::identity(), r), Real::one(),
     );
     assert!({
         let mut m = x;
@@ -142,13 +142,13 @@ fn test_append_rotation_wrt_point_and_center() {
         m
     };
     let shift: Similarity2<Fixed> = Similarity2Trait::from_isometry(
-        Translation2Trait::new(p.x, p.y).into(), Real::ONE,
+        Translation2Trait::new(p.x, p.y).into(), Real::one(),
     );
     let back: Similarity2<Fixed> = Similarity2Trait::from_isometry(
-        Translation2Trait::new(-p.x, -p.y).into(), Real::ONE,
+        Translation2Trait::new(-p.x, -p.y).into(), Real::one(),
     );
     let ri: Similarity2<Fixed> = Similarity2Trait::from_isometry(
-        Isometry2Trait::from_parts(Translation2Trait::identity(), r), Real::ONE,
+        Isometry2Trait::from_parts(Translation2Trait::identity(), r), Real::one(),
     );
     assert!(y.abs_diff_eq(shift * ri * back * x, 4));
     assert!(
@@ -169,19 +169,19 @@ fn test_append_rotation_wrt_point_and_center() {
 fn test_from_parts_zero_scaling_panics() {
     Similarity2Trait::<
         Fixed,
-    >::from_parts(Translation2Trait::identity(), UnitComplexTrait::identity(), Real::ZERO);
+    >::from_parts(Translation2Trait::identity(), UnitComplexTrait::identity(), Real::zero());
 }
 
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_from_isometry_zero_scaling_panics() {
-    Similarity2Trait::<Fixed>::from_isometry(Isometry2Trait::identity(), Real::ZERO);
+    Similarity2Trait::<Fixed>::from_isometry(Isometry2Trait::identity(), Real::zero());
 }
 
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_from_scaling_zero_panics() {
-    Similarity2Trait::<Fixed>::from_scaling(Real::ZERO);
+    Similarity2Trait::<Fixed>::from_scaling(Real::zero());
 }
 
 #[test]
@@ -189,7 +189,7 @@ fn test_from_scaling_zero_panics() {
 fn test_with_scaling_zero_panics() {
     {
         let mut m = a();
-        m.set_scaling(Real::ZERO);
+        m.set_scaling(Real::zero());
         m
     };
 }
@@ -197,13 +197,13 @@ fn test_with_scaling_zero_panics() {
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_prepend_scaling_zero_panics() {
-    a().prepend_scaling(Real::ZERO);
+    a().prepend_scaling(Real::zero());
 }
 
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_append_scaling_zero_panics() {
-    a().append_scaling(Real::ZERO);
+    a().append_scaling(Real::zero());
 }
 
 #[test]

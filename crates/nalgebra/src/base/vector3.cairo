@@ -193,7 +193,7 @@ pub impl Vector3Impl<
 
     #[inline(always)]
     fn zeros() -> Vector3<T> {
-        Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO }
+        Vector3 { x: R::zero(), y: R::zero(), z: R::zero() }
     }
 
     #[inline(always)]
@@ -208,17 +208,17 @@ pub impl Vector3Impl<
 
     #[inline(always)]
     fn x() -> Vector3<T> {
-        Vector3 { x: R::ONE, y: R::ZERO, z: R::ZERO }
+        Vector3 { x: R::one(), y: R::zero(), z: R::zero() }
     }
 
     #[inline(always)]
     fn y() -> Vector3<T> {
-        Vector3 { x: R::ZERO, y: R::ONE, z: R::ZERO }
+        Vector3 { x: R::zero(), y: R::one(), z: R::zero() }
     }
 
     #[inline(always)]
     fn z() -> Vector3<T> {
-        Vector3 { x: R::ZERO, y: R::ZERO, z: R::ONE }
+        Vector3 { x: R::zero(), y: R::zero(), z: R::one() }
     }
 
     #[inline(always)]
@@ -233,7 +233,7 @@ pub impl Vector3Impl<
 
     #[inline(always)]
     fn to_homogeneous(self: Vector3<T>) -> Vector4<T> {
-        Vector4 { x: self.x, y: self.y, z: self.z, w: R::ZERO }
+        Vector4 { x: self.x, y: self.y, z: self.z, w: R::zero() }
     }
 
     #[inline(always)]
@@ -346,7 +346,7 @@ pub impl Vector3Impl<
 
     #[inline(always)]
     fn is_zero(self: Vector3<T>) -> bool {
-        self.x == R::ZERO && self.y == R::ZERO && self.z == R::ZERO
+        self.x == R::zero() && self.y == R::zero() && self.z == R::zero()
     }
 
     #[inline(always)]
@@ -461,13 +461,13 @@ pub(crate) impl Vector3InternalImpl<
         // With d = 1 + |z|, p = x^2 / d, q = x * y / d, r = y^2 / d (Duff et al., signs folded):
         //   z >= 0: u = (1 - p, -q, -x), w = (-q, 1 - r, -y);
         //   z <  0: u = (1 - p, -q,  x), w = ( q, r - 1, -y).
-        let d = R::ONE + R::abs(self.z);
+        let d = R::one() + R::abs(self.z);
         let xd = R::div(self.x, d);
         let yd = R::div(self.y, d);
         let q = xd * self.y;
-        let ux = R::diff_prod(R::ONE, R::ONE, xd, self.x);
-        let wy = R::diff_prod(R::ONE, R::ONE, yd, self.y);
-        if R::is_negative(self.z) {
+        let ux = R::diff_prod(R::one(), R::one(), xd, self.x);
+        let wy = R::diff_prod(R::one(), R::one(), yd, self.y);
+        if R::is_sign_negative(self.z) {
             (Vector3 { x: ux, y: -q, z: self.x }, Vector3 { x: q, y: -wy, z: -self.y })
         } else {
             (Vector3 { x: ux, y: -q, z: -self.x }, Vector3 { x: -q, y: wy, z: -self.y })
@@ -488,8 +488,8 @@ pub impl Vector3AngleImpl<
     fn angle(self: Vector3<T>, other: Vector3<T>) -> T {
         let n1 = R::norm3(self.x, self.y, self.z);
         let n2 = R::norm3(other.x, other.y, other.z);
-        if n1 == R::ZERO || n2 == R::ZERO {
-            return R::ZERO;
+        if n1 == R::zero() || n2 == R::zero() {
+            return R::zero();
         }
         let (ux, uy, uz) = R::div3(self.x, self.y, self.z, n1);
         let (vx, vy, vz) = R::div3(other.x, other.y, other.z, n2);

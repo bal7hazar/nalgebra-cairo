@@ -36,8 +36,8 @@ fn quarter() -> Rotation2<Fixed> {
 fn test_identity_is_exact() {
     let r = id();
     assert!(r.matrix == Matrix2Trait::<Fixed>::identity());
-    assert!(r.angle() == Real::ZERO);
-    assert!(r.matrix.determinant() == Real::ONE);
+    assert!(r.angle() == Real::zero());
+    assert!(r.matrix.determinant() == Real::one());
 }
 
 #[test]
@@ -51,10 +51,10 @@ fn test_from_matrix_unchecked_and_accessors() {
 
 #[test]
 fn test_new_cardinal_angles() {
-    assert!(Rotation2AngleTrait::<Fixed>::new(Real::ZERO) == id());
-    let q = Rotation2AngleTrait::<Fixed>::new(Real::FRAC_PI_2);
+    assert!(Rotation2AngleTrait::<Fixed>::new(Real::zero()) == id());
+    let q = Rotation2AngleTrait::<Fixed>::new(Real::frac_pi_2());
     assert!(q.abs_diff_eq(quarter(), 1));
-    assert!(Rotation2AngleTrait::<Fixed>::new(Real::PI).abs_diff_eq(quarter() * quarter(), 2));
+    assert!(Rotation2AngleTrait::<Fixed>::new(Real::pi()).abs_diff_eq(quarter() * quarter(), 2));
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn test_from_matrix_normalizes_the_first_column() {
     // the second column from it, whatever the garbage that column held.
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let four = Real::<Fixed>::from_int(4);
-    let m = Matrix2 { m11: c.re * four, m21: c.im * four, m12: Real::ZERO, m22: Real::ZERO };
+    let m = Matrix2 { m11: c.re * four, m21: c.im * four, m12: Real::zero(), m22: Real::zero() };
     let r = Rotation2Trait::from_matrix(m);
     assert!(r.abs_diff_eq(c.to_rotation_matrix(), 2));
     assert!(r.renormalized().abs_diff_eq(r, 2));
@@ -81,7 +81,9 @@ fn test_from_matrix_normalizes_the_first_column() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_from_matrix_of_a_zero_first_column_panics() {
-    let m = Matrix2 { m11: Real::<Fixed>::ZERO, m21: Real::ZERO, m12: Real::ONE, m22: Real::ONE };
+    let m = Matrix2 {
+        m11: Real::<Fixed>::zero(), m21: Real::zero(), m12: Real::one(), m22: Real::one(),
+    };
     let _ = Rotation2Trait::from_matrix(black_box(m));
 }
 
@@ -115,15 +117,15 @@ fn test_mul_inverse_is_identity_within_two_ulp() {
     // R · Rᵀ = I: the off-diagonal terms cancel exactly, the diagonal carries the norm drift.
     let r = Rotation2AngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let p = r * r.inverse();
-    assert!(p.matrix.m12 == Real::ZERO && p.matrix.m21 == Real::ZERO);
-    assert!(ulp_diff(p.matrix.m11, Real::ONE) <= 2 && ulp_diff(p.matrix.m22, Real::ONE) <= 2);
+    assert!(p.matrix.m12 == Real::zero() && p.matrix.m21 == Real::zero());
+    assert!(ulp_diff(p.matrix.m11, Real::one()) <= 2 && ulp_diff(p.matrix.m22, Real::one()) <= 2);
     assert!(p.abs_diff_eq(id(), 2));
 }
 
 #[test]
 fn test_determinant_is_one() {
     let r = Rotation2AngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
-    assert!(ulp_diff(r.matrix.determinant(), Real::ONE) <= 2);
+    assert!(ulp_diff(r.matrix.determinant(), Real::one()) <= 2);
 }
 
 #[test]
@@ -175,7 +177,7 @@ fn test_inverse_transform_is_the_transposed_product() {
 #[test]
 #[should_panic(expected: 'Fixed: overflow')]
 fn test_transform_vector_overflow_panics() {
-    let r = black_box(Rotation2AngleTrait::<Fixed>::new(-Real::<Fixed>::FRAC_PI_4));
+    let r = black_box(Rotation2AngleTrait::<Fixed>::new(-Real::<Fixed>::frac_pi_4()));
     let _ = r.transform_vector(black_box(v2t((0x6000000000000000, 0x6000000000000000))));
 }
 
@@ -198,8 +200,8 @@ fn test_to_homogeneous() {
     let h = r.to_homogeneous();
     assert!(h.m11 == r.matrix.m11 && h.m12 == r.matrix.m12);
     assert!(h.m21 == r.matrix.m21 && h.m22 == r.matrix.m22);
-    assert!(h.m13 == Real::ZERO && h.m23 == Real::ZERO);
-    assert!(h.m31 == Real::ZERO && h.m32 == Real::ZERO && h.m33 == Real::ONE);
+    assert!(h.m13 == Real::zero() && h.m23 == Real::zero());
+    assert!(h.m31 == Real::zero() && h.m32 == Real::zero() && h.m33 == Real::one());
     assert!(h == UnitComplexTrait::from_rotation_matrix(r).to_homogeneous());
 }
 
@@ -210,7 +212,7 @@ fn test_rotation_between_axes_is_exact() {
     let (x, y) = (v2t((0x300000000, 0)), v2t((0, 0x500000000)));
     assert!(Rotation2Trait::rotation_between(x, y) == quarter());
     assert!(Rotation2Trait::rotation_between(x, x) == id());
-    let z = Vector2 { x: Real::<Fixed>::ZERO, y: Real::ZERO };
+    let z = Vector2 { x: Real::<Fixed>::zero(), y: Real::zero() };
     assert!(Rotation2Trait::rotation_between(z, x) == id());
     // Same rotation as the unit complex form, expanded.
     let (a, b) = (v2t((0x30ec4a100, -0x41d5b9200)), v2t((0x40a3d7000, 0x2f1a9fc00)));
@@ -224,16 +226,16 @@ fn test_rotation_between_axes_is_exact() {
 fn test_scaled_rotation_between() {
     let (x, y) = (v2t((0x300000000, 0)), v2t((0, 0x500000000)));
     let r = Rotation2AngleTrait::scaled_rotation_between(x, y, Real::HALF);
-    assert!(r.abs_diff_eq(Rotation2AngleTrait::<Fixed>::new(Real::FRAC_PI_4), 4));
-    let z = Vector2 { x: Real::<Fixed>::ZERO, y: Real::ZERO };
-    assert!(Rotation2AngleTrait::scaled_rotation_between(z, z, Real::ONE) == id());
+    assert!(r.abs_diff_eq(Rotation2AngleTrait::<Fixed>::new(Real::frac_pi_4()), 4));
+    let z = Vector2 { x: Real::<Fixed>::zero(), y: Real::zero() };
+    assert!(Rotation2AngleTrait::scaled_rotation_between(z, z, Real::one()) == id());
 }
 
 #[test]
 fn test_angle_round_trip_and_angle_to() {
     let a = fx(0x1f0a3d70a);
     assert!(ulp_diff(Rotation2AngleTrait::<Fixed>::new(a).angle(), a) <= 12);
-    assert!(quarter().angle() == Real::FRAC_PI_2);
+    assert!(quarter().angle() == Real::frac_pi_2());
     let (x, y) = (
         Rotation2AngleTrait::<Fixed>::new(fx(0x66666666)),
         Rotation2AngleTrait::<Fixed>::new(fx(0x1999999a)),
@@ -251,8 +253,8 @@ fn test_angle_round_trip_and_angle_to() {
 #[test]
 fn test_powf() {
     let r = Rotation2AngleTrait::<Fixed>::new(fx(0x66666666));
-    assert!(r.powf(Real::ZERO) == id());
-    assert!(r.powf(Real::ONE).abs_diff_eq(r, 16));
+    assert!(r.powf(Real::zero()) == id());
+    assert!(r.powf(Real::one()).abs_diff_eq(r, 16));
     assert!(r.powf(Real::TWO).abs_diff_eq(r * r, 32));
     assert!(r.powf(Real::NEG_ONE).abs_diff_eq(r.inverse(), 16));
 }
@@ -284,7 +286,9 @@ fn test_renormalize_recovers_orthogonality() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_of_a_zero_first_column_panics() {
-    let m = Matrix2 { m11: Real::<Fixed>::ZERO, m21: Real::ZERO, m12: Real::ONE, m22: Real::ONE };
+    let m = Matrix2 {
+        m11: Real::<Fixed>::zero(), m21: Real::zero(), m12: Real::one(), m22: Real::one(),
+    };
     let _ = black_box(Rotation2Trait::from_matrix_unchecked(m)).renormalized();
 }
 

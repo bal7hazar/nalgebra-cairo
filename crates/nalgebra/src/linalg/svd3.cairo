@@ -183,8 +183,8 @@ pub impl Svd3Impl<
             w3 = tw;
             v3 = tv;
         }
-        let u1 = if s1 == R::ZERO {
-            Vector3 { x: R::ONE, y: R::ZERO, z: R::ZERO }
+        let u1 = if s1 == R::zero() {
+            Vector3 { x: R::one(), y: R::zero(), z: R::zero() }
         } else {
             {
                 let (x, y, z) = R::div3(w1.x, w1.y, w1.z, s1);
@@ -200,7 +200,7 @@ pub impl Svd3Impl<
             z: R::mul_add(-p, u1.z, w2.z),
         };
         let n = R::norm3(g.x, g.y, g.z);
-        let u2 = if n == R::ZERO {
+        let u2 = if n == R::zero() {
             let (basis, _) = u1.orthonormal_basis();
             basis
         } else {
@@ -211,7 +211,7 @@ pub impl Svd3Impl<
         };
         let c = u1.cross(u2);
         let along = R::sum_prod3(c.x, w3.x, c.y, w3.y, c.z, w3.z);
-        let u3 = if along.is_negative() {
+        let u3 = if along.is_sign_negative() {
             Vector3 { x: -c.x, y: -c.y, z: -c.z }
         } else {
             c
@@ -262,7 +262,7 @@ pub impl Svd3Impl<
     /// Three roundings per entry (the reciprocal, the scaling, the product). Panics with the
     /// scalar's overflow error if a reciprocal or an entry does not fit.
     fn pseudo_inverse(self: Svd3<T>, eps: T) -> Option<Matrix3<T>> {
-        if eps.is_negative() {
+        if eps.is_sign_negative() {
             return None;
         }
         let r = Vector3 {
@@ -280,7 +280,7 @@ pub impl Svd3Impl<
     /// per component instead of two, and no overflow on a tiny singular value unless the solution
     /// itself does not fit. Panics with the scalar's overflow error in that case.
     fn solve(self: Svd3<T>, b: Vector3<T>, eps: T) -> Option<Vector3<T>> {
-        if eps.is_negative() {
+        if eps.is_sign_negative() {
             return None;
         }
         let y = self.u.tr_mul_vec(b);
@@ -367,7 +367,7 @@ pub(crate) impl Svd3InternalImpl<
         if s > eps {
             s.recip()
         } else {
-            R::ZERO
+            R::zero()
         }
     }
     /// `y / s` when `s > eps`, `0` otherwise: upstream's `solve` filter.
@@ -376,7 +376,7 @@ pub(crate) impl Svd3InternalImpl<
         if s > eps {
             R::div(y, s)
         } else {
-            R::ZERO
+            R::zero()
         }
     }
 }
@@ -497,13 +497,13 @@ mod tests {
 
     /// `w / s`, or the `i`-th axis when `s` is zero: the naive fallback of the candidate above.
     fn normalised_or_axis(w: Vector3<Fixed>, s: Fixed, i: u8) -> Vector3<Fixed> {
-        if s == Real::ZERO {
+        if s == Real::zero() {
             if i == 0 {
-                Vector3 { x: Real::ONE, y: Real::ZERO, z: Real::ZERO }
+                Vector3 { x: Real::one(), y: Real::zero(), z: Real::zero() }
             } else if i == 1 {
-                Vector3 { x: Real::ZERO, y: Real::ONE, z: Real::ZERO }
+                Vector3 { x: Real::zero(), y: Real::one(), z: Real::zero() }
             } else {
-                Vector3 { x: Real::ZERO, y: Real::ZERO, z: Real::ONE }
+                Vector3 { x: Real::zero(), y: Real::zero(), z: Real::one() }
             }
         } else {
             w.unscale(s)
@@ -527,13 +527,13 @@ mod tests {
     /// `Jacobi3::rotation`, applied to the Gram entries recomputed from the columns.
     fn one_sided_rotation(app: Fixed, g: Fixed, aqq: Fixed) -> (Fixed, Fixed) {
         let h = Real::diff_prod(aqq, Real::HALF, app, Real::HALF);
-        let num = if h.is_negative() {
+        let num = if h.is_sign_negative() {
             -g
         } else {
             g
         };
         let t = num / (h.abs() + Real::norm2(h, g));
-        let c = Real::recip(Real::sqrt(Real::mul_add(t, t, Real::ONE)));
+        let c = Real::recip(Real::sqrt(Real::mul_add(t, t, Real::one())));
         (c, t * c)
     }
 
@@ -560,21 +560,21 @@ mod tests {
     fn one_sided_sweep(j: OneSided) -> OneSided {
         let mut j = j;
         let g = j.a1.dot(j.a2);
-        if g != Real::ZERO {
+        if g != Real::zero() {
             let (c, s) = one_sided_rotation(j.a1.norm_squared(), g, j.a2.norm_squared());
             let (a1, a2) = one_sided_apply(c, s, j.a1, j.a2);
             let (v1, v2) = one_sided_apply(c, s, j.v1, j.v2);
             j = OneSided { a1, a2, a3: j.a3, v1, v2, v3: j.v3 };
         }
         let g = j.a1.dot(j.a3);
-        if g != Real::ZERO {
+        if g != Real::zero() {
             let (c, s) = one_sided_rotation(j.a1.norm_squared(), g, j.a3.norm_squared());
             let (a1, a3) = one_sided_apply(c, s, j.a1, j.a3);
             let (v1, v3) = one_sided_apply(c, s, j.v1, j.v3);
             j = OneSided { a1, a2: j.a2, a3, v1, v2: j.v2, v3 };
         }
         let g = j.a2.dot(j.a3);
-        if g != Real::ZERO {
+        if g != Real::zero() {
             let (c, s) = one_sided_rotation(j.a2.norm_squared(), g, j.a3.norm_squared());
             let (a2, a3) = one_sided_apply(c, s, j.a2, j.a3);
             let (v2, v3) = one_sided_apply(c, s, j.v2, j.v3);
@@ -591,9 +591,9 @@ mod tests {
             a1: m.column1(),
             a2: m.column2(),
             a3: m.column3(),
-            v1: Vector3 { x: Real::ONE, y: Real::ZERO, z: Real::ZERO },
-            v2: Vector3 { x: Real::ZERO, y: Real::ONE, z: Real::ZERO },
-            v3: Vector3 { x: Real::ZERO, y: Real::ZERO, z: Real::ONE },
+            v1: Vector3 { x: Real::one(), y: Real::zero(), z: Real::zero() },
+            v2: Vector3 { x: Real::zero(), y: Real::one(), z: Real::zero() },
+            v3: Vector3 { x: Real::zero(), y: Real::zero(), z: Real::one() },
         };
         let j = one_sided_sweep(one_sided_sweep(one_sided_sweep(one_sided_sweep(j))));
         let (mut s1, mut s2, mut s3) = (j.a1.norm(), j.a2.norm(), j.a3.norm());
@@ -643,7 +643,7 @@ mod tests {
         let f = Svd3Trait::new(Matrix3Trait::<Fixed>::identity());
         assert!(f.singular_values == Vector3 { x: int(1), y: int(1), z: int(1) });
         assert!(f.recompose() == Matrix3Trait::identity());
-        assert!(f.rank(Real::ZERO) == 3);
+        assert!(f.rank(Real::zero()) == 3);
         assert!(orthonormality_error_m3(f.u) == 0);
         assert!(orthonormality_error_m3(f.v_t) == 0);
     }
@@ -670,19 +670,19 @@ mod tests {
     #[test]
     fn test_new_rank_deficient_and_zero() {
         let f = Svd3Trait::new(a_rank1());
-        assert!(f.rank(Real::ZERO) == 1);
+        assert!(f.rank(Real::zero()) == 1);
         assert!(f.singular_values.x == int(2));
         assert!(orthonormality_error_m3(f.u) <= 4);
         assert!(max_ulp_diff3(f.recompose(), a_rank1()) <= 4);
         let f = Svd3Trait::new(a_rank2());
-        assert!(f.rank(Real::ZERO) == 2);
+        assert!(f.rank(Real::zero()) == 2);
         assert!(f.singular_values == Vector3 { x: int(4), y: int(2), z: int(0) });
         assert!(orthonormality_error_m3(f.u) <= 4);
         assert!(max_ulp_diff3(f.recompose(), a_rank2()) <= 4);
         // The zero matrix: every singular value vanishes and nothing divides by zero.
         let z = Svd3Trait::new(Matrix3Trait::<Fixed>::zeros());
         assert!(z.singular_values == Vector3Trait::zeros());
-        assert!(z.rank(Real::ZERO) == 0);
+        assert!(z.rank(Real::zero()) == 0);
         assert!(z.recompose() == Matrix3Trait::zeros());
         assert!(orthonormality_error_m3(z.u) == 0);
     }
@@ -708,7 +708,7 @@ mod tests {
             let e = v3t(expected);
             let err = max_ulp_diff_v3(got, e);
             worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v3(e), tol)));
-            assert!(got.x >= got.y && got.y >= got.z && got.z >= Real::ZERO, "not descending");
+            assert!(got.x >= got.y && got.y >= got.z && got.z >= Real::zero(), "not descending");
             worst = core::cmp::max(worst, err);
         }
         assert!((worst, worst_ex) == (71, 0), "regressed: {worst} {worst_ex}");
@@ -791,7 +791,7 @@ mod tests {
         let b = v3t((-1811584373, 4204441265, -4234532070));
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
-            let x = Svd3Trait::new(m3(a)).solve(b, Real::EPSILON).unwrap();
+            let x = Svd3Trait::new(m3(a)).solve(b, Real::default_epsilon()).unwrap();
             let e = m3(a).try_inverse().unwrap().mul_vec(b);
             worst = core::cmp::max(worst, max_ulp_diff_v3(x, e));
         }
@@ -805,7 +805,7 @@ mod tests {
         let mut worst = 0;
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
-            let p = Svd3Trait::new(m3(a)).pseudo_inverse(Real::EPSILON).unwrap();
+            let p = Svd3Trait::new(m3(a)).pseudo_inverse(Real::default_epsilon()).unwrap();
             worst = core::cmp::max(worst, max_ulp_diff3(p, m3(a).try_inverse().unwrap()));
         }
         assert!(worst == 77683, "regressed: {worst}");
@@ -814,7 +814,7 @@ mod tests {
     #[test]
     fn test_pseudo_inverse_of_a_rank_deficient_matrix() {
         // The pseudo-inverse drops the null directions: `A A⁺ A = A`.
-        let p = Svd3Trait::new(a_rank2()).pseudo_inverse(Real::EPSILON).unwrap();
+        let p = Svd3Trait::new(a_rank2()).pseudo_inverse(Real::default_epsilon()).unwrap();
         assert!(max_ulp_diff3(a_rank2() * p * a_rank2(), a_rank2()) <= 64);
         assert!(Svd3Trait::new(a_rank2()).pseudo_inverse(Real::NEG_ONE).is_none());
         assert!(Svd3Trait::new(a_rank2()).solve(Vector3Trait::zeros(), Real::NEG_ONE).is_none());
@@ -830,7 +830,7 @@ mod tests {
             // `P` is symmetric by construction and positive semi-definite: its determinant is the
             // product of the singular values.
             assert!(p == p.transpose(), "P is not symmetric");
-            assert!(!p.determinant().is_negative(), "P is not positive semi-definite");
+            assert!(!p.determinant().is_sign_negative(), "P is not positive semi-definite");
             worst_orth = core::cmp::max(worst_orth, orthonormality_error_m3(u));
             worst = core::cmp::max(worst, max_ulp_diff3(p * u, m3(a)) / amax_m3(m3(a)));
         }
@@ -852,7 +852,7 @@ mod tests {
     #[should_panic(expected: 'Fixed: overflow')]
     fn test_new_overflow_panics() {
         // `MᵀM` does not fit: the squares of the entries must be representable.
-        let m = black_box(Matrix3Trait::from_diagonal_element(Real::<Fixed>::MAX));
+        let m = black_box(Matrix3Trait::from_diagonal_element(Real::<Fixed>::max_value().unwrap()));
         Svd3Trait::new(m);
     }
 
@@ -914,7 +914,7 @@ mod tests {
         let a = black_box(a_bench());
         let e = black_box(true);
         let u = u_from_normalised_columns(a);
-        assert!((u.m11 != Real::ZERO) == e);
+        assert!((u.m11 != Real::zero()) == e);
     }
 
     #[test]
@@ -939,7 +939,7 @@ mod tests {
     fn bench_svd3_gram__fused() {
         let a = black_box(a_bench());
         let e = black_box(true);
-        assert!((Svd3InternalTrait::gram(a).m11 != Real::ZERO) == e);
+        assert!((Svd3InternalTrait::gram(a).m11 != Real::zero()) == e);
     }
 
     #[test]
@@ -947,7 +947,7 @@ mod tests {
     fn bench_svd3_gram__transpose_mul_transpose() {
         let a = black_box(a_bench());
         let e = black_box(true);
-        assert!((a.transpose().mul_transpose().m11 != Real::ZERO) == e);
+        assert!((a.transpose().mul_transpose().m11 != Real::zero()) == e);
     }
 
     #[test]
@@ -963,7 +963,7 @@ mod tests {
     fn bench_svd3_recompose__scaled_product() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        assert!((f.recompose().m11 != Real::ZERO) == e);
+        assert!((f.recompose().m11 != Real::zero()) == e);
     }
 
     #[test]
@@ -981,7 +981,7 @@ mod tests {
         let f = black_box(f_bench());
         let b = black_box(v3t((0x100000000, 0x200000000, 0x300000000)));
         let e = black_box(true);
-        assert!(f.solve(b, Real::EPSILON).is_some() == e);
+        assert!(f.solve(b, Real::default_epsilon()).is_some() == e);
     }
 
     #[test]
@@ -997,7 +997,7 @@ mod tests {
     fn bench_svd3_pseudo_inverse__reciprocals() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        assert!(f.pseudo_inverse(Real::EPSILON).is_some() == e);
+        assert!(f.pseudo_inverse(Real::default_epsilon()).is_some() == e);
     }
 
     #[test]
@@ -1013,7 +1013,7 @@ mod tests {
     fn bench_svd3_rank__comparisons() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        assert!((f.rank(Real::EPSILON) == 3) == e);
+        assert!((f.rank(Real::default_epsilon()) == 3) == e);
     }
 
     #[test]
@@ -1030,6 +1030,6 @@ mod tests {
         let f = black_box(f_bench());
         let e = black_box(true);
         let (p, u) = f.to_polar().unwrap();
-        assert!((u.m11 != Real::ZERO && p.m11 != Real::ZERO) == e);
+        assert!((u.m11 != Real::zero() && p.m11 != Real::zero()) == e);
     }
 }

@@ -75,7 +75,7 @@ fn test_mul_alt_blocks_rounds_twice() {
     // Row 1 of `lhs` is (0.5, 0, 0, 0.5, 0, 0), column 1 of `rhs` is (1, 0, 0, 1, 0, 0) ulp: two
     // products of 2^-33, exact sum 1 ulp. Each 3x3 block product floors its half to 0.
     let h = fx(0x80000000);
-    let zero: Fixed = Real::ZERO;
+    let zero: Fixed = Real::zero();
     let mut lhs = Matrix6Trait::<Fixed>::zeros();
     lhs.m11.m11 = h;
     lhs.m12.m11 = h;
@@ -89,7 +89,7 @@ fn test_mul_alt_blocks_rounds_twice() {
 #[test]
 fn test_mul_vec_alt_blocks_rounds_twice() {
     let h = fx(0x80000000);
-    let zero: Fixed = Real::ZERO;
+    let zero: Fixed = Real::zero();
     let mut m = Matrix6Trait::<Fixed>::zeros();
     m.m11.m11 = h;
     m.m12.m11 = h;

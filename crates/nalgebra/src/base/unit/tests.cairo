@@ -133,28 +133,30 @@ fn test_new_and_get_zero() {
 
 #[test]
 fn test_try_new_some() {
-    assert!(UnitTrait::try_new(p(), Real::ZERO) == Some(np()));
-    assert!(UnitTrait::try_new(p(), fx(0xd00000000) - Real::EPSILON) == Some(np()));
+    assert!(UnitTrait::try_new(p(), Real::zero()) == Some(np()));
+    assert!(UnitTrait::try_new(p(), fx(0xd00000000) - Real::default_epsilon()) == Some(np()));
     assert!(
-        UnitTrait::try_new(v3(3, -4, 0), Real::EPSILON) == Some(u3(2576980378, -3435973837, 0)),
+        UnitTrait::try_new(
+            v3(3, -4, 0), Real::default_epsilon(),
+        ) == Some(u3(2576980378, -3435973837, 0)),
     );
 }
 
 #[test]
 fn test_try_new_none() {
-    assert!(UnitTrait::try_new(Vector3Trait::<Fixed>::zeros(), Real::ZERO) == None);
+    assert!(UnitTrait::try_new(Vector3Trait::<Fixed>::zeros(), Real::zero()) == None);
     // The norm is compared with `<=`.
     assert!(UnitTrait::try_new(p(), fx(0xd00000000)) == None);
     assert!(UnitTrait::try_new(v3(3, -4, 0), fx(5)) == None);
-    assert!(UnitTrait::try_new(v2(0, 0), Real::ZERO) == None);
-    assert!(UnitTrait::try_new(v4(0, 0, 0, 0), Real::ZERO) == None);
+    assert!(UnitTrait::try_new(v2(0, 0), Real::zero()) == None);
+    assert!(UnitTrait::try_new(v4(0, 0, 0, 0), Real::zero()) == None);
 }
 
 #[test]
 fn test_try_new_and_get() {
-    assert!(UnitTrait::try_new_and_get(p(), Real::ZERO) == Some((np(), fx(0xd00000000))));
+    assert!(UnitTrait::try_new_and_get(p(), Real::zero()) == Some((np(), fx(0xd00000000))));
     assert!(UnitTrait::try_new_and_get(p(), fx(0xd00000000)) == None);
-    assert!(UnitTrait::try_new_and_get(Vector3Trait::<Fixed>::zeros(), Real::ZERO) == None);
+    assert!(UnitTrait::try_new_and_get(Vector3Trait::<Fixed>::zeros(), Real::zero()) == None);
 }
 
 #[test]
@@ -254,8 +256,8 @@ fn test_renormalize_fast_overflow() {
 
 #[test]
 fn test_dot_of_units() {
-    assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::x_axis()) == Real::ONE);
-    assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::y_axis()) == Real::ZERO);
+    assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::x_axis()) == Real::one());
+    assert!(Unit3Trait::<Fixed>::x_axis().dot(Unit3Trait::<Fixed>::y_axis()) == Real::zero());
     assert!(Unit3Trait::<Fixed>::x_axis().dot(-Unit3Trait::<Fixed>::x_axis()) == Real::NEG_ONE);
     // A normalized vector has a squared norm of 1 within a few ulp: here 1 ulp short.
     assert!(na().dot(na()) == fx(4294967295));
@@ -278,8 +280,8 @@ fn test_scale_gives_a_vector() {
     // The scaled axis of a rotation: axis * angle.
     assert!(Unit3Trait::<Fixed>::z_axis().scale(fx(0x280000000)) == v3(0, 0, 0x280000000));
     assert!(Unit3Trait::<Fixed>::x_axis().scale(fx(-0x180000000)) == v3(-0x180000000, 0, 0));
-    assert!(np().scale(Real::ZERO) == Vector3Trait::<Fixed>::zeros());
-    assert!(np().scale(Real::ONE) == np().value);
+    assert!(np().scale(Real::zero()) == Vector3Trait::<Fixed>::zeros());
+    assert!(np().scale(Real::one()) == np().value);
     assert!(np().scale(fx(0xd00000000)) == np().value.scale(fx(0xd00000000)));
 }
 

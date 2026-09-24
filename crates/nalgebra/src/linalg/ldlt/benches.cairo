@@ -78,7 +78,7 @@ fn inv2() -> SymMatrix2<Fixed> {
 /// first order in the rounding of `l_jk`.
 fn new2_products(a: SymMatrix2<Fixed>) -> Option<Ldlt2<Fixed>> {
     let d1 = a.m11;
-    if d1 == Real::<Fixed>::ZERO {
+    if d1 == Real::<Fixed>::zero() {
         return None;
     }
     let l21 = a.m12 / d1;
@@ -86,7 +86,7 @@ fn new2_products(a: SymMatrix2<Fixed>) -> Option<Ldlt2<Fixed>> {
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22);
     let w = Real::wide_sub_prod(w, l21, t21);
     let d2 = Real::wide_rescale(w);
-    if d2 == Real::<Fixed>::ZERO {
+    if d2 == Real::<Fixed>::zero() {
         return None;
     }
     Some(Ldlt2 { l21, d: Vector2 { x: d1, y: d2 } })
@@ -364,7 +364,7 @@ fn inv3() -> SymMatrix3<Fixed> {
 /// first order in the rounding of `l_jk`.
 fn new3_products(a: SymMatrix3<Fixed>) -> Option<Ldlt3<Fixed>> {
     let d1 = a.m11;
-    if d1 == Real::<Fixed>::ZERO {
+    if d1 == Real::<Fixed>::zero() {
         return None;
     }
     let l21 = a.m12 / d1;
@@ -373,7 +373,7 @@ fn new3_products(a: SymMatrix3<Fixed>) -> Option<Ldlt3<Fixed>> {
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22);
     let w = Real::wide_sub_prod(w, l21, t21);
     let d2 = Real::wide_rescale(w);
-    if d2 == Real::<Fixed>::ZERO {
+    if d2 == Real::<Fixed>::zero() {
         return None;
     }
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m23);
@@ -386,7 +386,7 @@ fn new3_products(a: SymMatrix3<Fixed>) -> Option<Ldlt3<Fixed>> {
     let w = Real::wide_sub_prod(w, l31, t31);
     let w = Real::wide_sub_prod(w, l32, t32);
     let d3 = Real::wide_rescale(w);
-    if d3 == Real::<Fixed>::ZERO {
+    if d3 == Real::<Fixed>::zero() {
         return None;
     }
     Some(Ldlt3 { l21, l31, l32, d: Vector3 { x: d1, y: d2, z: d3 } })
@@ -699,7 +699,7 @@ fn inv4() -> Matrix4<Fixed> {
 /// first order in the rounding of `l_jk`.
 fn new4_products(a: Matrix4<Fixed>) -> Option<Ldlt4<Fixed>> {
     let d1 = a.m11;
-    if d1 == Real::<Fixed>::ZERO {
+    if d1 == Real::<Fixed>::zero() {
         return None;
     }
     let l21 = a.m21 / d1;
@@ -709,7 +709,7 @@ fn new4_products(a: Matrix4<Fixed>) -> Option<Ldlt4<Fixed>> {
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22);
     let w = Real::wide_sub_prod(w, l21, t21);
     let d2 = Real::wide_rescale(w);
-    if d2 == Real::<Fixed>::ZERO {
+    if d2 == Real::<Fixed>::zero() {
         return None;
     }
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m32);
@@ -726,7 +726,7 @@ fn new4_products(a: Matrix4<Fixed>) -> Option<Ldlt4<Fixed>> {
     let w = Real::wide_sub_prod(w, l31, t31);
     let w = Real::wide_sub_prod(w, l32, t32);
     let d3 = Real::wide_rescale(w);
-    if d3 == Real::<Fixed>::ZERO {
+    if d3 == Real::<Fixed>::zero() {
         return None;
     }
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m43);
@@ -742,7 +742,7 @@ fn new4_products(a: Matrix4<Fixed>) -> Option<Ldlt4<Fixed>> {
     let w = Real::wide_sub_prod(w, l42, t42);
     let w = Real::wide_sub_prod(w, l43, t43);
     let d4 = Real::wide_rescale(w);
-    if d4 == Real::<Fixed>::ZERO {
+    if d4 == Real::<Fixed>::zero() {
         return None;
     }
     Some(Ldlt4 { l21, l31, l41, l32, l42, l43, d: Vector4 { x: d1, y: d2, z: d3, w: d4 } })
@@ -1131,7 +1131,7 @@ fn inv6() -> Matrix6<Fixed> {
 /// first order in the rounding of `l_jk`.
 fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let d1 = a.m11.m11;
-    if d1 == Real::<Fixed>::ZERO {
+    if d1 == Real::<Fixed>::zero() {
         return None;
     }
     let l21 = a.m11.m21 / d1;
@@ -1143,7 +1143,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m11.m22);
     let w = Real::wide_sub_prod(w, l21, t21);
     let d2 = Real::wide_rescale(w);
-    if d2 == Real::<Fixed>::ZERO {
+    if d2 == Real::<Fixed>::zero() {
         return None;
     }
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m11.m32);
@@ -1168,7 +1168,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let w = Real::wide_sub_prod(w, l31, t31);
     let w = Real::wide_sub_prod(w, l32, t32);
     let d3 = Real::wide_rescale(w);
-    if d3 == Real::<Fixed>::ZERO {
+    if d3 == Real::<Fixed>::zero() {
         return None;
     }
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m21.m13);
@@ -1194,7 +1194,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let w = Real::wide_sub_prod(w, l42, t42);
     let w = Real::wide_sub_prod(w, l43, t43);
     let d4 = Real::wide_rescale(w);
-    if d4 == Real::<Fixed>::ZERO {
+    if d4 == Real::<Fixed>::zero() {
         return None;
     }
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m21);
@@ -1219,7 +1219,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let w = Real::wide_sub_prod(w, l53, t53);
     let w = Real::wide_sub_prod(w, l54, t54);
     let d5 = Real::wide_rescale(w);
-    if d5 == Real::<Fixed>::ZERO {
+    if d5 == Real::<Fixed>::zero() {
         return None;
     }
     let w = Real::wide_add(Real::<Fixed>::wide_zero(), a.m22.m32);
@@ -1241,7 +1241,7 @@ fn new6_products(a: Matrix6<Fixed>) -> Option<Ldlt6<Fixed>> {
     let w = Real::wide_sub_prod(w, l64, t64);
     let w = Real::wide_sub_prod(w, l65, t65);
     let d6 = Real::wide_rescale(w);
-    if d6 == Real::<Fixed>::ZERO {
+    if d6 == Real::<Fixed>::zero() {
         return None;
     }
     Some(

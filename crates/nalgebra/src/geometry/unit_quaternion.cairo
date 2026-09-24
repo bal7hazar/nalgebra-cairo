@@ -73,7 +73,9 @@ pub impl UnitQuaternionImpl<
     /// The identity rotation `1 + 0i + 0j + 0k`. Exact. Upstream: `UnitQuaternion::identity`.
     #[inline(always)]
     fn identity() -> UnitQuaternion<T> {
-        UnitQuaternion { quaternion: Quaternion { i: R::ZERO, j: R::ZERO, k: R::ZERO, w: R::ONE } }
+        UnitQuaternion {
+            quaternion: Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::one() },
+        }
     }
 
     /// Wraps `q` WITHOUT normalizing it: the caller guarantees a unit norm. Upstream:
@@ -189,7 +191,7 @@ pub impl UnitQuaternionImpl<
     /// `|q|²` does not fit (norm above about 46 340). Upstream: `Unit::renormalize_fast`.
     #[inline(always)]
     fn renormalize_fast(ref self: UnitQuaternion<T>) {
-        let f = R::mul_add(self.quaternion.norm_squared(), -R::HALF, R::HALF + R::ONE);
+        let f = R::mul_add(self.quaternion.norm_squared(), -R::HALF, R::HALF + R::one());
         self = UnitQuaternion { quaternion: self.quaternion.scale(f) };
     }
 
@@ -214,12 +216,12 @@ pub impl UnitQuaternionImpl<
     /// the right output for integration. Upstream: `axis`.
     fn axis(self: UnitQuaternion<T>) -> Option<Unit<Vector3<T>>> {
         let v = Self::imag(self);
-        let v = if R::is_negative(self.quaternion.w) {
+        let v = if R::is_sign_negative(self.quaternion.w) {
             Vector3 { x: -v.x, y: -v.y, z: -v.z }
         } else {
             v
         };
-        UnitTrait::try_new(v, R::ZERO)
+        UnitTrait::try_new(v, R::zero())
     }
 
     // --- conversions to / from a rotation matrix --------------------------------------------
@@ -309,10 +311,10 @@ pub impl UnitQuaternionImpl<
     fn from_rotation_matrix(r: Rotation3<T>) -> UnitQuaternion<T> {
         let m = r.matrix;
         let tr = m.m11 + m.m22 + m.m33;
-        if R::is_positive(tr) {
+        if R::is_sign_positive(tr) {
             // d = sqrt(1 + tr) in (1, 2]; upstream's `denom` is 2d and its `quarter · denom` is
             // d/2.
-            let d = R::sqrt(R::ONE + tr);
+            let d = R::sqrt(R::one() + tr);
             let denom = d + d;
             UnitQuaternion {
                 quaternion: {
@@ -321,7 +323,7 @@ pub impl UnitQuaternionImpl<
                 },
             }
         } else if m.m11 > m.m22 && m.m11 > m.m33 {
-            let d = R::sqrt(R::ONE + m.m11 - m.m22 - m.m33);
+            let d = R::sqrt(R::one() + m.m11 - m.m22 - m.m33);
             let denom = d + d;
             UnitQuaternion {
                 quaternion: {
@@ -330,7 +332,7 @@ pub impl UnitQuaternionImpl<
                 },
             }
         } else if m.m22 > m.m33 {
-            let d = R::sqrt(R::ONE + m.m22 - m.m11 - m.m33);
+            let d = R::sqrt(R::one() + m.m22 - m.m11 - m.m33);
             let denom = d + d;
             UnitQuaternion {
                 quaternion: {
@@ -339,7 +341,7 @@ pub impl UnitQuaternionImpl<
                 },
             }
         } else {
-            let d = R::sqrt(R::ONE + m.m33 - m.m11 - m.m22);
+            let d = R::sqrt(R::one() + m.m33 - m.m11 - m.m22);
             let denom = d + d;
             UnitQuaternion {
                 quaternion: {
@@ -454,13 +456,13 @@ pub impl UnitQuaternionImpl<
     /// (correct)
     /// half turn about the rounded cross product. Upstream: `UnitQuaternion::rotation_between`.
     fn rotation_between(a: Vector3<T>, b: Vector3<T>) -> Option<UnitQuaternion<T>> {
-        match (a.try_normalize(R::ZERO), b.try_normalize(R::ZERO)) {
+        match (a.try_normalize(R::zero()), b.try_normalize(R::zero())) {
             (
                 Some(u), Some(v),
             ) => {
                 let c = u.cross(v);
                 if c.is_zero() {
-                    if R::is_negative(Vector3Trait::dot(u, v)) {
+                    if R::is_sign_negative(Vector3Trait::dot(u, v)) {
                         // A half turn about an undefined axis: not a simple rotation.
                         None
                     } else {
@@ -468,7 +470,7 @@ pub impl UnitQuaternionImpl<
                     }
                 } else {
                     let q = Quaternion {
-                        i: c.x, j: c.y, k: c.z, w: R::ONE + Vector3Trait::dot(u, v),
+                        i: c.x, j: c.y, k: c.z, w: R::one() + Vector3Trait::dot(u, v),
                     };
                     Some(Self::new_normalize(q))
                 }
@@ -616,7 +618,7 @@ pub impl UnitQuaternionAngleImpl<
             x: axisangle.x * R::HALF, y: axisangle.y * R::HALF, z: axisangle.z * R::HALF,
         };
         let n = R::norm3(h.x, h.y, h.z);
-        if n == R::ZERO {
+        if n == R::zero() {
             return UnitQuaternionTrait::identity();
         }
         let (s, c) = Tr::sin_cos(n);
@@ -686,13 +688,13 @@ pub impl UnitQuaternionAngleImpl<
     fn scaled_axis(self: UnitQuaternion<T>) -> Vector3<T> {
         let q = self.quaternion;
         let n = R::norm3(q.i, q.j, q.k);
-        if n == R::ZERO {
-            return Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO };
+        if n == R::zero() {
+            return Vector3 { x: R::zero(), y: R::zero(), z: R::zero() };
         }
         let half = Tr::atan2(n, R::abs(q.w));
         let angle = half + half;
         // axis = imag / |imag| (sign-corrected), then scaled by the angle, as upstream.
-        if R::is_negative(q.w) {
+        if R::is_sign_negative(q.w) {
             let (x, y, z) = R::div3(-q.i, -q.j, -q.k, n);
             Vector3 { x: x * angle, y: y * angle, z: z * angle }
         } else {
@@ -729,7 +731,7 @@ pub impl UnitQuaternionAngleImpl<
         let j2 = j + j;
         let k2 = k + k;
         let m31 = R::diff_prod(i2, k, w, j2);
-        if R::abs(m31) < R::ONE {
+        if R::abs(m31) < R::one() {
             let m33 = R::wide_rescale(
                 R::wide_add_prod(
                     R::wide_sub_prod(
@@ -762,10 +764,10 @@ pub impl UnitQuaternionAngleImpl<
                 ),
             );
             let m23 = R::diff_prod(j2, k, w, i2);
-            if R::is_negative(m31) {
-                (Tr::atan2(m23, m22), R::FRAC_PI_2, R::ZERO)
+            if R::is_sign_negative(m31) {
+                (Tr::atan2(m23, m22), R::frac_pi_2(), R::zero())
             } else {
-                (-Tr::atan2(m23, m22), -R::FRAC_PI_2, R::ZERO)
+                (-Tr::atan2(m23, m22), -R::frac_pi_2(), R::zero())
             }
         }
     }
@@ -786,7 +788,7 @@ pub impl UnitQuaternionAngleImpl<
     /// `nalgebra: ambiguous slerp` is kept only for scalars whose resolution would make
     /// `sqrt(1 - cos²)` vanish. Upstream: `slerp`.
     fn slerp(self: UnitQuaternion<T>, other: UnitQuaternion<T>, t: T) -> UnitQuaternion<T> {
-        Self::try_slerp(self, other, t, R::ZERO).expect('nalgebra: ambiguous slerp')
+        Self::try_slerp(self, other, t, R::zero()).expect('nalgebra: ambiguous slerp')
     }
 
     /// `slerp`, or `None` when `sin(half the angle between the rotations)` is `<= epsilon`. After
@@ -800,7 +802,7 @@ pub impl UnitQuaternionAngleImpl<
     ) -> Option<UnitQuaternion<T>> {
         // Shortest arc: flip `other` when the dot product is negative, so that cos >= 0.
         let d = UnitQuaternionTrait::dot(self, other);
-        let (o, c) = if R::is_negative(d) {
+        let (o, c) = if R::is_sign_negative(d) {
             (
                 Quaternion {
                     i: -other.quaternion.i,
@@ -813,17 +815,17 @@ pub impl UnitQuaternionAngleImpl<
         } else {
             (other.quaternion, d)
         };
-        if c >= R::ONE {
+        if c >= R::one() {
             // The same rotation (up to rounding): nothing to interpolate.
             return Some(self);
         }
         let hang = Tr::acos(c);
         // sin of that half angle, from one fused `1 - c²` (floored once).
-        let shang = R::sqrt(R::diff_prod(R::ONE, R::ONE, c, c));
+        let shang = R::sqrt(R::diff_prod(R::one(), R::one(), c, c));
         if shang <= epsilon {
             return None;
         }
-        let ta = R::div(Tr::sin((R::ONE - t) * hang), shang);
+        let ta = R::div(Tr::sin((R::one() - t) * hang), shang);
         let tb = R::div(Tr::sin(t * hang), shang);
         let s = self.quaternion;
         let q = Quaternion {
@@ -852,15 +854,15 @@ pub impl UnitQuaternionAngleImpl<
     /// and one `from_axis_angle`. `None` in the same antiparallel case as `rotation_between`.
     /// Upstream: `scaled_rotation_between`.
     fn scaled_rotation_between(a: Vector3<T>, b: Vector3<T>, s: T) -> Option<UnitQuaternion<T>> {
-        match (a.try_normalize(R::ZERO), b.try_normalize(R::ZERO)) {
+        match (a.try_normalize(R::zero()), b.try_normalize(R::zero())) {
             (
                 Some(u), Some(v),
             ) => {
                 let c = u.cross(v);
-                let d = R::clamp(Vector3Trait::dot(u, v), R::NEG_ONE, R::ONE);
-                match UnitTrait::try_new(c, R::ZERO) {
+                let d = R::clamp(Vector3Trait::dot(u, v), R::NEG_ONE, R::one());
+                match UnitTrait::try_new(c, R::zero()) {
                     Some(axis) => Some(Self::from_axis_angle(axis, Tr::acos(d) * s)),
-                    None => if R::is_negative(d) {
+                    None => if R::is_sign_negative(d) {
                         None
                     } else {
                         Some(UnitQuaternionTrait::identity())

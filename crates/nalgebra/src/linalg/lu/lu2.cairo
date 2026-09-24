@@ -100,7 +100,7 @@ pub impl Lu2Impl<
             a12 = a22;
             a22 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let l = R::div(a21, a11);
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
@@ -113,13 +113,13 @@ pub impl Lu2Impl<
     /// storage). Exact: moves only. Upstream: `LU::l`.
     #[inline(always)]
     fn l(self: Lu2<T>) -> Matrix2<T> {
-        Matrix2 { m11: R::ONE, m21: self.lu.m21, m12: R::ZERO, m22: R::ONE }
+        Matrix2 { m11: R::one(), m21: self.lu.m21, m12: R::zero(), m22: R::one() }
     }
 
     /// The upper triangular factor `U`. Exact: moves only. Upstream: `LU::u`.
     #[inline(always)]
     fn u(self: Lu2<T>) -> Matrix2<T> {
-        Matrix2 { m11: self.lu.m11, m21: R::ZERO, m12: self.lu.m12, m22: self.lu.m22 }
+        Matrix2 { m11: self.lu.m11, m21: R::zero(), m12: self.lu.m12, m22: self.lu.m22 }
     }
 
     /// The row permutation `P`, as the compact sequence of 1 transpositions `Perm2` — never as a
@@ -141,7 +141,7 @@ pub impl Lu2Impl<
     /// it is factored and solved with the precision its conditioning allows.
     #[inline(always)]
     fn is_invertible(self: Lu2<T>) -> bool {
-        self.lu.m11 != R::ZERO && self.lu.m22 != R::ZERO
+        self.lu.m11 != R::zero() && self.lu.m22 != R::zero()
     }
 
     /// The solution of `A * x = b` for the factored `A`, or `None` when a pivot is exactly zero
@@ -199,7 +199,7 @@ pub impl Lu2Impl<
         let y21 = -self.lu.m21;
         let x22 = R::recip(self.lu.m22);
         let x21 = R::div(y21, self.lu.m22);
-        let n11 = R::mul_add(-self.lu.m12, x21, R::ONE);
+        let n11 = R::mul_add(-self.lu.m12, x21, R::one());
         let n12 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22));
         let x11 = R::div(n11, self.lu.m11);
         let x12 = R::div(n12, self.lu.m11);
@@ -408,7 +408,7 @@ mod tests {
         let mut a12 = matrix.m12;
         let mut a21 = matrix.m21;
         let mut a22 = matrix.m22;
-        if a11 != Real::ZERO {
+        if a11 != Real::zero() {
             let l = a21 / a11;
             let nl = -l;
             a22 = Real::mul_add(nl, a12, a22);

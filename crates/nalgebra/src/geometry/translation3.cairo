@@ -47,7 +47,7 @@ pub impl Translation3Impl<
     /// The identity translation (the zero vector). Exact. Upstream: `Translation3::identity`.
     #[inline(always)]
     fn identity() -> Translation3<T> {
-        Translation3 { vector: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO } }
+        Translation3 { vector: Vector3 { x: R::zero(), y: R::zero(), z: R::zero() } }
     }
 
     /// The translation by `v`. Exact. Upstream: `Translation3::from(v)` (`From<Vector3>`), also
@@ -84,22 +84,22 @@ pub impl Translation3Impl<
     #[inline(always)]
     fn to_homogeneous(self: Translation3<T>) -> Matrix4<T> {
         Matrix4 {
-            m11: R::ONE,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m41: R::ZERO,
-            m12: R::ZERO,
-            m22: R::ONE,
-            m32: R::ZERO,
-            m42: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
-            m43: R::ZERO,
+            m11: R::one(),
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m12: R::zero(),
+            m22: R::one(),
+            m32: R::zero(),
+            m42: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
+            m43: R::zero(),
             m14: self.vector.x,
             m24: self.vector.y,
             m34: self.vector.z,
-            m44: R::ONE,
+            m44: R::one(),
         }
     }
 

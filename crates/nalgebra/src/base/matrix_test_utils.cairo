@@ -989,33 +989,33 @@ pub fn amax_s3(m: SymMatrix3<Fixed>) -> u128 {
 /// `max_ij |(QᵀQ - I)_ij|` in raw units: how far the columns of `q` are from orthonormal.
 pub fn orthonormality_error_m2(q: Matrix2<Fixed>) -> u128 {
     let (c1, c2) = (q.column1(), q.column2());
-    let mut e = ulp_diff(c1.norm_squared(), Real::ONE);
-    e = core::cmp::max(e, ulp_diff(c2.norm_squared(), Real::ONE));
-    core::cmp::max(e, ulp_diff(c1.dot(c2), Real::ZERO))
+    let mut e = ulp_diff(c1.norm_squared(), Real::one());
+    e = core::cmp::max(e, ulp_diff(c2.norm_squared(), Real::one()));
+    core::cmp::max(e, ulp_diff(c1.dot(c2), Real::zero()))
 }
 
 /// `max_ij |(QᵀQ - I)_ij|` in raw units, see `orthonormality_error_m2`.
 pub fn orthonormality_error_m3(q: Matrix3<Fixed>) -> u128 {
     let (c1, c2, c3) = (q.column1(), q.column2(), q.column3());
-    let mut e = ulp_diff(c1.norm_squared(), Real::ONE);
-    e = core::cmp::max(e, ulp_diff(c2.norm_squared(), Real::ONE));
-    e = core::cmp::max(e, ulp_diff(c3.norm_squared(), Real::ONE));
-    e = core::cmp::max(e, ulp_diff(c1.dot(c2), Real::ZERO));
-    e = core::cmp::max(e, ulp_diff(c1.dot(c3), Real::ZERO));
-    core::cmp::max(e, ulp_diff(c2.dot(c3), Real::ZERO))
+    let mut e = ulp_diff(c1.norm_squared(), Real::one());
+    e = core::cmp::max(e, ulp_diff(c2.norm_squared(), Real::one()));
+    e = core::cmp::max(e, ulp_diff(c3.norm_squared(), Real::one()));
+    e = core::cmp::max(e, ulp_diff(c1.dot(c2), Real::zero()));
+    e = core::cmp::max(e, ulp_diff(c1.dot(c3), Real::zero()));
+    core::cmp::max(e, ulp_diff(c2.dot(c3), Real::zero()))
 }
 
 /// `max_ij |(QᵀQ - I)_ij|` in raw units, see `orthonormality_error_m2`.
 pub fn orthonormality_error_m4(q: Matrix4<Fixed>) -> u128 {
     let (c1, c2, c3, c4) = (q.column1(), q.column2(), q.column3(), q.column4());
-    let mut e = ulp_diff(c1.norm_squared(), Real::ONE);
-    e = core::cmp::max(e, ulp_diff(c2.norm_squared(), Real::ONE));
-    e = core::cmp::max(e, ulp_diff(c3.norm_squared(), Real::ONE));
-    e = core::cmp::max(e, ulp_diff(c4.norm_squared(), Real::ONE));
-    e = core::cmp::max(e, ulp_diff(c1.dot(c2), Real::ZERO));
-    e = core::cmp::max(e, ulp_diff(c1.dot(c3), Real::ZERO));
-    e = core::cmp::max(e, ulp_diff(c1.dot(c4), Real::ZERO));
-    e = core::cmp::max(e, ulp_diff(c2.dot(c3), Real::ZERO));
-    e = core::cmp::max(e, ulp_diff(c2.dot(c4), Real::ZERO));
-    core::cmp::max(e, ulp_diff(c3.dot(c4), Real::ZERO))
+    let mut e = ulp_diff(c1.norm_squared(), Real::one());
+    e = core::cmp::max(e, ulp_diff(c2.norm_squared(), Real::one()));
+    e = core::cmp::max(e, ulp_diff(c3.norm_squared(), Real::one()));
+    e = core::cmp::max(e, ulp_diff(c4.norm_squared(), Real::one()));
+    e = core::cmp::max(e, ulp_diff(c1.dot(c2), Real::zero()));
+    e = core::cmp::max(e, ulp_diff(c1.dot(c3), Real::zero()));
+    e = core::cmp::max(e, ulp_diff(c1.dot(c4), Real::zero()));
+    e = core::cmp::max(e, ulp_diff(c2.dot(c3), Real::zero()));
+    e = core::cmp::max(e, ulp_diff(c2.dot(c4), Real::zero()));
+    core::cmp::max(e, ulp_diff(c3.dot(c4), Real::zero()))
 }

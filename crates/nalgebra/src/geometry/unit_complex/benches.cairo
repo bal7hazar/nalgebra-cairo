@@ -33,7 +33,7 @@ fn d() -> UnitComplex<Fixed> {
 fn alt_rotation_between_atan2(a: Vector2<Fixed>, b: Vector2<Fixed>) -> UnitComplex<Fixed> {
     let na = Real::norm2(a.x, a.y);
     let nb = Real::norm2(b.x, b.y);
-    if na == Real::ZERO || nb == Real::ZERO {
+    if na == Real::zero() || nb == Real::zero() {
         return UnitComplexTrait::identity();
     }
     let (ax, ay) = (a.x / na, a.y / na);
@@ -51,7 +51,7 @@ fn alt_rotation_between_atan2(a: Vector2<Fixed>, b: Vector2<Fixed>) -> UnitCompl
 fn alt_rotation_between_normalized(a: Vector2<Fixed>, b: Vector2<Fixed>) -> UnitComplex<Fixed> {
     let na = Real::norm2(a.x, a.y);
     let nb = Real::norm2(b.x, b.y);
-    if na == Real::ZERO || nb == Real::ZERO {
+    if na == Real::zero() || nb == Real::zero() {
         return UnitComplexTrait::identity();
     }
     let (ax, ay) = (a.x / na, a.y / na);
@@ -82,10 +82,10 @@ fn alt_renormalize_fast_mul_add(c: UnitComplex<Fixed>) -> UnitComplex<Fixed> {
 #[inline(always)]
 fn alt_renormalize_fast_lerp(c: UnitComplex<Fixed>) -> UnitComplex<Fixed> {
     let f = Real::mul_add(
-        Real::norm_squared2(c.re, c.im), -Real::<Fixed>::HALF, Real::HALF + Real::ONE,
+        Real::norm_squared2(c.re, c.im), -Real::<Fixed>::HALF, Real::HALF + Real::one(),
     );
     UnitComplex {
-        re: Real::lerp(Real::ZERO, c.re, f), im: Real::lerp(Real::<Fixed>::ZERO, c.im, f),
+        re: Real::lerp(Real::zero(), c.re, f), im: Real::lerp(Real::<Fixed>::zero(), c.im, f),
     }
 }
 
@@ -145,7 +145,7 @@ fn bench_unit_complex_identity__const() {
 fn bench_unit_complex_identity__from_cos_sin_unchecked() {
     let a: Fixed = black_box(fx(0x66666666));
     let e: UnitComplex<Fixed> = black_box(uc(0x66666666, 0));
-    assert!(UnitComplexTrait::from_cos_sin_unchecked(a, Real::ZERO) == e);
+    assert!(UnitComplexTrait::from_cos_sin_unchecked(a, Real::zero()) == e);
 }
 
 #[test]
@@ -370,7 +370,7 @@ fn bench_unit_complex_to_homogeneous__expand() {
     let c: UnitComplex<Fixed> = black_box(c());
     let e: Fixed = black_box(fx(-1672539044));
     let h = c.to_homogeneous();
-    assert!(h.m12 == e && h.m33 == Real::ONE);
+    assert!(h.m12 == e && h.m33 == Real::one());
 }
 
 #[test]

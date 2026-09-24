@@ -96,17 +96,17 @@ pub impl Qr4Impl<
                 r12,
                 r13,
                 r14,
-                R::ZERO,
+                R::zero(),
                 r22,
                 r23,
                 r24,
-                R::ZERO,
-                R::ZERO,
+                R::zero(),
+                R::zero(),
                 r33,
                 r34,
-                R::ZERO,
-                R::ZERO,
-                R::ZERO,
+                R::zero(),
+                R::zero(),
+                R::zero(),
                 r44,
             ),
         }
@@ -134,10 +134,10 @@ pub impl Qr4Impl<
     /// (no epsilon), like upstream's `QR::is_invertible`. Equivalently, `Q` is orthonormal.
     #[inline(always)]
     fn is_invertible(self: Qr4<T>) -> bool {
-        self.r.m11 != R::ZERO
-            && self.r.m22 != R::ZERO
-            && self.r.m33 != R::ZERO
-            && self.r.m44 != R::ZERO
+        self.r.m11 != R::zero()
+            && self.r.m22 != R::zero()
+            && self.r.m33 != R::zero()
+            && self.r.m44 != R::zero()
     }
 
     /// The solution of `A * x = b` for the factored `A`, or `None` when a diagonal entry of `R`
@@ -191,8 +191,8 @@ pub(crate) impl Qr4InternalImpl<
     /// module doc). One correctly rounded division per component. No upstream equivalent.
     #[inline(always)]
     fn unit(v: Vector4<T>, n: T) -> Vector4<T> {
-        if n == R::ZERO {
-            Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO }
+        if n == R::zero() {
+            Vector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() }
         } else {
             {
                 let (x, y, z, w) = R::div4(v.x, v.y, v.z, v.w, n);
@@ -230,7 +230,7 @@ pub(crate) impl Qr4InternalImpl<
     /// most of the price of this method; PREFER `Matrix4::determinant` on the matrix itself when
     /// the factorisation is not needed for something else.
     fn determinant(self: Qr4<T>) -> T {
-        let d = if self.q.determinant().is_negative() {
+        let d = if self.q.determinant().is_sign_negative() {
             -self.r.m11
         } else {
             self.r.m11
@@ -336,7 +336,7 @@ mod tests {
     #[test]
     fn test_new_rank_deficient_leaves_a_zero_column() {
         let f = Qr4Trait::new(a_rank3());
-        assert!(f.r().m44 == Real::ZERO);
+        assert!(f.r().m44 == Real::zero());
         assert!(f.q().column4() == Vector4Trait::zeros());
         assert!(f.q() * f.r() == a_rank3());
         assert!(!f.is_invertible());
@@ -444,7 +444,7 @@ mod tests {
         let a = black_box(a_bench());
         let e = black_box(true);
         let f = Qr4Trait::new(a);
-        assert!((f.r.m11 > Real::ZERO && f.r.m44 > Real::ZERO) == e);
+        assert!((f.r.m11 > Real::zero() && f.r.m44 > Real::zero()) == e);
     }
 
     #[test]
@@ -461,7 +461,7 @@ mod tests {
         let f = black_box(f_bench());
         let e = black_box(true);
         let (q, r) = f.unpack();
-        assert!((q.m11 != Real::ZERO && r.m11 != Real::ZERO) == e);
+        assert!((q.m11 != Real::zero() && r.m11 != Real::zero()) == e);
     }
 
     #[test]
@@ -527,6 +527,6 @@ mod tests {
     fn bench_qr4_determinant__diagonal_product() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        assert!((f.determinant() != Real::ZERO) == e);
+        assert!((f.determinant() != Real::zero()) == e);
     }
 }

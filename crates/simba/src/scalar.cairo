@@ -42,44 +42,53 @@ pub trait Real<T> {
     /// Exact accumulator of unscaled products, see `wide_zero`.
     type Wide;
 
-    /// 0.
-    const ZERO: T;
-    /// 1.
-    const ONE: T;
+    // --- constants: simba-rs's names (`num::Zero::zero`, `num::One::one`, `RealField::pi`, ...)
+    // ---
+
+    /// 0. Upstream: `num::Zero::zero`.
+    fn zero() -> T;
+    /// 1. Upstream: `num::One::one`.
+    fn one() -> T;
+    /// Smallest positive value (1 ulp). Upstream: `approx::AbsDiffEq::default_epsilon`; not a
+    /// float-style machine epsilon.
+    fn default_epsilon() -> T;
+    /// Smallest value. Upstream: `RealField::min_value` (`Option<Self>`, always `Some` here).
+    fn min_value() -> Option<T>;
+    /// Largest value. Upstream: `RealField::max_value` (`Option<Self>`, always `Some` here).
+    fn max_value() -> Option<T>;
+    /// π. Upstream: `RealField::pi`.
+    fn pi() -> T;
+    /// 2π. Upstream: `RealField::two_pi`.
+    fn two_pi() -> T;
+    /// π/2. Upstream: `RealField::frac_pi_2`.
+    fn frac_pi_2() -> T;
+    /// π/3. Upstream: `RealField::frac_pi_3`.
+    fn frac_pi_3() -> T;
+    /// π/4. Upstream: `RealField::frac_pi_4`.
+    fn frac_pi_4() -> T;
+    /// π/6. Upstream: `RealField::frac_pi_6`.
+    fn frac_pi_6() -> T;
+    /// 1/π. Upstream: `RealField::frac_1_pi`.
+    fn frac_1_pi() -> T;
+    /// Euler's number. Upstream: `RealField::e`.
+    fn e() -> T;
+    /// ln 2. Upstream: `RealField::ln_2`.
+    fn ln_2() -> T;
+    /// ln 10. Upstream: `RealField::ln_10`.
+    fn ln_10() -> T;
+
+    // --- constants without a simba-rs name: the documented scalar exception ---------------------
+    //
+    // Upstream builds them with `crate::convert(0.5)` (an `f64` literal conversion); Cairo has no
+    // such conversion, so the ones nalgebra uses are associated constants (owner ruling
+    // 2026-09-24).
+
     /// -1.
     const NEG_ONE: T;
     /// 2.
     const TWO: T;
     /// 1/2.
     const HALF: T;
-    /// Smallest positive value (1 ulp). Not a float-style machine epsilon.
-    const EPSILON: T;
-    /// Smallest value.
-    const MIN: T;
-    /// Largest value.
-    const MAX: T;
-    /// π.
-    const PI: T;
-    /// 2π.
-    const TAU: T;
-    /// π/2.
-    const FRAC_PI_2: T;
-    /// π/3.
-    const FRAC_PI_3: T;
-    /// π/4.
-    const FRAC_PI_4: T;
-    /// π/6.
-    const FRAC_PI_6: T;
-    /// 1/π.
-    const FRAC_1_PI: T;
-    /// Euler's number.
-    const E: T;
-    /// ln 2.
-    const LN_2: T;
-    /// ln 10.
-    const LN_10: T;
-    /// √2.
-    const SQRT_2: T;
     /// 1/√2.
     const FRAC_1_SQRT_2: T;
 
@@ -97,10 +106,10 @@ pub trait Real<T> {
     fn abs(self: T) -> T;
     /// `-1` if `self` is negative, `1` otherwise: `signum(0) = 1`, as for `+0.0` in Rust.
     fn signum(self: T) -> T;
-    /// `self < 0`.
-    fn is_negative(self: T) -> bool;
-    /// `self > 0`.
-    fn is_positive(self: T) -> bool;
+    /// `self < 0`. Upstream: `RealField::is_sign_negative`.
+    fn is_sign_negative(self: T) -> bool;
+    /// `self > 0`. Upstream: `RealField::is_sign_positive`.
+    fn is_sign_positive(self: T) -> bool;
     /// The smaller of two values.
     fn min(self: T, other: T) -> T;
     /// The larger of two values.
@@ -109,7 +118,7 @@ pub trait Real<T> {
     fn clamp(self: T, lo: T, hi: T) -> T;
     /// Largest integer `<= self`.
     fn floor(self: T) -> T;
-    /// `1 / self`, bit-identical to `Real::div(ONE, self)` and cheaper (to nearest, ties to even
+    /// `1 / self`, bit-identical to `Real::div(one(), self)` and cheaper (to nearest, ties to even
     /// for `fixed::Fixed`).
     fn recip(self: T) -> T;
     /// Square root (floor of the exact root for `fixed::Fixed`). Panics on a negative input.
@@ -297,25 +306,70 @@ pub impl FixedTranscendental of Transcendental<Fixed> {
 pub impl FixedReal of Real<Fixed> {
     type Wide = Acc;
 
-    const ZERO: Fixed = consts::ZERO;
-    const ONE: Fixed = consts::ONE;
+    #[inline(always)]
+    fn zero() -> Fixed {
+        consts::ZERO
+    }
+    #[inline(always)]
+    fn one() -> Fixed {
+        consts::ONE
+    }
+    #[inline(always)]
+    fn default_epsilon() -> Fixed {
+        consts::EPSILON
+    }
+    #[inline(always)]
+    fn min_value() -> Option<Fixed> {
+        Some(consts::MIN)
+    }
+    #[inline(always)]
+    fn max_value() -> Option<Fixed> {
+        Some(consts::MAX)
+    }
+    #[inline(always)]
+    fn pi() -> Fixed {
+        consts::PI
+    }
+    #[inline(always)]
+    fn two_pi() -> Fixed {
+        consts::TAU
+    }
+    #[inline(always)]
+    fn frac_pi_2() -> Fixed {
+        consts::FRAC_PI_2
+    }
+    #[inline(always)]
+    fn frac_pi_3() -> Fixed {
+        consts::FRAC_PI_3
+    }
+    #[inline(always)]
+    fn frac_pi_4() -> Fixed {
+        consts::FRAC_PI_4
+    }
+    #[inline(always)]
+    fn frac_pi_6() -> Fixed {
+        consts::FRAC_PI_6
+    }
+    #[inline(always)]
+    fn frac_1_pi() -> Fixed {
+        consts::FRAC_1_PI
+    }
+    #[inline(always)]
+    fn e() -> Fixed {
+        consts::E
+    }
+    #[inline(always)]
+    fn ln_2() -> Fixed {
+        consts::LN_2
+    }
+    #[inline(always)]
+    fn ln_10() -> Fixed {
+        consts::LN_10
+    }
+
     const NEG_ONE: Fixed = consts::NEG_ONE;
     const TWO: Fixed = consts::TWO;
     const HALF: Fixed = consts::HALF;
-    const EPSILON: Fixed = consts::EPSILON;
-    const MIN: Fixed = consts::MIN;
-    const MAX: Fixed = consts::MAX;
-    const PI: Fixed = consts::PI;
-    const TAU: Fixed = consts::TAU;
-    const FRAC_PI_2: Fixed = consts::FRAC_PI_2;
-    const FRAC_PI_3: Fixed = consts::FRAC_PI_3;
-    const FRAC_PI_4: Fixed = consts::FRAC_PI_4;
-    const FRAC_PI_6: Fixed = consts::FRAC_PI_6;
-    const FRAC_1_PI: Fixed = consts::FRAC_1_PI;
-    const E: Fixed = consts::E;
-    const LN_2: Fixed = consts::LN_2;
-    const LN_10: Fixed = consts::LN_10;
-    const SQRT_2: Fixed = consts::SQRT_2;
     const FRAC_1_SQRT_2: Fixed = consts::FRAC_1_SQRT_2;
 
     #[inline(always)]
@@ -336,11 +390,11 @@ pub impl FixedReal of Real<Fixed> {
         FixedTrait::signum(self)
     }
     #[inline(always)]
-    fn is_negative(self: Fixed) -> bool {
+    fn is_sign_negative(self: Fixed) -> bool {
         FixedTrait::is_negative(self)
     }
     #[inline(always)]
-    fn is_positive(self: Fixed) -> bool {
+    fn is_sign_positive(self: Fixed) -> bool {
         FixedTrait::is_positive(self)
     }
     #[inline(always)]

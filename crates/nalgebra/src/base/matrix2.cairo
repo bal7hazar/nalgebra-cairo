@@ -48,25 +48,25 @@ pub impl Matrix2Impl<
     /// The zero matrix. Upstream: `Matrix2::zeros`.
     #[inline(always)]
     fn zeros() -> Matrix2<T> {
-        Matrix2 { m11: R::ZERO, m21: R::ZERO, m12: R::ZERO, m22: R::ZERO }
+        Matrix2 { m11: R::zero(), m21: R::zero(), m12: R::zero(), m22: R::zero() }
     }
 
     /// The identity matrix. Upstream: `Matrix2::identity`.
     #[inline(always)]
     fn identity() -> Matrix2<T> {
-        Matrix2 { m11: R::ONE, m21: R::ZERO, m12: R::ZERO, m22: R::ONE }
+        Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() }
     }
 
     /// The diagonal matrix `diag(d.x, d.y)`. Upstream: `Matrix2::from_diagonal`.
     #[inline(always)]
     fn from_diagonal(d: Vector2<T>) -> Matrix2<T> {
-        Matrix2 { m11: d.x, m21: R::ZERO, m12: R::ZERO, m22: d.y }
+        Matrix2 { m11: d.x, m21: R::zero(), m12: R::zero(), m22: d.y }
     }
 
     /// The matrix `e * I`. Upstream: `Matrix2::from_diagonal_element`.
     #[inline(always)]
     fn from_diagonal_element(e: T) -> Matrix2<T> {
-        Matrix2 { m11: e, m21: R::ZERO, m12: R::ZERO, m22: e }
+        Matrix2 { m11: e, m21: R::zero(), m12: R::zero(), m22: e }
     }
 
     /// The matrix whose columns are `c1`, `c2`. Upstream: `Matrix2::from_columns`.
@@ -217,14 +217,14 @@ pub impl Matrix2Impl<
         let det = R::diff_prod(self.m11, self.m22, self.m12, self.m21);
         if det < R::HALF && det > -R::HALF {
             let f = R::norm4(self.m11, self.m21, self.m12, self.m22);
-            if f == R::ZERO {
+            if f == R::zero() {
                 return None;
             }
             let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let (b11, b21, b12, b22) = (self.m11 * k, self.m21 * k, self.m12 * k, self.m22 * k);
                 let det_b = R::diff_prod(b11, b22, b12, b21);
-                if det_b == R::ZERO {
+                if det_b == R::zero() {
                     return None;
                 }
                 let t = R::div(k, det_b);
@@ -232,7 +232,7 @@ pub impl Matrix2Impl<
                     Matrix2 { m11: b22 * t, m21: (-b21) * t, m12: (-b12) * t, m22: b11 * t },
                 );
             }
-            if det == R::ZERO {
+            if det == R::zero() {
                 return None;
             }
         }
@@ -245,10 +245,10 @@ pub impl Matrix2Impl<
     /// Whether every component is within `ulps` smallest units of the identity's.
     /// Upstream: `is_identity(eps)`, with the tolerance in raw units instead of a float epsilon.
     fn is_identity(self: Matrix2<T>, ulps: u64) -> bool {
-        R::abs_diff_eq(self.m11, R::ONE, ulps)
-            && R::abs_diff_eq(self.m21, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m12, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m22, R::ONE, ulps)
+        R::abs_diff_eq(self.m11, R::one(), ulps)
+            && R::abs_diff_eq(self.m21, R::zero(), ulps)
+            && R::abs_diff_eq(self.m12, R::zero(), ulps)
+            && R::abs_diff_eq(self.m22, R::one(), ulps)
     }
 
     /// Whether every component of `self` is within `ulps` smallest units of `other`'s.
@@ -404,7 +404,7 @@ mod tests {
     fn try_inverse_div(m: Matrix2<Fixed>) -> Option<Matrix2<Fixed>> {
         let adj = m.adjugate();
         let det = m.determinant();
-        if det == Real::ZERO {
+        if det == Real::zero() {
             return None;
         }
         Some(
@@ -420,7 +420,7 @@ mod tests {
     fn try_inverse_div_n(m: Matrix2<Fixed>) -> Option<Matrix2<Fixed>> {
         let adj = m.adjugate();
         let det = m.determinant();
-        if det == Real::ZERO {
+        if det == Real::zero() {
             return None;
         }
         let (m11, m21, m12, m22) = Real::div4(adj.m11, adj.m21, adj.m12, adj.m22, det);
@@ -430,7 +430,7 @@ mod tests {
     /// `adjugate * (1 / determinant)`: one reciprocal, 4 multiplications.
     fn try_inverse_recip(m: Matrix2<Fixed>) -> Option<Matrix2<Fixed>> {
         let det = m.determinant();
-        if det == Real::ZERO {
+        if det == Real::zero() {
             return None;
         }
         Some(m.adjugate().scale(det.recip()))
@@ -542,14 +542,16 @@ mod tests {
     #[test]
     #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
-        let m = black_box(Matrix2Trait::from_diagonal_element(Real::<Fixed>::MAX));
+        let m = black_box(Matrix2Trait::from_diagonal_element(Real::<Fixed>::max_value().unwrap()));
         let _ = m + m;
     }
 
     #[test]
     #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
-        let _ = -black_box(Matrix2Trait::from_diagonal_element(Real::<Fixed>::MIN));
+        let _ = -black_box(
+            Matrix2Trait::from_diagonal_element(Real::<Fixed>::min_value().unwrap()),
+        );
     }
 
     #[test]

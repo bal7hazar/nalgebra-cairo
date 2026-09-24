@@ -322,19 +322,19 @@ pub impl Isometry3Impl<
             m11: m.m11,
             m21: m.m21,
             m31: m.m31,
-            m41: R::ZERO,
+            m41: R::zero(),
             m12: m.m12,
             m22: m.m22,
             m32: m.m32,
-            m42: R::ZERO,
+            m42: R::zero(),
             m13: m.m13,
             m23: m.m23,
             m33: m.m33,
-            m43: R::ZERO,
+            m43: R::zero(),
             m14: self.translation.vector.x,
             m24: self.translation.vector.y,
             m34: self.translation.vector.z,
-            m44: R::ONE,
+            m44: R::one(),
         }
     }
 
@@ -584,7 +584,7 @@ pub impl Isometry3FromTranslation<
     fn into(self: Translation3<T>) -> Isometry3<T> {
         Isometry3 {
             rotation: UnitQuaternion {
-                quaternion: Quaternion { i: R::ZERO, j: R::ZERO, k: R::ZERO, w: R::ONE },
+                quaternion: Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::one() },
             },
             translation: self,
         }

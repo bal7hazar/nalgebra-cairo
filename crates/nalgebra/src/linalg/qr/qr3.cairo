@@ -86,8 +86,8 @@ pub impl Qr3Impl<
     /// it is bounded by 1).
     fn new(matrix: Matrix3<T>) -> Qr3<T> {
         let r11 = R::norm3(matrix.m11, matrix.m21, matrix.m31);
-        let (q11, q21, q31) = if r11 == R::ZERO {
-            (R::ZERO, R::ZERO, R::ZERO)
+        let (q11, q21, q31) = if r11 == R::zero() {
+            (R::zero(), R::zero(), R::zero())
         } else {
             R::div3(matrix.m11, matrix.m21, matrix.m31, r11)
         };
@@ -100,8 +100,8 @@ pub impl Qr3Impl<
         let b32 = R::mul_add(-r13, q21, matrix.m23);
         let b33 = R::mul_add(-r13, q31, matrix.m33);
         let r22 = R::norm3(b21, b22, b23);
-        let (q12, q22, q32) = if r22 == R::ZERO {
-            (R::ZERO, R::ZERO, R::ZERO)
+        let (q12, q22, q32) = if r22 == R::zero() {
+            (R::zero(), R::zero(), R::zero())
         } else {
             R::div3(b21, b22, b23, r22)
         };
@@ -110,8 +110,8 @@ pub impl Qr3Impl<
         let c32 = R::mul_add(-r23, q22, b32);
         let c33 = R::mul_add(-r23, q32, b33);
         let r33 = R::norm3(c31, c32, c33);
-        let (q13, q23, q33) = if r33 == R::ZERO {
-            (R::ZERO, R::ZERO, R::ZERO)
+        let (q13, q23, q33) = if r33 == R::zero() {
+            (R::zero(), R::zero(), R::zero())
         } else {
             R::div3(c31, c32, c33, r33)
         };
@@ -129,11 +129,11 @@ pub impl Qr3Impl<
             },
             r: Matrix3 {
                 m11: r11,
-                m21: R::ZERO,
-                m31: R::ZERO,
+                m21: R::zero(),
+                m31: R::zero(),
                 m12: r12,
                 m22: r22,
-                m32: R::ZERO,
+                m32: R::zero(),
                 m13: r13,
                 m23: r23,
                 m33: r33,
@@ -164,7 +164,7 @@ pub impl Qr3Impl<
     /// (no epsilon), like upstream's `QR::is_invertible`. Equivalently, `Q` is orthonormal.
     #[inline(always)]
     fn is_invertible(self: Qr3<T>) -> bool {
-        self.r.m11 != R::ZERO && self.r.m22 != R::ZERO && self.r.m33 != R::ZERO
+        self.r.m11 != R::zero() && self.r.m22 != R::zero() && self.r.m33 != R::zero()
     }
 
     /// The solution of `A * x = b` for the factored `A`, or `None` when a diagonal entry of `R`
@@ -253,7 +253,7 @@ pub(crate) impl Qr3InternalImpl<
     /// the oracle: the two differ by up to 90 847 ulp on a `medium` matrix, whose determinant is
     /// itself of the order of 10^5, `test_determinant_versus_matrix3_cofactors`).
     fn determinant(self: Qr3<T>) -> T {
-        let d = if self.q.determinant().is_negative() {
+        let d = if self.q.determinant().is_sign_negative() {
             -self.r.m11
         } else {
             self.r.m11
@@ -390,7 +390,9 @@ mod tests {
                 Vector3 { x: q12, y: q22, z: q32 },
                 Vector3 { x: q13, y: q23, z: q33 },
             ),
-            r: Matrix3Trait::new(r11, r12, r13, Real::ZERO, r22, r23, Real::ZERO, Real::ZERO, r33),
+            r: Matrix3Trait::new(
+                r11, r12, r13, Real::zero(), r22, r23, Real::zero(), Real::zero(), r33,
+            ),
         }
     }
 
@@ -399,10 +401,10 @@ mod tests {
     /// upstream's `householder::reflection_axis_mut` with the normalisation written as a `norm3`.
     fn householder_axis(x: Vector3<Fixed>) -> Option<Vector3<Fixed>> {
         let n = Real::norm3(x.x, x.y, x.z);
-        if n == Real::ZERO {
+        if n == Real::zero() {
             return None;
         }
-        let head = if x.x.is_negative() {
+        let head = if x.x.is_sign_negative() {
             x.x - n
         } else {
             x.x + n
@@ -418,16 +420,16 @@ mod tests {
     /// created, which is why the sub-column has its own helper.
     fn householder_axis_sub(y: Fixed, z: Fixed) -> Option<Vector3<Fixed>> {
         let n = Real::norm2(y, z);
-        if n == Real::ZERO {
+        if n == Real::zero() {
             return None;
         }
-        let head = if y.is_negative() {
+        let head = if y.is_sign_negative() {
             y - n
         } else {
             y + n
         };
         let f = Real::norm2(head, z);
-        Some(Vector3 { x: Real::ZERO, y: head / f, z: z / f })
+        Some(Vector3 { x: Real::zero(), y: head / f, z: z / f })
     }
 
     /// `c - 2 <v, c> v`, the reflection of `c` in the hyperplane orthogonal to the unit `v`.
@@ -450,9 +452,9 @@ mod tests {
     fn new_householder(matrix: Matrix3<Fixed>) -> Qr3<Fixed> {
         let (mut a1, mut a2, mut a3) = (matrix.column1(), matrix.column2(), matrix.column3());
         let (mut e1, mut e2, mut e3) = (
-            Vector3 { x: Real::ONE, y: Real::ZERO, z: Real::ZERO },
-            Vector3 { x: Real::ZERO, y: Real::ONE, z: Real::ZERO },
-            Vector3 { x: Real::ZERO, y: Real::ZERO, z: Real::ONE },
+            Vector3 { x: Real::one(), y: Real::zero(), z: Real::zero() },
+            Vector3 { x: Real::zero(), y: Real::one(), z: Real::zero() },
+            Vector3 { x: Real::zero(), y: Real::zero(), z: Real::one() },
         );
         if let Some(v) = householder_axis(a1) {
             a1 = reflect(v, a1);
@@ -475,22 +477,22 @@ mod tests {
         let q = Matrix3Trait::from_columns(e1, e2, e3).transpose();
         let (mut q1, mut q2, mut q3) = (q.column1(), q.column2(), q.column3());
         let (mut rr1, mut rr2, mut rr3) = (
-            Vector3 { x: a1.x, y: Real::ZERO, z: Real::ZERO },
-            Vector3 { x: a2.x, y: a2.y, z: Real::ZERO },
+            Vector3 { x: a1.x, y: Real::zero(), z: Real::zero() },
+            Vector3 { x: a2.x, y: a2.y, z: Real::zero() },
             a3,
         );
-        if rr1.x.is_negative() {
+        if rr1.x.is_sign_negative() {
             rr1 = Vector3 { x: -rr1.x, y: rr1.y, z: rr1.z };
             rr2 = Vector3 { x: -rr2.x, y: rr2.y, z: rr2.z };
             rr3 = Vector3 { x: -rr3.x, y: rr3.y, z: rr3.z };
             q1 = -q1;
         }
-        if rr2.y.is_negative() {
+        if rr2.y.is_sign_negative() {
             rr2 = Vector3 { x: rr2.x, y: -rr2.y, z: rr2.z };
             rr3 = Vector3 { x: rr3.x, y: -rr3.y, z: rr3.z };
             q2 = -q2;
         }
-        if rr3.z.is_negative() {
+        if rr3.z.is_sign_negative() {
             rr3 = Vector3 { x: rr3.x, y: rr3.y, z: -rr3.z };
             q3 = -q3;
         }
@@ -506,14 +508,14 @@ mod tests {
     fn new_completed(matrix: Matrix3<Fixed>) -> Qr3<Fixed> {
         let f = Qr3Trait::new(matrix);
         let (mut c1, mut c2, mut c3) = (f.q.column1(), f.q.column2(), f.q.column3());
-        if f.r.m11 == Real::ZERO {
-            c1 = Vector3 { x: Real::ONE, y: Real::ZERO, z: Real::ZERO };
+        if f.r.m11 == Real::zero() {
+            c1 = Vector3 { x: Real::one(), y: Real::zero(), z: Real::zero() };
         }
-        if f.r.m22 == Real::ZERO {
+        if f.r.m22 == Real::zero() {
             let (u, _) = c1.orthonormal_basis();
             c2 = u;
         }
-        if f.r.m33 == Real::ZERO {
+        if f.r.m33 == Real::zero() {
             c3 = c1.cross(c2);
         }
         Qr3 { q: Matrix3Trait::from_columns(c1, c2, c3), r: f.r }
@@ -558,7 +560,7 @@ mod tests {
     #[test]
     fn test_new_rank_deficient_leaves_a_zero_column() {
         let f = Qr3Trait::new(a_rank2());
-        assert!(f.r().m33 == Real::ZERO);
+        assert!(f.r().m33 == Real::zero());
         assert!(f.q().column3() == Vector3Trait::zeros());
         // `Q R = A` still holds exactly: row 3 of R is zero.
         assert!(f.q() * f.r() == a_rank2());
@@ -727,7 +729,7 @@ mod tests {
         let a = black_box(a_bench());
         let e = black_box(true);
         let f = Qr3Trait::new(a);
-        assert!((f.r.m11 > Real::ZERO && f.r.m33 > Real::ZERO) == e);
+        assert!((f.r.m11 > Real::zero() && f.r.m33 > Real::zero()) == e);
     }
 
     #[test]
@@ -736,7 +738,7 @@ mod tests {
         let a = black_box(a_bench());
         let e = black_box(true);
         let f = new_classical(a);
-        assert!((f.r.m11 > Real::ZERO && f.r.m33 > Real::ZERO) == e);
+        assert!((f.r.m11 > Real::zero() && f.r.m33 > Real::zero()) == e);
     }
 
     #[test]
@@ -745,7 +747,7 @@ mod tests {
         let a = black_box(a_bench());
         let e = black_box(true);
         let f = new_householder(a);
-        assert!((f.r.m11 > Real::ZERO && f.r.m33 > Real::ZERO) == e);
+        assert!((f.r.m11 > Real::zero() && f.r.m33 > Real::zero()) == e);
     }
 
     #[test]
@@ -754,7 +756,7 @@ mod tests {
         let a = black_box(a_bench());
         let e = black_box(true);
         let f = new_completed(a);
-        assert!((f.r.m11 > Real::ZERO && f.r.m33 > Real::ZERO) == e);
+        assert!((f.r.m11 > Real::zero() && f.r.m33 > Real::zero()) == e);
     }
 
     #[test]
@@ -771,7 +773,7 @@ mod tests {
         let f = black_box(f_bench());
         let e = black_box(true);
         let (q, r) = f.unpack();
-        assert!((q.m11 != Real::ZERO && r.m11 != Real::ZERO) == e);
+        assert!((q.m11 != Real::zero() && r.m11 != Real::zero()) == e);
     }
 
     #[test]
@@ -855,7 +857,7 @@ mod tests {
     fn bench_qr3_determinant__diagonal_product() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        assert!((f.determinant() != Real::ZERO) == e);
+        assert!((f.determinant() != Real::zero()) == e);
     }
 
     #[test]
@@ -874,6 +876,6 @@ mod tests {
     fn bench_qr3_determinant_closed_form__matrix3_cofactors() {
         let a = black_box(a_bench());
         let e = black_box(true);
-        assert!((a.determinant() != Real::ZERO) == e);
+        assert!((a.determinant() != Real::zero()) == e);
     }
 }

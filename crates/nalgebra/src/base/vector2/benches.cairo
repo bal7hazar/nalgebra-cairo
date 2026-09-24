@@ -859,8 +859,8 @@ fn bench_vector2_lerp__lerp() {
 #[inline(always)]
 fn alt_angle_acos(a: Vector2<Fixed>, b: Vector2<Fixed>) -> Fixed {
     let n = a.norm() * b.norm();
-    if n == Real::ZERO {
-        return Real::ZERO;
+    if n == Real::zero() {
+        return Real::zero();
     }
     Transcendental::acos(a.dot(b) / n)
 }
@@ -871,7 +871,7 @@ fn test_angle_alt_acos_loses_precision_on_close_directions() {
     // zero, because its cosine `1 - 2^-41` floors to 1.
     let (a, b) = (v2(0x100000000, 0), v2(0x100000000, 0x1000));
     assert!(Real::abs_diff_eq(a.angle(b), fx(4096), 4));
-    assert!(alt_angle_acos(a, b) == Real::ZERO);
+    assert!(alt_angle_acos(a, b) == Real::zero());
 }
 
 #[test]
@@ -880,7 +880,7 @@ fn test_angle_alt_acos_overflows_on_long_vectors() {
     // Norms of 1e6: their product does not fit Q32.32, while the half-angle form normalizes
     // first and answers pi/2.
     let (a, b) = (v2(0xf424000000000, 0), v2(0, 0xf424000000000));
-    assert!(Real::abs_diff_eq(a.angle(b), Real::FRAC_PI_2, 4));
+    assert!(Real::abs_diff_eq(a.angle(b), Real::frac_pi_2(), 4));
     let _ = alt_angle_acos(black_box(a), black_box(b));
 }
 

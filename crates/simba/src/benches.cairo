@@ -640,7 +640,7 @@ fn bench_real_shared_div4__prepared() {
 }
 
 /// `1 / sqrt(x^2 + y^2)` through `fixed`'s normalisation path: `wide::norm2_wide(x, y)` (floor
-/// of the exact norm), then `recip().mul(ONE)`, one rounding to nearest. The measured loser for
+/// of the exact norm), then `recip().mul(one())`, one rounding to nearest. The measured loser for
 /// the Jacobi `c` of nalgebra's `SymmetricEigen3` / `Svd3` (cheaper, worse SVD records), kept as
 /// evidence (AGENTS.md rule 8); formerly `Real::inv_norm2`, not part of upstream `RealField`.
 #[inline(always)]
@@ -653,14 +653,14 @@ fn test_inv_norm2_rounds_to_nearest() {
     // 1/5 = 858993459.2 raw.
     assert!(inv_norm2(Real::from_int(3), Real::from_int(-4)) == fx(858993459));
     // 1 / floor(sqrt(2)) = 3037000500.45 raw (the exact 1/sqrt(2) is 3037000499.98 raw).
-    assert!(inv_norm2(Real::ONE, Real::ONE) == fx(3037000500));
-    assert!(inv_norm2(Real::ONE, Real::ZERO) == Real::ONE);
+    assert!(inv_norm2(Real::one(), Real::one()) == fx(3037000500));
+    assert!(inv_norm2(Real::one(), Real::zero()) == Real::one());
 }
 
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_inv_norm2_of_zero_panics() {
-    let _ = inv_norm2(black_box(Real::ZERO), Real::ZERO);
+    let _ = inv_norm2(black_box(Real::zero()), Real::zero());
 }
 
 // --- Jacobi rotation `c = 1 / sqrt(1 + t^2)`: `recip(sqrt(mul_add))` (shipped in nalgebra's
@@ -679,7 +679,7 @@ fn bench_real_jacobi_c__baseline() {
 fn bench_real_jacobi_c__recip_sqrt() {
     let t = black_box(fx(-Q));
     let e = black_box(fx(0));
-    assert!(Real::recip(Real::sqrt(Real::mul_add(t, t, Real::ONE))) != e);
+    assert!(Real::recip(Real::sqrt(Real::mul_add(t, t, Real::one()))) != e);
 }
 
 #[test]
@@ -687,5 +687,5 @@ fn bench_real_jacobi_c__recip_sqrt() {
 fn bench_real_jacobi_c__alt_inv_norm2() {
     let t = black_box(fx(-Q));
     let e = black_box(fx(0));
-    assert!(inv_norm2(Real::ONE, t) != e);
+    assert!(inv_norm2(Real::one(), t) != e);
 }

@@ -151,7 +151,7 @@ pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
     let mut a64 = matrix.m22.m31;
     let mut a65 = matrix.m22.m32;
     let mut a66 = matrix.m22.m33;
-    if a11 != Real::ZERO {
+    if a11 != Real::zero() {
         let l = a21 / a11;
         let nl = -l;
         a22 = Real::mul_add(nl, a12, a22);
@@ -193,7 +193,7 @@ pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
         a66 = Real::mul_add(nl, a16, a66);
         a61 = l;
     }
-    if a22 != Real::ZERO {
+    if a22 != Real::zero() {
         let l = a32 / a22;
         let nl = -l;
         a33 = Real::mul_add(nl, a23, a33);
@@ -223,7 +223,7 @@ pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
         a66 = Real::mul_add(nl, a26, a66);
         a62 = l;
     }
-    if a33 != Real::ZERO {
+    if a33 != Real::zero() {
         let l = a43 / a33;
         let nl = -l;
         a44 = Real::mul_add(nl, a34, a44);
@@ -243,7 +243,7 @@ pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
         a66 = Real::mul_add(nl, a36, a66);
         a63 = l;
     }
-    if a44 != Real::ZERO {
+    if a44 != Real::zero() {
         let l = a54 / a44;
         let nl = -l;
         a55 = Real::mul_add(nl, a45, a55);
@@ -255,7 +255,7 @@ pub fn new_no_pivot(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
         a66 = Real::mul_add(nl, a46, a66);
         a64 = l;
     }
-    if a55 != Real::ZERO {
+    if a55 != Real::zero() {
         let l = a65 / a55;
         let nl = -l;
         a66 = Real::mul_add(nl, a56, a66);

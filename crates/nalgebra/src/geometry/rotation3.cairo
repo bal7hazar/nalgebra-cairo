@@ -102,19 +102,19 @@ pub impl Rotation3Impl<
             m11: m.m11,
             m21: m.m21,
             m31: m.m31,
-            m41: R::ZERO,
+            m41: R::zero(),
             m12: m.m12,
             m22: m.m22,
             m32: m.m32,
-            m42: R::ZERO,
+            m42: R::zero(),
             m13: m.m13,
             m23: m.m23,
             m33: m.m33,
-            m43: R::ZERO,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
-            m44: R::ONE,
+            m43: R::zero(),
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: R::one(),
         }
     }
 
@@ -166,7 +166,7 @@ pub impl Rotation3Impl<
     fn axis(self: Rotation3<T>) -> Option<Unit<Vector3<T>>> {
         let m = self.matrix;
         let v = Vector3 { x: m.m32 - m.m23, y: m.m13 - m.m31, z: m.m21 - m.m12 };
-        UnitTrait::try_new(v, R::ZERO)
+        UnitTrait::try_new(v, R::zero())
     }
 
     /// The shortest rotation taking the direction of `a` to the direction of `b`, or `None` when
@@ -292,12 +292,12 @@ pub impl Rotation3AngleImpl<
     /// (`bench_rotation3_from_axis_angle__alt_quaternion`). Upstream:
     /// `Rotation3::from_axis_angle`.
     fn from_axis_angle(axis: Unit<Vector3<T>>, angle: T) -> Rotation3<T> {
-        if angle == R::ZERO {
+        if angle == R::zero() {
             return Rotation3Trait::identity();
         }
         let u = axis.value;
         let (s, c) = Tr::sin_cos(angle);
-        let omc = R::ONE - c;
+        let omc = R::one() - c;
         // Shared products of the symmetric part (each rounded once, as upstream).
         let (uxy, uxz, uyz) = (u.x * u.y, u.x * u.z, u.y * u.z);
         Rotation3 {
@@ -321,7 +321,7 @@ pub impl Rotation3AngleImpl<
     /// Upstream: `Rotation3::from_scaled_axis` (`Rotation3::new`).
     fn from_scaled_axis(axisangle: Vector3<T>) -> Rotation3<T> {
         let n = Vector3Trait::norm(axisangle);
-        if n == R::ZERO {
+        if n == R::zero() {
             return Rotation3Trait::identity();
         }
         Self::from_axis_angle(UnitTrait::new_unchecked(Vector3Trait::unscale(axisangle, n)), n)
@@ -362,8 +362,8 @@ pub impl Rotation3AngleImpl<
     /// `test_angle_alt_quaternion_is_more_accurate_near_zero`). Upstream: `Rotation3::angle`.
     fn angle(self: Rotation3<T>) -> T {
         let m = self.matrix;
-        let half = (m.m11 + m.m22 + m.m33 - R::ONE) * R::HALF;
-        Tr::acos(R::clamp(half, R::NEG_ONE, R::ONE))
+        let half = (m.m11 + m.m22 + m.m33 - R::one()) * R::HALF;
+        Tr::acos(R::clamp(half, R::NEG_ONE, R::one()))
     }
 
     /// The rotation vector `axis · angle` (the logarithmic map), or the zero vector when the axis
@@ -371,7 +371,7 @@ pub impl Rotation3AngleImpl<
     fn scaled_axis(self: Rotation3<T>) -> Vector3<T> {
         match Rotation3Trait::axis(self) {
             Some(axis) => axis.value.scale(Self::angle(self)),
-            None => Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO },
+            None => Vector3 { x: R::zero(), y: R::zero(), z: R::zero() },
         }
     }
 
@@ -386,12 +386,12 @@ pub impl Rotation3AngleImpl<
     /// `Rotation3::euler_angles`.
     fn euler_angles(self: Rotation3<T>) -> (T, T, T) {
         let m = self.matrix;
-        if R::abs(m.m31) < R::ONE {
+        if R::abs(m.m31) < R::one() {
             (Tr::atan2(m.m32, m.m33), -Tr::asin(m.m31), Tr::atan2(m.m21, m.m11))
-        } else if R::is_negative(m.m31) {
-            (Tr::atan2(m.m23, m.m22), R::FRAC_PI_2, R::ZERO)
+        } else if R::is_sign_negative(m.m31) {
+            (Tr::atan2(m.m23, m.m22), R::frac_pi_2(), R::zero())
         } else {
-            (-Tr::atan2(m.m23, m.m22), -R::FRAC_PI_2, R::ZERO)
+            (-Tr::atan2(m.m23, m.m22), -R::frac_pi_2(), R::zero())
         }
     }
 
@@ -399,17 +399,17 @@ pub impl Rotation3AngleImpl<
     /// `from_axis_angle`), which is the only way to scale an angle. `None` in the antiparallel
     /// case. Upstream: `Rotation3::scaled_rotation_between`.
     fn scaled_rotation_between(a: Vector3<T>, b: Vector3<T>, s: T) -> Option<Rotation3<T>> {
-        let na = a.try_normalize(R::ZERO);
-        let nb = b.try_normalize(R::ZERO);
+        let na = a.try_normalize(R::zero());
+        let nb = b.try_normalize(R::zero());
         match (na, nb) {
             (
                 Some(u), Some(v),
             ) => {
                 let c = u.cross(v);
-                let d = R::clamp(u.dot(v), R::NEG_ONE, R::ONE);
-                match UnitTrait::try_new(c, R::ZERO) {
+                let d = R::clamp(u.dot(v), R::NEG_ONE, R::one());
+                match UnitTrait::try_new(c, R::zero()) {
                     Some(axis) => Some(Self::from_axis_angle(axis, Tr::acos(d) * s)),
-                    None => if R::is_negative(d) {
+                    None => if R::is_sign_negative(d) {
                         None
                     } else {
                         Some(Rotation3Trait::identity())

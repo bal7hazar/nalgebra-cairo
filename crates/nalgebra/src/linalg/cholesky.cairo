@@ -292,7 +292,7 @@ pub impl Cholesky2Impl<
     /// `Cholesky::l`. Exact: the stored components are copied, nothing is recomputed.
     #[inline(always)]
     fn l(self: Cholesky2<T>) -> Matrix2<T> {
-        Matrix2 { m11: self.l11, m21: self.l21, m12: R::ZERO, m22: self.l22 }
+        Matrix2 { m11: self.l11, m21: self.l21, m12: R::zero(), m22: self.l22 }
     }
 
     /// The solution `x` of `a * x = b`, by forward substitution on `l` then back substitution on
@@ -384,7 +384,7 @@ pub(crate) impl Cholesky2InternalImpl<
     /// The factorisation of the symmetric matrix of upper triangle `a`; see `Cholesky2Trait::new`.
     fn new_sym(a: SymMatrix2<T>) -> Option<Cholesky2<T>> {
         let p1 = a.m11;
-        if p1 <= R::ZERO {
+        if p1 <= R::zero() {
             return None;
         }
         let l11 = R::sqrt(p1);
@@ -392,7 +392,7 @@ pub(crate) impl Cholesky2InternalImpl<
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
+        if p2 <= R::zero() {
             return None;
         }
         let l22 = R::sqrt(p2);
@@ -452,11 +452,11 @@ pub impl Cholesky3Impl<
             m11: self.l11,
             m21: self.l21,
             m31: self.l31,
-            m12: R::ZERO,
+            m12: R::zero(),
             m22: self.l22,
             m32: self.l32,
-            m13: R::ZERO,
-            m23: R::ZERO,
+            m13: R::zero(),
+            m23: R::zero(),
             m33: self.l33,
         }
     }
@@ -590,7 +590,7 @@ pub(crate) impl Cholesky3InternalImpl<
     /// The factorisation of the symmetric matrix of upper triangle `a`; see `Cholesky3Trait::new`.
     fn new_sym(a: SymMatrix3<T>) -> Option<Cholesky3<T>> {
         let p1 = a.m11;
-        if p1 <= R::ZERO {
+        if p1 <= R::zero() {
             return None;
         }
         let l11 = R::sqrt(p1);
@@ -599,7 +599,7 @@ pub(crate) impl Cholesky3InternalImpl<
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
+        if p2 <= R::zero() {
             return None;
         }
         let l22 = R::sqrt(p2);
@@ -611,7 +611,7 @@ pub(crate) impl Cholesky3InternalImpl<
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
         let p3 = R::wide_rescale(w);
-        if p3 <= R::ZERO {
+        if p3 <= R::zero() {
             return None;
         }
         let l33 = R::sqrt(p3);
@@ -658,7 +658,7 @@ pub impl Cholesky4Impl<
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: Matrix4<T>) -> Option<Cholesky4<T>> {
         let p1 = a.m11;
-        if p1 <= R::ZERO {
+        if p1 <= R::zero() {
             return None;
         }
         let l11 = R::sqrt(p1);
@@ -666,7 +666,7 @@ pub impl Cholesky4Impl<
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
+        if p2 <= R::zero() {
             return None;
         }
         let l22 = R::sqrt(p2);
@@ -682,7 +682,7 @@ pub impl Cholesky4Impl<
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
         let p3 = R::wide_rescale(w);
-        if p3 <= R::ZERO {
+        if p3 <= R::zero() {
             return None;
         }
         let l33 = R::sqrt(p3);
@@ -696,7 +696,7 @@ pub impl Cholesky4Impl<
         let w = R::wide_sub_prod(w, l42, l42);
         let w = R::wide_sub_prod(w, l43, l43);
         let p4 = R::wide_rescale(w);
-        if p4 <= R::ZERO {
+        if p4 <= R::zero() {
             return None;
         }
         let l44 = R::sqrt(p4);
@@ -712,17 +712,17 @@ pub impl Cholesky4Impl<
             m21: self.l21,
             m31: self.l31,
             m41: self.l41,
-            m12: R::ZERO,
+            m12: R::zero(),
             m22: self.l22,
             m32: self.l32,
             m42: self.l42,
-            m13: R::ZERO,
-            m23: R::ZERO,
+            m13: R::zero(),
+            m23: R::zero(),
             m33: self.l33,
             m43: self.l43,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
             m44: self.l44,
         }
     }
@@ -923,7 +923,7 @@ pub impl Cholesky6Impl<
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: Matrix6<T>) -> Option<Cholesky6<T>> {
         let p1 = a.m11.m11;
-        if p1 <= R::ZERO {
+        if p1 <= R::zero() {
             return None;
         }
         let l11 = R::sqrt(p1);
@@ -933,7 +933,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_add(R::wide_zero(), a.m11.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
+        if p2 <= R::zero() {
             return None;
         }
         let l22 = R::sqrt(p2);
@@ -957,7 +957,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
         let p3 = R::wide_rescale(w);
-        if p3 <= R::ZERO {
+        if p3 <= R::zero() {
             return None;
         }
         let l33 = R::sqrt(p3);
@@ -981,7 +981,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l42, l42);
         let w = R::wide_sub_prod(w, l43, l43);
         let p4 = R::wide_rescale(w);
-        if p4 <= R::ZERO {
+        if p4 <= R::zero() {
             return None;
         }
         let l44 = R::sqrt(p4);
@@ -1003,7 +1003,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l53, l53);
         let w = R::wide_sub_prod(w, l54, l54);
         let p5 = R::wide_rescale(w);
-        if p5 <= R::ZERO {
+        if p5 <= R::zero() {
             return None;
         }
         let l55 = R::sqrt(p5);
@@ -1021,7 +1021,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l64, l64);
         let w = R::wide_sub_prod(w, l65, l65);
         let p6 = R::wide_rescale(w);
-        if p6 <= R::ZERO {
+        if p6 <= R::zero() {
             return None;
         }
         let l66 = R::sqrt(p6);
@@ -1061,11 +1061,11 @@ pub impl Cholesky6Impl<
                 m11: self.l11,
                 m21: self.l21,
                 m31: self.l31,
-                m12: R::ZERO,
+                m12: R::zero(),
                 m22: self.l22,
                 m32: self.l32,
-                m13: R::ZERO,
-                m23: R::ZERO,
+                m13: R::zero(),
+                m23: R::zero(),
                 m33: self.l33,
             },
             m21: Matrix3 {
@@ -1080,25 +1080,25 @@ pub impl Cholesky6Impl<
                 m33: self.l63,
             },
             m12: Matrix3 {
-                m11: R::ZERO,
-                m21: R::ZERO,
-                m31: R::ZERO,
-                m12: R::ZERO,
-                m22: R::ZERO,
-                m32: R::ZERO,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ZERO,
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
             },
             m22: Matrix3 {
                 m11: self.l44,
                 m21: self.l54,
                 m31: self.l64,
-                m12: R::ZERO,
+                m12: R::zero(),
                 m22: self.l55,
                 m32: self.l65,
-                m13: R::ZERO,
-                m23: R::ZERO,
+                m13: R::zero(),
+                m23: R::zero(),
                 m33: self.l66,
             },
         }

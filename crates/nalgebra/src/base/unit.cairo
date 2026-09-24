@@ -294,7 +294,7 @@ pub impl UnitImpl<
     fn renormalize_fast(ref self: Unit<V>) {
         // (3 - |v|²) / 2 = floor(-|v|² * 1/2 + 3/2): one fused kernel, bit-identical to
         // `HALF * (THREE - s)`.
-        let f = R::mul_add(N::norm_squared(self.value), -R::HALF, R::HALF + R::ONE);
+        let f = R::mul_add(N::norm_squared(self.value), -R::HALF, R::HALF + R::one());
         self = Unit { value: N::scale(self.value, f) };
     }
 
@@ -367,12 +367,12 @@ pub trait Unit2Trait<T> {
 pub impl Unit2Impl<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Unit2Trait<T> {
     #[inline(always)]
     fn x_axis() -> Unit<Vector2<T>> {
-        Unit { value: Vector2 { x: R::ONE, y: R::ZERO } }
+        Unit { value: Vector2 { x: R::one(), y: R::zero() } }
     }
 
     #[inline(always)]
     fn y_axis() -> Unit<Vector2<T>> {
-        Unit { value: Vector2 { x: R::ZERO, y: R::ONE } }
+        Unit { value: Vector2 { x: R::zero(), y: R::one() } }
     }
 }
 
@@ -400,17 +400,17 @@ pub impl Unit3Impl<
 > of Unit3Trait<T> {
     #[inline(always)]
     fn x_axis() -> Unit<Vector3<T>> {
-        Unit { value: Vector3 { x: R::ONE, y: R::ZERO, z: R::ZERO } }
+        Unit { value: Vector3 { x: R::one(), y: R::zero(), z: R::zero() } }
     }
 
     #[inline(always)]
     fn y_axis() -> Unit<Vector3<T>> {
-        Unit { value: Vector3 { x: R::ZERO, y: R::ONE, z: R::ZERO } }
+        Unit { value: Vector3 { x: R::zero(), y: R::one(), z: R::zero() } }
     }
 
     #[inline(always)]
     fn z_axis() -> Unit<Vector3<T>> {
-        Unit { value: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ONE } }
+        Unit { value: Vector3 { x: R::zero(), y: R::zero(), z: R::one() } }
     }
 }
 
@@ -429,21 +429,21 @@ pub trait Unit4Trait<T> {
 pub impl Unit4Impl<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Unit4Trait<T> {
     #[inline(always)]
     fn x_axis() -> Unit<Vector4<T>> {
-        Unit { value: Vector4 { x: R::ONE, y: R::ZERO, z: R::ZERO, w: R::ZERO } }
+        Unit { value: Vector4 { x: R::one(), y: R::zero(), z: R::zero(), w: R::zero() } }
     }
 
     #[inline(always)]
     fn y_axis() -> Unit<Vector4<T>> {
-        Unit { value: Vector4 { x: R::ZERO, y: R::ONE, z: R::ZERO, w: R::ZERO } }
+        Unit { value: Vector4 { x: R::zero(), y: R::one(), z: R::zero(), w: R::zero() } }
     }
 
     #[inline(always)]
     fn z_axis() -> Unit<Vector4<T>> {
-        Unit { value: Vector4 { x: R::ZERO, y: R::ZERO, z: R::ONE, w: R::ZERO } }
+        Unit { value: Vector4 { x: R::zero(), y: R::zero(), z: R::one(), w: R::zero() } }
     }
 
     #[inline(always)]
     fn w_axis() -> Unit<Vector4<T>> {
-        Unit { value: Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ONE } }
+        Unit { value: Vector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::one() } }
     }
 }

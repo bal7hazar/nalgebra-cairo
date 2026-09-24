@@ -31,7 +31,7 @@ fn id() -> Translation2<Fixed> {
 #[test]
 fn test_identity_is_exact() {
     assert!(id() == t2t((0, 0)));
-    assert!(id().vector == Vector2 { x: Real::ZERO, y: Real::ZERO });
+    assert!(id().vector == Vector2 { x: Real::zero(), y: Real::zero() });
 }
 
 #[test]
@@ -62,7 +62,10 @@ fn test_mul_inverse_is_the_identity_exactly() {
 #[test]
 #[should_panic(expected: 'i64_neg Underflow')]
 fn test_inverse_of_min_component_panics() {
-    let _ = Translation2 { vector: Vector2 { x: Real::<Fixed>::MIN, y: Real::ZERO } }.inverse();
+    let _ = Translation2 {
+        vector: Vector2 { x: Real::<Fixed>::min_value().unwrap(), y: Real::zero() },
+    }
+        .inverse();
 }
 
 // --- composition
@@ -78,8 +81,10 @@ fn test_mul_is_the_sum_and_commutes_bit_for_bit() {
 #[test]
 #[should_panic(expected: 'i64_add Overflow')]
 fn test_mul_overflow_panics() {
-    let big = Translation2 { vector: Vector2 { x: Real::<Fixed>::MAX, y: Real::ZERO } };
-    let _ = big * Translation2 { vector: Vector2 { x: Real::<Fixed>::ONE, y: Real::ZERO } };
+    let big = Translation2 {
+        vector: Vector2 { x: Real::<Fixed>::max_value().unwrap(), y: Real::zero() },
+    };
+    let _ = big * Translation2 { vector: Vector2 { x: Real::<Fixed>::one(), y: Real::zero() } };
 }
 
 // --- transforms
@@ -106,9 +111,9 @@ fn test_inverse_transform_point_undoes_transform_point() {
 fn test_to_homogeneous_is_the_identity_plus_the_last_column() {
     let t = t2t((0x140000000, -0x60000000));
     let m = t.to_homogeneous();
-    assert!(m.m11 == Real::ONE && m.m22 == Real::ONE && m.m33 == Real::ONE);
-    assert!(m.m12 == Real::ZERO && m.m21 == Real::ZERO);
-    assert!(m.m31 == Real::ZERO && m.m32 == Real::ZERO);
+    assert!(m.m11 == Real::one() && m.m22 == Real::one() && m.m33 == Real::one());
+    assert!(m.m12 == Real::zero() && m.m21 == Real::zero());
+    assert!(m.m31 == Real::zero() && m.m32 == Real::zero());
     assert!(m.m13 == fx(0x140000000) && m.m23 == fx(-0x60000000));
     assert!(id().to_homogeneous() == Matrix3Trait::<Fixed>::identity());
 }
@@ -119,7 +124,7 @@ fn test_to_homogeneous_acts_like_transform_point() {
     let p = p2t((-0x280000000, 0x3c0000000));
     let h = t.to_homogeneous().mul_vec(p.to_homogeneous());
     let got = t.transform_point(p);
-    assert!(h.x == got.x && h.y == got.y && h.z == Real::ONE);
+    assert!(h.x == got.x && h.y == got.y && h.z == Real::one());
 }
 
 // --- comparison and conversions
@@ -194,6 +199,6 @@ fn test_to_homogeneous_oracle_consistency() {
         let (t, p, expected, _) = *case;
         let (ex, ey) = expected;
         let h = t2t(t).to_homogeneous().mul_vec(p2t(p).to_homogeneous());
-        assert!(h.x == fx(ex) && h.y == fx(ey) && h.z == Real::ONE);
+        assert!(h.x == fx(ex) && h.y == fx(ey) && h.z == Real::one());
     }
 }

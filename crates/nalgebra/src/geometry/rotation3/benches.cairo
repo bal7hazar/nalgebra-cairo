@@ -90,7 +90,7 @@ fn alt_renormalize_quaternion(r: Rotation3<Fixed>) -> Rotation3<Fixed> {
 fn alt_renormalize_newton(r: Rotation3<Fixed>) -> Rotation3<Fixed> {
     let m = r.matrix;
     let s = m.tr_mul(m);
-    let three = Real::<Fixed>::TWO + Real::ONE;
+    let three = Real::<Fixed>::TWO + Real::one();
     let c = Matrix3 {
         m11: Real::mul_add(-s.m11, Real::HALF, three * Real::HALF),
         m21: -s.m21 * Real::HALF,
@@ -109,15 +109,15 @@ fn alt_renormalize_newton(r: Rotation3<Fixed>) -> Rotation3<Fixed> {
 fn alt_rotation_between_axis_angle(
     x: Vector3<Fixed>, y: Vector3<Fixed>,
 ) -> Option<Rotation3<Fixed>> {
-    let nx = x.try_normalize(Real::ZERO);
-    let ny = y.try_normalize(Real::ZERO);
+    let nx = x.try_normalize(Real::zero());
+    let ny = y.try_normalize(Real::zero());
     match (nx, ny) {
         (
             Some(ux), Some(uy),
         ) => {
             let c = ux.cross(uy);
-            let d = Real::clamp(Vector3Trait::dot(ux, uy), Real::NEG_ONE, Real::ONE);
-            match UnitTrait::try_new(c, Real::ZERO) {
+            let d = Real::clamp(Vector3Trait::dot(ux, uy), Real::NEG_ONE, Real::one());
+            match UnitTrait::try_new(c, Real::zero()) {
                 Some(u) => Some(Rotation3AngleTrait::from_axis_angle(u, Transcendental::acos(d))),
                 None => Option::None,
             }
@@ -148,7 +148,7 @@ fn test_from_axis_angle_alt_quaternion_agrees() {
 fn test_angle_alt_quaternion_is_more_accurate_near_zero() {
     // θ = 2^-17: `acos` collapses to zero, the quaternion path is within 2 ulp.
     let tiny = Rotation3AngleTrait::from_axis_angle(axis(), fx(0x8000));
-    assert!(tiny.angle() == Real::ZERO);
+    assert!(tiny.angle() == Real::zero());
     assert!(alt_angle_quaternion(tiny).abs_diff_eq(fx(0x8000), 4));
     // θ = 2^-10: 1 024 ulp against 2.
     let small = Rotation3AngleTrait::from_axis_angle(axis(), fx(0x400000));
@@ -182,7 +182,7 @@ fn test_renormalize_alts_restore_orthonormality() {
 /// scaled by 1 + 1e-3, where Gram-Schmidt does in one pass.
 #[test]
 fn test_renormalize_alt_newton_only_converges() {
-    let scaled = Rotation3 { matrix: a().matrix.scale(Real::ONE + fx(4294967)) };
+    let scaled = Rotation3 { matrix: a().matrix.scale(Real::one() + fx(4294967)) };
     assert!(
         (scaled.renormalized().matrix * scaled.renormalized().matrix.transpose()).is_identity(4),
     );
@@ -275,7 +275,7 @@ fn bench_rotation3_to_homogeneous__matrix4() {
     let e = black_box(fx(-173945351));
     let h = r.to_homogeneous();
     assert!(h.m11 == e);
-    assert!(h.m44 == Real::ONE);
+    assert!(h.m44 == Real::one());
 }
 
 // --- composition and transforms

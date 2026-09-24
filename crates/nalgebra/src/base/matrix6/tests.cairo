@@ -136,7 +136,7 @@ fn test_from_diagonal_and_diagonal() {
     assert!(m.diagonal() == d);
     assert!(a6().diagonal() == v6i(1, 8, 15, 22, 29, 36));
     assert!(Matrix6Trait::from_diagonal_element(int(7)).diagonal() == v6i(7, 7, 7, 7, 7, 7));
-    assert!(Matrix6Trait::<Fixed>::from_diagonal_element(Real::ONE) == Matrix6Trait::identity());
+    assert!(Matrix6Trait::<Fixed>::from_diagonal_element(Real::one()) == Matrix6Trait::identity());
 }
 
 // --- exact operations
@@ -168,13 +168,15 @@ fn test_trace_and_abs() {
 #[test]
 #[should_panic(expected: 'i64_add Overflow')]
 fn test_trace_overflow_panics() {
-    let _ = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MAX)).trace();
+    let _ = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::max_value().unwrap()))
+        .trace();
 }
 
 #[test]
 #[should_panic(expected: 'Fixed: overflow')]
 fn test_abs_of_min_panics() {
-    let _ = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MIN)).abs();
+    let _ = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::min_value().unwrap()))
+        .abs();
 }
 
 // --- additive operators
@@ -190,14 +192,14 @@ fn test_add_sub_neg_exact() {
 #[test]
 #[should_panic(expected: 'i64_add Overflow')]
 fn test_add_overflow_panics() {
-    let m = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MAX));
+    let m = black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::max_value().unwrap()));
     let _ = m + m;
 }
 
 #[test]
 #[should_panic(expected: 'i64_neg Underflow')]
 fn test_neg_min_panics() {
-    let _ = -black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::MIN));
+    let _ = -black_box(Matrix6Trait::from_diagonal_element(Real::<Fixed>::min_value().unwrap()));
 }
 
 // --- products
