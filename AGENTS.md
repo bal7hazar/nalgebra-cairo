@@ -62,7 +62,11 @@ proven, so gas is a first-class requirement, on par with correctness.
 
 - Upstream names and semantics wherever the operation exists upstream (`try_inverse`,
   `transform_point`, `Matrix3::new` row-major). Deviations are documented in the doc comment.
-- One type per file, tests in an inline `#[cfg(test)] mod tests` at the bottom of the file.
+- One type per file. Tests of the PUBLIC API live in the test-only package of the module
+  (`crates/tests_base`, `crates/tests_geometry`, `crates/tests_linalg`, generated shape tests in
+  `crates/shapes_tests_*`; helpers in `crates/tests_utils`), mirroring the module tree; only tests
+  of crate-internal items stay in-crate (`#[cfg(test)] mod tests;`). Keep each test package's
+  `scarb build --test` peak under ~7 GB (split it and add a CI shard when it grows).
 - Errors are `felt252` constants in an `errors` module; panic messages are stable API.
 - Pure library: no `starknet` dependency, no storage, no proc macros; the only dependency is
   glam.cairo's `fixed` (registry, pinned version).

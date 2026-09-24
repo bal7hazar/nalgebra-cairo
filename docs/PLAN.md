@@ -105,8 +105,9 @@ conformable product, `M * v` included; `mul_vec` / `tr_mul_vec` removed; `*` sta
 shapes); `Vector6` / `Matrix6` flat like upstream (the 3D-block layout goes). 8.1b sequence:
 8.1b-1 migrate the hand-written 2/3/4 shapes into the generator (bit- and gas-identical) → 8.1b-2
 flatten `Vector6` / `Matrix6` → 8.1b-3 the 28 new shapes + `mul_mat` everywhere + parity script →
-8.1b-4 generated test packages + CI jobs (the `nalgebra` unit-test crate already peaks at 13.2 GB on
-16 GB runners: public-API tests move to test-only packages).
+8.1b-4 generated test packages + CI jobs. Done: 8.1b-1 #28, 8.1b-2 #29, 8.1b-3 #30 (36 shapes, `mul_mat`,
+`shapes_tests_core`), 8.1c #32 (public-API tests moved to `tests_base` / `tests_geometry` /
+`tests_linalg`: the `nalgebra` test build fell from 14.7 GB to 5.3 GB, CI shards ≈ 3 min).
 
 Fidelity rules settled by the orchestrator under the owner's "same as the Rust reference" rule
 (applied by a later sweep, WP 8.4-fix): approximate comparisons of quaternions / unit quaternions
