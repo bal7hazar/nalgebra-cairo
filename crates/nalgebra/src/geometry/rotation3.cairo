@@ -583,10 +583,10 @@ pub impl Rotation3AngleImpl<
     /// `rotation_to(other).angle()`, i.e. `acos((tr(other · selfᵀ) - 1) / 2)`, WITHOUT forming
     /// the product: the trace `Σ other_ij · self_ij` is ONE fused kernel of nine products, and
     /// `(tr - 1) / 2` is floored once from the exact accumulator, where the product floors its
-    /// three diagonal entries and `angle` floors the halving too: 31 250 gas against 43 930
-    /// (`bench_rotation3_angle_to__alt_rotation_to_angle`). The argument is clamped to `[-1, 1]`
-    /// like `angle` (see there for the accuracy of `acos` near `0` and `π`). Upstream:
-    /// `Rotation3::angle_to`.
+    /// three diagonal entries and `angle` floors the halving too: 32 230 gas against 79 950
+    /// (`bench_rotation3_angle_to__alt_rotation_to_angle`, 2.5x). The argument is clamped to
+    /// `[-1, 1]` like `angle` (see there for the accuracy of `acos` near `0` and `π`).
+    /// Upstream: `Rotation3::angle_to`.
     fn angle_to(self: Rotation3<T>, other: Rotation3<T>) -> T {
         let (a, b) = (self.matrix, other.matrix);
         let acc = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a.m11, b.m11), a.m21, b.m21);
@@ -729,13 +729,15 @@ pub impl Rotation3AngleImpl<
 
     /// The rotation part of `m` (the rotation `R` maximising `tr(Rᵀ m)`), computed as
     /// `UnitQuaternion::from_matrix_eps(m, eps, max_iter, guess.into())` expanded back into a
-    /// matrix (one `to_rotation_matrix`, 23 530 gas): `max_iter = 0` is the closed-form LIMIT of
+    /// matrix (one `to_rotation_matrix`): `max_iter = 0` is the closed-form LIMIT of
     /// upstream's iteration, `max_iter > 0` runs upstream's Müller iteration BOUNDED by
     /// `FROM_MATRIX_MAX_ITER` (see `UnitQuaternionAngleTrait::from_matrix_eps` for both, their
     /// costs and the measurements). Upstream iterates on matrices (`R ← exp([ω]×) · R`, 27
-    /// products per composition); the quaternion form converges to the same rotation with a
-    /// 4x cheaper composition and stays exactly on the rotation group, and the result is
-    /// orthonormal within a few ulp. Upstream: `Rotation3::from_matrix_eps`.
+    /// products per composition, plus Rodrigues' formula); the quaternion form follows the same
+    /// path (`test_from_matrix_alt_matrix_iteration_agrees`) at 1 404 700 gas for 8 iterations
+    /// against 1 625 860 (`bench_rotation3_from_matrix__alt_matrix_iterate_8`), and it stays on
+    /// the rotation group between the steps. The closed form costs 529 600. Upstream:
+    /// `Rotation3::from_matrix_eps`.
     fn from_matrix_eps(
         m: Matrix3<T>, eps: T, max_iter: usize, guess: Rotation3<T>,
     ) -> Rotation3<T> {

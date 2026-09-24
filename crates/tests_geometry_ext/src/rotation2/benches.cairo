@@ -33,9 +33,9 @@ fn c() -> UnitComplex<Fixed> {
 #[test]
 #[inline(never)]
 fn bench_rotation2_from_matrix_eps__baseline() {
-    let m = black_box(skewed());
+    let _m = black_box(skewed());
     let e = black_box(Rotation2Trait::from_matrix(skewed()));
-    assert!(m == m && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -63,9 +63,9 @@ fn bench_rotation2_from_matrix_eps__iterate_8() {
 #[test]
 #[inline(never)]
 fn bench_rotation2_slerp__baseline() {
-    let (x, y) = (black_box(a()), black_box(b()));
+    let (_x, _y) = (black_box(a()), black_box(b()));
     let e = black_box(a().slerp(b(), Real::HALF));
-    assert!(x == x && y == y && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -81,9 +81,9 @@ fn bench_rotation2_slerp__through_unit_complex() {
 #[test]
 #[inline(never)]
 fn bench_rotation2_rotation_to__baseline() {
-    let (x, y) = (black_box(a()), black_box(b()));
+    let (_x, _y) = (black_box(a()), black_box(b()));
     let e = black_box(a().rotation_to(b()));
-    assert!(x == x && y == y && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -107,9 +107,9 @@ fn bench_rotation2_rotation_to__div() {
 #[test]
 #[inline(never)]
 fn bench_rotation2_mul_unit_complex__baseline() {
-    let (r, u) = (black_box(a()), black_box(c()));
+    let (_r, _u) = (black_box(a()), black_box(c()));
     let e = black_box(a().mul_unit_complex(c()));
-    assert!(r == r && u == u && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -133,9 +133,9 @@ fn bench_rotation2_mul_unit_complex__div() {
 #[test]
 #[inline(never)]
 fn bench_rotation2_from_scaled_axis__baseline() {
-    let v = black_box(Matrix1 { x: fx(0xc0000000) });
+    let _v = black_box(Matrix1 { x: fx(0xc0000000) });
     let e = black_box(a());
-    assert!(v == v && e == e);
+    assert!(e == e);
 }
 
 #[test]

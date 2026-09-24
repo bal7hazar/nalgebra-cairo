@@ -49,8 +49,8 @@ pub trait AbstractRotation<R> {
     fn inverse_transform_point(self: R, p: Self::Point) -> Self::Point;
 }
 
-/// `AbstractRotation` for `Rotation2`: forwards to `Rotation2Trait`. Upstream: `AbstractRotation<T,
-/// 2> for Rotation2`.
+/// `AbstractRotation` for `Rotation2`: forwards to `Rotation2Trait`.
+/// Upstream: `AbstractRotation<T, 2> for Rotation2`.
 pub impl Rotation2AbstractRotation<
     T,
     impl R: Real<T>,
@@ -108,8 +108,8 @@ pub impl Rotation2AbstractRotation<
     }
 }
 
-/// `AbstractRotation` for `Rotation3`: forwards to `Rotation3Trait`. Upstream: `AbstractRotation<T,
-/// 3> for Rotation3`.
+/// `AbstractRotation` for `Rotation3`: forwards to `Rotation3Trait`.
+/// Upstream: `AbstractRotation<T, 3> for Rotation3`.
 pub impl Rotation3AbstractRotation<
     T,
     impl R: Real<T>,

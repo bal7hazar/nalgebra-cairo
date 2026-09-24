@@ -655,7 +655,11 @@ fn rot3_angle_between(a: &Rotation3<f64>, b: &Rotation3<f64>) -> f64 {
 /// (where the wrap-around of a rounded angle is ambiguous). Upstream asserts `n1 ⟂ n2` and
 /// `n3 ⟂ n1`, so only the six Tait-Bryan sequences are accepted (a symmetric one such as `zxz`
 /// panics upstream, and in the Cairo port).
-fn euler_ordered(r: &Rotation3<f64>, seq: [Unit<Vector3<f64>>; 3], extrinsic: bool) -> Option<Vec<f64>> {
+fn euler_ordered(
+    r: &Rotation3<f64>,
+    seq: [Unit<Vector3<f64>>; 3],
+    extrinsic: bool,
+) -> Option<Vec<f64>> {
     let symmetric = seq[0] == seq[2];
     let (angles, observable) = r.euler_angles_ordered(seq, extrinsic);
     let mid = angles[1];
@@ -765,18 +769,21 @@ fn rotation_matrix_completion_ops() -> Vec<Op> {
                 let angle = rot3_angle_between(&rot3(x), &rot3(&x[9..]));
                 (angle > 0.05 && angle < 3.0).then_some(vec![angle])
             }),
-        Op::new("rotation3_axis_angle", "r.axis_angle().unwrap(), angle in [0.05, 3]")
-            .input(irot("r", 3))
-            .out(fv("axis", 3))
-            .out(fangle("angle"))
-            .dists(&Dist::UNIT)
-            .tol(Tol::Sens { k: 4.0, base: 24.0 })
-            .eval(|x| {
-                let (axis, angle) = rot3(x).axis_angle()?;
-                let mut out = flat(&axis.into_inner());
-                out.push(angle);
-                (angle > 0.05 && angle < 3.0).then_some(out)
-            }),
+        Op::new(
+            "rotation3_axis_angle",
+            "r.axis_angle().unwrap(), angle in [0.05, 3]",
+        )
+        .input(irot("r", 3))
+        .out(fv("axis", 3))
+        .out(fangle("angle"))
+        .dists(&Dist::UNIT)
+        .tol(Tol::Sens { k: 4.0, base: 24.0 })
+        .eval(|x| {
+            let (axis, angle) = rot3(x).axis_angle()?;
+            let mut out = flat(&axis.into_inner());
+            out.push(angle);
+            (angle > 0.05 && angle < 3.0).then_some(out)
+        }),
         Op::new("rotation3_rotation_to", "a.rotation_to(&b) = b * a^-1")
             .input(irot("a", 3))
             .input(irot("b", 3))

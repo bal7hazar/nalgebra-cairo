@@ -144,7 +144,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `ulps` | 28680 | 9930 | x1.00 |
+| `ulps` | 29250 | 10500 | x1.00 |
 
 ### isometry3_append_rotation
 
@@ -294,7 +294,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `components` | 19860 | 2220 | x1.00 |
+| `components` | 22340 | 4700 | x1.00 |
 
 ### quaternion_add
 
@@ -426,7 +426,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `upstream` | 171060 | 153020 | x1.00 |
+| `upstream` | 171160 | 153120 | x1.00 |
 
 ### quaternion_acosh
 
@@ -438,7 +438,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `upstream` | 185230 | 167190 | x1.00 |
+| `upstream` | 185330 | 167290 | x1.00 |
 
 ### quaternion_asinh
 
@@ -450,7 +450,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `upstream` | 173060 | 155020 | x1.00 |
+| `upstream` | 173160 | 155120 | x1.00 |
 
 ### quaternion_atanh
 
@@ -597,7 +597,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `components` | 31110 | 13470 | x1.00 |
+| `components` | 38190 | 20550 | x1.00 |
 
 ### quaternion_right_div
 
@@ -649,7 +649,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `components` | 24300 | 6660 | x1.00 |
+| `components` | 29880 | 12240 | x1.00 |
 
 ## nalgebra_tests_geometry::rotation2::benches
 
@@ -676,7 +676,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `normalize_first_column` | 26920 | 8880 | x1.00 |
+| `closed_form` | 32820 | 14780 | x1.00 |
 
 ### rotation2_from_matrix_unchecked
 
@@ -1392,7 +1392,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `components` | 19850 | 2210 | x1.00 |
+| `components` | 22320 | 4680 | x1.00 |
 
 ### unit_quaternion_angle
 
@@ -1788,7 +1788,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `components` | 24340 | 6700 | x1.00 |
+| `components` | 38490 | 20850 | x1.00 |
 
 ### unit_quaternion_rotation_between_axis
 
@@ -1818,5 +1818,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `components` | 22860 | 5220 | x1.00 |
+| `components` | 29670 | 12030 | x1.00 |
 

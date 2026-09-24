@@ -30,9 +30,9 @@ fn p4() -> Point4<Fixed> {
 #[test]
 #[inline(never)]
 fn bench_translation3_mul_isometry__baseline() {
-    let t = black_box(t3(0x100000000, -0x200000000, 0x300000000));
-    let i = black_box(iso3((0, 0, 0x100000000), (0x80000000, 0x80000000, 0x80000000, 0x80000000)));
-    assert!(t == t && i == i);
+    let _t = black_box(t3(0x100000000, -0x200000000, 0x300000000));
+    let _i = black_box(iso3((0, 0, 0x100000000), (0x80000000, 0x80000000, 0x80000000, 0x80000000)));
+    assert!(black_box(true));
 }
 
 #[test]
@@ -54,9 +54,9 @@ fn bench_translation3_mul_isometry__mul_unit_quaternion() {
 #[test]
 #[inline(never)]
 fn bench_translation3_div__baseline() {
-    let (a, b) = (black_box(t3(0x100000000, 0, 0)), black_box(t3(0, 0x100000000, 0)));
+    let (_a, _b) = (black_box(t3(0x100000000, 0, 0)), black_box(t3(0, 0x100000000, 0)));
     let e = black_box(t3(0x100000000, -0x100000000, 0));
-    assert!(a == a && b == b && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -80,8 +80,8 @@ fn bench_translation3_div__relative_eq() {
 #[test]
 #[inline(never)]
 fn bench_translation2_mul_unit_complex__baseline() {
-    let (t, c) = (black_box(t2(0x100000000, 0)), black_box(uc(0, 0x100000000)));
-    assert!(t == t && c == c);
+    let (_t, _c) = (black_box(t2(0x100000000, 0)), black_box(uc(0, 0x100000000)));
+    assert!(black_box(true));
 }
 
 #[test]
@@ -96,9 +96,9 @@ fn bench_translation2_mul_unit_complex__wrap() {
 #[test]
 #[inline(never)]
 fn bench_translation4_transform_point__baseline() {
-    let (t, p) = (black_box(t4()), black_box(p4()));
+    let (_t, _p) = (black_box(t4()), black_box(p4()));
     let e = black_box(Point4Trait::new(int(11), int(18), int(33), int(44)));
-    assert!(t == t && p == p && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -112,8 +112,8 @@ fn bench_translation4_transform_point__add() {
 #[test]
 #[inline(never)]
 fn bench_translation4_to_homogeneous__baseline() {
-    let t = black_box(t4());
-    assert!(t == t);
+    let _t = black_box(t4());
+    assert!(black_box(true));
 }
 
 #[test]
@@ -126,8 +126,8 @@ fn bench_translation4_to_homogeneous__matrix5() {
 #[test]
 #[inline(never)]
 fn bench_translation6_mul__baseline() {
-    let (a, b) = (black_box(t6()), black_box(t6()));
-    assert!(a == b);
+    let (_a, _b) = (black_box(t6()), black_box(t6()));
+    assert!(black_box(true));
 }
 
 #[test]

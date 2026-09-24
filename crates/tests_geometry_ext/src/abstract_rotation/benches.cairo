@@ -19,9 +19,9 @@ fn v() -> Vector3<Fixed> {
 #[test]
 #[inline(never)]
 fn bench_abstract_rotation_transform_vector__baseline() {
-    let (r, x) = (black_box(q()), black_box(v()));
+    let (_r, _x) = (black_box(q()), black_box(v()));
     let e = black_box(UnitQuaternionTrait::transform_vector(q(), v()));
-    assert!(r == r && x == x && e == e);
+    assert!(e == e);
 }
 
 #[test]

@@ -34,9 +34,9 @@ fn p3() -> Point3<Fixed> {
 #[test]
 #[inline(never)]
 fn bench_point4_lerp__baseline() {
-    let (a, b) = (black_box(p()), black_box(q()));
+    let (_a, _b) = (black_box(p()), black_box(q()));
     let e = black_box(p().lerp(q(), Real::HALF));
-    assert!(a == a && b == b && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -50,9 +50,9 @@ fn bench_point4_lerp__fused() {
 #[test]
 #[inline(never)]
 fn bench_point4_unscale__baseline() {
-    let a = black_box(p());
+    let _a = black_box(p());
     let e = black_box(p().unscale(int(3)));
-    assert!(a == a && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -66,9 +66,9 @@ fn bench_point4_unscale__div4() {
 #[test]
 #[inline(never)]
 fn bench_point4_from_homogeneous__baseline() {
-    let h: Vector5<Fixed> = black_box(p().to_homogeneous());
+    let _h: Vector5<Fixed> = black_box(p().to_homogeneous());
     let e = black_box(p());
-    assert!(h == h && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -82,8 +82,8 @@ fn bench_point4_from_homogeneous__div4() {
 #[test]
 #[inline(never)]
 fn bench_point4_relative_eq__baseline() {
-    let (a, b) = (black_box(p()), black_box(p()));
-    assert!(a == b);
+    let (_a, _b) = (black_box(p()), black_box(p()));
+    assert!(black_box(true));
 }
 
 #[test]
@@ -103,8 +103,8 @@ fn bench_point4_relative_eq__ulps_eq() {
 #[test]
 #[inline(never)]
 fn bench_point4_partial_ord__baseline() {
-    let (a, b) = (black_box(p()), black_box(p().sup(q())));
-    assert!(a == a && b == b);
+    let (_a, _b) = (black_box(p()), black_box(p().sup(q())));
+    assert!(black_box(true));
 }
 
 #[test]
@@ -117,9 +117,9 @@ fn bench_point4_partial_ord__le() {
 #[test]
 #[inline(never)]
 fn bench_point4_index__baseline() {
-    let a = black_box(p());
+    let _a = black_box(p());
     let e = black_box(p().w);
-    assert!(a == a && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -135,9 +135,9 @@ fn bench_point4_index__match() {
 #[test]
 #[inline(never)]
 fn bench_point6_lerp__baseline() {
-    let (a, b) = (black_box(p6()), black_box(-p6()));
+    let (_a, _b) = (black_box(p6()), black_box(-p6()));
     let e = black_box(p6().lerp(-p6(), Real::HALF));
-    assert!(a == a && b == b && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -153,9 +153,9 @@ fn bench_point6_lerp__fused() {
 #[test]
 #[inline(never)]
 fn bench_point3_from_slice__baseline() {
-    let s = black_box(array![fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)]);
+    let _s = black_box(array![fx(0x180000000), fx(-0x240000000), fx(0x3c0000000)]);
     let e = black_box(p3());
-    assert!(s.len() == 3 && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -169,9 +169,9 @@ fn bench_point3_from_slice__checked() {
 #[test]
 #[inline(never)]
 fn bench_point3_index__baseline() {
-    let a = black_box(p3());
+    let _a = black_box(p3());
     let e = black_box(p3().z);
-    assert!(a == a && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -185,8 +185,8 @@ fn bench_point3_index__match() {
 #[test]
 #[inline(never)]
 fn bench_point3_relative_eq__baseline() {
-    let (a, b) = (black_box(p3()), black_box(p3()));
-    assert!(a == b);
+    let (_a, _b) = (black_box(p3()), black_box(p3()));
+    assert!(black_box(true));
 }
 
 #[test]

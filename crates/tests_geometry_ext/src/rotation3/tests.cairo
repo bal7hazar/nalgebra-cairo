@@ -19,7 +19,7 @@ use nalgebra_tests_utils::{
 };
 use simba::scalar::Real;
 use crate::oracle;
-use super::benches::alt_angle_to_rotation_to_angle;
+use super::benches::{alt_angle_to_rotation_to_angle, alt_from_matrix_eps_matrix};
 
 /// The excess of `err` over `tol`, printed when positive.
 fn report(op: ByteArray, index: usize, err: u128, tol: u64) -> u128 {
@@ -400,6 +400,18 @@ fn test_from_matrix_cases() {
     );
     let it = Rotation3AngleTrait::from_matrix_eps(r.matrix, Real::default_epsilon(), 64, id);
     assert!(rot_err(it, r) <= 4);
+}
+
+/// The loser: upstream's iteration on matrices follows the same path as the quaternion form (the
+/// same rotation after the same number of steps from the identity), at a higher cost per step
+/// (`bench_rotation3_from_matrix__alt_matrix_iterate_8`).
+#[test]
+fn test_from_matrix_alt_matrix_iteration_agrees() {
+    let m = super::benches::skewed();
+    let id = Rotation3Trait::identity();
+    let kept = Rotation3AngleTrait::from_matrix_eps(m, Real::default_epsilon(), 8, id);
+    let alt = alt_from_matrix_eps_matrix(m, 8);
+    assert!(rot_err(kept, alt) <= 64);
 }
 
 #[test]

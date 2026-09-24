@@ -54,14 +54,47 @@ pub fn alt_angle_to_rotation_to_angle(x: Rotation3<Fixed>, y: Rotation3<Fixed>) 
     x.rotation_to(y).angle()
 }
 
+/// Upstream's `Rotation3::from_matrix_eps` literally, on MATRICES: `ω = Σ_c r_c × m_c / (|Σ_c
+/// r_c ·
+/// m_c| + ε)`, `R ← from_axis_angle(ω/|ω|, |ω|) · R` (Rodrigues' formula, then a 27-product
+/// composition) for `iters` iterations (no stationary-point perturbation: the benchmark and the
+/// test stop before convergence). The kept version runs the same iteration on a unit quaternion
+/// (one `to_rotation_matrix`, a half-angle `sin_cos` and a 16-product composition per step).
+pub fn alt_from_matrix_eps_matrix(m: Matrix3<Fixed>, iters: usize) -> Rotation3<Fixed> {
+    let mut r: Rotation3<Fixed> = Rotation3Trait::identity();
+    let mut k: usize = 0;
+    while k < iters {
+        k += 1;
+        let a = r.matrix;
+        let x = Real::sum_prod3(a.m21, m.m31, a.m22, m.m32, a.m23, m.m33)
+            - Real::sum_prod3(a.m31, m.m21, a.m32, m.m22, a.m33, m.m23);
+        let y = Real::sum_prod3(a.m31, m.m11, a.m32, m.m12, a.m33, m.m13)
+            - Real::sum_prod3(a.m11, m.m31, a.m12, m.m32, a.m13, m.m33);
+        let z = Real::sum_prod3(a.m11, m.m21, a.m12, m.m22, a.m13, m.m23)
+            - Real::sum_prod3(a.m21, m.m11, a.m22, m.m12, a.m23, m.m13);
+        let d = Real::sum_prod3(a.m11, m.m11, a.m21, m.m21, a.m31, m.m31)
+            + Real::sum_prod3(a.m12, m.m12, a.m22, m.m22, a.m32, m.m32)
+            + Real::sum_prod3(a.m13, m.m13, a.m23, m.m23, a.m33, m.m33);
+        let (x, y, z) = Real::div3(x, y, z, Real::abs(d) + Real::default_epsilon());
+        let n = Real::norm3(x, y, z);
+        if n <= Real::default_epsilon() {
+            break;
+        }
+        let (ux, uy, uz) = Real::div3(x, y, z, n);
+        let axis = Unit { value: Vector3 { x: ux, y: uy, z: uz } };
+        r = Rotation3AngleTrait::from_axis_angle(axis, n) * r;
+    }
+    r
+}
+
 // --- new
 
 #[test]
 #[inline(never)]
 fn bench_rotation3_new__baseline() {
-    let v = black_box(w());
+    let _v = black_box(w());
     let e: Rotation3<Fixed> = black_box(Rotation3AngleTrait::from_scaled_axis(w()));
-    assert!(v == v && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -77,9 +110,9 @@ fn bench_rotation3_new__rodrigues() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_powf__baseline() {
-    let r = black_box(a());
+    let _r = black_box(a());
     let e = black_box(a().powf(Real::HALF));
-    assert!(r == r && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -95,9 +128,9 @@ fn bench_rotation3_powf__axis_angle() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_angle_to__baseline() {
-    let (x, y) = (black_box(a()), black_box(b()));
+    let (_x, _y) = (black_box(a()), black_box(b()));
     let e = black_box(a().angle_to(b()));
-    assert!(x == x && y == y && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -121,9 +154,9 @@ fn bench_rotation3_angle_to__alt_rotation_to_angle() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_axis_angle__baseline() {
-    let r = black_box(a());
+    let _r = black_box(a());
     let e = black_box(a().axis_angle());
-    assert!(r == r && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -139,10 +172,10 @@ fn bench_rotation3_axis_angle__axis_then_angle() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_euler_angles_ordered__baseline() {
-    let r = black_box(a());
-    let s = black_box(axes());
+    let _r = black_box(a());
+    let _s = black_box(axes());
     let e = black_box(a().euler_angles_ordered(axes(), false));
-    assert!(r == r && s == s && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -156,7 +189,7 @@ fn bench_rotation3_euler_angles_ordered__shuster_markley() {
 
 // --- from_matrix
 
-fn skewed() -> Matrix3<Fixed> {
+pub fn skewed() -> Matrix3<Fixed> {
     r3(
         [
             [4294967296, 429496729, -214748364], [0, 3865470566, 858993459],
@@ -169,9 +202,9 @@ fn skewed() -> Matrix3<Fixed> {
 #[test]
 #[inline(never)]
 fn bench_rotation3_from_matrix__baseline() {
-    let m = black_box(skewed());
+    let _m = black_box(skewed());
     let e: Rotation3<Fixed> = black_box(Rotation3AngleTrait::from_matrix(skewed()));
-    assert!(m == m && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -193,14 +226,22 @@ fn bench_rotation3_from_matrix__iterate_8() {
     assert!(Rotation3AngleTrait::from_matrix_eps(m, Real::default_epsilon(), 8, id) == e);
 }
 
+#[test]
+#[inline(never)]
+fn bench_rotation3_from_matrix__alt_matrix_iterate_8() {
+    let m = black_box(skewed());
+    let e: Rotation3<Fixed> = black_box(alt_from_matrix_eps_matrix(skewed(), 8));
+    assert!(alt_from_matrix_eps_matrix(m, 8) == e);
+}
+
 // --- slerp
 
 #[test]
 #[inline(never)]
 fn bench_rotation3_slerp__baseline() {
-    let (x, y) = (black_box(a()), black_box(b()));
+    let (_x, _y) = (black_box(a()), black_box(b()));
     let e = black_box(a().slerp(b(), Real::HALF));
-    assert!(x == x && y == y && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -224,9 +265,9 @@ fn bench_rotation3_slerp__try_slerp() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_rotation_to__baseline() {
-    let (x, y) = (black_box(a()), black_box(b()));
+    let (_x, _y) = (black_box(a()), black_box(b()));
     let e = black_box(a().rotation_to(b()));
-    assert!(x == x && y == y && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -250,9 +291,9 @@ fn bench_rotation3_rotation_to__div() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_mul_unit_quaternion__baseline() {
-    let (r, u) = (black_box(a()), black_box(q()));
+    let (_r, _u) = (black_box(a()), black_box(q()));
     let e = black_box(a().mul_unit_quaternion(q()));
-    assert!(r == r && u == u && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -276,9 +317,9 @@ fn bench_rotation3_mul_unit_quaternion__div() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_look_at_lh__baseline() {
-    let (d, u) = (black_box(w()), black_box(v3t((0, ONE_RAW, 0))));
+    let (_d, _u) = (black_box(w()), black_box(v3t((0, ONE_RAW, 0))));
     let e = black_box(Rotation3Trait::look_at_lh(w(), v3t((0, ONE_RAW, 0))));
-    assert!(d == d && u == u && e == e);
+    assert!(e == e);
 }
 
 #[test]
@@ -294,8 +335,8 @@ fn bench_rotation3_look_at_lh__face_towards_transposed() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_relative_eq__baseline() {
-    let (x, y) = (black_box(a()), black_box(a()));
-    assert!(x == y);
+    let (_x, _y) = (black_box(a()), black_box(a()));
+    assert!(black_box(true));
 }
 
 #[test]
@@ -315,9 +356,9 @@ fn bench_rotation3_relative_eq__ulps_eq() {
 #[test]
 #[inline(never)]
 fn bench_rotation3_index__baseline() {
-    let r = black_box(a());
+    let _r = black_box(a());
     let e = black_box(a().matrix.m23);
-    assert!(r == r && e == e);
+    assert!(e == e);
 }
 
 #[test]
