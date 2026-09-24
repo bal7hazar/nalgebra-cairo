@@ -454,17 +454,35 @@ fn bench_rotation2_powf__atan2_sin_cos() {
 #[inline(never)]
 fn bench_rotation2_renormalize__baseline() {
     let _r: Rotation2<Fixed> = black_box(r2([[3955930943, -1672539044], [1672543140, 3955926847]]));
-    let e: Rotation2<Fixed> = black_box(r2([[3955925999, -1672541049], [1672541049, 3955925999]]));
+    let e: Rotation2<Fixed> = black_box(r2([[3955926423, -1672540047], [1672540047, 3955926423]]));
     assert!(e == e);
 }
 
+/// Upstream's formula (WP 8.4-P09b): the closest rotation, `from_matrix_eps(m, eps, 0, guess)`,
+/// i.e. the pair `(m11 + m22, m21 - m12)` normalised.
 #[test]
 #[inline(never)]
-fn bench_rotation2_renormalize__first_column() {
+fn bench_rotation2_renormalize__closed_form_limit() {
     let r: Rotation2<Fixed> = black_box(r2([[3955930943, -1672539044], [1672543140, 3955926847]]));
-    let e: Rotation2<Fixed> = black_box(r2([[3955926000, -1672541050], [1672541050, 3955926000]]));
+    let e: Rotation2<Fixed> = black_box(r2([[3955926423, -1672540047], [1672540047, 3955926423]]));
     let mut renormalized = r;
     renormalized.renormalize();
+    assert!(renormalized == e);
+}
+
+/// The loser (the pre-P09b library form): normalise the first column alone and rebuild the
+/// matrix. Not upstream's formula (it ignores the second column), hence not a candidate under the
+/// "same as the Rust reference" rule, whatever its cost.
+#[test]
+#[inline(never)]
+fn bench_rotation2_renormalize__alt_first_column() {
+    let r: Rotation2<Fixed> = black_box(r2([[3955930943, -1672539044], [1672543140, 3955926847]]));
+    let e: Rotation2<Fixed> = black_box(r2([[3955926000, -1672541050], [1672541050, 3955926000]]));
+    let n = Real::norm2(r.matrix.m11, r.matrix.m21);
+    let (re, im) = (Real::div(r.matrix.m11, n), Real::div(r.matrix.m21, n));
+    let renormalized = Rotation2Trait::from_matrix_unchecked(
+        Matrix2 { m11: re, m21: im, m12: -im, m22: re },
+    );
     assert!(renormalized == e);
 }
 

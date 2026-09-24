@@ -9,11 +9,14 @@
 //! upstream's fixed-point-observable order (`rotate`, then `scale`, then `translate`) while
 //! avoiding a checked scalar addition after the scale.
 
+use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix3::Matrix3;
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;
 use super::isometry2::{Isometry2, Isometry2Trait};
+use super::quaternion::ApproxEqTrait;
 use super::translation2::Translation2;
 use super::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 
@@ -267,6 +270,73 @@ pub impl Similarity2Impl<
         self.isometry.abs_diff_eq(other.isometry, ulps)
             && R::abs_diff_eq(self.scaling, other.scaling, ulps)
     }
+
+    // --- P09b completion ---------------------------------------------------------------------
+
+    /// The rotation `r` about the point `p`, with the scale `scaling`: translation `r · (-p) + p`
+    /// (upstream's formula, one fused kernel per component). Panics with `nalgebra: zero scale`
+    /// on a zero scale. Upstream: `Similarity::rotation_wrt_point`.
+    #[inline(always)]
+    fn rotation_wrt_point(r: UnitComplex<T>, p: Point2<T>, scaling: T) -> Similarity2<T> {
+        Self::from_isometry(Isometry2Trait::rotation_wrt_point(r, p), scaling)
+    }
+
+    /// `self / r = self * r⁻¹`: rotation `rotation / r`, the translation and scale unchanged.
+    /// Upstream: `Div<UnitComplex> for Similarity2` (a named method: Cairo's `Div` is
+    /// homogeneous).
+    #[inline(always)]
+    fn div_unit_complex(self: Similarity2<T>, r: UnitComplex<T>) -> Similarity2<T> {
+        Similarity2 { isometry: self.isometry.div_unit_complex(r), scaling: self.scaling }
+    }
+
+    /// `self * iso`: translation `translation + scaling * (rotation · iso.translation)`, rotation
+    /// `rotation · iso.rotation`, the same scale. Upstream: `Mul<Isometry> for Similarity`.
+    #[inline(always)]
+    fn mul_isometry(self: Similarity2<T>, iso: Isometry2<T>) -> Similarity2<T> {
+        Similarity2 {
+            isometry: Isometry2 {
+                rotation: self.isometry.rotation * iso.rotation,
+                translation: Translation2 {
+                    vector: Similarity2InternalTrait::rotate_scale_translate(
+                        self.isometry.rotation,
+                        iso.translation.vector,
+                        self.scaling,
+                        self.isometry.translation.vector,
+                    ),
+                },
+            },
+            scaling: self.scaling,
+        }
+    }
+
+    /// `self / iso = self * iso⁻¹` (upstream's formula). Upstream: `Div<Isometry> for
+    /// Similarity`.
+    #[inline(always)]
+    fn div_isometry(self: Similarity2<T>, iso: Isometry2<T>) -> Similarity2<T> {
+        Self::mul_isometry(self, iso.inverse())
+    }
+
+    /// `relative_eq` of the isometries and of the scales. Upstream:
+    /// `approx::RelativeEq::relative_eq` (DESIGN D3).
+    fn relative_eq(
+        self: Similarity2<T>, other: Similarity2<T>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        self.isometry.relative_eq(other.isometry, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.scaling, other.scaling, epsilon, max_relative)
+    }
+
+    /// `ulps_eq` of the isometries and of the scales. Upstream: `approx::UlpsEq::ulps_eq`
+    /// (DESIGN D3).
+    fn ulps_eq(self: Similarity2<T>, other: Similarity2<T>, epsilon: u64, max_ulps: u32) -> bool {
+        self.isometry.ulps_eq(other.isometry, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.scaling, other.scaling, epsilon, max_ulps)
+    }
+
+    /// The same similarity with every scalar converted by `Into<T, U>` (the identity for the
+    /// single scalar `Fixed`). Upstream: `Similarity2::cast` (and `SubsetOf<Similarity>`).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Similarity2<T>) -> Similarity2<U> {
+        Similarity2 { isometry: self.isometry.cast(), scaling: self.scaling.into() }
+    }
 }
 
 /// Crate-internal kernels of `Similarity2<T>` (WP 8.0: the public API is strictly upstream's): the
@@ -359,5 +429,155 @@ pub impl Similarity2Mul<
             },
             scaling: lhs.scaling * rhs.scaling,
         }
+    }
+}
+
+/// `a / b = a * b⁻¹` (upstream's formula: the inverse is materialised). Upstream:
+/// `Div<Similarity>`.
+pub impl Similarity2Div<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of Div<Similarity2<T>> {
+    #[inline(always)]
+    fn div(lhs: Similarity2<T>, rhs: Similarity2<T>) -> Similarity2<T> {
+        lhs * rhs.inverse()
+    }
+}
+
+/// `sim *= t`: `sim = sim * t`. Upstream: `MulAssign<Translation> for Similarity`.
+pub impl Similarity2MulAssignTranslation2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of MulAssign<Similarity2<T>, Translation2<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Similarity2<T>, rhs: Translation2<T>) {
+        self = self.mul_translation(rhs);
+    }
+}
+
+/// `sim *= iso`: `sim = sim * iso`. Upstream: `MulAssign<Isometry> for Similarity`.
+pub impl Similarity2MulAssignIsometry2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of MulAssign<Similarity2<T>, Isometry2<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Similarity2<T>, rhs: Isometry2<T>) {
+        self = self.mul_isometry(rhs);
+    }
+}
+
+/// `a *= b`: `a = a * b`. Upstream: `MulAssign<Similarity> for Similarity`.
+pub impl Similarity2MulAssign<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of MulAssign<Similarity2<T>, Similarity2<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Similarity2<T>, rhs: Similarity2<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `sim /= iso`: `sim = sim * iso⁻¹`. Upstream: `DivAssign<Isometry> for Similarity`.
+pub impl Similarity2DivAssignIsometry2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of DivAssign<Similarity2<T>, Isometry2<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Similarity2<T>, rhs: Isometry2<T>) {
+        self = self.div_isometry(rhs);
+    }
+}
+
+/// `a /= b`: `a = a * b⁻¹`. Upstream: `DivAssign<Similarity> for Similarity`.
+pub impl Similarity2DivAssign<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of DivAssign<Similarity2<T>, Similarity2<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Similarity2<T>, rhs: Similarity2<T>) {
+        self = self * rhs.inverse();
+    }
+}
+
+/// `Default::default()`: the identity. Upstream: `Default for Similarity`.
+pub impl Similarity2Default<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Default<Similarity2<T>> {
+    #[inline(always)]
+    fn default() -> Similarity2<T> {
+        Similarity2 {
+            isometry: Isometry2 {
+                rotation: UnitComplex { re: R::one(), im: R::zero() },
+                translation: Translation2 { vector: Vector2 { x: R::zero(), y: R::zero() } },
+            },
+            scaling: R::one(),
+        }
+    }
+}
+
+/// `One::one()`: the identity; `is_one` compares with it exactly. Upstream: `num::One for
+/// Similarity`.
+pub impl Similarity2One<
+    T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
+> of One<Similarity2<T>> {
+    #[inline(always)]
+    fn one() -> Similarity2<T> {
+        Similarity2Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_one(self: @Similarity2<T>) -> bool {
+        *self == Similarity2Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @Similarity2<T>) -> bool {
+        !Self::is_one(self)
     }
 }

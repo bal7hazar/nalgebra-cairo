@@ -690,19 +690,20 @@ pub impl QuaternionTranscendentalImpl<
     /// division for the common factor `sin|v| / |v|`, then each imaginary component is the exact
     /// triple product `v_i · (sin|v| / |v|) · e^w` floored once.
     ///
-    /// When `|v| <= eps` the imaginary part is treated as zero and the result is the real
-    /// `(e^w, 0, 0, 0)`. **Deviation:** upstream returns the IDENTITY there, dropping `e^w` (so its
-    /// `exp` of a real quaternion is 1); both agree on pure quaternions (`e^0 = 1` exactly), the
-    /// case of `UnitQuaternion::new`. `|v|` is compared to `eps` directly: upstream's
-    /// `|v|² <= eps²` would floor to zero below `|v| = 2^-16` in fixed point. Panics with
-    /// `Fixed: exp overflow` for `w` above about 21.49. Upstream: `exp_eps`.
+    /// When `|v| <= eps` the result is the IDENTITY, like upstream, whatever the real part: the
+    /// exponential of a real quaternion `(w, 0, 0, 0)` is `1`, not `e^w` (upstream's
+    /// `le.if_else(Self::identity, ..)`, kept as is under the owner's "same as the Rust reference"
+    /// rule; `e^w` of a real `w` is `Real`'s scalar `exp`). No `exp` is evaluated there, so a huge
+    /// real part cannot overflow. `|v|` is compared to `eps` directly: upstream's `|v|² <= eps²`
+    /// would floor to zero below `|v| = 2^-16` in fixed point. Panics with `Fixed: exp overflow`
+    /// for `w` above about 21.49 otherwise. Upstream: `exp_eps`.
     fn exp_eps(self: Quaternion<T>, eps: T) -> Quaternion<T> {
         let Quaternion { i, j, k, w } = self;
-        let ew = Tr::exp(w);
         let n = R::norm3(i, j, k);
         if n <= eps {
-            return Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: ew };
+            return QuaternionTrait::identity();
         }
+        let ew = Tr::exp(w);
         let (s, c) = Tr::sin_cos(n);
         let f = R::div(s, n);
         Quaternion {
@@ -805,25 +806,40 @@ pub impl QuaternionTranscendentalImpl<
     /// upstream's `(exp(self) - exp(-self)) / 2`, sharing one `sin_cos` and two scalar `exp`
     /// between the two exponentials: 94 150 gas against 157 140 for upstream's composition of
     /// two full quaternion `exp` (`bench_quaternion_sinh__alt_exp_difference`, agreeing to the
-    /// oracle tolerance: `test_sinh_alt_exp_difference_agrees`). Panics for `|w|` above about
-    /// 21.49. Upstream:
+    /// oracle tolerance: `test_sinh_alt_exp_difference_agrees`). When `|v| <= default_epsilon`
+    /// both exponentials are the identity upstream (see `exp_eps`), so `sinh` is ZERO there, like
+    /// upstream, whatever the real part. Panics for `|w|` above about 21.49 otherwise. Upstream:
     /// `sinh`.
     fn sinh(self: Quaternion<T>) -> Quaternion<T> {
-        let (ch, sh) = QuaternionTranscendentalInternalTrait::<T>::cosh_sinh(self.w);
-        let (f, c) = QuaternionTranscendentalInternalTrait::<T>::sinc_cos(self);
-        QuaternionTranscendentalInternalTrait::<T>::scale_parts(self, sh * c, f, ch)
+        match QuaternionTranscendentalInternalTrait::<T>::sinc_cos(self) {
+            Some((
+                f, c,
+            )) => {
+                let (ch, sh) = QuaternionTranscendentalInternalTrait::<T>::cosh_sinh(self.w);
+                QuaternionTranscendentalInternalTrait::<T>::scale_parts(self, sh * c, f, ch)
+            },
+            None => Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::zero() },
+        }
     }
 
     /// `cosh(self) = (cosh w · cos|v|, v · sinh w · sin|v| / |v|)`, the closed form of
-    /// upstream's `(exp(self) + exp(-self)) / 2` (see `sinh`). Upstream: `cosh`.
+    /// upstream's `(exp(self) + exp(-self)) / 2` (see `sinh`): the IDENTITY when `|v| <=
+    /// default_epsilon`, like upstream, whatever the real part. Upstream: `cosh`.
     fn cosh(self: Quaternion<T>) -> Quaternion<T> {
-        let (ch, sh) = QuaternionTranscendentalInternalTrait::<T>::cosh_sinh(self.w);
-        let (f, c) = QuaternionTranscendentalInternalTrait::<T>::sinc_cos(self);
-        QuaternionTranscendentalInternalTrait::<T>::scale_parts(self, ch * c, f, sh)
+        match QuaternionTranscendentalInternalTrait::<T>::sinc_cos(self) {
+            Some((
+                f, c,
+            )) => {
+                let (ch, sh) = QuaternionTranscendentalInternalTrait::<T>::cosh_sinh(self.w);
+                QuaternionTranscendentalInternalTrait::<T>::scale_parts(self, ch * c, f, sh)
+            },
+            None => QuaternionTrait::identity(),
+        }
     }
 
-    /// `sinh(self) · cosh(self)⁻¹` (`right_div`). Panics with `nalgebra: not invertible` when
-    /// `|cosh(self)|²` floors to zero. Upstream: `tanh`.
+    /// `sinh(self) · cosh(self)⁻¹` (`right_div`): zero when `|v| <= default_epsilon`, like
+    /// upstream (`sinh` is zero and `cosh` the identity there). Panics with
+    /// `nalgebra: not invertible` when `|cosh(self)|²` floors to zero. Upstream: `tanh`.
     fn tanh(self: Quaternion<T>) -> Quaternion<T> {
         Self::sinh(self).right_div(Self::cosh(self)).expect(errors::NOT_INVERTIBLE)
     }
@@ -888,14 +904,16 @@ pub(crate) impl QuaternionTranscendentalInternalImpl<
         (ch, R::div(sh, z))
     }
 
-    /// `(sin z / z, cos z)` with `z = |v|` (and `(1, 1)` for `v = 0`).
-    fn sinc_cos(q: Quaternion<T>) -> (T, T) {
+    /// `(sin z / z, cos z)` with `z = |v|`, or `None` when `z <= default_epsilon`: the threshold
+    /// under which upstream's `exp` returns the identity (`exp_eps`), hence `sinh` / `cosh`
+    /// (compositions of two `exp` upstream) their `|v| = 0` values.
+    fn sinc_cos(q: Quaternion<T>) -> Option<(T, T)> {
         let z = R::norm3(q.i, q.j, q.k);
-        if z == R::zero() {
-            return (R::one(), R::one());
+        if z <= R::default_epsilon() {
+            return None;
         }
         let (s, c) = Tr::sin_cos(z);
-        (R::div(s, z), c)
+        Some((R::div(s, z), c))
     }
 
     /// `(w, v · f · g)`: each imaginary component the exact triple product `v_i · f · g`,

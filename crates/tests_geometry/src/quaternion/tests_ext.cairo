@@ -574,13 +574,17 @@ fn test_exp_exact_cases() {
     assert!(q.exp().abs_diff_eq(qi(0, 1, 0, 0), 4));
 }
 
-/// Deviation from upstream: the real quaternion `(1, 0, 0, 0)` has the exponential `(e, 0, 0,
-/// 0)` (upstream returns the identity whenever `|v| <= eps`).
+/// Like upstream (WP 8.4-P09b fidelity fix): the exponential of a real quaternion is the
+/// IDENTITY, whatever its real part (upstream returns the identity whenever `|v| <= eps`,
+/// `Quaternion::exp_eps`), and no scalar `exp` is evaluated, so a huge real part cannot overflow.
 #[test]
-fn test_exp_of_a_real_quaternion_is_real() {
-    let e = qi(1, 0, 0, 0).exp();
-    assert!(e.w == Real::e() || e.w.abs_diff_eq(Real::e(), 3));
-    assert!(e.pure() == Zero::zero());
+fn test_exp_of_a_real_quaternion_is_the_identity() {
+    assert!(qi(1, 0, 0, 0).exp() == QuaternionTrait::identity());
+    assert!(qi(-3, 0, 0, 0).exp() == QuaternionTrait::identity());
+    assert!(qi(1000, 0, 0, 0).exp() == QuaternionTrait::identity());
+    // `|v|` at the default threshold (1 ulp) still counts as real; 2 ulp does not.
+    assert!(qt((ONE_RAW, 1, 0, 0)).exp() == QuaternionTrait::identity());
+    assert!(qt((ONE_RAW, 2, 0, 0)).exp().w.abs_diff_eq(Real::e(), 3));
     // With a large threshold the imaginary part is ignored.
     assert!(qt((0, HALF_RAW, 0, 0)).exp_eps(fx(ONE_RAW)) == QuaternionTrait::identity());
 }
@@ -712,14 +716,18 @@ fn test_inverse_functions_invert() {
     assert!(q.tanh().atanh().abs_diff_eq(q, 128));
 }
 
-/// `sinh` / `cosh` of a real quaternion are the scalar functions.
+/// Like upstream (WP 8.4-P09b fidelity fix): `sinh` / `cosh` / `tanh` of a real quaternion are
+/// `0` / `1` / `0`, whatever the real part, because upstream composes them from two `exp` that are
+/// both the identity there (`(exp(q) - exp(-q)) / 2`).
 #[test]
 fn test_hyperbolic_of_a_real_quaternion() {
-    let sh = qi(1, 0, 0, 0).sinh();
-    let ch = qi(1, 0, 0, 0).cosh();
-    // sinh 1 = 1.1752011936, cosh 1 = 1.5430806348.
-    assert!(sh.abs_diff_eq(qt((5047450692, 0, 0, 0)), 4));
-    assert!(ch.abs_diff_eq(qt((6627480861, 0, 0, 0)), 4));
+    assert!(qi(1, 0, 0, 0).sinh() == Zero::zero());
+    assert!(qi(1, 0, 0, 0).cosh() == QuaternionTrait::identity());
+    assert!(qi(-2, 0, 0, 0).tanh() == Zero::zero());
+    assert!(qt((ONE_RAW, 1, 0, 0)).sinh() == Zero::zero());
+    // Just above the threshold, the closed form: sinh 1 = 1.1752011936, cosh 1 = 1.5430806348.
+    assert!(qt((ONE_RAW, 2, 0, 0)).sinh().w.abs_diff_eq(fx(5047450692), 4));
+    assert!(qt((ONE_RAW, 2, 0, 0)).cosh().w.abs_diff_eq(fx(6627480861), 4));
     assert!(Zero::<Quaternion<Fixed>>::zero().sin() == Zero::zero());
     assert!(Zero::<Quaternion<Fixed>>::zero().cos() == QuaternionTrait::identity());
 }
