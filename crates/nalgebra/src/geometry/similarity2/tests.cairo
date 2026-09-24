@@ -3,6 +3,7 @@
 
 use fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::MatrixMul;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, p2t, sim2t, uct, v2t};
 use crate::base::point2::{Point2, Point2Trait};
@@ -129,7 +130,7 @@ fn test_to_homogeneous_layout_and_action() {
     assert!(m.m23 == x.isometry.translation.vector.y);
     assert!(id().to_homogeneous() == Matrix3Trait::<Fixed>::identity());
     let p = p2t((-0x280000000, 0x3c0000000));
-    let h = m.mul_vec(p.to_homogeneous());
+    let h = m.mul_mat(p.to_homogeneous());
     assert!(Point2 { x: h.x, y: h.y }.abs_diff_eq(x.transform_point(p), 4));
 }
 

@@ -18,6 +18,7 @@
 
 use fixed::Fixed;
 use simba::scalar::Real;
+use crate::base::MatrixMul;
 use crate::base::matrix4::Matrix4Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, iso3t, m4, p3t, uqt, v3t};
 use crate::base::point3::{Point3, Point3Trait};
@@ -286,7 +287,7 @@ fn test_to_homogeneous_layout() {
 #[test]
 fn test_to_homogeneous_acts_like_transform_point() {
     let (i, p) = (a(), p3t((-0x280000000, 0x3c0000000, 0xc0000000)));
-    let h = i.to_homogeneous().mul_vec(p.to_homogeneous());
+    let h = i.to_homogeneous().mul_mat(p.to_homogeneous());
     let got = i.transform_point(p);
     assert!(Real::abs_diff_eq(h.x, got.x, 16));
     assert!(Real::abs_diff_eq(h.y, got.y, 16));

@@ -5,7 +5,7 @@ use crate::base::matrix_test_utils::{
     fx, int, m3, m3i, max_ulp_diff3, s3, sym3_upper, ulp_diff, v3i, v3t,
 };
 use crate::base::sym_matrix3::SymMatrix3Trait;
-use crate::base::{oracle_matrix3, oracle_matrix3_inverse};
+use crate::base::{MatrixMul, MatrixTrMul, oracle_matrix3, oracle_matrix3_inverse};
 use super::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 
 // --- losing candidates of the determinant / inverse study (kept as evidence) -----------------
@@ -281,16 +281,16 @@ fn test_mul_vec_oracle() {
     let mut cases = oracle_matrix3::matrix3_mul_vec_cases();
     while let Some(case) = cases.pop_front() {
         let (a, v, expected, _) = *case;
-        assert!(m3(a).mul_vec(v3t(v)) == v3t(expected));
-        assert!(m3(a).transpose().tr_mul_vec(v3t(v)) == v3t(expected));
+        assert!(m3(a).mul_mat(v3t(v)) == v3t(expected));
+        assert!(m3(a).transpose().tr_mul(v3t(v)) == v3t(expected));
     }
 }
 
 #[test]
 fn test_mul_vec_tr_mul_vec_exact() {
     let a = m3i([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
-    assert!(a.mul_vec(v3i(1, 0, -1)) == v3i(-2, -2, -2));
-    assert!(a.tr_mul_vec(v3i(1, 0, -1)) == v3i(-6, -6, -6));
+    assert!(a.mul_mat(v3i(1, 0, -1)) == v3i(-2, -2, -2));
+    assert!(a.tr_mul(v3i(1, 0, -1)) == v3i(-6, -6, -6));
 }
 
 #[test]
@@ -1391,7 +1391,7 @@ fn bench_matrix3_mul_vec__fused() {
     );
     let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
     let e = black_box(v3t((-21470622535, 5268724875, -2717586978)));
-    assert!(a.mul_vec(v) == e);
+    assert!(a.mul_mat(v) == e);
 }
 
 #[test]
@@ -1423,7 +1423,7 @@ fn bench_matrix3_tr_mul_vec__fused() {
     );
     let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
     let e = black_box(v3t((-19851986100, 2686233155, -299288788)));
-    assert!(a.tr_mul_vec(v) == e);
+    assert!(a.tr_mul(v) == e);
 }
 
 #[test]
@@ -1439,7 +1439,7 @@ fn bench_matrix3_tr_mul_vec__transpose_mul_vec() {
     );
     let v = black_box(v3t((6422282562, 6202159288, 2324644860)));
     let e = black_box(v3t((-19851986100, 2686233155, -299288788)));
-    assert!(a.transpose().mul_vec(v) == e);
+    assert!(a.transpose().mul_mat(v) == e);
 }
 
 #[test]

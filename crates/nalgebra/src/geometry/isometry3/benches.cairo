@@ -11,7 +11,7 @@
 
 use fixed::Fixed;
 use nalgebra_testing::black_box;
-use crate::base::matrix3::Matrix3Trait;
+use crate::base::MatrixMul;
 use crate::base::matrix_test_utils::{fx, iso3, p3, uq, v3};
 use crate::base::point3::{Point3, Point3Trait};
 use crate::base::vector3::Vector3;
@@ -373,7 +373,7 @@ fn bench_isometry3_transform_point__alt_rotation_matrix() {
     let q: Point3<Fixed> = black_box(p());
     let e: Point3<Fixed> = black_box(p3(-6917091138, 3923952211, 20793852411));
     let m = x.rotation.to_rotation_matrix().matrix;
-    let c = m.mul_vec(Vector3 { x: q.x, y: q.y, z: q.z });
+    let c = m.mul_mat(Vector3 { x: q.x, y: q.y, z: q.z });
     let tr = x.translation.vector;
     let got = Point3 { x: c.x + tr.x, y: c.y + tr.y, z: c.z + tr.z };
     assert!(got.abs_diff_eq(e, 16));

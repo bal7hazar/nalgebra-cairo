@@ -29,6 +29,7 @@ use simba::scalar::Real;
 use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
 use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
 use crate::base::vector2::Vector2;
+use crate::base::{MatrixMul, MatrixTrMul};
 use crate::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 
 /// The singular value decomposition `M = U · diag(singular_values) · v_t` of a `Matrix2<T>`.
@@ -137,7 +138,7 @@ pub impl Svd2Impl<
         let nv = R::norm2(c1.x, c1.y);
         let v1 = Vector2 { x: R::div(c1.x, nv), y: R::div(c1.y, nv) };
         let v2 = Vector2 { x: -v1.y, y: v1.x };
-        let (w1, w2) = (matrix.mul_vec(v1), matrix.mul_vec(v2));
+        let (w1, w2) = (matrix.mul_mat(v1), matrix.mul_mat(v2));
         let s1 = R::norm2(w1.x, w1.y);
         let s2 = R::norm2(w2.x, w2.y);
         // `SymmetricEigen2` sorts the eigenvalues ASCENDING and the singular values are DESCENDING,
@@ -241,7 +242,7 @@ pub impl Svd2Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let y = self.u.tr_mul_vec(b);
+        let y = self.u.tr_mul(b);
         let y1 = if self.singular_values.x > eps {
             R::div(y.x, self.singular_values.x)
         } else {
@@ -252,7 +253,7 @@ pub impl Svd2Impl<
         } else {
             R::zero()
         };
-        Some(self.v_t.tr_mul_vec(Vector2 { x: y1, y: y2 }))
+        Some(self.v_t.tr_mul(Vector2 { x: y1, y: y2 }))
     }
 
     /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ` is
@@ -361,6 +362,7 @@ mod tests {
     use fixed::Fixed;
     use nalgebra_testing::black_box;
     use simba::scalar::Real;
+    use crate::base::MatrixMul;
     use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_m2, excess, int, m2, max_abs_v2, max_ulp_diff2, max_ulp_diff_v2, oracle_tol,
@@ -402,7 +404,7 @@ mod tests {
     fn u_from_normalised_columns(m: Matrix2<Fixed>) -> Matrix2<Fixed> {
         let f = Svd2Trait::new(m);
         let v = f.v_t.transpose();
-        let (w1, w2) = (m.mul_vec(v.column1()), m.mul_vec(v.column2()));
+        let (w1, w2) = (m.mul_mat(v.column1()), m.mul_mat(v.column2()));
         let c1 = if f.singular_values.x == Real::zero() {
             Vector2 { x: Real::one(), y: Real::zero() }
         } else {
@@ -550,7 +552,7 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             let x = Svd2Trait::new(m2(a)).solve(b, Real::default_epsilon()).unwrap();
-            let e = m2(a).try_inverse().unwrap().mul_vec(b);
+            let e = m2(a).try_inverse().unwrap().mul_mat(b);
             worst = core::cmp::max(worst, max_ulp_diff_v2(x, e));
         }
         // Measured gap to `Matrix2::try_inverse` * b over the 30 well-conditioned vectors.

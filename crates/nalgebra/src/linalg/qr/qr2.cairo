@@ -4,6 +4,7 @@
 //! convention of upstream's unpacked `q()` / `r()`, see the module doc of `linalg::qr`.
 
 use simba::scalar::Real;
+use crate::base::MatrixTrMul;
 use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::vector2::Vector2;
 
@@ -121,7 +122,7 @@ pub impl Qr2Impl<
     /// The solution of `A * x = b` for the factored `A`, or `None` when a diagonal entry of `R`
     /// is exactly zero (`is_invertible`). Upstream: `QR::solve`.
     ///
-    /// `x = R^-1 (Qᵀ b)`: one fused `tr_mul_vec` for `Qᵀ b` (one rounding per component), then
+    /// `x = R^-1 (Qᵀ b)`: one fused `tr_mul` for `Qᵀ b` (one rounding per component), then
     /// back substitution, each component costing one fused numerator and one correctly rounded
     /// division.
     /// Panics with the scalar's overflow error if a component of `x` does not fit.
@@ -129,7 +130,7 @@ pub impl Qr2Impl<
         if !Self::is_invertible(self) {
             return None;
         }
-        let y = self.q.tr_mul_vec(b);
+        let y = self.q.tr_mul(b);
         let x2 = R::div(y.y, self.r.m22);
         let x1 = R::div(R::mul_add(-self.r.m12, x2, y.x), self.r.m11);
         Some(Vector2 { x: x1, y: x2 })

@@ -10,7 +10,7 @@
 
 use fixed::Fixed;
 use nalgebra_testing::black_box;
-use crate::base::matrix3::Matrix3Trait;
+use crate::base::MatrixMul;
 use crate::base::matrix_test_utils::{fx, iso2, p2, uc, v2};
 use crate::base::point2::{Point2, Point2Trait};
 use crate::base::vector2::Vector2;
@@ -82,7 +82,7 @@ fn test_transform_point_fused_and_composed_agree_bit_for_bit() {
     let (x, q) = (a(), p());
     assert!(x.transform_point(q) == alt_transform_point_rotate_then_add(x, q));
     // ... and the homogeneous 3x3 product, which is the same fused form, agrees too.
-    let h = x.to_homogeneous().mul_vec(q.to_homogeneous());
+    let h = x.to_homogeneous().mul_mat(q.to_homogeneous());
     assert!(h.x == x.transform_point(q).x && h.y == x.transform_point(q).y);
 }
 
