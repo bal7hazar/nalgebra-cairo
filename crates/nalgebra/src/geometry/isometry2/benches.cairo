@@ -14,6 +14,7 @@ use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{fx, iso2, p2, uc, v2};
 use crate::base::point2::{Point2, Point2Trait};
 use crate::base::vector2::Vector2;
+use crate::geometry::isometry2::Isometry2InternalTrait;
 use crate::geometry::translation2::Translation2;
 use crate::geometry::unit_complex::{UnitComplex, UnitComplexTrait};
 use super::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
@@ -145,30 +146,14 @@ fn bench_isometry2_from_translation__baseline() {
     assert!(e == e);
 }
 
-/// `Isometry2::from_translation(t)`, which is also `t.into()` (the same code).
+/// `t.into()` (upstream `From<Translation2> for Isometry2`).
 #[test]
 #[inline(never)]
 fn bench_isometry2_from_translation__pure() {
     let u: Translation2<Fixed> = black_box(t());
     let e: Isometry2<Fixed> = black_box(iso2(0x140000000, -0x60000000, 0x100000000, 0));
-    assert!(Isometry2Trait::from_translation(u) == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_isometry2_from_rotation__baseline() {
-    let _q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 4273510349, 428781260));
-    assert!(e == e);
-}
-
-/// `Isometry2::from_rotation(r)`, which is also `r.into()` (the same code).
-#[test]
-#[inline(never)]
-fn bench_isometry2_from_rotation__pure() {
-    let q: UnitComplex<Fixed> = black_box(r());
-    let e: Isometry2<Fixed> = black_box(iso2(0, 0, 4273510349, 428781260));
-    assert!(Isometry2Trait::from_rotation(q) == e);
+    let r: Isometry2<Fixed> = u.into();
+    assert!(r == e);
 }
 
 #[test]
@@ -366,7 +351,9 @@ fn bench_isometry2_append_translation__add() {
     let x: Isometry2<Fixed> = black_box(a());
     let u: Translation2<Fixed> = black_box(t());
     let e: Isometry2<Fixed> = black_box(iso2(11811160064, -11274289152, 3955926847, 1672539044));
-    assert!(x.append_translation(u) == e);
+    let mut m = x;
+    m.append_translation_mut(u);
+    assert!(m == e);
 }
 
 #[test]
@@ -384,7 +371,7 @@ fn bench_isometry2_prepend_translation__rotate_add() {
     let x: Isometry2<Fixed> = black_box(a());
     let u: Translation2<Fixed> = black_box(t());
     let e: Isometry2<Fixed> = black_box(iso2(12014561644, -9056475179, 3955926847, 1672539044));
-    assert!(x.prepend_translation(u) == e);
+    assert!(x.mul_translation(u) == e);
 }
 
 #[test]
@@ -402,7 +389,9 @@ fn bench_isometry2_append_rotation__compose_rotate() {
     let x: Isometry2<Fixed> = black_box(a());
     let q: UnitComplex<Fixed> = black_box(r());
     let e: Isometry2<Fixed> = black_box(iso2(7375023358, -8972226396, 3769188402, 2059117008));
-    assert!(x.append_rotation(q) == e);
+    let mut m = x;
+    m.append_rotation_mut(q);
+    assert!(m == e);
 }
 
 #[test]
@@ -420,7 +409,7 @@ fn bench_isometry2_prepend_rotation__compose() {
     let x: Isometry2<Fixed> = black_box(a());
     let q: UnitComplex<Fixed> = black_box(r());
     let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3769188402, 2059117008));
-    assert!(x.prepend_rotation(q) == e);
+    assert!(x.mul_unit_complex(q) == e);
 }
 
 #[test]
@@ -440,7 +429,9 @@ fn bench_isometry2_append_rotation_wrt_point__shift_rotate() {
     let q: UnitComplex<Fixed> = black_box(r());
     let c: Point2<Fixed> = black_box(p());
     let e: Isometry2<Fixed> = black_box(iso2(8929310716, -7819809694, 3769188402, 2059117008));
-    assert!(x.append_rotation_wrt_point(q, c) == e);
+    let mut m = x;
+    m.append_rotation_wrt_point_mut(q, c);
+    assert!(m == e);
 }
 
 #[test]
@@ -458,7 +449,9 @@ fn bench_isometry2_append_rotation_wrt_center__compose() {
     let x: Isometry2<Fixed> = black_box(a());
     let q: UnitComplex<Fixed> = black_box(r());
     let e: Isometry2<Fixed> = black_box(iso2(6442450944, -9663676416, 3769188402, 2059117008));
-    assert!(x.append_rotation_wrt_center(q) == e);
+    let mut m = x;
+    m.append_rotation_wrt_center_mut(q);
+    assert!(m == e);
 }
 
 #[test]

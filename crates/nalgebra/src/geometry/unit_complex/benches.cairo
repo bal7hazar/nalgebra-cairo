@@ -11,6 +11,7 @@ use crate::base::matrix_test_utils::{fx, p2, uc, v2};
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;
 use crate::geometry::rotation2::Rotation2;
+use crate::geometry::unit_complex::UnitComplexInternalTrait;
 use super::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 
 /// `new(0.4)`.
@@ -58,7 +59,7 @@ fn alt_rotation_between_normalized(a: Vector2<Fixed>, b: Vector2<Fixed>) -> Unit
     let c = UnitComplex {
         re: Real::sum_prod2(ax, bx, ay, by), im: Real::diff_prod(ax, by, ay, bx),
     };
-    c.renormalize_fast()
+    c.renormalized_fast()
 }
 
 /// `renormalize_fast` written as upstream's literal `1/2 * (3 - |c|²)`: two roundings instead of
@@ -88,22 +89,6 @@ fn alt_renormalize_fast_lerp(c: UnitComplex<Fixed>) -> UnitComplex<Fixed> {
     }
 }
 
-/// `append_axisangle_linearized` closed with a Newton step instead of a division: cheaper, but
-/// `|c|² - 1 = angle²` is outside the radius where one step converges (see the doc comment).
-#[inline(always)]
-fn alt_append_renormalize_fast(c: UnitComplex<Fixed>, angle: Fixed) -> UnitComplex<Fixed> {
-    let p = UnitComplex {
-        re: Real::mul_add(-c.im, angle, c.re), im: Real::mul_add(c.re, angle, c.im),
-    };
-    p.renormalize_fast()
-}
-
-/// The exact composition `c * new(angle)`: no linearization error at all, one `sin_cos`.
-#[inline(always)]
-fn alt_append_sin_cos(c: UnitComplex<Fixed>, angle: Fixed) -> UnitComplex<Fixed> {
-    c * UnitComplexAngleTrait::new(angle)
-}
-
 // --- why the alternatives lost
 
 #[test]
@@ -130,36 +115,11 @@ fn test_rotation_between_alt_normalized_wins_on_short_vectors() {
 #[test]
 fn test_renormalize_fast_alternatives_give_the_same_bits() {
     let drifted = uc(3955930943, 1672543140);
-    let got = drifted.renormalize_fast();
+    let got = drifted.renormalized_fast();
     assert!(alt_renormalize_fast_literal(drifted) == got);
     assert!(alt_renormalize_fast_lerp(drifted) == got);
     // `c + c·(1 - |c|²)/2` rounds the correction and the sum separately: 1 ulp apart.
     assert!(alt_renormalize_fast_mul_add(drifted).abs_diff_eq(got, 1));
-}
-
-#[test]
-fn test_append_alt_renormalize_fast_leaves_a_large_norm_error() {
-    // 0.01 rad: `|c|²` is off by `angle² = 1e-4`, and one Newton step leaves `3·angle⁴/4`.
-    let (c, angle) = (c(), fx(0x28f5c29));
-    let fast = alt_append_renormalize_fast(c, angle);
-    let n = Real::norm_squared2(fast.re, fast.im);
-    let e: i64 = n.raw - Real::<Fixed>::ONE.raw;
-    assert!(e < 0 && e > -400);
-    let exact = c.append_axisangle_linearized(angle);
-    let n = Real::norm_squared2(exact.re, exact.im);
-    assert!(Real::abs_diff_eq(n, Real::ONE, 2));
-    // Both rotate by `atan(angle)` instead of `angle`, so they agree on the direction.
-    assert!(fast.abs_diff_eq(exact, 400));
-}
-
-#[test]
-fn test_append_alt_sin_cos_is_the_exact_rotation() {
-    // The linearization is 1 500 ulp short of the true composition (`atan(θ) - θ = θ³/3`),
-    // which buys it a `sin_cos`.
-    let (c, angle) = (c(), fx(0x28f5c29));
-    let exact = alt_append_sin_cos(c, angle);
-    assert!(c.append_axisangle_linearized(angle).abs_diff_eq(exact, 1500));
-    assert!(!c.append_axisangle_linearized(angle).abs_diff_eq(exact, 1000));
 }
 
 // --- gas benchmarks
@@ -298,7 +258,6 @@ fn bench_unit_complex_transform_vector__fused() {
     let v: Vector2<Fixed> = black_box(v2(0x180000000, -0x240000000));
     let e: Vector2<Fixed> = black_box(v2(9697103119, -6392026840));
     assert!(c.transform_vector(v) == e);
-    assert!(c.mul_vec(v) == e);
 }
 
 #[test]
@@ -555,7 +514,9 @@ fn bench_unit_complex_renormalize__baseline() {
 fn bench_unit_complex_renormalize__norm_and_divisions() {
     let c: UnitComplex<Fixed> = black_box(uc(3955930943, 1672543140));
     let e: UnitComplex<Fixed> = black_box(uc(3955926000, 1672541050));
-    assert!(c.renormalize() == e);
+    let mut renormalized = c;
+    let _ = renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -571,7 +532,9 @@ fn bench_unit_complex_renormalize_fast__baseline() {
 fn bench_unit_complex_renormalize_fast__mul_add() {
     let c: UnitComplex<Fixed> = black_box(uc(3955930943, 1672543140));
     let e: UnitComplex<Fixed> = black_box(uc(3955925998, 1672541049));
-    assert!(c.renormalize_fast() == e);
+    let mut renormalized = c;
+    renormalized.renormalize_fast();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -603,43 +566,9 @@ fn bench_unit_complex_renormalize_fast__alt_lerp() {
 fn bench_unit_complex_renormalize_fast__alt_exact() {
     let c: UnitComplex<Fixed> = black_box(uc(3955930943, 1672543140));
     let e: UnitComplex<Fixed> = black_box(uc(3955926000, 1672541050));
-    assert!(c.renormalize() == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_unit_complex_append_axisangle_linearized__baseline() {
-    let _c: UnitComplex<Fixed> = black_box(c());
-    let _a: Fixed = black_box(fx(0x28f5c29));
-    let e: UnitComplex<Fixed> = black_box(uc(3939004511, 1712012713));
-    assert!(e == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_unit_complex_append_axisangle_linearized__renormalize() {
-    let c: UnitComplex<Fixed> = black_box(c());
-    let a: Fixed = black_box(fx(0x28f5c29));
-    let e: UnitComplex<Fixed> = black_box(uc(3939004512, 1712012714));
-    assert!(c.append_axisangle_linearized(a) == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_unit_complex_append_axisangle_linearized__alt_renormalize_fast() {
-    let c: UnitComplex<Fixed> = black_box(c());
-    let a: Fixed = black_box(fx(0x28f5c29));
-    let e: UnitComplex<Fixed> = black_box(uc(3939004496, 1712012707));
-    assert!(alt_append_renormalize_fast(c, a) == e);
-}
-
-#[test]
-#[inline(never)]
-fn bench_unit_complex_append_axisangle_linearized__alt_sin_cos() {
-    let c: UnitComplex<Fixed> = black_box(c());
-    let a: Fixed = black_box(fx(0x28f5c29));
-    let e: UnitComplex<Fixed> = black_box(uc(3939003940, 1712014026));
-    assert!(alt_append_sin_cos(c, a) == e);
+    let mut renormalized = c;
+    let _ = renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]

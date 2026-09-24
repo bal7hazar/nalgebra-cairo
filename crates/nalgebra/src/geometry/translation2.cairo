@@ -57,13 +57,6 @@ pub impl Translation2Impl<
         Translation2 { vector: v }
     }
 
-    /// The translation vector (a copy: everything is by value here). Upstream: the `vector`
-    /// field.
-    #[inline(always)]
-    fn vector(self: Translation2<T>) -> Vector2<T> {
-        self.vector
-    }
-
     /// The inverse translation, by `-vector`. Exact; panics on overflow (`-MIN`). Upstream:
     /// `inverse`.
     #[inline(always)]
@@ -129,13 +122,5 @@ pub impl Translation2FromVector<T> of Into<Vector2<T>, Translation2<T>> {
     #[inline(always)]
     fn into(self: Vector2<T>) -> Translation2<T> {
         Translation2 { vector: self }
-    }
-}
-
-/// `t.into()`: the translation vector. Upstream: the `vector` field.
-pub impl Translation2IntoVector<T> of Into<Translation2<T>, Vector2<T>> {
-    #[inline(always)]
-    fn into(self: Translation2<T>) -> Vector2<T> {
-        self.vector
     }
 }

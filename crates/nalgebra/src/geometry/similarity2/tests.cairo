@@ -43,8 +43,14 @@ fn test_identity_and_constructors_are_exact() {
     let from_iso = Similarity2Trait::from_isometry(Isometry2Trait::from_parts(t, r), s);
     assert!(from_parts == a() && from_iso == a());
     assert!(Similarity2Trait::from_scaling(s).scaling() == s);
-    assert!(from_parts.with_scaling(fx(0x180000000)).scaling() == fx(0x180000000));
-    let pure: Similarity2<Fixed> = Isometry2Trait::from_parts(t, r).into();
+    assert!(
+        {
+            let mut m = from_parts;
+            m.set_scaling(fx(0x180000000));
+            m
+        }.scaling() == fx(0x180000000),
+    );
+    let pure = Similarity2Trait::from_isometry(Isometry2Trait::from_parts(t, r), Real::ONE);
     assert!(pure.scaling == Real::ONE && pure.isometry == from_parts.isometry);
 }
 
@@ -73,11 +79,9 @@ fn test_inverse_composes_to_identity_and_undoes_points() {
 }
 
 #[test]
-fn test_mul_and_inv_mul_match_actions() {
+fn test_mul_matches_actions() {
     let (x, y, p) = (a(), b(), p2t((-0x280000000, 0x3c0000000)));
     assert!((x * y).transform_point(p).abs_diff_eq(x.transform_point(y.transform_point(p)), 16));
-    assert!(x.inv_mul(y).abs_diff_eq(x.inverse() * y, 16));
-    assert!(x.inv_mul(x).abs_diff_eq(id(), 8));
 }
 
 #[test]
@@ -98,11 +102,21 @@ fn test_scaling_append_and_prepend_match_upstream_order() {
 fn test_append_and_prepend_translation_rotation_match_composition() {
     let (x, t, r) = (a(), Translation2Trait::new(fx(0x140000000), fx(-0x60000000)), quarter());
     let ti: Similarity2<Fixed> = Similarity2Trait::from_isometry(t.into(), Real::ONE);
-    let ri: Similarity2<Fixed> = Similarity2Trait::from_isometry(r.into(), Real::ONE);
-    assert!(x.append_translation(t) == ti * x);
-    assert!(x.prepend_translation(t).abs_diff_eq(x * ti, 1));
-    assert!(x.append_rotation(r) == ri * x);
-    assert!(x.prepend_rotation(r) == x * ri);
+    let ri: Similarity2<Fixed> = Similarity2Trait::from_isometry(
+        Isometry2Trait::from_parts(Translation2Trait::identity(), r), Real::ONE,
+    );
+    assert!({
+        let mut m = x;
+        m.append_translation_mut(t);
+        m
+    } == ti * x);
+    assert!(x.mul_translation(t).abs_diff_eq(x * ti, 1));
+    assert!({
+        let mut m = x;
+        m.append_rotation_mut(r);
+        m
+    } == ri * x);
+    assert!(x.mul_unit_complex(r) == x * ri);
 }
 
 #[test]
@@ -122,16 +136,32 @@ fn test_to_homogeneous_layout_and_action() {
 #[test]
 fn test_append_rotation_wrt_point_and_center() {
     let (x, r, p) = (a(), quarter(), p2t((0x180000000, -0x80000000)));
-    let y = x.append_rotation_wrt_point(r, p);
+    let y = {
+        let mut m = x;
+        m.append_rotation_wrt_point_mut(r, p);
+        m
+    };
     let shift: Similarity2<Fixed> = Similarity2Trait::from_isometry(
         Translation2Trait::new(p.x, p.y).into(), Real::ONE,
     );
     let back: Similarity2<Fixed> = Similarity2Trait::from_isometry(
         Translation2Trait::new(-p.x, -p.y).into(), Real::ONE,
     );
-    let ri: Similarity2<Fixed> = Similarity2Trait::from_isometry(r.into(), Real::ONE);
+    let ri: Similarity2<Fixed> = Similarity2Trait::from_isometry(
+        Isometry2Trait::from_parts(Translation2Trait::identity(), r), Real::ONE,
+    );
     assert!(y.abs_diff_eq(shift * ri * back * x, 4));
-    assert!(x.append_rotation_wrt_center(r).isometry.translation == x.isometry.translation);
+    assert!(
+        {
+            let mut m = x;
+            m.append_rotation_wrt_center_mut(r);
+            m
+        }
+            .isometry
+            .translation == x
+            .isometry
+            .translation,
+    );
 }
 
 #[test]
@@ -157,7 +187,11 @@ fn test_from_scaling_zero_panics() {
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_with_scaling_zero_panics() {
-    a().with_scaling(Real::ZERO);
+    {
+        let mut m = a();
+        m.set_scaling(Real::ZERO);
+        m
+    };
 }
 
 #[test]

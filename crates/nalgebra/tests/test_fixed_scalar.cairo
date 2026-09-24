@@ -150,8 +150,10 @@ fn test_unit_quaternion_kernels() {
         (3087494630, -10071360742, 5856891605),
         "inverse_transform_vector",
     );
+    let mut renormalized = q();
+    renormalized.renormalize_fast();
     assert_quaternion(
-        q().renormalize_fast().quaternion,
+        renormalized.quaternion,
         (3449105434, 1293414537, -1724552720, 1379642173),
         "renormalize_fast",
     );

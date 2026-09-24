@@ -21,6 +21,7 @@ use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, iso2t, m3, p2t, uct, v2t};
 use crate::base::point2::{Point2, Point2Trait};
 use crate::base::vector2::{Vector2, Vector2Trait};
+use crate::geometry::isometry2::Isometry2InternalTrait;
 use crate::geometry::translation2::{Translation2, Translation2Trait};
 use crate::geometry::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 use super::{Isometry2, Isometry2AngleTrait, Isometry2Trait, oracle};
@@ -64,10 +65,8 @@ fn test_from_parts_and_the_constructors_agree() {
     assert!(i == a());
     assert!(i.translation == t && i.rotation == r);
     let pure_t: Isometry2<Fixed> = t.into();
-    let pure_r: Isometry2<Fixed> = r.into();
+    let pure_r = Isometry2Trait::from_parts(Translation2Trait::identity(), r);
     assert!(Isometry2Trait::translation(fx(0x180000000), fx(-0x240000000)) == pure_t);
-    assert!(Isometry2Trait::from_translation(t) == pure_t);
-    assert!(Isometry2Trait::from_rotation(r) == pure_r);
     assert!(Isometry2AngleTrait::<Fixed>::rotation(fx(0x66666666)) == pure_r);
 }
 
@@ -152,26 +151,38 @@ fn test_inv_mul_is_the_inverse_times_other_within_two_ulp() {
 fn test_append_and_prepend_translation_match_the_composition() {
     let (i, t) = (a(), Translation2Trait::new(fx(0x140000000), fx(-0x60000000)));
     let ti: Isometry2<Fixed> = t.into();
-    assert!(i.append_translation(t) == ti * i);
-    assert!(i.prepend_translation(t) == i * ti);
+    assert!({
+        let mut m = i;
+        m.append_translation_mut(t);
+        m
+    } == ti * i);
+    assert!(i.mul_translation(t) == i * ti);
 }
 
 #[test]
 fn test_append_and_prepend_rotation_match_the_composition() {
     let (i, r) = (a(), UnitComplexAngleTrait::<Fixed>::new(fx(0x1999999a)));
-    let ri: Isometry2<Fixed> = r.into();
-    assert!(i.append_rotation(r) == ri * i);
-    assert!(i.prepend_rotation(r) == i * ri);
+    let ri = Isometry2Trait::from_parts(Translation2Trait::identity(), r);
+    assert!({
+        let mut m = i;
+        m.append_rotation_mut(r);
+        m
+    } == ri * i);
+    assert!(i.mul_unit_complex(r) == i * ri);
 }
 
 #[test]
 fn test_append_rotation_wrt_point_fixes_that_point() {
     let (i, r, p) = (a(), quarter(), p2t((0x180000000, -0x80000000)));
-    let j = i.append_rotation_wrt_point(r, p);
+    let j = {
+        let mut m = i;
+        m.append_rotation_wrt_point_mut(r, p);
+        m
+    };
     // T(p) · R(r) · T(-p) · self, the definition.
     let shift: Isometry2<Fixed> = Translation2Trait::new(p.x, p.y).into();
     let back: Isometry2<Fixed> = Translation2Trait::new(-p.x, -p.y).into();
-    let ri: Isometry2<Fixed> = r.into();
+    let ri = Isometry2Trait::from_parts(Translation2Trait::identity(), r);
     assert!(j.abs_diff_eq(shift * ri * back * i, 2));
     assert!(j.rotation == r * i.rotation);
 }
@@ -179,12 +190,20 @@ fn test_append_rotation_wrt_point_fixes_that_point() {
 #[test]
 fn test_append_rotation_wrt_center_keeps_the_translation() {
     let (i, r) = (a(), quarter());
-    let j = i.append_rotation_wrt_center(r);
+    let j = {
+        let mut m = i;
+        m.append_rotation_wrt_center_mut(r);
+        m
+    };
     assert!(j.translation == i.translation);
     assert!(j.rotation == r * i.rotation);
     // Rotating about the isometry's own centre is `append_rotation_wrt_point` at that centre.
     let c = Point2 { x: i.translation.vector.x, y: i.translation.vector.y };
-    assert!(j == i.append_rotation_wrt_point(r, c));
+    assert!(j == {
+        let mut m = i;
+        m.append_rotation_wrt_point_mut(r, c);
+        m
+    });
 }
 
 // --- homogeneous form

@@ -22,6 +22,7 @@ use crate::base::matrix4::Matrix4Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, int, iso3t, m4, p3t, uqt, v3t};
 use crate::base::point3::{Point3, Point3Trait};
 use crate::base::vector3::{Vector3, Vector3Trait};
+use crate::geometry::isometry3::Isometry3InternalTrait;
 use crate::geometry::quaternion::Quaternion;
 use crate::geometry::translation3::{Translation3, Translation3Trait};
 use crate::geometry::unit_quaternion::{
@@ -74,10 +75,8 @@ fn test_from_parts_and_the_constructors_agree() {
     assert!(i == a());
     assert!(i.translation == t && i.rotation == r);
     let pure_t: Isometry3<Fixed> = t.into();
-    let pure_r: Isometry3<Fixed> = r.into();
+    let pure_r = Isometry3Trait::from_parts(Translation3Trait::identity(), r);
     assert!(Isometry3Trait::translation(t.vector.x, t.vector.y, t.vector.z) == pure_t);
-    assert!(Isometry3Trait::from_translation(t) == pure_t);
-    assert!(Isometry3Trait::from_rotation(r) == pure_r);
     assert!(
         Isometry3AngleTrait::<
             Fixed,
@@ -183,25 +182,37 @@ fn test_inv_mul_is_the_inverse_times_other_within_nine_ulp() {
 fn test_append_and_prepend_translation_match_the_composition() {
     let (i, t) = (a(), Translation3Trait::new(fx(0x140000000), fx(-0x60000000), fx(0x280000000)));
     let ti: Isometry3<Fixed> = t.into();
-    assert!(i.append_translation(t) == ti * i);
-    assert!(i.prepend_translation(t) == i * ti);
+    assert!({
+        let mut m = i;
+        m.append_translation_mut(t);
+        m
+    } == ti * i);
+    assert!(i.mul_translation(t) == i * ti);
 }
 
 #[test]
 fn test_append_and_prepend_rotation_match_the_composition() {
     let (i, r) = (a(), half_turn_y());
-    let ri: Isometry3<Fixed> = r.into();
-    assert!(i.append_rotation(r) == ri * i);
-    assert!(i.prepend_rotation(r) == i * ri);
+    let ri = Isometry3Trait::from_parts(Translation3Trait::identity(), r);
+    assert!({
+        let mut m = i;
+        m.append_rotation_mut(r);
+        m
+    } == ri * i);
+    assert!(i.mul_unit_quaternion(r) == i * ri);
 }
 
 #[test]
 fn test_append_rotation_wrt_point_fixes_that_point() {
     let (i, r, p) = (a(), half_turn_y(), p3t((0x180000000, -0x80000000, 0x40000000)));
-    let j = i.append_rotation_wrt_point(r, p);
+    let j = {
+        let mut m = i;
+        m.append_rotation_wrt_point_mut(r, p);
+        m
+    };
     let shift: Isometry3<Fixed> = Translation3Trait::new(p.x, p.y, p.z).into();
     let back: Isometry3<Fixed> = Translation3Trait::new(-p.x, -p.y, -p.z).into();
-    let ri: Isometry3<Fixed> = r.into();
+    let ri = Isometry3Trait::from_parts(Translation3Trait::identity(), r);
     assert!(j.abs_diff_eq(shift * ri * back * i, 4));
     assert!(j.rotation == r * i.rotation);
 }
@@ -209,13 +220,21 @@ fn test_append_rotation_wrt_point_fixes_that_point() {
 #[test]
 fn test_append_rotation_wrt_center_keeps_the_translation() {
     let (i, r) = (a(), half_turn_y());
-    let j = i.append_rotation_wrt_center(r);
+    let j = {
+        let mut m = i;
+        m.append_rotation_wrt_center_mut(r);
+        m
+    };
     assert!(j.translation == i.translation);
     assert!(j.rotation == r * i.rotation);
     let c = Point3 {
         x: i.translation.vector.x, y: i.translation.vector.y, z: i.translation.vector.z,
     };
-    assert!(j == i.append_rotation_wrt_point(r, c));
+    assert!(j == {
+        let mut m = i;
+        m.append_rotation_wrt_point_mut(r, c);
+        m
+    });
 }
 
 // --- observer frames

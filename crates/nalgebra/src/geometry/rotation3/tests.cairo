@@ -22,6 +22,7 @@ use crate::base::matrix_test_utils::{ONE_RAW, fx, int, m3, r3, r3i, u3t, uqt, v3
 use crate::base::point3::Point3;
 use crate::base::unit::Unit3Trait;
 use crate::base::vector3::Vector3Trait;
+use crate::geometry::rotation3::Rotation3InternalTrait;
 use crate::geometry::unit_quaternion::{
     UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
 };
@@ -163,15 +164,17 @@ fn test_inverse_transform_vector_round_trip() {
 #[test]
 fn test_unit_quaternion_conversions_exact() {
     let q = uqt((HALF_RAW, HALF_RAW, HALF_RAW, HALF_RAW));
-    assert!(Rotation3Trait::from_unit_quaternion(q) == third());
-    assert!(third().to_unit_quaternion() == q);
+    assert!(UnitQuaternionTrait::to_rotation_matrix(q) == third());
+    assert!(UnitQuaternionTrait::from_rotation_matrix(third()) == q);
     // `Into` both ways.
     let r: Rotation3<Fixed> = q.into();
     assert!(r == third());
     let back: UnitQuaternion<Fixed> = third().into();
     assert!(back == q);
     assert!(
-        Rotation3Trait::<Fixed>::identity().to_unit_quaternion() == UnitQuaternionTrait::identity(),
+        UnitQuaternionTrait::from_rotation_matrix(
+            Rotation3Trait::<Fixed>::identity(),
+        ) == UnitQuaternionTrait::identity(),
     );
 }
 
@@ -182,7 +185,9 @@ fn test_quaternion_round_trip() {
     while let Some(case) = cases.pop_front() {
         let (ra, _, _, _) = *case;
         let r = r3(ra);
-        let back = Rotation3Trait::from_unit_quaternion(r.to_unit_quaternion());
+        let back = UnitQuaternionTrait::to_rotation_matrix(
+            UnitQuaternionTrait::from_rotation_matrix(r),
+        );
         assert!(back.abs_diff_eq(r, 4));
     }
 }
@@ -437,9 +442,9 @@ fn test_face_towards_with_a_parallel_up_panics() {
 
 #[test]
 fn test_renormalize_keeps_a_rotation_matrix() {
-    assert!(Rotation3Trait::<Fixed>::identity().renormalize() == Rotation3Trait::identity());
-    assert!(third().renormalize() == third());
-    assert!(half_x().renormalize() == half_x());
+    assert!(Rotation3Trait::<Fixed>::identity().renormalized() == Rotation3Trait::identity());
+    assert!(third().renormalized() == third());
+    assert!(half_x().renormalized() == half_x());
 }
 
 /// 64 compositions of a quarter turn: the matrix drifts, `renormalize` brings it back to
@@ -451,7 +456,7 @@ fn test_renormalize_fixes_a_drifted_matrix() {
     for _ in 0_u32..64 {
         r = r * step;
     }
-    let fixed = r.renormalize();
+    let fixed = r.renormalized();
     assert!((fixed.matrix * fixed.matrix.transpose()).is_identity(4));
     assert!(fixed.matrix.determinant().abs_diff_eq(Real::ONE, 4));
     // The correction is small: the drift of 64 products is a few ulp.
@@ -464,7 +469,7 @@ fn test_renormalize_fixes_a_drifted_matrix() {
 fn test_renormalize_handles_a_scaled_matrix() {
     let s = fx(ONE_RAW + 4294967);
     let scaled = Rotation3 { matrix: third().matrix.scale(s) };
-    let fixed = scaled.renormalize();
+    let fixed = scaled.renormalized();
     assert!((fixed.matrix * fixed.matrix.transpose()).is_identity(4));
     assert!(fixed.abs_diff_eq(third(), 4));
 }
@@ -472,7 +477,7 @@ fn test_renormalize_handles_a_scaled_matrix() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_of_a_singular_matrix_panics() {
-    let _ = black_box(Rotation3 { matrix: Matrix3Trait::<Fixed>::zeros() }).renormalize();
+    let _ = black_box(Rotation3 { matrix: Matrix3Trait::<Fixed>::zeros() }).renormalized();
 }
 
 // --- comparison

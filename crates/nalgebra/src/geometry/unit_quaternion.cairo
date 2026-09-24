@@ -34,7 +34,7 @@ use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::unit::{Unit, UnitTrait};
 use crate::base::vector3::{Vector3, Vector3Trait};
-use super::quaternion::{Quaternion, QuaternionTrait};
+use super::quaternion::{Quaternion, QuaternionInternalTrait, QuaternionTrait};
 use super::rotation3::{Rotation3, Rotation3Trait};
 
 #[cfg(test)]
@@ -146,16 +146,6 @@ pub impl UnitQuaternionImpl<
         UnitQuaternion { quaternion: self.quaternion.conjugate() }
     }
 
-    /// `self⁻¹ · other` (= `self.conjugate() * other`): the rotation `other` expressed in the
-    /// frame of `self`, as ONE fused Hamilton product with the conjugate's signs folded in
-    /// (`QuaternionTrait::conj_mul`) — bit-identical to `self.inverse() * other`, three negations
-    /// cheaper, and a component equal to the scalar's `MIN` no longer panics. Upstream has no
-    /// direct equivalent: it replaces `self.inverse() * other` (as in `Isometry3::inv_mul`).
-    #[inline(always)]
-    fn conj_mul(self: UnitQuaternion<T>, other: UnitQuaternion<T>) -> UnitQuaternion<T> {
-        UnitQuaternion { quaternion: self.quaternion.conj_mul(other.quaternion) }
-    }
-
     /// The rotation `r` such that `r · self = other`, i.e. `other · self⁻¹`: one Hamilton
     /// product on the conjugate, no division. Upstream: `rotation_to` (`other / self`).
     #[inline(always)]
@@ -172,31 +162,35 @@ pub impl UnitQuaternionImpl<
 
     // --- renormalization --------------------------------------------------------------------
 
-    /// Renormalizes exactly: `new_normalize(self.quaternion)`, i.e. one norm and one exactly
-    /// correctly rounded division per component. Use it when the norm may be far from 1 (after
-    /// `nlerp`, after an unnormalized construction). Panics on a zero quaternion. Upstream:
-    /// `Unit::renormalize`.
+    /// Renormalizes exactly, in place: `self` becomes `new_normalize(self.quaternion)`, i.e. one
+    /// norm and one exactly correctly rounded division per component, and the norm it had is
+    /// returned. Use it when the norm may be far from 1 (after `nlerp`, after an unnormalized
+    /// construction). Panics on a zero quaternion. Upstream: `Unit::renormalize` (`&mut self`,
+    /// returns the previous norm).
     #[inline(always)]
-    fn renormalize(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
-        UnitQuaternion { quaternion: self.quaternion.normalize() }
+    fn renormalize(ref self: UnitQuaternion<T>) -> T {
+        let n = self.quaternion.norm();
+        self = UnitQuaternion { quaternion: self.quaternion.unscale(n) };
+        n
     }
 
-    /// Renormalizes a quaternion whose norm is already close to 1 (accumulated rounding of repeated
-    /// composition, as in rapier's per-step update): one Newton step for the inverse square root,
-    /// `q · (3 - |q|²) / 2`, with the factor as ONE fused kernel (`mul_add(|q|², -1/2, 3/2)`,
-    /// bit-identical to upstream's `1/2 · (3 - |q|²)`) and one product per component. No square
-    /// root, no division: 11 700 gas against 13 780 for the exact `renormalize`, 15 % cheaper
-    /// (`bench_unit_quaternion_renormalize_fast__*`; a `Fixed` division costs 2 800 and a product
-    /// 1 750, so trading four divisions and a square root for four products saves only that much).
+    /// Renormalizes, in place, a quaternion whose norm is already close to 1 (accumulated rounding
+    /// of repeated composition, as in rapier's per-step update): one Newton step for the inverse
+    /// square root, `q · (3 - |q|²) / 2`, with the factor as ONE fused kernel (`mul_add(|q|²,
+    /// -1/2, 3/2)`, bit-identical to upstream's `1/2 · (3 - |q|²)`) and one product per
+    /// component. No square root, no division: 11 700 gas against 13 780 for the exact
+    /// `renormalize`, 15 % cheaper (`bench_unit_quaternion_renormalize_fast__*`; a `Fixed` division
+    /// costs 2 800 and a product 1 750, so trading four divisions and a square root for four
+    /// products saves only that much).
     ///
     /// With `|q|² = 1 + e` the new squared norm is `1 - 3e²/4 + e³/4`: the error is squared at
     /// every step, so one step is exact to the last ulp for `|e| < 2^-16` and the norm stays within
     /// about 2 ulp below 1. A zero quaternion stays zero (no panic). Panics on overflow when
     /// `|q|²` does not fit (norm above about 46 340). Upstream: `Unit::renormalize_fast`.
     #[inline(always)]
-    fn renormalize_fast(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
+    fn renormalize_fast(ref self: UnitQuaternion<T>) {
         let f = R::mul_add(self.quaternion.norm_squared(), -R::HALF, R::HALF + R::ONE);
-        UnitQuaternion { quaternion: self.quaternion.scale(f) }
+        self = UnitQuaternion { quaternion: self.quaternion.scale(f) };
     }
 
     /// `true` when the four components are within `ulps` smallest units (raw units for fixed point)
@@ -528,6 +522,51 @@ pub impl UnitQuaternionImpl<
     }
 }
 
+/// Crate-internal kernels of `UnitQuaternion<T>` (WP 8.0: the public API is strictly upstream's):
+/// the fused `conj_mul` of `Isometry3::inv_mul` (upstream writes `self.inverse() * other`), and the
+/// by-value forms of the in-place `renormalize` / `renormalize_fast` for the tests and the
+/// value-style call sites.
+#[generate_trait]
+pub(crate) impl UnitQuaternionInternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of UnitQuaternionInternalTrait<T> {
+    /// `self` renormalized exactly (`UnitQuaternionTrait::renormalize`), by value.
+    #[inline(always)]
+    fn renormalized(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
+        let mut r = self;
+        let _ = UnitQuaternionTrait::renormalize(ref r);
+        r
+    }
+
+    /// `self` renormalized by one Newton step (`UnitQuaternionTrait::renormalize_fast`), by value.
+    #[inline(always)]
+    fn renormalized_fast(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
+        let mut r = self;
+        UnitQuaternionTrait::renormalize_fast(ref r);
+        r
+    }
+
+    /// `self⁻¹ · other` (= `self.conjugate() * other`): the rotation `other` expressed in the
+    /// frame of `self`, as ONE fused Hamilton product with the conjugate's signs folded in
+    /// (`QuaternionTrait::conj_mul`) — bit-identical to `self.inverse() * other`, three negations
+    /// cheaper, and a component equal to the scalar's `MIN` no longer panics. Upstream has no
+    /// direct equivalent: it replaces `self.inverse() * other` (as in `Isometry3::inv_mul`).
+    #[inline(always)]
+    fn conj_mul(self: UnitQuaternion<T>, other: UnitQuaternion<T>) -> UnitQuaternion<T> {
+        UnitQuaternion { quaternion: self.quaternion.conj_mul(other.quaternion) }
+    }
+}
+
 /// Rotation operations of `UnitQuaternion<T>` that need trigonometry, hence their own trait:
 /// scalars may implement `Real` only (see `Vector3AngleTrait`).
 ///
@@ -847,8 +886,9 @@ pub impl UnitQuaternionMul<
 }
 
 /// `-q`: the opposite quaternion, which is the SAME rotation (the double cover of the rotation
-/// group). Exact; panics on overflow (`-MIN`). Upstream: `Neg` (through `Unit`).
-pub impl UnitQuaternionNeg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<UnitQuaternion<T>> {
+/// group). Exact; panics on overflow (`-MIN`). Crate-internal (WP 8.0): upstream has `Neg` on
+/// `Unit<Vector>` only; `-*q` there is a plain `Quaternion`.
+pub(crate) impl UnitQuaternionNeg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<UnitQuaternion<T>> {
     #[inline(always)]
     fn neg(a: UnitQuaternion<T>) -> UnitQuaternion<T> {
         UnitQuaternion {

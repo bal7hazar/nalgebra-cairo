@@ -154,20 +154,6 @@ pub impl Rotation3Impl<
 
     // --- conversions with `UnitQuaternion` --------------------------------------------------
 
-    /// The same rotation as a unit quaternion (Shepperd's method, one square root and three
-    /// divisions). Upstream: `UnitQuaternion::from_rotation_matrix` (`From<Rotation3>`).
-    #[inline(always)]
-    fn to_unit_quaternion(self: Rotation3<T>) -> UnitQuaternion<T> {
-        UnitQuaternionTrait::from_rotation_matrix(self)
-    }
-
-    /// The matrix of a unit quaternion (24 products, no division). Upstream:
-    /// `UnitQuaternion::to_rotation_matrix` (`From<UnitQuaternion>`).
-    #[inline(always)]
-    fn from_unit_quaternion(q: UnitQuaternion<T>) -> Rotation3<T> {
-        UnitQuaternionTrait::to_rotation_matrix(q)
-    }
-
     // --- axis, composition, construction from vectors ---------------------------------------
 
     /// The rotation axis as a unit vector, or `None` when the rotation is the identity or a half
@@ -219,7 +205,8 @@ pub impl Rotation3Impl<
 
     // --- renormalisation and comparison -----------------------------------------------------
 
-    /// Restores orthonormality after repeated composition, by Gram-Schmidt on the columns:
+    /// Restores orthonormality after repeated composition, in place, by Gram-Schmidt on the
+    /// columns:
     /// `x = c1/|c1|`, `y = (c2 - (x·c2)·x)/|...|`, `z = x × y`. Two norms, six divisions, one
     /// dot product and one cross product: 39 170 gas, against 70 250 for the round trip through a
     /// quaternion (`from_rotation_matrix`, `renormalize_fast`, `to_rotation_matrix`) and 78 320 for
@@ -232,7 +219,7 @@ pub impl Rotation3Impl<
     /// Panics with `Fixed: division by zero` on a singular matrix. Upstream:
     /// `Rotation::renormalize`
     /// (which uses a QR decomposition).
-    fn renormalize(self: Rotation3<T>) -> Rotation3<T> {
+    fn renormalize(ref self: Rotation3<T>) {
         let m = self.matrix;
         let x = Vector3 { x: m.m11, y: m.m21, z: m.m31 }.normalize();
         let c2 = Vector3 { x: m.m12, y: m.m22, z: m.m32 };
@@ -242,7 +229,7 @@ pub impl Rotation3Impl<
         }
             .normalize();
         let z = x.cross(y);
-        Rotation3 { matrix: Matrix3Trait::from_columns(x, y, z) }
+        self = Rotation3 { matrix: Matrix3Trait::from_columns(x, y, z) };
     }
 
     /// `true` when every entry is within `ulps` smallest units (raw units for fixed point) of the
@@ -251,6 +238,31 @@ pub impl Rotation3Impl<
     #[inline(always)]
     fn abs_diff_eq(self: Rotation3<T>, other: Rotation3<T>, ulps: u64) -> bool {
         self.matrix.abs_diff_eq(other.matrix, ulps)
+    }
+}
+
+/// Crate-internal by-value forms of the in-place `renormalize` (WP 8.0: the
+/// public methods are upstream's `&mut self` ones), for the tests and the value-style call sites.
+#[generate_trait]
+pub(crate) impl Rotation3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Rotation3InternalTrait<T> {
+    /// `self` renormalized exactly (`Rotation3Trait::renormalize`), by value.
+    #[inline(always)]
+    fn renormalized(self: Rotation3<T>) -> Rotation3<T> {
+        let mut r = self;
+        Rotation3Trait::renormalize(ref r);
+        r
     }
 }
 

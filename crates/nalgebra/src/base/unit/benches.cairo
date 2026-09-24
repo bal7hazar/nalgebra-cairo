@@ -8,6 +8,7 @@ use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, u2, u3, u4, v2, v3, v4};
+use crate::base::unit::UnitInternalTrait;
 use crate::base::vector2::Vector2;
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::base::vector4::Vector4;
@@ -83,7 +84,7 @@ fn test_renormalize_fast_alts_are_bit_identical() {
     ]
         .span();
     while let Some(u) = units.pop_front() {
-        let r = (*u).renormalize_fast();
+        let r = (*u).renormalized_fast();
         assert!(alt_renormalize_fast_upstream(*u) == r);
         assert!(alt_renormalize_fast_mul_add(*u) == r);
         assert!(alt_renormalize_fast_scale(*u) == r);
@@ -187,7 +188,9 @@ fn bench_unit3_renormalize_fast__baseline() {
 fn bench_unit3_renormalize_fast__fma_factor() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530ebff8, -0x7c961ff7, 0xcfa4dfef));
     let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa3, -0x7c960779, 0xcfa4b71b));
-    assert!(u.renormalize_fast() == e);
+    let mut renormalized = u;
+    renormalized.renormalize_fast();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -227,7 +230,9 @@ fn bench_unit3_renormalize_fast__alt_lerp() {
 fn bench_unit3_renormalize_fast__alt_exact() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530ebff8, -0x7c961ff7, 0xcfa4dfef));
     let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960779, 0xcfa4b71d));
-    assert!(u.renormalize() == e);
+    let mut renormalized = u;
+    let _ = renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -243,7 +248,9 @@ fn bench_unit3_renormalize__baseline() {
 fn bench_unit3_renormalize__renormalize() {
     let u: Unit<Vector3<Fixed>> = black_box(u3(0x530ebff8, -0x7c961ff7, 0xcfa4dfef));
     let e: Unit<Vector3<Fixed>> = black_box(u3(0x530eafa4, -0x7c960779, 0xcfa4b71d));
-    assert!(u.renormalize() == e);
+    let mut renormalized = u;
+    let _ = renormalized.renormalize();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -425,7 +432,9 @@ fn bench_unit2_renormalize_fast__baseline() {
 fn bench_unit2_renormalize_fast__fma_factor() {
     let u: Unit<Vector2<Fixed>> = black_box(u2(0x8e00f0ec, -0xd5016964));
     let e: Unit<Vector2<Fixed>> = black_box(u2(0x8e00d500, -0xd5013f83));
-    assert!(u.renormalize_fast() == e);
+    let mut renormalized = u;
+    renormalized.renormalize_fast();
+    assert!(renormalized == e);
 }
 
 #[test]
@@ -508,7 +517,9 @@ fn bench_unit4_renormalize_fast__baseline() {
 fn bench_unit4_renormalize_fast__fma_factor() {
     let u: Unit<Vector4<Fixed>> = black_box(u4(0x52efbb64, -0x7c679918, 0xcf57547d, 0xdd29f3b));
     let e: Unit<Vector4<Fixed>> = black_box(u4(0x52efab15, -0x7c6780a3, 0xcf572bb9, 0xdd29c83));
-    assert!(u.renormalize_fast() == e);
+    let mut renormalized = u;
+    renormalized.renormalize_fast();
+    assert!(renormalized == e);
 }
 
 #[test]

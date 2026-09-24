@@ -15,6 +15,7 @@ use simba::scalar::Real;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, m2, max_ulp_diff_uc, p2t, r2, uct, ulp_diff, v2t};
 use crate::base::vector2::{Vector2, Vector2Trait};
 use crate::geometry::rotation2::Rotation2Trait;
+use crate::geometry::unit_complex::UnitComplexInternalTrait;
 use super::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait, oracle};
 
 /// The raw value of 1.
@@ -157,7 +158,6 @@ fn test_transform_vector_quarter_turn_is_exact() {
     // (x, y) -> (-y, x), with no rounding at all.
     let v = v2t((0x300000000, -0x400000000));
     assert!(quarter().transform_vector(v) == v2t((0x400000000, 0x300000000)));
-    assert!(quarter().mul_vec(v) == quarter().transform_vector(v));
     assert!(id().transform_vector(v) == v);
 }
 
@@ -205,7 +205,7 @@ fn test_to_rotation_matrix_and_back_is_exact() {
     let r = c.to_rotation_matrix();
     assert!(r.matrix == m2([[0x80000000, 0xdd6a9c1], [-0xdd6a9c1, 0x80000000]]));
     assert!(UnitComplexTrait::from_rotation_matrix(r) == c);
-    assert!(r.to_unit_complex() == c);
+    assert!(UnitComplexTrait::from_rotation_matrix(r) == c);
 }
 
 #[test]
@@ -347,8 +347,8 @@ fn test_slerp_takes_the_shortest_arc() {
 
 #[test]
 fn test_renormalize_is_exact_on_a_unit_pair() {
-    assert!(quarter().renormalize() == quarter());
-    assert!(id().renormalize() == id());
+    assert!(quarter().renormalized() == quarter());
+    assert!(id().renormalized() == id());
 }
 
 #[test]
@@ -358,7 +358,7 @@ fn test_renormalize_recovers_from_a_large_drift() {
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let four = Real::<Fixed>::from_int(4);
     let drifted = UnitComplex { re: c.re * four, im: c.im * four };
-    let n = drifted.renormalize();
+    let n = drifted.renormalized();
     assert!(ulp_diff(Real::norm_squared2(n.re, n.im), Real::ONE) <= 2);
     assert!(n.abs_diff_eq(c, 2));
 }
@@ -370,10 +370,10 @@ fn test_renormalize_fast_converges_quadratically() {
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let drifted = UnitComplex { re: c.re + fx(0x1000), im: c.im + fx(0x1000) };
     assert!(ulp_diff(Real::norm_squared2(drifted.re, drifted.im), Real::ONE) > 1000);
-    let n = drifted.renormalize_fast();
+    let n = drifted.renormalized_fast();
     assert!(ulp_diff(Real::norm_squared2(n.re, n.im), Real::ONE) <= 2);
     // And the exact renormalization agrees to a few ulp.
-    assert!(n.abs_diff_eq(drifted.renormalize(), 4));
+    assert!(n.abs_diff_eq(drifted.renormalized(), 4));
 }
 
 #[test]
@@ -383,63 +383,26 @@ fn test_renormalize_fast_leaves_the_square_of_a_large_drift() {
     // so a second step would fix it; `renormalize` is the right tool above 2^-16.
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let drifted = UnitComplex { re: c.re + fx(0x68db8), im: c.im + fx(0x68db8) };
-    let once = drifted.renormalize_fast();
+    let once = drifted.renormalized_fast();
     let e = ulp_diff(Real::norm_squared2(once.re, once.im), Real::ONE);
     assert!(e > 2 && e < 400);
-    let twice = once.renormalize_fast();
+    let twice = once.renormalized_fast();
     assert!(ulp_diff(Real::norm_squared2(twice.re, twice.im), Real::ONE) <= 2);
-    let exact = drifted.renormalize();
+    let exact = drifted.renormalized();
     assert!(ulp_diff(Real::norm_squared2(exact.re, exact.im), Real::ONE) <= 2);
 }
 
 #[test]
 fn test_renormalize_fast_of_zero_stays_zero() {
     let z = UnitComplex { re: Real::<Fixed>::ZERO, im: Real::ZERO };
-    assert!(z.renormalize_fast() == z);
+    assert!(z.renormalized_fast() == z);
 }
 
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_renormalize_of_zero_panics() {
     let z = UnitComplex { re: Real::<Fixed>::ZERO, im: Real::ZERO };
-    let _ = black_box(z).renormalize();
-}
-
-// --- linearized composition
-
-#[test]
-fn test_append_axisangle_linearized_small_angle() {
-    // 0.01 rad appended to a rotation: the linearization rotates by atan(θ) instead of θ, i.e.
-    // 3.3e-7 rad short, which is 1500 ulp on the components.
-    let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x66666666));
-    let step = fx(0x28f5c29); // 0.01
-    let got = c.append_axisangle_linearized(step);
-    let expected = c * UnitComplexAngleTrait::<Fixed>::new(step);
-    assert!(got.abs_diff_eq(expected, 1500));
-    // Whatever the error on the angle, the result is a unit complex number again.
-    assert!(ulp_diff(Real::norm_squared2(got.re, got.im), Real::ONE) <= 2);
-}
-
-#[test]
-fn test_append_axisangle_linearized_zero_angle() {
-    let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x66666666));
-    assert!(c.append_axisangle_linearized(Real::ZERO).abs_diff_eq(c, 2));
-}
-
-#[test]
-fn test_append_axisangle_linearized_accumulates() {
-    // 64 steps of 1/64 rad: the norm stays unit (each step renormalizes), while the angle falls
-    // short of 1 rad by 64 · θ³/3 = 8.1e-5, i.e. about 350 000 ulp on the components. That is
-    // the systematic error of the linearization, not drift.
-    let mut c = id();
-    let step = fx(0x4000000); // 1/64
-    for _ in 0_u8..64 {
-        c = c.append_axisangle_linearized(step);
-    }
-    assert!(ulp_diff(Real::norm_squared2(c.re, c.im), Real::ONE) <= 2);
-    let exact = UnitComplexAngleTrait::<Fixed>::new(Real::ONE);
-    assert!(c.abs_diff_eq(exact, 400000));
-    assert!(!c.abs_diff_eq(exact, 100000));
+    let _ = black_box(z).renormalized();
 }
 
 // --- approximate equality

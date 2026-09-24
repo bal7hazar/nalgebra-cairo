@@ -14,7 +14,7 @@ use crate::base::matrix3::Matrix3;
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;
 use super::isometry2::{Isometry2, Isometry2Trait};
-use super::translation2::{Translation2, Translation2Trait};
+use super::translation2::Translation2;
 use super::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 
 #[cfg(test)]
@@ -90,11 +90,11 @@ pub impl Similarity2Impl<
         self.scaling
     }
 
-    /// Returns the same isometry with a new nonzero scale. Panics with
-    /// `nalgebra: zero scale` on zero. Upstream: `set_scaling` (by value here).
+    /// Sets a new nonzero scale, in place (the isometry is unchanged). Panics with
+    /// `nalgebra: zero scale` on zero. Upstream: `set_scaling`.
     #[inline(always)]
-    fn with_scaling(self: Similarity2<T>, scaling: T) -> Similarity2<T> {
-        Self::from_isometry(self.isometry, scaling)
+    fn set_scaling(ref self: Similarity2<T>, scaling: T) {
+        self = Self::from_isometry(self.isometry, scaling);
     }
 
     /// Applies scale `s` BEFORE `self`: only the stored scale changes. Panics on zero `s`.
@@ -128,26 +128,6 @@ pub impl Similarity2Impl<
         }
     }
 
-    /// `scaling * v + t`, fused as one product plus one add in the wide accumulator. This preserves
-    /// upstream's `rotate`-then-`scale` rounding when `v` is already rotated. Panics on overflow.
-    #[inline(always)]
-    fn scale_translate(v: Vector2<T>, scaling: T, t: Vector2<T>) -> Vector2<T> {
-        Vector2 {
-            x: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.x, scaling), t.x)),
-            y: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.y, scaling), t.y)),
-        }
-    }
-
-    /// `scaling * (rotation · v) + t`: two fused rotation components, then a fused
-    /// scale-plus-translation per component. Upstream writes this as `translation *
-    /// (rotation * point * scaling)`.
-    #[inline(always)]
-    fn rotate_scale_translate(
-        rotation: UnitComplex<T>, v: Vector2<T>, scaling: T, t: Vector2<T>,
-    ) -> Vector2<T> {
-        Self::scale_translate(rotation.transform_vector(v), scaling, t)
-    }
-
     /// The inverse similarity. The inverse scale is computed once, then the inverse isometry
     /// translation is divided by the original scale component-wise. Panics only as scalar division
     /// or negation can. Upstream: `inverse`.
@@ -168,31 +148,11 @@ pub impl Similarity2Impl<
         }
     }
 
-    /// `self⁻¹ * other` without materialising `self.inverse()`: the relative translation is
-    /// `rotation⁻¹ · (other.t - self.t) / self.scaling`, the rotation is `self.r⁻¹ ·
-    /// other.r`, and the scale is `other.scaling / self.scaling`. Upstream: `inv_mul`.
-    fn inv_mul(self: Similarity2<T>, other: Similarity2<T>) -> Similarity2<T> {
-        let d = Vector2 {
-            x: other.isometry.translation.vector.x - self.isometry.translation.vector.x,
-            y: other.isometry.translation.vector.y - self.isometry.translation.vector.y,
-        };
-        let r = self.isometry.rotation.inverse_transform_vector(d);
-        Similarity2 {
-            isometry: Isometry2 {
-                rotation: self.isometry.rotation.rotation_to(other.isometry.rotation),
-                translation: Translation2 {
-                    vector: Vector2 { x: R::div(r.x, self.scaling), y: R::div(r.y, self.scaling) },
-                },
-            },
-            scaling: R::div(other.scaling, self.scaling),
-        }
-    }
-
     /// `self * p = translation + scaling * (rotation · p)`. Panics on overflow. Upstream:
     /// `transform_point` (`sim * p`).
     #[inline(always)]
     fn transform_point(self: Similarity2<T>, p: Point2<T>) -> Point2<T> {
-        let c = Self::rotate_scale_translate(
+        let c = Similarity2InternalTrait::rotate_scale_translate(
             self.isometry.rotation,
             Vector2 { x: p.x, y: p.y },
             self.scaling,
@@ -229,19 +189,21 @@ pub impl Similarity2Impl<
     /// `Translation(t) ∘ self`: the translation shifts exactly; scale and rotation are unchanged.
     /// Upstream: `append_translation_mut`.
     #[inline(always)]
-    fn append_translation(self: Similarity2<T>, t: Translation2<T>) -> Similarity2<T> {
-        Similarity2 { isometry: self.isometry.append_translation(t), scaling: self.scaling }
+    fn append_translation_mut(ref self: Similarity2<T>, t: Translation2<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_translation_mut(t);
+        self = Similarity2 { isometry, scaling: self.scaling };
     }
 
     /// `self ∘ Translation(t)`: the translation shifts by `scaling * (rotation · t)`. Upstream:
     /// `Mul<Translation2>` for similarities.
     #[inline(always)]
-    fn prepend_translation(self: Similarity2<T>, t: Translation2<T>) -> Similarity2<T> {
+    fn mul_translation(self: Similarity2<T>, t: Translation2<T>) -> Similarity2<T> {
         Similarity2 {
             isometry: Isometry2 {
                 rotation: self.isometry.rotation,
                 translation: Translation2 {
-                    vector: Self::rotate_scale_translate(
+                    vector: Similarity2InternalTrait::rotate_scale_translate(
                         self.isometry.rotation,
                         t.vector,
                         self.scaling,
@@ -256,33 +218,35 @@ pub impl Similarity2Impl<
     /// `Rotation(r) ∘ self`: the isometry part handles the rotation about the origin; scale is
     /// unchanged. Upstream: `append_rotation_mut`.
     #[inline(always)]
-    fn append_rotation(self: Similarity2<T>, r: UnitComplex<T>) -> Similarity2<T> {
-        Similarity2 { isometry: self.isometry.append_rotation(r), scaling: self.scaling }
+    fn append_rotation_mut(ref self: Similarity2<T>, r: UnitComplex<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_rotation_mut(r);
+        self = Similarity2 { isometry, scaling: self.scaling };
     }
 
     /// `self ∘ Rotation(r)`: rotation before the similarity; translation and scale are unchanged.
     /// Upstream: `Mul<UnitComplex>`.
     #[inline(always)]
-    fn prepend_rotation(self: Similarity2<T>, r: UnitComplex<T>) -> Similarity2<T> {
-        Similarity2 { isometry: self.isometry.prepend_rotation(r), scaling: self.scaling }
+    fn mul_unit_complex(self: Similarity2<T>, r: UnitComplex<T>) -> Similarity2<T> {
+        Similarity2 { isometry: self.isometry.mul_unit_complex(r), scaling: self.scaling }
     }
 
     /// Appends a rotation about point `p`; the scale is unchanged. Upstream:
     /// `append_rotation_wrt_point_mut`.
     #[inline(always)]
-    fn append_rotation_wrt_point(
-        self: Similarity2<T>, r: UnitComplex<T>, p: Point2<T>,
-    ) -> Similarity2<T> {
-        Similarity2 {
-            isometry: self.isometry.append_rotation_wrt_point(r, p), scaling: self.scaling,
-        }
+    fn append_rotation_wrt_point_mut(ref self: Similarity2<T>, r: UnitComplex<T>, p: Point2<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_rotation_wrt_point_mut(r, p);
+        self = Similarity2 { isometry, scaling: self.scaling };
     }
 
     /// Appends a rotation about the similarity centre; the translation and scale are unchanged.
     /// Upstream: `append_rotation_wrt_center_mut`.
     #[inline(always)]
-    fn append_rotation_wrt_center(self: Similarity2<T>, r: UnitComplex<T>) -> Similarity2<T> {
-        Similarity2 { isometry: self.isometry.append_rotation_wrt_center(r), scaling: self.scaling }
+    fn append_rotation_wrt_center_mut(ref self: Similarity2<T>, r: UnitComplex<T>) {
+        let mut isometry = self.isometry;
+        isometry.append_rotation_wrt_center_mut(r);
+        self = Similarity2 { isometry, scaling: self.scaling };
     }
 
     /// The homogeneous matrix `[[s*re, -s*im, tx], [s*im, s*re, ty], [0, 0, 1]]`, with one product
@@ -311,6 +275,41 @@ pub impl Similarity2Impl<
     }
 }
 
+/// Crate-internal kernels of `Similarity2<T>` (WP 8.0: the public API is strictly upstream's): the
+/// fused scale-plus-translation behind `transform_point`, `*` and `mul_translation`.
+#[generate_trait]
+pub(crate) impl Similarity2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+> of Similarity2InternalTrait<T> {
+    /// `scaling * v + t`, fused as one product plus one add in the wide accumulator. This preserves
+    /// upstream's `rotate`-then-`scale` rounding when `v` is already rotated. Panics on overflow.
+    #[inline(always)]
+    fn scale_translate(v: Vector2<T>, scaling: T, t: Vector2<T>) -> Vector2<T> {
+        Vector2 {
+            x: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.x, scaling), t.x)),
+            y: R::wide_rescale(R::wide_add(R::wide_add_prod(R::wide_zero(), v.y, scaling), t.y)),
+        }
+    }
+    /// `scaling * (rotation · v) + t`: two fused rotation components, then a fused
+    /// scale-plus-translation per component. Upstream writes this as `translation *
+    /// (rotation * point * scaling)`.
+    #[inline(always)]
+    fn rotate_scale_translate(
+        rotation: UnitComplex<T>, v: Vector2<T>, scaling: T, t: Vector2<T>,
+    ) -> Vector2<T> {
+        Self::scale_translate(rotation.transform_vector(v), scaling, t)
+    }
+}
+
 /// Operations of `Similarity2<T>` that go through an angle, hence their own trait.
 #[generate_trait]
 pub impl Similarity2AngleImpl<
@@ -335,15 +334,6 @@ pub impl Similarity2AngleImpl<
             Translation2 { vector: translation }, UnitComplexAngleTrait::new(angle), scaling,
         )
     }
-
-    /// The pure rotation of `angle` radians with nonzero scale. Panics with
-    /// `nalgebra: zero scale` on zero scale. Upstream: `Similarity2::rotation`.
-    #[inline(always)]
-    fn rotation(angle: T, scaling: T) -> Similarity2<T> {
-        Similarity2Trait::from_parts(
-            Translation2Trait::identity(), UnitComplexAngleTrait::new(angle), scaling,
-        )
-    }
 }
 
 /// `a * b`: composition of two similarities, with `b` applied first. Translation is
@@ -365,7 +355,7 @@ pub impl Similarity2Mul<
             isometry: Isometry2 {
                 rotation: lhs.isometry.rotation * rhs.isometry.rotation,
                 translation: Translation2 {
-                    vector: Similarity2Trait::rotate_scale_translate(
+                    vector: Similarity2InternalTrait::rotate_scale_translate(
                         lhs.isometry.rotation,
                         rhs.isometry.translation.vector,
                         lhs.scaling,
@@ -375,15 +365,5 @@ pub impl Similarity2Mul<
             },
             scaling: lhs.scaling * rhs.scaling,
         }
-    }
-}
-
-/// `iso.into()`: the isometry with unit scale. Upstream: `From<Isometry2> for Similarity2`.
-pub impl Similarity2FromIsometry<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
-> of Into<Isometry2<T>, Similarity2<T>> {
-    #[inline(always)]
-    fn into(self: Isometry2<T>) -> Similarity2<T> {
-        Similarity2 { isometry: self, scaling: R::ONE }
     }
 }

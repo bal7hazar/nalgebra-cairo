@@ -190,12 +190,13 @@ pub trait UnitTrait<V, T> {
     fn try_new_and_get(v: V, min_norm: T) -> Option<(Unit<V>, T)>;
     /// The wrapped vector. Upstream: `Unit::into_inner`.
     fn into_inner(self: Unit<V>) -> V;
-    /// Renormalizes exactly: `Unit::new_normalize(self.value)`, i.e. one norm and one exactly
-    /// correctly rounded division per component. Panics on a zero norm. Upstream:
-    /// `Unit::renormalize` (which also returns the previous norm and works in place).
-    fn renormalize(self: Unit<V>) -> Unit<V>;
-    /// Renormalizes a vector that already has a norm close to 1 (accumulated rounding errors,
-    /// e.g. an axis rotated every step): one Newton step for the inverse square root,
+    /// Renormalizes exactly, in place: `self` becomes `Unit::new_normalize(self.value)`, i.e. one
+    /// norm and one exactly correctly rounded division per component, and the norm it had is
+    /// returned. Panics on a zero norm. Upstream: `Unit::renormalize` (`&mut self`, returns the
+    /// previous norm).
+    fn renormalize(ref self: Unit<V>) -> T;
+    /// Renormalizes, in place, a vector that already has a norm close to 1 (accumulated rounding
+    /// errors, e.g. an axis rotated every step): one Newton step for the inverse square root,
     /// `v * (3 - |v|²) / 2`. One fused `norm_squared`, the factor `(3 - |v|²) / 2` as ONE fused
     /// kernel (`mul_add(|v|², -1/2, 3/2)`, floored once, bit-identical to upstream's
     /// `1/2 * (3 - |v|²)`), then one product per component. No square root, no division.
@@ -214,7 +215,7 @@ pub trait UnitTrait<V, T> {
     /// a `lerp` per component 12 590. All the variants give the same bits and are kept as
     /// benchmarks (`bench_unit3_renormalize_fast__alt_*`). Use `renormalize` where the norm may be
     /// far from 1.
-    fn renormalize_fast(self: Unit<V>) -> Unit<V>;
+    fn renormalize_fast(ref self: Unit<V>);
     /// Dot product of two unit vectors: the cosine of the angle between them, fused (floored
     /// once). Cannot overflow (`|cos| <= 1` up to a few ulp). Upstream: `dot` (through `Deref`).
     fn dot(self: Unit<V>, rhs: Unit<V>) -> T;
@@ -283,16 +284,18 @@ pub impl UnitImpl<
     }
 
     #[inline(always)]
-    fn renormalize(self: Unit<V>) -> Unit<V> {
-        Unit { value: N::unscale(self.value, N::norm(self.value)) }
+    fn renormalize(ref self: Unit<V>) -> T {
+        let n = N::norm(self.value);
+        self = Unit { value: N::unscale(self.value, n) };
+        n
     }
 
     #[inline(always)]
-    fn renormalize_fast(self: Unit<V>) -> Unit<V> {
+    fn renormalize_fast(ref self: Unit<V>) {
         // (3 - |v|²) / 2 = floor(-|v|² * 1/2 + 3/2): one fused kernel, bit-identical to
         // `HALF * (THREE - s)`.
         let f = R::mul_add(N::norm_squared(self.value), -R::HALF, R::HALF + R::ONE);
-        Unit { value: N::scale(self.value, f) }
+        self = Unit { value: N::scale(self.value, f) };
     }
 
     #[inline(always)]
@@ -308,6 +311,40 @@ pub impl UnitImpl<
     #[inline(always)]
     fn abs_diff_eq(self: Unit<V>, other: Unit<V>, ulps: u64) -> bool {
         N::abs_diff_eq(self.value, other.value, ulps)
+    }
+}
+
+/// Crate-internal by-value forms of the in-place `renormalize` / `renormalize_fast` (WP 8.0: the
+/// public methods are upstream's `&mut self` ones), for the tests and the value-style call sites.
+#[generate_trait]
+pub(crate) impl UnitInternalImpl<
+    V,
+    T,
+    impl N: Normalizable<V, T>,
+    impl R: Real<T>,
+    +Add<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialOrd<T>,
+    +Copy<V>,
+    +Drop<V>,
+    +Copy<T>,
+    +Drop<T>,
+> of UnitInternalTrait<V, T> {
+    /// `self` renormalized exactly (`UnitTrait::renormalize`), by value.
+    #[inline(always)]
+    fn renormalized(self: Unit<V>) -> Unit<V> {
+        let mut u = self;
+        let _ = UnitTrait::renormalize(ref u);
+        u
+    }
+
+    /// `self` renormalized by one Newton step (`UnitTrait::renormalize_fast`), by value.
+    #[inline(always)]
+    fn renormalized_fast(self: Unit<V>) -> Unit<V> {
+        let mut u = self;
+        UnitTrait::renormalize_fast(ref u);
+        u
     }
 }
 
