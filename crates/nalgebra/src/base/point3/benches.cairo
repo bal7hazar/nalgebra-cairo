@@ -19,7 +19,7 @@ use super::{Point3, Point3InternalTrait, Point3Trait};
 /// amplified by the coordinates.
 #[inline(always)]
 fn alt_from_homogeneous_recip(v: Vector4<Fixed>) -> Option<Point3<Fixed>> {
-    if v.w == Real::ZERO {
+    if v.w == Real::zero() {
         None
     } else {
         let r = v.w.recip();

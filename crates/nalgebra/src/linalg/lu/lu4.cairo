@@ -155,7 +155,7 @@ pub impl Lu4Impl<
             a14 = a44;
             a44 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let (l_a21, l_a31, l_a41) = R::div3(a21, a31, a41, a11);
             let l = l_a21;
             let nl = -l;
@@ -216,7 +216,7 @@ pub impl Lu4Impl<
             a24 = a44;
             a44 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let l = R::div(a32, a22);
             let nl = -l;
             a33 = R::mul_add(nl, a23, a33);
@@ -250,7 +250,7 @@ pub impl Lu4Impl<
             a34 = a44;
             a44 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let l = R::div(a43, a33);
             let nl = -l;
             a44 = R::mul_add(nl, a34, a44);
@@ -284,22 +284,22 @@ pub impl Lu4Impl<
     #[inline(always)]
     fn l(self: Lu4<T>) -> Matrix4<T> {
         Matrix4 {
-            m11: R::ONE,
+            m11: R::one(),
             m21: self.lu.m21,
             m31: self.lu.m31,
             m41: self.lu.m41,
-            m12: R::ZERO,
-            m22: R::ONE,
+            m12: R::zero(),
+            m22: R::one(),
             m32: self.lu.m32,
             m42: self.lu.m42,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
             m43: self.lu.m43,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
-            m44: R::ONE,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: R::one(),
         }
     }
 
@@ -308,17 +308,17 @@ pub impl Lu4Impl<
     fn u(self: Lu4<T>) -> Matrix4<T> {
         Matrix4 {
             m11: self.lu.m11,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m41: R::ZERO,
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
             m12: self.lu.m12,
             m22: self.lu.m22,
-            m32: R::ZERO,
-            m42: R::ZERO,
+            m32: R::zero(),
+            m42: R::zero(),
             m13: self.lu.m13,
             m23: self.lu.m23,
             m33: self.lu.m33,
-            m43: R::ZERO,
+            m43: R::zero(),
             m14: self.lu.m14,
             m24: self.lu.m24,
             m34: self.lu.m34,
@@ -345,10 +345,10 @@ pub impl Lu4Impl<
     /// it is factored and solved with the precision its conditioning allows.
     #[inline(always)]
     fn is_invertible(self: Lu4<T>) -> bool {
-        self.lu.m11 != R::ZERO
-            && self.lu.m22 != R::ZERO
-            && self.lu.m33 != R::ZERO
-            && self.lu.m44 != R::ZERO
+        self.lu.m11 != R::zero()
+            && self.lu.m22 != R::zero()
+            && self.lu.m33 != R::zero()
+            && self.lu.m44 != R::zero()
     }
 
     /// The solution of `A * x = b` for the factored `A`, or `None` when a pivot is exactly zero
@@ -468,7 +468,7 @@ pub impl Lu4Impl<
         let (x41, x42, x43) = R::div3(y41, y42, y43, self.lu.m44);
         let n31 = R::mul_add(-self.lu.m34, x41, y31);
         let n32 = R::mul_add(-self.lu.m34, x42, y32);
-        let n33 = R::mul_add(-self.lu.m34, x43, R::ONE);
+        let n33 = R::mul_add(-self.lu.m34, x43, R::one());
         let n34 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m34, x44));
         let (x31, x32, x33, x34) = R::div4(n31, n32, n33, n34, self.lu.m33);
         let n21 = R::wide_rescale(
@@ -480,7 +480,7 @@ pub impl Lu4Impl<
         );
         let n22 = R::wide_rescale(
             R::wide_sub_prod(
-                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m23, x32),
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::one()), self.lu.m23, x32),
                 self.lu.m24,
                 x42,
             ),
@@ -495,7 +495,7 @@ pub impl Lu4Impl<
         let n11 = R::wide_rescale(
             R::wide_sub_prod(
                 R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12, x21),
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::one()), self.lu.m12, x21),
                     self.lu.m13,
                     x31,
                 ),
@@ -1025,7 +1025,7 @@ mod tests {
         let mut a42 = matrix.m42;
         let mut a43 = matrix.m43;
         let mut a44 = matrix.m44;
-        if a11 != Real::ZERO {
+        if a11 != Real::zero() {
             let l = a21 / a11;
             let nl = -l;
             a22 = Real::mul_add(nl, a12, a22);
@@ -1045,7 +1045,7 @@ mod tests {
             a44 = Real::mul_add(nl, a14, a44);
             a41 = l;
         }
-        if a22 != Real::ZERO {
+        if a22 != Real::zero() {
             let l = a32 / a22;
             let nl = -l;
             a33 = Real::mul_add(nl, a23, a33);
@@ -1057,7 +1057,7 @@ mod tests {
             a44 = Real::mul_add(nl, a24, a44);
             a42 = l;
         }
-        if a33 != Real::ZERO {
+        if a33 != Real::zero() {
             let l = a43 / a33;
             let nl = -l;
             a44 = Real::mul_add(nl, a34, a44);

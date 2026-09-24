@@ -164,9 +164,9 @@ fn test_mul_preserves_the_norm() {
     // sqrt(3).
     let u = qt((2576980377, 1145324612, 2290649224, -2290649225));
     let v = qt((2147483648, 2147483648, 2147483648, -2147483648));
-    assert!(u.norm().abs_diff_eq(Real::ONE, 1));
-    assert!(v.norm() == Real::ONE);
-    assert!((u * v).norm().abs_diff_eq(Real::ONE, 1));
+    assert!(u.norm().abs_diff_eq(Real::one(), 1));
+    assert!(v.norm() == Real::one());
+    assert!((u * v).norm().abs_diff_eq(Real::one(), 1));
     assert!(u * v == qt((-1574821342, 1861152495, 1861152494, -3006477107)));
 }
 
@@ -244,7 +244,7 @@ fn test_norm_and_norm_squared_exact() {
     assert!(a().norm_squared() == int(30));
     assert!(qi(1, 1, 1, 1).norm() == int(2));
     assert!(qi(0, 3, 4, 0).norm() == int(5));
-    assert!(QuaternionTrait::<Fixed>::identity().norm() == Real::ONE);
+    assert!(QuaternionTrait::<Fixed>::identity().norm() == Real::one());
     assert!(a().norm() == a().norm_squared().sqrt());
 }
 
@@ -283,7 +283,7 @@ fn test_dot_is_fused() {
 #[test]
 fn test_scale_and_unscale() {
     assert!(a().scale(int(2)) == qi(2, 4, -6, 8));
-    assert!(a().scale(Real::ZERO) == Zero::zero());
+    assert!(a().scale(Real::zero()) == Zero::zero());
     assert!(a().unscale(int(2)) == qt((ONE_RAW / 2, ONE_RAW, -3 * ONE_RAW / 2, 2 * ONE_RAW)));
     // Floor division: -1 / 2 = -0.5 exactly, -1 / 3 rounds down.
     assert!(qi(-1, 0, 0, 0).unscale(int(3)) == qt((-1431655765, 0, 0, 0)));
@@ -292,7 +292,7 @@ fn test_scale_and_unscale() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero_panics() {
-    let _ = black_box(a()).unscale(Real::ZERO);
+    let _ = black_box(a()).unscale(Real::zero());
 }
 
 #[test]
@@ -304,7 +304,7 @@ fn test_normalize_exact_and_oracle() {
     while let Some(case) = cases.pop_front() {
         let (rq, expected, tol) = *case;
         assert!(qt(rq).normalize().abs_diff_eq(qt(expected), tol));
-        assert!(qt(rq).normalize().norm().abs_diff_eq(Real::ONE, 4));
+        assert!(qt(rq).normalize().norm().abs_diff_eq(Real::one(), 4));
     }
 }
 
@@ -349,8 +349,8 @@ fn test_try_inverse_none_on_zero() {
 
 #[test]
 fn test_lerp_endpoints_are_exact() {
-    assert!(a().lerp(b(), Real::ZERO) == a());
-    assert!(a().lerp(b(), Real::ONE) == b());
+    assert!(a().lerp(b(), Real::zero()) == a());
+    assert!(a().lerp(b(), Real::one()) == b());
     assert!(a().lerp(b(), Real::HALF) == qt((-0x80000000, 0x180000000, 0x100000000, 0x180000000)));
     // Not clamped: t = 2 extrapolates.
     assert!(a().lerp(b(), int(2)) == qi(-5, 0, 13, -6));

@@ -225,8 +225,8 @@ fn test_scale_exact() {
     // (1.5, -2.25, 3.75) * 2 = (3, -4.5, 7.5); * -0.5 = (-0.75, 1.125, -1.875)
     assert!(a().scale(fx(0x200000000)) == p3(0x300000000, -0x480000000, 0x780000000));
     assert!(a().scale(fx(-0x80000000)) == p3(-0xc0000000, 0x120000000, -0x1e0000000));
-    assert!(a().scale(Real::ONE) == a());
-    assert!(a().scale(Real::ZERO) == Point3Trait::<Fixed>::origin());
+    assert!(a().scale(Real::one()) == a());
+    assert!(a().scale(Real::zero()) == Point3Trait::<Fixed>::origin());
 }
 
 #[test]
@@ -246,7 +246,7 @@ fn test_unscale_exact() {
     // (1.5, -2.25, 3.75) / 2 = (0.75, -1.125, 1.875); / -0.5 = * -2
     assert!(a().unscale(fx(0x200000000)) == p3(0xc0000000, -0x120000000, 0x1e0000000));
     assert!(a().unscale(fx(-0x80000000)) == p3(-0x300000000, 0x480000000, -0x780000000));
-    assert!(a().unscale(Real::ONE) == a());
+    assert!(a().unscale(Real::one()) == a());
 }
 
 #[test]
@@ -260,7 +260,7 @@ fn test_unscale_rounds_to_nearest() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero() {
-    let _ = black_box(a()).unscale(Real::ZERO);
+    let _ = black_box(a()).unscale(Real::zero());
 }
 
 // --- inf / sup
@@ -300,8 +300,8 @@ fn test_abs_diff_eq_cannot_overflow() {
 #[test]
 fn test_lerp_exact() {
     // t = 0, 1 give the endpoints; t = 1/2 the midpoint; t = 2 extrapolates.
-    assert!(a().lerp(b(), Real::ZERO) == a());
-    assert!(a().lerp(b(), Real::ONE) == b());
+    assert!(a().lerp(b(), Real::zero()) == a());
+    assert!(a().lerp(b(), Real::one()) == b());
     assert!(a().lerp(b(), Real::HALF) == p3(-0x180000000, -0x100000000, 0x2e0000000));
     assert!(a().lerp(b(), Real::TWO) == p3(-0xa80000000, 0x2c0000000, 0x40000000));
 }
@@ -348,8 +348,8 @@ fn test_distance_exact() {
     assert!(p().distance_squared(o) == fx(0xa900000000));
     assert!(p().distance(o) == fx(0xd00000000));
     assert!(o.distance(p()) == fx(0xd00000000));
-    assert!(p().distance(p()) == Real::ZERO);
-    assert!(p().distance_squared(p()) == Real::ZERO);
+    assert!(p().distance(p()) == Real::zero());
+    assert!(p().distance_squared(p()) == Real::zero());
 }
 
 #[test]

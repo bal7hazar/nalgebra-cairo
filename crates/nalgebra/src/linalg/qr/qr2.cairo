@@ -72,8 +72,8 @@ pub impl Qr2Impl<
     /// it is bounded by 1).
     fn new(matrix: Matrix2<T>) -> Qr2<T> {
         let r11 = R::norm2(matrix.m11, matrix.m21);
-        let (q11, q21) = if r11 == R::ZERO {
-            (R::ZERO, R::ZERO)
+        let (q11, q21) = if r11 == R::zero() {
+            (R::zero(), R::zero())
         } else {
             (R::div(matrix.m11, r11), R::div(matrix.m21, r11))
         };
@@ -81,14 +81,14 @@ pub impl Qr2Impl<
         let w1 = R::mul_add(-r12, q11, matrix.m12);
         let w2 = R::mul_add(-r12, q21, matrix.m22);
         let r22 = R::norm2(w1, w2);
-        let (q12, q22) = if r22 == R::ZERO {
-            (R::ZERO, R::ZERO)
+        let (q12, q22) = if r22 == R::zero() {
+            (R::zero(), R::zero())
         } else {
             (R::div(w1, r22), R::div(w2, r22))
         };
         Qr2 {
             q: Matrix2 { m11: q11, m21: q21, m12: q12, m22: q22 },
-            r: Matrix2 { m11: r11, m21: R::ZERO, m12: r12, m22: r22 },
+            r: Matrix2 { m11: r11, m21: R::zero(), m12: r12, m22: r22 },
         }
     }
 
@@ -115,7 +115,7 @@ pub impl Qr2Impl<
     /// (no epsilon), like upstream's `QR::is_invertible`. Equivalently, `Q` is orthonormal.
     #[inline(always)]
     fn is_invertible(self: Qr2<T>) -> bool {
-        self.r.m11 != R::ZERO && self.r.m22 != R::ZERO
+        self.r.m11 != R::zero() && self.r.m22 != R::zero()
     }
 
     /// The solution of `A * x = b` for the factored `A`, or `None` when a diagonal entry of `R`
@@ -189,7 +189,7 @@ pub(crate) impl Qr2InternalImpl<
     /// closed form is one exactly-rounded `diff_prod`, where this one multiplies two norms that
     /// already carry the rounding of the orthogonalisation.
     fn determinant(self: Qr2<T>) -> T {
-        let d = if self.q.determinant().is_negative() {
+        let d = if self.q.determinant().is_sign_negative() {
             -self.r.m11
         } else {
             self.r.m11
@@ -312,8 +312,8 @@ mod tests {
     #[test]
     fn test_new_rank_one_leaves_a_zero_column() {
         let f = Qr2Trait::new(a_rank1());
-        assert!(f.r().m22 == Real::ZERO);
-        assert!(f.q().column2() == Vector2 { x: Real::ZERO, y: Real::ZERO });
+        assert!(f.r().m22 == Real::zero());
+        assert!(f.q().column2() == Vector2 { x: Real::zero(), y: Real::zero() });
         // `Q R = A` still holds exactly: row 2 of R is zero.
         assert!(f.q() * f.r() == a_rank1());
         assert!(!f.is_invertible());
@@ -449,7 +449,7 @@ mod tests {
         let a = black_box(a_bench());
         let e = black_box(int(1));
         let f = Qr2Trait::new(a);
-        assert!(f.r.m11 > Real::ZERO && f.r.m22 > Real::ZERO && f.r.m21 == Real::ZERO);
+        assert!(f.r.m11 > Real::zero() && f.r.m22 > Real::zero() && f.r.m21 == Real::zero());
         assert!(e == e);
     }
 
@@ -467,7 +467,7 @@ mod tests {
         let f = black_box(f_bench());
         let e = black_box(int(1));
         let (q, r) = f.unpack();
-        assert!(q.m11 != Real::ZERO && r.m11 != Real::ZERO);
+        assert!(q.m11 != Real::zero() && r.m11 != Real::zero());
         assert!(e == e);
     }
 
@@ -552,6 +552,6 @@ mod tests {
     fn bench_qr2_determinant__diagonal_product() {
         let f = black_box(f_bench());
         let e = black_box(true);
-        assert!((f.determinant() != Real::ZERO) == e);
+        assert!((f.determinant() != Real::zero()) == e);
     }
 }

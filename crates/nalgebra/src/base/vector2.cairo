@@ -187,7 +187,7 @@ pub impl Vector2Impl<
 
     #[inline(always)]
     fn zeros() -> Vector2<T> {
-        Vector2 { x: R::ZERO, y: R::ZERO }
+        Vector2 { x: R::zero(), y: R::zero() }
     }
 
     #[inline(always)]
@@ -202,12 +202,12 @@ pub impl Vector2Impl<
 
     #[inline(always)]
     fn x() -> Vector2<T> {
-        Vector2 { x: R::ONE, y: R::ZERO }
+        Vector2 { x: R::one(), y: R::zero() }
     }
 
     #[inline(always)]
     fn y() -> Vector2<T> {
-        Vector2 { x: R::ZERO, y: R::ONE }
+        Vector2 { x: R::zero(), y: R::one() }
     }
 
     #[inline(always)]
@@ -217,7 +217,7 @@ pub impl Vector2Impl<
 
     #[inline(always)]
     fn to_homogeneous(self: Vector2<T>) -> Vector3<T> {
-        Vector3 { x: self.x, y: self.y, z: R::ZERO }
+        Vector3 { x: self.x, y: self.y, z: R::zero() }
     }
 
     #[inline(always)]
@@ -315,7 +315,7 @@ pub impl Vector2Impl<
 
     #[inline(always)]
     fn is_zero(self: Vector2<T>) -> bool {
-        self.x == R::ZERO && self.y == R::ZERO
+        self.x == R::zero() && self.y == R::zero()
     }
 
     #[inline(always)]
@@ -402,8 +402,8 @@ pub impl Vector2AngleImpl<
     fn angle(self: Vector2<T>, other: Vector2<T>) -> T {
         let n1 = R::norm2(self.x, self.y);
         let n2 = R::norm2(other.x, other.y);
-        if n1 == R::ZERO || n2 == R::ZERO {
-            return R::ZERO;
+        if n1 == R::zero() || n2 == R::zero() {
+            return R::zero();
         }
         let u = Vector2 { x: R::div(self.x, n1), y: R::div(self.y, n1) };
         let v = Vector2 { x: R::div(other.x, n2), y: R::div(other.y, n2) };

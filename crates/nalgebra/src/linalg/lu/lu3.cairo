@@ -124,7 +124,7 @@ pub impl Lu3Impl<
             a13 = a33;
             a33 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let l = R::div(a21, a11);
             let nl = -l;
             a22 = R::mul_add(nl, a12, a22);
@@ -155,7 +155,7 @@ pub impl Lu3Impl<
             a23 = a33;
             a33 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let l = R::div(a32, a22);
             let nl = -l;
             a33 = R::mul_add(nl, a23, a33);
@@ -182,15 +182,15 @@ pub impl Lu3Impl<
     #[inline(always)]
     fn l(self: Lu3<T>) -> Matrix3<T> {
         Matrix3 {
-            m11: R::ONE,
+            m11: R::one(),
             m21: self.lu.m21,
             m31: self.lu.m31,
-            m12: R::ZERO,
-            m22: R::ONE,
+            m12: R::zero(),
+            m22: R::one(),
             m32: self.lu.m32,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
         }
     }
 
@@ -199,11 +199,11 @@ pub impl Lu3Impl<
     fn u(self: Lu3<T>) -> Matrix3<T> {
         Matrix3 {
             m11: self.lu.m11,
-            m21: R::ZERO,
-            m31: R::ZERO,
+            m21: R::zero(),
+            m31: R::zero(),
             m12: self.lu.m12,
             m22: self.lu.m22,
-            m32: R::ZERO,
+            m32: R::zero(),
             m13: self.lu.m13,
             m23: self.lu.m23,
             m33: self.lu.m33,
@@ -229,7 +229,7 @@ pub impl Lu3Impl<
     /// it is factored and solved with the precision its conditioning allows.
     #[inline(always)]
     fn is_invertible(self: Lu3<T>) -> bool {
-        self.lu.m11 != R::ZERO && self.lu.m22 != R::ZERO && self.lu.m33 != R::ZERO
+        self.lu.m11 != R::zero() && self.lu.m22 != R::zero() && self.lu.m33 != R::zero()
     }
 
     /// The solution of `A * x = b` for the factored `A`, or `None` when a pivot is exactly zero
@@ -321,12 +321,12 @@ pub impl Lu3Impl<
         let x31 = R::div(y31, self.lu.m33);
         let x32 = R::div(y32, self.lu.m33);
         let n21 = R::mul_add(-self.lu.m23, x31, y21);
-        let n22 = R::mul_add(-self.lu.m23, x32, R::ONE);
+        let n22 = R::mul_add(-self.lu.m23, x32, R::one());
         let n23 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m23, x33));
         let (x21, x22, x23) = R::div3(n21, n22, n23, self.lu.m22);
         let n11 = R::wide_rescale(
             R::wide_sub_prod(
-                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12, x21),
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::one()), self.lu.m12, x21),
                 self.lu.m13,
                 x31,
             ),
@@ -675,7 +675,7 @@ mod tests {
         let mut a31 = matrix.m31;
         let mut a32 = matrix.m32;
         let mut a33 = matrix.m33;
-        if a11 != Real::ZERO {
+        if a11 != Real::zero() {
             let l = a21 / a11;
             let nl = -l;
             a22 = Real::mul_add(nl, a12, a22);
@@ -687,7 +687,7 @@ mod tests {
             a33 = Real::mul_add(nl, a13, a33);
             a31 = l;
         }
-        if a22 != Real::ZERO {
+        if a22 != Real::zero() {
             let l = a32 / a22;
             let nl = -l;
             a33 = Real::mul_add(nl, a23, a33);

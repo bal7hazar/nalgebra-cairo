@@ -137,7 +137,9 @@ pub impl Rotation2Impl<
 > of Rotation2Trait<T> {
     #[inline(always)]
     fn identity() -> Rotation2<T> {
-        Rotation2 { matrix: Matrix2 { m11: R::ONE, m21: R::ZERO, m12: R::ZERO, m22: R::ONE } }
+        Rotation2 {
+            matrix: Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() },
+        }
     }
 
     #[inline(always)]
@@ -190,9 +192,9 @@ pub impl Rotation2Impl<
         let dot = R::sum_prod2(a.x, b.x, a.y, b.y);
         let perp = R::diff_prod(a.x, b.y, a.y, b.x);
         let n = R::norm2(dot, perp);
-        if n == R::ZERO {
+        if n == R::zero() {
             return Rotation2 {
-                matrix: Matrix2 { m11: R::ONE, m21: R::ZERO, m12: R::ZERO, m22: R::ONE },
+                matrix: Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() },
             };
         }
         let (re, im) = (R::div(dot, n), R::div(perp, n));
@@ -236,13 +238,13 @@ pub impl Rotation2Impl<
         Matrix3 {
             m11: self.matrix.m11,
             m21: self.matrix.m21,
-            m31: R::ZERO,
+            m31: R::zero(),
             m12: self.matrix.m12,
             m22: self.matrix.m22,
-            m32: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
+            m32: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
         }
     }
 
@@ -312,9 +314,9 @@ pub impl Rotation2AngleImpl<
     fn scaled_rotation_between(a: Vector2<T>, b: Vector2<T>, s: T) -> Rotation2<T> {
         let dot = R::sum_prod2(a.x, b.x, a.y, b.y);
         let perp = R::diff_prod(a.x, b.y, a.y, b.x);
-        if dot == R::ZERO && perp == R::ZERO {
+        if dot == R::zero() && perp == R::zero() {
             return Rotation2 {
-                matrix: Matrix2 { m11: R::ONE, m21: R::ZERO, m12: R::ZERO, m22: R::ONE },
+                matrix: Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() },
             };
         }
         let (sin, cos) = Tr::sin_cos(Tr::atan2(perp, dot) * s);

@@ -43,7 +43,7 @@ fn half_turn_y() -> UnitQuaternion<Fixed> {
 fn test_identity_and_constructors_are_exact() {
     let i = id();
     assert!(i.isometry == Isometry3Trait::<Fixed>::identity());
-    assert!(i.scaling == Real::ONE);
+    assert!(i.scaling == Real::one());
     assert!(i.transform_point(p3t((0x123, -0x456, 0x789))) == p3t((0x123, -0x456, 0x789)));
 
     let t = Translation3Trait::new(fx(0x180000000), fx(-0x240000000), fx(0x3c0000000));
@@ -62,8 +62,8 @@ fn test_identity_and_constructors_are_exact() {
             m
         }.scaling() == fx(0x180000000),
     );
-    let pure = Similarity3Trait::from_isometry(Isometry3Trait::from_parts(t, r), Real::ONE);
-    assert!(pure.scaling == Real::ONE && pure.isometry == from_parts.isometry);
+    let pure = Similarity3Trait::from_isometry(Isometry3Trait::from_parts(t, r), Real::one());
+    assert!(pure.scaling == Real::one() && pure.isometry == from_parts.isometry);
 }
 
 #[test]
@@ -76,7 +76,9 @@ fn test_pure_scaling_and_half_turn_are_exact() {
             ) == p3t((3 * ONE_RAW, -6 * ONE_RAW, 9 * ONE_RAW)),
     );
     let q = Similarity3Trait::from_parts(
-        Translation3Trait::new(fx(ONE_RAW), Real::ZERO, Real::ZERO), half_turn_y(), fx(0x200000000),
+        Translation3Trait::new(fx(ONE_RAW), Real::zero(), Real::zero()),
+        half_turn_y(),
+        fx(0x200000000),
     );
     assert!(
         q
@@ -124,9 +126,9 @@ fn test_append_and_prepend_translation_rotation_match_composition() {
         Translation3Trait::new(fx(0x140000000), fx(-0x60000000), fx(0x280000000)),
         half_turn_y(),
     );
-    let ti: Similarity3<Fixed> = Similarity3Trait::from_isometry(t.into(), Real::ONE);
+    let ti: Similarity3<Fixed> = Similarity3Trait::from_isometry(t.into(), Real::one());
     let ri: Similarity3<Fixed> = Similarity3Trait::from_isometry(
-        Isometry3Trait::from_parts(Translation3Trait::identity(), r), Real::ONE,
+        Isometry3Trait::from_parts(Translation3Trait::identity(), r), Real::one(),
     );
     assert!({
         let mut m = x;
@@ -148,7 +150,7 @@ fn test_to_homogeneous_layout_and_action() {
     let m = x.to_homogeneous();
     let r = x.isometry.rotation.to_rotation_matrix().matrix;
     assert!(m.m11 == r.m11 * x.scaling && m.m22 == r.m22 * x.scaling);
-    assert!(m.m14 == x.isometry.translation.vector.x && m.m44 == Real::ONE);
+    assert!(m.m14 == x.isometry.translation.vector.x && m.m44 == Real::one());
     assert!(id().to_homogeneous() == Matrix4Trait::<Fixed>::identity());
     let p = p3t((-0x280000000, 0x3c0000000, 0xc0000000));
     let h = m.mul_vec(p.to_homogeneous());
@@ -164,13 +166,13 @@ fn test_append_rotation_wrt_point_and_center() {
         m
     };
     let shift: Similarity3<Fixed> = Similarity3Trait::from_isometry(
-        Translation3Trait::new(p.x, p.y, p.z).into(), Real::ONE,
+        Translation3Trait::new(p.x, p.y, p.z).into(), Real::one(),
     );
     let back: Similarity3<Fixed> = Similarity3Trait::from_isometry(
-        Translation3Trait::new(-p.x, -p.y, -p.z).into(), Real::ONE,
+        Translation3Trait::new(-p.x, -p.y, -p.z).into(), Real::one(),
     );
     let ri: Similarity3<Fixed> = Similarity3Trait::from_isometry(
-        Isometry3Trait::from_parts(Translation3Trait::identity(), r), Real::ONE,
+        Isometry3Trait::from_parts(Translation3Trait::identity(), r), Real::one(),
     );
     assert!(y.abs_diff_eq(shift * ri * back * x, 8));
     assert!(
@@ -191,19 +193,19 @@ fn test_append_rotation_wrt_point_and_center() {
 fn test_from_parts_zero_scaling_panics() {
     Similarity3Trait::<
         Fixed,
-    >::from_parts(Translation3Trait::identity(), UnitQuaternionTrait::identity(), Real::ZERO);
+    >::from_parts(Translation3Trait::identity(), UnitQuaternionTrait::identity(), Real::zero());
 }
 
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_from_isometry_zero_scaling_panics() {
-    Similarity3Trait::<Fixed>::from_isometry(Isometry3Trait::identity(), Real::ZERO);
+    Similarity3Trait::<Fixed>::from_isometry(Isometry3Trait::identity(), Real::zero());
 }
 
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_from_scaling_zero_panics() {
-    Similarity3Trait::<Fixed>::from_scaling(Real::ZERO);
+    Similarity3Trait::<Fixed>::from_scaling(Real::zero());
 }
 
 #[test]
@@ -211,7 +213,7 @@ fn test_from_scaling_zero_panics() {
 fn test_with_scaling_zero_panics() {
     {
         let mut m = a();
-        m.set_scaling(Real::ZERO);
+        m.set_scaling(Real::zero());
         m
     };
 }
@@ -219,13 +221,13 @@ fn test_with_scaling_zero_panics() {
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_prepend_scaling_zero_panics() {
-    a().prepend_scaling(Real::ZERO);
+    a().prepend_scaling(Real::zero());
 }
 
 #[test]
 #[should_panic(expected: 'nalgebra: zero scale')]
 fn test_append_scaling_zero_panics() {
-    a().append_scaling(Real::ZERO);
+    a().append_scaling(Real::zero());
 }
 
 #[test]

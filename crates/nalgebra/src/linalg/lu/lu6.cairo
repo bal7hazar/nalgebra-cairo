@@ -248,7 +248,7 @@ pub impl Lu6Impl<
             a16 = a66;
             a66 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let (l_a21, l_a31, l_a41, l_a51, l_a61) = R::div5(a21, a31, a41, a51, a61, a11);
             let l = l_a21;
             let nl = -l;
@@ -391,7 +391,7 @@ pub impl Lu6Impl<
             a26 = a66;
             a66 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let (l_a32, l_a42, l_a52, l_a62) = R::div4(a32, a42, a52, a62, a22);
             let l = l_a32;
             let nl = -l;
@@ -498,7 +498,7 @@ pub impl Lu6Impl<
             a36 = a66;
             a66 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let (l_a43, l_a53, l_a63) = R::div3(a43, a53, a63, a33);
             let l = l_a43;
             let nl = -l;
@@ -571,7 +571,7 @@ pub impl Lu6Impl<
             a46 = a66;
             a66 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let l = R::div(a54, a44);
             let nl = -l;
             a55 = R::mul_add(nl, a45, a55);
@@ -611,7 +611,7 @@ pub impl Lu6Impl<
             a56 = a66;
             a66 = t;
         }
-        if piv != R::ZERO {
+        if piv != R::zero() {
             let l = R::div(a65, a55);
             let nl = -l;
             a66 = R::mul_add(nl, a56, a66);
@@ -674,15 +674,15 @@ pub impl Lu6Impl<
     fn l(self: Lu6<T>) -> Matrix6<T> {
         Matrix6 {
             m11: Matrix3 {
-                m11: R::ONE,
+                m11: R::one(),
                 m21: self.lu.m11.m21,
                 m31: self.lu.m11.m31,
-                m12: R::ZERO,
-                m22: R::ONE,
+                m12: R::zero(),
+                m22: R::one(),
                 m32: self.lu.m11.m32,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ONE,
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::one(),
             },
             m21: Matrix3 {
                 m11: self.lu.m21.m11,
@@ -696,26 +696,26 @@ pub impl Lu6Impl<
                 m33: self.lu.m21.m33,
             },
             m12: Matrix3 {
-                m11: R::ZERO,
-                m21: R::ZERO,
-                m31: R::ZERO,
-                m12: R::ZERO,
-                m22: R::ZERO,
-                m32: R::ZERO,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ZERO,
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
             },
             m22: Matrix3 {
-                m11: R::ONE,
+                m11: R::one(),
                 m21: self.lu.m22.m21,
                 m31: self.lu.m22.m31,
-                m12: R::ZERO,
-                m22: R::ONE,
+                m12: R::zero(),
+                m22: R::one(),
                 m32: self.lu.m22.m32,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ONE,
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::one(),
             },
         }
     }
@@ -726,25 +726,25 @@ pub impl Lu6Impl<
         Matrix6 {
             m11: Matrix3 {
                 m11: self.lu.m11.m11,
-                m21: R::ZERO,
-                m31: R::ZERO,
+                m21: R::zero(),
+                m31: R::zero(),
                 m12: self.lu.m11.m12,
                 m22: self.lu.m11.m22,
-                m32: R::ZERO,
+                m32: R::zero(),
                 m13: self.lu.m11.m13,
                 m23: self.lu.m11.m23,
                 m33: self.lu.m11.m33,
             },
             m21: Matrix3 {
-                m11: R::ZERO,
-                m21: R::ZERO,
-                m31: R::ZERO,
-                m12: R::ZERO,
-                m22: R::ZERO,
-                m32: R::ZERO,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ZERO,
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
             },
             m12: Matrix3 {
                 m11: self.lu.m12.m11,
@@ -759,11 +759,11 @@ pub impl Lu6Impl<
             },
             m22: Matrix3 {
                 m11: self.lu.m22.m11,
-                m21: R::ZERO,
-                m31: R::ZERO,
+                m21: R::zero(),
+                m31: R::zero(),
                 m12: self.lu.m22.m12,
                 m22: self.lu.m22.m22,
-                m32: R::ZERO,
+                m32: R::zero(),
                 m13: self.lu.m22.m13,
                 m23: self.lu.m22.m23,
                 m33: self.lu.m22.m33,
@@ -790,12 +790,12 @@ pub impl Lu6Impl<
     /// it is factored and solved with the precision its conditioning allows.
     #[inline(always)]
     fn is_invertible(self: Lu6<T>) -> bool {
-        self.lu.m11.m11 != R::ZERO
-            && self.lu.m11.m22 != R::ZERO
-            && self.lu.m11.m33 != R::ZERO
-            && self.lu.m22.m11 != R::ZERO
-            && self.lu.m22.m22 != R::ZERO
-            && self.lu.m22.m33 != R::ZERO
+        self.lu.m11.m11 != R::zero()
+            && self.lu.m11.m22 != R::zero()
+            && self.lu.m11.m33 != R::zero()
+            && self.lu.m22.m11 != R::zero()
+            && self.lu.m22.m22 != R::zero()
+            && self.lu.m22.m33 != R::zero()
     }
 
     /// The solution of `A * x = b` for the factored `A`, or `None` when a pivot is exactly zero
@@ -1066,7 +1066,7 @@ pub impl Lu6Impl<
         let n52 = R::mul_add(-self.lu.m22.m23, x62, y52);
         let n53 = R::mul_add(-self.lu.m22.m23, x63, y53);
         let n54 = R::mul_add(-self.lu.m22.m23, x64, y54);
-        let n55 = R::mul_add(-self.lu.m22.m23, x65, R::ONE);
+        let n55 = R::mul_add(-self.lu.m22.m23, x65, R::one());
         let n56 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m22.m23, x66));
         let (x51, x52, x53, x54, x55, x56) = R::div6(n51, n52, n53, n54, n55, n56, self.lu.m22.m22);
         let n41 = R::wide_rescale(
@@ -1092,7 +1092,7 @@ pub impl Lu6Impl<
         );
         let n44 = R::wide_rescale(
             R::wide_sub_prod(
-                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m22.m12, x54),
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::one()), self.lu.m22.m12, x54),
                 self.lu.m22.m13,
                 x64,
             ),
@@ -1133,7 +1133,7 @@ pub impl Lu6Impl<
         let n33 = R::wide_rescale(
             R::wide_sub_prod(
                 R::wide_sub_prod(
-                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m12.m31, x43),
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::one()), self.lu.m12.m31, x43),
                     self.lu.m12.m32,
                     x53,
                 ),
@@ -1188,7 +1188,9 @@ pub impl Lu6Impl<
             R::wide_sub_prod(
                 R::wide_sub_prod(
                     R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), R::ONE), self.lu.m11.m23, x32),
+                        R::wide_sub_prod(
+                            R::wide_add(R::wide_zero(), R::one()), self.lu.m11.m23, x32,
+                        ),
                         self.lu.m12.m21,
                         x42,
                     ),
@@ -1266,7 +1268,7 @@ pub impl Lu6Impl<
                     R::wide_sub_prod(
                         R::wide_sub_prod(
                             R::wide_sub_prod(
-                                R::wide_add(R::wide_zero(), R::ONE), self.lu.m11.m12, x21,
+                                R::wide_add(R::wide_zero(), R::one()), self.lu.m11.m12, x21,
                             ),
                             self.lu.m11.m13,
                             x31,

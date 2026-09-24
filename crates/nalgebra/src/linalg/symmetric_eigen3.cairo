@@ -114,13 +114,13 @@ impl Jacobi3Impl<
     #[inline(always)]
     fn rotation(app: T, g: T, aqq: T) -> (T, T, T) {
         let h = R::diff_prod(aqq, R::HALF, app, R::HALF);
-        let num = if h.is_negative() {
+        let num = if h.is_sign_negative() {
             -g
         } else {
             g
         };
         let t = R::div(num, h.abs() + R::norm2(h, g));
-        let c = R::recip(R::sqrt(R::mul_add(t, t, R::ONE)));
+        let c = R::recip(R::sqrt(R::mul_add(t, t, R::one())));
         (t, c, t * c)
     }
 
@@ -185,14 +185,14 @@ impl Jacobi3Impl<
     /// buys 23 520 gas on `new` (measured), which is why it stays.
     #[inline(always)]
     fn rotate12_s(s: SymMatrix3<T>) -> (SymMatrix3<T>, T, T) {
-        if s.m12 == R::ZERO {
-            return (s, R::ONE, R::ZERO);
+        if s.m12 == R::zero() {
+            return (s, R::one(), R::zero());
         }
         let (t, c, sn) = Self::rotation(s.m11, s.m12, s.m22);
         (
             SymMatrix3 {
                 m11: R::mul_add(-t, s.m12, s.m11),
-                m12: R::ZERO,
+                m12: R::zero(),
                 m13: R::diff_prod(c, s.m13, sn, s.m23),
                 m22: R::mul_add(t, s.m12, s.m22),
                 m23: R::sum_prod2(sn, s.m13, c, s.m23),
@@ -228,15 +228,15 @@ impl Jacobi3Impl<
     /// The rotation in the `(1, 3)` plane that annihilates `m13`, see `rotate12_s`.
     #[inline(always)]
     fn rotate13_s(s: SymMatrix3<T>) -> (SymMatrix3<T>, T, T) {
-        if s.m13 == R::ZERO {
-            return (s, R::ONE, R::ZERO);
+        if s.m13 == R::zero() {
+            return (s, R::one(), R::zero());
         }
         let (t, c, sn) = Self::rotation(s.m11, s.m13, s.m33);
         (
             SymMatrix3 {
                 m11: R::mul_add(-t, s.m13, s.m11),
                 m12: R::diff_prod(c, s.m12, sn, s.m23),
-                m13: R::ZERO,
+                m13: R::zero(),
                 m22: s.m22,
                 m23: R::sum_prod2(sn, s.m12, c, s.m23),
                 m33: R::mul_add(t, s.m13, s.m33),
@@ -269,8 +269,8 @@ impl Jacobi3Impl<
     /// The rotation in the `(2, 3)` plane that annihilates `m23`, see `rotate12_s`.
     #[inline(always)]
     fn rotate23_s(s: SymMatrix3<T>) -> (SymMatrix3<T>, T, T) {
-        if s.m23 == R::ZERO {
-            return (s, R::ONE, R::ZERO);
+        if s.m23 == R::zero() {
+            return (s, R::one(), R::zero());
         }
         let (t, c, sn) = Self::rotation(s.m22, s.m23, s.m33);
         (
@@ -279,7 +279,7 @@ impl Jacobi3Impl<
                 m12: R::diff_prod(c, s.m12, sn, s.m13),
                 m13: R::sum_prod2(sn, s.m12, c, s.m13),
                 m22: R::mul_add(-t, s.m23, s.m22),
-                m23: R::ZERO,
+                m23: R::zero(),
                 m33: R::mul_add(t, s.m23, s.m33),
             },
             c,
@@ -368,7 +368,7 @@ impl Jacobi3Impl<
         } else {
             v.z
         };
-        if dominant.is_negative() {
+        if dominant.is_sign_negative() {
             Vector3 { x: -v.x, y: -v.y, z: -v.z }
         } else {
             v
@@ -574,12 +574,12 @@ mod tests {
     /// `|<c_i, c_j> - delta_ij|` over the three columns, in raw units.
     fn orthonormality_error(v: Matrix3<Fixed>) -> u128 {
         let (c1, c2, c3) = (v.column1(), v.column2(), v.column3());
-        let mut e = ulp_diff(c1.norm(), Real::ONE);
-        e = core::cmp::max(e, ulp_diff(c2.norm(), Real::ONE));
-        e = core::cmp::max(e, ulp_diff(c3.norm(), Real::ONE));
-        e = core::cmp::max(e, ulp_diff(c1.dot(c2), Real::ZERO));
-        e = core::cmp::max(e, ulp_diff(c1.dot(c3), Real::ZERO));
-        core::cmp::max(e, ulp_diff(c2.dot(c3), Real::ZERO))
+        let mut e = ulp_diff(c1.norm(), Real::one());
+        e = core::cmp::max(e, ulp_diff(c2.norm(), Real::one()));
+        e = core::cmp::max(e, ulp_diff(c3.norm(), Real::one()));
+        e = core::cmp::max(e, ulp_diff(c1.dot(c2), Real::zero()));
+        e = core::cmp::max(e, ulp_diff(c1.dot(c3), Real::zero()));
+        core::cmp::max(e, ulp_diff(c2.dot(c3), Real::zero()))
     }
 
     /// `|S * c_i - lambda_i * c_i|` over the three columns, in raw units.
@@ -600,9 +600,9 @@ mod tests {
 
     /// Largest `|off-diagonal|` of the partially diagonalised matrix, in raw units.
     fn off_diagonal_error(j: Jacobi3<Fixed>) -> u128 {
-        let mut e = ulp_diff(j.s.m12, Real::ZERO);
-        e = core::cmp::max(e, ulp_diff(j.s.m13, Real::ZERO));
-        core::cmp::max(e, ulp_diff(j.s.m23, Real::ZERO))
+        let mut e = ulp_diff(j.s.m12, Real::zero());
+        e = core::cmp::max(e, ulp_diff(j.s.m13, Real::zero()));
+        core::cmp::max(e, ulp_diff(j.s.m23, Real::zero()))
     }
 
     // --- exact cases ---------------------------------------------------------------------------
@@ -626,7 +626,7 @@ mod tests {
             let s = s3i((a, 0, 0, b, 0, c));
             let e = SymmetricEigen3InternalTrait::new_sym(s);
             assert!(e.eigenvalues == v3i(-2, 1, 7));
-            assert!(e.eigenvectors.determinant() == Real::ONE);
+            assert!(e.eigenvectors.determinant() == Real::one());
             assert!(e.recompose_sym() == s);
             assert!(residual_error(s, e) == 0);
         }
@@ -650,7 +650,7 @@ mod tests {
         let s = s3i((5, 0, 0, 3, 0, 3));
         let e = SymmetricEigen3InternalTrait::new_sym(s);
         assert!(e.eigenvalues == v3i(3, 3, 5));
-        assert!(e.eigenvectors.determinant() == Real::ONE);
+        assert!(e.eigenvectors.determinant() == Real::one());
         assert!(residual_error(s, e) == 0);
         assert!(e.recompose_sym() == s);
     }
@@ -662,7 +662,7 @@ mod tests {
         let e = SymmetricEigen3InternalTrait::new_sym(s);
         assert!(max_ulp_diff_v3(e.eigenvalues, v3i(0, 0, 3)) <= 2);
         // 1/sqrt(3) through `fixed`'s normalisation path (it has no `inv_sqrt`).
-        let third = norm3_wide(Real::ONE, Real::ONE, Real::ONE).recip().mul(Real::ONE);
+        let third = norm3_wide(Real::one(), Real::one(), Real::one()).recip().mul(Real::one());
         let c3 = e.eigenvectors.column3();
         assert!(max_ulp_diff_v3(c3.abs(), Vector3 { x: third, y: third, z: third }) <= 4);
         assert!(orthonormality_error(e.eigenvectors) <= 16);
@@ -676,7 +676,7 @@ mod tests {
         let e = SymmetricEigen3InternalTrait::new_sym(s);
         assert!(e.eigenvalues == v3i(1, 4, 6));
         // The eigenvectors of the block are irrational, so `det` is only +1 up to their rounding.
-        assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
+        assert!(ulp_diff(e.eigenvectors.determinant(), Real::one()) <= 4);
         assert!(residual_error(s, e) <= 8);
     }
 
@@ -838,7 +838,7 @@ mod tests {
             let (a, _expected, _tol) = *case;
             let s = s3r(a);
             let e = SymmetricEigen3InternalTrait::new_sym(s);
-            assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
+            assert!(ulp_diff(e.eigenvectors.determinant(), Real::one()) <= 4);
             let orth = orthonormality_error(e.eigenvectors);
             assert!(orth <= 32, "columns are not orthonormal");
             let rec = max_ulp_diff_s3(e.recompose_sym(), s) / amax_s3(s);
@@ -883,12 +883,12 @@ mod tests {
     fn test_new_overflow_panics() {
         let s = black_box(
             SymMatrix3 {
-                m11: Real::<Fixed>::MAX,
-                m12: Real::MAX,
-                m13: Real::MAX,
-                m22: Real::MAX,
-                m23: Real::MAX,
-                m33: Real::MAX,
+                m11: Real::<Fixed>::max_value().unwrap(),
+                m12: Real::max_value().unwrap(),
+                m13: Real::max_value().unwrap(),
+                m22: Real::max_value().unwrap(),
+                m23: Real::max_value().unwrap(),
+                m33: Real::max_value().unwrap(),
             },
         );
         SymmetricEigen3InternalTrait::new_sym(s);
@@ -1023,7 +1023,7 @@ mod tests {
         let j = black_box(Jacobi3Impl::<Fixed>::start(bench_input()));
         let j = j.sweep();
         // `m12` was zeroed by the first rotation and refilled by the next two.
-        assert!(j.s.m12 != Real::ZERO);
+        assert!(j.s.m12 != Real::zero());
     }
 
     #[test]
@@ -1031,7 +1031,7 @@ mod tests {
     fn bench_symmetric_eigen3_sweep__three_rotations_without_eigenvectors() {
         let s = black_box(bench_input());
         let s = Jacobi3Impl::<Fixed>::sweep_s(s);
-        assert!(s.m12 != Real::ZERO);
+        assert!(s.m12 != Real::zero());
     }
 
     #[test]
@@ -1047,6 +1047,6 @@ mod tests {
     fn bench_symmetric_eigen3_recompose__quadform() {
         let d = black_box(SymmetricEigen3InternalTrait::new_sym(bench_input()));
         let s = d.recompose_sym();
-        assert!(s.m11 != Real::ZERO);
+        assert!(s.m11 != Real::zero());
     }
 }

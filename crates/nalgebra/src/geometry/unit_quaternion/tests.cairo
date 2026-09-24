@@ -56,7 +56,7 @@ fn third() -> UnitQuaternion<Fixed> {
 fn test_identity_is_exact() {
     let id = UnitQuaternionTrait::<Fixed>::identity();
     assert!(id.quaternion == QuaternionTrait::identity());
-    assert!(id.quaternion.norm() == Real::ONE);
+    assert!(id.quaternion.norm() == Real::one());
     assert!(id.quaternion() == QuaternionTrait::identity());
     assert!(id.imag() == Vector3Trait::zeros());
     // The constructors of upstream's `Unit<Quaternion>`.
@@ -70,7 +70,7 @@ fn test_new_normalize_makes_a_unit_quaternion() {
     let q = QuaternionTrait::new(int(1), int(2), int(-3), int(4));
     let u: UnitQuaternion<Fixed> = UnitQuaternionTrait::new_normalize(q);
     assert!(u.quaternion == q.normalize());
-    assert!(u.quaternion.norm().abs_diff_eq(Real::ONE, 2));
+    assert!(u.quaternion.norm().abs_diff_eq(Real::one(), 2));
 }
 
 #[test]
@@ -78,8 +78,8 @@ fn test_imag_and_quaternion_accessors() {
     assert!(third().imag() == v3t((HALF_RAW, HALF_RAW, HALF_RAW)));
     assert!(third().quaternion().scalar() == fx(HALF_RAW));
     assert!(third().into_inner() == third().quaternion);
-    assert!(UnitQuaternionTrait::try_new(third().quaternion, Real::ZERO) == Some(third()));
-    assert!(UnitQuaternionTrait::try_new(Zero::<Quaternion<Fixed>>::zero(), Real::ZERO) == None);
+    assert!(UnitQuaternionTrait::try_new(third().quaternion, Real::zero()) == Some(third()));
+    assert!(UnitQuaternionTrait::try_new(Zero::<Quaternion<Fixed>>::zero(), Real::zero()) == None);
 }
 
 // --- conjugate, inverse, composition
@@ -155,7 +155,7 @@ fn test_mul_oracle_is_bit_exact() {
         let (ra, rb, expected, _tol) = *case;
         assert!(uqt(ra) * uqt(rb) == uqt(expected));
         // The product of two unit quaternions is a unit quaternion.
-        assert!((uqt(ra) * uqt(rb)).quaternion.norm().abs_diff_eq(Real::ONE, 2));
+        assert!((uqt(ra) * uqt(rb)).quaternion.norm().abs_diff_eq(Real::one(), 2));
     }
 }
 
@@ -270,7 +270,7 @@ fn test_to_rotation_matrix_is_orthonormal() {
         let (rq, _, _) = *case;
         let m = uqt(rq).to_rotation_matrix().matrix;
         assert!((m * m.transpose()).is_identity(8));
-        assert!(m.determinant().abs_diff_eq(Real::ONE, 8));
+        assert!(m.determinant().abs_diff_eq(Real::one(), 8));
     }
 }
 
@@ -312,7 +312,7 @@ fn test_from_rotation_matrix_oracle() {
         let got = UnitQuaternionTrait::from_rotation_matrix(r3(rr));
         // The sign is upstream's: the branch selection matches, so the bits do too.
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 4));
     }
 }
 
@@ -350,10 +350,10 @@ fn test_quaternion_round_trip_from_a_matrix() {
 #[test]
 fn test_to_homogeneous() {
     let h = third().to_homogeneous();
-    assert!(h.m11 == Real::ZERO && h.m13 == Real::ONE && h.m21 == Real::ONE);
-    assert!(h.m44 == Real::ONE);
-    assert!(h.m41 == Real::ZERO && h.m42 == Real::ZERO && h.m43 == Real::ZERO);
-    assert!(h.m14 == Real::ZERO && h.m24 == Real::ZERO && h.m34 == Real::ZERO);
+    assert!(h.m11 == Real::zero() && h.m13 == Real::one() && h.m21 == Real::one());
+    assert!(h.m44 == Real::one());
+    assert!(h.m41 == Real::zero() && h.m42 == Real::zero() && h.m43 == Real::zero());
+    assert!(h.m14 == Real::zero() && h.m24 == Real::zero() && h.m34 == Real::zero());
 }
 
 // --- axis and angle
@@ -368,7 +368,7 @@ fn test_axis_angle_exact_cases() {
     assert!(angle.abs_diff_eq(fx(8995358469), 16));
     // Half turn about x: the axis is exact and the angle is pi.
     assert!(half_x().axis().unwrap() == Unit3Trait::<Fixed>::x_axis());
-    assert!(half_x().angle().abs_diff_eq(Real::PI, 16));
+    assert!(half_x().angle().abs_diff_eq(Real::pi(), 16));
 }
 
 #[test]
@@ -376,18 +376,18 @@ fn test_axis_of_the_identity_is_none() {
     let id = UnitQuaternionTrait::<Fixed>::identity();
     assert!(id.axis() == None);
     assert!(id.axis_angle() == None);
-    assert!(id.angle() == Real::ZERO);
+    assert!(id.angle() == Real::zero());
     assert!(id.scaled_axis() == Vector3Trait::zeros());
     // -identity is the identity too (a rotation by 2 pi).
     assert!((-id).axis() == None);
-    assert!((-id).angle() == Real::ZERO);
+    assert!((-id).angle() == Real::zero());
 }
 
 /// The axis is flipped so that the angle lies in `[0, pi]` (upstream's convention).
 #[test]
 fn test_axis_sign_convention() {
     let q = -third();
-    assert!(q.quaternion.w < Real::ZERO);
+    assert!(q.quaternion.w < Real::zero());
     assert!(q.axis().unwrap() == third().axis().unwrap());
     assert!(q.angle() == third().angle());
     assert!(q.scaled_axis() == third().scaled_axis());
@@ -414,10 +414,10 @@ fn test_angle_to_oracle() {
 #[test]
 fn test_angle_to_is_a_rotation_metric() {
     let id = UnitQuaternionTrait::<Fixed>::identity();
-    assert!(id.angle_to(id) == Real::ZERO);
-    assert!(third().angle_to(third()) == Real::ZERO);
+    assert!(id.angle_to(id) == Real::zero());
+    assert!(third().angle_to(third()) == Real::zero());
     // q and -q are the same rotation: zero angle, although the components are far apart.
-    assert!(third().angle_to(-third()) == Real::ZERO);
+    assert!(third().angle_to(-third()) == Real::zero());
     assert!(third().angle_to(id).abs_diff_eq(third().angle(), 1));
 }
 
@@ -438,19 +438,19 @@ fn test_from_axis_angle_exact_cases() {
     // A zero angle is the identity exactly (sin 0 = 0, cos 0 = 1).
     assert!(
         UnitQuaternionAngleTrait::from_axis_angle(
-            z, Real::<Fixed>::ZERO,
+            z, Real::<Fixed>::zero(),
         ) == UnitQuaternionTrait::identity(),
     );
     // A quarter turn about z: (cos(pi/4), 0, 0, sin(pi/4)) = 0.7071067811 both.
-    let q = UnitQuaternionAngleTrait::from_axis_angle(z, Real::<Fixed>::FRAC_PI_2);
+    let q = UnitQuaternionAngleTrait::from_axis_angle(z, Real::<Fixed>::frac_pi_2());
     assert!(q.quaternion.w.abs_diff_eq(Real::FRAC_1_SQRT_2, 4));
     assert!(q.quaternion.k.abs_diff_eq(Real::FRAC_1_SQRT_2, 4));
-    assert!(q.quaternion.i == Real::ZERO && q.quaternion.j == Real::ZERO);
+    assert!(q.quaternion.i == Real::zero() && q.quaternion.j == Real::zero());
     // It maps x to y within a few ulp.
     assert!(q.transform_vector(v3i(1, 0, 0)).abs_diff_eq(v3i(0, 1, 0), 8));
     // A half turn about x: cos(pi/2) is 0 within 1 ulp, sin(pi/2) is 1.
     let h = UnitQuaternionAngleTrait::from_axis_angle(
-        Unit3Trait::<Fixed>::x_axis(), Real::<Fixed>::PI,
+        Unit3Trait::<Fixed>::x_axis(), Real::<Fixed>::pi(),
     );
     assert!(h.quaternion.abs_diff_eq(half_x().quaternion, 2));
 }
@@ -462,7 +462,7 @@ fn test_from_axis_angle_oracle() {
         let (raxis, rangle, expected, tol) = *case;
         let got = UnitQuaternionAngleTrait::from_axis_angle(u3t(raxis), fx(rangle));
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 4));
     }
 }
 
@@ -477,14 +477,14 @@ fn test_from_scaled_axis_exact_and_oracle() {
     // Same rotation as from_axis_angle(axis, |v|).
     let axis = Unit3Trait::<Fixed>::y_axis();
     let scaled = UnitQuaternionAngleTrait::from_scaled_axis(v3t((0, ONE_RAW, 0)));
-    let direct = UnitQuaternionAngleTrait::from_axis_angle(axis, Real::ONE);
+    let direct = UnitQuaternionAngleTrait::from_axis_angle(axis, Real::one());
     assert!(scaled.quaternion.abs_diff_eq(direct.quaternion, 2));
     let mut cases = oracle::unit_quaternion_from_scaled_axis_cases();
     while let Some(case) = cases.pop_front() {
         let (rv, expected, tol) = *case;
         let got = UnitQuaternionAngleTrait::from_scaled_axis(v3t(rv));
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 4));
     }
 }
 
@@ -507,7 +507,7 @@ fn test_from_euler_angles_oracle() {
         let (roll, pitch, yaw) = reuler;
         let got = UnitQuaternionAngleTrait::from_euler_angles(fx(roll), fx(pitch), fx(yaw));
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 4));
     }
 }
 
@@ -533,7 +533,7 @@ fn test_euler_angles_round_trip() {
         let q = uqt(rq);
         let (roll, pitch, yaw) = q.euler_angles();
         let back = UnitQuaternionAngleTrait::from_euler_angles(roll, pitch, yaw);
-        assert!(back.angle_to(q).abs_diff_eq(Real::ZERO, 256));
+        assert!(back.angle_to(q).abs_diff_eq(Real::zero(), 256));
     }
 }
 
@@ -542,13 +542,13 @@ fn test_euler_angles_round_trip() {
 #[test]
 fn test_euler_angles_convention() {
     let half = fx(HALF_RAW);
-    let q = UnitQuaternionAngleTrait::from_euler_angles(half, Real::ZERO, Real::ZERO);
+    let q = UnitQuaternionAngleTrait::from_euler_angles(half, Real::zero(), Real::zero());
     let x = UnitQuaternionAngleTrait::from_axis_angle(Unit3Trait::<Fixed>::x_axis(), half);
     assert!(q.quaternion.abs_diff_eq(x.quaternion, 2));
-    let q = UnitQuaternionAngleTrait::from_euler_angles(Real::ZERO, half, Real::ZERO);
+    let q = UnitQuaternionAngleTrait::from_euler_angles(Real::zero(), half, Real::zero());
     let y = UnitQuaternionAngleTrait::from_axis_angle(Unit3Trait::<Fixed>::y_axis(), half);
     assert!(q.quaternion.abs_diff_eq(y.quaternion, 2));
-    let q = UnitQuaternionAngleTrait::from_euler_angles(Real::ZERO, Real::ZERO, half);
+    let q = UnitQuaternionAngleTrait::from_euler_angles(Real::zero(), Real::zero(), half);
     let z = UnitQuaternionAngleTrait::from_axis_angle(Unit3Trait::<Fixed>::z_axis(), half);
     assert!(q.quaternion.abs_diff_eq(z.quaternion, 2));
     // The composition order: Rz · Ry · Rx.
@@ -567,14 +567,14 @@ fn test_euler_angles_convention() {
 fn test_euler_angles_gimbal_lock() {
     // m31 = -1: pitch = +pi/2, yaw = 0 (upstream's choice).
     let q = UnitQuaternionAngleTrait::from_euler_angles(
-        Real::ZERO, Real::<Fixed>::FRAC_PI_2, Real::ZERO,
+        Real::zero(), Real::<Fixed>::frac_pi_2(), Real::zero(),
     );
     let (roll, pitch, yaw) = q.euler_angles();
-    assert!(pitch.abs_diff_eq(Real::FRAC_PI_2, 64));
-    assert!(yaw == Real::ZERO || roll.abs_diff_eq(Real::ZERO, 64));
+    assert!(pitch.abs_diff_eq(Real::frac_pi_2(), 64));
+    assert!(yaw == Real::zero() || roll.abs_diff_eq(Real::zero(), 64));
     // The rotation is still rebuilt.
     let back = UnitQuaternionAngleTrait::from_euler_angles(roll, pitch, yaw);
-    assert!(back.angle_to(q).abs_diff_eq(Real::ZERO, 1024));
+    assert!(back.angle_to(q).abs_diff_eq(Real::zero(), 1024));
 }
 
 // --- rotation between vectors
@@ -617,7 +617,7 @@ fn test_rotation_between_oracle() {
         let (ra, rb, expected, tol) = *case;
         let got = UnitQuaternionTrait::rotation_between(v3t(ra), v3t(rb)).unwrap();
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 4));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 4));
     }
 }
 
@@ -640,7 +640,7 @@ fn test_rotation_between_maps_a_to_b() {
 fn test_scaled_rotation_between() {
     let x = v3i(1, 0, 0);
     let y = v3i(0, 1, 0);
-    let full = UnitQuaternionAngleTrait::scaled_rotation_between(x, y, Real::ONE).unwrap();
+    let full = UnitQuaternionAngleTrait::scaled_rotation_between(x, y, Real::one()).unwrap();
     assert!(
         full
             .quaternion
@@ -653,16 +653,18 @@ fn test_scaled_rotation_between() {
             .quaternion
             .abs_diff_eq(
                 UnitQuaternionAngleTrait::from_axis_angle(
-                    Unit3Trait::<Fixed>::z_axis(), Real::FRAC_PI_4,
+                    Unit3Trait::<Fixed>::z_axis(), Real::frac_pi_4(),
                 )
                     .quaternion,
                 8,
             ),
     );
-    assert!(UnitQuaternionAngleTrait::scaled_rotation_between(x, v3i(-1, 0, 0), Real::ONE) == None);
+    assert!(
+        UnitQuaternionAngleTrait::scaled_rotation_between(x, v3i(-1, 0, 0), Real::one()) == None,
+    );
     assert!(
         UnitQuaternionAngleTrait::scaled_rotation_between(
-            x, v3i(2, 0, 0), Real::ONE,
+            x, v3i(2, 0, 0), Real::one(),
         ) == Some(UnitQuaternionTrait::identity()),
     );
 }
@@ -674,14 +676,14 @@ fn test_nlerp_endpoints_and_oracle() {
     // t = 0 and t = 1 give the (renormalized) endpoints.
     let a = third();
     let b = half_x();
-    assert!(a.nlerp(b, Real::ZERO).quaternion.abs_diff_eq(a.quaternion, 2));
-    assert!(a.nlerp(b, Real::ONE).quaternion.abs_diff_eq(b.quaternion, 2));
+    assert!(a.nlerp(b, Real::zero()).quaternion.abs_diff_eq(a.quaternion, 2));
+    assert!(a.nlerp(b, Real::one()).quaternion.abs_diff_eq(b.quaternion, 2));
     let mut cases = oracle::unit_quaternion_nlerp_cases();
     while let Some(case) = cases.pop_front() {
         let (ra, rb, t, expected, tol) = *case;
         let got = uqt(ra).nlerp(uqt(rb), fx(t));
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 2));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 2));
     }
 }
 
@@ -696,8 +698,8 @@ fn test_nlerp_of_opposite_quaternions_panics() {
 fn test_slerp_endpoints_and_oracle() {
     let a = third();
     let b = half_x();
-    assert!(a.slerp(b, Real::ZERO).quaternion.abs_diff_eq(a.quaternion, 4));
-    assert!(a.slerp(b, Real::ONE).quaternion.abs_diff_eq(b.quaternion, 4));
+    assert!(a.slerp(b, Real::zero()).quaternion.abs_diff_eq(a.quaternion, 4));
+    assert!(a.slerp(b, Real::one()).quaternion.abs_diff_eq(b.quaternion, 4));
     // Interpolating a rotation with itself is that rotation (the early exit).
     assert!(a.slerp(a, Real::HALF) == a);
     let mut cases = oracle::unit_quaternion_slerp_cases();
@@ -705,7 +707,7 @@ fn test_slerp_endpoints_and_oracle() {
         let (ra, rb, t, expected, tol) = *case;
         let got = uqt(ra).slerp(uqt(rb), fx(t));
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 2));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 2));
     }
 }
 
@@ -725,11 +727,11 @@ fn test_slerp_takes_the_shortest_arc() {
 fn test_slerp_has_constant_angular_velocity() {
     let a = UnitQuaternionTrait::<Fixed>::identity();
     let b = UnitQuaternionAngleTrait::from_axis_angle(
-        Unit3Trait::<Fixed>::z_axis(), Real::<Fixed>::FRAC_PI_2,
+        Unit3Trait::<Fixed>::z_axis(), Real::<Fixed>::frac_pi_2(),
     );
     let mid = a.slerp(b, Real::HALF);
     assert!(a.angle_to(mid).abs_diff_eq(mid.angle_to(b), 16));
-    assert!(a.angle_to(mid).abs_diff_eq(Real::FRAC_PI_4, 32));
+    assert!(a.angle_to(mid).abs_diff_eq(Real::frac_pi_4(), 32));
 }
 
 /// The shortest-arc flip makes `slerp` TOTAL on `[-1, 1]`: `-a` is the same rotation as `a`, so the
@@ -739,10 +741,10 @@ fn test_slerp_has_constant_angular_velocity() {
 #[test]
 fn test_try_slerp_is_total_with_a_zero_epsilon() {
     let a = third();
-    assert!(a.try_slerp(-a, Real::HALF, Real::ZERO) == Some(a));
+    assert!(a.try_slerp(-a, Real::HALF, Real::zero()) == Some(a));
     assert!(a.slerp(-a, Real::HALF) == a);
-    assert!(a.try_slerp(a, Real::HALF, Real::ZERO) == Some(a));
-    assert!(a.try_slerp(half_x(), Real::HALF, Real::ZERO) != None);
+    assert!(a.try_slerp(a, Real::HALF, Real::zero()) == Some(a));
+    assert!(a.try_slerp(half_x(), Real::HALF, Real::zero()) != None);
 }
 
 /// A positive `epsilon` rejects nearly aligned rotations (`sin` of the half angle below it), where
@@ -764,7 +766,7 @@ fn test_slerp_panics_when_try_slerp_rejects() {
     // Only reachable through a `try_slerp` epsilon; `slerp` itself passes 0 (see above).
     let a = black_box(UnitQuaternionTrait::<Fixed>::identity());
     let b = black_box(third());
-    match a.try_slerp(b, Real::HALF, Real::ONE) {
+    match a.try_slerp(b, Real::HALF, Real::one()) {
         Some(_) => (),
         None => core::panic_with_felt252('nalgebra: ambiguous slerp'),
     }
@@ -776,11 +778,14 @@ fn test_slerp_panics_when_try_slerp_rejects() {
 fn test_powf() {
     let q = third();
     let id = UnitQuaternionTrait::<Fixed>::identity();
-    assert!(q.powf(Real::ZERO).quaternion.abs_diff_eq(id.quaternion, 2));
-    assert!(q.powf(Real::ONE).quaternion.abs_diff_eq(q.quaternion, 8));
+    assert!(q.powf(Real::zero()).quaternion.abs_diff_eq(id.quaternion, 2));
+    assert!(q.powf(Real::one()).quaternion.abs_diff_eq(q.quaternion, 8));
     // Three times 120° is a full turn: -identity or identity depending on the sign convention.
     let cubed = q.powf(Real::from_int(3));
-    assert!(cubed.angle().abs_diff_eq(Real::ZERO, 64) || cubed.angle().abs_diff_eq(Real::TAU, 64));
+    assert!(
+        cubed.angle().abs_diff_eq(Real::zero(), 64)
+            || cubed.angle().abs_diff_eq(Real::two_pi(), 64),
+    );
     // Twice the angle is the square of the rotation.
     assert!(q.powf(Real::TWO).quaternion.abs_diff_eq((q * q).quaternion, 16));
     // The identity to any power is the identity.
@@ -797,7 +802,7 @@ fn test_append_axisangle_linearized_oracle() {
         let (rq, rv, expected, tol) = *case;
         let got = uqt(rq).append_axisangle_linearized(v3t(rv));
         assert!(got.quaternion.abs_diff_eq(uqt(expected).quaternion, tol));
-        assert!(got.quaternion.norm().abs_diff_eq(Real::ONE, 2));
+        assert!(got.quaternion.norm().abs_diff_eq(Real::one(), 2));
     }
 }
 
@@ -839,11 +844,12 @@ fn test_append_axisangle_linearized_is_stable() {
     for _ in 0_u32..1024 {
         q = q.append_axisangle_linearized(step);
     }
-    assert!(q.quaternion.norm().abs_diff_eq(Real::ONE, 2));
+    assert!(q.quaternion.norm().abs_diff_eq(Real::one(), 2));
     // The linearised update over-rotates by |step|²/24 per step (tan(x/2) vs x/2): about 6e-4 rad
     // in total here, plus the rounding of 1 024 steps.
     assert!(
-        q.angle().abs_diff_eq(Real::ZERO, 0x300000) || q.angle().abs_diff_eq(Real::TAU, 0x300000),
+        q.angle().abs_diff_eq(Real::zero(), 0x300000)
+            || q.angle().abs_diff_eq(Real::two_pi(), 0x300000),
     );
 }
 
@@ -857,10 +863,10 @@ fn test_renormalize_fast_on_a_drifted_rotation() {
         q = q * third();
     }
     let n = q.quaternion.norm();
-    assert!(n.abs_diff_eq(Real::ONE, 64));
+    assert!(n.abs_diff_eq(Real::one(), 64));
     let fixed = q.renormalized_fast();
-    assert!(fixed.quaternion.norm().abs_diff_eq(Real::ONE, 2));
-    assert!(q.renormalized().quaternion.norm().abs_diff_eq(Real::ONE, 2));
+    assert!(fixed.quaternion.norm().abs_diff_eq(Real::one(), 2));
+    assert!(q.renormalized().quaternion.norm().abs_diff_eq(Real::one(), 2));
     // Both renormalisations agree to 1 ulp on such a small drift.
     assert!(fixed.quaternion.abs_diff_eq(q.renormalized().quaternion, 2));
 }
@@ -870,8 +876,8 @@ fn test_renormalize_fast_fixes_a_scaled_quaternion() {
     // The 120° rotation scaled by 1 + 1e-3.
     let s = fx(HALF_RAW + 2147483);
     let drifted = uqt((s.raw, s.raw, s.raw, s.raw));
-    assert!(!drifted.quaternion.norm().abs_diff_eq(Real::ONE, 1000));
+    assert!(!drifted.quaternion.norm().abs_diff_eq(Real::one(), 1000));
     let once = drifted.renormalized_fast();
-    assert!(once.quaternion.norm().abs_diff_eq(Real::ONE, 8000));
-    assert!(once.renormalized_fast().quaternion.norm().abs_diff_eq(Real::ONE, 4));
+    assert!(once.quaternion.norm().abs_diff_eq(Real::one(), 8000));
+    assert!(once.renormalized_fast().quaternion.norm().abs_diff_eq(Real::one(), 4));
 }

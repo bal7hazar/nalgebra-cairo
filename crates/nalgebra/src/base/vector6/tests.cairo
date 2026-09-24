@@ -156,7 +156,7 @@ fn test_mul_div_assign_are_scale_unscale() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero_panics() {
-    let _ = black_box(a()).unscale(Real::ZERO);
+    let _ = black_box(a()).unscale(Real::zero());
 }
 
 #[test]
@@ -219,7 +219,7 @@ fn test_dot_exact() {
     // 1.5*-4.5 - 2.25*0.25 + 3.75*2 - 4.5*1.5 + 0.25*-2.25 + 2*3.75 = 0.375
     assert!(a().dot(b()) == fx(0x60000000));
     assert!(p().dot(p()) == int(36));
-    assert!(Vector6Trait::<Fixed>::zeros().dot(a()) == Real::ZERO);
+    assert!(Vector6Trait::<Fixed>::zeros().dot(a()) == Real::zero());
     // Symmetry.
     assert!(a().dot(b()) == b().dot(a()));
 }
@@ -255,7 +255,7 @@ fn test_norm_squared_and_norm_exact() {
     assert!(p().norm() == int(6));
     // 2.25 + 5.0625 + 14.0625 + 20.25 + 0.0625 + 4 = 45.6875
     assert!(a().norm_squared() == fx(0x2db0000000));
-    assert!(Vector6Trait::<Fixed>::zeros().norm() == Real::ZERO);
+    assert!(Vector6Trait::<Fixed>::zeros().norm() == Real::zero());
     assert!(a().norm_squared() == a().dot(a()));
 }
 
@@ -281,7 +281,7 @@ fn test_normalize_exact() {
                 1431655765, -1431655765, 1431655765, -1431655765, 1431655765, 2863311531,
             ),
     );
-    assert!(p().normalize().norm().abs_diff_eq(Real::ONE, 2));
+    assert!(p().normalize().norm().abs_diff_eq(Real::one(), 2));
 }
 
 #[test]
@@ -301,8 +301,8 @@ fn test_normalize_of_zero_panics() {
 
 #[test]
 fn test_lerp_endpoints_and_middle() {
-    assert!(a().lerp(b(), Real::ZERO) == a());
-    assert!(a().lerp(b(), Real::ONE) == b());
+    assert!(a().lerp(b(), Real::zero()) == a());
+    assert!(a().lerp(b(), Real::one()) == b());
     // (-1.5, -1, 2.875, -1.5, -1, 2.875)
     assert!(
         a()
@@ -328,7 +328,7 @@ fn test_abs_diff_eq_counts_raw_units() {
     assert!(!v6(MIN, 0, 0, 0, 0, 0).abs_diff_eq(v6(MAX, 0, 0, 0, 0, 0), 0xffffffffffffffff));
     assert!(
         v6(MAX, 0, 0, 0, 0, 0)
-            .abs_diff_eq(v6(MAX, 0, 0, 0, 0, 0).scale(Real::ZERO), 0xffffffffffffffff),
+            .abs_diff_eq(v6(MAX, 0, 0, 0, 0, 0).scale(Real::zero()), 0xffffffffffffffff),
     );
 }
 

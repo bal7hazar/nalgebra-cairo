@@ -141,22 +141,22 @@ pub impl Matrix4Impl<
     #[inline(always)]
     fn zeros() -> Matrix4<T> {
         Matrix4 {
-            m11: R::ZERO,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m41: R::ZERO,
-            m12: R::ZERO,
-            m22: R::ZERO,
-            m32: R::ZERO,
-            m42: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ZERO,
-            m43: R::ZERO,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
-            m44: R::ZERO,
+            m11: R::zero(),
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m12: R::zero(),
+            m22: R::zero(),
+            m32: R::zero(),
+            m42: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::zero(),
+            m43: R::zero(),
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: R::zero(),
         }
     }
 
@@ -164,22 +164,22 @@ pub impl Matrix4Impl<
     #[inline(always)]
     fn identity() -> Matrix4<T> {
         Matrix4 {
-            m11: R::ONE,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m41: R::ZERO,
-            m12: R::ZERO,
-            m22: R::ONE,
-            m32: R::ZERO,
-            m42: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
-            m43: R::ZERO,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
-            m44: R::ONE,
+            m11: R::one(),
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m12: R::zero(),
+            m22: R::one(),
+            m32: R::zero(),
+            m42: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
+            m43: R::zero(),
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: R::one(),
         }
     }
 
@@ -188,20 +188,20 @@ pub impl Matrix4Impl<
     fn from_diagonal(d: Vector4<T>) -> Matrix4<T> {
         Matrix4 {
             m11: d.x,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m41: R::ZERO,
-            m12: R::ZERO,
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m12: R::zero(),
             m22: d.y,
-            m32: R::ZERO,
-            m42: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
+            m32: R::zero(),
+            m42: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
             m33: d.z,
-            m43: R::ZERO,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
+            m43: R::zero(),
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
             m44: d.w,
         }
     }
@@ -211,20 +211,20 @@ pub impl Matrix4Impl<
     fn from_diagonal_element(e: T) -> Matrix4<T> {
         Matrix4 {
             m11: e,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m41: R::ZERO,
-            m12: R::ZERO,
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m12: R::zero(),
             m22: e,
-            m32: R::ZERO,
-            m42: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
+            m32: R::zero(),
+            m42: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
             m33: e,
-            m43: R::ZERO,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
+            m43: R::zero(),
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
             m44: e,
         }
     }
@@ -567,18 +567,18 @@ pub impl Matrix4Impl<
         let (adj, det) = Matrix4Kernels::adjugate_determinant(self);
         if det < R::HALF && det > -R::HALF {
             let f = Self::norm(self);
-            if f == R::ZERO {
+            if f == R::zero() {
                 return None;
             }
             let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let (adj_b, det_b) = Matrix4Kernels::adjugate_determinant(Self::scale(self, k));
-                if det_b == R::ZERO {
+                if det_b == R::zero() {
                     return None;
                 }
                 return Some(Self::scale(adj_b, R::div(k, det_b)));
             }
-            if det == R::ZERO {
+            if det == R::zero() {
                 return None;
             }
         }
@@ -614,22 +614,22 @@ pub impl Matrix4Impl<
     /// Whether every component is within `ulps` smallest units of the identity's.
     /// Upstream: `is_identity(eps)`, with the tolerance in raw units instead of a float epsilon.
     fn is_identity(self: Matrix4<T>, ulps: u64) -> bool {
-        R::abs_diff_eq(self.m11, R::ONE, ulps)
-            && R::abs_diff_eq(self.m21, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m31, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m41, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m12, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m22, R::ONE, ulps)
-            && R::abs_diff_eq(self.m32, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m42, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m13, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m23, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m33, R::ONE, ulps)
-            && R::abs_diff_eq(self.m43, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m14, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m24, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m34, R::ZERO, ulps)
-            && R::abs_diff_eq(self.m44, R::ONE, ulps)
+        R::abs_diff_eq(self.m11, R::one(), ulps)
+            && R::abs_diff_eq(self.m21, R::zero(), ulps)
+            && R::abs_diff_eq(self.m31, R::zero(), ulps)
+            && R::abs_diff_eq(self.m41, R::zero(), ulps)
+            && R::abs_diff_eq(self.m12, R::zero(), ulps)
+            && R::abs_diff_eq(self.m22, R::one(), ulps)
+            && R::abs_diff_eq(self.m32, R::zero(), ulps)
+            && R::abs_diff_eq(self.m42, R::zero(), ulps)
+            && R::abs_diff_eq(self.m13, R::zero(), ulps)
+            && R::abs_diff_eq(self.m23, R::zero(), ulps)
+            && R::abs_diff_eq(self.m33, R::one(), ulps)
+            && R::abs_diff_eq(self.m43, R::zero(), ulps)
+            && R::abs_diff_eq(self.m14, R::zero(), ulps)
+            && R::abs_diff_eq(self.m24, R::zero(), ulps)
+            && R::abs_diff_eq(self.m34, R::zero(), ulps)
+            && R::abs_diff_eq(self.m44, R::one(), ulps)
     }
 
     /// Whether every component of `self` is within `ulps` smallest units of `other`'s.
@@ -956,7 +956,7 @@ mod tests {
     fn try_inverse_div(m: Matrix4<Fixed>) -> Option<Matrix4<Fixed>> {
         let adj = m.adjugate();
         let det = m.determinant();
-        if det == Real::ZERO {
+        if det == Real::zero() {
             return None;
         }
         Some(
@@ -987,7 +987,7 @@ mod tests {
     fn try_inverse_div_n(m: Matrix4<Fixed>) -> Option<Matrix4<Fixed>> {
         let adj = m.adjugate();
         let det = m.determinant();
-        if det == Real::ZERO {
+        if det == Real::zero() {
             return None;
         }
         let (m11, m21, m31, m41, m12, m22, m32, m42, m13, m23, m33, m43, m14, m24, m34, m44) =
@@ -1020,7 +1020,7 @@ mod tests {
     /// `adjugate * (1 / determinant)`: one reciprocal, 16 multiplications.
     fn try_inverse_recip(m: Matrix4<Fixed>) -> Option<Matrix4<Fixed>> {
         let det = m.determinant();
-        if det == Real::ZERO {
+        if det == Real::zero() {
             return None;
         }
         Some(m.adjugate().scale(det.recip()))
@@ -1189,14 +1189,16 @@ mod tests {
     #[test]
     #[should_panic(expected: 'i64_add Overflow')]
     fn test_add_overflow_panics() {
-        let m = black_box(Matrix4Trait::from_diagonal_element(Real::<Fixed>::MAX));
+        let m = black_box(Matrix4Trait::from_diagonal_element(Real::<Fixed>::max_value().unwrap()));
         let _ = m + m;
     }
 
     #[test]
     #[should_panic(expected: 'i64_neg Underflow')]
     fn test_neg_min_panics() {
-        let _ = -black_box(Matrix4Trait::from_diagonal_element(Real::<Fixed>::MIN));
+        let _ = -black_box(
+            Matrix4Trait::from_diagonal_element(Real::<Fixed>::min_value().unwrap()),
+        );
     }
 
     #[test]

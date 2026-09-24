@@ -55,7 +55,7 @@ pub impl Similarity2Impl<
     /// `Similarity2::identity`.
     #[inline(always)]
     fn identity() -> Similarity2<T> {
-        Similarity2 { isometry: Isometry2Trait::identity(), scaling: R::ONE }
+        Similarity2 { isometry: Isometry2Trait::identity(), scaling: R::one() }
     }
 
     /// The similarity from `translation`, `rotation` and nonzero `scaling`. Panics with
@@ -71,7 +71,7 @@ pub impl Similarity2Impl<
     /// `nalgebra: zero scale` on zero. Upstream: `Similarity2::from_isometry`.
     #[inline(always)]
     fn from_isometry(isometry: Isometry2<T>, scaling: T) -> Similarity2<T> {
-        if scaling == R::ZERO {
+        if scaling == R::zero() {
             core::panic_with_felt252(errors::ZERO_SCALING);
         }
         Similarity2 { isometry, scaling }
@@ -101,7 +101,7 @@ pub impl Similarity2Impl<
     /// Upstream: `prepend_scaling`.
     #[inline(always)]
     fn prepend_scaling(self: Similarity2<T>, s: T) -> Similarity2<T> {
-        if s == R::ZERO {
+        if s == R::zero() {
             core::panic_with_felt252(errors::ZERO_SCALING);
         }
         Similarity2 { isometry: self.isometry, scaling: self.scaling * s }
@@ -111,7 +111,7 @@ pub impl Similarity2Impl<
     /// zero `s`. Upstream: `append_scaling`.
     #[inline(always)]
     fn append_scaling(self: Similarity2<T>, s: T) -> Similarity2<T> {
-        if s == R::ZERO {
+        if s == R::zero() {
             core::panic_with_felt252(errors::ZERO_SCALING);
         }
         Similarity2 {
@@ -144,7 +144,7 @@ pub impl Similarity2Impl<
                     },
                 },
             },
-            scaling: R::div(R::ONE, self.scaling),
+            scaling: R::div(R::one(), self.scaling),
         }
     }
 
@@ -256,13 +256,13 @@ pub impl Similarity2Impl<
         Matrix3 {
             m11: self.isometry.rotation.re * self.scaling,
             m21: self.isometry.rotation.im * self.scaling,
-            m31: R::ZERO,
+            m31: R::zero(),
             m12: -self.isometry.rotation.im * self.scaling,
             m22: self.isometry.rotation.re * self.scaling,
-            m32: R::ZERO,
+            m32: R::zero(),
             m13: self.isometry.translation.vector.x,
             m23: self.isometry.translation.vector.y,
-            m33: R::ONE,
+            m33: R::one(),
         }
     }
 

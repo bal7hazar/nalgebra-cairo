@@ -191,7 +191,7 @@ pub impl Vector4Impl<
 
     #[inline(always)]
     fn zeros() -> Vector4<T> {
-        Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO }
+        Vector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() }
     }
 
     #[inline(always)]
@@ -206,22 +206,22 @@ pub impl Vector4Impl<
 
     #[inline(always)]
     fn x() -> Vector4<T> {
-        Vector4 { x: R::ONE, y: R::ZERO, z: R::ZERO, w: R::ZERO }
+        Vector4 { x: R::one(), y: R::zero(), z: R::zero(), w: R::zero() }
     }
 
     #[inline(always)]
     fn y() -> Vector4<T> {
-        Vector4 { x: R::ZERO, y: R::ONE, z: R::ZERO, w: R::ZERO }
+        Vector4 { x: R::zero(), y: R::one(), z: R::zero(), w: R::zero() }
     }
 
     #[inline(always)]
     fn z() -> Vector4<T> {
-        Vector4 { x: R::ZERO, y: R::ZERO, z: R::ONE, w: R::ZERO }
+        Vector4 { x: R::zero(), y: R::zero(), z: R::one(), w: R::zero() }
     }
 
     #[inline(always)]
     fn w() -> Vector4<T> {
-        Vector4 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ONE }
+        Vector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::one() }
     }
 
     #[inline(always)]
@@ -365,7 +365,7 @@ pub impl Vector4Impl<
 
     #[inline(always)]
     fn is_zero(self: Vector4<T>) -> bool {
-        self.x == R::ZERO && self.y == R::ZERO && self.z == R::ZERO && self.w == R::ZERO
+        self.x == R::zero() && self.y == R::zero() && self.z == R::zero() && self.w == R::zero()
     }
 
     #[inline(always)]
@@ -455,8 +455,8 @@ pub impl Vector4AngleImpl<
     fn angle(self: Vector4<T>, other: Vector4<T>) -> T {
         let n1 = R::norm4(self.x, self.y, self.z, self.w);
         let n2 = R::norm4(other.x, other.y, other.z, other.w);
-        if n1 == R::ZERO || n2 == R::ZERO {
-            return R::ZERO;
+        if n1 == R::zero() || n2 == R::zero() {
+            return R::zero();
         }
         let (ux, uy, uz, uw) = R::div4(self.x, self.y, self.z, self.w, n1);
         let (vx, vy, vz, vw) = R::div4(other.x, other.y, other.z, other.w, n2);

@@ -79,7 +79,7 @@ pub impl QuaternionImpl<
     /// The multiplicative identity `1`. Upstream: `Quaternion::identity`.
     #[inline(always)]
     fn identity() -> Quaternion<T> {
-        Quaternion { i: R::ZERO, j: R::ZERO, k: R::ZERO, w: R::ONE }
+        Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::one() }
     }
 
     /// The quaternion of real part `scalar` and imaginary part `vector`. Upstream:
@@ -92,13 +92,13 @@ pub impl QuaternionImpl<
     /// The pure quaternion `(0, vector)`. Upstream: `Quaternion::from_imag`.
     #[inline(always)]
     fn from_imag(vector: Vector3<T>) -> Quaternion<T> {
-        Quaternion { i: vector.x, j: vector.y, k: vector.z, w: R::ZERO }
+        Quaternion { i: vector.x, j: vector.y, k: vector.z, w: R::zero() }
     }
 
     /// The real quaternion `(w, 0, 0, 0)`. Upstream: `Quaternion::from_real`.
     #[inline(always)]
     fn from_real(w: T) -> Quaternion<T> {
-        Quaternion { i: R::ZERO, j: R::ZERO, k: R::ZERO, w }
+        Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w }
     }
 
     /// The quaternion whose coordinates are `(i, j, k, w)`, the STORAGE order. Upstream:
@@ -197,7 +197,7 @@ pub impl QuaternionImpl<
     #[inline(always)]
     fn try_inverse(self: Quaternion<T>) -> Option<Quaternion<T>> {
         let n2 = R::norm_squared4(self.i, self.j, self.k, self.w);
-        if n2 == R::ZERO {
+        if n2 == R::zero() {
             None
         } else {
             Some(
@@ -358,12 +358,12 @@ pub impl QuaternionZero<
 > of Zero<Quaternion<T>> {
     #[inline(always)]
     fn zero() -> Quaternion<T> {
-        Quaternion { i: R::ZERO, j: R::ZERO, k: R::ZERO, w: R::ZERO }
+        Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::zero() }
     }
 
     #[inline(always)]
     fn is_zero(self: @Quaternion<T>) -> bool {
-        *self.i == R::ZERO && *self.j == R::ZERO && *self.k == R::ZERO && *self.w == R::ZERO
+        *self.i == R::zero() && *self.j == R::zero() && *self.k == R::zero() && *self.w == R::zero()
     }
 
     #[inline(always)]

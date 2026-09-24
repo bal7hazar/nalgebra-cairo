@@ -65,7 +65,7 @@ fn rot() -> Rotation3<Fixed> {
 fn alt_to_rotation_matrix_one_minus(q: UnitQuaternion<Fixed>) -> Rotation3<Fixed> {
     let Quaternion { i, j, k, w } = q.quaternion;
     let (i2, j2, k2) = (i + i, j + j, k + k);
-    let one = Real::<Fixed>::ONE;
+    let one = Real::<Fixed>::one();
     Rotation3 {
         matrix: Matrix3 {
             m11: Real::wide_rescale(
@@ -125,7 +125,7 @@ fn alt_transform_vector_via_matrix(q: UnitQuaternion<Fixed>, x: Vector3<Fixed>) 
 fn alt_from_rotation_matrix_recip(r: Rotation3<Fixed>) -> UnitQuaternion<Fixed> {
     let m = r.matrix;
     let tr = m.m11 + m.m22 + m.m33;
-    let d = Real::sqrt(Real::ONE + tr);
+    let d = Real::sqrt(Real::one() + tr);
     let f = Real::recip(d + d);
     UnitQuaternion {
         quaternion: Quaternion {
@@ -143,7 +143,7 @@ fn alt_from_scaled_axis_unit_axis(axisangle: Vector3<Fixed>) -> UnitQuaternion<F
         x: axisangle.x * Real::HALF, y: axisangle.y * Real::HALF, z: axisangle.z * Real::HALF,
     };
     let n = Real::norm3(h.x, h.y, h.z);
-    if n == Real::ZERO {
+    if n == Real::zero() {
         return UnitQuaternionTrait::identity();
     }
     let (s, c) = Transcendental::sin_cos(n);
@@ -154,7 +154,9 @@ fn alt_from_scaled_axis_unit_axis(axisangle: Vector3<Fixed>) -> UnitQuaternion<F
 /// `angle` as `2·acos(|w|)`: cheaper than `2·atan2(|imag|, |w|)` but it loses half of the digits
 /// near `0` and `π`, where `acos` has an unbounded derivative.
 fn alt_angle_acos(q: UnitQuaternion<Fixed>) -> Fixed {
-    let half = Transcendental::acos(Real::clamp(Real::abs(q.quaternion.w), Real::ZERO, Real::ONE));
+    let half = Transcendental::acos(
+        Real::clamp(Real::abs(q.quaternion.w), Real::zero(), Real::one()),
+    );
     half + half
 }
 
@@ -163,12 +165,12 @@ fn alt_angle_acos(q: UnitQuaternion<Fixed>) -> Fixed {
 fn alt_scaled_axis_factor(q: UnitQuaternion<Fixed>) -> Vector3<Fixed> {
     let c = q.quaternion;
     let n = Real::norm3(c.i, c.j, c.k);
-    if n == Real::ZERO {
+    if n == Real::zero() {
         return Vector3Trait::zeros();
     }
     let half = Transcendental::atan2(n, Real::abs(c.w));
     let f = (half + half) / n;
-    if Real::is_negative(c.w) {
+    if Real::is_sign_negative(c.w) {
         Vector3 { x: -c.i * f, y: -c.j * f, z: -c.k * f }
     } else {
         Vector3 { x: c.i * f, y: c.j * f, z: c.k * f }
@@ -188,7 +190,7 @@ fn test_to_rotation_matrix_alt_one_minus_differs_by_the_norm_defect() {
     // disagree by about 2^-11 (2 097 152 ulp): upstream's form stays exactly `|q|²` times the true
     // rotation matrix (so `renormalize` on the quaternion fixes it), the `1 - 2(...)` form mixes a
     // scaled off-diagonal with an unscaled diagonal and is no longer a similarity.
-    let s = Real::<Fixed>::ONE + fx(0x100000);
+    let s = Real::<Fixed>::one() + fx(0x100000);
     let drifted = UnitQuaternionTrait::new_unchecked(a().quaternion.scale(s));
     let approx = alt_to_rotation_matrix_one_minus(drifted);
     let good = drifted.to_rotation_matrix();
@@ -234,8 +236,8 @@ fn test_from_rotation_matrix_alt_recip_is_within_a_few_ulp() {
     let exact = UnitQuaternionTrait::from_rotation_matrix(small);
     let approx = alt_from_rotation_matrix_recip(small);
     assert!(approx.abs_diff_eq(exact, 4));
-    assert!(exact.quaternion.norm().abs_diff_eq(Real::ONE, 4));
-    assert!(approx.quaternion.norm().abs_diff_eq(Real::ONE, 4));
+    assert!(exact.quaternion.norm().abs_diff_eq(Real::one(), 4));
+    assert!(approx.quaternion.norm().abs_diff_eq(Real::one(), 4));
 }
 
 /// Normalizing the half vector first (three divisions) gives the same bits as the shipped single
@@ -245,7 +247,7 @@ fn test_from_scaled_axis_alt_unit_axis_is_barely_more_accurate() {
     let exact = UnitQuaternionAngleTrait::from_scaled_axis(w());
     let alt = alt_from_scaled_axis_unit_axis(w());
     assert!(alt.abs_diff_eq(exact, 1));
-    assert!(alt.quaternion.norm().abs_diff_eq(Real::ONE, 4));
+    assert!(alt.quaternion.norm().abs_diff_eq(Real::one(), 4));
     // A larger rotation vector (|v| = 3): still within 2 ulp.
     let big = v3t((0x200000000, -0x180000000, 0x100000000));
     assert!(
@@ -654,7 +656,7 @@ fn bench_unit_quaternion_to_homogeneous__matrix4() {
     let e = black_box(fx(-173945351));
     let h = q.to_homogeneous();
     assert!(h.m11 == e);
-    assert!(h.m44 == Real::ONE);
+    assert!(h.m44 == Real::one());
 }
 
 // --- transforms
@@ -841,7 +843,7 @@ fn bench_unit_quaternion_rotation_between__alt_axis_angle() {
     let x = black_box(v());
     let y = black_box(w());
     let e = black_box(uqt((4089636156, 611444112, 1087011754, 407629407)));
-    assert!(UnitQuaternionAngleTrait::scaled_rotation_between(x, y, Real::ONE) == Some(e));
+    assert!(UnitQuaternionAngleTrait::scaled_rotation_between(x, y, Real::one()) == Some(e));
 }
 
 #[test]

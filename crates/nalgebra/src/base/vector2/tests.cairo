@@ -60,9 +60,9 @@ fn test_axes_are_orthonormal() {
     assert!(Vector2Trait::<Fixed>::x() == v2(0x100000000, 0));
     assert!(Vector2Trait::<Fixed>::y() == v2(0, 0x100000000));
     // Orthonormal: unit norms, zero dot products.
-    assert!(Vector2Trait::<Fixed>::x().norm() == Real::ONE);
-    assert!(Vector2Trait::<Fixed>::x().dot(Vector2Trait::<Fixed>::y()) == Real::ZERO);
-    assert!(Vector2Trait::<Fixed>::y().norm() == Real::ONE);
+    assert!(Vector2Trait::<Fixed>::x().norm() == Real::one());
+    assert!(Vector2Trait::<Fixed>::x().dot(Vector2Trait::<Fixed>::y()) == Real::zero());
+    assert!(Vector2Trait::<Fixed>::y().norm() == Real::one());
 }
 
 #[test]
@@ -155,8 +155,8 @@ fn test_div_assign_matches_unscale() {
 fn test_scale_exact() {
     // (1.5, -2.25) * 2.5 = (3.75, -5.625)
     assert!(a().scale(fx(0x280000000)) == v2(0x3c0000000, -0x5a0000000));
-    assert!(a().scale(Real::ONE) == a());
-    assert!(a().scale(Real::ZERO).is_zero());
+    assert!(a().scale(Real::one()) == a());
+    assert!(a().scale(Real::zero()).is_zero());
 }
 
 #[test]
@@ -175,7 +175,7 @@ fn test_scale_overflow() {
 fn test_unscale_exact() {
     // (1.5, -2.25) / 2.5 = (0.5999999999, -0.9000000001)
     assert!(a().unscale(fx(0x280000000)) == v2(2576980378, -3865470566));
-    assert!(a().unscale(Real::ONE) == a());
+    assert!(a().unscale(Real::one()) == a());
 }
 
 #[test]
@@ -189,7 +189,7 @@ fn test_unscale_rounds_to_nearest() {
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_unscale_by_zero() {
-    let _ = black_box(a()).unscale(Real::ZERO);
+    let _ = black_box(a()).unscale(Real::zero());
 }
 
 #[test]
@@ -202,7 +202,7 @@ fn test_unscale_overflow() {
 fn test_component_mul_exact() {
     // (1.5, -2.25) .* (-4.5, 0.25) = (-6.75, -0.5625)
     assert!(a().component_mul(b()) == v2(-0x6c0000000, -0x90000000));
-    assert!(a().component_mul(Vector2Trait::<Fixed>::repeat(Real::ONE)) == a());
+    assert!(a().component_mul(Vector2Trait::<Fixed>::repeat(Real::one())) == a());
 }
 
 #[test]
@@ -215,7 +215,7 @@ fn test_component_mul_overflow() {
 fn test_component_div_exact() {
     // (1.5, -2.25) ./ (-4.5, 0.25) = floor of the exact quotients
     assert!(a().component_div(b()) == v2(-1431655765, -0x900000000));
-    assert!(a().component_div(Vector2Trait::<Fixed>::repeat(Real::ONE)) == a());
+    assert!(a().component_div(Vector2Trait::<Fixed>::repeat(Real::one())) == a());
 }
 
 #[test]
@@ -345,7 +345,7 @@ fn test_abs_diff_eq_counts_ulps() {
     // `fixed`'s tolerance is a `Fixed`: a `u64` tolerance above `MAX` raw is clamped to it,
     // so a pair `2^63` raw or more apart is never equal (the exact answer would be `true`).
     assert!(!v2(MIN, MIN).abs_diff_eq(v2(MAX, MAX), 0xffffffffffffffff));
-    assert!(v2(MAX, MAX).abs_diff_eq(v2(MAX, MAX).scale(Real::ZERO), 0xffffffffffffffff));
+    assert!(v2(MAX, MAX).abs_diff_eq(v2(MAX, MAX).scale(Real::zero()), 0xffffffffffffffff));
 }
 
 // --- products
@@ -382,14 +382,14 @@ fn test_perp_exact() {
     // (1.5, -2.25) perp (-4.5, 0.25) = -9.75
     assert!(a().perp(b()) == fx(-0x9c0000000));
     assert!(b().perp(a()) == fx(0x9c0000000));
-    assert!(a().perp(a()) == Real::ZERO);
-    assert!(Vector2Trait::<Fixed>::x().perp(Vector2Trait::<Fixed>::y()) == Real::ONE);
+    assert!(a().perp(a()) == Real::zero());
+    assert!(Vector2Trait::<Fixed>::x().perp(Vector2Trait::<Fixed>::y()) == Real::one());
 }
 
 #[test]
 fn test_perp_rounds_once() {
     // 1.25 ulp - 0.5 ulp = 0.75 ulp floors to 0; rounding each product would give 1 - 0 = 1.
-    assert!(v2(0x40000000, 0x80000000).perp(v2(1, 5)) == Real::ZERO);
+    assert!(v2(0x40000000, 0x80000000).perp(v2(1, 5)) == Real::zero());
 }
 
 #[test]
@@ -419,7 +419,7 @@ fn test_norm_exact() {
     // |(3, -4)| = 5
     assert!(p().norm() == fx(0x500000000));
     assert!(p().magnitude() == fx(0x500000000));
-    assert!(v2(0, 0).norm() == Real::ZERO);
+    assert!(v2(0, 0).norm() == Real::zero());
     assert!(a().norm() == fx(11614293609));
 }
 
@@ -435,7 +435,7 @@ fn test_norm_large_magnitude_does_not_overflow() {
 fn test_norm_tiny_magnitude_keeps_precision() {
     // |(3, -4, ..) ulp| = 5 ulp: the squares vanish in Q32.32, not in the unscaled kernel.
     assert!(v2(3, -4).norm() == fx(5));
-    assert!(v2(3, -4).norm_squared() == Real::ZERO);
+    assert!(v2(3, -4).norm_squared() == Real::zero());
 }
 
 #[test]
@@ -449,7 +449,7 @@ fn test_metric_distance_exact() {
     // Distance between (4.5, -6.25) and (1.5, -2.25).
     assert!(v2(0x480000000, -0x640000000).metric_distance(a()) == fx(0x500000000));
     assert!(a().metric_distance(v2(0x480000000, -0x640000000)) == fx(0x500000000));
-    assert!(a().metric_distance(a()) == Real::ZERO);
+    assert!(a().metric_distance(a()) == Real::zero());
 }
 
 #[test]
@@ -493,21 +493,21 @@ fn test_normalize_zero() {
 fn test_normalize_is_unit_within_tolerance() {
     let r = a().normalize();
     assert!(r == v2(2382419202, -3573628803));
-    assert!(r.norm().abs_diff_eq(Real::ONE, 4));
+    assert!(r.norm().abs_diff_eq(Real::one(), 4));
 }
 
 #[test]
 fn test_try_normalize_some() {
-    assert!(p().try_normalize(Real::ZERO) == Some(p().normalize()));
-    assert!(p().try_normalize(fx(0x500000000) - Real::EPSILON) == Some(p().normalize()));
+    assert!(p().try_normalize(Real::zero()) == Some(p().normalize()));
+    assert!(p().try_normalize(fx(0x500000000) - Real::default_epsilon()) == Some(p().normalize()));
 }
 
 #[test]
 fn test_try_normalize_none() {
-    assert!(Vector2Trait::<Fixed>::zeros().try_normalize(Real::ZERO) == None);
+    assert!(Vector2Trait::<Fixed>::zeros().try_normalize(Real::zero()) == None);
     // The threshold is inclusive, like upstream (`norm <= min_norm`).
     assert!(p().try_normalize(fx(0x500000000)) == None);
-    assert!(v2(3, -4).try_normalize(Real::EPSILON) == Some(v2(3, -4).normalize()));
+    assert!(v2(3, -4).try_normalize(Real::default_epsilon()) == Some(v2(3, -4).normalize()));
     assert!(v2(3, -4).try_normalize(fx(5)) == None);
 }
 
@@ -519,8 +519,8 @@ fn test_cap_magnitude_exact() {
     // Not longer than the cap: unchanged (inclusive).
     assert!(p().cap_magnitude(fx(0x500000000)) == p());
     assert!(p().cap_magnitude(fx(MAX)) == p());
-    assert!(p().cap_magnitude(Real::ZERO).is_zero());
-    assert!(Vector2Trait::<Fixed>::zeros().cap_magnitude(Real::ZERO).is_zero());
+    assert!(p().cap_magnitude(Real::zero()).is_zero());
+    assert!(Vector2Trait::<Fixed>::zeros().cap_magnitude(Real::zero()).is_zero());
 }
 
 #[test]
@@ -543,8 +543,8 @@ fn test_cap_magnitude_large_magnitude() {
 #[test]
 fn test_lerp_exact() {
     // From (1.5, -2.25) to (-4.5, 0.25).
-    assert!(a().lerp(b(), Real::ZERO) == a());
-    assert!(a().lerp(b(), Real::ONE) == b());
+    assert!(a().lerp(b(), Real::zero()) == a());
+    assert!(a().lerp(b(), Real::one()) == b());
     assert!(a().lerp(b(), Real::HALF) == v2(-0x180000000, -0x100000000));
     assert!(a().lerp(b(), fx(0x40000000)) == v2(0, -0x1a0000000));
     // Not clamped: extrapolation.
@@ -556,7 +556,7 @@ fn test_lerp_exact() {
 fn test_lerp_full_range_does_not_overflow() {
     // `rhs - self` does not fit the scalar; the kernel works on the exact difference.
     let (lo, hi) = (v2(MIN, MAX), v2(MAX, MIN));
-    assert!(lo.lerp(hi, Real::ONE) == hi);
+    assert!(lo.lerp(hi, Real::one()) == hi);
     assert!(lo.lerp(hi, Real::HALF) == v2(-1, -1));
 }
 
@@ -574,10 +574,10 @@ fn test_angle_cardinal_directions() {
     // accurate to 1.12 ulp (DESIGN D6) and normalizing the inputs costs a couple more, so the
     // cardinal angles land within 4 ulp of the exact 0, pi/2 and pi. Parallel vectors give
     // EXACTLY zero (`|u - v| = 0` and `atan2(0, x) = 0` for `x > 0`).
-    let half_turn = Real::<Fixed>::PI;
-    let quarter_turn = Real::<Fixed>::FRAC_PI_2;
-    assert!(v2(0x300000000, 0).angle(v2(0x300000000, 0)) == Real::ZERO);
-    assert!(v2(0x300000000, 0).angle(v2(0x1500000000, 0)) == Real::ZERO);
+    let half_turn = Real::<Fixed>::pi();
+    let quarter_turn = Real::<Fixed>::frac_pi_2();
+    assert!(v2(0x300000000, 0).angle(v2(0x300000000, 0)) == Real::zero());
+    assert!(v2(0x300000000, 0).angle(v2(0x1500000000, 0)) == Real::zero());
     assert!(Real::abs_diff_eq(v2(0x300000000, 0).angle(v2(0, 0x80000000)), quarter_turn, 4));
     assert!(Real::abs_diff_eq(v2(0, 0x80000000).angle(v2(-0x300000000, 0)), quarter_turn, 4));
     assert!(Real::abs_diff_eq(v2(0x300000000, 0).angle(v2(-0x300000000, 0)), half_turn, 4));
@@ -589,8 +589,8 @@ fn test_angle_cardinal_directions() {
 
 #[test]
 fn test_angle_of_zero_vector_is_zero() {
-    assert!(Vector2Trait::<Fixed>::zeros().angle(v2(0x300000000, 0)) == Real::ZERO);
-    assert!(v2(0x300000000, 0).angle(Vector2Trait::<Fixed>::zeros()) == Real::ZERO);
+    assert!(Vector2Trait::<Fixed>::zeros().angle(v2(0x300000000, 0)) == Real::zero());
+    assert!(v2(0x300000000, 0).angle(Vector2Trait::<Fixed>::zeros()) == Real::zero());
 }
 
 #[test]

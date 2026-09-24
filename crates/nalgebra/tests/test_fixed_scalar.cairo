@@ -106,7 +106,7 @@ fn test_vector3_normalize_divides_by_the_norm() {
     let u = a.normalize();
     assert!(u == Vector3 { x: a.x / n, y: a.y / n, z: a.z / n }, "normalize");
     assert_vector(u, (2295756587, -3443634881, 1147878294), "normalize");
-    assert!(a.try_normalize(Real::ZERO).unwrap() == u, "try_normalize");
+    assert!(a.try_normalize(Real::zero()).unwrap() == u, "try_normalize");
 }
 
 /// `unscale` by a positive inexact divisor, and `/=`: `fixed`'s `/`, rounded to nearest.

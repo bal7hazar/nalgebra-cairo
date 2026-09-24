@@ -90,7 +90,7 @@ fn bench_rotation2_from_matrix_unchecked__wrap() {
 #[inline(never)]
 fn bench_rotation2_from_matrix__baseline() {
     let _m: Matrix2<Fixed> = black_box(
-        Matrix2 { m11: fx(15823707388), m21: fx(6690156176), m12: Real::ZERO, m22: Real::ZERO },
+        Matrix2 { m11: fx(15823707388), m21: fx(6690156176), m12: Real::zero(), m22: Real::zero() },
     );
     let e: Rotation2<Fixed> = black_box(r2([[3955926847, -1672539044], [1672539044, 3955926847]]));
     assert!(e == e);
@@ -100,7 +100,7 @@ fn bench_rotation2_from_matrix__baseline() {
 #[inline(never)]
 fn bench_rotation2_from_matrix__normalize_first_column() {
     let m: Matrix2<Fixed> = black_box(
-        Matrix2 { m11: fx(15823707388), m21: fx(6690156176), m12: Real::ZERO, m22: Real::ZERO },
+        Matrix2 { m11: fx(15823707388), m21: fx(6690156176), m12: Real::zero(), m22: Real::zero() },
     );
     let e: Rotation2<Fixed> = black_box(r2([[3955926847, -1672539044], [1672539044, 3955926847]]));
     assert!(Rotation2Trait::from_matrix(m) == e);
@@ -295,7 +295,7 @@ fn bench_rotation2_to_homogeneous__expand() {
     let r: Rotation2<Fixed> = black_box(r());
     let e: Fixed = black_box(fx(-1672539044));
     let h = r.to_homogeneous();
-    assert!(h.m12 == e && h.m33 == Real::ONE);
+    assert!(h.m12 == e && h.m33 == Real::one());
 }
 
 #[test]

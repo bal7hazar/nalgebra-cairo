@@ -22,7 +22,7 @@ use super::{Unit, Unit2Trait, Unit3Trait, Unit4Trait, UnitTrait};
 #[inline(always)]
 fn alt_renormalize_fast_upstream(u: Unit<Vector3<Fixed>>) -> Unit<Vector3<Fixed>> {
     let v = u.value;
-    let three: Fixed = Real::TWO + Real::ONE;
+    let three: Fixed = Real::TWO + Real::one();
     let f = Real::HALF * (three - v.norm_squared());
     Unit { value: Vector3 { x: v.x * f, y: v.y * f, z: v.z * f } }
 }
@@ -32,7 +32,7 @@ fn alt_renormalize_fast_upstream(u: Unit<Vector3<Fixed>>) -> Unit<Vector3<Fixed>
 #[inline(always)]
 fn alt_renormalize_fast_mul_add(u: Unit<Vector3<Fixed>>) -> Unit<Vector3<Fixed>> {
     let v = u.value;
-    let f = Real::HALF * (Real::ONE - v.norm_squared());
+    let f = Real::HALF * (Real::one() - v.norm_squared());
     Unit {
         value: Vector3 {
             x: Real::mul_add(v.x, f, v.x),
@@ -46,7 +46,7 @@ fn alt_renormalize_fast_mul_add(u: Unit<Vector3<Fixed>>) -> Unit<Vector3<Fixed>>
 #[inline(always)]
 fn alt_renormalize_fast_scale(u: Unit<Vector3<Fixed>>) -> Unit<Vector3<Fixed>> {
     let v = u.value;
-    let f = Real::ONE + Real::HALF * (Real::ONE - v.norm_squared());
+    let f = Real::one() + Real::HALF * (Real::one() - v.norm_squared());
     Unit { value: Vector3 { x: v.x * f, y: v.y * f, z: v.z * f } }
 }
 
@@ -55,12 +55,12 @@ fn alt_renormalize_fast_scale(u: Unit<Vector3<Fixed>>) -> Unit<Vector3<Fixed>> {
 #[inline(always)]
 fn alt_renormalize_fast_lerp(u: Unit<Vector3<Fixed>>) -> Unit<Vector3<Fixed>> {
     let v = u.value;
-    let f = Real::HALF * (Real::ONE - v.norm_squared());
+    let f = Real::HALF * (Real::one() - v.norm_squared());
     Unit {
         value: Vector3 {
-            x: Real::lerp(v.x, Real::ZERO, -f),
-            y: Real::lerp(v.y, Real::ZERO, -f),
-            z: Real::lerp(v.z, Real::ZERO, -f),
+            x: Real::lerp(v.x, Real::zero(), -f),
+            y: Real::lerp(v.y, Real::zero(), -f),
+            z: Real::lerp(v.z, Real::zero(), -f),
         },
     }
 }

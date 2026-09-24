@@ -79,8 +79,8 @@ pub impl Isometry2Impl<
     #[inline(always)]
     fn identity() -> Isometry2<T> {
         Isometry2 {
-            rotation: UnitComplex { re: R::ONE, im: R::ZERO },
-            translation: Translation2 { vector: Vector2 { x: R::ZERO, y: R::ZERO } },
+            rotation: UnitComplex { re: R::one(), im: R::zero() },
+            translation: Translation2 { vector: Vector2 { x: R::zero(), y: R::zero() } },
         }
     }
 
@@ -95,7 +95,7 @@ pub impl Isometry2Impl<
     #[inline(always)]
     fn translation(x: T, y: T) -> Isometry2<T> {
         Isometry2 {
-            rotation: UnitComplex { re: R::ONE, im: R::ZERO },
+            rotation: UnitComplex { re: R::one(), im: R::zero() },
             translation: Translation2 { vector: Vector2 { x, y } },
         }
     }
@@ -263,13 +263,13 @@ pub impl Isometry2Impl<
         Matrix3 {
             m11: self.rotation.re,
             m21: self.rotation.im,
-            m31: R::ZERO,
+            m31: R::zero(),
             m12: -self.rotation.im,
             m22: self.rotation.re,
-            m32: R::ZERO,
+            m32: R::zero(),
             m13: self.translation.vector.x,
             m23: self.translation.vector.y,
-            m33: R::ONE,
+            m33: R::one(),
         }
     }
 
@@ -419,7 +419,7 @@ pub impl Isometry2AngleImpl<
         let (sin, cos) = Tr::sin_cos(angle);
         Isometry2 {
             rotation: UnitComplex { re: cos, im: sin },
-            translation: Translation2 { vector: Vector2 { x: R::ZERO, y: R::ZERO } },
+            translation: Translation2 { vector: Vector2 { x: R::zero(), y: R::zero() } },
         }
     }
 
@@ -478,6 +478,6 @@ pub impl Isometry2FromTranslation<
 > of Into<Translation2<T>, Isometry2<T>> {
     #[inline(always)]
     fn into(self: Translation2<T>) -> Isometry2<T> {
-        Isometry2 { rotation: UnitComplex { re: R::ONE, im: R::ZERO }, translation: self }
+        Isometry2 { rotation: UnitComplex { re: R::one(), im: R::zero() }, translation: self }
     }
 }

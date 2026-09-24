@@ -122,8 +122,8 @@ pub impl Vector6Impl<
     #[inline(always)]
     fn zeros() -> Vector6<T> {
         Vector6 {
-            a: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO },
-            b: Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO },
+            a: Vector3 { x: R::zero(), y: R::zero(), z: R::zero() },
+            b: Vector3 { x: R::zero(), y: R::zero(), z: R::zero() },
         }
     }
 

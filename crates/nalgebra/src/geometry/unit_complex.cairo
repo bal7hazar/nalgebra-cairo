@@ -201,7 +201,7 @@ pub impl UnitComplexImpl<
 > of UnitComplexTrait<T> {
     #[inline(always)]
     fn identity() -> UnitComplex<T> {
-        UnitComplex { re: R::ONE, im: R::ZERO }
+        UnitComplex { re: R::one(), im: R::zero() }
     }
 
     #[inline(always)]
@@ -219,8 +219,8 @@ pub impl UnitComplexImpl<
         let perp = R::diff_prod(a.x, b.y, a.y, b.x);
         // |(a·b, a×b)| = |a|·|b|, so the pair carries its own normalizing factor.
         let n = R::norm2(dot, perp);
-        if n == R::ZERO {
-            return UnitComplex { re: R::ONE, im: R::ZERO };
+        if n == R::zero() {
+            return UnitComplex { re: R::one(), im: R::zero() };
         }
         UnitComplex { re: R::div(dot, n), im: R::div(perp, n) }
     }
@@ -311,13 +311,13 @@ pub impl UnitComplexImpl<
         Matrix3 {
             m11: self.re,
             m21: self.im,
-            m31: R::ZERO,
+            m31: R::zero(),
             m12: -self.im,
             m22: self.re,
-            m32: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
+            m32: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
         }
     }
 
@@ -331,7 +331,7 @@ pub impl UnitComplexImpl<
     #[inline(always)]
     fn renormalize_fast(ref self: UnitComplex<T>) {
         // (3 - |c|²) / 2 = floor(-|c|² * 1/2 + 3/2): one fused kernel.
-        let f = R::mul_add(R::norm_squared2(self.re, self.im), -R::HALF, R::HALF + R::ONE);
+        let f = R::mul_add(R::norm_squared2(self.re, self.im), -R::HALF, R::HALF + R::one());
         self = UnitComplex { re: self.re * f, im: self.im * f };
     }
 
@@ -405,8 +405,8 @@ pub impl UnitComplexAngleImpl<
     fn scaled_rotation_between(a: Vector2<T>, b: Vector2<T>, s: T) -> UnitComplex<T> {
         let dot = R::sum_prod2(a.x, b.x, a.y, b.y);
         let perp = R::diff_prod(a.x, b.y, a.y, b.x);
-        if dot == R::ZERO && perp == R::ZERO {
-            return UnitComplex { re: R::ONE, im: R::ZERO };
+        if dot == R::zero() && perp == R::zero() {
+            return UnitComplex { re: R::one(), im: R::zero() };
         }
         let (sin, cos) = Tr::sin_cos(Tr::atan2(perp, dot) * s);
         UnitComplex { re: cos, im: sin }

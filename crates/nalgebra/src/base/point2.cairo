@@ -114,7 +114,7 @@ pub impl Point2Impl<
 
     #[inline(always)]
     fn origin() -> Point2<T> {
-        Point2 { x: R::ZERO, y: R::ZERO }
+        Point2 { x: R::zero(), y: R::zero() }
     }
 
     #[inline(always)]
@@ -129,12 +129,12 @@ pub impl Point2Impl<
 
     #[inline(always)]
     fn to_homogeneous(self: Point2<T>) -> Vector3<T> {
-        Vector3 { x: self.x, y: self.y, z: R::ONE }
+        Vector3 { x: self.x, y: self.y, z: R::one() }
     }
 
     #[inline(always)]
     fn from_homogeneous(v: Vector3<T>) -> Option<Point2<T>> {
-        if v.z == R::ZERO {
+        if v.z == R::zero() {
             None
         } else {
             Some(Point2 { x: R::div(v.x, v.z), y: R::div(v.y, v.z) })

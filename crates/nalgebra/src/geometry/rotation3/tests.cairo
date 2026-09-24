@@ -75,10 +75,10 @@ fn test_inverse_oracle_is_exact() {
 #[test]
 fn test_to_homogeneous() {
     let h = third().to_homogeneous();
-    assert!(h.m13 == Real::ONE && h.m21 == Real::ONE && h.m32 == Real::ONE);
-    assert!(h.m11 == Real::ZERO && h.m44 == Real::ONE);
-    assert!(h.m41 == Real::ZERO && h.m42 == Real::ZERO && h.m43 == Real::ZERO);
-    assert!(h.m14 == Real::ZERO && h.m24 == Real::ZERO && h.m34 == Real::ZERO);
+    assert!(h.m13 == Real::one() && h.m21 == Real::one() && h.m32 == Real::one());
+    assert!(h.m11 == Real::zero() && h.m44 == Real::one());
+    assert!(h.m41 == Real::zero() && h.m42 == Real::zero() && h.m43 == Real::zero());
+    assert!(h.m14 == Real::zero() && h.m24 == Real::zero() && h.m34 == Real::zero());
 }
 
 // --- composition
@@ -199,15 +199,19 @@ fn test_from_axis_angle_exact_cases() {
     let z = Unit3Trait::<Fixed>::z_axis();
     // A zero angle is the identity exactly (the branch of upstream).
     assert!(
-        Rotation3AngleTrait::from_axis_angle(z, Real::<Fixed>::ZERO) == Rotation3Trait::identity(),
+        Rotation3AngleTrait::from_axis_angle(
+            z, Real::<Fixed>::zero(),
+        ) == Rotation3Trait::identity(),
     );
     // A quarter turn about z maps x to y.
-    let r = Rotation3AngleTrait::from_axis_angle(z, Real::<Fixed>::FRAC_PI_2);
+    let r = Rotation3AngleTrait::from_axis_angle(z, Real::<Fixed>::frac_pi_2());
     assert!(r.transform_vector(v3i(1, 0, 0)).abs_diff_eq(v3i(0, 1, 0), 8));
     assert!(r.transform_vector(v3i(0, 1, 0)).abs_diff_eq(v3i(-1, 0, 0), 8));
     assert!(r.transform_vector(v3i(0, 0, 1)).abs_diff_eq(v3i(0, 0, 1), 8));
     // A half turn about x is diag(1, -1, -1) within a few ulp.
-    let h = Rotation3AngleTrait::from_axis_angle(Unit3Trait::<Fixed>::x_axis(), Real::<Fixed>::PI);
+    let h = Rotation3AngleTrait::from_axis_angle(
+        Unit3Trait::<Fixed>::x_axis(), Real::<Fixed>::pi(),
+    );
     assert!(h.abs_diff_eq(half_x(), 8));
 }
 
@@ -241,8 +245,8 @@ fn test_from_scaled_axis_oracle_and_zero() {
 
 #[test]
 fn test_angle_oracle_and_exact_cases() {
-    assert!(Rotation3Trait::<Fixed>::identity().angle() == Real::ZERO);
-    assert!(half_x().angle().abs_diff_eq(Real::PI, 16));
+    assert!(Rotation3Trait::<Fixed>::identity().angle() == Real::zero());
+    assert!(half_x().angle().abs_diff_eq(Real::pi(), 16));
     let mut cases = oracle::rotation3_angle_cases();
     while let Some(case) = cases.pop_front() {
         let (rr, expected, tol) = *case;
@@ -255,9 +259,9 @@ fn test_angle_oracle_and_exact_cases() {
 #[test]
 fn test_angle_clamps_the_trace() {
     let over = r3([[ONE_RAW + 4, 0, 0], [0, ONE_RAW + 4, 0], [0, 0, ONE_RAW + 4]]);
-    assert!(over.angle() == Real::ZERO);
+    assert!(over.angle() == Real::zero());
     let under = r3([[-ONE_RAW - 4, 0, 0], [0, -ONE_RAW - 4, 0], [0, 0, ONE_RAW + 4]]);
-    assert!(under.angle().abs_diff_eq(Real::PI, 4));
+    assert!(under.angle().abs_diff_eq(Real::pi(), 4));
 }
 
 #[test]
@@ -346,11 +350,11 @@ fn test_euler_angles_convention() {
 fn test_euler_angles_gimbal_lock() {
     // pitch = +pi/2 (m31 = -1): yaw is set to 0 and roll carries the rotation.
     let r = Rotation3AngleTrait::from_euler_angles(
-        Real::ZERO, Real::<Fixed>::FRAC_PI_2, Real::ZERO,
+        Real::zero(), Real::<Fixed>::frac_pi_2(), Real::zero(),
     );
     let (roll, pitch, yaw) = r.euler_angles();
-    assert!(pitch.abs_diff_eq(Real::FRAC_PI_2, 64));
-    assert!(yaw == Real::ZERO || roll.abs_diff_eq(Real::ZERO, 64));
+    assert!(pitch.abs_diff_eq(Real::frac_pi_2(), 64));
+    assert!(yaw == Real::zero() || roll.abs_diff_eq(Real::zero(), 64));
     let back = Rotation3AngleTrait::from_euler_angles(roll, pitch, yaw);
     assert!(back.abs_diff_eq(r, 1024));
 }
@@ -391,14 +395,14 @@ fn test_rotation_between_oracle() {
 fn test_scaled_rotation_between() {
     let x = v3i(1, 0, 0);
     let y = v3i(0, 1, 0);
-    let full = Rotation3AngleTrait::scaled_rotation_between(x, y, Real::ONE).unwrap();
+    let full = Rotation3AngleTrait::scaled_rotation_between(x, y, Real::one()).unwrap();
     assert!(full.abs_diff_eq(Rotation3Trait::rotation_between(x, y).unwrap(), 16));
     let half = Rotation3AngleTrait::scaled_rotation_between(x, y, Real::HALF).unwrap();
     let eighth = Rotation3AngleTrait::from_axis_angle(
-        Unit3Trait::<Fixed>::z_axis(), Real::<Fixed>::FRAC_PI_4,
+        Unit3Trait::<Fixed>::z_axis(), Real::<Fixed>::frac_pi_4(),
     );
     assert!(half.abs_diff_eq(eighth, 16));
-    assert!(Rotation3AngleTrait::scaled_rotation_between(x, v3i(-1, 0, 0), Real::ONE) == None);
+    assert!(Rotation3AngleTrait::scaled_rotation_between(x, v3i(-1, 0, 0), Real::one()) == None);
 }
 
 #[test]
@@ -458,7 +462,7 @@ fn test_renormalize_fixes_a_drifted_matrix() {
     }
     let fixed = r.renormalized();
     assert!((fixed.matrix * fixed.matrix.transpose()).is_identity(4));
-    assert!(fixed.matrix.determinant().abs_diff_eq(Real::ONE, 4));
+    assert!(fixed.matrix.determinant().abs_diff_eq(Real::one(), 4));
     // The correction is small: the drift of 64 products is a few ulp.
     assert!(fixed.abs_diff_eq(r, 64));
 }

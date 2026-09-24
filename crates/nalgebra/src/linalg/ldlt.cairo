@@ -205,7 +205,7 @@ pub(crate) impl Ldlt2Impl<
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: SymMatrix2<T>) -> Option<Ldlt2<T>> {
         let d1 = a.m11;
-        if d1 == R::ZERO {
+        if d1 == R::zero() {
             return None;
         }
         let n21 = a.m12;
@@ -213,7 +213,7 @@ pub(crate) impl Ldlt2Impl<
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
-        if d2 == R::ZERO {
+        if d2 == R::zero() {
             return None;
         }
         Some(Ldlt2 { l21, d: Vector2 { x: d1, y: d2 } })
@@ -223,7 +223,7 @@ pub(crate) impl Ldlt2Impl<
     /// Upstream: the reverse-permuted `UDU::u`. Exact: nothing is recomputed.
     #[inline(always)]
     fn l(self: Ldlt2<T>) -> Matrix2<T> {
-        Matrix2 { m11: R::ONE, m21: self.l21, m12: R::ZERO, m22: R::ONE }
+        Matrix2 { m11: R::one(), m21: self.l21, m12: R::zero(), m22: R::one() }
     }
 
     /// The diagonal of `diag(d)`. Upstream: `UDU::d`, reversed. Exact: the stored vector.
@@ -338,7 +338,7 @@ pub(crate) impl Ldlt3Impl<
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: SymMatrix3<T>) -> Option<Ldlt3<T>> {
         let d1 = a.m11;
-        if d1 == R::ZERO {
+        if d1 == R::zero() {
             return None;
         }
         let n21 = a.m12;
@@ -348,7 +348,7 @@ pub(crate) impl Ldlt3Impl<
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
-        if d2 == R::ZERO {
+        if d2 == R::zero() {
             return None;
         }
         let w = R::wide_add(R::wide_zero(), a.m23);
@@ -359,7 +359,7 @@ pub(crate) impl Ldlt3Impl<
         let w = R::wide_sub_prod(w, l31, n31);
         let w = R::wide_sub_prod(w, l32, n32);
         let d3 = R::wide_rescale(w);
-        if d3 == R::ZERO {
+        if d3 == R::zero() {
             return None;
         }
         Some(Ldlt3 { l21, l31, l32, d: Vector3 { x: d1, y: d2, z: d3 } })
@@ -370,15 +370,15 @@ pub(crate) impl Ldlt3Impl<
     #[inline(always)]
     fn l(self: Ldlt3<T>) -> Matrix3<T> {
         Matrix3 {
-            m11: R::ONE,
+            m11: R::one(),
             m21: self.l21,
             m31: self.l31,
-            m12: R::ZERO,
-            m22: R::ONE,
+            m12: R::zero(),
+            m22: R::one(),
             m32: self.l32,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
         }
     }
 
@@ -522,7 +522,7 @@ pub(crate) impl Ldlt4Impl<
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: Matrix4<T>) -> Option<Ldlt4<T>> {
         let d1 = a.m11;
-        if d1 == R::ZERO {
+        if d1 == R::zero() {
             return None;
         }
         let n21 = a.m21;
@@ -534,7 +534,7 @@ pub(crate) impl Ldlt4Impl<
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
-        if d2 == R::ZERO {
+        if d2 == R::zero() {
             return None;
         }
         let w = R::wide_add(R::wide_zero(), a.m32);
@@ -549,7 +549,7 @@ pub(crate) impl Ldlt4Impl<
         let w = R::wide_sub_prod(w, l31, n31);
         let w = R::wide_sub_prod(w, l32, n32);
         let d3 = R::wide_rescale(w);
-        if d3 == R::ZERO {
+        if d3 == R::zero() {
             return None;
         }
         let w = R::wide_add(R::wide_zero(), a.m43);
@@ -562,7 +562,7 @@ pub(crate) impl Ldlt4Impl<
         let w = R::wide_sub_prod(w, l42, n42);
         let w = R::wide_sub_prod(w, l43, n43);
         let d4 = R::wide_rescale(w);
-        if d4 == R::ZERO {
+        if d4 == R::zero() {
             return None;
         }
         Some(Ldlt4 { l21, l31, l41, l32, l42, l43, d: Vector4 { x: d1, y: d2, z: d3, w: d4 } })
@@ -573,22 +573,22 @@ pub(crate) impl Ldlt4Impl<
     #[inline(always)]
     fn l(self: Ldlt4<T>) -> Matrix4<T> {
         Matrix4 {
-            m11: R::ONE,
+            m11: R::one(),
             m21: self.l21,
             m31: self.l31,
             m41: self.l41,
-            m12: R::ZERO,
-            m22: R::ONE,
+            m12: R::zero(),
+            m22: R::one(),
             m32: self.l32,
             m42: self.l42,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
             m43: self.l43,
-            m14: R::ZERO,
-            m24: R::ZERO,
-            m34: R::ZERO,
-            m44: R::ONE,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: R::one(),
         }
     }
 
@@ -786,7 +786,7 @@ pub(crate) impl Ldlt6Impl<
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: Matrix6<T>) -> Option<Ldlt6<T>> {
         let d1 = a.m11.m11;
-        if d1 == R::ZERO {
+        if d1 == R::zero() {
             return None;
         }
         let n21 = a.m11.m21;
@@ -802,7 +802,7 @@ pub(crate) impl Ldlt6Impl<
         let w = R::wide_add(R::wide_zero(), a.m11.m22);
         let w = R::wide_sub_prod(w, l21, n21);
         let d2 = R::wide_rescale(w);
-        if d2 == R::ZERO {
+        if d2 == R::zero() {
             return None;
         }
         let w = R::wide_add(R::wide_zero(), a.m11.m32);
@@ -825,7 +825,7 @@ pub(crate) impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, l31, n31);
         let w = R::wide_sub_prod(w, l32, n32);
         let d3 = R::wide_rescale(w);
-        if d3 == R::ZERO {
+        if d3 == R::zero() {
             return None;
         }
         let w = R::wide_add(R::wide_zero(), a.m21.m13);
@@ -848,7 +848,7 @@ pub(crate) impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, l42, n42);
         let w = R::wide_sub_prod(w, l43, n43);
         let d4 = R::wide_rescale(w);
-        if d4 == R::ZERO {
+        if d4 == R::zero() {
             return None;
         }
         let w = R::wide_add(R::wide_zero(), a.m22.m21);
@@ -869,7 +869,7 @@ pub(crate) impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, l53, n53);
         let w = R::wide_sub_prod(w, l54, n54);
         let d5 = R::wide_rescale(w);
-        if d5 == R::ZERO {
+        if d5 == R::zero() {
             return None;
         }
         let w = R::wide_add(R::wide_zero(), a.m22.m32);
@@ -886,7 +886,7 @@ pub(crate) impl Ldlt6Impl<
         let w = R::wide_sub_prod(w, l64, n64);
         let w = R::wide_sub_prod(w, l65, n65);
         let d6 = R::wide_rescale(w);
-        if d6 == R::ZERO {
+        if d6 == R::zero() {
             return None;
         }
         Some(
@@ -919,15 +919,15 @@ pub(crate) impl Ldlt6Impl<
     fn l(self: Ldlt6<T>) -> Matrix6<T> {
         Matrix6 {
             m11: Matrix3 {
-                m11: R::ONE,
+                m11: R::one(),
                 m21: self.l21,
                 m31: self.l31,
-                m12: R::ZERO,
-                m22: R::ONE,
+                m12: R::zero(),
+                m22: R::one(),
                 m32: self.l32,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ONE,
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::one(),
             },
             m21: Matrix3 {
                 m11: self.l41,
@@ -941,26 +941,26 @@ pub(crate) impl Ldlt6Impl<
                 m33: self.l63,
             },
             m12: Matrix3 {
-                m11: R::ZERO,
-                m21: R::ZERO,
-                m31: R::ZERO,
-                m12: R::ZERO,
-                m22: R::ZERO,
-                m32: R::ZERO,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ZERO,
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
             },
             m22: Matrix3 {
-                m11: R::ONE,
+                m11: R::one(),
                 m21: self.l54,
                 m31: self.l64,
-                m12: R::ZERO,
-                m22: R::ONE,
+                m12: R::zero(),
+                m22: R::one(),
                 m32: self.l65,
-                m13: R::ZERO,
-                m23: R::ZERO,
-                m33: R::ONE,
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::one(),
             },
         }
     }

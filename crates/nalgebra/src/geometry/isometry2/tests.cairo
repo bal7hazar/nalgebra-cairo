@@ -83,7 +83,9 @@ fn test_pure_translation_moves_points_exactly() {
 
 #[test]
 fn test_quarter_turn_is_exact() {
-    let i = Isometry2Trait::from_parts(Translation2Trait::new(fx(ONE_RAW), Real::ZERO), quarter());
+    let i = Isometry2Trait::from_parts(
+        Translation2Trait::new(fx(ONE_RAW), Real::zero()), quarter(),
+    );
     // (1, 0) turns into (0, 1), then the translation adds (1, 0).
     assert!(i.transform_point(p2t((ONE_RAW, 0))) == p2t((ONE_RAW, ONE_RAW)));
     assert!(i.transform_vector(v2t((0, ONE_RAW))) == v2t((-ONE_RAW, 0)));
@@ -215,7 +217,7 @@ fn test_to_homogeneous_layout() {
     assert!(m.m11 == i.rotation.re && m.m21 == i.rotation.im);
     assert!(m.m12 == -i.rotation.im && m.m22 == i.rotation.re);
     assert!(m.m13 == i.translation.vector.x && m.m23 == i.translation.vector.y);
-    assert!(m.m31 == Real::ZERO && m.m32 == Real::ZERO && m.m33 == Real::ONE);
+    assert!(m.m31 == Real::zero() && m.m32 == Real::zero() && m.m33 == Real::one());
     assert!(id().to_homogeneous() == Matrix3Trait::<Fixed>::identity());
 }
 
@@ -226,7 +228,7 @@ fn test_to_homogeneous_acts_like_transform_point_bit_for_bit() {
     let (i, p) = (a(), p2t((-0x280000000, 0x3c0000000)));
     let h = i.to_homogeneous().mul_vec(p.to_homogeneous());
     let got = i.transform_point(p);
-    assert!(h.x == got.x && h.y == got.y && h.z == Real::ONE);
+    assert!(h.x == got.x && h.y == got.y && h.z == Real::one());
 }
 
 // --- renormalisation, comparison, interpolation
@@ -272,8 +274,8 @@ fn test_abs_diff_eq_covers_both_parts() {
 fn test_lerp_nlerp_endpoints_and_midpoint() {
     let (x, y) = (a(), b());
     // `t = 0` and `t = 1` give the endpoints back, up to the renormalisation of the rotation.
-    assert!(x.lerp_nlerp(y, Real::ZERO).abs_diff_eq(x, 2));
-    assert!(x.lerp_nlerp(y, Real::ONE).abs_diff_eq(y, 2));
+    assert!(x.lerp_nlerp(y, Real::zero()).abs_diff_eq(x, 2));
+    assert!(x.lerp_nlerp(y, Real::one()).abs_diff_eq(y, 2));
     // The translation is the exact `lerp`, whatever the rotation does.
     let h = x.lerp_nlerp(y, Real::HALF);
     assert!(
@@ -283,7 +285,7 @@ fn test_lerp_nlerp_endpoints_and_midpoint() {
             .x == Real::lerp(x.translation.vector.x, y.translation.vector.x, Real::HALF),
     );
     // The interpolated rotation is unit and lies between the two (half the angle to `y`).
-    assert!(Real::abs_diff_eq(Real::norm_squared2(h.rotation.re, h.rotation.im), Real::ONE, 2));
+    assert!(Real::abs_diff_eq(Real::norm_squared2(h.rotation.re, h.rotation.im), Real::one(), 2));
     let half_angle = x.rotation.angle_to(y.rotation) * Real::HALF;
     assert!(Real::abs_diff_eq(x.rotation.angle_to(h.rotation), half_angle, 1048576));
 }
@@ -291,8 +293,8 @@ fn test_lerp_nlerp_endpoints_and_midpoint() {
 #[test]
 fn test_lerp_slerp_endpoints_and_agreement_with_lerp_nlerp() {
     let (x, y) = (a(), b());
-    assert!(x.lerp_slerp(y, Real::ZERO).abs_diff_eq(x, 2));
-    assert!(x.lerp_slerp(y, Real::ONE).abs_diff_eq(y, 8));
+    assert!(x.lerp_slerp(y, Real::zero()).abs_diff_eq(x, 2));
+    assert!(x.lerp_slerp(y, Real::one()).abs_diff_eq(y, 8));
     // The two interpolations differ by the parametrisation only: the angle to `x` is the same
     // at the midpoint (both walk half the arc there).
     let (s, n) = (x.lerp_slerp(y, Real::HALF), x.lerp_nlerp(y, Real::HALF));

@@ -97,7 +97,7 @@ fn test_pure_translation_moves_points_exactly() {
 #[test]
 fn test_half_turn_is_exact() {
     let i = Isometry3Trait::from_parts(
-        Translation3Trait::new(int(1), Real::ZERO, Real::ZERO), half_turn_y(),
+        Translation3Trait::new(int(1), Real::zero(), Real::zero()), half_turn_y(),
     );
     // A half turn about `y` maps `(x, y, z)` to `(-x, y, -z)`, then `(1, 0, 0)` is added.
     assert!(
@@ -276,8 +276,8 @@ fn test_to_homogeneous_layout() {
     assert!(m.m12 == r.m12 && m.m13 == r.m13 && m.m21 == r.m21);
     assert!(m.m14 == i.translation.vector.x && m.m24 == i.translation.vector.y);
     assert!(m.m34 == i.translation.vector.z);
-    assert!(m.m41 == Real::ZERO && m.m42 == Real::ZERO && m.m43 == Real::ZERO);
-    assert!(m.m44 == Real::ONE);
+    assert!(m.m41 == Real::zero() && m.m42 == Real::zero() && m.m43 == Real::zero());
+    assert!(m.m44 == Real::one());
     assert!(id().to_homogeneous() == Matrix4Trait::<Fixed>::identity());
 }
 
@@ -291,7 +291,7 @@ fn test_to_homogeneous_acts_like_transform_point() {
     assert!(Real::abs_diff_eq(h.x, got.x, 16));
     assert!(Real::abs_diff_eq(h.y, got.y, 16));
     assert!(Real::abs_diff_eq(h.z, got.z, 16));
-    assert!(h.w == Real::ONE);
+    assert!(h.w == Real::one());
 }
 
 // --- renormalisation, comparison, interpolation
@@ -357,8 +357,8 @@ fn test_abs_diff_eq_covers_both_parts() {
 #[test]
 fn test_lerp_nlerp_endpoints_and_midpoint() {
     let (x, y) = (a(), b());
-    assert!(x.lerp_nlerp(y, Real::ZERO).abs_diff_eq(x, 4));
-    assert!(x.lerp_nlerp(y, Real::ONE).abs_diff_eq(y, 4));
+    assert!(x.lerp_nlerp(y, Real::zero()).abs_diff_eq(x, 4));
+    assert!(x.lerp_nlerp(y, Real::one()).abs_diff_eq(y, 4));
     let h = x.lerp_nlerp(y, Real::HALF);
     assert!(
         h
@@ -367,14 +367,14 @@ fn test_lerp_nlerp_endpoints_and_midpoint() {
             .x == Real::lerp(x.translation.vector.x, y.translation.vector.x, Real::HALF),
     );
     let q = h.rotation.quaternion;
-    assert!(Real::abs_diff_eq(Real::norm_squared4(q.i, q.j, q.k, q.w), Real::ONE, 4));
+    assert!(Real::abs_diff_eq(Real::norm_squared4(q.i, q.j, q.k, q.w), Real::one(), 4));
 }
 
 #[test]
 fn test_lerp_slerp_endpoints_and_agreement_with_lerp_nlerp() {
     let (x, y) = (a(), b());
-    assert!(x.lerp_slerp(y, Real::ZERO).abs_diff_eq(x, 4));
-    assert!(x.lerp_slerp(y, Real::ONE).abs_diff_eq(y, 16));
+    assert!(x.lerp_slerp(y, Real::zero()).abs_diff_eq(x, 4));
+    assert!(x.lerp_slerp(y, Real::one()).abs_diff_eq(y, 16));
     let (s, n) = (x.lerp_slerp(y, Real::HALF), x.lerp_nlerp(y, Real::HALF));
     assert!(s.translation == n.translation);
     // Same path, different parametrisation: at the midpoint both are the half-way rotation.
@@ -388,7 +388,7 @@ fn test_try_lerp_slerp_rejects_nearly_aligned_rotations() {
     assert!(x.try_lerp_slerp(x, Real::HALF, Real::<Fixed>::from_ratio(1, 512)).is_none());
     // With `epsilon = 0` the result always exists, and equals `lerp_slerp`.
     let (y, t) = (b(), Real::<Fixed>::from_ratio(1, 4));
-    let got = x.try_lerp_slerp(y, t, Real::ZERO);
+    let got = x.try_lerp_slerp(y, t, Real::zero());
     assert!(got.is_some());
     assert!(got.unwrap().abs_diff_eq(x.lerp_slerp(y, t), 0));
 }

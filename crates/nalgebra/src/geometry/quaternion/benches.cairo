@@ -67,7 +67,7 @@ fn alt_normalize_recip(x: Quaternion<Fixed>) -> Quaternion<Fixed> {
 #[inline(always)]
 fn alt_try_inverse_recip(x: Quaternion<Fixed>) -> Option<Quaternion<Fixed>> {
     let n2 = x.norm_squared();
-    if n2 == Real::ZERO {
+    if n2 == Real::zero() {
         None
     } else {
         Some(x.conjugate().scale(Real::recip(n2)))

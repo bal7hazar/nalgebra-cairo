@@ -118,7 +118,7 @@ pub impl Point3Impl<
 
     #[inline(always)]
     fn origin() -> Point3<T> {
-        Point3 { x: R::ZERO, y: R::ZERO, z: R::ZERO }
+        Point3 { x: R::zero(), y: R::zero(), z: R::zero() }
     }
 
     #[inline(always)]
@@ -138,12 +138,12 @@ pub impl Point3Impl<
 
     #[inline(always)]
     fn to_homogeneous(self: Point3<T>) -> Vector4<T> {
-        Vector4 { x: self.x, y: self.y, z: self.z, w: R::ONE }
+        Vector4 { x: self.x, y: self.y, z: self.z, w: R::one() }
     }
 
     #[inline(always)]
     fn from_homogeneous(v: Vector4<T>) -> Option<Point3<T>> {
-        if v.w == R::ZERO {
+        if v.w == R::zero() {
             None
         } else {
             let (x, y, z) = R::div3(v.x, v.y, v.z, v.w);

@@ -132,13 +132,13 @@ pub(crate) impl SymmetricEigen2InternalImpl<
         let d = R::diff_prod(s.m11, R::HALF, s.m22, R::HALF);
         let r = R::norm2(d, s.m12);
         let eigenvalues = Vector2 { x: mean - r, y: mean + r };
-        if s.m12 == R::ZERO && d == R::ZERO {
+        if s.m12 == R::zero() && d == R::zero() {
             // Isotropic: every direction is an eigenvector, and both rows of `S - λ₁ I` vanish.
             return SymmetricEigen2 { eigenvalues, eigenvectors: Matrix2Trait::identity() };
         }
         // Rows of `S - λ₁ I`: `(d + r, m12)` and `(m12, r - d)`. Both `d + r` and `r - d` are
         // non-negative; `d > 0` makes the first one the larger, `d <= 0` the second one.
-        let u = if d > R::ZERO {
+        let u = if d > R::zero() {
             Vector2 { x: -s.m12, y: d + r }
         } else {
             Vector2 { x: d - r, y: s.m12 }
@@ -167,7 +167,7 @@ pub(crate) impl SymmetricEigen2InternalImpl<
         } else {
             v.y
         };
-        if dominant.is_negative() {
+        if dominant.is_sign_negative() {
             Vector2 { x: -v.x, y: -v.y }
         } else {
             v
@@ -237,9 +237,9 @@ mod tests {
     /// `|<c_i, c_j> - delta_ij|` over the two columns, in raw units.
     fn orthonormality_error(v: Matrix2<Fixed>) -> u128 {
         let (c1, c2) = (v.column1(), v.column2());
-        let mut e = ulp_diff(c1.norm(), Real::ONE);
-        e = core::cmp::max(e, ulp_diff(c2.norm(), Real::ONE));
-        core::cmp::max(e, ulp_diff(c1.dot(c2), Real::ZERO))
+        let mut e = ulp_diff(c1.norm(), Real::one());
+        e = core::cmp::max(e, ulp_diff(c2.norm(), Real::one()));
+        core::cmp::max(e, ulp_diff(c1.dot(c2), Real::zero()))
     }
 
     /// `|S * c_i - lambda_i * c_i|` over the two columns, in raw units.
@@ -264,7 +264,7 @@ mod tests {
         let e = SymmetricEigen2InternalTrait::new_sym(s2i((7, 0, 2)));
         assert!(e.eigenvalues == v2i(2, 7));
         assert!(e.eigenvectors == Matrix2Trait::new(int(0), int(-1), int(1), int(0)));
-        assert!(e.eigenvectors.determinant() == Real::ONE);
+        assert!(e.eigenvectors.determinant() == Real::one());
         assert!(e.recompose_sym() == s2i((7, 0, 2)));
     }
 
@@ -394,7 +394,7 @@ mod tests {
             let s = s2r(a);
             let e = SymmetricEigen2InternalTrait::new_sym(s);
             // `det = +1` only up to the rounding of the normalised column.
-            assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 4);
+            assert!(ulp_diff(e.eigenvectors.determinant(), Real::one()) <= 4);
             let orth = orthonormality_error(e.eigenvectors);
             assert!(orth <= 8, "columns are not orthonormal");
             let rec = max_ulp_diff_s2(e.recompose_sym(), s) / amax_s2(s);
@@ -421,7 +421,7 @@ mod tests {
             let (a, _expected, _tol) = *case;
             let s = s2r(a);
             let e = SymmetricEigen2InternalTrait::new_sym(s);
-            assert!(ulp_diff(e.eigenvectors.determinant(), Real::ONE) <= 128);
+            assert!(ulp_diff(e.eigenvectors.determinant(), Real::one()) <= 128);
             let orth = orthonormality_error(e.eigenvectors);
             assert!(orth <= 64, "columns are not orthonormal");
             let rec = max_ulp_diff_s2(e.recompose_sym(), s) / amax_s2(s);
@@ -439,7 +439,13 @@ mod tests {
     #[should_panic(expected: 'i64_add Overflow')]
     fn test_new_overflow_panics() {
         // `mean + r` leaves the representable range.
-        let s = black_box(SymMatrix2 { m11: Real::<Fixed>::MAX, m12: Real::MAX, m22: Real::MAX });
+        let s = black_box(
+            SymMatrix2 {
+                m11: Real::<Fixed>::max_value().unwrap(),
+                m12: Real::max_value().unwrap(),
+                m22: Real::max_value().unwrap(),
+            },
+        );
         SymmetricEigen2InternalTrait::new_sym(s);
     }
 
@@ -463,7 +469,7 @@ mod tests {
         let s = black_box(bench_input());
         let d = SymmetricEigen2InternalTrait::new_sym(s);
         assert!(d.eigenvalues.x < d.eigenvalues.y);
-        assert!(d.eigenvectors.m11 != Real::ZERO);
+        assert!(d.eigenvectors.m11 != Real::zero());
     }
 
     /// The public entry point, `SymmetricEigen2::new` on a full `Matrix2` (lower triangle
@@ -483,7 +489,7 @@ mod tests {
         let m = black_box(bench_input().to_matrix());
         let d = SymmetricEigen2Trait::new(m);
         assert!(d.eigenvalues.x < d.eigenvalues.y);
-        assert!(d.eigenvectors.m11 != Real::ZERO);
+        assert!(d.eigenvectors.m11 != Real::zero());
     }
 
     #[test]
@@ -515,6 +521,6 @@ mod tests {
     fn bench_symmetric_eigen2_recompose__quadform() {
         let d = black_box(SymmetricEigen2InternalTrait::new_sym(bench_input()));
         let s = d.recompose_sym();
-        assert!(s.m11 != Real::ZERO);
+        assert!(s.m11 != Real::zero());
     }
 }
