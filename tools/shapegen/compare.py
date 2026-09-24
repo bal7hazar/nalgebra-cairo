@@ -1,7 +1,7 @@
 """Staging comparison of the generated library shapes against `crates/nalgebra` (DESIGN.md §2.2).
 
 `shapegen.py --compare DIR` writes a throw-away Scarb package that holds the GENERATED
-`Vector2/3/4`, `Matrix2/3/4` (library templates + specialisations, test modules omitted, with
+`Vector2/3/4/6`, `Matrix2/3/4/6` (library templates + specialisations, test modules omitted, with
 copies of the crate-internal `SymMatrix2/3` they return) next to a dependency on the CURRENT
 `crates/nalgebra`, and one comparison module:
 
@@ -15,6 +15,11 @@ copies of the crate-internal `SymMatrix2/3` they return) next to a dependency on
 conversion impl of the shape. The crate-internal traits (`Matrix3InternalTrait`, ...) cannot be
 called from another crate; they are spliced verbatim and covered by the crate's own tests and
 benches under the gas snapshot.
+
+WP 8.1b-2: the hand-written `Vector6` / `Matrix6` were block types (`v.a.x`, `m.m21.m32`); their
+inputs are written as block literals holding the same components, and a hand-written `Matrix6`
+result is compared through its flat column-major image (`himage6`), the order of the generated
+flat `Serde`. The hand-written `Vector6` already serialised as `x y z w a b`.
 
 Run it BEFORE the generated files replace the hand-written ones (afterwards it compares the
 generator with itself): `tools/shapegen/compare.sh`.
@@ -54,7 +59,22 @@ max-line-length = 100
 allow-prebuilt-plugins = ["snforge_std"]
 """
 
-STRUCT = re.compile(r"\b(Vector[234]|Matrix[234])\b")
+STRUCT = re.compile(r"\b(Vector[2346]|Matrix[2346])\b")
+
+# The hand-written block layout of the 6D shapes (WP 8.1b-2): flat field -> block path.
+H6_VECTOR = {c: f"{'a' if k < 3 else 'b'}.{'xyz'[k % 3]}" for k, c in enumerate(L.COORDS)}
+
+
+def h6_matrix(i: int, j: int) -> str:
+    """The hand-written path of the scalar at row `i`, column `j` (0-based) of a `Matrix6`."""
+    return f"m{i // 3 + 1}{j // 3 + 1}.m{i % 3 + 1}{j % 3 + 1}"
+
+
+def field_path(side: "Side", struct: str, field: str) -> str:
+    """`field` of a `struct` value on `side` (`x` → `a.x` on a hand-written `Vector6`)."""
+    if side.tag == "h" and struct == "Vector6":
+        return H6_VECTOR[field]
+    return field
 
 
 def strip_tests(text: str) -> str:
@@ -103,10 +123,30 @@ def value(side: Side, ty: str, rng: random.Random, bits: int) -> str:
     if not m:
         raise ValueError(f"no input generator for `{ty}`")
     n = int(m.group(2))
-    fields = (list(L.COORDS[:n]) if m.group(1) == "Vector"
-              else [L.Mat.f(i, j) for j in range(n) for i in range(n)])
-    body = ", ".join(f"{f}: fx({raw()})" for f in fields)
+    if m.group(1) == "Vector":
+        comps = {(k, 0): raw() for k in range(n)}
+    else:
+        comps = {(i, j): raw() for j in range(n) for i in range(n)}
+    if side.tag == "h" and n == 6:
+        return h6_literal(m.group(1), comps)
+    fields = ([(c, (k, 0)) for k, c in enumerate(L.COORDS[:n])] if m.group(1) == "Vector"
+              else [(L.Mat.f(i, j), (i, j)) for j in range(n) for i in range(n)])
+    body = ", ".join(f"{f}: fx({comps[ij]})" for f, ij in fields)
     return f"{side.name(m.group(1) + m.group(2))} {{ {body} }}"
+
+
+def h6_literal(kind: str, comps: dict[tuple[int, int], int]) -> str:
+    """A hand-written block `Vector6` / `Matrix6` literal holding the components `comps`."""
+    if kind == "Vector":
+        blocks = [", ".join(f"{c}: fx({comps[(3 * b + k, 0)]})" for k, c in enumerate("xyz"))
+                  for b in range(2)]
+        return f"HVector6 {{ a: HVector3 {{ {blocks[0]} }}, b: HVector3 {{ {blocks[1]} }} }}"
+    out = []
+    for bi, bj in ((0, 0), (1, 0), (0, 1), (1, 1)):
+        body = ", ".join(f"m{i + 1}{j + 1}: fx({comps[(3 * bi + i, 3 * bj + j)]})"
+                         for j in range(3) for i in range(3))
+        out.append(f"m{bi + 1}{bj + 1}: HMatrix3 {{ {body} }}")
+    return f"HMatrix6 {{ {', '.join(out)} }}"
 
 
 class Op:
@@ -161,7 +201,8 @@ def operator_ops(shape: tuple[int, int]) -> list[Op]:
             Op("div_assign", [("a", T), ("k", "T")], T, lambda s, a: f"{a['a']} /= {a['k']}", "a"),
             Op("into_array", [("a", T)], arr, lambda s, a: f"{a['a']}.into()"),
             Op("from_array", [("a", T)], T,
-               lambda s, a: "[" + ", ".join(f"{a['a']}.{x}" for x in L.COORDS[:r]) + "].into()"),
+               lambda s, a: "[" + ", ".join(f"{a['a']}.{field_path(s, S, x)}"
+                                            for x in L.COORDS[:r]) + "].into()"),
         ]
     else:
         ops += [
@@ -187,7 +228,8 @@ def render_compare() -> str:
     for shape, module in L.LIBRARY_SHAPES.items():
         r, c = shape
         S = f"Vector{r}" if c == 1 else f"Matrix{r}"
-        traits = [S, f"{S}Trait"] + ([f"{S}AngleTrait"] if c == 1 else [])
+        traits = [S, f"{S}Trait"] + ([f"{S}AngleTrait"] if c == 1 and r not in L.VECTOR_SURFACE
+                                     else [])
         uses.add(f"crate::{module}::{{{', '.join(traits)}}}")
         uses.add(f"nalgebra::base::{module}::{{{', '.join(f'{t} as H{t}' for t in traits)}}}")
         for op in shape_ops(shape):
@@ -206,7 +248,8 @@ def render_compare() -> str:
             for vals in cases:
                 body.append("{")
                 body += op.lines(Side("g"), vals, False) + op.lines(Side("h"), vals, False)
-                body.append("assert!(image(r_g) == image(r_h));")
+                h = "himage6" if op.ret == "Matrix6<T>" else "image"
+                body.append(f"assert!(image(r_g) == {h}(r_h));")
                 body.append("}")
             fns.append(f"#[test]\nfn test_{group}_bit_identical() {{\n" + "\n".join(body) + "\n}")
             for tag, variant in (("g", "generated"), ("h", "handwritten")):
@@ -222,7 +265,14 @@ def render_compare() -> str:
             "/// The `Serde` image of a value: equal images are equal bits.\n"
             "fn image<S, +Serde<S>, +Drop<S>>(value: S) -> Span<felt252> {\n"
             "    let mut out: Array<felt252> = array![];\n    value.serialize(ref out);\n"
-            "    out.span()\n}\n\n" + "\n\n".join(fns) + "\n")
+            "    out.span()\n}\n\n"
+            "/// The flat column-major image of a hand-written block `Matrix6` (the generated\n"
+            "/// `Serde` order).\n"
+            "fn himage6(m: HMatrix6<Fixed>) -> Span<felt252> {\n"
+            "    let mut out: Array<felt252> = array![];\n"
+            + "".join(f"    m.{h6_matrix(i, j)}.serialize(ref out);\n"
+                      for j in range(6) for i in range(6))
+            + "    out.span()\n}\n\n" + "\n\n".join(fns) + "\n")
 
 
 def generate(pkg: Path, root: str) -> None:
