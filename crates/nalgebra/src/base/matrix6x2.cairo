@@ -9,8 +9,9 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
+use crate::geometry::Rotation2;
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
@@ -1933,5 +1934,76 @@ pub impl Matrix6x2IntoColumnArrays<T, +Drop<T>> of Into<Matrix6x2<T>, [[T; 6]; 2
     fn into(self: Matrix6x2<T>) -> [[T; 6]; 2] {
         let Matrix6x2 { m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62 } = self;
         [[m11, m21, m31, m41, m51, m61], [m12, m22, m32, m42, m52, m62]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix6x2MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix6x2<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix6x2<T>, rhs: T) {
+        self =
+            Matrix6x2 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m31: self.m31 * rhs,
+                m41: self.m41 * rhs,
+                m51: self.m51 * rhs,
+                m61: self.m61 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m32: self.m32 * rhs,
+                m42: self.m42 * rhs,
+                m52: self.m52 * rhs,
+                m62: self.m62 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix6x2DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix6x2<T>, T> {
+    fn div_assign(ref self: Matrix6x2<T>, rhs: T) {
+        let (m11, m21, m31, m41, m51, m61, m12, m22, m32) = R::div9(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m41,
+            self.m51,
+            self.m61,
+            self.m12,
+            self.m22,
+            self.m32,
+            rhs,
+        );
+        let (m42, m52, m62) = R::div3(self.m42, self.m52, self.m62, rhs);
+        self = Matrix6x2 { m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62 };
+    }
+}
+
+/// `self * r`, a `Matrix6x2`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m * r`).
+pub impl Matrix6x2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix6x2<T>, Rotation2<T>> {
+    type Output = Matrix6x2<T>;
+
+    fn mul_mat(self: Matrix6x2<T>, rhs: Rotation2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: R::sum_prod2(self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21),
+            m21: R::sum_prod2(self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21),
+            m31: R::sum_prod2(self.m31, rhs.matrix.m11, self.m32, rhs.matrix.m21),
+            m41: R::sum_prod2(self.m41, rhs.matrix.m11, self.m42, rhs.matrix.m21),
+            m51: R::sum_prod2(self.m51, rhs.matrix.m11, self.m52, rhs.matrix.m21),
+            m61: R::sum_prod2(self.m61, rhs.matrix.m11, self.m62, rhs.matrix.m21),
+            m12: R::sum_prod2(self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22),
+            m22: R::sum_prod2(self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22),
+            m32: R::sum_prod2(self.m31, rhs.matrix.m12, self.m32, rhs.matrix.m22),
+            m42: R::sum_prod2(self.m41, rhs.matrix.m12, self.m42, rhs.matrix.m22),
+            m52: R::sum_prod2(self.m51, rhs.matrix.m12, self.m52, rhs.matrix.m22),
+            m62: R::sum_prod2(self.m61, rhs.matrix.m12, self.m62, rhs.matrix.m22),
+        }
     }
 }

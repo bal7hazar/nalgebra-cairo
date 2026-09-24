@@ -9,8 +9,9 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
+use crate::geometry::Rotation3;
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
@@ -958,5 +959,43 @@ pub impl RowVector3IntoColumnArrays<T, +Drop<T>> of Into<RowVector3<T>, [[T; 1];
     fn into(self: RowVector3<T>) -> [[T; 1]; 3] {
         let RowVector3 { x, y, z } = self;
         [[x], [y], [z]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl RowVector3MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<RowVector3<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: RowVector3<T>, rhs: T) {
+        self = RowVector3 { x: self.x * rhs, y: self.y * rhs, z: self.z * rhs };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl RowVector3DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<RowVector3<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: RowVector3<T>, rhs: T) {
+        let (x, y, z) = R::div3(self.x, self.y, self.z, rhs);
+        self = RowVector3 { x, y, z };
+    }
+}
+
+/// `self * r`, a `RowVector3`: the product with the rotation matrix of `r`, each component one
+/// fused `sum_prod3` (floored once). Panics on overflow. Upstream: `Mul<Rotation3> for Matrix` (`m
+/// * r`).
+pub impl RowVector3MulRotation3<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<RowVector3<T>, Rotation3<T>> {
+    type Output = RowVector3<T>;
+    #[inline(always)]
+    fn mul_mat(self: RowVector3<T>, rhs: Rotation3<T>) -> RowVector3<T> {
+        RowVector3 {
+            x: R::sum_prod3(self.x, rhs.matrix.m11, self.y, rhs.matrix.m21, self.z, rhs.matrix.m31),
+            y: R::sum_prod3(self.x, rhs.matrix.m12, self.y, rhs.matrix.m22, self.z, rhs.matrix.m32),
+            z: R::sum_prod3(self.x, rhs.matrix.m13, self.y, rhs.matrix.m23, self.z, rhs.matrix.m33),
+        }
     }
 }

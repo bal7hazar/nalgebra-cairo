@@ -31,12 +31,36 @@ divisions by a common divisor go through the prepared-divisor `Real::divN` (bit-
 `Real::div`), chunked to the fewest calls.
 """
 
+import re
 import textwrap
 
 import library as L
 from model import COORDS, Shape
 
 INDEX_ERROR = "errors::INDEX_OUT_OF_BOUNDS"
+LEGACY_VECTORS = {(2, 1), (3, 1), (4, 1), (6, 1)}
+
+# `Into<Src, MatrixN>` of the geometry types (upstream `geometry/*_conversion.rs`): (source,
+# body, doc) per square shape.
+GEOMETRY_INTO = {
+    (2, 2): [("Rotation2", "self.matrix", "the rotation matrix"),
+             ("UnitComplex", "UnitComplexTrait::to_rotation_matrix(self).matrix",
+              "the rotation matrix `[[re, -im], [im, re]]`")],
+    (3, 3): [("Rotation2", "Rotation2Trait::to_homogeneous(self)", "the homogeneous rotation"),
+             ("Rotation3", "self.matrix", "the rotation matrix"),
+             ("UnitComplex", "UnitComplexTrait::to_homogeneous(self)", "the homogeneous rotation"),
+             ("UnitQuaternion", "UnitQuaternionTrait::to_rotation_matrix(self).matrix",
+              "the rotation matrix"),
+             ("Isometry2", "Isometry2Trait::to_homogeneous(self)", "the homogeneous matrix"),
+             ("Similarity2", "Similarity2Trait::to_homogeneous(self)", "the homogeneous matrix"),
+             ("Translation2", "Translation2Trait::to_homogeneous(self)", "the homogeneous matrix")],
+    (4, 4): [("Rotation3", "Rotation3Trait::to_homogeneous(self)", "the homogeneous rotation"),
+             ("UnitQuaternion", "UnitQuaternionTrait::to_homogeneous(self)",
+              "the homogeneous rotation"),
+             ("Isometry3", "Isometry3Trait::to_homogeneous(self)", "the homogeneous matrix"),
+             ("Similarity3", "Similarity3Trait::to_homogeneous(self)", "the homogeneous matrix"),
+             ("Translation3", "Translation3Trait::to_homogeneous(self)", "the homogeneous matrix")],
+}
 DIV_SIZES = (16, 9, 6, 5, 4, 3, 1)  # `Real::divN` (1 = `Real::div`)
 
 ANGLE_BOUNDS = ["T", "impl R: Real<T>", "impl Tr: Transcendental<T>", "+Copy<T>", "+Drop<T>",
@@ -440,6 +464,48 @@ def methods(s: Shape) -> list[L.Fn]:
                       f"fn from_homogeneous(v: {u.name}<T>) -> Option<{T}>",
                       f"if v.{last} == R::zero() {{\nSome({L.lit(S, [(k, f'v.{k}') for k in F])})\n}}"
                       f" else {{\nNone\n}}"))
+    if s.is_column:
+        sub = L.lit(S, [(k, f"R::diff_prod(elt.{k}, R::one(), b.{k}, d)") for k in F])
+        out.append(fn(
+            "orthonormalize",
+            f"Gram-Schmidt on `vs`, like upstream: each vector minus its projections on the basis "
+            f"found so far (each component ONE fused `diff_prod`), normalized when its norm is "
+            f"not zero; the orthonormal vectors are moved to the front (the first dependent "
+            f"residual taking the place of each new basis vector, upstream's `swap`), and the "
+            f"vectors after the {s.r}-th basis vector are left untouched. Returns the number of "
+            f"basis vectors. Upstream: `orthonormalize(vs: &mut [Self]) -> usize`: Cairo arrays "
+            f"cannot be written in place, so `vs` is rebuilt (`ref`); the loop runs on the runtime "
+            f"length of `vs`.",
+            f"fn orthonormalize(ref vs: Array<{T}>) -> usize",
+            f"let mut basis: Array<{T}> = array![];\nlet mut deps: Array<{T}> = array![];\n"
+            f"let mut rest = vs.span();\nlet mut nb: usize = 0;\nwhile nb < {s.r} {{\n"
+            f"let v = match rest.pop_front() {{\nOption::Some(v) => *v,\nOption::None => {{\n"
+            f"break;\n}},\n}};\nlet mut elt = v;\nfor b in basis.span() {{\nlet b = *b;\n"
+            f"let d = Self::dot(elt, b);\nelt = {sub};\n}}\nlet n = Self::norm(elt);\n"
+            f"if n > R::zero() {{\nbasis.append(Self::unscale(elt, n));\nnb += 1;\n"
+            f"if let Option::Some(first) = deps.pop_front() {{\ndeps.append(first);\n}}\n"
+            f"}} else {{\ndeps.append(elt);\n}}\n}}\n"
+            f"for d in deps.span() {{\nbasis.append(*d);\n}}\n"
+            f"for r in rest {{\nbasis.append(*r);\n}}\nvs = basis;\nnb", False))
+    if (s.r, s.c) == (3, 1):
+        out.append(fn(
+            "orthonormal_subspace_basis",
+            "An orthonormal basis of the orthogonal complement of the free family `vs` (0 to 3 "
+            "vectors), computed like upstream's 3D branch: the canonical basis for no vector; "
+            "for one vector `v`, the normalized `a = (v.z, 0, -v.x)` (or `(0, -v.z, v.y)` when "
+            "`|v.x| <= |v.y|`) then `a × v`, returned as `[a × v, a]`; for two, their "
+            "normalized cross product; nothing for three. Panics with `nalgebra: not a free "
+            "family` for more than 3 vectors. Upstream: `orthonormal_subspace_basis(vs, f)`, "
+            "which passes each element to the closure `f` (stopping when it returns `false`): a "
+            "Cairo closure cannot accumulate state, so the elements are returned instead.",
+            "fn orthonormal_subspace_basis(vs: Span<Vector3<T>>) -> Array<Vector3<T>>",
+            "match vs.len() {\n0 => array![Self::x(), Self::y(), Self::z()],\n"
+            "1 => {\nlet v = *vs[0];\nlet a = if R::abs(v.x) > R::abs(v.y) {\n"
+            "Vector3 { x: v.z, y: R::zero(), z: -v.x }\n} else {\n"
+            "Vector3 { x: R::zero(), y: -v.z, z: v.y }\n};\nlet a = Self::normalize(a);\n"
+            "array![Self::cross(a, v), a]\n},\n"
+            "2 => array![Self::normalize(Self::cross(*vs[0], *vs[1]))],\n3 => array![],\n"
+            "_ => core::panic_with_felt252(errors::NOT_FREE_FAMILY),\n}", False))
     out.append(fn("cast", "The same shape with every component converted by `Into<T, U>`. With "
                           "the single scalar of this library (`Fixed`) it is the identity; it "
                           "exists for scalar-generic code. Upstream: `cast` (and "
@@ -622,6 +688,40 @@ def items(s: Shape) -> list[str]:
         f"pub impl {S}IntoColumnArrays<T, +Drop<T>> of Into<{T}, {arr_t}> {{\n{L.INLINE}\n"
         f"fn into(self: {T}) -> {arr_t} {{\nlet {shorthand(s)} = self;\n"
         f"[{', '.join('[' + ', '.join(c) + ']' for c in colnames)}]\n}}\n}}"))
+    if (s.r, s.c) not in LEGACY_VECTORS:  # `Vector2/3/4/6` have them (`library.py`)
+        out.append(item(
+            "`self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics "
+            "on overflow. Upstream: `MulAssign<T>`.",
+            f"pub impl {S}MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<{T}, T> {{\n"
+            f"{L.INLINE}\nfn mul_assign(ref self: {T}, rhs: T) {{\n"
+            f"self = {L.lit(S, [(k, f'self.{k} * rhs') for k in F])};\n}}\n}}"))
+        out.append(item(
+            "`self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. "
+            "Panics on a zero `k` and on overflow. Upstream: `DivAssign<T>`.",
+            f"pub impl {S}DivAssignScalar<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of "
+            f"DivAssign<{T}, T> {{\n{L.INLINE if n <= 6 else ''}\n"
+            f"fn div_assign(ref self: {T}, rhs: T) {{\n{quotients(s, 'self', 'rhs')}\n"
+            f"self = {shorthand(s)};\n}}\n}}"))
+    for src, how, what in GEOMETRY_INTO.get((s.r, s.c), []):
+        out.append(item(
+            f"`{src.lower()}.into()`: {what}. Exact (no arithmetic). Upstream: `From<{src}> for "
+            f"{S}`.",
+            f"pub impl {S}From{src}<\n{L.bounds(L.MATRIX_IMPL_BOUNDS)}\n> of Into<{src}<T>, {T}> "
+            f"{{\n{L.INLINE}\nfn into(self: {src}<T>) -> {T} {{\n{how}\n}}\n}}"))
+    if s.c in (2, 3):
+        rot = f"Rotation{s.c}"
+        q = Shape(s.c, s.c)
+        vals = [(s.f(i, j), products([(f"self.{s.f(i, k)}", f"rhs.matrix.{q.f(k, j)}")
+                                      for k in range(s.c)])) for j in range(s.c)
+                for i in range(s.r)]
+        out.append(item(
+            f"`self * r`, a `{S}`: the product with the rotation matrix of `r`, each component "
+            f"one fused `sum_prod{s.c}` (floored once). Panics on overflow. Upstream: "
+            f"`Mul<{rot}> for Matrix` (`m * r`).",
+            f"pub impl {S}Mul{rot}<T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>> of "
+            f"MatrixMul<{T}, {rot}<T>> {{\ntype Output = {T};\n"
+            f"{L.INLINE if s.n <= 4 else ''}\nfn mul_mat(self: {T}, rhs: {rot}<T>) -> {T} {{\n"
+            f"{L.lit(S, vals)}\n}}\n}}"))
     if s.r in (2, 3) and s.c in (2, 3):
         # `m * p`: the points of the crate are `Point2` / `Point3`.
         pr, pc = f"Point{s.r}", f"Point{s.c}"
@@ -730,8 +830,15 @@ def uses(s: Shape) -> list[str]:
         u = Shape(s.r + 1, s.r + 1)
         out.append(f"super::{u.module}::{u.name}")
     if s.r in (2, 3) and s.c in (2, 3):
-        out += ["super::matrix_mul::MatrixMul"] + [f"super::point{d}::Point{d}"
-                                                   for d in sorted({s.r, s.c})]
+        out += [f"super::point{d}::Point{d}" for d in sorted({s.r, s.c})]
+    if s.c in (2, 3):
+        out += ["super::matrix_mul::MatrixMul", f"crate::geometry::Rotation{s.c}"]
+    geo = [src for src, how, _ in GEOMETRY_INTO.get((s.r, s.c), [])]
+    traits = sorted({m.group(1) for _, how, _ in GEOMETRY_INTO.get((s.r, s.c), [])
+                     for m in [re.match(r"(\w+Trait)::", how)] if m})
+    if geo:
+        names = sorted(set(geo) | set(traits))
+        out.append(f"crate::geometry::{{{', '.join(names)}}}")
     return out
 
 

@@ -10,7 +10,7 @@ use nalgebra::{
     Matrix6Trait, Matrix6x2, Matrix6x2Trait, Matrix6x3, Matrix6x3Trait, Matrix6x4, Matrix6x4Trait,
     Matrix6x5, Matrix6x5Trait, Vector4, Vector4Trait, Vector5, Vector5Trait, Vector6, Vector6Trait,
 };
-use crate::helpers::{assert_raws, fx, load};
+use crate::helpers::{assert_raws, assert_raws_near, fx, load};
 
 #[test]
 fn test_vector4_norms() {
@@ -50,6 +50,12 @@ fn test_vector4_norms() {
     c.try_set_magnitude(fx(12884914233), fx(274877906944));
     assert_raws(c, array![2483873677, -8814639239, -2535985035, 8701856212].span());
     assert!(a.one_norm() == fx(167136458039));
+    let mut vs: Array<Vector4<Fixed>> = array![a, Vector4Trait::zeros(), b];
+    assert!(Vector4Trait::orthonormalize(ref vs) == 2);
+    assert!(vs.len() == 3);
+    assert_raws_near(*vs[0], array![827957099, -2938210263, -845327535, 2900615957].span(), 4096);
+    assert_raws_near(*vs[1], array![-2151199708, -545170719, 3513283985, 1085683388].span(), 4096);
+    assert_raws_near(*vs[2], array![0, 0, 0, 0].span(), 4096);
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]
@@ -600,6 +606,16 @@ fn test_vector5_norms() {
     c.try_set_magnitude(fx(12884914233), fx(274877906944));
     assert_raws(c, array![5930555453, 10011849693, 3876870706, -1086109616, -3795079975].span());
     assert!(a.one_norm() == fx(81309040486));
+    let mut vs: Array<Vector5<Fixed>> = array![a, Vector5Trait::zeros(), b];
+    assert!(Vector5Trait::orthonormalize(ref vs) == 2);
+    assert!(vs.len() == 3);
+    assert_raws_near(
+        *vs[0], array![1976849923, 3337280033, 1292288997, -362036191, -1265025446].span(), 4096,
+    );
+    assert_raws_near(
+        *vs[1], array![227665614, -2009888514, 2360426358, 950345338, -2807221358].span(), 4096,
+    );
+    assert_raws_near(*vs[2], array![0, 0, 0, 0, 0].span(), 4096);
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]
@@ -1192,6 +1208,20 @@ fn test_vector6_norms() {
         c, array![-3268762167, 114453805, -4986818551, -4085569114, 8002000485, -7052011269].span(),
     );
     assert!(a.one_norm() == fx(229615266746));
+    let mut vs: Array<Vector6<Fixed>> = array![a, Vector6Trait::zeros(), b];
+    assert!(Vector6Trait::orthonormalize(ref vs) == 2);
+    assert!(vs.len() == 3);
+    assert_raws_near(
+        *vs[0],
+        array![-1089586345, 38151232, -1662271258, -1361855067, 2667330940, -2350668171].span(),
+        4096,
+    );
+    assert_raws_near(
+        *vs[1],
+        array![2713883743, -1047033428, -1795266532, 2184110871, -119442385, -1406311274].span(),
+        4096,
+    );
+    assert_raws_near(*vs[2], array![0, 0, 0, 0, 0, 0].span(), 4096);
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]

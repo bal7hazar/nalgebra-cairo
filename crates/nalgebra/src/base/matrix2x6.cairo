@@ -9,7 +9,7 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -2432,5 +2432,51 @@ pub impl Matrix2x6IntoColumnArrays<T, +Drop<T>> of Into<Matrix2x6<T>, [[T; 2]; 6
     fn into(self: Matrix2x6<T>) -> [[T; 2]; 6] {
         let Matrix2x6 { m11, m21, m12, m22, m13, m23, m14, m24, m15, m25, m16, m26 } = self;
         [[m11, m21], [m12, m22], [m13, m23], [m14, m24], [m15, m25], [m16, m26]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix2x6MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix2x6<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix2x6<T>, rhs: T) {
+        self =
+            Matrix2x6 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+                m14: self.m14 * rhs,
+                m24: self.m24 * rhs,
+                m15: self.m15 * rhs,
+                m25: self.m25 * rhs,
+                m16: self.m16 * rhs,
+                m26: self.m26 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix2x6DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix2x6<T>, T> {
+    fn div_assign(ref self: Matrix2x6<T>, rhs: T) {
+        let (m11, m21, m12, m22, m13, m23, m14, m24, m15) = R::div9(
+            self.m11,
+            self.m21,
+            self.m12,
+            self.m22,
+            self.m13,
+            self.m23,
+            self.m14,
+            self.m24,
+            self.m15,
+            rhs,
+        );
+        let (m25, m16, m26) = R::div3(self.m25, self.m16, self.m26, rhs);
+        self = Matrix2x6 { m11, m21, m12, m22, m13, m23, m14, m24, m15, m25, m16, m26 };
     }
 }

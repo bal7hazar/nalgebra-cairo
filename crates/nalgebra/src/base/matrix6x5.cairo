@@ -9,7 +9,7 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -5117,5 +5117,123 @@ pub impl Matrix6x5IntoColumnArrays<T, +Drop<T>> of Into<Matrix6x5<T>, [[T; 6]; 5
             [m13, m23, m33, m43, m53, m63], [m14, m24, m34, m44, m54, m64],
             [m15, m25, m35, m45, m55, m65],
         ]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix6x5MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix6x5<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix6x5<T>, rhs: T) {
+        self =
+            Matrix6x5 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m31: self.m31 * rhs,
+                m41: self.m41 * rhs,
+                m51: self.m51 * rhs,
+                m61: self.m61 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m32: self.m32 * rhs,
+                m42: self.m42 * rhs,
+                m52: self.m52 * rhs,
+                m62: self.m62 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+                m33: self.m33 * rhs,
+                m43: self.m43 * rhs,
+                m53: self.m53 * rhs,
+                m63: self.m63 * rhs,
+                m14: self.m14 * rhs,
+                m24: self.m24 * rhs,
+                m34: self.m34 * rhs,
+                m44: self.m44 * rhs,
+                m54: self.m54 * rhs,
+                m64: self.m64 * rhs,
+                m15: self.m15 * rhs,
+                m25: self.m25 * rhs,
+                m35: self.m35 * rhs,
+                m45: self.m45 * rhs,
+                m55: self.m55 * rhs,
+                m65: self.m65 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix6x5DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix6x5<T>, T> {
+    fn div_assign(ref self: Matrix6x5<T>, rhs: T) {
+        let (m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62, m13, m23, m33, m43) =
+            R::div16(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m41,
+            self.m51,
+            self.m61,
+            self.m12,
+            self.m22,
+            self.m32,
+            self.m42,
+            self.m52,
+            self.m62,
+            self.m13,
+            self.m23,
+            self.m33,
+            self.m43,
+            rhs,
+        );
+        let (m53, m63, m14, m24, m34, m44, m54, m64, m15) = R::div9(
+            self.m53,
+            self.m63,
+            self.m14,
+            self.m24,
+            self.m34,
+            self.m44,
+            self.m54,
+            self.m64,
+            self.m15,
+            rhs,
+        );
+        let (m25, m35, m45, m55, m65) = R::div5(
+            self.m25, self.m35, self.m45, self.m55, self.m65, rhs,
+        );
+        self =
+            Matrix6x5 {
+                m11,
+                m21,
+                m31,
+                m41,
+                m51,
+                m61,
+                m12,
+                m22,
+                m32,
+                m42,
+                m52,
+                m62,
+                m13,
+                m23,
+                m33,
+                m43,
+                m53,
+                m63,
+                m14,
+                m24,
+                m34,
+                m44,
+                m54,
+                m64,
+                m15,
+                m25,
+                m35,
+                m45,
+                m55,
+                m65,
+            };
     }
 }

@@ -9,7 +9,7 @@
 //! shape `MatrixMul::mul_mat` (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::{Bounded, One};
-use core::ops::{AddAssign, IndexView, MulAssign, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -566,6 +566,50 @@ pub impl Matrix1Impl<
         }
     }
 
+    /// Gram-Schmidt on `vs`, like upstream: each vector minus its projections on the basis found so
+    /// far (each component ONE fused `diff_prod`), normalized when its norm is not zero; the
+    /// orthonormal vectors are moved to the front (the first dependent residual taking the place of
+    /// each new basis vector, upstream's `swap`), and the vectors after the 1-th basis vector are
+    /// left untouched. Returns the number of basis vectors. Upstream: `orthonormalize(vs: &mut
+    /// [Self]) -> usize`: Cairo arrays cannot be written in place, so `vs` is rebuilt (`ref`); the
+    /// loop runs on the runtime length of `vs`.
+    fn orthonormalize(ref vs: Array<Matrix1<T>>) -> usize {
+        let mut basis: Array<Matrix1<T>> = array![];
+        let mut deps: Array<Matrix1<T>> = array![];
+        let mut rest = vs.span();
+        let mut nb: usize = 0;
+        while nb < 1 {
+            let v = match rest.pop_front() {
+                Option::Some(v) => *v,
+                Option::None => { break; },
+            };
+            let mut elt = v;
+            for b in basis.span() {
+                let b = *b;
+                let d = Self::dot(elt, b);
+                elt = Matrix1 { x: R::diff_prod(elt.x, R::one(), b.x, d) };
+            }
+            let n = Self::norm(elt);
+            if n > R::zero() {
+                basis.append(Self::unscale(elt, n));
+                nb += 1;
+                if let Option::Some(first) = deps.pop_front() {
+                    deps.append(first);
+                }
+            } else {
+                deps.append(elt);
+            }
+        }
+        for d in deps.span() {
+            basis.append(*d);
+        }
+        for r in rest {
+            basis.append(*r);
+        }
+        vs = basis;
+        nb
+    }
+
     /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
     /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
     /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
@@ -1068,6 +1112,27 @@ pub impl Matrix1IntoColumnArrays<T, +Drop<T>> of Into<Matrix1<T>, [[T; 1]; 1]> {
     fn into(self: Matrix1<T>) -> [[T; 1]; 1] {
         let Matrix1 { x } = self;
         [[x]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix1MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix1<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix1<T>, rhs: T) {
+        self = Matrix1 { x: self.x * rhs };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix1DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix1<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: Matrix1<T>, rhs: T) {
+        let x = R::div(self.x, rhs);
+        self = Matrix1 { x };
     }
 }
 

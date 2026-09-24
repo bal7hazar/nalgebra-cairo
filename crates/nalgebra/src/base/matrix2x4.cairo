@@ -9,7 +9,7 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -1567,5 +1567,38 @@ pub impl Matrix2x4IntoColumnArrays<T, +Drop<T>> of Into<Matrix2x4<T>, [[T; 2]; 4
     fn into(self: Matrix2x4<T>) -> [[T; 2]; 4] {
         let Matrix2x4 { m11, m21, m12, m22, m13, m23, m14, m24 } = self;
         [[m11, m21], [m12, m22], [m13, m23], [m14, m24]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix2x4MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix2x4<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix2x4<T>, rhs: T) {
+        self =
+            Matrix2x4 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+                m14: self.m14 * rhs,
+                m24: self.m24 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix2x4DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix2x4<T>, T> {
+    fn div_assign(ref self: Matrix2x4<T>, rhs: T) {
+        let (m11, m21, m12, m22, m13) = R::div5(
+            self.m11, self.m21, self.m12, self.m22, self.m13, rhs,
+        );
+        let (m23, m14, m24) = R::div3(self.m23, self.m14, self.m24, rhs);
+        self = Matrix2x4 { m11, m21, m12, m22, m13, m23, m14, m24 };
     }
 }

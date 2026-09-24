@@ -259,6 +259,14 @@ pub trait Vector2Trait<T> {
     /// The first 2 components of `v` when its last one is zero (a homogeneous VECTOR), `None`
     /// otherwise. Exact. Upstream: `Vector2::from_homogeneous`.
     fn from_homogeneous(v: Vector3<T>) -> Option<Vector2<T>>;
+    /// Gram-Schmidt on `vs`, like upstream: each vector minus its projections on the basis found so
+    /// far (each component ONE fused `diff_prod`), normalized when its norm is not zero; the
+    /// orthonormal vectors are moved to the front (the first dependent residual taking the place of
+    /// each new basis vector, upstream's `swap`), and the vectors after the 2-th basis vector are
+    /// left untouched. Returns the number of basis vectors. Upstream: `orthonormalize(vs: &mut
+    /// [Self]) -> usize`: Cairo arrays cannot be written in place, so `vs` is rebuilt (`ref`); the
+    /// loop runs on the runtime length of `vs`.
+    fn orthonormalize(ref vs: Array<Vector2<T>>) -> usize;
     /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
     /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
     /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
@@ -710,6 +718,47 @@ pub impl Vector2Impl<
         } else {
             None
         }
+    }
+
+    fn orthonormalize(ref vs: Array<Vector2<T>>) -> usize {
+        let mut basis: Array<Vector2<T>> = array![];
+        let mut deps: Array<Vector2<T>> = array![];
+        let mut rest = vs.span();
+        let mut nb: usize = 0;
+        while nb < 2 {
+            let v = match rest.pop_front() {
+                Option::Some(v) => *v,
+                Option::None => { break; },
+            };
+            let mut elt = v;
+            for b in basis.span() {
+                let b = *b;
+                let d = Self::dot(elt, b);
+                elt =
+                    Vector2 {
+                        x: R::diff_prod(elt.x, R::one(), b.x, d),
+                        y: R::diff_prod(elt.y, R::one(), b.y, d),
+                    };
+            }
+            let n = Self::norm(elt);
+            if n > R::zero() {
+                basis.append(Self::unscale(elt, n));
+                nb += 1;
+                if let Option::Some(first) = deps.pop_front() {
+                    deps.append(first);
+                }
+            } else {
+                deps.append(elt);
+            }
+        }
+        for d in deps.span() {
+            basis.append(*d);
+        }
+        for r in rest {
+            basis.append(*r);
+        }
+        vs = basis;
+        nb
     }
 
     fn cast<U, +Into<T, U>, +Drop<U>>(self: Vector2<T>) -> Vector2<U> {

@@ -9,9 +9,10 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::{Bounded, One};
-use core::ops::{AddAssign, IndexView, MulAssign, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
+use crate::geometry::{Rotation2, UnitComplex, UnitComplexTrait};
 use super::errors;
 use super::kernels::Powi;
 use super::matrix2x3::Matrix2x3;
@@ -1291,6 +1292,89 @@ pub impl Matrix2IntoColumnArrays<T, +Drop<T>> of Into<Matrix2<T>, [[T; 2]; 2]> {
     fn into(self: Matrix2<T>) -> [[T; 2]; 2] {
         let Matrix2 { m11, m21, m12, m22 } = self;
         [[m11, m21], [m12, m22]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix2MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix2<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix2<T>, rhs: T) {
+        self =
+            Matrix2 {
+                m11: self.m11 * rhs, m21: self.m21 * rhs, m12: self.m12 * rhs, m22: self.m22 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix2DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix2<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: Matrix2<T>, rhs: T) {
+        let (m11, m21, m12, m22) = R::div4(self.m11, self.m21, self.m12, self.m22, rhs);
+        self = Matrix2 { m11, m21, m12, m22 };
+    }
+}
+
+/// `rotation2.into()`: the rotation matrix. Exact (no arithmetic). Upstream: `From<Rotation2> for
+/// Matrix2`.
+pub impl Matrix2FromRotation2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Rotation2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn into(self: Rotation2<T>) -> Matrix2<T> {
+        self.matrix
+    }
+}
+
+/// `unitcomplex.into()`: the rotation matrix `[[re, -im], [im, re]]`. Exact (no arithmetic).
+/// Upstream: `From<UnitComplex> for Matrix2`.
+pub impl Matrix2FromUnitComplex<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<UnitComplex<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn into(self: UnitComplex<T>) -> Matrix2<T> {
+        UnitComplexTrait::to_rotation_matrix(self).matrix
+    }
+}
+
+/// `self * r`, a `Matrix2`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m * r`).
+pub impl Matrix2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix2<T>, Rotation2<T>> {
+    type Output = Matrix2<T>;
+    #[inline(always)]
+    fn mul_mat(self: Matrix2<T>, rhs: Rotation2<T>) -> Matrix2<T> {
+        Matrix2 {
+            m11: R::sum_prod2(self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21),
+            m21: R::sum_prod2(self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21),
+            m12: R::sum_prod2(self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22),
+            m22: R::sum_prod2(self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22),
+        }
     }
 }
 

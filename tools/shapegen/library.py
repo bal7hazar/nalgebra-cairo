@@ -909,7 +909,9 @@ def render_matrix(n: int, module: str, test_modules: list[str], extra: Extra) ->
                                       + [x.definition() for x in extra.methods]))
     internal = slot_fns(MATRIX_INTERNAL_ORDER[n], matrix_internal_fns(m), specs.internal)
     scalar = "simba::scalar::{Real, Transcendental}" if extra.angle else "simba::scalar::Real"
-    uses = dedup(["core::ops::{AddAssign, MulAssign, SubAssign}", scalar,
+    ops = ("core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}" if extra.methods else
+           "core::ops::{AddAssign, MulAssign, SubAssign}")
+    uses = dedup([ops, scalar,
                   f"super::vector{n}::Vector{n}"] + specs.uses + extra.uses)
     blocks = [
         f"//! `{S}`: a statically sized {n}x{n} matrix (upstream `nalgebra::{S}`).\n//!\n"

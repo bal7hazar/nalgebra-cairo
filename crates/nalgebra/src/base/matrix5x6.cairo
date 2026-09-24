@@ -9,7 +9,7 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -5140,5 +5140,123 @@ pub impl Matrix5x6IntoColumnArrays<T, +Drop<T>> of Into<Matrix5x6<T>, [[T; 5]; 6
             [m11, m21, m31, m41, m51], [m12, m22, m32, m42, m52], [m13, m23, m33, m43, m53],
             [m14, m24, m34, m44, m54], [m15, m25, m35, m45, m55], [m16, m26, m36, m46, m56],
         ]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix5x6MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix5x6<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix5x6<T>, rhs: T) {
+        self =
+            Matrix5x6 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m31: self.m31 * rhs,
+                m41: self.m41 * rhs,
+                m51: self.m51 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m32: self.m32 * rhs,
+                m42: self.m42 * rhs,
+                m52: self.m52 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+                m33: self.m33 * rhs,
+                m43: self.m43 * rhs,
+                m53: self.m53 * rhs,
+                m14: self.m14 * rhs,
+                m24: self.m24 * rhs,
+                m34: self.m34 * rhs,
+                m44: self.m44 * rhs,
+                m54: self.m54 * rhs,
+                m15: self.m15 * rhs,
+                m25: self.m25 * rhs,
+                m35: self.m35 * rhs,
+                m45: self.m45 * rhs,
+                m55: self.m55 * rhs,
+                m16: self.m16 * rhs,
+                m26: self.m26 * rhs,
+                m36: self.m36 * rhs,
+                m46: self.m46 * rhs,
+                m56: self.m56 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix5x6DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix5x6<T>, T> {
+    fn div_assign(ref self: Matrix5x6<T>, rhs: T) {
+        let (m11, m21, m31, m41, m51, m12, m22, m32, m42, m52, m13, m23, m33, m43, m53, m14) =
+            R::div16(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m41,
+            self.m51,
+            self.m12,
+            self.m22,
+            self.m32,
+            self.m42,
+            self.m52,
+            self.m13,
+            self.m23,
+            self.m33,
+            self.m43,
+            self.m53,
+            self.m14,
+            rhs,
+        );
+        let (m24, m34, m44, m54, m15, m25, m35, m45, m55) = R::div9(
+            self.m24,
+            self.m34,
+            self.m44,
+            self.m54,
+            self.m15,
+            self.m25,
+            self.m35,
+            self.m45,
+            self.m55,
+            rhs,
+        );
+        let (m16, m26, m36, m46, m56) = R::div5(
+            self.m16, self.m26, self.m36, self.m46, self.m56, rhs,
+        );
+        self =
+            Matrix5x6 {
+                m11,
+                m21,
+                m31,
+                m41,
+                m51,
+                m12,
+                m22,
+                m32,
+                m42,
+                m52,
+                m13,
+                m23,
+                m33,
+                m43,
+                m53,
+                m14,
+                m24,
+                m34,
+                m44,
+                m54,
+                m15,
+                m25,
+                m35,
+                m45,
+                m55,
+                m16,
+                m26,
+                m36,
+                m46,
+                m56,
+            };
     }
 }

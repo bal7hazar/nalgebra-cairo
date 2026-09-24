@@ -9,8 +9,9 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
+use crate::geometry::Rotation2;
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
@@ -916,5 +917,43 @@ pub impl RowVector2IntoColumnArrays<T, +Drop<T>> of Into<RowVector2<T>, [[T; 1];
     fn into(self: RowVector2<T>) -> [[T; 1]; 2] {
         let RowVector2 { x, y } = self;
         [[x], [y]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl RowVector2MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<RowVector2<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: RowVector2<T>, rhs: T) {
+        self = RowVector2 { x: self.x * rhs, y: self.y * rhs };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl RowVector2DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<RowVector2<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: RowVector2<T>, rhs: T) {
+        let x = R::div(self.x, rhs);
+        let y = R::div(self.y, rhs);
+        self = RowVector2 { x, y };
+    }
+}
+
+/// `self * r`, a `RowVector2`: the product with the rotation matrix of `r`, each component one
+/// fused `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m
+/// * r`).
+pub impl RowVector2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<RowVector2<T>, Rotation2<T>> {
+    type Output = RowVector2<T>;
+    #[inline(always)]
+    fn mul_mat(self: RowVector2<T>, rhs: Rotation2<T>) -> RowVector2<T> {
+        RowVector2 {
+            x: R::sum_prod2(self.x, rhs.matrix.m11, self.y, rhs.matrix.m21),
+            y: R::sum_prod2(self.x, rhs.matrix.m12, self.y, rhs.matrix.m22),
+        }
     }
 }

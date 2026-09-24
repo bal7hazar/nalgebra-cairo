@@ -270,6 +270,23 @@ pub trait Vector3Trait<T> {
     /// The first 3 components of `v` when its last one is zero (a homogeneous VECTOR), `None`
     /// otherwise. Exact. Upstream: `Vector3::from_homogeneous`.
     fn from_homogeneous(v: Vector4<T>) -> Option<Vector3<T>>;
+    /// Gram-Schmidt on `vs`, like upstream: each vector minus its projections on the basis found so
+    /// far (each component ONE fused `diff_prod`), normalized when its norm is not zero; the
+    /// orthonormal vectors are moved to the front (the first dependent residual taking the place of
+    /// each new basis vector, upstream's `swap`), and the vectors after the 3-th basis vector are
+    /// left untouched. Returns the number of basis vectors. Upstream: `orthonormalize(vs: &mut
+    /// [Self]) -> usize`: Cairo arrays cannot be written in place, so `vs` is rebuilt (`ref`); the
+    /// loop runs on the runtime length of `vs`.
+    fn orthonormalize(ref vs: Array<Vector3<T>>) -> usize;
+    /// An orthonormal basis of the orthogonal complement of the free family `vs` (0 to 3 vectors),
+    /// computed like upstream's 3D branch: the canonical basis for no vector; for one vector `v`,
+    /// the normalized `a = (v.z, 0, -v.x)` (or `(0, -v.z, v.y)` when `|v.x| <= |v.y|`) then `a ×
+    /// v`, returned as `[a × v, a]`; for two, their normalized cross product; nothing for three.
+    /// Panics with `nalgebra: not a free family` for more than 3 vectors. Upstream:
+    /// `orthonormal_subspace_basis(vs, f)`, which passes each element to the closure `f` (stopping
+    /// when it returns `false`): a Cairo closure cannot accumulate state, so the elements are
+    /// returned instead.
+    fn orthonormal_subspace_basis(vs: Span<Vector3<T>>) -> Array<Vector3<T>>;
     /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
     /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
     /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
@@ -774,6 +791,67 @@ pub impl Vector3Impl<
             Some(Vector3 { x: v.x, y: v.y, z: v.z })
         } else {
             None
+        }
+    }
+
+    fn orthonormalize(ref vs: Array<Vector3<T>>) -> usize {
+        let mut basis: Array<Vector3<T>> = array![];
+        let mut deps: Array<Vector3<T>> = array![];
+        let mut rest = vs.span();
+        let mut nb: usize = 0;
+        while nb < 3 {
+            let v = match rest.pop_front() {
+                Option::Some(v) => *v,
+                Option::None => { break; },
+            };
+            let mut elt = v;
+            for b in basis.span() {
+                let b = *b;
+                let d = Self::dot(elt, b);
+                elt =
+                    Vector3 {
+                        x: R::diff_prod(elt.x, R::one(), b.x, d),
+                        y: R::diff_prod(elt.y, R::one(), b.y, d),
+                        z: R::diff_prod(elt.z, R::one(), b.z, d),
+                    };
+            }
+            let n = Self::norm(elt);
+            if n > R::zero() {
+                basis.append(Self::unscale(elt, n));
+                nb += 1;
+                if let Option::Some(first) = deps.pop_front() {
+                    deps.append(first);
+                }
+            } else {
+                deps.append(elt);
+            }
+        }
+        for d in deps.span() {
+            basis.append(*d);
+        }
+        for r in rest {
+            basis.append(*r);
+        }
+        vs = basis;
+        nb
+    }
+
+    fn orthonormal_subspace_basis(vs: Span<Vector3<T>>) -> Array<Vector3<T>> {
+        match vs.len() {
+            0 => array![Self::x(), Self::y(), Self::z()],
+            1 => {
+                let v = *vs[0];
+                let a = if R::abs(v.x) > R::abs(v.y) {
+                    Vector3 { x: v.z, y: R::zero(), z: -v.x }
+                } else {
+                    Vector3 { x: R::zero(), y: -v.z, z: v.y }
+                };
+                let a = Self::normalize(a);
+                array![Self::cross(a, v), a]
+            },
+            2 => array![Self::normalize(Self::cross(*vs[0], *vs[1]))],
+            3 => array![],
+            _ => core::panic_with_felt252(errors::NOT_FREE_FAMILY),
         }
     }
 

@@ -9,8 +9,9 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
+use crate::geometry::Rotation3;
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
@@ -1316,6 +1317,68 @@ pub impl Matrix2x3IntoColumnArrays<T, +Drop<T>> of Into<Matrix2x3<T>, [[T; 2]; 3
     fn into(self: Matrix2x3<T>) -> [[T; 2]; 3] {
         let Matrix2x3 { m11, m21, m12, m22, m13, m23 } = self;
         [[m11, m21], [m12, m22], [m13, m23]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix2x3MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix2x3<T>, rhs: T) {
+        self =
+            Matrix2x3 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix2x3DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: Matrix2x3<T>, rhs: T) {
+        let (m11, m21, m12, m22, m13, m23) = R::div6(
+            self.m11, self.m21, self.m12, self.m22, self.m13, self.m23, rhs,
+        );
+        self = Matrix2x3 { m11, m21, m12, m22, m13, m23 };
+    }
+}
+
+/// `self * r`, a `Matrix2x3`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod3` (floored once). Panics on overflow. Upstream: `Mul<Rotation3> for Matrix` (`m * r`).
+pub impl Matrix2x3MulRotation3<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix2x3<T>, Rotation3<T>> {
+    type Output = Matrix2x3<T>;
+
+    fn mul_mat(self: Matrix2x3<T>, rhs: Rotation3<T>) -> Matrix2x3<T> {
+        Matrix2x3 {
+            m11: R::sum_prod3(
+                self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21, self.m13, rhs.matrix.m31,
+            ),
+            m21: R::sum_prod3(
+                self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21, self.m23, rhs.matrix.m31,
+            ),
+            m12: R::sum_prod3(
+                self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22, self.m13, rhs.matrix.m32,
+            ),
+            m22: R::sum_prod3(
+                self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22, self.m23, rhs.matrix.m32,
+            ),
+            m13: R::sum_prod3(
+                self.m11, rhs.matrix.m13, self.m12, rhs.matrix.m23, self.m13, rhs.matrix.m33,
+            ),
+            m23: R::sum_prod3(
+                self.m21, rhs.matrix.m13, self.m22, rhs.matrix.m23, self.m23, rhs.matrix.m33,
+            ),
+        }
     }
 }
 

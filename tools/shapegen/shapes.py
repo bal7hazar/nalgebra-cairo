@@ -326,8 +326,8 @@ def new_operators(s: Shape) -> list[str]:
 def render_new(s: Shape) -> str:
     S = s.name
     t = s.transposed()
-    uses = ["core::ops::{AddAssign, MulAssign, SubAssign}" if s.is_square else
-            "core::ops::{AddAssign, SubAssign}", "simba::scalar::{Real, Transcendental}"]
+    uses = ["core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}",
+            "simba::scalar::{Real, Transcendental}"]
     if t != s:
         uses.append(use_of(t))
     if s.is_square and s.r > 1:
@@ -489,6 +489,9 @@ pub const SLICE_LENGTH: felt252 = 'nalgebra: wrong slice length';
 pub const TOO_MANY_DIAGONAL: felt252 = 'nalgebra: diagonal too long';
 /// `lp_norm(p)` with `p < 1` (upstream returns meaningless values).
 pub const LP_NORM_P: felt252 = 'nalgebra: lp_norm needs p >= 1';
+/// `Vector3::orthonormal_subspace_basis` of more than 3 vectors (upstream: "The given set of
+/// vectors has no chance of being a free family.").
+pub const NOT_FREE_FAMILY: felt252 = 'nalgebra: not a free family';
 """
 
 

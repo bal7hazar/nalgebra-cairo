@@ -1158,6 +1158,9 @@ DIM_ONLY: dict[str, set[str]] = {
     # are ambiguous on it (a Rust call does not compile), so it has neither.
     "push": set(COLUMNS[:5]), "from_homogeneous": set(COLUMNS[:5]),
     "to_homogeneous": set(COLUMNS[1:5] + SQUARES[1:5]),
+    # Upstream names isometries and similarities in 2D and 3D only (`Isometry2/3`,
+    # `IsometryMatrix2/3`, `Similarity2/3`...), so their homogeneous matrices are 3x3 and 4x4.
+    **{name: {"Matrix3", "Matrix4"} for name in ("From<Isometry>", "From<Similarity>")},
     "orthonormal_subspace_basis": {"Vector3"},
     # Square-matrix semantics, generated on the 6 squares (`Matrix1..6`).
     **{name: set(SQUARES) for name in (
@@ -1248,8 +1251,9 @@ RENAMES = (
          "shape and index type: `usize`, `(usize, usize)`)"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<Matrix> for T", "scale",
          "Cairo-imposed: heterogeneous operator (`k * m` is `m.scale(k)`)"),
-    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<Point>", r"MatrixMul::mul_mat",
-         "`m * p` is `m.mul_mat(p)` (Cairo's `Mul` is homogeneous)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<(?:Point|Rotation)>",
+         r"MatrixMul::mul_mat", "`m * p` / `m * r` is `m.mul_mat(..)` (Cairo's `Mul` is "
+         "homogeneous)"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:SubsetOf<Matrix>", "cast",
          "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"eq", "impl:PartialEq",

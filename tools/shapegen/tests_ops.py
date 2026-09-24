@@ -153,10 +153,61 @@ def norms(f: File, s: Shape):
               f"assert_raws(c, {col(s, {x: mul(a[x], ratio) for x in F})});"]
     one = max(sum(abs(a[s.f(i, j)]) for i in range(s.r)) for j in range(s.c))
     lines.append(f"assert!(a.one_norm() == fx({one}));")
+    if s.is_column:
+        lines += orthonormalize_lines(s, a, b)
     f.add(f"test_{s.module}_norms", lines, [f"{s.name}Trait"])
     f.add(f"test_{s.module}_normalize_zero_panics",
           [f"let z: {s.name}<Fixed> = {s.name}Trait::zeros();", "let _ = z.normalize();"],
           [f"{s.name}Trait"], attr="#[should_panic(expected: 'Fixed: division by zero')]\n")
+
+
+def gram_schmidt(vs: list[list[float]], dim: int) -> tuple[list[list[float]], int]:
+    """Upstream's `orthonormalize` in floats (the expected values, within a tolerance)."""
+    vs = [list(v) for v in vs]
+    nb = 0
+    for i in range(len(vs)):
+        elt = vs[i]
+        for b in vs[:nb]:
+            d = sum(x * y for x, y in zip(elt, b))
+            elt = [x - y * d for x, y in zip(elt, b)]
+        vs[i] = elt
+        n = math.sqrt(sum(x * x for x in elt))
+        if n > 0:
+            vs[i] = [x / n for x in elt]
+            vs[nb], vs[i] = vs[i], vs[nb]
+            nb += 1
+            if nb == dim:
+                break
+    return vs, nb
+
+
+def orthonormalize_lines(s: Shape, a: dict, b: dict) -> list[str]:
+    """`orthonormalize([a, 0, b])` (the zero vector is dependent), then, on `Vector3`,
+    `orthonormal_subspace_basis` of 0, 1 and 2 vectors."""
+    F, S = s.fields, s.name
+    va, vb = [to_f(a[x]) for x in F], [to_f(b[x]) for x in F]
+    out, nb = gram_schmidt([va, [0.0] * s.r, vb], s.r)
+    lines = [f"let mut vs: Array<{S}<Fixed>> = array![a, {S}Trait::zeros(), b];",
+             f"assert!({S}Trait::orthonormalize(ref vs) == {nb});", "assert!(vs.len() == 3);"]
+    for i, v in enumerate(out):
+        lines.append(f"assert_raws_near(*vs[{i}], {span(round(x * ONE) for x in v)}, 4096);")
+    if (s.r, s.c) == (3, 1):
+        def cross(u, v):
+            return [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]
+
+        def unit(u):
+            n = math.sqrt(sum(x * x for x in u))
+            return [x / n for x in u]
+        av = unit([va[2], 0.0, -va[0]] if abs(va[0]) > abs(va[1]) else [0.0, -va[2], va[1]])
+        cases = [("ArrayTrait::<Vector3<Fixed>>::new()", [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]]),
+                 ("array![a]", [cross(av, va), av]), ("array![a, b]", [unit(cross(va, vb))])]
+        for arr, basis in cases:
+            lines += [f"let basis = Vector3Trait::orthonormal_subspace_basis({arr}.span());",
+                      f"assert!(basis.len() == {len(basis)});"]
+            for i, v in enumerate(basis):
+                lines.append(f"assert_raws_near(*basis[{i}], {span(round(x * ONE) for x in v)}, "
+                             f"{16384 if len(arr) > 9 else 4096});")
+    return lines
 
 
 def componentwise(f: File, s: Shape):
@@ -185,6 +236,10 @@ def componentwise(f: File, s: Shape):
              f"assert_raws(p, {col(s, cm)});",
              "let mut q = c;", f"q.cdpy(fx({alpha}), a, b, fx({beta}));",
              f"assert_raws(q, {col(s, cd)});"]
+    kd = nonzero_raw(rng)
+    lines += ["let mut e = a;", f"e *= fx({k});", f"assert_raws(e, {col(s, {x: mul(a[x], k) for x in F})});",
+              "let mut g = a;", f"g /= fx({kd});",
+              f"assert_raws(g, {col(s, {x: div_round(a[x], kd) for x in F})});"]
     f.add(f"test_{s.module}_componentwise", lines, [f"{s.name}Trait"])
     zero = dict(b)
     zero[F[-1]] = 0
@@ -256,10 +311,44 @@ def construction(f: File, s: Shape):
                   f"{span([e if k == i else 0 for k in range(s.r)])});",
                   f"let axis: Unit<{S}<Fixed>> = {S}Trait::ith_axis({i});",
                   f"assert_raws(axis.value, {span([ONE if k == i else 0 for k in range(s.r)])});"]
+    lines += conversion_lines(f, s, a, rng)
     f.add(f"test_{s.module}_construction", lines, [f"{S}Trait"])
     f.add(f"test_{s.module}_from_row_slice_wrong_length_panics",
           [f"let _: {S}<Fixed> = {S}Trait::from_row_slice({fxs([1] * (s.n + 1))});"],
           [f"{S}Trait"], attr="#[should_panic(expected: 'nalgebra: wrong slice length')]\n")
+
+
+# Serde images of the geometry sources (raw generators) and the method the conversion wraps.
+GEOMETRY_SOURCES = {
+    "Rotation2": (4, None), "Rotation3": (9, None), "UnitComplex": (2, None),
+    "UnitQuaternion": (4, None), "Isometry2": (4, None), "Isometry3": (7, None),
+    "Similarity2": (5, None), "Similarity3": (8, None), "Translation2": (2, None),
+    "Translation3": (3, None),
+}
+
+
+def conversion_lines(f: File, s: Shape, a: dict, rng: random.Random) -> list[str]:
+    lines = []
+    for src, how, _ in C.GEOMETRY_INTO.get((s.r, s.c), []):
+        n, _ = GEOMETRY_SOURCES[src]
+        raw = [rand_raw(rng, 32) for _ in range(n)]
+        var = src.lower()
+        expected = how.replace("self", var)
+        lines += [f"let {var}: {src}<Fixed> = load({span(raw)});",
+                  f"let m: {s.name}<Fixed> = {var}.into();", f"assert!(m == {expected});"]
+        f.uses.add(f"use nalgebra::{src};")
+        m = re.match(r"(\w+Trait)::", how)
+        if m:
+            f.uses.add(f"use nalgebra::{m.group(1)};")
+    if s.c in (2, 3):
+        q = Shape(s.c, s.c)
+        vq = raws(rng, q, 32)
+        o = {s.f(i, j): floor_scale(sum(a[s.f(i, k)] * vq[q.f(k, j)] for k in range(s.c)))
+             for i in range(s.r) for j in range(s.c)}
+        lines += [f"let rot: Rotation{s.c}<Fixed> = load({col(q, vq)});",
+                  f"assert_raws(a.mul_mat(rot), {col(s, o)});"]
+        f.uses.add(f"use nalgebra::Rotation{s.c};")
+    return lines
 
 
 def structure(f: File, s: Shape):
@@ -624,7 +713,8 @@ FAMILIES = {
     "extrema": ("Generated tests, `extrema` family: `min`, `max`, `amin`, `amax`, `camin`, "
                 "`camax`, the index searches.", extrema),
     "construction": ("Generated tests, `construction` family: `repeat`, `from_fn`, slices, "
-                     "partial diagonals, axes.", construction),
+                     "partial diagonals, axes, conversions from the geometry types, `m * r`.",
+                     construction),
     "structure": ("Generated tests, `structure` family: adjoints, symmetric parts, homogeneous "
                   "forms, comparisons, casts, conversions, indexing, `Unit<VectorN>`.", structure),
 }

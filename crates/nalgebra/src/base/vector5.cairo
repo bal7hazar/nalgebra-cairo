@@ -9,7 +9,7 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -753,6 +753,57 @@ pub impl Vector5Impl<
         }
     }
 
+    /// Gram-Schmidt on `vs`, like upstream: each vector minus its projections on the basis found so
+    /// far (each component ONE fused `diff_prod`), normalized when its norm is not zero; the
+    /// orthonormal vectors are moved to the front (the first dependent residual taking the place of
+    /// each new basis vector, upstream's `swap`), and the vectors after the 5-th basis vector are
+    /// left untouched. Returns the number of basis vectors. Upstream: `orthonormalize(vs: &mut
+    /// [Self]) -> usize`: Cairo arrays cannot be written in place, so `vs` is rebuilt (`ref`); the
+    /// loop runs on the runtime length of `vs`.
+    fn orthonormalize(ref vs: Array<Vector5<T>>) -> usize {
+        let mut basis: Array<Vector5<T>> = array![];
+        let mut deps: Array<Vector5<T>> = array![];
+        let mut rest = vs.span();
+        let mut nb: usize = 0;
+        while nb < 5 {
+            let v = match rest.pop_front() {
+                Option::Some(v) => *v,
+                Option::None => { break; },
+            };
+            let mut elt = v;
+            for b in basis.span() {
+                let b = *b;
+                let d = Self::dot(elt, b);
+                elt =
+                    Vector5 {
+                        x: R::diff_prod(elt.x, R::one(), b.x, d),
+                        y: R::diff_prod(elt.y, R::one(), b.y, d),
+                        z: R::diff_prod(elt.z, R::one(), b.z, d),
+                        w: R::diff_prod(elt.w, R::one(), b.w, d),
+                        a: R::diff_prod(elt.a, R::one(), b.a, d),
+                    };
+            }
+            let n = Self::norm(elt);
+            if n > R::zero() {
+                basis.append(Self::unscale(elt, n));
+                nb += 1;
+                if let Option::Some(first) = deps.pop_front() {
+                    deps.append(first);
+                }
+            } else {
+                deps.append(elt);
+            }
+        }
+        for d in deps.span() {
+            basis.append(*d);
+        }
+        for r in rest {
+            basis.append(*r);
+        }
+        vs = basis;
+        nb
+    }
+
     /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
     /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
     /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
@@ -1418,6 +1469,30 @@ pub impl Vector5IntoColumnArrays<T, +Drop<T>> of Into<Vector5<T>, [[T; 5]; 1]> {
     fn into(self: Vector5<T>) -> [[T; 5]; 1] {
         let Vector5 { x, y, z, w, a } = self;
         [[x, y, z, w, a]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Vector5MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Vector5<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Vector5<T>, rhs: T) {
+        self =
+            Vector5 {
+                x: self.x * rhs, y: self.y * rhs, z: self.z * rhs, w: self.w * rhs, a: self.a * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Vector5DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Vector5<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: Vector5<T>, rhs: T) {
+        let (x, y, z, w, a) = R::div5(self.x, self.y, self.z, self.w, self.a, rhs);
+        self = Vector5 { x, y, z, w, a };
     }
 }
 

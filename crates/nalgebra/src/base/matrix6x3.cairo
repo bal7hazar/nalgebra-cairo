@@ -9,8 +9,9 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
+use crate::geometry::Rotation3;
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
@@ -2543,5 +2544,155 @@ pub impl Matrix6x3IntoColumnArrays<T, +Drop<T>> of Into<Matrix6x3<T>, [[T; 6]; 3
             [m11, m21, m31, m41, m51, m61], [m12, m22, m32, m42, m52, m62],
             [m13, m23, m33, m43, m53, m63],
         ]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix6x3MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix6x3<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix6x3<T>, rhs: T) {
+        self =
+            Matrix6x3 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m31: self.m31 * rhs,
+                m41: self.m41 * rhs,
+                m51: self.m51 * rhs,
+                m61: self.m61 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m32: self.m32 * rhs,
+                m42: self.m42 * rhs,
+                m52: self.m52 * rhs,
+                m62: self.m62 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+                m33: self.m33 * rhs,
+                m43: self.m43 * rhs,
+                m53: self.m53 * rhs,
+                m63: self.m63 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix6x3DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix6x3<T>, T> {
+    fn div_assign(ref self: Matrix6x3<T>, rhs: T) {
+        let (m11, m21, m31, m41, m51, m61, m12, m22, m32) = R::div9(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m41,
+            self.m51,
+            self.m61,
+            self.m12,
+            self.m22,
+            self.m32,
+            rhs,
+        );
+        let (m42, m52, m62, m13, m23, m33, m43, m53, m63) = R::div9(
+            self.m42,
+            self.m52,
+            self.m62,
+            self.m13,
+            self.m23,
+            self.m33,
+            self.m43,
+            self.m53,
+            self.m63,
+            rhs,
+        );
+        self =
+            Matrix6x3 {
+                m11,
+                m21,
+                m31,
+                m41,
+                m51,
+                m61,
+                m12,
+                m22,
+                m32,
+                m42,
+                m52,
+                m62,
+                m13,
+                m23,
+                m33,
+                m43,
+                m53,
+                m63,
+            };
+    }
+}
+
+/// `self * r`, a `Matrix6x3`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod3` (floored once). Panics on overflow. Upstream: `Mul<Rotation3> for Matrix` (`m * r`).
+pub impl Matrix6x3MulRotation3<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix6x3<T>, Rotation3<T>> {
+    type Output = Matrix6x3<T>;
+
+    fn mul_mat(self: Matrix6x3<T>, rhs: Rotation3<T>) -> Matrix6x3<T> {
+        Matrix6x3 {
+            m11: R::sum_prod3(
+                self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21, self.m13, rhs.matrix.m31,
+            ),
+            m21: R::sum_prod3(
+                self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21, self.m23, rhs.matrix.m31,
+            ),
+            m31: R::sum_prod3(
+                self.m31, rhs.matrix.m11, self.m32, rhs.matrix.m21, self.m33, rhs.matrix.m31,
+            ),
+            m41: R::sum_prod3(
+                self.m41, rhs.matrix.m11, self.m42, rhs.matrix.m21, self.m43, rhs.matrix.m31,
+            ),
+            m51: R::sum_prod3(
+                self.m51, rhs.matrix.m11, self.m52, rhs.matrix.m21, self.m53, rhs.matrix.m31,
+            ),
+            m61: R::sum_prod3(
+                self.m61, rhs.matrix.m11, self.m62, rhs.matrix.m21, self.m63, rhs.matrix.m31,
+            ),
+            m12: R::sum_prod3(
+                self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22, self.m13, rhs.matrix.m32,
+            ),
+            m22: R::sum_prod3(
+                self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22, self.m23, rhs.matrix.m32,
+            ),
+            m32: R::sum_prod3(
+                self.m31, rhs.matrix.m12, self.m32, rhs.matrix.m22, self.m33, rhs.matrix.m32,
+            ),
+            m42: R::sum_prod3(
+                self.m41, rhs.matrix.m12, self.m42, rhs.matrix.m22, self.m43, rhs.matrix.m32,
+            ),
+            m52: R::sum_prod3(
+                self.m51, rhs.matrix.m12, self.m52, rhs.matrix.m22, self.m53, rhs.matrix.m32,
+            ),
+            m62: R::sum_prod3(
+                self.m61, rhs.matrix.m12, self.m62, rhs.matrix.m22, self.m63, rhs.matrix.m32,
+            ),
+            m13: R::sum_prod3(
+                self.m11, rhs.matrix.m13, self.m12, rhs.matrix.m23, self.m13, rhs.matrix.m33,
+            ),
+            m23: R::sum_prod3(
+                self.m21, rhs.matrix.m13, self.m22, rhs.matrix.m23, self.m23, rhs.matrix.m33,
+            ),
+            m33: R::sum_prod3(
+                self.m31, rhs.matrix.m13, self.m32, rhs.matrix.m23, self.m33, rhs.matrix.m33,
+            ),
+            m43: R::sum_prod3(
+                self.m41, rhs.matrix.m13, self.m42, rhs.matrix.m23, self.m43, rhs.matrix.m33,
+            ),
+            m53: R::sum_prod3(
+                self.m51, rhs.matrix.m13, self.m52, rhs.matrix.m23, self.m53, rhs.matrix.m33,
+            ),
+            m63: R::sum_prod3(
+                self.m61, rhs.matrix.m13, self.m62, rhs.matrix.m23, self.m63, rhs.matrix.m33,
+            ),
+        }
     }
 }

@@ -9,7 +9,7 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -2824,5 +2824,57 @@ pub impl Matrix3x5IntoColumnArrays<T, +Drop<T>> of Into<Matrix3x5<T>, [[T; 3]; 5
             m11, m21, m31, m12, m22, m32, m13, m23, m33, m14, m24, m34, m15, m25, m35,
         } = self;
         [[m11, m21, m31], [m12, m22, m32], [m13, m23, m33], [m14, m24, m34], [m15, m25, m35]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix3x5MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix3x5<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix3x5<T>, rhs: T) {
+        self =
+            Matrix3x5 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m31: self.m31 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m32: self.m32 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+                m33: self.m33 * rhs,
+                m14: self.m14 * rhs,
+                m24: self.m24 * rhs,
+                m34: self.m34 * rhs,
+                m15: self.m15 * rhs,
+                m25: self.m25 * rhs,
+                m35: self.m35 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix3x5DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix3x5<T>, T> {
+    fn div_assign(ref self: Matrix3x5<T>, rhs: T) {
+        let (m11, m21, m31, m12, m22, m32, m13, m23, m33) = R::div9(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m12,
+            self.m22,
+            self.m32,
+            self.m13,
+            self.m23,
+            self.m33,
+            rhs,
+        );
+        let (m14, m24, m34, m15, m25, m35) = R::div6(
+            self.m14, self.m24, self.m34, self.m15, self.m25, self.m35, rhs,
+        );
+        self =
+            Matrix3x5 { m11, m21, m31, m12, m22, m32, m13, m23, m33, m14, m24, m34, m15, m25, m35 };
     }
 }

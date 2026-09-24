@@ -9,9 +9,14 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::{Bounded, One};
-use core::ops::{AddAssign, IndexView, MulAssign, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
+use crate::geometry::{
+    Isometry2, Isometry2Trait, Rotation2, Rotation2Trait, Rotation3, Similarity2, Similarity2Trait,
+    Translation2, Translation2Trait, UnitComplex, UnitComplexTrait, UnitQuaternion,
+    UnitQuaternionTrait,
+};
 use super::errors;
 use super::kernels::Powi;
 use super::matrix3x2::Matrix3x2;
@@ -2039,6 +2044,235 @@ pub impl Matrix3IntoColumnArrays<T, +Drop<T>> of Into<Matrix3<T>, [[T; 3]; 3]> {
     fn into(self: Matrix3<T>) -> [[T; 3]; 3] {
         let Matrix3 { m11, m21, m31, m12, m22, m32, m13, m23, m33 } = self;
         [[m11, m21, m31], [m12, m22, m32], [m13, m23, m33]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix3MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix3<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix3<T>, rhs: T) {
+        self =
+            Matrix3 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m31: self.m31 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m32: self.m32 * rhs,
+                m13: self.m13 * rhs,
+                m23: self.m23 * rhs,
+                m33: self.m33 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix3DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix3<T>, T> {
+    fn div_assign(ref self: Matrix3<T>, rhs: T) {
+        let (m11, m21, m31, m12, m22, m32, m13, m23, m33) = R::div9(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m12,
+            self.m22,
+            self.m32,
+            self.m13,
+            self.m23,
+            self.m33,
+            rhs,
+        );
+        self = Matrix3 { m11, m21, m31, m12, m22, m32, m13, m23, m33 };
+    }
+}
+
+/// `rotation2.into()`: the homogeneous rotation. Exact (no arithmetic). Upstream: `From<Rotation2>
+/// for Matrix3`.
+pub impl Matrix3FromRotation2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Rotation2<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: Rotation2<T>) -> Matrix3<T> {
+        Rotation2Trait::to_homogeneous(self)
+    }
+}
+
+/// `rotation3.into()`: the rotation matrix. Exact (no arithmetic). Upstream: `From<Rotation3> for
+/// Matrix3`.
+pub impl Matrix3FromRotation3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Rotation3<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: Rotation3<T>) -> Matrix3<T> {
+        self.matrix
+    }
+}
+
+/// `unitcomplex.into()`: the homogeneous rotation. Exact (no arithmetic). Upstream:
+/// `From<UnitComplex> for Matrix3`.
+pub impl Matrix3FromUnitComplex<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<UnitComplex<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: UnitComplex<T>) -> Matrix3<T> {
+        UnitComplexTrait::to_homogeneous(self)
+    }
+}
+
+/// `unitquaternion.into()`: the rotation matrix. Exact (no arithmetic). Upstream:
+/// `From<UnitQuaternion> for Matrix3`.
+pub impl Matrix3FromUnitQuaternion<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<UnitQuaternion<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: UnitQuaternion<T>) -> Matrix3<T> {
+        UnitQuaternionTrait::to_rotation_matrix(self).matrix
+    }
+}
+
+/// `isometry2.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream: `From<Isometry2>
+/// for Matrix3`.
+pub impl Matrix3FromIsometry2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Isometry2<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: Isometry2<T>) -> Matrix3<T> {
+        Isometry2Trait::to_homogeneous(self)
+    }
+}
+
+/// `similarity2.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream:
+/// `From<Similarity2> for Matrix3`.
+pub impl Matrix3FromSimilarity2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Similarity2<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: Similarity2<T>) -> Matrix3<T> {
+        Similarity2Trait::to_homogeneous(self)
+    }
+}
+
+/// `translation2.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream:
+/// `From<Translation2> for Matrix3`.
+pub impl Matrix3FromTranslation2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Translation2<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: Translation2<T>) -> Matrix3<T> {
+        Translation2Trait::to_homogeneous(self)
+    }
+}
+
+/// `self * r`, a `Matrix3`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod3` (floored once). Panics on overflow. Upstream: `Mul<Rotation3> for Matrix` (`m * r`).
+pub impl Matrix3MulRotation3<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix3<T>, Rotation3<T>> {
+    type Output = Matrix3<T>;
+
+    fn mul_mat(self: Matrix3<T>, rhs: Rotation3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: R::sum_prod3(
+                self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21, self.m13, rhs.matrix.m31,
+            ),
+            m21: R::sum_prod3(
+                self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21, self.m23, rhs.matrix.m31,
+            ),
+            m31: R::sum_prod3(
+                self.m31, rhs.matrix.m11, self.m32, rhs.matrix.m21, self.m33, rhs.matrix.m31,
+            ),
+            m12: R::sum_prod3(
+                self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22, self.m13, rhs.matrix.m32,
+            ),
+            m22: R::sum_prod3(
+                self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22, self.m23, rhs.matrix.m32,
+            ),
+            m32: R::sum_prod3(
+                self.m31, rhs.matrix.m12, self.m32, rhs.matrix.m22, self.m33, rhs.matrix.m32,
+            ),
+            m13: R::sum_prod3(
+                self.m11, rhs.matrix.m13, self.m12, rhs.matrix.m23, self.m13, rhs.matrix.m33,
+            ),
+            m23: R::sum_prod3(
+                self.m21, rhs.matrix.m13, self.m22, rhs.matrix.m23, self.m23, rhs.matrix.m33,
+            ),
+            m33: R::sum_prod3(
+                self.m31, rhs.matrix.m13, self.m32, rhs.matrix.m23, self.m33, rhs.matrix.m33,
+            ),
+        }
     }
 }
 

@@ -11,7 +11,7 @@ use nalgebra::{
     RowVector4Trait, RowVector5, RowVector5Trait, RowVector6, RowVector6Trait, Vector2,
     Vector2Trait, Vector3, Vector3Trait,
 };
-use crate::helpers::{assert_raws, fx, load};
+use crate::helpers::{assert_raws, assert_raws_near, fx, load};
 
 #[test]
 fn test_matrix1_norms() {
@@ -35,6 +35,12 @@ fn test_matrix1_norms() {
     c.try_set_magnitude(fx(12884914233), fx(274877906944));
     assert_raws(c, array![12884914232].span());
     assert!(a.one_norm() == fx(32149512776));
+    let mut vs: Array<Matrix1<Fixed>> = array![a, Matrix1Trait::zeros(), b];
+    assert!(Matrix1Trait::orthonormalize(ref vs) == 1);
+    assert!(vs.len() == 3);
+    assert_raws_near(*vs[0], array![4294967296].span(), 4096);
+    assert_raws_near(*vs[1], array![0].span(), 4096);
+    assert_raws_near(*vs[2], array![-61625579709].span(), 4096);
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]
@@ -292,6 +298,12 @@ fn test_vector2_norms() {
     c.try_set_magnitude(fx(12884914233), fx(274877906944));
     assert_raws(c, array![-12455436356, -3298957412].span());
     assert!(a.one_norm() == fx(63201897810));
+    let mut vs: Array<Vector2<Fixed>> = array![a, Vector2Trait::zeros(), b];
+    assert!(Vector2Trait::orthonormalize(ref vs) == 2);
+    assert!(vs.len() == 3);
+    assert_raws_near(*vs[0], array![-4151808140, -1099651417].span(), 4096);
+    assert_raws_near(*vs[1], array![1099651417, -4151808140].span(), 4096);
+    assert_raws_near(*vs[2], array![0, 0].span(), 4096);
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]
@@ -710,6 +722,26 @@ fn test_vector3_norms() {
     c.try_set_magnitude(fx(12884914233), fx(274877906944));
     assert_raws(c, array![-1406310781, 5426731604, 11601460635].span());
     assert!(a.one_norm() == fx(91438880921));
+    let mut vs: Array<Vector3<Fixed>> = array![a, Vector3Trait::zeros(), b];
+    assert!(Vector3Trait::orthonormalize(ref vs) == 2);
+    assert!(vs.len() == 3);
+    assert_raws_near(*vs[0], array![-468769811, 1808908802, 3867149840].span(), 4096);
+    assert_raws_near(*vs[1], array![1474763590, 3719520277, -1561084667].span(), 4096);
+    assert_raws_near(*vs[2], array![0, 0, 0].span(), 4096);
+    let basis = Vector3Trait::orthonormal_subspace_basis(
+        ArrayTrait::<Vector3<Fixed>>::new().span(),
+    );
+    assert!(basis.len() == 3);
+    assert_raws_near(*basis[0], array![4294967296, 0, 0].span(), 16384);
+    assert_raws_near(*basis[1], array![0, 4294967296, 0].span(), 16384);
+    assert_raws_near(*basis[2], array![0, 0, 4294967296].span(), 16384);
+    let basis = Vector3Trait::orthonormal_subspace_basis(array![a].span());
+    assert!(basis.len() == 2);
+    assert_raws_near(*basis[0], array![-63529980697, -2955560558, -6318502915].span(), 4096);
+    assert_raws_near(*basis[1], array![0, -3890391226, 1819780257].span(), 4096);
+    let basis = Vector3Trait::orthonormal_subspace_basis(array![a, b].span());
+    assert!(basis.len() == 1);
+    assert_raws_near(*basis[0], array![-4006503624, 1157480854, -1027088532].span(), 16384);
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]

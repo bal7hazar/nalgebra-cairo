@@ -9,7 +9,7 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, IndexView, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -1538,5 +1538,34 @@ pub impl RowVector6IntoColumnArrays<T, +Drop<T>> of Into<RowVector6<T>, [[T; 1];
     fn into(self: RowVector6<T>) -> [[T; 1]; 6] {
         let RowVector6 { x, y, z, w, a, b } = self;
         [[x], [y], [z], [w], [a], [b]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl RowVector6MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<RowVector6<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: RowVector6<T>, rhs: T) {
+        self =
+            RowVector6 {
+                x: self.x * rhs,
+                y: self.y * rhs,
+                z: self.z * rhs,
+                w: self.w * rhs,
+                a: self.a * rhs,
+                b: self.b * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl RowVector6DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<RowVector6<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: RowVector6<T>, rhs: T) {
+        let (x, y, z, w, a, b) = R::div6(self.x, self.y, self.z, self.w, self.a, self.b, rhs);
+        self = RowVector6 { x, y, z, w, a, b };
     }
 }
