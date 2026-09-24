@@ -205,6 +205,22 @@ All 49 compared groups (`new`, `zeros`, `identity`, `sub`, `neg` included, see `
 are equal except `vector6_zeros` (flat layout 300 cheaper); 49 `*_bit_identical` tests pass.
 (`zeros` / `identity` nets are negative because their baseline compares two black-boxed values.)
 
+### 2.3 WP 8.1b-1 outcome: `Vector2/3/4`, `Matrix2/3/4` generated
+
+The six library files are written by `shapegen.py` from `library.py` (templates that reproduce the
+hand-written families as they were: explicit `VectorNTrait` + `VectorNImpl` for the vectors,
+`#[generate_trait]` for the matrices, `R::zero()` / `R::one()`, the measured kernel and inlining
+of every method, the doc comments with their line breaks) and `specialisations/<module>.cairo`.
+The generated files differ from the hand-written ones by their two-line header and five blank
+lines between crate-internal matrix methods; `tools/shapegen/COMPARE.md` (`compare.sh`, run
+before the switch) shows 235 / 235 public operations bit-identical at equal gas, and
+`gas/nalgebra-base.json` did not move. Specialisation format (`library.py`): `// @method`,
+`// @internal` (crate-internal matrix trait), `// @use`, `// @doc internal`, `// @item <name>
+<anchor>` (`struct`, `impl`, `end`); the inline `#[cfg(test)] mod tests` of `Matrix2/3/4` is
+spliced from `specialisations/<module>_tests.cairo`. The prototype keeps its own specialisations
+in `specialisations/proto/`. Unifying the vector / matrix / prototype templates is 8.1b-3's work,
+under the same gas gate.
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is
