@@ -117,7 +117,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `expand` | 45940 | 3600 | x1.00 |
+| `expand` | 45040 | 3600 | x1.00 |
 
 ### cholesky6_new
 
@@ -255,40 +255,40 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `accessor` | 23340 | 0 | - |
+| `accessor` | 23040 | 0 | - |
 
 ### ldlt6_determinant
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `diagonal_product` | 28540 | 8300 | x1.00 |
+| `diagonal_product` | 28240 | 8300 | x1.00 |
 
 ### ldlt6_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 163700 | 121960 | x1.00 |
-| `triangular` | 201290 | 159550 | x1.31 |
+| `alt_recip` | 163400 | 121960 | x1.00 |
+| `triangular` | 200990 | 159550 | x1.31 |
 
 ### ldlt6_l
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `expand` | 46240 | 3600 | x1.00 |
+| `expand` | 45040 | 3600 | x1.00 |
 
 ### ldlt6_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `factorize` | 143070 | 107330 | x1.00 |
-| `alt_products` | 168270 | 132530 | x1.23 |
+| `factorize` | 142770 | 107330 | x1.00 |
+| `alt_products` | 167970 | 132530 | x1.23 |
 
 ### ldlt6_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 77810 | 53670 | x1.00 |
-| `alt_recip` | 84410 | 60270 | x1.12 |
+| `substitution` | 77510 | 53670 | x1.00 |
+| `alt_recip` | 84110 | 60270 | x1.12 |
 
 ## nalgebra::linalg::lu::lu2::tests
 
@@ -511,14 +511,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `pivots` | 42320 | 18380 | x1.00 |
+| `pivots` | 41720 | 17780 | x1.00 |
 
 ### lu6_factors
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `l` | 49940 | 3600 | x1.00 |
-| `u` | 49940 | 3600 | x1.00 |
+| `l` | 49040 | 3600 | x1.00 |
+| `u` | 49040 | 3600 | x1.00 |
 
 ### lu6_is_invertible
 
@@ -570,13 +570,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `alt_recip` | 257580 | 208240 | x1.00 |
 | `columns` | 321020 | 271680 | x1.30 |
-| `alt_solve_columns` | 495180 | 445840 | x2.14 |
+| `alt_solve_columns` | 493980 | 444640 | x2.14 |
 
 ### matrix6_lu
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `determinant` | 290740 | 267800 | x1.00 |
+| `determinant` | 290140 | 267200 | x1.00 |
 | `try_inverse` | 573340 | 550400 | x2.06 |
 
 ## nalgebra::linalg::qr::qr2::tests

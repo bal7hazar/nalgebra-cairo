@@ -5,7 +5,7 @@
 use fixed::Fixed;
 use nalgebra_testing::black_box;
 use simba::scalar::Real;
-use crate::base::matrix_test_utils::{fx, v6};
+use crate::base::matrix_test_utils::{fx, v6, v6_head, v6_tail};
 use crate::base::vector3::Vector3Trait;
 use super::{Vector6, Vector6Trait};
 
@@ -16,13 +16,13 @@ use super::{Vector6, Vector6Trait};
 /// `sum_prod3` pays a full rescale while an extra `wide_add_prod` does not.
 #[inline(always)]
 fn alt_dot_two_sum_prod3(a: Vector6<Fixed>, b: Vector6<Fixed>) -> Fixed {
-    Vector3Trait::dot(a.a, b.a) + Vector3Trait::dot(a.b, b.b)
+    Vector3Trait::dot(v6_head(a), v6_head(b)) + Vector3Trait::dot(v6_tail(a), v6_tail(b))
 }
 
 /// `norm_squared` as the sum of the two blocks' squared norms: same two-rounding defect.
 #[inline(always)]
 fn alt_norm_squared_two_blocks(a: Vector6<Fixed>) -> Fixed {
-    Vector3Trait::norm_squared(a.a) + Vector3Trait::norm_squared(a.b)
+    Vector3Trait::norm_squared(v6_head(a)) + Vector3Trait::norm_squared(v6_tail(a))
 }
 
 /// `norm` through `norm_squared`: the squared norm must fit Q32.32, so it overflows above a norm
@@ -35,7 +35,7 @@ fn alt_norm_via_norm_squared(a: Vector6<Fixed>) -> Fixed {
 /// `dot` with one rounding and one overflow check per product (what AGENTS.md rule 4 forbids).
 #[inline(always)]
 fn alt_dot_unfused(a: Vector6<Fixed>, b: Vector6<Fixed>) -> Fixed {
-    a.a.x * b.a.x + a.a.y * b.a.y + a.a.z * b.a.z + a.b.x * b.b.x + a.b.y * b.b.y + a.b.z * b.b.z
+    a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w + a.a * b.a + a.b * b.b
 }
 
 // --- why the alternatives lost

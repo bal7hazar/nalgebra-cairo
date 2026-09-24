@@ -831,10 +831,7 @@ fn bench_vector3_cross__handwritten() {
 }
 
 fn to_h_vector6(g: Vector6<Fixed>) -> HVector6<Fixed> {
-    HVector6 {
-        a: nalgebra::base::Vector3 { x: g.x, y: g.y, z: g.z },
-        b: nalgebra::base::Vector3 { x: g.w, y: g.a, z: g.b },
-    }
+    HVector6 { x: g.x, y: g.y, z: g.z, w: g.w, a: g.a, b: g.b }
 }
 
 #[test]
@@ -953,12 +950,12 @@ fn bench_vector6_new__handwritten() {
     let r5 = black_box(fx(-63551724814));
     let e = black_box(
         HVector6 {
-            a: nalgebra::base::Vector3 {
-                x: fx(-37568166818), y: fx(-13883244667), z: fx(14484514775),
-            },
-            b: nalgebra::base::Vector3 {
-                x: fx(-55573507327), y: fx(1592748467), z: fx(-63551724814),
-            },
+            x: fx(-37568166818),
+            y: fx(-13883244667),
+            z: fx(14484514775),
+            w: fx(-55573507327),
+            a: fx(1592748467),
+            b: fx(-63551724814),
         },
     );
     assert!(HVector6Trait::new(r0, r1, r2, r3, r4, r5) == e);
@@ -988,12 +985,7 @@ fn bench_vector6_zeros__generated() {
 #[test]
 #[inline(never)]
 fn bench_vector6_zeros__handwritten() {
-    let e = black_box(
-        HVector6 {
-            a: nalgebra::base::Vector3 { x: fx(0), y: fx(0), z: fx(0) },
-            b: nalgebra::base::Vector3 { x: fx(0), y: fx(0), z: fx(0) },
-        },
-    );
+    let e = black_box(HVector6 { x: fx(0), y: fx(0), z: fx(0), w: fx(0), a: fx(0), b: fx(0) });
     assert!(HVector6Trait::zeros() == e);
 }
 
@@ -1203,12 +1195,12 @@ fn bench_vector6_add__handwritten() {
     );
     let e = black_box(
         HVector6 {
-            a: nalgebra::base::Vector3 {
-                x: fx(-32753790447), y: fx(-15157573927), z: fx(70561617588),
-            },
-            b: nalgebra::base::Vector3 {
-                x: fx(-3844463562), y: fx(10706919402), z: fx(-5933897062),
-            },
+            x: fx(-32753790447),
+            y: fx(-15157573927),
+            z: fx(70561617588),
+            w: fx(-3844463562),
+            a: fx(10706919402),
+            b: fx(-5933897062),
         },
     );
     assert!((a + b) == e);
@@ -1420,12 +1412,12 @@ fn bench_vector6_sub__handwritten() {
     );
     let e = black_box(
         HVector6 {
-            a: nalgebra::base::Vector3 {
-                x: fx(-42382543189), y: fx(-12608915407), z: fx(-41592588038),
-            },
-            b: nalgebra::base::Vector3 {
-                x: fx(-107302551092), y: fx(-7521422468), z: fx(-121169552566),
-            },
+            x: fx(-42382543189),
+            y: fx(-12608915407),
+            z: fx(-41592588038),
+            w: fx(-107302551092),
+            a: fx(-7521422468),
+            b: fx(-121169552566),
         },
     );
     assert!((a - b) == e);
@@ -1559,12 +1551,12 @@ fn bench_vector6_neg__handwritten() {
     );
     let e = black_box(
         HVector6 {
-            a: nalgebra::base::Vector3 {
-                x: fx(37568166818), y: fx(13883244667), z: fx(-14484514775),
-            },
-            b: nalgebra::base::Vector3 {
-                x: fx(55573507327), y: fx(-1592748467), z: fx(63551724814),
-            },
+            x: fx(37568166818),
+            y: fx(13883244667),
+            z: fx(-14484514775),
+            w: fx(55573507327),
+            a: fx(-1592748467),
+            b: fx(63551724814),
         },
     );
     assert!((-a) == e);
@@ -1707,12 +1699,12 @@ fn bench_vector6_scale__handwritten() {
     let k = black_box(fx(-46945606692));
     let e = black_box(
         HVector6 {
-            a: nalgebra::base::Vector3 {
-                x: fx(410634182295), y: fx(151749081850), z: fx(-158321190102),
-            },
-            b: nalgebra::base::Vector3 {
-                x: fx(607439320876), y: fx(-17409339336), z: fx(694644236405),
-            },
+            x: fx(410634182295),
+            y: fx(151749081850),
+            z: fx(-158321190102),
+            w: fx(607439320876),
+            a: fx(-17409339336),
+            b: fx(694644236405),
         },
     );
     assert!(a.scale(k) == e);

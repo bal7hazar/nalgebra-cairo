@@ -922,38 +922,36 @@ pub impl Cholesky6Impl<
     ///
     /// Panics on overflow of a pivot or a numerator; never wraps.
     fn new(a: Matrix6<T>) -> Option<Cholesky6<T>> {
-        let p1 = a.m11.m11;
+        let p1 = a.m11;
         if p1 <= R::zero() {
             return None;
         }
         let l11 = R::sqrt(p1);
-        let (l21, l31, l41, l51, l61) = R::div5(
-            a.m11.m21, a.m11.m31, a.m21.m11, a.m21.m21, a.m21.m31, l11,
-        );
-        let w = R::wide_add(R::wide_zero(), a.m11.m22);
+        let (l21, l31, l41, l51, l61) = R::div5(a.m21, a.m31, a.m41, a.m51, a.m61, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
         if p2 <= R::zero() {
             return None;
         }
         let l22 = R::sqrt(p2);
-        let w = R::wide_add(R::wide_zero(), a.m11.m32);
+        let w = R::wide_add(R::wide_zero(), a.m32);
         let w = R::wide_sub_prod(w, l31, l21);
         let n32 = R::wide_rescale(w);
         let l32 = R::div(n32, l22);
-        let w = R::wide_add(R::wide_zero(), a.m21.m12);
+        let w = R::wide_add(R::wide_zero(), a.m42);
         let w = R::wide_sub_prod(w, l41, l21);
         let n42 = R::wide_rescale(w);
         let l42 = R::div(n42, l22);
-        let w = R::wide_add(R::wide_zero(), a.m21.m22);
+        let w = R::wide_add(R::wide_zero(), a.m52);
         let w = R::wide_sub_prod(w, l51, l21);
         let n52 = R::wide_rescale(w);
         let l52 = R::div(n52, l22);
-        let w = R::wide_add(R::wide_zero(), a.m21.m32);
+        let w = R::wide_add(R::wide_zero(), a.m62);
         let w = R::wide_sub_prod(w, l61, l21);
         let n62 = R::wide_rescale(w);
         let l62 = R::div(n62, l22);
-        let w = R::wide_add(R::wide_zero(), a.m11.m33);
+        let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
         let p3 = R::wide_rescale(w);
@@ -961,22 +959,22 @@ pub impl Cholesky6Impl<
             return None;
         }
         let l33 = R::sqrt(p3);
-        let w = R::wide_add(R::wide_zero(), a.m21.m13);
+        let w = R::wide_add(R::wide_zero(), a.m43);
         let w = R::wide_sub_prod(w, l41, l31);
         let w = R::wide_sub_prod(w, l42, l32);
         let n43 = R::wide_rescale(w);
         let l43 = R::div(n43, l33);
-        let w = R::wide_add(R::wide_zero(), a.m21.m23);
+        let w = R::wide_add(R::wide_zero(), a.m53);
         let w = R::wide_sub_prod(w, l51, l31);
         let w = R::wide_sub_prod(w, l52, l32);
         let n53 = R::wide_rescale(w);
         let l53 = R::div(n53, l33);
-        let w = R::wide_add(R::wide_zero(), a.m21.m33);
+        let w = R::wide_add(R::wide_zero(), a.m63);
         let w = R::wide_sub_prod(w, l61, l31);
         let w = R::wide_sub_prod(w, l62, l32);
         let n63 = R::wide_rescale(w);
         let l63 = R::div(n63, l33);
-        let w = R::wide_add(R::wide_zero(), a.m22.m11);
+        let w = R::wide_add(R::wide_zero(), a.m44);
         let w = R::wide_sub_prod(w, l41, l41);
         let w = R::wide_sub_prod(w, l42, l42);
         let w = R::wide_sub_prod(w, l43, l43);
@@ -985,19 +983,19 @@ pub impl Cholesky6Impl<
             return None;
         }
         let l44 = R::sqrt(p4);
-        let w = R::wide_add(R::wide_zero(), a.m22.m21);
+        let w = R::wide_add(R::wide_zero(), a.m54);
         let w = R::wide_sub_prod(w, l51, l41);
         let w = R::wide_sub_prod(w, l52, l42);
         let w = R::wide_sub_prod(w, l53, l43);
         let n54 = R::wide_rescale(w);
         let l54 = R::div(n54, l44);
-        let w = R::wide_add(R::wide_zero(), a.m22.m31);
+        let w = R::wide_add(R::wide_zero(), a.m64);
         let w = R::wide_sub_prod(w, l61, l41);
         let w = R::wide_sub_prod(w, l62, l42);
         let w = R::wide_sub_prod(w, l63, l43);
         let n64 = R::wide_rescale(w);
         let l64 = R::div(n64, l44);
-        let w = R::wide_add(R::wide_zero(), a.m22.m22);
+        let w = R::wide_add(R::wide_zero(), a.m55);
         let w = R::wide_sub_prod(w, l51, l51);
         let w = R::wide_sub_prod(w, l52, l52);
         let w = R::wide_sub_prod(w, l53, l53);
@@ -1007,14 +1005,14 @@ pub impl Cholesky6Impl<
             return None;
         }
         let l55 = R::sqrt(p5);
-        let w = R::wide_add(R::wide_zero(), a.m22.m32);
+        let w = R::wide_add(R::wide_zero(), a.m65);
         let w = R::wide_sub_prod(w, l61, l51);
         let w = R::wide_sub_prod(w, l62, l52);
         let w = R::wide_sub_prod(w, l63, l53);
         let w = R::wide_sub_prod(w, l64, l54);
         let n65 = R::wide_rescale(w);
         let l65 = R::div(n65, l55);
-        let w = R::wide_add(R::wide_zero(), a.m22.m33);
+        let w = R::wide_add(R::wide_zero(), a.m66);
         let w = R::wide_sub_prod(w, l61, l61);
         let w = R::wide_sub_prod(w, l62, l62);
         let w = R::wide_sub_prod(w, l63, l63);
@@ -1057,50 +1055,42 @@ pub impl Cholesky6Impl<
     #[inline(always)]
     fn l(self: Cholesky6<T>) -> Matrix6<T> {
         Matrix6 {
-            m11: Matrix3 {
-                m11: self.l11,
-                m21: self.l21,
-                m31: self.l31,
-                m12: R::zero(),
-                m22: self.l22,
-                m32: self.l32,
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: self.l33,
-            },
-            m21: Matrix3 {
-                m11: self.l41,
-                m21: self.l51,
-                m31: self.l61,
-                m12: self.l42,
-                m22: self.l52,
-                m32: self.l62,
-                m13: self.l43,
-                m23: self.l53,
-                m33: self.l63,
-            },
-            m12: Matrix3 {
-                m11: R::zero(),
-                m21: R::zero(),
-                m31: R::zero(),
-                m12: R::zero(),
-                m22: R::zero(),
-                m32: R::zero(),
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: R::zero(),
-            },
-            m22: Matrix3 {
-                m11: self.l44,
-                m21: self.l54,
-                m31: self.l64,
-                m12: R::zero(),
-                m22: self.l55,
-                m32: self.l65,
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: self.l66,
-            },
+            m11: self.l11,
+            m21: self.l21,
+            m31: self.l31,
+            m12: R::zero(),
+            m22: self.l22,
+            m32: self.l32,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: self.l33,
+            m41: self.l41,
+            m51: self.l51,
+            m61: self.l61,
+            m42: self.l42,
+            m52: self.l52,
+            m62: self.l62,
+            m43: self.l43,
+            m53: self.l53,
+            m63: self.l63,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m15: R::zero(),
+            m25: R::zero(),
+            m35: R::zero(),
+            m16: R::zero(),
+            m26: R::zero(),
+            m36: R::zero(),
+            m44: self.l44,
+            m54: self.l54,
+            m64: self.l64,
+            m45: R::zero(),
+            m55: self.l55,
+            m65: self.l65,
+            m46: R::zero(),
+            m56: R::zero(),
+            m66: self.l66,
         }
     }
 
@@ -1115,30 +1105,30 @@ pub impl Cholesky6Impl<
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
     fn solve(self: Cholesky6<T>, b: Vector6<T>) -> Vector6<T> {
-        let y1 = R::div(b.a.x, self.l11);
-        let w = R::wide_add(R::wide_zero(), b.a.y);
+        let y1 = R::div(b.x, self.l11);
+        let w = R::wide_add(R::wide_zero(), b.y);
         let w = R::wide_sub_prod(w, self.l21, y1);
         let f2 = R::wide_rescale(w);
         let y2 = R::div(f2, self.l22);
-        let w = R::wide_add(R::wide_zero(), b.a.z);
+        let w = R::wide_add(R::wide_zero(), b.z);
         let w = R::wide_sub_prod(w, self.l31, y1);
         let w = R::wide_sub_prod(w, self.l32, y2);
         let f3 = R::wide_rescale(w);
         let y3 = R::div(f3, self.l33);
-        let w = R::wide_add(R::wide_zero(), b.b.x);
+        let w = R::wide_add(R::wide_zero(), b.w);
         let w = R::wide_sub_prod(w, self.l41, y1);
         let w = R::wide_sub_prod(w, self.l42, y2);
         let w = R::wide_sub_prod(w, self.l43, y3);
         let f4 = R::wide_rescale(w);
         let y4 = R::div(f4, self.l44);
-        let w = R::wide_add(R::wide_zero(), b.b.y);
+        let w = R::wide_add(R::wide_zero(), b.a);
         let w = R::wide_sub_prod(w, self.l51, y1);
         let w = R::wide_sub_prod(w, self.l52, y2);
         let w = R::wide_sub_prod(w, self.l53, y3);
         let w = R::wide_sub_prod(w, self.l54, y4);
         let f5 = R::wide_rescale(w);
         let y5 = R::div(f5, self.l55);
-        let w = R::wide_add(R::wide_zero(), b.b.z);
+        let w = R::wide_add(R::wide_zero(), b.b);
         let w = R::wide_sub_prod(w, self.l61, y1);
         let w = R::wide_sub_prod(w, self.l62, y2);
         let w = R::wide_sub_prod(w, self.l63, y3);
@@ -1177,7 +1167,7 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, self.l61, x6);
         let g1 = R::wide_rescale(w);
         let x1 = R::div(g1, self.l11);
-        Vector6 { a: Vector3 { x: x1, y: x2, z: x3 }, b: Vector3 { x: x4, y: x5, z: x6 } }
+        Vector6 { x: x1, y: x2, z: x3, w: x4, a: x5, b: x6 }
     }
 
     /// `a⁻¹ = l⁻ᵀ · l⁻¹`, as a full (symmetric) `Matrix6`, like upstream.
@@ -1359,50 +1349,42 @@ pub impl Cholesky6Impl<
         let r56 = q65 * q66;
         let r66 = R::sqr(q66);
         Matrix6 {
-            m11: Matrix3 {
-                m11: r11,
-                m21: r12,
-                m31: r13,
-                m12: r12,
-                m22: r22,
-                m32: r23,
-                m13: r13,
-                m23: r23,
-                m33: r33,
-            },
-            m21: Matrix3 {
-                m11: r14,
-                m21: r15,
-                m31: r16,
-                m12: r24,
-                m22: r25,
-                m32: r26,
-                m13: r34,
-                m23: r35,
-                m33: r36,
-            },
-            m12: Matrix3 {
-                m11: r14,
-                m21: r24,
-                m31: r34,
-                m12: r15,
-                m22: r25,
-                m32: r35,
-                m13: r16,
-                m23: r26,
-                m33: r36,
-            },
-            m22: Matrix3 {
-                m11: r44,
-                m21: r45,
-                m31: r46,
-                m12: r45,
-                m22: r55,
-                m32: r56,
-                m13: r46,
-                m23: r56,
-                m33: r66,
-            },
+            m11: r11,
+            m21: r12,
+            m31: r13,
+            m12: r12,
+            m22: r22,
+            m32: r23,
+            m13: r13,
+            m23: r23,
+            m33: r33,
+            m41: r14,
+            m51: r15,
+            m61: r16,
+            m42: r24,
+            m52: r25,
+            m62: r26,
+            m43: r34,
+            m53: r35,
+            m63: r36,
+            m14: r14,
+            m24: r24,
+            m34: r34,
+            m15: r15,
+            m25: r25,
+            m35: r35,
+            m16: r16,
+            m26: r26,
+            m36: r36,
+            m44: r44,
+            m54: r45,
+            m64: r46,
+            m45: r45,
+            m55: r55,
+            m65: r56,
+            m46: r46,
+            m56: r56,
+            m66: r66,
         }
     }
 

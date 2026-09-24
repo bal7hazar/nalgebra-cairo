@@ -76,8 +76,8 @@
       "triangular": 210470
     },
     "cholesky6_l": {
-      "baseline": 42340,
-      "expand": 45940
+      "baseline": 41440,
+      "expand": 45040
     },
     "cholesky6_new": {
       "baseline": 35440,
@@ -172,31 +172,31 @@
       "substitution": 53410
     },
     "ldlt6_d": {
-      "accessor": 23340,
-      "baseline": 23340
+      "accessor": 23040,
+      "baseline": 23040
     },
     "ldlt6_determinant": {
-      "baseline": 20240,
-      "diagonal_product": 28540
+      "baseline": 19940,
+      "diagonal_product": 28240
     },
     "ldlt6_inverse": {
-      "alt_recip": 163700,
-      "baseline": 41740,
-      "triangular": 201290
+      "alt_recip": 163400,
+      "baseline": 41440,
+      "triangular": 200990
     },
     "ldlt6_l": {
-      "baseline": 42640,
-      "expand": 46240
+      "baseline": 41440,
+      "expand": 45040
     },
     "ldlt6_new": {
-      "alt_products": 168270,
-      "baseline": 35740,
-      "factorize": 143070
+      "alt_products": 167970,
+      "baseline": 35440,
+      "factorize": 142770
     },
     "ldlt6_solve": {
-      "alt_recip": 84410,
-      "baseline": 24140,
-      "substitution": 77810
+      "alt_recip": 84110,
+      "baseline": 23840,
+      "substitution": 77510
     }
   },
   "nalgebra::linalg::lu::lu2::tests": {
@@ -353,12 +353,12 @@
   "nalgebra::linalg::lu::lu6::benches": {
     "lu6_determinant": {
       "baseline": 23940,
-      "pivots": 42320
+      "pivots": 41720
     },
     "lu6_factors": {
-      "baseline": 46340,
-      "l": 49940,
-      "u": 49940
+      "baseline": 45440,
+      "l": 49040,
+      "u": 49040
     },
     "lu6_is_invertible": {
       "baseline": 23950,
@@ -392,13 +392,13 @@
     },
     "lu6_try_inverse": {
       "alt_recip": 257580,
-      "alt_solve_columns": 495180,
+      "alt_solve_columns": 493980,
       "baseline": 49340,
       "columns": 321020
     },
     "matrix6_lu": {
       "baseline": 22940,
-      "determinant": 290740,
+      "determinant": 290140,
       "try_inverse": 573340
     }
   },

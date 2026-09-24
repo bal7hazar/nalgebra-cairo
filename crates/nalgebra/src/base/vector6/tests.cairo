@@ -33,7 +33,7 @@ fn p() -> Vector6<Fixed> {
     v6i(2, -2, 2, -2, 2, 4)
 }
 
-// --- constructors, blocks, conversions
+// --- constructors, conversions
 
 #[test]
 fn test_new_is_upstream_component_order() {
@@ -46,9 +46,9 @@ fn test_new_is_upstream_component_order() {
         fx(0x200000000),
     );
     assert!(r == a());
-    // Upstream `x, y, z, w, a, b` are the two blocks' components, in order.
-    assert!(r.a.x == fx(0x180000000) && r.a.y == fx(-0x240000000) && r.a.z == fx(0x3c0000000));
-    assert!(r.b.x == fx(-0x480000000) && r.b.y == fx(0x40000000) && r.b.z == fx(0x200000000));
+    // Upstream's component names, in order.
+    assert!(r.x == fx(0x180000000) && r.y == fx(-0x240000000) && r.z == fx(0x3c0000000));
+    assert!(r.w == fx(-0x480000000) && r.a == fx(0x40000000) && r.b == fx(0x200000000));
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn test_zeros_is_zero_and_default() {
 }
 
 #[test]
-fn test_serde_is_block_order() {
+fn test_serde_is_upstream_order() {
     let mut out = array![];
     v6i(1, 2, 3, 4, 5, 6).serialize(ref out);
     let one: felt252 = 0x100000000;
