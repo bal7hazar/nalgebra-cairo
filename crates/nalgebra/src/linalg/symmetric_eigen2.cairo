@@ -466,6 +466,26 @@ mod tests {
         assert!(d.eigenvectors.m11 != Real::ZERO);
     }
 
+    /// The public entry point, `SymmetricEigen2::new` on a full `Matrix2` (lower triangle
+    /// read): an inlined wrapper around the kernel measured by `new__closed_form`, which it
+    /// should match (WP 8.0).
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen2_new_matrix__baseline() {
+        let _m = black_box(bench_input().to_matrix());
+        let e = black_box(fx(0x100000000));
+        assert!(e == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen2_new_matrix__public() {
+        let m = black_box(bench_input().to_matrix());
+        let d = SymmetricEigen2Trait::new(m);
+        assert!(d.eigenvalues.x < d.eigenvalues.y);
+        assert!(d.eigenvectors.m11 != Real::ZERO);
+    }
+
     #[test]
     #[inline(never)]
     fn bench_symmetric_eigen2_eigenvalues__baseline() {

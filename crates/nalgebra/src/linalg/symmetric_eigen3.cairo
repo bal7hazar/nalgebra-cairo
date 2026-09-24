@@ -932,6 +932,25 @@ mod tests {
         assert!(d.eigenvalues.x <= d.eigenvalues.y && d.eigenvalues.y <= d.eigenvalues.z);
     }
 
+    /// The public entry point, `SymmetricEigen3::new` on a full `Matrix3` (lower triangle
+    /// read): an inlined wrapper around the kernel measured by `new__jacobi_4_sweeps`, which it
+    /// should match (WP 8.0).
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen3_new_matrix__baseline() {
+        let _m = black_box(bench_input().to_matrix());
+        let e = black_box(fx(0x100000000));
+        assert!(e == e);
+    }
+
+    #[test]
+    #[inline(never)]
+    fn bench_symmetric_eigen3_new_matrix__public() {
+        let m = black_box(bench_input().to_matrix());
+        let d = SymmetricEigen3Trait::new(m);
+        assert!(d.eigenvalues.x <= d.eigenvalues.y && d.eigenvalues.y <= d.eigenvalues.z);
+    }
+
     #[test]
     #[inline(never)]
     fn bench_symmetric_eigen3_new__jacobi_5_sweeps() {

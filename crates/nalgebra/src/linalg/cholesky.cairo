@@ -36,6 +36,8 @@ use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
 use crate::base::matrix6::Matrix6;
+use crate::base::sym_matrix2::SymMatrix2;
+use crate::base::sym_matrix3::SymMatrix3;
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
@@ -281,21 +283,9 @@ pub impl Cholesky2Impl<
     /// same way, but only when it drives a pivot to zero: `new` is not a definiteness test.
     ///
     /// Panics on overflow of a pivot or a numerator; never wraps.
+    #[inline(always)]
     fn new(a: Matrix2<T>) -> Option<Cholesky2<T>> {
-        let p1 = a.m11;
-        if p1 <= R::ZERO {
-            return None;
-        }
-        let l11 = R::sqrt(p1);
-        let l21 = R::div(a.m21, l11);
-        let w = R::wide_add(R::wide_zero(), a.m22);
-        let w = R::wide_sub_prod(w, l21, l21);
-        let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
-            return None;
-        }
-        let l22 = R::sqrt(p2);
-        Some(Cholesky2 { l11, l21, l22 })
+        Cholesky2InternalTrait::new_sym(SymMatrix2 { m11: a.m11, m12: a.m21, m22: a.m22 })
     }
 
     /// The lower triangular factor, with explicit zeros above the diagonal. Upstream:
@@ -373,6 +363,43 @@ pub impl Cholesky2Impl<
     }
 }
 
+/// Crate-internal kernel of `Cholesky2<T>`: `new` on the 3 independent components of the
+/// symmetric matrix (the public `new` takes upstream's full `Matrix2` and is inlined around it, so
+/// the call passes 3 scalars instead of 4: WP 8.0 keeps the gas of the former `SymMatrix2`
+/// signature).
+#[generate_trait]
+pub(crate) impl Cholesky2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Cholesky2InternalTrait<T> {
+    /// The factorisation of the symmetric matrix of upper triangle `a`; see `Cholesky2Trait::new`.
+    fn new_sym(a: SymMatrix2<T>) -> Option<Cholesky2<T>> {
+        let p1 = a.m11;
+        if p1 <= R::ZERO {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let l21 = R::div(a.m12, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        if p2 <= R::ZERO {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        Some(Cholesky2 { l11, l21, l22 })
+    }
+}
+
 /// Methods of `Cholesky3<T>` for any `Real` scalar.
 #[generate_trait]
 pub impl Cholesky3Impl<
@@ -410,34 +437,11 @@ pub impl Cholesky3Impl<
     /// same way, but only when it drives a pivot to zero: `new` is not a definiteness test.
     ///
     /// Panics on overflow of a pivot or a numerator; never wraps.
+    #[inline(always)]
     fn new(a: Matrix3<T>) -> Option<Cholesky3<T>> {
-        let p1 = a.m11;
-        if p1 <= R::ZERO {
-            return None;
-        }
-        let l11 = R::sqrt(p1);
-        let l21 = R::div(a.m21, l11);
-        let l31 = R::div(a.m31, l11);
-        let w = R::wide_add(R::wide_zero(), a.m22);
-        let w = R::wide_sub_prod(w, l21, l21);
-        let p2 = R::wide_rescale(w);
-        if p2 <= R::ZERO {
-            return None;
-        }
-        let l22 = R::sqrt(p2);
-        let w = R::wide_add(R::wide_zero(), a.m32);
-        let w = R::wide_sub_prod(w, l31, l21);
-        let n32 = R::wide_rescale(w);
-        let l32 = R::div(n32, l22);
-        let w = R::wide_add(R::wide_zero(), a.m33);
-        let w = R::wide_sub_prod(w, l31, l31);
-        let w = R::wide_sub_prod(w, l32, l32);
-        let p3 = R::wide_rescale(w);
-        if p3 <= R::ZERO {
-            return None;
-        }
-        let l33 = R::sqrt(p3);
-        Some(Cholesky3 { l11, l21, l31, l22, l32, l33 })
+        Cholesky3InternalTrait::new_sym(
+            SymMatrix3 { m11: a.m11, m12: a.m21, m13: a.m31, m22: a.m22, m23: a.m32, m33: a.m33 },
+        )
     }
 
     /// The lower triangular factor, with explicit zeros above the diagonal. Upstream:
@@ -562,6 +566,56 @@ pub impl Cholesky3Impl<
     #[inline(always)]
     fn determinant(self: Cholesky3<T>) -> T {
         R::sqr(self.l11 * (self.l22 * self.l33))
+    }
+}
+
+/// Crate-internal kernel of `Cholesky3<T>`: `new` on the 6 independent components of the
+/// symmetric matrix (the public `new` takes upstream's full `Matrix3` and is inlined around it, so
+/// the call passes 6 scalars instead of 9: WP 8.0 keeps the gas of the former `SymMatrix3`
+/// signature).
+#[generate_trait]
+pub(crate) impl Cholesky3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Cholesky3InternalTrait<T> {
+    /// The factorisation of the symmetric matrix of upper triangle `a`; see `Cholesky3Trait::new`.
+    fn new_sym(a: SymMatrix3<T>) -> Option<Cholesky3<T>> {
+        let p1 = a.m11;
+        if p1 <= R::ZERO {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let l21 = R::div(a.m12, l11);
+        let l31 = R::div(a.m13, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        if p2 <= R::ZERO {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m23);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        if p3 <= R::ZERO {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        Some(Cholesky3 { l11, l21, l31, l22, l32, l33 })
     }
 }
 
