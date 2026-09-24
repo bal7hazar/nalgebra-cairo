@@ -61,9 +61,7 @@ pub trait Normed<V, T> {
     fn abs_diff_eq(self: V, rhs: V, ulps: u64) -> bool;
 }
 
-pub impl Vector2Normed<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
-> of Normed<Vector2<T>, T> {
+pub impl Vector2Normed<T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>> of Normed<Vector2<T>, T> {
     #[inline(always)]
     fn norm(self: Vector2<T>) -> T {
         R::norm2(self.x, self.y)
@@ -95,9 +93,7 @@ pub impl Vector2Normed<
     }
 }
 
-pub impl Vector3Normed<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
-> of Normed<Vector3<T>, T> {
+pub impl Vector3Normed<T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>> of Normed<Vector3<T>, T> {
     #[inline(always)]
     fn norm(self: Vector3<T>) -> T {
         R::norm3(self.x, self.y, self.z)
@@ -134,9 +130,7 @@ pub impl Vector3Normed<
     }
 }
 
-pub impl Vector4Normed<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
-> of Normed<Vector4<T>, T> {
+pub impl Vector4Normed<T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>> of Normed<Vector4<T>, T> {
     #[inline(always)]
     fn norm(self: Vector4<T>) -> T {
         R::norm4(self.x, self.y, self.z, self.w)
