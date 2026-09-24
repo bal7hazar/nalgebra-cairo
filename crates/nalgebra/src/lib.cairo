@@ -26,13 +26,16 @@ pub use base::{
 // shapegen: end
 pub use base::{Point2, Point3, Unit};
 pub use geometry::{
-    Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3, Isometry3AngleTrait, Isometry3Trait,
-    Quaternion, QuaternionTrait, QuaternionTranscendentalTrait, Rotation2, Rotation2AngleTrait,
-    Rotation2Trait, Rotation3, Rotation3AngleTrait, Rotation3Trait, Similarity2,
-    Similarity2AngleTrait, Similarity2Trait, Similarity3, Similarity3AngleTrait, Similarity3Trait,
-    Translation2, Translation2Trait, Translation3, Translation3Trait, UnitComplex,
-    UnitComplexAngleTrait, UnitComplexTrait, UnitQuaternion, UnitQuaternionAngleTrait,
-    UnitQuaternionTrait,
+    AbstractRotation, Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3,
+    Isometry3AngleTrait, Isometry3Trait, Point1, Point1Trait, Point2ExtTrait, Point2Index,
+    Point2PartialOrd, Point3ExtTrait, Point3Index, Point3PartialOrd, Point4, Point4Trait, Point5,
+    Point5Trait, Point6, Point6Trait, Quaternion, QuaternionTrait, QuaternionTranscendentalTrait,
+    Rotation2, Rotation2AngleTrait, Rotation2Trait, Rotation3, Rotation3AngleTrait, Rotation3Trait,
+    Similarity2, Similarity2AngleTrait, Similarity2Trait, Similarity3, Similarity3AngleTrait,
+    Similarity3Trait, Translation1, Translation1Trait, Translation2, Translation2Trait,
+    Translation3, Translation3Trait, Translation4, Translation4Trait, Translation5,
+    Translation5Trait, Translation6, Translation6Trait, UnitComplex, UnitComplexAngleTrait,
+    UnitComplexTrait, UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
 };
 pub use linalg::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,

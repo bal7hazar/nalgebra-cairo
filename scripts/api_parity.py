@@ -1112,15 +1112,23 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     **{alias: [t] for alias, t in SHAPE_ALIASES.items()},
     "Unit": ["Unit", "UnitComplex", "UnitQuaternion"],
     "Unit<Vector>": ["Unit"],
-    "Point": ["Point2", "Point3"],
+    "Point": ["Point1", "Point2", "Point3", "Point4", "Point5", "Point6"],
+    "Point1": ["Point1"],
     "Point2": ["Point2"],
     "Point3": ["Point3"],
+    "Point4": ["Point4"],
+    "Point5": ["Point5"],
+    "Point6": ["Point6"],
     "Rotation": ["Rotation2", "Rotation3"],
     "Rotation2": ["Rotation2"],
     "Rotation3": ["Rotation3"],
-    "Translation": ["Translation2", "Translation3"],
+    "Translation": ["Translation1", "Translation2", "Translation3", "Translation4", "Translation5", "Translation6"],
+    "Translation1": ["Translation1"],
     "Translation2": ["Translation2"],
     "Translation3": ["Translation3"],
+    "Translation4": ["Translation4"],
+    "Translation5": ["Translation5"],
+    "Translation6": ["Translation6"],
     "Isometry": ["Isometry2", "Isometry3"],
     "Isometry2": ["Isometry2"],
     "Isometry3": ["Isometry3"],
@@ -1160,6 +1168,11 @@ DIM_ONLY: dict[str, set[str]] = {
         "pseudo_inverse", "singular_values")},
     # 1x1 only (upstream `Matrix1` / `Vector1` impls).
     **{name: {"Matrix1"} for name in ("into_scalar", "as_scalar", "to_scalar", "as_scalar_mut")},
+    # Upstream multiplies a translation by an isometry / similarity of the same dimension; the
+    # `Isometry` / `Similarity` families exist in 2D and 3D only (upstream's aliases).
+    **{name: {"Translation2", "Translation3", "Rotation2", "Rotation3", "UnitComplex",
+              "UnitQuaternion", "Isometry2", "Isometry3", "Similarity2", "Similarity3"}
+       for name in ("Mul<Isometry>", "Mul<Similarity>")},
 }
 
 EXCLUSIONS = {
@@ -1290,7 +1303,6 @@ RENAMES = (
          "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
     rule(r"Translation", r"impl:SubsetOf<Translation>", "cast",
          "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
-    rule(r"Point1", r"new", "Point1::new", "`Point1` (WP 8.4-P09a, `geometry::point1`)"),
     rule(r"Rotation", r"impl:SubsetOf<Isometry>", "Isometry3::impl:From<Rotation>",
          "Cairo-imposed: `nalgebra::convert` is `Into` (`Isometry2` likewise)"),
     rule(r"Rotation", r"impl:SubsetOf<Similarity>", "Similarity3::impl:From<Rotation>",
@@ -1327,7 +1339,7 @@ RENAMES = (
 # `Deref`). They are listed in their own section and are not counted as extras.  (owner, rendered
 # item, upstream spelling, reason) — fullmatch regexes on the Cairo owner and rendered item.
 CAIRO_FORMS = (
-    (r"Point[23]", r"coords", "`p.coords`",
+    (r"Point[1-6]", r"coords", "`p.coords`",
      "an upstream public field; Cairo's points store `x, y(, z)` as fields (upstream's `Deref` "
      "view), so the vector is a method"),
     (r"Unit", r"dot|scale", "`u.dot(&w)`, `u * k`",
@@ -1336,6 +1348,10 @@ CAIRO_FORMS = (
      "the fields of upstream's `Complex`, reached through `Deref`"),
     (r"UnitQuaternion", r"dot|imag|scalar", "`q.dot(&r)`, `q.imag()`, `q.scalar()`",
      "`Quaternion` methods reached through upstream's `Deref<Target = Quaternion>`"),
+    (r"Point[1-6]", r"min_value", "`<Point as Bounded>::min_value()`",
+     "the second method of upstream's `Bounded` impl (`RENAMES` maps the impl to `max_value`)"),
+    (r"Isometry2|Similarity2", r"impl:From<(?:Rotation|Translation)>", "`convert(r)` / `convert(t)`",
+     "the 2D side of upstream's `SubsetOf<Isometry | Similarity>` (`RENAMES` points at the 3D impls)"),
 )
 
 
@@ -1405,7 +1421,7 @@ EXCLUDE = (
     exclude(r"RandomOrthogonal|RandomSDP|MatrixStrategy|MatrixParameters|DimRange|"
             r"nalgebra::proptest|nalgebra::debug", r".*", "random"),
     exclude(r".*", r"(?:simd_\w+|\w+_simd|type:Simd\w*|trait:Simd\w*)", "simd"),
-    exclude(r"Quaternion|UnitQuaternion|UnitComplex", r"impl:From<\[(?:Quaternion|UnitQuaternion|UnitComplex); N\]>", "simd"),
+    exclude(r"Quaternion|UnitQuaternion|UnitComplex|Point|Rotation|Translation", r"impl:From<\[(?:Quaternion|UnitQuaternion|UnitComplex|Point|Rotation|Translation); N\]>", "simd"),
     exclude(r"ParColumnIter|ParColumnIterMut|ColumnIntoIter", r".*", "rayon"),
     exclude(r".*", r"par_\w+", "rayon"),
     exclude(r".*", r"(?:as_ptr|as_mut_ptr|as_slice_unchecked|as_mut_slice_unchecked|"
