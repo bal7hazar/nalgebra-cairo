@@ -234,9 +234,10 @@ pub impl UnitQuaternionImpl<
     }
 
     /// `true` when the four components are within `ulps` smallest units (raw units for fixed point)
-    /// of `other`'s. Note that `q` and `-q` are the same rotation and are NOT `abs_diff_eq`: use
-    /// `angle_to` for a rotation distance. Upstream: `approx::AbsDiffEq::abs_diff_eq`, the
-    /// tolerance being counted in ulp instead of a float epsilon (DESIGN D3).
+    /// of `other`'s, or of `-other`'s: `q` and `-q` are the same rotation and compare equal, like
+    /// upstream (`QuaternionTrait::abs_diff_eq`); `angle_to` is the rotation distance. Upstream:
+    /// `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp instead of a float
+    /// epsilon (DESIGN D3).
     #[inline(always)]
     fn abs_diff_eq(self: UnitQuaternion<T>, other: UnitQuaternion<T>, ulps: u64) -> bool {
         self.quaternion.abs_diff_eq(other.quaternion, ulps)
@@ -597,8 +598,8 @@ pub impl UnitQuaternionImpl<
         self.quaternion.lerp(other.quaternion, t)
     }
 
-    /// `relative_eq` of the quaternions (component-wise, tolerances in ulp; `q` and `-q` are not
-    /// equal for it). Upstream: `approx::RelativeEq::relative_eq`.
+    /// `relative_eq` of the quaternions (component-wise, tolerances in ulp; `q` and `-q` compare
+    /// equal, like upstream). Upstream: `approx::RelativeEq::relative_eq`.
     #[inline(always)]
     fn relative_eq(
         self: UnitQuaternion<T>, other: UnitQuaternion<T>, epsilon: u64, max_relative: T,
@@ -606,7 +607,8 @@ pub impl UnitQuaternionImpl<
         self.quaternion.relative_eq(other.quaternion, epsilon, max_relative)
     }
 
-    /// `ulps_eq` of the quaternions (component-wise, tolerances in ulp). Upstream:
+    /// `ulps_eq` of the quaternions (component-wise, tolerances in ulp; `q` and `-q` compare
+    /// equal, like upstream). Upstream:
     /// `approx::UlpsEq::ulps_eq`.
     #[inline(always)]
     fn ulps_eq(
@@ -1146,8 +1148,8 @@ pub impl UnitQuaternionAngleImpl<
 
     /// The angle of the rotation taking `self` to `other`, in `[0, π]`:
     /// `rotation_to(other).angle()` (one Hamilton product, one norm, one `atan2`). It is a metric
-    /// on rotations, unlike the component-wise `abs_diff_eq`: `q` and `-q` are the same rotation
-    /// and are at angle `0` from each other. Upstream: `angle_to`.
+    /// on rotations (`abs_diff_eq` is only a component-wise test, up to the sign): `q` and `-q`
+    /// are the same rotation and are at angle `0` from each other. Upstream: `angle_to`.
     #[inline(always)]
     fn angle_to(self: UnitQuaternion<T>, other: UnitQuaternion<T>) -> T {
         Self::angle(UnitQuaternionTrait::rotation_to(self, other))

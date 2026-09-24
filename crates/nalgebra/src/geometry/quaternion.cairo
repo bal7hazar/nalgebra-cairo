@@ -25,8 +25,12 @@
 //!   pure quaternion and `scaled_axis` its `ln`, both cheaper.
 //!
 //! The approximate comparisons (`abs_diff_eq`, `relative_eq`, `ulps_eq`) count their tolerances
-//! in ulp (DESIGN D3) and compare the coordinates component-wise: `q` and `-q` are NOT equal for
-//! them, where upstream's `approx` impls also accept `-q` (the double cover).
+//! in ulp (DESIGN D3) and, like upstream's `approx` impls, accept `other` OR `-other`
+//! component-wise (the double cover of the rotations: `q` and `-q` compare equal).
+//!
+//! Where upstream's formula yields `NaN` (the logarithm, square root and inverse trigonometric
+//! functions of a REAL quaternion, whose imaginary part upstream normalises), these functions
+//! panic with `errors::REAL_QUATERNION` instead (PLAN M8 fidelity rules).
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
@@ -56,6 +60,9 @@ pub mod errors {
     pub const NOT_INVERTIBLE: felt252 = 'nalgebra: not invertible';
     /// `q[i]` with `i > 3`.
     pub const INDEX_OUT_OF_BOUNDS: felt252 = 'nalgebra: index out of bounds';
+    /// `ln`, `sqrt`, `powf`, `acos`, `asin`, `atan`, `asinh`, `acosh` or `atanh` of an argument
+    /// whose imaginary part is zero where upstream normalises it (its result is `NaN` there).
+    pub const REAL_QUATERNION: felt252 = 'nalgebra: real quaternion (NaN)';
 }
 
 /// A quaternion `w + i·i + j·j + k·k`.
@@ -243,49 +250,65 @@ pub impl QuaternionImpl<
     }
 
     /// `true` when every component is within `ulps` smallest units (raw units for fixed point) of
-    /// the matching component of `other`; cannot overflow. Note that `q` and `-q` are the same
-    /// rotation but are NOT `abs_diff_eq` (see `UnitQuaternionTrait::angle_to` for a rotation
-    /// distance). Upstream: `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp
-    /// instead of a float epsilon (DESIGN D3).
+    /// the matching component of `other`, or every component within `ulps` of the matching
+    /// component of `-other`: like upstream, `q` and `-q` compare equal (the double cover of the
+    /// rotations). The second comparison runs only when the first fails; it negates `other`,
+    /// hence panics on a component equal to the scalar's `MIN` there. Upstream:
+    /// `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp instead of a float
+    /// epsilon (DESIGN D3).
     #[inline(always)]
     fn abs_diff_eq(self: Quaternion<T>, other: Quaternion<T>, ulps: u64) -> bool {
-        R::abs_diff_eq(self.i, other.i, ulps)
+        (R::abs_diff_eq(self.i, other.i, ulps)
             && R::abs_diff_eq(self.j, other.j, ulps)
             && R::abs_diff_eq(self.k, other.k, ulps)
-            && R::abs_diff_eq(self.w, other.w, ulps)
+            && R::abs_diff_eq(self.w, other.w, ulps))
+            || (R::abs_diff_eq(self.i, -other.i, ulps)
+                && R::abs_diff_eq(self.j, -other.j, ulps)
+                && R::abs_diff_eq(self.k, -other.k, ulps)
+                && R::abs_diff_eq(self.w, -other.w, ulps))
     }
 
     /// `true` when every component is `abs_diff_eq` within `epsilon` ulp of `other`'s, or within
     /// `max_relative` times the larger magnitude of the two (`|a - b| <= max(|a|, |b|) ·
-    /// max_relative`). Two components of opposite signs are compared absolutely only (their
-    /// difference is at least the larger magnitude, so they are relatively equal only for
-    /// `max_relative >= 1`, which is meaningless). Component-wise: `q` and `-q` are NOT
-    /// `relative_eq` (see the module doc). Panics on a component equal to the scalar's `MIN`, and
-    /// on overflow of `max(|a|, |b|) · max_relative` (only possible with `max_relative > 1`).
-    /// Upstream: `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp instead of a float
-    /// epsilon (DESIGN D3).
+    /// max_relative`) — or the same against `-other` (upstream accepts `-q`, the double cover).
+    /// Two components of opposite signs are compared absolutely only (their difference is at
+    /// least the larger magnitude, so they are relatively equal only for `max_relative >= 1`,
+    /// which is meaningless). Panics on a component equal to the scalar's `MIN`, and on overflow
+    /// of `max(|a|, |b|) · max_relative` (only possible with `max_relative > 1`). Upstream:
+    /// `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp instead of a float epsilon
+    /// (DESIGN D3).
     #[inline(always)]
     fn relative_eq(
         self: Quaternion<T>, other: Quaternion<T>, epsilon: u64, max_relative: T,
     ) -> bool {
-        ApproxEqTrait::relative_eq(self.i, other.i, epsilon, max_relative)
+        (ApproxEqTrait::relative_eq(self.i, other.i, epsilon, max_relative)
             && ApproxEqTrait::relative_eq(self.j, other.j, epsilon, max_relative)
             && ApproxEqTrait::relative_eq(self.k, other.k, epsilon, max_relative)
-            && ApproxEqTrait::relative_eq(self.w, other.w, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.w, other.w, epsilon, max_relative))
+            || (ApproxEqTrait::relative_eq(self.i, -other.i, epsilon, max_relative)
+                && ApproxEqTrait::relative_eq(self.j, -other.j, epsilon, max_relative)
+                && ApproxEqTrait::relative_eq(self.k, -other.k, epsilon, max_relative)
+                && ApproxEqTrait::relative_eq(self.w, -other.w, epsilon, max_relative))
     }
 
     /// `true` when every component is `abs_diff_eq` within `epsilon` ulp of `other`'s, or has the
-    /// same sign and lies within `max_ulps` ulp. In fixed point the distance in ulp IS the raw
-    /// difference, so this is `abs_diff_eq` with the larger of the two budgets, except that the
-    /// `max_ulps` budget does not cross zero (like upstream's float `ulps_eq`, which never
-    /// compares the bits of values of opposite signs). Component-wise: `q` and `-q` are NOT
-    /// `ulps_eq`. Cannot overflow. Upstream: `approx::UlpsEq::ulps_eq`.
+    /// same sign and lies within `max_ulps` ulp — or the same against `-other` (upstream accepts
+    /// `-q`, the double cover). In fixed point the distance in ulp IS the raw difference, so this
+    /// is `abs_diff_eq` with the larger of the two budgets, except that the `max_ulps` budget
+    /// does not cross zero (like upstream's float `ulps_eq`, which never compares the bits of
+    /// values of opposite signs). The comparison against `-other` runs only when the first one
+    /// fails and panics on a component equal to the scalar's `MIN`. Upstream:
+    /// `approx::UlpsEq::ulps_eq`.
     #[inline(always)]
     fn ulps_eq(self: Quaternion<T>, other: Quaternion<T>, epsilon: u64, max_ulps: u32) -> bool {
-        ApproxEqTrait::ulps_eq(self.i, other.i, epsilon, max_ulps)
+        (ApproxEqTrait::ulps_eq(self.i, other.i, epsilon, max_ulps)
             && ApproxEqTrait::ulps_eq(self.j, other.j, epsilon, max_ulps)
             && ApproxEqTrait::ulps_eq(self.k, other.k, epsilon, max_ulps)
-            && ApproxEqTrait::ulps_eq(self.w, other.w, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.w, other.w, epsilon, max_ulps))
+            || (ApproxEqTrait::ulps_eq(self.i, -other.i, epsilon, max_ulps)
+                && ApproxEqTrait::ulps_eq(self.j, -other.j, epsilon, max_ulps)
+                && ApproxEqTrait::ulps_eq(self.k, -other.k, epsilon, max_ulps)
+                && ApproxEqTrait::ulps_eq(self.w, -other.w, epsilon, max_ulps))
     }
 
     // --- P08 completion: norms, parts, casts --------------------------------------------------
@@ -440,34 +463,32 @@ pub impl QuaternionImpl<
     ///   imaginary part as the correctly rounded quotients of the floored `v_i · t` by `|v|`
     ///   while `n < 2^20` (about one ulp), as `t` times the rounded direction above (a relative
     ///   error of about 2^-33);
-    /// - the negative real `(w < 0, v = 0)` has a whole sphere of roots: `(0, sqrt(-w), 0, 0)`
-    ///   is returned, the complex principal root `sqrt(-x) = i·sqrt(x)` (upstream returns NaN
-    ///   there, through `ln`).
+    /// - a REAL quaternion (`v = 0`, zero included) panics with `errors::REAL_QUATERNION`:
+    ///   upstream's `powf(1/2)` goes through `ln`, which normalises the zero imaginary part and
+    ///   returns `NaN` there (even for a positive real, whose root would be obvious; PLAN M8
+    ///   fidelity rules).
     ///
     /// `(n ± w) / 2` is one fused kernel (exactly floored, no overflow of the intermediate sum),
     /// then one square root and at most one norm and four divisions: 35 510 gas, where upstream's
     /// `powf(1/2)` = `exp(ln(q) / 2)` costs a `ln`, an `atan2`, an `exp` and a `sin_cos`: 148 110
     /// (`bench_quaternion_sqrt__alt_powf`, 4.2x dearer, and less accurate: the exponential
     /// amplifies the error of the logarithm). The two agree to the tolerance of the oracle
-    /// (`test_sqrt_alt_powf_agrees`). The zero quaternion gives zero. Upstream: `sqrt`.
+    /// (`test_sqrt_alt_powf_agrees`). Upstream: `sqrt`.
     fn sqrt(self: Quaternion<T>) -> Quaternion<T> {
         let Quaternion { i, j, k, w } = self;
+        let nv = R::norm3(i, j, k);
+        if nv == R::zero() {
+            core::panic_with_felt252(errors::REAL_QUATERNION);
+        }
         let n = R::norm4(i, j, k, w);
         if w >= R::zero() {
             let h = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), n, R::HALF), w, R::HALF);
             let s = R::sqrt(R::wide_rescale(h));
-            if s == R::zero() {
-                return Quaternion { i: R::zero(), j: R::zero(), k: R::zero(), w: R::zero() };
-            }
             let (x, y, z) = R::div3(i, j, k, s + s);
             Quaternion { i: x, j: y, k: z, w: s }
         } else {
             let h = R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), n, R::HALF), w, R::HALF);
             let t = R::sqrt(R::wide_rescale(h));
-            let nv = R::norm3(i, j, k);
-            if nv == R::zero() {
-                return Quaternion { i: t, j: R::zero(), k: R::zero(), w: R::zero() };
-            }
             // t · v / |v|: dividing the floored products `v_i · t` keeps the error at about one
             // ulp; `v_i · t` fits while `|self| < 2^20` (`t <= 2^10`). Beyond that the unit
             // direction is scaled instead, which keeps a RELATIVE error of about 2^-33 (an
@@ -602,8 +623,10 @@ pub(crate) impl ApproxEqImpl<
 /// The inverse functions (`acos`, `asin`, `atan`, `asinh`, `acosh`, `atanh`) are upstream's
 /// compositions of `ln`, `sqrt` and products, in upstream's order; every intermediate rounds,
 /// so their error is a few hundred ulp on moderate inputs (oracle tolerances in
-/// `tests_ext.cairo`). `acos`, `asin` and `atan` normalise the imaginary part: they panic with
-/// `Fixed: division by zero` on a real quaternion (upstream returns NaN).
+/// `tests_ext.cairo`). `acos`, `asin` and `atan` normalise the imaginary part, and `asinh`,
+/// `acosh`, `atanh` take the `ln` / `sqrt` of a real quaternion when the argument is real: all of
+/// them panic with `errors::REAL_QUATERNION` on a real quaternion, where upstream returns `NaN`
+/// (or, for `atan`, panics).
 #[generate_trait]
 pub impl QuaternionTranscendentalImpl<
     T,
@@ -701,30 +724,24 @@ pub impl QuaternionTranscendentalImpl<
     /// `v / |v|` (three correctly rounded divisions), then scaled by `θ`, like
     /// `UnitQuaternion::scaled_axis`.
     ///
-    /// For a real quaternion (`v = 0`) the imaginary part is zero when `w > 0`, and `(π, 0, 0)`
-    /// when `w < 0` (the complex principal logarithm `ln(-x) = ln x + iπ`): **deviation**,
-    /// upstream normalises the zero vector and returns NaN in both cases. Panics with `Fixed: ln
-    /// domain`
-    /// on the zero quaternion. Upstream: `ln`.
+    /// A REAL quaternion (`v = 0`, zero included) panics with `errors::REAL_QUATERNION`: upstream
+    /// normalises the zero imaginary part and returns `NaN` there (PLAN M8 fidelity rules).
+    /// Upstream: `ln`.
     fn ln(self: Quaternion<T>) -> Quaternion<T> {
         let Quaternion { i, j, k, w } = self;
-        let ln_n = Tr::ln(R::norm4(i, j, k, w));
         let nv = R::norm3(i, j, k);
         if nv == R::zero() {
-            let x = if R::is_sign_negative(w) {
-                R::pi()
-            } else {
-                R::zero()
-            };
-            return Quaternion { i: x, j: R::zero(), k: R::zero(), w: ln_n };
+            core::panic_with_felt252(errors::REAL_QUATERNION);
         }
+        let ln_n = Tr::ln(R::norm4(i, j, k, w));
         let theta = Tr::atan2(nv, w);
         let (x, y, z) = R::div3(i, j, k, nv);
         Quaternion { i: x * theta, j: y * theta, k: z * theta, w: ln_n }
     }
 
     /// `self^n = exp(n · ln(self))` (the product floored per component). Inherits the domain of
-    /// `ln` (panics on zero) and of `exp`. Upstream: `powf`.
+    /// `ln` (panics on a real quaternion, where upstream returns `NaN`) and of `exp`. Upstream:
+    /// `powf`.
     #[inline(always)]
     fn powf(self: Quaternion<T>, n: T) -> Quaternion<T> {
         Self::exp(Self::ln(self).scale(n))
@@ -755,7 +772,8 @@ pub impl QuaternionTranscendentalImpl<
     }
 
     /// `-(u · ln(self + sqrt(self² - 1)))` with `u = (0, v / |v|)`, upstream's composition.
-    /// Panics with `Fixed: division by zero` on a real quaternion. Upstream: `acos`.
+    /// Panics with `errors::REAL_QUATERNION` on a real quaternion (upstream: `NaN`). Upstream:
+    /// `acos`.
     fn acos(self: Quaternion<T>) -> Quaternion<T> {
         let u = QuaternionTranscendentalInternalTrait::<T>::unit_imag(self);
         let z = Self::ln(self + (self.squared() - QuaternionTrait::identity()).sqrt());
@@ -763,7 +781,8 @@ pub impl QuaternionTranscendentalImpl<
     }
 
     /// `-(u · ln(u · self + sqrt(1 - self²)))` with `u = (0, v / |v|)`, upstream's composition.
-    /// Panics with `Fixed: division by zero` on a real quaternion. Upstream: `asin`.
+    /// Panics with `errors::REAL_QUATERNION` on a real quaternion (upstream: `NaN`). Upstream:
+    /// `asin`.
     fn asin(self: Quaternion<T>) -> Quaternion<T> {
         let u = QuaternionTranscendentalInternalTrait::<T>::unit_imag(self);
         let z = Self::ln(u * self + (QuaternionTrait::identity() - self.squared()).sqrt());
@@ -771,8 +790,9 @@ pub impl QuaternionTranscendentalImpl<
     }
 
     /// `(u / 2) · ln((u + self) · (u - self)⁻¹)` with `u = (0, v / |v|)`, upstream's
-    /// composition. Panics with `Fixed: division by zero` on a real quaternion and with
-    /// `nalgebra: not invertible` when `u - self` is not invertible. Upstream: `atan`.
+    /// composition. Panics with `errors::REAL_QUATERNION` on a real quaternion (where upstream
+    /// panics too) and with `nalgebra: not invertible` when `u - self` is not invertible.
+    /// Upstream: `atan`.
     fn atan(self: Quaternion<T>) -> Quaternion<T> {
         let u = QuaternionTranscendentalInternalTrait::<T>::unit_imag(self);
         let fr = (u + self).right_div(u - self).expect(errors::NOT_INVERTIBLE);
@@ -820,7 +840,7 @@ pub impl QuaternionTranscendentalImpl<
     }
 
     /// `(ln(1 + self) - ln(1 - self)) / 2`, upstream's composition. Panics with
-    /// `Fixed: ln domain` when `self = ±1`. Upstream: `atanh`.
+    /// `errors::REAL_QUATERNION` on a real quaternion (upstream: `NaN`). Upstream: `atanh`.
     fn atanh(self: Quaternion<T>) -> Quaternion<T> {
         let one = QuaternionTrait::identity();
         (Self::ln(one + self) - Self::ln(one - self)).half()
@@ -890,10 +910,13 @@ pub(crate) impl QuaternionTranscendentalInternalImpl<
         }
     }
 
-    /// `(0, v / |v|)`. Panics with `Fixed: division by zero` for `v = 0`.
+    /// `(0, v / |v|)`. Panics with `errors::REAL_QUATERNION` for `v = 0` (upstream: `NaN`).
     #[inline(always)]
     fn unit_imag(q: Quaternion<T>) -> Quaternion<T> {
         let nv = R::norm3(q.i, q.j, q.k);
+        if nv == R::zero() {
+            core::panic_with_felt252(errors::REAL_QUATERNION);
+        }
         let (i, j, k) = R::div3(q.i, q.j, q.k, nv);
         Quaternion { i, j, k, w: R::zero() }
     }

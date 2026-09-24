@@ -23,15 +23,29 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
+use core::num::traits::One;
+use core::ops::Index;
 use simba::scalar::{Real, Transcendental};
+use crate::base::matrix1::Matrix1;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
 use crate::base::point2::Point2;
+use crate::base::unit::Unit;
 use crate::base::vector2::Vector2;
-use super::unit_complex::UnitComplex;
+use super::isometry2::Isometry2;
+use super::quaternion::ApproxEqTrait;
+use super::similarity2::Similarity2;
+use super::translation2::Translation2;
+use super::unit_complex::{UnitComplex, UnitComplexAngleTrait};
 
 #[cfg(test)]
 mod tests;
+
+/// Panic messages of `Rotation2` (stable API).
+pub mod errors {
+    /// `r[(i, j)]` with `i > 1` or `j > 1`.
+    pub const INDEX_OUT_OF_BOUNDS: felt252 = 'nalgebra: index out of bounds';
+}
 
 /// A 2D rotation of angle `θ`, stored as the orthogonal matrix
 /// `[[cos θ, -sin θ], [sin θ, cos θ]]` (`matrix.m11 = cos θ`, `matrix.m21 = sin θ`).
@@ -53,15 +67,12 @@ pub trait Rotation2Trait<T> {
     /// Wraps `m` WITHOUT checking that it is a rotation: the caller guarantees `Rᵀ R = I` and
     /// `det R = 1`. Upstream: `Rotation2::from_matrix_unchecked`.
     fn from_matrix_unchecked(m: Matrix2<T>) -> Rotation2<T>;
-    /// The rotation closest to `m` in the sense of its FIRST COLUMN: `(m11, m21)` normalized,
-    /// then expanded back into a rotation matrix. Panics with `Fixed: division by zero` when that
-    /// column is zero.
-    ///
-    /// Deviates from upstream, which runs a Gauss-Newton optimization
-    /// (`Rotation2::from_matrix` / `from_matrix_eps`, an iteration count on the input): a loop is
-    /// forbidden here (AGENTS.md rule 1) and would be pointless in 2D, where the group is
-    /// one-dimensional. On an exact rotation both agree; on a general matrix upstream splits the
-    /// difference between the two columns while this keeps the first one.
+    /// The rotation closest to `m` (maximising `tr(Rᵀ m)`): the closed-form LIMIT of upstream's
+    /// iteration `from_matrix_eps(m, default_epsilon, 0, identity)`, i.e. the angle of
+    /// `(m11 + m22, m21 - m12)` — that pair normalised (one `norm2`, two correctly rounded
+    /// divisions, no trigonometry), the identity when it is zero. Bit for bit
+    /// `UnitComplex::from_matrix(m).into()`. Panics on overflow of the two exact sums (entries
+    /// above about 1e9). Upstream: `Rotation2::from_matrix`.
     fn from_matrix(m: Matrix2<T>) -> Rotation2<T>;
     /// The wrapped matrix (a copy: everything is by value here). Upstream: `matrix` (a
     /// reference) / `into_inner`.
@@ -103,6 +114,35 @@ pub trait Rotation2Trait<T> {
     /// `approx::AbsDiffEq::abs_diff_eq`, the tolerance being counted in ulp instead of a float
     /// epsilon (DESIGN D3).
     fn abs_diff_eq(self: Rotation2<T>, other: Rotation2<T>, ulps: u64) -> bool;
+    /// Deprecated alias of `into_inner`. Upstream: `Rotation::unwrap`.
+    fn unwrap(self: Rotation2<T>) -> Matrix2<T>;
+    /// The rotation whose matrix has the columns `basis[0]` and `basis[1]`, WITHOUT checking that
+    /// they are orthonormal. Exact. Upstream: `Rotation2::from_basis_unchecked`.
+    fn from_basis_unchecked(basis: [Vector2<T>; 2]) -> Rotation2<T>;
+    /// The rotation taking `self` to `other`: `other * self⁻¹`, the product with the transpose
+    /// (four fused kernels, one rounding per entry). Upstream: `Rotation2::rotation_to`.
+    fn rotation_to(self: Rotation2<T>, other: Rotation2<T>) -> Rotation2<T>;
+    /// `self * v` for a unit vector: `transform_vector` of its value, re-wrapped WITHOUT
+    /// renormalising. Upstream: `Mul<Unit<Vector2>> for Rotation2` (`r * v`).
+    fn transform_unit_vector(self: Rotation2<T>, v: Unit<Vector2<T>>) -> Unit<Vector2<T>>;
+    /// `self⁻¹ * v` for a unit vector, not renormalised. Upstream:
+    /// `inverse_transform_unit_vector`.
+    fn inverse_transform_unit_vector(self: Rotation2<T>, v: Unit<Vector2<T>>) -> Unit<Vector2<T>>;
+    /// `self * c`: the unit complex `UnitComplex::from_rotation_matrix(self) * c` (the first
+    /// column times `c`, two fused kernels). Upstream: `Mul<UnitComplex> for Rotation2`.
+    fn mul_unit_complex(self: Rotation2<T>, c: UnitComplex<T>) -> UnitComplex<T>;
+    /// `self / c = self * c⁻¹`: the first column times the conjugate of `c` (two fused
+    /// kernels). Upstream: `Div<UnitComplex> for Rotation2`.
+    fn div_unit_complex(self: Rotation2<T>, c: UnitComplex<T>) -> UnitComplex<T>;
+    /// `true` when every entry is `relative_eq` to the matching entry of `other` (see
+    /// `QuaternionTrait::relative_eq`). Upstream: `approx::RelativeEq::relative_eq` (DESIGN D3).
+    fn relative_eq(self: Rotation2<T>, other: Rotation2<T>, epsilon: u64, max_relative: T) -> bool;
+    /// `true` when every entry is `ulps_eq` to the matching entry of `other` (see
+    /// `QuaternionTrait::ulps_eq`). Upstream: `approx::UlpsEq::ulps_eq` (DESIGN D3).
+    fn ulps_eq(self: Rotation2<T>, other: Rotation2<T>, epsilon: u64, max_ulps: u32) -> bool;
+    /// The same rotation with every entry converted by `Into<T, U>` (the identity for the single
+    /// scalar `Fixed`). Upstream: `cast` (and `SubsetOf<Rotation2<U>>`).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Rotation2<T>) -> Rotation2<U>;
 }
 
 /// Operations of `Rotation2<T>` that go through an angle, hence their own trait: scalars may
@@ -126,6 +166,21 @@ pub trait Rotation2AngleTrait<T> {
     /// The rotation of angle `n·θ`: one `atan2`, one product and one `sin_cos`. Upstream:
     /// `powf`.
     fn powf(self: Rotation2<T>, n: T) -> Rotation2<T>;
+    /// The rotation of angle `axisangle.x` (upstream's `Vector1` scaled axis): `new`. Upstream:
+    /// `Rotation2::from_scaled_axis`.
+    fn from_scaled_axis(axisangle: Matrix1<T>) -> Rotation2<T>;
+    /// The angle as a `Vector1` (`angle()`, in `(-π, π]`). Upstream: `Rotation2::scaled_axis`.
+    fn scaled_axis(self: Rotation2<T>) -> Matrix1<T>;
+    /// Spherical interpolation, upstream's formula: the `slerp` of the two unit complex numbers
+    /// (the first columns; one `atan2`, one `sin_cos`, one composition), expanded back into a
+    /// matrix. The shortest arc; `t = 0` gives `self` exactly. Upstream: `Rotation2::slerp`.
+    fn slerp(self: Rotation2<T>, other: Rotation2<T>, t: T) -> Rotation2<T>;
+    /// The rotation part of `m`: `UnitComplex::from_matrix_eps(m, eps, max_iter, guess.into())`
+    /// as a matrix — `max_iter = 0` is the closed-form limit (`from_matrix`), `max_iter > 0`
+    /// runs upstream's 2D Müller iteration from `guess`, BOUNDED by `FROM_MATRIX_MAX_ITER` (see
+    /// `UnitComplexAngleTrait::from_matrix_eps`). Upstream iterates on matrices; the complex form
+    /// is the same iteration with a cheaper composition. Upstream: `Rotation2::from_matrix_eps`.
+    fn from_matrix_eps(m: Matrix2<T>, eps: T, max_iter: usize, guess: Rotation2<T>) -> Rotation2<T>;
 }
 
 pub impl Rotation2Impl<
@@ -143,10 +198,13 @@ pub impl Rotation2Impl<
         Rotation2 { matrix: m }
     }
 
-    #[inline(always)]
     fn from_matrix(m: Matrix2<T>) -> Rotation2<T> {
-        let n = R::norm2(m.m11, m.m21);
-        let (re, im) = (R::div(m.m11, n), R::div(m.m21, n));
+        let (re, im) = (m.m11 + m.m22, m.m21 - m.m12);
+        let n = R::norm2(re, im);
+        if n == R::zero() {
+            return Self::identity();
+        }
+        let (re, im) = (R::div(re, n), R::div(im, n));
         Rotation2 { matrix: Matrix2 { m11: re, m21: im, m12: -im, m22: re } }
     }
 
@@ -258,6 +316,75 @@ pub impl Rotation2Impl<
             && R::abs_diff_eq(self.matrix.m12, other.matrix.m12, ulps)
             && R::abs_diff_eq(self.matrix.m22, other.matrix.m22, ulps)
     }
+
+    #[inline(always)]
+    fn unwrap(self: Rotation2<T>) -> Matrix2<T> {
+        self.matrix
+    }
+
+    #[inline(always)]
+    fn from_basis_unchecked(basis: [Vector2<T>; 2]) -> Rotation2<T> {
+        let [a, b] = basis;
+        Rotation2 { matrix: Matrix2 { m11: a.x, m21: a.y, m12: b.x, m22: b.y } }
+    }
+
+    #[inline(always)]
+    fn rotation_to(self: Rotation2<T>, other: Rotation2<T>) -> Rotation2<T> {
+        let (a, b) = (other.matrix, self.matrix);
+        Rotation2 {
+            matrix: Matrix2 {
+                m11: R::sum_prod2(a.m11, b.m11, a.m12, b.m12),
+                m21: R::sum_prod2(a.m21, b.m11, a.m22, b.m12),
+                m12: R::sum_prod2(a.m11, b.m21, a.m12, b.m22),
+                m22: R::sum_prod2(a.m21, b.m21, a.m22, b.m22),
+            },
+        }
+    }
+
+    #[inline(always)]
+    fn transform_unit_vector(self: Rotation2<T>, v: Unit<Vector2<T>>) -> Unit<Vector2<T>> {
+        Unit { value: Self::transform_vector(self, v.value) }
+    }
+
+    #[inline(always)]
+    fn inverse_transform_unit_vector(self: Rotation2<T>, v: Unit<Vector2<T>>) -> Unit<Vector2<T>> {
+        Unit { value: Self::inverse_transform_vector(self, v.value) }
+    }
+
+    #[inline(always)]
+    fn mul_unit_complex(self: Rotation2<T>, c: UnitComplex<T>) -> UnitComplex<T> {
+        UnitComplex { re: self.matrix.m11, im: self.matrix.m21 } * c
+    }
+
+    #[inline(always)]
+    fn div_unit_complex(self: Rotation2<T>, c: UnitComplex<T>) -> UnitComplex<T> {
+        UnitComplex { re: self.matrix.m11, im: self.matrix.m21 } / c
+    }
+
+    fn relative_eq(self: Rotation2<T>, other: Rotation2<T>, epsilon: u64, max_relative: T) -> bool {
+        let (a, b) = (self.matrix, other.matrix);
+        ApproxEqTrait::relative_eq(a.m11, b.m11, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(a.m21, b.m21, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(a.m12, b.m12, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(a.m22, b.m22, epsilon, max_relative)
+    }
+
+    fn ulps_eq(self: Rotation2<T>, other: Rotation2<T>, epsilon: u64, max_ulps: u32) -> bool {
+        let (a, b) = (self.matrix, other.matrix);
+        ApproxEqTrait::ulps_eq(a.m11, b.m11, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(a.m21, b.m21, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(a.m12, b.m12, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(a.m22, b.m22, epsilon, max_ulps)
+    }
+
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Rotation2<T>) -> Rotation2<U> {
+        let m = self.matrix;
+        Rotation2 {
+            matrix: Matrix2 {
+                m11: m.m11.into(), m21: m.m21.into(), m12: m.m12.into(), m22: m.m22.into(),
+            },
+        }
+    }
 }
 
 /// Crate-internal by-value forms of the in-place `renormalize` (WP 8.0: the
@@ -324,6 +451,34 @@ pub impl Rotation2AngleImpl<
         let (sin, cos) = Tr::sin_cos(Tr::atan2(self.matrix.m21, self.matrix.m11) * n);
         Rotation2 { matrix: Matrix2 { m11: cos, m21: sin, m12: -sin, m22: cos } }
     }
+
+    #[inline(always)]
+    fn from_scaled_axis(axisangle: Matrix1<T>) -> Rotation2<T> {
+        Self::new(axisangle.x)
+    }
+
+    #[inline(always)]
+    fn scaled_axis(self: Rotation2<T>) -> Matrix1<T> {
+        Matrix1 { x: Self::angle(self) }
+    }
+
+    fn slerp(self: Rotation2<T>, other: Rotation2<T>, t: T) -> Rotation2<T> {
+        let c = UnitComplexAngleTrait::slerp(
+            UnitComplex { re: self.matrix.m11, im: self.matrix.m21 },
+            UnitComplex { re: other.matrix.m11, im: other.matrix.m21 },
+            t,
+        );
+        Rotation2 { matrix: Matrix2 { m11: c.re, m21: c.im, m12: -c.im, m22: c.re } }
+    }
+
+    fn from_matrix_eps(
+        m: Matrix2<T>, eps: T, max_iter: usize, guess: Rotation2<T>,
+    ) -> Rotation2<T> {
+        let c = UnitComplexAngleTrait::from_matrix_eps(
+            m, eps, max_iter, UnitComplex { re: guess.matrix.m11, im: guess.matrix.m21 },
+        );
+        Rotation2 { matrix: Matrix2 { m11: c.re, m21: c.im, m12: -c.im, m22: c.re } }
+    }
 }
 
 /// `a * b`: the composition of two rotations (turn by `b`, then by `a`), the product of their
@@ -367,5 +522,93 @@ pub impl Rotation2IntoUnitComplex<T, +Copy<T>, +Drop<T>> of Into<Rotation2<T>, U
     #[inline(always)]
     fn into(self: Rotation2<T>) -> UnitComplex<T> {
         UnitComplex { re: self.matrix.m11, im: self.matrix.m21 }
+    }
+}
+
+/// `a / b = a * b⁻¹`: the product with the transpose (four fused kernels, one rounding per
+/// entry). Upstream: `Div<Rotation2>`.
+pub impl Rotation2Div<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Div<Rotation2<T>> {
+    fn div(lhs: Rotation2<T>, rhs: Rotation2<T>) -> Rotation2<T> {
+        let (a, b) = (lhs.matrix, rhs.matrix);
+        Rotation2 {
+            matrix: Matrix2 {
+                m11: R::sum_prod2(a.m11, b.m11, a.m12, b.m12),
+                m21: R::sum_prod2(a.m21, b.m11, a.m22, b.m12),
+                m12: R::sum_prod2(a.m11, b.m21, a.m12, b.m22),
+                m22: R::sum_prod2(a.m21, b.m21, a.m22, b.m22),
+            },
+        }
+    }
+}
+
+/// `Default::default()`: the identity rotation. Upstream: `Default for Rotation2`.
+pub impl Rotation2Default<T, impl R: Real<T>, +Drop<T>> of Default<Rotation2<T>> {
+    #[inline(always)]
+    fn default() -> Rotation2<T> {
+        Rotation2 {
+            matrix: Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() },
+        }
+    }
+}
+
+/// `One::one()`: the identity rotation; `is_one` compares with the identity matrix exactly.
+/// Upstream: `num::One for Rotation2`.
+pub impl Rotation2One<T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>> of One<Rotation2<T>> {
+    #[inline(always)]
+    fn one() -> Rotation2<T> {
+        Rotation2Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_one(self: @Rotation2<T>) -> bool {
+        *self == Rotation2Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @Rotation2<T>) -> bool {
+        !Self::is_one(self)
+    }
+}
+
+/// `r[(i, j)]`: the entry of row `i` and column `j` of the matrix. Panics with
+/// `nalgebra: index out of bounds` for `i > 1` or `j > 1`. Upstream: `Index<(usize, usize)> for
+/// Rotation`.
+pub impl Rotation2Index<T, +Copy<T>, +Drop<T>> of Index<Rotation2<T>, (usize, usize)> {
+    type Target = T;
+
+    fn index(ref self: Rotation2<T>, index: (usize, usize)) -> T {
+        let m = self.matrix;
+        match index {
+            (0, 0) => m.m11,
+            (0, 1) => m.m12,
+            (1, 0) => m.m21,
+            (1, 1) => m.m22,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `r.into()`: the isometry of rotation `r` (its first column as a unit complex) and zero
+/// translation. Upstream: `SubsetOf<Isometry2> for Rotation2` (`nalgebra::convert(r)`).
+pub impl Isometry2FromRotation2<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of Into<Rotation2<T>, Isometry2<T>> {
+    #[inline(always)]
+    fn into(self: Rotation2<T>) -> Isometry2<T> {
+        Isometry2 {
+            rotation: UnitComplex { re: self.matrix.m11, im: self.matrix.m21 },
+            translation: Translation2 { vector: Vector2 { x: R::zero(), y: R::zero() } },
+        }
+    }
+}
+
+/// `r.into()`: the similarity of rotation `r`, zero translation and scaling 1. Upstream:
+/// `SubsetOf<Similarity2> for Rotation2` (`nalgebra::convert(r)`).
+pub impl Similarity2FromRotation2<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of Into<Rotation2<T>, Similarity2<T>> {
+    #[inline(always)]
+    fn into(self: Rotation2<T>) -> Similarity2<T> {
+        Similarity2 { isometry: self.into(), scaling: R::one() }
     }
 }
