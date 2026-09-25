@@ -13,7 +13,8 @@
 //! quaternion costs 23 530 — so the break-even is TWO vectors per step (measured,
 //! `bench_unit_quaternion_transform_vector_x2__*`). Composition is the other way round: 23 310 for
 //! a matrix product against 11 860 for a Hamilton product, and a matrix composed repeatedly drifts
-//! out of orthonormality, which `renormalize` (39 170) has to fix.
+//! out of orthonormality, which `renormalize` (upstream's closed-form polar factor, about 530 000
+//! gas) has to fix.
 //!
 //! The invariant (orthonormal, determinant +1) is a CONTRACT, like upstream's
 //! `from_matrix_unchecked`: nothing checks it, and `inverse` is implemented as the transpose.
@@ -36,7 +37,9 @@ use super::quaternion::ApproxEqTrait;
 use super::similarity3::Similarity3;
 use super::similarity_matrix3::{SimilarityMatrix3, SimilarityMatrix3Trait};
 use super::translation3::Translation3;
-use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
+use super::unit_quaternion::{
+    UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionInternalTrait, UnitQuaternionTrait,
+};
 
 #[cfg(test)]
 mod benches;
@@ -221,30 +224,28 @@ pub impl Rotation3Impl<
 
     // --- renormalisation and comparison -----------------------------------------------------
 
-    /// Restores orthonormality after repeated composition, in place, by Gram-Schmidt on the
-    /// columns: `x = c1/|c1|`, `y = (c2 - (x·c2)·x)/|...|`, `z = x × y`. Two norms, six
-    /// divisions, one dot product and one cross product: 39 170 gas, against 70 250 for the round
-    /// trip through a quaternion (`from_rotation_matrix`, `renormalize_fast`, `to_rotation_matrix`)
-    /// and 78 320 for one Newton step of the polar decomposition `R·(3I - RᵀR)/2` (54 products,
-    /// and it only halves the error instead of renormalizing exactly). Both are kept as benchmarks
-    /// (`bench_rotation3_renormalize__alt_*`).
+    /// Restores orthonormality after repeated composition, in place: `self` becomes the rotation
+    /// closest to its matrix, upstream's formula `from_matrix_eps(m, default_epsilon, 0, guess)`,
+    /// i.e. (the guess being unused by the closed form) `Rotation3::from_matrix(m)` without the
+    /// trigonometric layer: the dominant eigenvector of Horn's 4x4 matrix of `m` (the closed-form
+    /// LIMIT of upstream's iteration, `UnitQuaternionAngleTrait::from_matrix_eps` with
+    /// `max_iter = 0`), expanded back into a matrix. A fixed cost of about 530 000 gas, no loop.
     ///
-    /// The result is orthonormal to within a few ulp and is the closest rotation to `self` only to
-    /// first order (Gram-Schmidt privileges the first column, unlike the polar decomposition).
-    /// Panics with `Fixed: division by zero` on a singular matrix. Upstream:
-    /// `Rotation::renormalize`
-    /// (which uses a QR decomposition).
+    /// Upstream's `Rotation3::renormalize` is `UnitQuaternion::from(self)`, its quaternion
+    /// `renormalize`, then `from_matrix_eps(self.matrix(), T::default_epsilon(), 0, q.into())`; the
+    /// polar factor does not depend on that starting point. Unlike a column-by-column
+    /// orthonormalisation (Gram-Schmidt, this method's formula before WP 8.4-P10: 39 170 gas,
+    /// 13x cheaper, the first column kept exactly, kept as `bench_rotation3_renormalize__alt_*`)
+    /// the result is the closest rotation in Frobenius norm to first order in every column, and
+    /// a scaled or singular matrix does not panic: the zero matrix gives the identity, a scaled
+    /// rotation the rotation. Orthonormal and within about 20 ulp per entry of the exact polar factor
+    /// (the accuracy of the closed form, see `UnitQuaternionAngleTrait::from_matrix_eps`). Upstream:
+    /// `Rotation3::renormalize`.
     fn renormalize(ref self: Rotation3<T>) {
-        let m = self.matrix;
-        let x = Vector3 { x: m.m11, y: m.m21, z: m.m31 }.normalize();
-        let c2 = Vector3 { x: m.m12, y: m.m22, z: m.m32 };
-        let d = -Vector3Trait::dot(x, c2);
-        let y = Vector3 {
-            x: R::mul_add(d, x.x, c2.x), y: R::mul_add(d, x.y, c2.y), z: R::mul_add(d, x.z, c2.z),
-        }
-            .normalize();
-        let z = x.cross(y);
-        self = Rotation3 { matrix: Matrix3Trait::from_columns(x, y, z) };
+        self =
+            UnitQuaternionTrait::to_rotation_matrix(
+                UnitQuaternionInternalTrait::closest_rotation(self.matrix),
+            );
     }
 
     /// `true` when every entry is within `ulps` smallest units (raw units for fixed point) of the

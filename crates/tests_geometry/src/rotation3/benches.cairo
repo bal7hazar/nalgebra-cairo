@@ -83,6 +83,24 @@ fn alt_angle_quaternion(r: Rotation3<Fixed>) -> Fixed {
     UnitQuaternionTrait::from_rotation_matrix(r).angle()
 }
 
+/// `renormalize` by Gram-Schmidt on the columns (the formula before WP 8.4-P10): `x = c1/|c1|`,
+/// `y = (c2 - (x·c2)·x)/|...|`, `z = x × y`. 13x cheaper than upstream's closed form (the polar
+/// factor, `from_matrix_eps(m, eps, 0, guess)`) but it keeps the first column exactly and panics
+/// on a singular matrix.
+fn alt_renormalize_gram_schmidt(r: Rotation3<Fixed>) -> Rotation3<Fixed> {
+    let m = r.matrix;
+    let x = Vector3 { x: m.m11, y: m.m21, z: m.m31 }.normalize();
+    let c2 = Vector3 { x: m.m12, y: m.m22, z: m.m32 };
+    let d = -Vector3Trait::dot(x, c2);
+    let y = Vector3 {
+        x: Real::mul_add(d, x.x, c2.x), y: Real::mul_add(d, x.y, c2.y),
+        z: Real::mul_add(d, x.z, c2.z),
+    }
+        .normalize();
+    let z = x.cross(y);
+    Rotation3 { matrix: Matrix3Trait::from_columns(x, y, z) }
+}
+
 /// `renormalize` by one Newton step of the polar decomposition, `R · (3I - RᵀR) / 2`: two 3x3
 /// products (54 products) against two norms and six divisions for Gram-Schmidt.
 fn alt_renormalize_newton(r: Rotation3<Fixed>) -> Rotation3<Fixed> {
@@ -734,7 +752,24 @@ fn bench_rotation3_renormalize__baseline() {
 
 #[test]
 #[inline(never)]
-fn bench_rotation3_renormalize__gram_schmidt() {
+fn bench_rotation3_renormalize__closed_form() {
+    let r = black_box(a());
+    let e = black_box(
+        r3(
+            [
+                [-173945361, 4188633146, -933723436], [1215906016, -848092632, -4031011726],
+                [-4115587401, -427592483, -1151455209],
+            ],
+        ),
+    );
+    let mut renormalized = r;
+    renormalized.renormalize();
+    assert!(renormalized == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_rotation3_renormalize__alt_gram_schmidt() {
     let r = black_box(a());
     let e = black_box(
         r3(
@@ -744,9 +779,7 @@ fn bench_rotation3_renormalize__gram_schmidt() {
             ],
         ),
     );
-    let mut renormalized = r;
-    renormalized.renormalize();
-    assert!(renormalized == e);
+    assert!(alt_renormalize_gram_schmidt(r) == e);
 }
 
 #[test]
