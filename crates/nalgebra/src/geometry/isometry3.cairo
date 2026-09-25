@@ -15,8 +15,10 @@
 //! - `Isometry3AngleTrait` / `Isometry3AngleImpl`: the constructors that take a rotation VECTOR
 //!   (`new`, `rotation`) and the spherical interpolation (`lerp_slerp`, `try_lerp_slerp`), which
 //!   additionally need `simba::scalar::Transcendental`;
-//! - `a * b` (composition) and the conversion from a `Translation3`: their impls live in this
-//!   module, where the compiler finds them without any import.
+//! - `a * b` (composition), `a / b`, `*=` / `/=`, `Default`, `One` and the conversions from a
+//!   `Translation3`, a vector, a point or an array (and into a `Similarity3`): their impls live in
+//!   this module, where the compiler finds them without any import. The rotation-MATRIX instance
+//!   of upstream's generic `Isometry` is `IsometryMatrix3` (`.into()` converts between the two).
 //!
 //! **Representation of the rotation.** The quaternion form is the right one for a pose that is
 //! composed and renormalised every step: composition costs 11 860 gas against 23 310 for a

@@ -474,7 +474,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `closed_form` | 112190 | 94150 | x1.00 |
+| `closed_form` | 112960 | 94920 | x1.00 |
 
 ### quaternion_exp
 
@@ -616,8 +616,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `closed_form` | 112190 | 94150 | x1.00 |
-| `alt_exp_difference` | 175180 | 157140 | x1.67 |
+| `closed_form` | 112960 | 94920 | x1.00 |
+| `alt_exp_difference` | 175180 | 157140 | x1.66 |
 
 ### quaternion_sqrt
 
@@ -643,7 +643,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `upstream` | 240560 | 222520 | x1.00 |
+| `upstream` | 242100 | 224060 | x1.00 |
 
 ### quaternion_ulps_eq
 
@@ -744,7 +744,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `first_column` | 26920 | 8880 | x1.00 |
+| `alt_first_column` | 26920 | 8880 | x1.00 |
+| `closed_form_limit` | 33020 | 14980 | x1.69 |
 
 ### rotation2_rotation_between
 

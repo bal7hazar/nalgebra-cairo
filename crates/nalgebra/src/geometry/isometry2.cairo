@@ -13,8 +13,10 @@
 //! - `Isometry2AngleTrait` / `Isometry2AngleImpl`: the constructors and the interpolation that go
 //!   through an ANGLE (`new`, `rotation`, `lerp_slerp`), which additionally need
 //!   `simba::scalar::Transcendental`;
-//! - `a * b` (composition) and the conversion from a `Translation2`: their impls live in this
-//!   module, where the compiler finds them without any import.
+//! - `a * b` (composition), `a / b`, `*=` / `/=`, `Default`, `One` and the conversions from a
+//!   `Translation2`, a vector, a point or an array (and into a `Similarity2`): their impls live in
+//!   this module, where the compiler finds them without any import. The rotation-MATRIX instance
+//!   of upstream's generic `Isometry` is `IsometryMatrix2` (`.into()` converts between the two).
 //!
 //! The rotation is a `UnitComplex`, never a `Rotation2`: the two hold the same information, but the
 //! complex form composes for 4 000 gas against 10 260 for the matrix and transforms a vector for
