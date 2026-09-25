@@ -96,7 +96,9 @@ pub impl UnitDualQuaternionImpl<
     /// accumulation of the three products of the pure Hamilton product, halved inside the
     /// accumulator (`Real::wide_mul_scalar` by `1/2`, exact): the exact floor of the true value,
     /// where upstream rounds the product then halves (exactly, in floating point). 12 products, 4
-    /// roundings. Panics on overflow. Upstream: `UnitDualQuaternion::from_parts`.
+    /// roundings: 11 850 gas against 26 610 for the literal product then `half`
+    /// (`bench_unit_dual_quaternion_from_parts__alt_upstream`, within 1 ulp). Panics on overflow.
+    /// Upstream: `UnitDualQuaternion::from_parts`.
     #[inline(always)]
     fn from_parts(
         translation: Translation3<T>, rotation: UnitQuaternion<T>,
@@ -229,7 +231,9 @@ pub impl UnitDualQuaternionImpl<
     /// dual part, free), but the rounded unit dual quaternions of fixed point are unit only within
     /// a few ulp, and `dual*` then differs from upstream's result by up to `|dual| · (|real|² -
     /// 1)`, i.e. thousands of ulp for translations of a few thousand units: the products are kept
-    /// (fidelity to upstream, PLAN M8). Panics on overflow. Upstream:
+    /// (fidelity to upstream, PLAN M8): 25 400 gas against 2 000 for the conjugate
+    /// (`bench_unit_dual_quaternion_inverse__alt_conjugate`,
+    /// `test_inverse_alt_conjugate_loses_on_large_translations`). Panics on overflow. Upstream:
     /// `UnitDualQuaternion::inverse`.
     #[inline(always)]
     fn inverse(self: UnitDualQuaternion<T>) -> UnitDualQuaternion<T> {
@@ -269,8 +273,10 @@ pub impl UnitDualQuaternionImpl<
     /// The translation part, `2 · (dual · real*).vector()`: each component ONE accumulation of
     /// the four products of the fused product by the conjugate, doubled inside the accumulator
     /// (`Real::wide_mul_scalar` by 2, exact) and floored once — the exact floor of the true
-    /// value, where upstream rounds the product then doubles. 12 products, 3 roundings. Panics on
-    /// overflow. Upstream: `translation`.
+    /// value, where upstream rounds the product then doubles. 12 products, 3 roundings: 9 870 gas
+    /// against 14 670 for the literal product then the doubling
+    /// (`bench_unit_dual_quaternion_translation__alt_upstream`, within 2 ulp). Panics on overflow.
+    /// Upstream: `translation`.
     #[inline(always)]
     fn translation(self: UnitDualQuaternion<T>) -> Translation3<T> {
         Translation3 {
@@ -306,9 +312,11 @@ pub impl UnitDualQuaternionImpl<
     /// (`to_isometry().transform_point(p)`) is the same value only for an EXACTLY unit `real`:
     /// the literal form scales the rotated point by `|real|²`, which the rounded unit quaternions
     /// of fixed point miss by a few ulp, so the two differ by up to `|p| · (|real|² - 1)`, tens
-    /// of thousands of ulp for `|p|` of a few thousand units. The literal form is kept (fidelity to
-    /// upstream, PLAN M8; `bench_unit_dual_quaternion_transform_point__alt_to_isometry`). Panics on
-    /// overflow. Upstream: `transform_point` (`dq * p`).
+    /// of thousands of ulp for `|p|` of a few thousand units
+    /// (`test_transform_point_alt_to_isometry_loses_on_large_points`). The literal form is also the
+    /// cheaper: 27 040 gas against 33 240
+    /// (`bench_unit_dual_quaternion_transform_point__alt_to_isometry`). Panics on overflow.
+    /// Upstream: `transform_point` (`dq * p`).
     #[inline(always)]
     fn transform_point(self: UnitDualQuaternion<T>, p: Point3<T>) -> Point3<T> {
         let DualQuaternion { real, dual } = self.dual_quaternion;
@@ -338,9 +346,10 @@ pub impl UnitDualQuaternionImpl<
     }
 
     /// `self.inverse().transform_point(p)`, upstream's composition: the literal inverse (see
-    /// `inverse`) then the literal sandwich of `transform_point` (56 products). Rotating `p -
-    /// translation()` by the conjugate instead (27 products) differs from upstream's result by up
-    /// to `|p| · (|real|² - 1)` (see `transform_point`;
+    /// `inverse`) then the literal sandwich of `transform_point` (56 products): 51 740 gas.
+    /// Rotating `p - translation()` by the conjugate instead
+    /// (`to_isometry().inverse_transform_point(p)`, 36 160 gas) differs from upstream's result by
+    /// up to `|p| · (|real|² - 1)` (see `transform_point`;
     /// `bench_unit_dual_quaternion_inverse_transform_point__alt_to_isometry`). Panics on overflow.
     /// Upstream: `inverse_transform_point`.
     #[inline(always)]
@@ -426,7 +435,9 @@ pub impl UnitDualQuaternionImpl<
 
     /// `self * r`: upstream's `self * from_rotation(r)`, whose zero dual part vanishes from the
     /// product: `(real · r, dual · r)`, two fused Hamilton products (bit-identical to the general
-    /// fused product). Upstream: `Mul<UnitQuaternion> for UnitDualQuaternion`.
+    /// fused product): 24 000 gas against 28 000
+    /// (`bench_unit_dual_quaternion_mul_unit_quaternion__alt_from_rotation`). Upstream:
+    /// `Mul<UnitQuaternion> for UnitDualQuaternion`.
     #[inline(always)]
     fn mul_unit_quaternion(
         self: UnitDualQuaternion<T>, r: UnitQuaternion<T>,
@@ -456,8 +467,9 @@ pub impl UnitDualQuaternionImpl<
 
     /// `self * t`: upstream's `self * from_parts(t, identity)`, whose real part is `1`: `(real,
     /// dual + real · (0, t) / 2)`, the product by the pure quaternion halved inside its
-    /// accumulation (floored once) then added exactly. Panics on overflow. Upstream:
-    /// `Mul<Translation3> for UnitDualQuaternion`.
+    /// accumulation (floored once) then added exactly: 14 610 gas against 39 150 for the general
+    /// product (`bench_unit_dual_quaternion_mul_translation__alt_from_parts`, within 1 ulp). Panics
+    /// on overflow. Upstream: `Mul<Translation3> for UnitDualQuaternion`.
     #[inline(always)]
     fn mul_translation(self: UnitDualQuaternion<T>, t: Translation3<T>) -> UnitDualQuaternion<T> {
         let DualQuaternion { real, dual } = self.dual_quaternion;

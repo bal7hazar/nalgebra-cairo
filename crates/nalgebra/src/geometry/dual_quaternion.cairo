@@ -358,7 +358,9 @@ pub impl DualQuaternionNeg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<DualQuaternion
 /// The real part is the fused Hamilton product (`QuaternionMul`, 16 products, 4 roundings); each
 /// component of the dual part is ONE accumulation of the eight products of the two Hamilton
 /// products, floored once — the exact floor of the true result, where upstream rounds each
-/// product and the sum (48 products, 8 roundings in all). Panics on overflow of a component.
+/// product and the sum (48 products, 8 roundings in all): 28 000 gas against 38 610 for the literal
+/// two products and sum (`bench_dual_quaternion_mul__alt_two_products`, within 2 ulp). Panics on
+/// overflow of a component.
 /// Upstream: `Mul` (`dual_quaternion_ops.rs`).
 pub impl DualQuaternionMul<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
