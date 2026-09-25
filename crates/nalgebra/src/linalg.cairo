@@ -49,10 +49,14 @@ pub mod udu;
 
 pub use cholesky::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
-    Cholesky6Trait,
+    Cholesky6Trait, Matrix2CholeskyTrait, Matrix3CholeskyTrait, Matrix4CholeskyTrait,
+    Matrix6CholeskyTrait,
 };
 pub use givens::{GivensRotate, GivensRotateRows, GivensRotation, GivensRotationTrait};
 pub use householder::reflection_axis_mut;
+pub use inverse::{
+    Matrix2InverseTrait, Matrix3InverseTrait, Matrix4InverseTrait, Matrix6InverseTrait,
+};
 pub use lu::{
     Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix3LuTrait,
     Matrix4LuTrait, Matrix6LuTrait, Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4, Perm4Trait, Perm6,
@@ -67,4 +71,7 @@ pub use svd2::{Matrix2SvdTrait, Svd2, Svd2Trait};
 pub use svd3::{Matrix3SvdTrait, Svd3, Svd3Trait};
 pub use symmetric_eigen2::{Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2Trait};
 pub use symmetric_eigen3::{Matrix3SymmetricEigenTrait, SymmetricEigen3, SymmetricEigen3Trait};
-pub use udu::{Udu2, Udu2Trait, Udu3, Udu3Trait, Udu4, Udu4Trait, Udu6, Udu6Trait};
+pub use udu::{
+    Matrix2UduTrait, Matrix3UduTrait, Matrix4UduTrait, Matrix6UduTrait, Udu2, Udu2Trait, Udu3,
+    Udu3Trait, Udu4, Udu4Trait, Udu6, Udu6Trait,
+};

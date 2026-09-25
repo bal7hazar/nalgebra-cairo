@@ -1,6 +1,6 @@
 [package]
-name = "nalgebra_tests_linalg_solve"
-description = "Tests and gas benchmarks of the triangular solves (`MatrixSolve`) on the vector right-hand sides (WP 8.5-P14a; not published)."
+name = "nalgebra_tests_linalg_solve_rhs"
+description = "Tests and gas benchmarks of the triangular solves (`MatrixSolve`) on the matrix right-hand sides (WP 8.5-P14a; not published)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

@@ -662,19 +662,16 @@ impl Matrix1SolveKernelRowVector5<
 > of SolveKernel<Matrix1<T>, RowVector5<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix1<T>, b: RowVector5<T>) -> RowVector5<T> {
         let (x00, x01, x02, x03, x04) = R::div5(b.x, b.y, b.z, b.w, b.a, self.x);
         RowVector5 { x: x00, y: x01, z: x02, w: x03, a: x04 }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix1<T>, b: RowVector5<T>) -> RowVector5<T> {
         let (x00, x01, x02, x03, x04) = R::div5(b.x, b.y, b.z, b.w, b.a, self.x);
         RowVector5 { x: x00, y: x01, z: x02, w: x03, a: x04 }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix1<T>, b: RowVector5<T>) -> RowVector5<T> {
         let x00 = b.x;
         let x01 = b.y;
@@ -684,7 +681,6 @@ impl Matrix1SolveKernelRowVector5<
         RowVector5 { x: x00, y: x01, z: x02, w: x03, a: x04 }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix1<T>, b: RowVector5<T>, diag: T) -> RowVector5<T> {
         let x00 = b.x;
         let x01 = b.y;
@@ -716,19 +712,16 @@ impl Matrix1SolveKernelRowVector6<
 > of SolveKernel<Matrix1<T>, RowVector6<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix1<T>, b: RowVector6<T>) -> RowVector6<T> {
         let (x00, x01, x02, x03, x04, x05) = R::div6(b.x, b.y, b.z, b.w, b.a, b.b, self.x);
         RowVector6 { x: x00, y: x01, z: x02, w: x03, a: x04, b: x05 }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix1<T>, b: RowVector6<T>) -> RowVector6<T> {
         let (x00, x01, x02, x03, x04, x05) = R::div6(b.x, b.y, b.z, b.w, b.a, b.b, self.x);
         RowVector6 { x: x00, y: x01, z: x02, w: x03, a: x04, b: x05 }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix1<T>, b: RowVector6<T>) -> RowVector6<T> {
         let x00 = b.x;
         let x01 = b.y;
@@ -739,7 +732,6 @@ impl Matrix1SolveKernelRowVector6<
         RowVector6 { x: x00, y: x01, z: x02, w: x03, a: x04, b: x05 }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix1<T>, b: RowVector6<T>, diag: T) -> RowVector6<T> {
         let x00 = b.x;
         let x01 = b.y;
@@ -889,7 +881,6 @@ impl Matrix2SolveKernelMatrix2x3<
 > of SolveKernel<Matrix2<T>, Matrix2x3<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix2<T>, b: Matrix2x3<T>) -> Matrix2x3<T> {
         let (x00, x01, x02) = R::div3(b.m11, b.m12, b.m13, self.m11);
         let n10 = -self.m21;
@@ -902,7 +893,6 @@ impl Matrix2SolveKernelMatrix2x3<
         Matrix2x3 { m11: x00, m21: x10, m12: x01, m22: x11, m13: x02, m23: x12 }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix2<T>, b: Matrix2x3<T>) -> Matrix2x3<T> {
         let (x10, x11, x12) = R::div3(b.m21, b.m22, b.m23, self.m22);
         let n01 = -self.m12;
@@ -915,7 +905,6 @@ impl Matrix2SolveKernelMatrix2x3<
         Matrix2x3 { m11: x00, m21: x10, m12: x01, m22: x11, m13: x02, m23: x12 }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix2<T>, b: Matrix2x3<T>) -> Matrix2x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -927,7 +916,6 @@ impl Matrix2SolveKernelMatrix2x3<
         Matrix2x3 { m11: x00, m21: x10, m12: x01, m22: x11, m13: x02, m23: x12 }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix2<T>, b: Matrix2x3<T>, diag: T) -> Matrix2x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -961,7 +949,6 @@ impl Matrix2SolveKernelMatrix2x4<
 > of SolveKernel<Matrix2<T>, Matrix2x4<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix2<T>, b: Matrix2x4<T>) -> Matrix2x4<T> {
         let (x00, x01, x02, x03) = R::div4(b.m11, b.m12, b.m13, b.m14, self.m11);
         let n10 = -self.m21;
@@ -975,7 +962,6 @@ impl Matrix2SolveKernelMatrix2x4<
         Matrix2x4 { m11: x00, m21: x10, m12: x01, m22: x11, m13: x02, m23: x12, m14: x03, m24: x13 }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix2<T>, b: Matrix2x4<T>) -> Matrix2x4<T> {
         let (x10, x11, x12, x13) = R::div4(b.m21, b.m22, b.m23, b.m24, self.m22);
         let n01 = -self.m12;
@@ -989,7 +975,6 @@ impl Matrix2SolveKernelMatrix2x4<
         Matrix2x4 { m11: x00, m21: x10, m12: x01, m22: x11, m13: x02, m23: x12, m14: x03, m24: x13 }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix2<T>, b: Matrix2x4<T>) -> Matrix2x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1003,7 +988,6 @@ impl Matrix2SolveKernelMatrix2x4<
         Matrix2x4 { m11: x00, m21: x10, m12: x01, m22: x11, m13: x02, m23: x12, m14: x03, m24: x13 }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix2<T>, b: Matrix2x4<T>, diag: T) -> Matrix2x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1039,7 +1023,6 @@ impl Matrix2SolveKernelMatrix2x5<
 > of SolveKernel<Matrix2<T>, Matrix2x5<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix2<T>, b: Matrix2x5<T>) -> Matrix2x5<T> {
         let (x00, x01, x02, x03, x04) = R::div5(b.m11, b.m12, b.m13, b.m14, b.m15, self.m11);
         let n10 = -self.m21;
@@ -1065,7 +1048,6 @@ impl Matrix2SolveKernelMatrix2x5<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix2<T>, b: Matrix2x5<T>) -> Matrix2x5<T> {
         let (x10, x11, x12, x13, x14) = R::div5(b.m21, b.m22, b.m23, b.m24, b.m25, self.m22);
         let n01 = -self.m12;
@@ -1091,7 +1073,6 @@ impl Matrix2SolveKernelMatrix2x5<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix2<T>, b: Matrix2x5<T>) -> Matrix2x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1118,7 +1099,6 @@ impl Matrix2SolveKernelMatrix2x5<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix2<T>, b: Matrix2x5<T>, diag: T) -> Matrix2x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1167,7 +1147,6 @@ impl Matrix2SolveKernelMatrix2x6<
 > of SolveKernel<Matrix2<T>, Matrix2x6<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix2<T>, b: Matrix2x6<T>) -> Matrix2x6<T> {
         let (x00, x01, x02, x03, x04, x05) = R::div6(
             b.m11, b.m12, b.m13, b.m14, b.m15, b.m16, self.m11,
@@ -1198,7 +1177,6 @@ impl Matrix2SolveKernelMatrix2x6<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix2<T>, b: Matrix2x6<T>) -> Matrix2x6<T> {
         let (x10, x11, x12, x13, x14, x15) = R::div6(
             b.m21, b.m22, b.m23, b.m24, b.m25, b.m26, self.m22,
@@ -1229,7 +1207,6 @@ impl Matrix2SolveKernelMatrix2x6<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix2<T>, b: Matrix2x6<T>) -> Matrix2x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1260,7 +1237,6 @@ impl Matrix2SolveKernelMatrix2x6<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix2<T>, b: Matrix2x6<T>, diag: T) -> Matrix2x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1398,7 +1374,6 @@ impl Matrix3SolveKernelMatrix3x2<
 > of SolveKernel<Matrix3<T>, Matrix3x2<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix3<T>, b: Matrix3x2<T>) -> Matrix3x2<T> {
         let x00 = R::div(b.m11, self.m11);
         let x01 = R::div(b.m12, self.m11);
@@ -1428,7 +1403,6 @@ impl Matrix3SolveKernelMatrix3x2<
         Matrix3x2 { m11: x00, m21: x10, m31: x20, m12: x01, m22: x11, m32: x21 }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix3<T>, b: Matrix3x2<T>) -> Matrix3x2<T> {
         let x20 = R::div(b.m31, self.m33);
         let x21 = R::div(b.m32, self.m33);
@@ -1458,7 +1432,6 @@ impl Matrix3SolveKernelMatrix3x2<
         Matrix3x2 { m11: x00, m21: x10, m31: x20, m12: x01, m22: x11, m32: x21 }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix3<T>, b: Matrix3x2<T>) -> Matrix3x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1478,7 +1451,6 @@ impl Matrix3SolveKernelMatrix3x2<
         Matrix3x2 { m11: x00, m21: x10, m31: x20, m12: x01, m22: x11, m32: x21 }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix3<T>, b: Matrix3x2<T>, diag: T) -> Matrix3x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1523,7 +1495,6 @@ impl Matrix3SolveKernelMatrix3<
 > of SolveKernel<Matrix3<T>, Matrix3<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix3<T>, b: Matrix3<T>) -> Matrix3<T> {
         let (x00, x01, x02) = R::div3(b.m11, b.m12, b.m13, self.m11);
         let n10 = -self.m21;
@@ -1570,7 +1541,6 @@ impl Matrix3SolveKernelMatrix3<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix3<T>, b: Matrix3<T>) -> Matrix3<T> {
         let (x20, x21, x22) = R::div3(b.m31, b.m32, b.m33, self.m33);
         let n12 = -self.m23;
@@ -1617,7 +1587,6 @@ impl Matrix3SolveKernelMatrix3<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix3<T>, b: Matrix3<T>) -> Matrix3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1654,7 +1623,6 @@ impl Matrix3SolveKernelMatrix3<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix3<T>, b: Matrix3<T>, diag: T) -> Matrix3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1714,7 +1682,6 @@ impl Matrix3SolveKernelMatrix3x4<
 > of SolveKernel<Matrix3<T>, Matrix3x4<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix3<T>, b: Matrix3x4<T>) -> Matrix3x4<T> {
         let (x00, x01, x02, x03) = R::div4(b.m11, b.m12, b.m13, b.m14, self.m11);
         let n10 = -self.m21;
@@ -1772,7 +1739,6 @@ impl Matrix3SolveKernelMatrix3x4<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix3<T>, b: Matrix3x4<T>) -> Matrix3x4<T> {
         let (x20, x21, x22, x23) = R::div4(b.m31, b.m32, b.m33, b.m34, self.m33);
         let n12 = -self.m23;
@@ -1830,7 +1796,6 @@ impl Matrix3SolveKernelMatrix3x4<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix3<T>, b: Matrix3x4<T>) -> Matrix3x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1877,7 +1842,6 @@ impl Matrix3SolveKernelMatrix3x4<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix3<T>, b: Matrix3x4<T>, diag: T) -> Matrix3x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -1947,7 +1911,6 @@ impl Matrix3SolveKernelMatrix3x5<
 > of SolveKernel<Matrix3<T>, Matrix3x5<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix3<T>, b: Matrix3x5<T>) -> Matrix3x5<T> {
         let (x00, x01, x02, x03, x04) = R::div5(b.m11, b.m12, b.m13, b.m14, b.m15, self.m11);
         let n10 = -self.m21;
@@ -2016,7 +1979,6 @@ impl Matrix3SolveKernelMatrix3x5<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix3<T>, b: Matrix3x5<T>) -> Matrix3x5<T> {
         let (x20, x21, x22, x23, x24) = R::div5(b.m31, b.m32, b.m33, b.m34, b.m35, self.m33);
         let n12 = -self.m23;
@@ -2085,7 +2047,6 @@ impl Matrix3SolveKernelMatrix3x5<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix3<T>, b: Matrix3x5<T>) -> Matrix3x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -2142,7 +2103,6 @@ impl Matrix3SolveKernelMatrix3x5<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix3<T>, b: Matrix3x5<T>, diag: T) -> Matrix3x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -2222,7 +2182,6 @@ impl Matrix3SolveKernelMatrix3x6<
 > of SolveKernel<Matrix3<T>, Matrix3x6<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix3<T>, b: Matrix3x6<T>) -> Matrix3x6<T> {
         let (x00, x01, x02, x03, x04, x05) = R::div6(
             b.m11, b.m12, b.m13, b.m14, b.m15, b.m16, self.m11,
@@ -2304,7 +2263,6 @@ impl Matrix3SolveKernelMatrix3x6<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix3<T>, b: Matrix3x6<T>) -> Matrix3x6<T> {
         let (x20, x21, x22, x23, x24, x25) = R::div6(
             b.m31, b.m32, b.m33, b.m34, b.m35, b.m36, self.m33,
@@ -2386,7 +2344,6 @@ impl Matrix3SolveKernelMatrix3x6<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix3<T>, b: Matrix3x6<T>) -> Matrix3x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -2453,7 +2410,6 @@ impl Matrix3SolveKernelMatrix3x6<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix3<T>, b: Matrix3x6<T>, diag: T) -> Matrix3x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -2682,7 +2638,6 @@ impl Matrix4SolveKernelMatrix4x2<
 > of SolveKernel<Matrix4<T>, Matrix4x2<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix4<T>, b: Matrix4x2<T>) -> Matrix4x2<T> {
         let x00 = R::div(b.m11, self.m11);
         let x01 = R::div(b.m12, self.m11);
@@ -2740,7 +2695,6 @@ impl Matrix4SolveKernelMatrix4x2<
         Matrix4x2 { m11: x00, m21: x10, m31: x20, m41: x30, m12: x01, m22: x11, m32: x21, m42: x31 }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix4<T>, b: Matrix4x2<T>) -> Matrix4x2<T> {
         let x30 = R::div(b.m41, self.m44);
         let x31 = R::div(b.m42, self.m44);
@@ -2798,7 +2752,6 @@ impl Matrix4SolveKernelMatrix4x2<
         Matrix4x2 { m11: x00, m21: x10, m31: x20, m41: x30, m12: x01, m22: x11, m32: x21, m42: x31 }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix4<T>, b: Matrix4x2<T>) -> Matrix4x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -2840,7 +2793,6 @@ impl Matrix4SolveKernelMatrix4x2<
         Matrix4x2 { m11: x00, m21: x10, m31: x20, m41: x30, m12: x01, m22: x11, m32: x21, m42: x31 }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix4<T>, b: Matrix4x2<T>, diag: T) -> Matrix4x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -2912,7 +2864,6 @@ impl Matrix4SolveKernelMatrix4x3<
 > of SolveKernel<Matrix4<T>, Matrix4x3<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix4<T>, b: Matrix4x3<T>) -> Matrix4x3<T> {
         let (x00, x01, x02) = R::div3(b.m11, b.m12, b.m13, self.m11);
         let n10 = -self.m21;
@@ -2998,7 +2949,6 @@ impl Matrix4SolveKernelMatrix4x3<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix4<T>, b: Matrix4x3<T>) -> Matrix4x3<T> {
         let (x30, x31, x32) = R::div3(b.m41, b.m42, b.m43, self.m44);
         let n23 = -self.m34;
@@ -3084,7 +3034,6 @@ impl Matrix4SolveKernelMatrix4x3<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix4<T>, b: Matrix4x3<T>) -> Matrix4x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -3157,7 +3106,6 @@ impl Matrix4SolveKernelMatrix4x3<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix4<T>, b: Matrix4x3<T>, diag: T) -> Matrix4x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -3257,7 +3205,6 @@ impl Matrix4SolveKernelMatrix4<
 > of SolveKernel<Matrix4<T>, Matrix4<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix4<T>, b: Matrix4<T>) -> Matrix4<T> {
         let (x00, x01, x02, x03) = R::div4(b.m11, b.m12, b.m13, b.m14, self.m11);
         let n10 = -self.m21;
@@ -3366,7 +3313,6 @@ impl Matrix4SolveKernelMatrix4<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix4<T>, b: Matrix4<T>) -> Matrix4<T> {
         let (x30, x31, x32, x33) = R::div4(b.m41, b.m42, b.m43, b.m44, self.m44);
         let n23 = -self.m34;
@@ -3475,7 +3421,6 @@ impl Matrix4SolveKernelMatrix4<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix4<T>, b: Matrix4<T>) -> Matrix4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -3570,7 +3515,6 @@ impl Matrix4SolveKernelMatrix4<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix4<T>, b: Matrix4<T>, diag: T) -> Matrix4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -3692,7 +3636,6 @@ impl Matrix4SolveKernelMatrix4x5<
 > of SolveKernel<Matrix4<T>, Matrix4x5<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix4<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
         let (x00, x01, x02, x03, x04) = R::div5(b.m11, b.m12, b.m13, b.m14, b.m15, self.m11);
         let n10 = -self.m21;
@@ -3824,7 +3767,6 @@ impl Matrix4SolveKernelMatrix4x5<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix4<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
         let (x30, x31, x32, x33, x34) = R::div5(b.m41, b.m42, b.m43, b.m44, b.m45, self.m44);
         let n23 = -self.m34;
@@ -3956,7 +3898,6 @@ impl Matrix4SolveKernelMatrix4x5<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix4<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -4073,7 +4014,6 @@ impl Matrix4SolveKernelMatrix4x5<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix4<T>, b: Matrix4x5<T>, diag: T) -> Matrix4x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -4217,7 +4157,6 @@ impl Matrix4SolveKernelMatrix4x6<
 > of SolveKernel<Matrix4<T>, Matrix4x6<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix4<T>, b: Matrix4x6<T>) -> Matrix4x6<T> {
         let (x00, x01, x02, x03, x04, x05) = R::div6(
             b.m11, b.m12, b.m13, b.m14, b.m15, b.m16, self.m11,
@@ -4374,7 +4313,6 @@ impl Matrix4SolveKernelMatrix4x6<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix4<T>, b: Matrix4x6<T>) -> Matrix4x6<T> {
         let (x30, x31, x32, x33, x34, x35) = R::div6(
             b.m41, b.m42, b.m43, b.m44, b.m45, b.m46, self.m44,
@@ -4531,7 +4469,6 @@ impl Matrix4SolveKernelMatrix4x6<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix4<T>, b: Matrix4x6<T>) -> Matrix4x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -4670,7 +4607,6 @@ impl Matrix4SolveKernelMatrix4x6<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix4<T>, b: Matrix4x6<T>, diag: T) -> Matrix4x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -5043,7 +4979,6 @@ impl Matrix5SolveKernelMatrix5x2<
 > of SolveKernel<Matrix5<T>, Matrix5x2<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix5<T>, b: Matrix5x2<T>) -> Matrix5x2<T> {
         let x00 = R::div(b.m11, self.m11);
         let x01 = R::div(b.m12, self.m11);
@@ -5148,7 +5083,6 @@ impl Matrix5SolveKernelMatrix5x2<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix5<T>, b: Matrix5x2<T>) -> Matrix5x2<T> {
         let x40 = R::div(b.m51, self.m55);
         let x41 = R::div(b.m52, self.m55);
@@ -5253,7 +5187,6 @@ impl Matrix5SolveKernelMatrix5x2<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix5<T>, b: Matrix5x2<T>) -> Matrix5x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -5336,7 +5269,6 @@ impl Matrix5SolveKernelMatrix5x2<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix5<T>, b: Matrix5x2<T>, diag: T) -> Matrix5x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -5452,7 +5384,6 @@ impl Matrix5SolveKernelMatrix5x3<
 > of SolveKernel<Matrix5<T>, Matrix5x3<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix5<T>, b: Matrix5x3<T>) -> Matrix5x3<T> {
         let (x00, x01, x02) = R::div3(b.m11, b.m12, b.m13, self.m11);
         let n10 = -self.m21;
@@ -5589,7 +5520,6 @@ impl Matrix5SolveKernelMatrix5x3<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix5<T>, b: Matrix5x3<T>) -> Matrix5x3<T> {
         let (x40, x41, x42) = R::div3(b.m51, b.m52, b.m53, self.m55);
         let n34 = -self.m45;
@@ -5726,7 +5656,6 @@ impl Matrix5SolveKernelMatrix5x3<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix5<T>, b: Matrix5x3<T>) -> Matrix5x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -5847,7 +5776,6 @@ impl Matrix5SolveKernelMatrix5x3<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix5<T>, b: Matrix5x3<T>, diag: T) -> Matrix5x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -5997,7 +5925,6 @@ impl Matrix5SolveKernelMatrix5x4<
 > of SolveKernel<Matrix5<T>, Matrix5x4<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix5<T>, b: Matrix5x4<T>) -> Matrix5x4<T> {
         let (x00, x01, x02, x03) = R::div4(b.m11, b.m12, b.m13, b.m14, self.m11);
         let n10 = -self.m21;
@@ -6173,7 +6100,6 @@ impl Matrix5SolveKernelMatrix5x4<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix5<T>, b: Matrix5x4<T>) -> Matrix5x4<T> {
         let (x40, x41, x42, x43) = R::div4(b.m51, b.m52, b.m53, b.m54, self.m55);
         let n34 = -self.m45;
@@ -6349,7 +6275,6 @@ impl Matrix5SolveKernelMatrix5x4<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix5<T>, b: Matrix5x4<T>) -> Matrix5x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -6508,7 +6433,6 @@ impl Matrix5SolveKernelMatrix5x4<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix5<T>, b: Matrix5x4<T>, diag: T) -> Matrix5x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -6696,7 +6620,6 @@ impl Matrix5SolveKernelMatrix5<
 > of SolveKernel<Matrix5<T>, Matrix5<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix5<T>, b: Matrix5<T>) -> Matrix5<T> {
         let (x00, x01, x02, x03, x04) = R::div5(b.m11, b.m12, b.m13, b.m14, b.m15, self.m11);
         let n10 = -self.m21;
@@ -6911,7 +6834,6 @@ impl Matrix5SolveKernelMatrix5<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix5<T>, b: Matrix5<T>) -> Matrix5<T> {
         let (x40, x41, x42, x43, x44) = R::div5(b.m51, b.m52, b.m53, b.m54, b.m55, self.m55);
         let n34 = -self.m45;
@@ -7126,7 +7048,6 @@ impl Matrix5SolveKernelMatrix5<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix5<T>, b: Matrix5<T>) -> Matrix5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -7323,7 +7244,6 @@ impl Matrix5SolveKernelMatrix5<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix5<T>, b: Matrix5<T>, diag: T) -> Matrix5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -7549,7 +7469,6 @@ impl Matrix5SolveKernelMatrix5x6<
 > of SolveKernel<Matrix5<T>, Matrix5x6<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix5<T>, b: Matrix5x6<T>) -> Matrix5x6<T> {
         let (x00, x01, x02, x03, x04, x05) = R::div6(
             b.m11, b.m12, b.m13, b.m14, b.m15, b.m16, self.m11,
@@ -7805,7 +7724,6 @@ impl Matrix5SolveKernelMatrix5x6<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix5<T>, b: Matrix5x6<T>) -> Matrix5x6<T> {
         let (x40, x41, x42, x43, x44, x45) = R::div6(
             b.m51, b.m52, b.m53, b.m54, b.m55, b.m56, self.m55,
@@ -8061,7 +7979,6 @@ impl Matrix5SolveKernelMatrix5x6<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix5<T>, b: Matrix5x6<T>) -> Matrix5x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -8296,7 +8213,6 @@ impl Matrix5SolveKernelMatrix5x6<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix5<T>, b: Matrix5x6<T>, diag: T) -> Matrix5x6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -8851,7 +8767,6 @@ impl Matrix6SolveKernelMatrix6x2<
 > of SolveKernel<Matrix6<T>, Matrix6x2<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix6<T>, b: Matrix6x2<T>) -> Matrix6x2<T> {
         let x00 = R::div(b.m11, self.m11);
         let x01 = R::div(b.m12, self.m11);
@@ -9002,7 +8917,6 @@ impl Matrix6SolveKernelMatrix6x2<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix6<T>, b: Matrix6x2<T>) -> Matrix6x2<T> {
         let x50 = R::div(b.m61, self.m66);
         let x51 = R::div(b.m62, self.m66);
@@ -9153,7 +9067,6 @@ impl Matrix6SolveKernelMatrix6x2<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix6<T>, b: Matrix6x2<T>) -> Matrix6x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -9276,7 +9189,6 @@ impl Matrix6SolveKernelMatrix6x2<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix6<T>, b: Matrix6x2<T>, diag: T) -> Matrix6x2<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -9435,7 +9347,6 @@ impl Matrix6SolveKernelMatrix6x3<
 > of SolveKernel<Matrix6<T>, Matrix6x3<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix6<T>, b: Matrix6x3<T>) -> Matrix6x3<T> {
         let (x00, x01, x02) = R::div3(b.m11, b.m12, b.m13, self.m11);
         let n10 = -self.m21;
@@ -9635,7 +9546,6 @@ impl Matrix6SolveKernelMatrix6x3<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix6<T>, b: Matrix6x3<T>) -> Matrix6x3<T> {
         let (x50, x51, x52) = R::div3(b.m61, b.m62, b.m63, self.m66);
         let n45 = -self.m56;
@@ -9835,7 +9745,6 @@ impl Matrix6SolveKernelMatrix6x3<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix6<T>, b: Matrix6x3<T>) -> Matrix6x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -10016,7 +9925,6 @@ impl Matrix6SolveKernelMatrix6x3<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix6<T>, b: Matrix6x3<T>, diag: T) -> Matrix6x3<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -10228,7 +10136,6 @@ impl Matrix6SolveKernelMatrix6x4<
 > of SolveKernel<Matrix6<T>, Matrix6x4<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix6<T>, b: Matrix6x4<T>) -> Matrix6x4<T> {
         let (x00, x01, x02, x03) = R::div4(b.m11, b.m12, b.m13, b.m14, self.m11);
         let n10 = -self.m21;
@@ -10487,7 +10394,6 @@ impl Matrix6SolveKernelMatrix6x4<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix6<T>, b: Matrix6x4<T>) -> Matrix6x4<T> {
         let (x50, x51, x52, x53) = R::div4(b.m61, b.m62, b.m63, b.m64, self.m66);
         let n45 = -self.m56;
@@ -10746,7 +10652,6 @@ impl Matrix6SolveKernelMatrix6x4<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix6<T>, b: Matrix6x4<T>) -> Matrix6x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -10985,7 +10890,6 @@ impl Matrix6SolveKernelMatrix6x4<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix6<T>, b: Matrix6x4<T>, diag: T) -> Matrix6x4<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -11255,7 +11159,6 @@ impl Matrix6SolveKernelMatrix6x5<
 > of SolveKernel<Matrix6<T>, Matrix6x5<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix6<T>, b: Matrix6x5<T>) -> Matrix6x5<T> {
         let (x00, x01, x02, x03, x04) = R::div5(b.m11, b.m12, b.m13, b.m14, b.m15, self.m11);
         let n10 = -self.m21;
@@ -11573,7 +11476,6 @@ impl Matrix6SolveKernelMatrix6x5<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix6<T>, b: Matrix6x5<T>) -> Matrix6x5<T> {
         let (x50, x51, x52, x53, x54) = R::div5(b.m61, b.m62, b.m63, b.m64, b.m65, self.m66);
         let n45 = -self.m56;
@@ -11891,7 +11793,6 @@ impl Matrix6SolveKernelMatrix6x5<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix6<T>, b: Matrix6x5<T>) -> Matrix6x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -12188,7 +12089,6 @@ impl Matrix6SolveKernelMatrix6x5<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix6<T>, b: Matrix6x5<T>, diag: T) -> Matrix6x5<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -12516,7 +12416,6 @@ impl Matrix6SolveKernelMatrix6<
 > of SolveKernel<Matrix6<T>, Matrix6<T>> {
     type Scalar = T;
 
-    #[inline(always)]
     fn lower(self: Matrix6<T>, b: Matrix6<T>) -> Matrix6<T> {
         let (x00, x01, x02, x03, x04, x05) = R::div6(
             b.m11, b.m12, b.m13, b.m14, b.m15, b.m16, self.m11,
@@ -12895,7 +12794,6 @@ impl Matrix6SolveKernelMatrix6<
         }
     }
 
-    #[inline(always)]
     fn upper(self: Matrix6<T>, b: Matrix6<T>) -> Matrix6<T> {
         let (x50, x51, x52, x53, x54, x55) = R::div6(
             b.m61, b.m62, b.m63, b.m64, b.m65, b.m66, self.m66,
@@ -13274,7 +13172,6 @@ impl Matrix6SolveKernelMatrix6<
         }
     }
 
-    #[inline(always)]
     fn lower_unit(self: Matrix6<T>, b: Matrix6<T>) -> Matrix6<T> {
         let x00 = b.m11;
         let x01 = b.m12;
@@ -13629,7 +13526,6 @@ impl Matrix6SolveKernelMatrix6<
         }
     }
 
-    #[inline(always)]
     fn lower_with_diag(self: Matrix6<T>, b: Matrix6<T>, diag: T) -> Matrix6<T> {
         let x00 = b.m11;
         let x01 = b.m12;

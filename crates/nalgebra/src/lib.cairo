@@ -92,9 +92,13 @@ pub use geometry::{
 };
 pub use linalg::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
-    Cholesky6Trait, Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait,
-    Matrix2QrTrait, Matrix2SvdTrait, Matrix3LuTrait, Matrix3QrTrait, Matrix3SvdTrait,
-    Matrix4LuTrait, Matrix4QrTrait, Matrix6LuTrait, Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4,
-    Perm4Trait, Perm6, Perm6Trait, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait, Svd2, Svd2Trait,
-    Svd3, Svd3Trait, SymmetricEigen2, SymmetricEigen2Trait, SymmetricEigen3, SymmetricEigen3Trait,
+    Cholesky6Trait, GivensRotate, GivensRotateRows, GivensRotation, GivensRotationTrait, Lu2,
+    Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2CholeskyTrait,
+    Matrix2InverseTrait, Matrix2LuTrait, Matrix2QrTrait, Matrix2SvdTrait, Matrix2UduTrait,
+    Matrix3CholeskyTrait, Matrix3InverseTrait, Matrix3LuTrait, Matrix3QrTrait, Matrix3SvdTrait,
+    Matrix3UduTrait, Matrix4CholeskyTrait, Matrix4InverseTrait, Matrix4LuTrait, Matrix4QrTrait,
+    Matrix4UduTrait, Matrix6CholeskyTrait, Matrix6InverseTrait, Matrix6LuTrait, Matrix6UduTrait,
+    Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4, Perm4Trait, Perm6, Perm6Trait, PermuteColumns,
+    PermuteRows, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait, Svd2, Svd2Trait, Svd3, Svd3Trait,
+    SymmetricEigen2, SymmetricEigen2Trait, SymmetricEigen3, SymmetricEigen3Trait,
 };

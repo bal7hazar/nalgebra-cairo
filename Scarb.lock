@@ -298,7 +298,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_tests_linalg_factor"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_tests_linalg_solve"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_solve_rhs"
 version = "0.1.0"
 dependencies = [
  "fixed",

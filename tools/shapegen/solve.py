@@ -40,14 +40,16 @@ def pairs() -> list[tuple[Shape, Shape]]:
 
 
 def small(b: Shape) -> bool:
-    """`#[inline(always)]` on EVERY kernel, measured (`crates/tests_linalg_solve`, net gas of
-    `solve_lower_triangular_unchecked`): with the products' rule (inline only vector outputs of at
-    most 4 components) the call of an out-of-line kernel, whose struct operands are copied in and
-    out, cost `Vector6` 44 740 against 31 090 inlined, `Matrix3` right-hand side 54 410 against 39 980
-    and `Matrix6` 227 000 against 174 260: 23 to 36 % of the solve. Inlined, the per-column form
-    (`alt_columns`, the vector kernel per column) is 4 to 7 % dearer than the shared prepared divisor
-    of the direct kernel."""
-    return True
+    """`#[inline(always)]` for the column-vector right-hand sides (and the other shapes of at most
+    4 components), measured (`crates/tests_linalg_solve`, net gas of
+    `solve_lower_triangular_unchecked`): out of line, a kernel costs `Vector6` 44 740 against
+    31 090 inlined (the operands copied in and out of the call), `Matrix3` 54 410 against 39 980,
+    `Matrix6` 227 000 against 174 260. The matrix right-hand sides stay out of line anyway: every
+    call site would carry a copy of the whole unrolled kernel, and the test package of this WP,
+    compiled with every kernel inlined, peaked at 16.9 GB (12 min) against the budget of ~8.5 GB.
+    Destructuring the operands once at the top of an out-of-line kernel was also measured: the
+    same gas to the unit (the compiler already does it)."""
+    return b.is_column or b.n <= 4
 
 
 # --------------------------------------------------------------------------------------------
@@ -113,7 +115,8 @@ def substitution(m: Shape, b: Shape, order: list[int], below: bool, mode: str) -
     if mode == "diag" and n == 1:
         lines.append("let _ = diag;")
     lines.append(L.lit(b.name, [(b.f(i, j), f"x{i}{j}") for j in range(c) for i in range(n)]))
-    return "\n".join(lines)
+    body = "\n".join(lines)
+    return body
 
 
 def kernel_impl(m: Shape, b: Shape) -> str:

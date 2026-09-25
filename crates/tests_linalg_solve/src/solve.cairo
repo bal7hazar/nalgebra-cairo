@@ -1,4 +1,4 @@
-//! `MatrixSolve`: the triangular solves of the static squares (upstream `src/linalg/solve.rs`).
+//! `MatrixSolve` on the vector right-hand sides.
 
 mod benches;
 mod tests;
