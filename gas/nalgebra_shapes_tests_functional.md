@@ -8,40 +8,40 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_mul_mat` | 96670 | 37350 | x1.00 |
-| `library` | 96670 | 37350 | x1.00 |
+| `alt_mul_mat` | 96870 | 12550 | x1.00 |
+| `library` | 96870 | 12550 | x1.00 |
 
 ### matrix2x3_zip_map
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 100510 | 8970 | x1.00 |
+| `library` | 97880 | 6340 | x1.00 |
 
 ### matrix3_apply_norm
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_norm` | 56010 | 5640 | x1.00 |
-| `library` | 59840 | 9470 | x1.68 |
+| `library` | 56010 | 5640 | x1.00 |
 
 ### matrix3_map
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 98790 | 11090 | x1.00 |
+| `library` | 96360 | 8660 | x1.00 |
 
 ### matrix3_swap
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 103720 | 16420 | x1.00 |
+| `library` | 96660 | 9360 | x1.00 |
 
 ### matrix3_swap_rows
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_pair_match` | 93500 | 6200 | x1.00 |
-| `library` | 96140 | 8840 | x1.43 |
+| `library` | 94440 | 7140 | x1.15 |
 
 ### matrix3_transpose_mut
 
@@ -53,7 +53,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 158110 | 19970 | x1.00 |
+| `library` | 153380 | 15240 | x1.00 |
 
 ### matrix4_fill_lower_triangle
 
@@ -73,14 +73,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 327550 | 49410 | x1.00 |
+| `library` | 324450 | 21310 | x1.00 |
 
 ### row_vector3_apply_metric_distance
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `alt_amax` | 52900 | 7320 | x1.00 |
-| `library` | 54000 | 8420 | x1.15 |
+| `library` | 52900 | 7320 | x1.00 |
 
 ### vector3_normalize_mut
 
@@ -92,5 +92,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 39310 | 5090 | x1.00 |
+| `library` | 37180 | 2960 | x1.00 |
 

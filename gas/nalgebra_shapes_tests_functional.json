@@ -1,31 +1,31 @@
 {
   "nalgebra_shapes_tests_functional::benches": {
     "matrix2x3_mul_to": {
-      "alt_mul_mat": 96670,
-      "baseline": 59320,
-      "library": 96670
+      "alt_mul_mat": 96870,
+      "baseline": 84320,
+      "library": 96870
     },
     "matrix2x3_zip_map": {
       "baseline": 91540,
-      "library": 100510
+      "library": 97880
     },
     "matrix3_apply_norm": {
       "alt_norm": 56010,
       "baseline": 50370,
-      "library": 59840
+      "library": 56010
     },
     "matrix3_map": {
       "baseline": 87700,
-      "library": 98790
+      "library": 96360
     },
     "matrix3_swap": {
       "baseline": 87300,
-      "library": 103720
+      "library": 96660
     },
     "matrix3_swap_rows": {
       "alt_pair_match": 93500,
       "baseline": 87300,
-      "library": 96140
+      "library": 94440
     },
     "matrix3_transpose_mut": {
       "baseline": 87300,
@@ -33,7 +33,7 @@
     },
     "matrix4_apply": {
       "baseline": 138140,
-      "library": 158110
+      "library": 153380
     },
     "matrix4_fill_lower_triangle": {
       "alt_per_component": 154230,
@@ -46,13 +46,13 @@
       "library": 144350
     },
     "matrix6_set_column": {
-      "baseline": 278140,
-      "library": 327550
+      "baseline": 303140,
+      "library": 324450
     },
     "row_vector3_apply_metric_distance": {
       "alt_amax": 52900,
       "baseline": 45580,
-      "library": 54000
+      "library": 52900
     },
     "vector3_normalize_mut": {
       "baseline": 45780,
@@ -60,7 +60,7 @@
     },
     "vector4_fold": {
       "baseline": 34220,
-      "library": 39310
+      "library": 37180
     }
   }
 }
