@@ -8,6 +8,10 @@ mod decompositions;
 #[cfg(test)]
 mod givens;
 #[cfg(test)]
+mod oracle;
+#[cfg(test)]
+mod oracle_factor;
+#[cfg(test)]
 mod permutation;
 #[cfg(test)]
 mod steps;

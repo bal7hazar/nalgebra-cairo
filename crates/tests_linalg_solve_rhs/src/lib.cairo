@@ -3,4 +3,6 @@
 //! (square, `R x C` right-hand side, `C >= 2`) pair, and the per-column alternative that lost.
 
 #[cfg(test)]
+mod oracle_solve_rhs;
+#[cfg(test)]
 mod solve;

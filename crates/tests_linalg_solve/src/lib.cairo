@@ -4,4 +4,6 @@
 //! right-hand sides are `nalgebra_tests_linalg_solve_rhs` (split for the compile budget).
 
 #[cfg(test)]
+mod oracle_solve;
+#[cfg(test)]
 mod solve;
