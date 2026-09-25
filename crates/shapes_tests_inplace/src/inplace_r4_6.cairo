@@ -94,12 +94,9 @@ fn test_vector4_inplace() {
     a.ad_mul_to(c, ref q);
     assert_raws(q, array![-2482557956625].span());
     assert!(a.apply_norm(EuclideanNorm {}) == fx(116882983222));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(231789161152));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(116882983222));
     assert!(a.apply_norm(OneNorm {}) == fx(231789161152));
     assert!(a.apply_norm(UniformNorm {}) == fx(68069193820));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(211512487889));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(420986405923));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(420986405923));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(120807818819));
 }
@@ -317,12 +314,9 @@ fn test_matrix4x2_inplace() {
     a.ad_mul_to(c, ref q);
     assert_raws(q, array![-844433591342, -153419705213, 807689558815, -993937163034].span());
     assert!(a.apply_norm(EuclideanNorm {}) == fx(113698975319));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(302683234820));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(113698975319));
     assert!(a.apply_norm(OneNorm {}) == fx(158329690531));
     assert!(a.apply_norm(UniformNorm {}) == fx(66341367628));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(196478317828));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(512015656714));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(265378028832));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(105102160403));
 }
@@ -554,12 +548,9 @@ fn test_matrix4x3_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(144133428381));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(420911616989));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(144133428381));
     assert!(a.apply_norm(OneNorm {}) == fx(203741061002));
     assert!(a.apply_norm(UniformNorm {}) == fx(60222463520));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(240058314618));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(728900006055));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(260820195343));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(107748817428));
 }
@@ -846,12 +837,9 @@ fn test_matrix4_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(121978271909));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(389490557262));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(121978271909));
     assert!(a.apply_norm(OneNorm {}) == fx(115930390679));
     assert!(a.apply_norm(UniformNorm {}) == fx(61591490593));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(197243369558));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(670210401618));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(205851200029));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(106514294784));
 }
@@ -1138,12 +1126,9 @@ fn test_matrix4x5_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(184425091153));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(736561331259));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(184425091153));
     assert!(a.apply_norm(OneNorm {}) == fx(200134618345));
     assert!(a.apply_norm(UniformNorm {}) == fx(64719199216));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(223370180988));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(759513018584));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(231302557386));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(117792862553));
 }
@@ -1445,12 +1430,9 @@ fn test_matrix4x6_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(216837992599));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(966554331157));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(216837992599));
     assert!(a.apply_norm(OneNorm {}) == fx(213584284913));
     assert!(a.apply_norm(UniformNorm {}) == fx(66073366417));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(223291120880));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(810674700539));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(234451718154));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(94960751656));
 }
@@ -1570,14 +1552,14 @@ fn test_vector5_inplace() {
     a.ad_mul_to(c, ref q);
     assert_raws(q, array![1192293484732].span());
     assert!(a.apply_norm(EuclideanNorm {}) == fx(82974582036));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(163896442235));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(82974582036));
     assert!(a.apply_norm(OneNorm {}) == fx(163896442235));
     assert!(a.apply_norm(UniformNorm {}) == fx(63203999686));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(96229983176));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(184406561669));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(184406561669));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(77592576181));
+    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(163896442235));
+    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(82974582036));
+    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(184406561669));
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]
@@ -1797,12 +1779,9 @@ fn test_matrix5x2_inplace() {
     a.ad_mul_to(c, ref q);
     assert_raws(q, array![-195450839445, -702697024847, -349034969590, 756932535537].span());
     assert!(a.apply_norm(EuclideanNorm {}) == fx(84192953475));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(236484254362));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(84192953475));
     assert!(a.apply_norm(OneNorm {}) == fx(144848786393));
     assert!(a.apply_norm(UniformNorm {}) == fx(41623665990));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(140061239410));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(316714679832));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(197918555317));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(81104469774));
 }
@@ -2058,12 +2037,9 @@ fn test_matrix5x3_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(188119996216));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(674938348380));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(188119996216));
     assert!(a.apply_norm(OneNorm {}) == fx(252453120159));
     assert!(a.apply_norm(UniformNorm {}) == fx(68000458654));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(138916331974));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(457384786792));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(226783977969));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(61250095381));
 }
@@ -2344,12 +2320,9 @@ fn test_matrix5x4_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(139752293175));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(532448068760));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(139752293175));
     assert!(a.apply_norm(OneNorm {}) == fx(166732942362));
     assert!(a.apply_norm(UniformNorm {}) == fx(57865667120));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(235070095930));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(884399390186));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(302219847926));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(104806269147));
 }
@@ -2700,14 +2673,14 @@ fn test_matrix5_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(202568610202));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(894020759581));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(202568610202));
     assert!(a.apply_norm(OneNorm {}) == fx(241481450809));
     assert!(a.apply_norm(UniformNorm {}) == fx(66148070813));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(249042623701));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(983697533164));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(284590535354));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(121866053884));
+    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(894020759581));
+    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(202568610202));
+    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(983697533164));
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]
@@ -3049,12 +3022,9 @@ fn test_matrix5x6_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(213243414775));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(987376631162));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(213243414775));
     assert!(a.apply_norm(OneNorm {}) == fx(210612257521));
     assert!(a.apply_norm(UniformNorm {}) == fx(65677779854));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(334547892976));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(1461514191323));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(342056562011));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(127953273901));
 }
@@ -3220,12 +3190,9 @@ fn test_vector6_inplace() {
     a.ad_mul_to(c, ref q);
     assert_raws(q, array![670423700325].span());
     assert!(a.apply_norm(EuclideanNorm {}) == fx(120989995434));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(280007505230));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(120989995434));
     assert!(a.apply_norm(OneNorm {}) == fx(280007505230));
     assert!(a.apply_norm(UniformNorm {}) == fx(67474743392));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(142527924560));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(232138653618));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(232138653618));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(127621789952));
 }
@@ -3452,12 +3419,9 @@ fn test_matrix6x2_inplace() {
     a.ad_mul_to(c, ref q);
     assert_raws(q, array![-216603984922, -644002576843, 40817385811, -811800591158].span());
     assert!(a.apply_norm(EuclideanNorm {}) == fx(121943799632));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(363089026088));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(121943799632));
     assert!(a.apply_norm(OneNorm {}) == fx(215494224429));
     assert!(a.apply_norm(UniformNorm {}) == fx(67728966356));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(204258038834));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(535579830113));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(341966219687));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(122683780612));
 }
@@ -3727,12 +3691,9 @@ fn test_matrix6x3_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(183664979897));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(689255326865));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(183664979897));
     assert!(a.apply_norm(OneNorm {}) == fx(265191236264));
     assert!(a.apply_norm(UniformNorm {}) == fx(62366820719));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(220442199099));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(770154243437));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(338587279877));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(88543999855));
 }
@@ -4026,14 +3987,14 @@ fn test_matrix6x4_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(217334575805));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(965177767837));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(217334575805));
     assert!(a.apply_norm(OneNorm {}) == fx(287119893336));
     assert!(a.apply_norm(UniformNorm {}) == fx(68700057117));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(241348960116));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(956933132154));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(322495800356));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(105200809731));
+    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(965177767837));
+    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(217334575805));
+    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(956933132154));
 }
 
 #[should_panic(expected: 'Fixed: division by zero')]
@@ -4368,12 +4329,9 @@ fn test_matrix6x5_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(230452830550));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(1065416152804));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(230452830550));
     assert!(a.apply_norm(OneNorm {}) == fx(303941036936));
     assert!(a.apply_norm(UniformNorm {}) == fx(66747427405));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(292560879271));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(1397061010652));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(414028178637));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(127148552544));
 }
@@ -4786,12 +4744,9 @@ fn test_matrix6_inplace() {
             .span(),
     );
     assert!(a.apply_norm(EuclideanNorm {}) == fx(234089809640));
-    assert!(a.apply_norm(LpNorm { p: 1 }) == fx(1270838638527));
-    assert!(a.apply_norm(LpNorm { p: 2 }) == fx(234089809640));
     assert!(a.apply_norm(OneNorm {}) == fx(276248575264));
     assert!(a.apply_norm(UniformNorm {}) == fx(64922159798));
     assert!(a.apply_metric_distance(c, EuclideanNorm {}) == fx(306323244025));
-    assert!(a.apply_metric_distance(c, LpNorm { p: 1 }) == fx(1569897444193));
     assert!(a.apply_metric_distance(c, OneNorm {}) == fx(356011372642));
     assert!(a.apply_metric_distance(c, UniformNorm {}) == fx(91771701236));
 }
