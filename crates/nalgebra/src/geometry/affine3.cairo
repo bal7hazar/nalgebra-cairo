@@ -100,11 +100,17 @@ pub impl Affine3Impl<
 
     /// The inverse, or `None` when the linear block is singular: by blocks, `l = m[:3, :3]⁻¹`
     /// (`Matrix3::try_inverse`, its singularity criterion: a determinant EXACTLY zero), the
-    /// translation `l * (-t)` (ONE fused sum of products per coordinate) and the exact last row
-    /// `(0, .., 0, 1)`, so the result is affine again. Upstream inverts the whole 4x4 matrix
-    /// (`Matrix::try_inverse`, the same value in exact arithmetic): the block formula is cheaper,
-    /// as accurate (oracle suite `transform`) and keeps the affine invariant exactly
-    /// (`bench_affine3_try_inverse__alt_full_matrix`). Upstream: `try_inverse`.
+    /// translation `x = l * (-t)` refined once with the fused residual `r = -t - m[:3, :3] * x`
+    /// (`x + l * r`), and the exact last row `(0, .., 0, 1)`, so the result is affine again.
+    ///
+    /// Upstream inverts the whole 4x4 matrix (`Matrix::try_inverse`, the same value in exact
+    /// arithmetic). Measured candidates (`nalgebra_tests_geometry_transform`, `alt_*`): the
+    /// whole-matrix inverse leaves `small` oracle cases outside their tolerance (the `1` of the
+    /// last row keeps `Matrix4::try_inverse` from pre-scaling a small linear block, whose
+    /// determinant then has few significant bits) and costs more; the plain block formula
+    /// (without the refinement) multiplies the one-ulp roundings of `l` by `|t|` and leaves
+    /// `medium` cases outside. The refined block formula passes every case. Upstream:
+    /// `try_inverse`.
     #[inline(always)]
     fn try_inverse(self: Affine3<T>) -> Option<Affine3<T>> {
         match TransformKernels::affine_inverse3(self.matrix) {

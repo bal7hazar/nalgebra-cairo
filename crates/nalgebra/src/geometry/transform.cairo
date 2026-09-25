@@ -31,9 +31,11 @@
 //! output scalar). The products by a rotation, a translation, an isometry or a similarity skip
 //! the exact zeros and ones of its homogeneous matrix, which gives bit for bit the full product
 //! for less gas; the products of two transforms are full matrix products, like upstream. The
-//! affine inverse is computed by blocks (the linear block's inverse, then the translation), which
-//! keeps the affine last row exact; the other categories invert the whole matrix
-//! (`Matrix3/4::try_inverse`). Overflow panics.
+//! general and projective categories invert the whole homogeneous matrix (`Matrix3/4::
+//! try_inverse`, upstream's formula); the affine one inverts by blocks with one step of iterative
+//! refinement of the translation, which is cheaper, keeps the affine last row exact and is the
+//! only measured candidate within the oracle tolerance on every distribution (see
+//! `Affine3::try_inverse`). Overflow panics.
 
 use simba::scalar::Real;
 use crate::base::cg::{Matrix3CgTrait, Matrix4CgTrait};
@@ -229,33 +231,55 @@ pub(crate) impl TransformKernelsImpl<
         Matrix2 { m11: m.m11, m21: m.m21, m12: m.m12, m22: m.m22 }
     }
 
-    /// The inverse of an affine homogeneous matrix by blocks: `l = m[:2, :2]⁻¹`
-    /// (`Matrix2::try_inverse`, `None` when it is singular), the translation `l * (-m[:2, 2])`
-    /// (ONE fused sum of products per coordinate, the negation exact), then the exact last row
-    /// `(0, .., 0, 1)`. The last row of `m` is trusted to be `(0, .., 0, 1)` (the affine
-    /// invariant).
+    /// The inverse of an affine homogeneous matrix by blocks, with one step of iterative
+    /// refinement of the translation: `l = m[:2, :2]⁻¹` (`Matrix2::try_inverse`, `None` when
+    /// it is singular), `x = l * (-t)`, the residual `r = -t - m[:2, :2] * x` (ONE fused sum of
+    /// products per coordinate: the floor of the exact residual), then `x + l * r` (one fused sum
+    /// per coordinate). The refinement removes the one-ulp roundings of `l` multiplied by `|t|`;
+    /// the last row is the exact `(0, .., 0, 1)` (the affine invariant, trusted on input).
     fn affine_inverse2(m: Matrix3<T>) -> Option<Matrix3<T>> {
-        match Matrix2Trait::try_inverse(Self::linear2(m)) {
-            Option::Some(l) => Option::Some(
-                Matrix3 {
-                    m11: l.m11,
-                    m21: l.m21,
-                    m31: R::zero(),
-                    m12: l.m12,
-                    m22: l.m22,
-                    m32: R::zero(),
-                    m13: R::sum_prod2(l.m11, -m.m13, l.m12, -m.m23),
-                    m23: R::sum_prod2(l.m21, -m.m13, l.m22, -m.m23),
-                    m33: R::one(),
-                },
+        let lin = Self::linear2(m);
+        let l = Matrix2Trait::try_inverse(lin)?;
+        let xx = R::sum_prod2(l.m11, -m.m13, l.m12, -m.m23);
+        let xy = R::sum_prod2(l.m21, -m.m13, l.m22, -m.m23);
+        let rx = R::wide_rescale(
+            R::wide_sub(
+                R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), lin.m11, xx), lin.m12, xy), m.m13,
             ),
-            Option::None => Option::None,
-        }
+        );
+        let ry = R::wide_rescale(
+            R::wide_sub(
+                R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), lin.m21, xx), lin.m22, xy), m.m23,
+            ),
+        );
+        Option::Some(
+            Matrix3 {
+                m11: l.m11,
+                m21: l.m21,
+                m31: R::zero(),
+                m12: l.m12,
+                m22: l.m22,
+                m32: R::zero(),
+                m13: R::wide_rescale(
+                    R::wide_add(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), l.m11, rx), l.m12, ry),
+                        xx,
+                    ),
+                ),
+                m23: R::wide_rescale(
+                    R::wide_add(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), l.m21, rx), l.m22, ry),
+                        xy,
+                    ),
+                ),
+                m33: R::one(),
+            },
+        )
     }
 
     /// Upstream's `TAffine::check_homogeneous_invariants`: the last row is EXACTLY `(0, .., 0,
     /// 1)` and the matrix is invertible (here: its linear block, `Matrix2::is_invertible`,
-    /// equivalent for such a last row and consistent with `affine_inverse2`).
+    /// equivalent for such a last row, and the singularity criterion of `affine_inverse2`).
     fn is_affine2(m: Matrix3<T>) -> bool {
         m.m31 == R::zero()
             && m.m32 == R::zero()
@@ -467,40 +491,106 @@ pub(crate) impl TransformKernelsImpl<
         }
     }
 
-    /// The inverse of an affine homogeneous matrix by blocks: `l = m[:3, :3]⁻¹`
-    /// (`Matrix3::try_inverse`, `None` when it is singular), the translation `l * (-m[:3, 3])`
-    /// (ONE fused sum of products per coordinate, the negation exact), then the exact last row
-    /// `(0, .., 0, 1)`. The last row of `m` is trusted to be `(0, .., 0, 1)` (the affine
-    /// invariant).
+    /// The inverse of an affine homogeneous matrix by blocks, with one step of iterative
+    /// refinement of the translation: `l = m[:3, :3]⁻¹` (`Matrix3::try_inverse`, `None` when
+    /// it is singular), `x = l * (-t)`, the residual `r = -t - m[:3, :3] * x` (ONE fused sum of
+    /// products per coordinate: the floor of the exact residual), then `x + l * r` (one fused sum
+    /// per coordinate). The refinement removes the one-ulp roundings of `l` multiplied by `|t|`;
+    /// the last row is the exact `(0, .., 0, 1)` (the affine invariant, trusted on input).
     fn affine_inverse3(m: Matrix4<T>) -> Option<Matrix4<T>> {
-        match Matrix3Trait::try_inverse(Self::linear3(m)) {
-            Option::Some(l) => Option::Some(
-                Matrix4 {
-                    m11: l.m11,
-                    m21: l.m21,
-                    m31: l.m31,
-                    m41: R::zero(),
-                    m12: l.m12,
-                    m22: l.m22,
-                    m32: l.m32,
-                    m42: R::zero(),
-                    m13: l.m13,
-                    m23: l.m23,
-                    m33: l.m33,
-                    m43: R::zero(),
-                    m14: R::sum_prod3(l.m11, -m.m14, l.m12, -m.m24, l.m13, -m.m34),
-                    m24: R::sum_prod3(l.m21, -m.m14, l.m22, -m.m24, l.m23, -m.m34),
-                    m34: R::sum_prod3(l.m31, -m.m14, l.m32, -m.m24, l.m33, -m.m34),
-                    m44: R::one(),
-                },
+        let lin = Self::linear3(m);
+        let l = Matrix3Trait::try_inverse(lin)?;
+        let xx = R::sum_prod3(l.m11, -m.m14, l.m12, -m.m24, l.m13, -m.m34);
+        let xy = R::sum_prod3(l.m21, -m.m14, l.m22, -m.m24, l.m23, -m.m34);
+        let xz = R::sum_prod3(l.m31, -m.m14, l.m32, -m.m24, l.m33, -m.m34);
+        let rx = R::wide_rescale(
+            R::wide_sub(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), lin.m11, xx), lin.m12, xy),
+                    lin.m13,
+                    xz,
+                ),
+                m.m14,
             ),
-            Option::None => Option::None,
-        }
+        );
+        let ry = R::wide_rescale(
+            R::wide_sub(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), lin.m21, xx), lin.m22, xy),
+                    lin.m23,
+                    xz,
+                ),
+                m.m24,
+            ),
+        );
+        let rz = R::wide_rescale(
+            R::wide_sub(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), lin.m31, xx), lin.m32, xy),
+                    lin.m33,
+                    xz,
+                ),
+                m.m34,
+            ),
+        );
+        Option::Some(
+            Matrix4 {
+                m11: l.m11,
+                m21: l.m21,
+                m31: l.m31,
+                m41: R::zero(),
+                m12: l.m12,
+                m22: l.m22,
+                m32: l.m32,
+                m42: R::zero(),
+                m13: l.m13,
+                m23: l.m23,
+                m33: l.m33,
+                m43: R::zero(),
+                m14: R::wide_rescale(
+                    R::wide_add(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), l.m11, rx), l.m12, ry,
+                            ),
+                            l.m13,
+                            rz,
+                        ),
+                        xx,
+                    ),
+                ),
+                m24: R::wide_rescale(
+                    R::wide_add(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), l.m21, rx), l.m22, ry,
+                            ),
+                            l.m23,
+                            rz,
+                        ),
+                        xy,
+                    ),
+                ),
+                m34: R::wide_rescale(
+                    R::wide_add(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), l.m31, rx), l.m32, ry,
+                            ),
+                            l.m33,
+                            rz,
+                        ),
+                        xz,
+                    ),
+                ),
+                m44: R::one(),
+            },
+        )
     }
 
     /// Upstream's `TAffine::check_homogeneous_invariants`: the last row is EXACTLY `(0, .., 0,
     /// 1)` and the matrix is invertible (here: its linear block, `Matrix3::is_invertible`,
-    /// equivalent for such a last row and consistent with `affine_inverse3`).
+    /// equivalent for such a last row, and the singularity criterion of `affine_inverse3`).
     fn is_affine3(m: Matrix4<T>) -> bool {
         m.m41 == R::zero()
             && m.m42 == R::zero()

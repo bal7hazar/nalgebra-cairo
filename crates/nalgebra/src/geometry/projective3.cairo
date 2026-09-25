@@ -101,7 +101,7 @@ pub impl Projective3Impl<
 
     /// The inverse, or `None` when the matrix is singular: `Matrix4::try_inverse` of the
     /// homogeneous matrix (its rounding and its singularity criterion: a determinant EXACTLY
-    /// zero). Upstream: `try_inverse`.
+    /// zero), upstream's formula. Upstream: `try_inverse`.
     #[inline(always)]
     fn try_inverse(self: Projective3<T>) -> Option<Projective3<T>> {
         match Matrix4Trait::try_inverse(self.matrix) {

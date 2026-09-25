@@ -31,6 +31,9 @@
 //! - `pers4t((m11, m22, m33, m34))` / `ortho6t((m11, m14, m22, m24, m33, m34))` (WP 8.4-P11b):
 //!   a `Perspective3` / `Orthographic3` from the raw structural entries of its matrix (oracle
 //!   layout, `from_matrix_unchecked`).
+//! - `aff2t(linear, (x, y))` / `aff3t(linear, (x, y, z))` (WP 8.4-P11a): an `Affine2/3` from the
+//!   ROW-major rows of its linear block and its translation (oracle layout, last row `(0, .., 0,
+//!   1)`); `proj2(rows)` / `proj3(rows)`: a `Projective2/3` from ROW-major rows.
 //! - `ulp_diff`, `max_ulp_diffN` (matrices), `max_ulp_diff_vN`, `max_ulp_diff_sN`,
 //!   `max_ulp_diff_q`, `max_ulp_diff_uc`: largest component-wise `|a - b|` in raw units.
 //!   `abs_raw`, `max_abs_*`, `amax_*`, `oracle_tol`, `excess`, `orthonormality_error_mN`: the
@@ -122,12 +125,16 @@ use nalgebra::base::vector2::Vector2;
 use nalgebra::base::vector3::Vector3;
 use nalgebra::base::vector4::Vector4;
 use nalgebra::base::vector6::Vector6;
+use nalgebra::geometry::affine2::{Affine2, Affine2Trait};
+use nalgebra::geometry::affine3::{Affine3, Affine3Trait};
 use nalgebra::geometry::isometry2::Isometry2;
 use nalgebra::geometry::isometry3::Isometry3;
 use nalgebra::geometry::isometry_matrix2::IsometryMatrix2;
 use nalgebra::geometry::isometry_matrix3::IsometryMatrix3;
 use nalgebra::geometry::orthographic3::{Orthographic3, Orthographic3Trait};
 use nalgebra::geometry::perspective3::{Perspective3, Perspective3Trait};
+use nalgebra::geometry::projective2::{Projective2, Projective2Trait};
+use nalgebra::geometry::projective3::{Projective3, Projective3Trait};
 use nalgebra::geometry::quaternion::Quaternion;
 use nalgebra::geometry::rotation2::Rotation2;
 use nalgebra::geometry::rotation3::Rotation3;
@@ -807,6 +814,34 @@ pub fn ortho6t(t: (i64, i64, i64, i64, i64, i64)) -> Orthographic3<Fixed> {
     Orthographic3Trait::from_matrix_unchecked(
         m4([[m11, 0, 0, m14], [0, m22, 0, m24], [0, 0, m33, m34], [0, 0, 0, ONE_RAW]]),
     )
+}
+
+/// `Affine2` from the raw ROW-major rows of its linear block and its translation `(x, y)`
+/// (oracle layout; last row `(0, 0, 1)`).
+pub fn aff2t(l: [[i64; 2]; 2], t: (i64, i64)) -> Affine2<Fixed> {
+    let [[a, b], [c, d]] = l;
+    let (x, y) = t;
+    Affine2Trait::from_matrix_unchecked(m3([[a, b, x], [c, d, y], [0, 0, ONE_RAW]]))
+}
+
+/// `Affine3` from the raw ROW-major rows of its linear block and its translation `(x, y, z)`
+/// (oracle layout; last row `(0, 0, 0, 1)`).
+pub fn aff3t(l: [[i64; 3]; 3], t: (i64, i64, i64)) -> Affine3<Fixed> {
+    let [[a, b, c], [d, e, f], [g, h, i]] = l;
+    let (x, y, z) = t;
+    Affine3Trait::from_matrix_unchecked(
+        m4([[a, b, c, x], [d, e, f, y], [g, h, i, z], [0, 0, 0, ONE_RAW]]),
+    )
+}
+
+/// `Projective2` from raw ROW-major rows (`from_matrix_unchecked`).
+pub fn proj2(rows: [[i64; 3]; 3]) -> Projective2<Fixed> {
+    Projective2Trait::from_matrix_unchecked(m3(rows))
+}
+
+/// `Projective3` from raw ROW-major rows (`from_matrix_unchecked`).
+pub fn proj3(rows: [[i64; 4]; 4]) -> Projective3<Fixed> {
+    Projective3Trait::from_matrix_unchecked(m4(rows))
 }
 
 // --- comparisons in raw units -------------------------------------------------------------------
