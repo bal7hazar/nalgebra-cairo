@@ -18,7 +18,7 @@ How to read it:
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
 | base | 228 | 11 | 256 | 309 | 804 | 46.1% |
-| geometry | 491 | 2 | 437 | 118 | 1048 | 52.8% |
+| geometry | 577 | 2 | 351 | 118 | 1048 | 62.0% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
 | io | 0 | 0 | 2 | 0 | 2 | 0.0% |
@@ -26,9 +26,9 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **795** | **19** | **1063** | **559** | **2436** | **42.4%** |
+| **total** | **881** | **19** | **977** | **559** | **2436** | **46.9%** |
 
-nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **22** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
+nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
 ## Proposed work packages
 
@@ -38,14 +38,14 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 |---|---|---:|---|---|---|
 | [P01](#p01-rectangular-and-remaining-static-shapes) | Rectangular and remaining static shapes | 1 | mechanical | — | `base/matrix.rs` (1) |
 | [P02](#p02-static-base-completion-vector-matrix-2-6) | Static base completion (Vector / Matrix 2-6) | 12 | mechanical | — | `base/unit.rs` (8), `base/ops.rs` (3), `geometry/scale_conversion.rs` (1) |
-| [P03](#p03-functional-and-in-place-variants) | Functional and in-place variants | 101 | mechanical | — | `base/matrix.rs` (25), `base/edition.rs` (16), `geometry/quaternion_ops.rs` (9), `base/matrix_view.rs` (7), `base/ops.rs` (6) |
+| [P03](#p03-functional-and-in-place-variants) | Functional and in-place variants | 93 | mechanical | — | `base/matrix.rs` (25), `base/edition.rs` (16), `geometry/quaternion_ops.rs` (9), `base/matrix_view.rs` (7), `base/ops.rs` (6) |
 | [P04](#p04-swizzles) | Swizzles | 71 | mechanical | P01 (Vector2/3 results) | `base/swizzle.rs` (36), `geometry/swizzle.rs` (35) |
 | [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 28 | mechanical | P01 | `base/matrix_view.rs` (14), `base/matrix.rs` (4), `base/properties.rs` (4), `base/edition.rs` (3), `base/construction.rs` (2) |
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 37 | standard numerics | P01, P05 | `base/blas.rs` (21), `base/statistics.rs` (16) |
 | [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 32 | standard numerics | P01 | `base/cg.rs` (32) |
 | [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 3 | standard numerics | — | `geometry/quaternion_conversion.rs` (2), `geometry/unit_complex_conversion.rs` (1) |
-| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 12 | mechanical | P08 | `geometry/isometry_ops.rs` (4), `geometry/translation_conversion.rs` (3), `geometry/rotation_conversion.rs` (2), `geometry/similarity_ops.rs` (2), `geometry/point_conversion.rs` (1) |
-| [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 77 | mechanical | P09a | `geometry/isometry_construction.rs` (19), `geometry/similarity_construction.rs` (17), `geometry/isometry_conversion.rs` (9), `geometry/similarity_ops.rs` (9), `geometry/isometry_ops.rs` (6) |
+| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 6 | mechanical | P08 | `geometry/translation_conversion.rs` (3), `geometry/rotation_conversion.rs` (2), `geometry/point_conversion.rs` (1) |
+| [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 5 | mechanical | P09a | `geometry/isometry_conversion.rs` (3), `geometry/similarity_conversion.rs` (2) |
 | [P10](#p10-scale-and-reflection) | Scale and Reflection | 54 | mechanical | P09a | `geometry/scale.rs` (16), `geometry/reflection.rs` (8), `geometry/scale_conversion.rs` (8), `geometry/reflection_alias.rs` (6), `geometry/scale_alias.rs` (6) |
 | [P11a](#p11a-transform-affine-projective) | Transform, Affine, Projective | 59 | standard numerics | P07, P09b | `geometry/transform.rs` (24), `geometry/transform_ops.rs` (23), `geometry/transform_alias.rs` (6), `geometry/transform_construction.rs` (3), `geometry/transform_conversion.rs` (3) |
 | [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 63 | standard numerics | P07 | `geometry/orthographic.rs` (35), `geometry/perspective.rs` (28) |
@@ -76,15 +76,15 @@ the operations upstream has on every `Matrix` that nalgebra.cairo only has on so
 
 ### P03 Functional and in-place variants
 
-`map`, `zip_*`, `fold*`, `apply*`, `fill*`, `copy_from`, `swap*`, `set_*`, and the `*_mut` / `*_assign` / `*_to` in-place forms of existing operations (Cairo `ref self`). Tier: mechanical. Depends on: —. 101 items (`*` = partial):
+`map`, `zip_*`, `fold*`, `apply*`, `fill*`, `copy_from`, `swap*`, `set_*`, and the `*_mut` / `*_assign` / `*_to` in-place forms of existing operations (Cairo `ref self`). Tier: mechanical. Depends on: —. 93 items (`*` = partial):
 
-- **Isometry**: `impl:DivAssign<Isometry>`, `impl:MulAssign<Isometry>`, `impl:MulAssign<Translation>`, `inverse_mut`
+- **Isometry**: `inverse_mut`
 - **Matrix**: `ad_mul_to`, `add_scalar_mut`, `add_to`, `adjoint_to`, `apply`, `apply_into`, `apply_metric_distance`, `apply_norm`, `columns_with_step_mut`, `component_div_mut`, `component_mul_mut`, `conjugate_mut`, `conjugate_transpose_to`, `copy_from`, `copy_from_slice`, `fill`, `fill_column`, `fill_diagonal`, `fill_lower_triangle`, `fill_row`, `fill_upper_triangle`, `fill_with`, `fill_with_identity`, `fixed_columns_with_step_mut`, `fixed_rows_with_step_mut`, `fixed_slice_with_steps_mut`, `fold`, `fold_with`, `map`, `map_with_location`, `mul_to`, `neg_mut`, `normalize_mut`, `rows_with_step_mut`, `scale_mut`, `set_column`, `set_diagonal`, `set_magnitude`, `set_partial_diagonal`, `set_row`, `slice_with_steps_mut`, `sub_to`, `swap`, `swap_columns`, `swap_rows`, `tr_copy_from`, `tr_mul_to`, `transpose_to`, `try_normalize_mut`, `unscale_mut`, `view_with_steps_mut`, `zip_apply`, `zip_fold`, `zip_map`, `zip_zip_apply`, `zip_zip_map`
 - **Point**: `apply`, `map`
 - **Quaternion**: `impl:AddAssign<Quaternion>`, `impl:DivAssign<T>`, `impl:MulAssign<Quaternion>`, `impl:MulAssign<T>`, `impl:SubAssign<Quaternion>`, `as_vector_mut`, `conjugate_mut`, `normalize_mut`, `try_inverse_mut`
 - **Rotation**: `transpose_mut`
 - **Rotation2**: `impl:DivAssign<UnitComplex>`, `impl:MulAssign<UnitComplex>`
-- **Similarity**: `impl:DivAssign<Isometry>`, `impl:DivAssign<Similarity>`, `impl:MulAssign<Isometry>`, `impl:MulAssign<Similarity>`, `impl:MulAssign<Translation>`, `append_scaling_mut`, `inverse_mut`, `prepend_scaling_mut`
+- **Similarity**: `append_scaling_mut`, `inverse_mut`, `prepend_scaling_mut`
 - **SquareMatrix**: `adjoint_mut`, `conjugate_transform_mut`, `fill_lower_triangle_with_upper_triangle`, `fill_upper_triangle_with_lower_triangle`, `map_diagonal`, `transpose_mut`
 - **Translation**: `impl:DivAssign<Translation>`, `impl:MulAssign<Translation>`, `inverse_mut`
 - **UnitComplex**: `impl:DivAssign<Rotation>`, `impl:DivAssign<UnitComplex>`, `impl:MulAssign<Rotation>`, `impl:MulAssign<UnitComplex>`, `conjugate_mut`
@@ -129,27 +129,20 @@ quaternion transcendental functions (`exp`, `ln`, `powf`, `sqrt`, trig), polar d
 
 ### P09a Rotation, Translation, Point completion
 
-cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 12 items (`*` = partial):
+cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 6 items (`*` = partial):
 
 - **Point**: `impl:SubsetOf<Matrix>`*
-- **Rotation**: `impl:Div<Isometry>`, `impl:Div<Similarity>`, `impl:Mul<Isometry>`, `impl:Mul<Similarity>`, `impl:Mul<Translation>`, `impl:SubsetOf<Transform>`
+- **Rotation**: `impl:SubsetOf<Transform>`
 - **Rotation3**: `impl:SubsetOf<UnitDualQuaternion>`
-- **Translation**: `impl:Mul<Rotation>`, `impl:SubsetOf<Matrix>`*, `impl:SubsetOf<Transform>`, `impl:SubsetOf<UnitDualQuaternion>`
+- **Translation**: `impl:SubsetOf<Matrix>`*, `impl:SubsetOf<Transform>`, `impl:SubsetOf<UnitDualQuaternion>`
 
 ### P09b Isometry, Similarity completion (incl. rotation-matrix variants)
 
-`IsometryMatrix2/3`, `SimilarityMatrix2/3`, cross-type operators (`Isometry / Rotation`, `Similarity * Translation`...), `look_at_lh`, `new_observer_frames`, `rotation_wrt_point`, `to_matrix`, `inverse_transform_unit_vector`, `cast`. Tier: mechanical. Depends on: P09a. 77 items (`*` = partial):
+`IsometryMatrix2/3`, `SimilarityMatrix2/3`, cross-type operators (`Isometry / Rotation`, `Similarity * Translation`...), `look_at_lh`, `new_observer_frames`, `rotation_wrt_point`, `to_matrix`, `inverse_transform_unit_vector`, `cast`. Tier: mechanical. Depends on: P09a. 5 items (`*` = partial):
 
-- **Isometry**: `impl:Default`, `impl:Div<Isometry>`, `impl:Div<Rotation>`, `impl:Div<Similarity>`, `impl:From<Matrix>`, `impl:From<Point>`, `impl:From<[Isometry; N]>`, `impl:From<[T; N]>`, `impl:Mul<Rotation>`, `impl:Mul<Similarity>`, `impl:Mul<Unit<Matrix>>`, `impl:One`, `impl:RelativeEq`, `impl:SubsetOf<Isometry>`, `impl:SubsetOf<Matrix>`, `impl:SubsetOf<Similarity>`, `impl:SubsetOf<Transform>`, `impl:UlpsEq`, `inverse_transform_unit_vector`, `rotation_wrt_point`, `to_matrix`, `type:IsometryMatrix2`, `type:IsometryMatrix3`
-- **Isometry2**: `impl:Div<UnitComplex>`, `cast`
-- **Isometry3**: `impl:Div<UnitQuaternion>`, `impl:SubsetOf<UnitDualQuaternion>`, `cast`, `look_at_lh`, `new_observer_frame`
-- **IsometryMatrix2**: `cast`, `lerp_slerp`, `new`, `rotation`, `translation`
-- **IsometryMatrix3**: `cast`, `face_towards`, `lerp_slerp`, `look_at_lh`, `look_at_rh`, `new`, `new_observer_frame`, `rotation`, `translation`, `try_lerp_slerp`
-- **Similarity**: `impl:Default`, `impl:Div<Isometry>`, `impl:Div<Rotation>`, `impl:Div<Similarity>`, `impl:From<[Similarity; N]>`, `impl:Mul<Isometry>`, `impl:Mul<Rotation>`, `impl:One`, `impl:RelativeEq`, `impl:SubsetOf<Matrix>`, `impl:SubsetOf<Similarity>`, `impl:SubsetOf<Transform>`, `impl:UlpsEq`, `rotation_wrt_point`, `type:SimilarityMatrix2`, `type:SimilarityMatrix3`
-- **Similarity2**: `impl:Div<UnitComplex>`, `cast`
-- **Similarity3**: `impl:Div<UnitQuaternion>`, `cast`, `face_towards`, `look_at_lh`, `look_at_rh`, `new_observer_frames`
-- **SimilarityMatrix2**: `cast`, `new`
-- **SimilarityMatrix3**: `cast`, `face_towards`, `look_at_lh`, `look_at_rh`, `new`, `new_observer_frames`
+- **Isometry**: `impl:From<[Isometry; N]>`, `impl:SubsetOf<Transform>`
+- **Isometry3**: `impl:SubsetOf<UnitDualQuaternion>`
+- **Similarity**: `impl:From<[Similarity; N]>`, `impl:SubsetOf<Transform>`
 
 ### P10 Scale and Reflection
 
@@ -318,8 +311,8 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | Reflection | Reflection1, Reflection2, Reflection3, Reflection4, Reflection5, Reflection6 |
 | UnitVector | **UnitVector1**, **UnitVector2**, **UnitVector3**, **UnitVector4**, **UnitVector5**, **UnitVector6** |
 | Rotation | **Rotation2**, **Rotation3**, **UnitComplex**, **UnitQuaternion** |
-| Isometry | **Isometry2**, **Isometry3**, IsometryMatrix2, IsometryMatrix3 |
-| Similarity | **Similarity2**, **Similarity3**, SimilarityMatrix2, SimilarityMatrix3 |
+| Isometry | **Isometry2**, **Isometry3**, **IsometryMatrix2**, **IsometryMatrix3** |
+| Similarity | **Similarity2**, **Similarity3**, **SimilarityMatrix2**, **SimilarityMatrix3** |
 | Transform | Affine2, Affine3, Projective2, Projective3, Transform2, Transform3, Perspective3, Orthographic3 |
 | Quaternion | **Quaternion**, DualQuaternion, UnitDualQuaternion |
 
@@ -345,7 +338,11 @@ Public Cairo items that spell an upstream operator, field or `Deref` access Cair
 
 | Owner | Items | Upstream | Reason |
 |---|---|---|---|
+| Isometry2 | `impl:From<Isometry>` | `convert(iso)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Isometry>` (`RENAMES` maps its scalar side to `cast`) |
 | Isometry2 | `impl:From<Rotation>` | `convert(r)` / `convert(t)` | the 2D side of upstream's `SubsetOf<Isometry \| Similarity>` (`RENAMES` points at the 3D impls) |
+| Isometry3 | `impl:From<Isometry>` | `convert(iso)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Isometry>` (`RENAMES` maps its scalar side to `cast`) |
+| IsometryMatrix2 | `impl:From<Isometry>` | `convert(iso)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Isometry>` (`RENAMES` maps its scalar side to `cast`) |
+| IsometryMatrix3 | `impl:From<Isometry>` | `convert(iso)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Isometry>` (`RENAMES` maps its scalar side to `cast`) |
 | Point1 | `min_value` | `<Point as Bounded>::min_value()` | the second method of upstream's `Bounded` impl (`RENAMES` maps the impl to `max_value`) |
 | Point1 | `coords` | `p.coords` | an upstream public field; Cairo's points store `x, y(, z)` as fields (upstream's `Deref` view), so the vector is a method |
 | Point2 | `min_value` | `<Point as Bounded>::min_value()` | the second method of upstream's `Bounded` impl (`RENAMES` maps the impl to `max_value`) |
@@ -358,7 +355,14 @@ Public Cairo items that spell an upstream operator, field or `Deref` access Cair
 | Point5 | `coords` | `p.coords` | an upstream public field; Cairo's points store `x, y(, z)` as fields (upstream's `Deref` view), so the vector is a method |
 | Point6 | `min_value` | `<Point as Bounded>::min_value()` | the second method of upstream's `Bounded` impl (`RENAMES` maps the impl to `max_value`) |
 | Point6 | `coords` | `p.coords` | an upstream public field; Cairo's points store `x, y(, z)` as fields (upstream's `Deref` view), so the vector is a method |
+| Similarity2 | `impl:From<Isometry>` | `convert(iso)` | the other instances of upstream's generic `SubsetOf<Similarity> for Isometry` (`RENAMES` points at `Similarity3`) |
 | Similarity2 | `impl:From<Rotation>`, `impl:From<Translation>` | `convert(r)` / `convert(t)` | the 2D side of upstream's `SubsetOf<Isometry \| Similarity>` (`RENAMES` points at the 3D impls) |
+| Similarity2 | `impl:From<Similarity>` | `convert(sim)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Similarity>` (`RENAMES` maps its scalar side to `cast`) |
+| Similarity3 | `impl:From<Similarity>` | `convert(sim)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Similarity>` (`RENAMES` maps its scalar side to `cast`) |
+| SimilarityMatrix2 | `impl:From<Isometry>` | `convert(iso)` | the other instances of upstream's generic `SubsetOf<Similarity> for Isometry` (`RENAMES` points at `Similarity3`) |
+| SimilarityMatrix2 | `impl:From<Similarity>` | `convert(sim)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Similarity>` (`RENAMES` maps its scalar side to `cast`) |
+| SimilarityMatrix3 | `impl:From<Isometry>` | `convert(iso)` | the other instances of upstream's generic `SubsetOf<Similarity> for Isometry` (`RENAMES` points at `Similarity3`) |
+| SimilarityMatrix3 | `impl:From<Similarity>` | `convert(sim)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Similarity>` (`RENAMES` maps its scalar side to `cast`) |
 | Unit | `dot`, `scale` | `u.dot(&w)`, `u * k` | `Vector` methods reached through upstream's `Deref<Target = Vector>` |
 | UnitComplex | `im`, `re` | `c.re`, `c.im` | the fields of upstream's `Complex`, reached through `Deref` |
 | UnitQuaternion | `dot`, `imag`, `scalar` | `q.dot(&r)`, `q.imag()`, `q.scalar()` | `Quaternion` methods reached through upstream's `Deref<Target = Quaternion>` |
@@ -1718,84 +1722,84 @@ Cairo: none · ported 0, partial 0, missing 37, excluded 8.
 
 #### Isometry (geometry)
 
-Cairo: Isometry2/3 · ported 30, partial 0, missing 28, excluded 6.
+Cairo: Isometry2/3, IsometryMatrix2/3 · ported 54, partial 0, missing 4, excluded 6.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `AbsDiffEq` | ported | Isometry2/3::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `geometry/isometry.rs` |
+| impl `AbsDiffEq` | ported | Isometry2/3, IsometryMatrix2/3::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `geometry/isometry.rs` |
 | impl `Arbitrary` | excluded |  | random | `geometry/isometry_construction.rs` |
 | impl `Archive` | excluded |  | glue | `geometry/isometry.rs` |
-| impl `Clone` | ported | Isometry2/3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/isometry.rs` |
-| impl `Copy` | ported | Isometry2/3 (impl `Copy`) |  | `geometry/isometry.rs` |
-| impl `Debug` | ported | Isometry2/3 (impl `Debug`) |  | `geometry/isometry.rs` |
-| impl `Default` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| impl `Deserialize` | ported | Isometry2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/isometry.rs` |
+| impl `Clone` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/isometry.rs` |
+| impl `Copy` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Copy`) |  | `geometry/isometry.rs` |
+| impl `Debug` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Debug`) |  | `geometry/isometry.rs` |
+| impl `Default` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Default`) |  | `geometry/isometry_construction.rs` |
+| impl `Deserialize` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/isometry.rs` |
 | impl `Display` | excluded |  | fmt | `geometry/isometry.rs` |
 | impl `Distribution` | excluded |  | random | `geometry/isometry_construction.rs` |
-| impl `Div<Isometry>` | missing |  | P09b | `geometry/isometry_ops.rs` |
-| impl `Div<Rotation>` | missing |  | P09b | `geometry/isometry_ops.rs` |
-| impl `Div<Similarity>` | missing |  | P09b | `geometry/similarity_ops.rs` |
-| impl `DivAssign<Isometry>` | missing |  | P03 | `geometry/isometry_ops.rs` |
-| impl `Eq` | ported | Isometry2/3 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/isometry.rs` |
-| impl `From<Matrix>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| impl `From<Point>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| impl `From<Translation>` | ported | Isometry2/3 (impl `From<Translation>`) |  | `geometry/isometry_conversion.rs` |
+| impl `Div<Isometry>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Div<Isometry>`) |  | `geometry/isometry_ops.rs` |
+| impl `Div<Rotation>` | ported | IsometryMatrix2/3::div_rotation | renamed `div_rotation`: Cairo-imposed: heterogeneous operator (rotation-matrix instances only) | `geometry/isometry_ops.rs` |
+| impl `Div<Similarity>` | ported | Isometry2/3, IsometryMatrix2/3::div_similarity | renamed `div_similarity`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
+| impl `DivAssign<Isometry>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `DivAssign<Isometry>`) |  | `geometry/isometry_ops.rs` |
+| impl `Eq` | ported | Isometry2/3, IsometryMatrix2/3 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/isometry.rs` |
+| impl `From<Matrix>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `From<Matrix>`) |  | `geometry/isometry_conversion.rs` |
+| impl `From<Point>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `From<Point>`) |  | `geometry/isometry_conversion.rs` |
+| impl `From<Translation>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `From<Translation>`) |  | `geometry/isometry_conversion.rs` |
 | impl `From<[Isometry; N]>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| impl `From<[T; N]>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| impl `Hash` | ported | Isometry2/3 (impl `Hash`) |  | `geometry/isometry.rs` |
-| impl `Mul<Isometry>` | ported | Isometry2/3 (impl `Mul<Isometry>`) |  | `geometry/isometry_ops.rs` |
-| impl `Mul<Matrix>` | ported | Isometry2/3::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/isometry_ops.rs` |
-| impl `Mul<Point>` | ported | Isometry2/3::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/isometry_ops.rs` |
-| impl `Mul<Rotation>` | missing |  | P09b | `geometry/isometry_ops.rs` |
-| impl `Mul<Similarity>` | missing |  | P09b | `geometry/similarity_ops.rs` |
+| impl `From<[T; N]>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `From<[T; N]>`) |  | `geometry/isometry_conversion.rs` |
+| impl `Hash` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Hash`) |  | `geometry/isometry.rs` |
+| impl `Mul<Isometry>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Mul<Isometry>`) |  | `geometry/isometry_ops.rs` |
+| impl `Mul<Matrix>` | ported | Isometry2/3, IsometryMatrix2/3::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/isometry_ops.rs` |
+| impl `Mul<Point>` | ported | Isometry2/3, IsometryMatrix2/3::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/isometry_ops.rs` |
+| impl `Mul<Rotation>` | ported | IsometryMatrix2/3::mul_rotation | renamed `mul_rotation`: Cairo-imposed: heterogeneous operator (rotation-matrix instances only) | `geometry/isometry_ops.rs` |
+| impl `Mul<Similarity>` | ported | Isometry2/3, IsometryMatrix2/3::mul_similarity | renamed `mul_similarity`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
 | impl `Mul<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
-| impl `Mul<Translation>` | ported | Isometry2/3::mul_translation | renamed `mul_translation`: `iso * t`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/isometry_ops.rs` |
-| impl `Mul<Unit<Matrix>>` | missing |  | P09b | `geometry/isometry_ops.rs` |
-| impl `MulAssign<Isometry>` | missing |  | P03 | `geometry/isometry_ops.rs` |
-| impl `MulAssign<Translation>` | missing |  | P03 | `geometry/isometry_ops.rs` |
-| impl `One` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| impl `PartialEq` | ported | Isometry2/3 (impl `PartialEq`) |  | `geometry/isometry.rs` |
+| impl `Mul<Translation>` | ported | Isometry2/3, IsometryMatrix2/3::mul_translation | renamed `mul_translation`: `iso * t`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/isometry_ops.rs` |
+| impl `Mul<Unit<Matrix>>` | ported | Isometry2/3, IsometryMatrix2/3::transform_unit_vector | renamed `transform_unit_vector`: heterogeneous operators are named methods | `geometry/isometry_ops.rs` |
+| impl `MulAssign<Isometry>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `MulAssign<Isometry>`) |  | `geometry/isometry_ops.rs` |
+| impl `MulAssign<Translation>` | ported | Isometry2/3, IsometryMatrix2/3 (impl `MulAssign<Translation>`) |  | `geometry/isometry_ops.rs` |
+| impl `One` | ported | Isometry2/3, IsometryMatrix2/3 (impl `One`) |  | `geometry/isometry_construction.rs` |
+| impl `PartialEq` | ported | Isometry2/3, IsometryMatrix2/3 (impl `PartialEq`) |  | `geometry/isometry.rs` |
 | impl `Pod` | excluded |  | glue | `geometry/isometry.rs` |
-| impl `RelativeEq` | missing |  | P09b | `geometry/isometry.rs` |
-| impl `Serialize` | ported | Isometry2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/isometry.rs` |
-| impl `SubsetOf<Isometry>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| impl `SubsetOf<Matrix>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| impl `SubsetOf<Similarity>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
+| impl `RelativeEq` | ported | Isometry2/3, IsometryMatrix2/3::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/isometry.rs` |
+| impl `Serialize` | ported | Isometry2/3, IsometryMatrix2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/isometry.rs` |
+| impl `SubsetOf<Isometry>` | ported | Isometry2/3, IsometryMatrix2/3::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/isometry_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | Isometry2/3, IsometryMatrix2/3::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix is `to_homogeneous` | `geometry/isometry_conversion.rs` |
+| impl `SubsetOf<Similarity>` | ported | Similarity3 (impl `From<Isometry>`) | renamed `From<Isometry>`: Cairo-imposed: `nalgebra::convert` is `Into` (`Similarity2`, `SimilarityMatrix2/3` likewise) | `geometry/isometry_conversion.rs` |
 | impl `SubsetOf<Transform>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| impl `UlpsEq` | missing |  | P09b | `geometry/isometry.rs` |
+| impl `UlpsEq` | ported | Isometry2/3, IsometryMatrix2/3::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/isometry.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/isometry.rs` |
-| method `append_rotation_mut` | ported | Isometry2/3::append_rotation_mut |  | `geometry/isometry.rs` |
-| method `append_rotation_wrt_center_mut` | ported | Isometry2/3::append_rotation_wrt_center_mut |  | `geometry/isometry.rs` |
-| method `append_rotation_wrt_point_mut` | ported | Isometry2/3::append_rotation_wrt_point_mut |  | `geometry/isometry.rs` |
-| method `append_translation_mut` | ported | Isometry2/3::append_translation_mut |  | `geometry/isometry.rs` |
-| method `from_parts` | ported | Isometry2/3::from_parts |  | `geometry/isometry.rs` |
-| method `identity` | ported | Isometry2/3::identity |  | `geometry/isometry_construction.rs` |
-| method `inv_mul` | ported | Isometry2/3::inv_mul |  | `geometry/isometry.rs` |
-| method `inverse` | ported | Isometry2/3::inverse |  | `geometry/isometry.rs` |
+| method `append_rotation_mut` | ported | Isometry2/3, IsometryMatrix2/3::append_rotation_mut |  | `geometry/isometry.rs` |
+| method `append_rotation_wrt_center_mut` | ported | Isometry2/3, IsometryMatrix2/3::append_rotation_wrt_center_mut |  | `geometry/isometry.rs` |
+| method `append_rotation_wrt_point_mut` | ported | Isometry2/3, IsometryMatrix2/3::append_rotation_wrt_point_mut |  | `geometry/isometry.rs` |
+| method `append_translation_mut` | ported | Isometry2/3, IsometryMatrix2/3::append_translation_mut |  | `geometry/isometry.rs` |
+| method `from_parts` | ported | Isometry2/3, IsometryMatrix2/3::from_parts |  | `geometry/isometry.rs` |
+| method `identity` | ported | Isometry2/3, IsometryMatrix2/3::identity |  | `geometry/isometry_construction.rs` |
+| method `inv_mul` | ported | Isometry2/3, IsometryMatrix2/3::inv_mul |  | `geometry/isometry.rs` |
+| method `inverse` | ported | Isometry2/3, IsometryMatrix2/3::inverse |  | `geometry/isometry.rs` |
 | method `inverse_mut` | missing |  | P03 | `geometry/isometry.rs` |
-| method `inverse_transform_point` | ported | Isometry2/3::inverse_transform_point |  | `geometry/isometry.rs` |
-| method `inverse_transform_unit_vector` | missing |  | P09b | `geometry/isometry.rs` |
-| method `inverse_transform_vector` | ported | Isometry2/3::inverse_transform_vector |  | `geometry/isometry.rs` |
-| method `rotation_wrt_point` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `to_homogeneous` | ported | Isometry2/3::to_homogeneous |  | `geometry/isometry.rs` |
-| method `to_matrix` | missing |  | P09b | `geometry/isometry.rs` |
-| method `transform_point` | ported | Isometry2/3::transform_point |  | `geometry/isometry.rs` |
-| method `transform_vector` | ported | Isometry2/3::transform_vector |  | `geometry/isometry.rs` |
-| type `Isometry` | ported | Isometry2/3 | generic upstream type, concrete Cairo types | `geometry/isometry.rs` |
+| method `inverse_transform_point` | ported | Isometry2/3, IsometryMatrix2/3::inverse_transform_point |  | `geometry/isometry.rs` |
+| method `inverse_transform_unit_vector` | ported | Isometry2/3, IsometryMatrix2/3::inverse_transform_unit_vector |  | `geometry/isometry.rs` |
+| method `inverse_transform_vector` | ported | Isometry2/3, IsometryMatrix2/3::inverse_transform_vector |  | `geometry/isometry.rs` |
+| method `rotation_wrt_point` | ported | Isometry2/3, IsometryMatrix2/3::rotation_wrt_point |  | `geometry/isometry_construction.rs` |
+| method `to_homogeneous` | ported | Isometry2/3, IsometryMatrix2/3::to_homogeneous |  | `geometry/isometry.rs` |
+| method `to_matrix` | ported | Isometry2/3, IsometryMatrix2/3::to_matrix |  | `geometry/isometry.rs` |
+| method `transform_point` | ported | Isometry2/3, IsometryMatrix2/3::transform_point |  | `geometry/isometry.rs` |
+| method `transform_vector` | ported | Isometry2/3, IsometryMatrix2/3::transform_vector |  | `geometry/isometry.rs` |
+| type `Isometry` | ported | Isometry2/3, IsometryMatrix2/3 | generic upstream type, concrete Cairo types | `geometry/isometry.rs` |
 | type `Isometry2` | ported | Isometry2 |  | `geometry/isometry_alias.rs` |
 | type `Isometry3` | ported | Isometry3 |  | `geometry/isometry_alias.rs` |
-| type `IsometryMatrix2` | missing |  | P09b | `geometry/isometry_alias.rs` |
-| type `IsometryMatrix3` | missing |  | P09b | `geometry/isometry_alias.rs` |
+| type `IsometryMatrix2` | ported | IsometryMatrix2 |  | `geometry/isometry_alias.rs` |
+| type `IsometryMatrix3` | ported | IsometryMatrix3 |  | `geometry/isometry_alias.rs` |
 
 #### Isometry2 (geometry)
 
-Cairo: Isometry2 · ported 5, partial 0, missing 2, excluded 0.
+Cairo: Isometry2 · ported 7, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Div<UnitComplex>` | missing |  | P09b | `geometry/isometry_ops.rs` |
+| impl `Div<UnitComplex>` | ported | Isometry2::div_unit_complex | renamed `div_unit_complex`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
 | impl `Mul<UnitComplex>` | ported | Isometry2::mul_unit_complex | renamed `mul_unit_complex`: `iso * r`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/isometry_ops.rs` |
-| method `cast` | missing |  | P09b | `geometry/isometry_construction.rs` |
+| method `cast` | ported | Isometry2::cast |  | `geometry/isometry_construction.rs` |
 | method `lerp_slerp` | ported | Isometry2::lerp_slerp |  | `geometry/isometry_interpolation.rs` |
 | method `new` | ported | Isometry2::new |  | `geometry/isometry_construction.rs` |
 | method `rotation` | ported | Isometry2::rotation |  | `geometry/isometry_construction.rs` |
@@ -1803,55 +1807,55 @@ Cairo: Isometry2 · ported 5, partial 0, missing 2, excluded 0.
 
 #### Isometry3 (geometry)
 
-Cairo: Isometry3 · ported 8, partial 0, missing 8, excluded 0.
+Cairo: Isometry3 · ported 12, partial 0, missing 4, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Div<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Div<UnitQuaternion>` | missing |  | P09b | `geometry/isometry_ops.rs` |
+| impl `Div<UnitQuaternion>` | ported | Isometry3::div_unit_quaternion | renamed `div_unit_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
 | impl `From<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
 | impl `Mul<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
 | impl `Mul<UnitQuaternion>` | ported | Isometry3::mul_unit_quaternion | renamed `mul_unit_quaternion`: `iso * r`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/isometry_ops.rs` |
 | impl `SubsetOf<UnitDualQuaternion>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
-| method `cast` | missing |  | P09b | `geometry/isometry_construction.rs` |
+| method `cast` | ported | Isometry3::cast |  | `geometry/isometry_construction.rs` |
 | method `face_towards` | ported | Isometry3::face_towards |  | `geometry/isometry_construction.rs` |
 | method `lerp_slerp` | ported | Isometry3::lerp_slerp |  | `geometry/isometry_interpolation.rs` |
-| method `look_at_lh` | missing |  | P09b | `geometry/isometry_construction.rs` |
+| method `look_at_lh` | ported | Isometry3::look_at_lh |  | `geometry/isometry_construction.rs` |
 | method `look_at_rh` | ported | Isometry3::look_at_rh |  | `geometry/isometry_construction.rs` |
 | method `new` | ported | Isometry3::new |  | `geometry/isometry_construction.rs` |
-| method `new_observer_frame` | missing |  | deprecated upstream; P09b; deprecated | `geometry/isometry_construction.rs` |
+| method `new_observer_frame` | ported | Isometry3::new_observer_frame | deprecated | `geometry/isometry_construction.rs` |
 | method `rotation` | ported | Isometry3::rotation |  | `geometry/isometry_construction.rs` |
 | method `translation` | ported | Isometry3::translation |  | `geometry/isometry_construction.rs` |
 | method `try_lerp_slerp` | ported | Isometry3::try_lerp_slerp |  | `geometry/isometry_interpolation.rs` |
 
 #### IsometryMatrix2 (geometry)
 
-Cairo: none · ported 0, partial 0, missing 5, excluded 0.
+Cairo: IsometryMatrix2 · ported 5, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `cast` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `lerp_slerp` | missing |  | P09b | `geometry/isometry_interpolation.rs` |
-| method `new` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `rotation` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `translation` | missing |  | P09b | `geometry/isometry_construction.rs` |
+| method `cast` | ported | IsometryMatrix2::cast |  | `geometry/isometry_construction.rs` |
+| method `lerp_slerp` | ported | IsometryMatrix2::lerp_slerp |  | `geometry/isometry_interpolation.rs` |
+| method `new` | ported | IsometryMatrix2::new |  | `geometry/isometry_construction.rs` |
+| method `rotation` | ported | IsometryMatrix2::rotation |  | `geometry/isometry_construction.rs` |
+| method `translation` | ported | IsometryMatrix2::translation |  | `geometry/isometry_construction.rs` |
 
 #### IsometryMatrix3 (geometry)
 
-Cairo: none · ported 0, partial 0, missing 10, excluded 0.
+Cairo: IsometryMatrix3 · ported 10, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `cast` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `face_towards` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `lerp_slerp` | missing |  | P09b | `geometry/isometry_interpolation.rs` |
-| method `look_at_lh` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `look_at_rh` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `new` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `new_observer_frame` | missing |  | deprecated upstream; P09b; deprecated | `geometry/isometry_construction.rs` |
-| method `rotation` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `translation` | missing |  | P09b | `geometry/isometry_construction.rs` |
-| method `try_lerp_slerp` | missing |  | P09b | `geometry/isometry_interpolation.rs` |
+| method `cast` | ported | IsometryMatrix3::cast |  | `geometry/isometry_construction.rs` |
+| method `face_towards` | ported | IsometryMatrix3::face_towards |  | `geometry/isometry_construction.rs` |
+| method `lerp_slerp` | ported | IsometryMatrix3::lerp_slerp |  | `geometry/isometry_interpolation.rs` |
+| method `look_at_lh` | ported | IsometryMatrix3::look_at_lh |  | `geometry/isometry_construction.rs` |
+| method `look_at_rh` | ported | IsometryMatrix3::look_at_rh |  | `geometry/isometry_construction.rs` |
+| method `new` | ported | IsometryMatrix3::new |  | `geometry/isometry_construction.rs` |
+| method `new_observer_frame` | ported | IsometryMatrix3::new_observer_frame | deprecated | `geometry/isometry_construction.rs` |
+| method `rotation` | ported | IsometryMatrix3::rotation |  | `geometry/isometry_construction.rs` |
+| method `translation` | ported | IsometryMatrix3::translation |  | `geometry/isometry_construction.rs` |
+| method `try_lerp_slerp` | ported | IsometryMatrix3::try_lerp_slerp |  | `geometry/isometry_interpolation.rs` |
 
 #### Matrix (geometry)
 
@@ -2231,7 +2235,7 @@ Cairo: none · ported 0, partial 0, missing 14, excluded 1.
 
 #### Rotation (geometry)
 
-Cairo: Rotation2/3 · ported 41, partial 0, missing 9, excluded 7.
+Cairo: Rotation2/3 · ported 46, partial 0, missing 4, excluded 7.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2243,21 +2247,21 @@ Cairo: Rotation2/3 · ported 41, partial 0, missing 9, excluded 7.
 | impl `Default` | ported | Rotation2/3 (impl `Default`) |  | `geometry/rotation_construction.rs` |
 | impl `Deserialize` | ported | Rotation2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/rotation.rs` |
 | impl `Display` | excluded |  | fmt | `geometry/rotation.rs` |
-| impl `Div<Isometry>` | missing |  | P09a | `geometry/isometry_ops.rs` |
+| impl `Div<Isometry>` | ported | Rotation2/3::div_isometry | renamed `div_isometry`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
 | impl `Div<Rotation>` | ported | Rotation2/3 (impl `Div<Rotation>`) |  | `geometry/rotation_ops.rs` |
-| impl `Div<Similarity>` | missing |  | P09a | `geometry/similarity_ops.rs` |
+| impl `Div<Similarity>` | ported | Rotation2/3::div_similarity | renamed `div_similarity`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
 | impl `Div<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
 | impl `Eq` | ported | Rotation2/3 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/rotation.rs` |
 | impl `From<[Rotation; N]>` | excluded |  | simd | `geometry/rotation_conversion.rs` |
 | impl `Hash` | ported | Rotation2/3 (impl `Hash`) |  | `geometry/rotation.rs` |
 | impl `Index<(usize, usize)>` | ported | Rotation2/3 (impl `Index<(usize, usize)>`) |  | `geometry/rotation_ops.rs` |
-| impl `Mul<Isometry>` | missing |  | P09a | `geometry/isometry_ops.rs` |
+| impl `Mul<Isometry>` | ported | Rotation2/3::mul_isometry | renamed `mul_isometry`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
 | impl `Mul<Matrix>` | ported | Rotation2/3::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/rotation_ops.rs` |
 | impl `Mul<Point>` | ported | Rotation2/3::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/rotation_ops.rs` |
 | impl `Mul<Rotation>` | ported | Rotation2/3 (impl `Mul<Rotation>`) |  | `geometry/rotation_ops.rs` |
-| impl `Mul<Similarity>` | missing |  | P09a | `geometry/similarity_ops.rs` |
+| impl `Mul<Similarity>` | ported | Rotation2/3::mul_similarity | renamed `mul_similarity`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
 | impl `Mul<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
-| impl `Mul<Translation>` | missing |  | P09a | `geometry/isometry_ops.rs` |
+| impl `Mul<Translation>` | ported | Rotation2/3::mul_translation | renamed `mul_translation`: Cairo-imposed: heterogeneous operator (output `IsometryMatrix2/3`) | `geometry/isometry_ops.rs` |
 | impl `Mul<Unit<Matrix>>` | ported | Rotation2/3::transform_unit_vector | renamed `transform_unit_vector`: heterogeneous operators are named methods | `geometry/rotation_ops.rs` |
 | impl `One` | ported | Rotation2/3 (impl `One`) |  | `geometry/rotation_construction.rs` |
 | impl `PartialEq` | ported | Rotation2/3 (impl `PartialEq`) |  | `geometry/rotation.rs` |
@@ -2422,123 +2426,123 @@ Cairo: none · ported 0, partial 0, missing 40, excluded 11.
 
 #### Similarity (geometry)
 
-Cairo: Similarity2/3 · ported 34, partial 0, missing 25, excluded 6.
+Cairo: Similarity2/3, SimilarityMatrix2/3 · ported 53, partial 0, missing 6, excluded 6.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `AbsDiffEq` | ported | Similarity2/3::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `geometry/similarity.rs` |
+| impl `AbsDiffEq` | ported | Similarity2/3, SimilarityMatrix2/3::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `geometry/similarity.rs` |
 | impl `Arbitrary` | excluded |  | random | `geometry/similarity_construction.rs` |
 | impl `Archive` | excluded |  | glue | `geometry/similarity.rs` |
-| impl `Clone` | ported | Similarity2/3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/similarity.rs` |
-| impl `Copy` | ported | Similarity2/3 (impl `Copy`) |  | `geometry/similarity.rs` |
-| impl `Debug` | ported | Similarity2/3 (impl `Debug`) |  | `geometry/similarity.rs` |
-| impl `Default` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| impl `Deserialize` | ported | Similarity2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/similarity.rs` |
+| impl `Clone` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/similarity.rs` |
+| impl `Copy` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Copy`) |  | `geometry/similarity.rs` |
+| impl `Debug` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Debug`) |  | `geometry/similarity.rs` |
+| impl `Default` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Default`) |  | `geometry/similarity_construction.rs` |
+| impl `Deserialize` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/similarity.rs` |
 | impl `Display` | excluded |  | fmt | `geometry/similarity.rs` |
 | impl `Distribution` | excluded |  | random | `geometry/similarity_construction.rs` |
-| impl `Div<Isometry>` | missing |  | P09b | `geometry/similarity_ops.rs` |
-| impl `Div<Rotation>` | missing |  | P09b | `geometry/similarity_ops.rs` |
-| impl `Div<Similarity>` | missing |  | P09b | `geometry/similarity_ops.rs` |
-| impl `DivAssign<Isometry>` | missing |  | P03 | `geometry/similarity_ops.rs` |
-| impl `DivAssign<Similarity>` | missing |  | P03 | `geometry/similarity_ops.rs` |
-| impl `Eq` | ported | Similarity2/3 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/similarity.rs` |
+| impl `Div<Isometry>` | ported | Similarity2/3, SimilarityMatrix2/3::div_isometry | renamed `div_isometry`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
+| impl `Div<Rotation>` | ported | SimilarityMatrix2/3::div_rotation | renamed `div_rotation`: Cairo-imposed: heterogeneous operator (rotation-matrix instances only) | `geometry/similarity_ops.rs` |
+| impl `Div<Similarity>` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Div<Similarity>`) |  | `geometry/similarity_ops.rs` |
+| impl `DivAssign<Isometry>` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `DivAssign<Isometry>`) |  | `geometry/similarity_ops.rs` |
+| impl `DivAssign<Similarity>` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `DivAssign<Similarity>`) |  | `geometry/similarity_ops.rs` |
+| impl `Eq` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/similarity.rs` |
 | impl `From<[Similarity; N]>` | missing |  | P09b | `geometry/similarity_conversion.rs` |
-| impl `Hash` | ported | Similarity2/3 (impl `Hash`) |  | `geometry/similarity.rs` |
-| impl `Mul<Isometry>` | missing |  | P09b | `geometry/similarity_ops.rs` |
-| impl `Mul<Matrix>` | ported | Similarity2/3::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/similarity_ops.rs` |
-| impl `Mul<Point>` | ported | Similarity2/3::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/similarity_ops.rs` |
-| impl `Mul<Rotation>` | missing |  | P09b | `geometry/similarity_ops.rs` |
-| impl `Mul<Similarity>` | ported | Similarity2/3 (impl `Mul<Similarity>`) |  | `geometry/similarity_ops.rs` |
+| impl `Hash` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Hash`) |  | `geometry/similarity.rs` |
+| impl `Mul<Isometry>` | ported | Similarity2/3, SimilarityMatrix2/3::mul_isometry | renamed `mul_isometry`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
+| impl `Mul<Matrix>` | ported | Similarity2/3, SimilarityMatrix2/3::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/similarity_ops.rs` |
+| impl `Mul<Point>` | ported | Similarity2/3, SimilarityMatrix2/3::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/similarity_ops.rs` |
+| impl `Mul<Rotation>` | ported | SimilarityMatrix2/3::mul_rotation | renamed `mul_rotation`: Cairo-imposed: heterogeneous operator (rotation-matrix instances only) | `geometry/similarity_ops.rs` |
+| impl `Mul<Similarity>` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Mul<Similarity>`) |  | `geometry/similarity_ops.rs` |
 | impl `Mul<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
-| impl `Mul<Translation>` | ported | Similarity2/3::mul_translation | renamed `mul_translation`: `iso * t`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/similarity_ops.rs` |
-| impl `MulAssign<Isometry>` | missing |  | P03 | `geometry/similarity_ops.rs` |
-| impl `MulAssign<Similarity>` | missing |  | P03 | `geometry/similarity_ops.rs` |
-| impl `MulAssign<Translation>` | missing |  | P03 | `geometry/similarity_ops.rs` |
-| impl `One` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| impl `PartialEq` | ported | Similarity2/3 (impl `PartialEq`) |  | `geometry/similarity.rs` |
+| impl `Mul<Translation>` | ported | Similarity2/3, SimilarityMatrix2/3::mul_translation | renamed `mul_translation`: `iso * t`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/similarity_ops.rs` |
+| impl `MulAssign<Isometry>` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `MulAssign<Isometry>`) |  | `geometry/similarity_ops.rs` |
+| impl `MulAssign<Similarity>` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `MulAssign<Similarity>`) |  | `geometry/similarity_ops.rs` |
+| impl `MulAssign<Translation>` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `MulAssign<Translation>`) |  | `geometry/similarity_ops.rs` |
+| impl `One` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `One`) |  | `geometry/similarity_construction.rs` |
+| impl `PartialEq` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `PartialEq`) |  | `geometry/similarity.rs` |
 | impl `Pod` | excluded |  | glue | `geometry/similarity.rs` |
-| impl `RelativeEq` | missing |  | P09b | `geometry/similarity.rs` |
-| impl `Serialize` | ported | Similarity2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/similarity.rs` |
-| impl `SubsetOf<Matrix>` | missing |  | P09b | `geometry/similarity_conversion.rs` |
-| impl `SubsetOf<Similarity>` | missing |  | P09b | `geometry/similarity_conversion.rs` |
+| impl `RelativeEq` | ported | Similarity2/3, SimilarityMatrix2/3::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/similarity.rs` |
+| impl `Serialize` | ported | Similarity2/3, SimilarityMatrix2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/similarity.rs` |
+| impl `SubsetOf<Matrix>` | ported | Similarity2/3, SimilarityMatrix2/3::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix is `to_homogeneous` | `geometry/similarity_conversion.rs` |
+| impl `SubsetOf<Similarity>` | ported | Similarity2/3, SimilarityMatrix2/3::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/similarity_conversion.rs` |
 | impl `SubsetOf<Transform>` | missing |  | P09b | `geometry/similarity_conversion.rs` |
-| impl `UlpsEq` | missing |  | P09b | `geometry/similarity.rs` |
+| impl `UlpsEq` | ported | Similarity2/3, SimilarityMatrix2/3::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/similarity.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/similarity.rs` |
-| method `append_rotation_mut` | ported | Similarity2/3::append_rotation_mut |  | `geometry/similarity.rs` |
-| method `append_rotation_wrt_center_mut` | ported | Similarity2/3::append_rotation_wrt_center_mut |  | `geometry/similarity.rs` |
-| method `append_rotation_wrt_point_mut` | ported | Similarity2/3::append_rotation_wrt_point_mut |  | `geometry/similarity.rs` |
-| method `append_scaling` | ported | Similarity2/3::append_scaling |  | `geometry/similarity.rs` |
+| method `append_rotation_mut` | ported | Similarity2/3, SimilarityMatrix2/3::append_rotation_mut |  | `geometry/similarity.rs` |
+| method `append_rotation_wrt_center_mut` | ported | Similarity2/3, SimilarityMatrix2/3::append_rotation_wrt_center_mut |  | `geometry/similarity.rs` |
+| method `append_rotation_wrt_point_mut` | ported | Similarity2/3, SimilarityMatrix2/3::append_rotation_wrt_point_mut |  | `geometry/similarity.rs` |
+| method `append_scaling` | ported | Similarity2/3, SimilarityMatrix2/3::append_scaling |  | `geometry/similarity.rs` |
 | method `append_scaling_mut` | missing |  | P03 | `geometry/similarity.rs` |
-| method `append_translation_mut` | ported | Similarity2/3::append_translation_mut |  | `geometry/similarity.rs` |
-| method `from_isometry` | ported | Similarity2/3::from_isometry |  | `geometry/similarity.rs` |
-| method `from_parts` | ported | Similarity2/3::from_parts |  | `geometry/similarity.rs` |
-| method `from_scaling` | ported | Similarity2/3::from_scaling |  | `geometry/similarity.rs` |
-| method `identity` | ported | Similarity2/3::identity |  | `geometry/similarity_construction.rs` |
-| method `inverse` | ported | Similarity2/3::inverse |  | `geometry/similarity.rs` |
+| method `append_translation_mut` | ported | Similarity2/3, SimilarityMatrix2/3::append_translation_mut |  | `geometry/similarity.rs` |
+| method `from_isometry` | ported | Similarity2/3, SimilarityMatrix2/3::from_isometry |  | `geometry/similarity.rs` |
+| method `from_parts` | ported | Similarity2/3, SimilarityMatrix2/3::from_parts |  | `geometry/similarity.rs` |
+| method `from_scaling` | ported | Similarity2/3, SimilarityMatrix2/3::from_scaling |  | `geometry/similarity.rs` |
+| method `identity` | ported | Similarity2/3, SimilarityMatrix2/3::identity |  | `geometry/similarity_construction.rs` |
+| method `inverse` | ported | Similarity2/3, SimilarityMatrix2/3::inverse |  | `geometry/similarity.rs` |
 | method `inverse_mut` | missing |  | P03 | `geometry/similarity.rs` |
-| method `inverse_transform_point` | ported | Similarity2/3::inverse_transform_point |  | `geometry/similarity.rs` |
-| method `inverse_transform_vector` | ported | Similarity2/3::inverse_transform_vector |  | `geometry/similarity.rs` |
-| method `prepend_scaling` | ported | Similarity2/3::prepend_scaling |  | `geometry/similarity.rs` |
+| method `inverse_transform_point` | ported | Similarity2/3, SimilarityMatrix2/3::inverse_transform_point |  | `geometry/similarity.rs` |
+| method `inverse_transform_vector` | ported | Similarity2/3, SimilarityMatrix2/3::inverse_transform_vector |  | `geometry/similarity.rs` |
+| method `prepend_scaling` | ported | Similarity2/3, SimilarityMatrix2/3::prepend_scaling |  | `geometry/similarity.rs` |
 | method `prepend_scaling_mut` | missing |  | P03 | `geometry/similarity.rs` |
-| method `rotation_wrt_point` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `scaling` | ported | Similarity2/3::scaling |  | `geometry/similarity.rs` |
-| method `set_scaling` | ported | Similarity2/3::set_scaling |  | `geometry/similarity.rs` |
-| method `to_homogeneous` | ported | Similarity2/3::to_homogeneous |  | `geometry/similarity.rs` |
-| method `transform_point` | ported | Similarity2/3::transform_point |  | `geometry/similarity.rs` |
-| method `transform_vector` | ported | Similarity2/3::transform_vector |  | `geometry/similarity.rs` |
-| type `Similarity` | ported | Similarity2/3 | generic upstream type, concrete Cairo types | `geometry/similarity.rs` |
+| method `rotation_wrt_point` | ported | Similarity2/3, SimilarityMatrix2/3::rotation_wrt_point |  | `geometry/similarity_construction.rs` |
+| method `scaling` | ported | Similarity2/3, SimilarityMatrix2/3::scaling |  | `geometry/similarity.rs` |
+| method `set_scaling` | ported | Similarity2/3, SimilarityMatrix2/3::set_scaling |  | `geometry/similarity.rs` |
+| method `to_homogeneous` | ported | Similarity2/3, SimilarityMatrix2/3::to_homogeneous |  | `geometry/similarity.rs` |
+| method `transform_point` | ported | Similarity2/3, SimilarityMatrix2/3::transform_point |  | `geometry/similarity.rs` |
+| method `transform_vector` | ported | Similarity2/3, SimilarityMatrix2/3::transform_vector |  | `geometry/similarity.rs` |
+| type `Similarity` | ported | Similarity2/3, SimilarityMatrix2/3 | generic upstream type, concrete Cairo types | `geometry/similarity.rs` |
 | type `Similarity2` | ported | Similarity2 |  | `geometry/similarity_alias.rs` |
 | type `Similarity3` | ported | Similarity3 |  | `geometry/similarity_alias.rs` |
-| type `SimilarityMatrix2` | missing |  | P09b | `geometry/similarity_alias.rs` |
-| type `SimilarityMatrix3` | missing |  | P09b | `geometry/similarity_alias.rs` |
+| type `SimilarityMatrix2` | ported | SimilarityMatrix2 |  | `geometry/similarity_alias.rs` |
+| type `SimilarityMatrix3` | ported | SimilarityMatrix3 |  | `geometry/similarity_alias.rs` |
 
 #### Similarity2 (geometry)
 
-Cairo: Similarity2 · ported 2, partial 0, missing 2, excluded 0.
+Cairo: Similarity2 · ported 4, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Div<UnitComplex>` | missing |  | P09b | `geometry/similarity_ops.rs` |
+| impl `Div<UnitComplex>` | ported | Similarity2::div_unit_complex | renamed `div_unit_complex`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
 | impl `Mul<UnitComplex>` | ported | Similarity2::mul_unit_complex | renamed `mul_unit_complex`: `iso * r`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/similarity_ops.rs` |
-| method `cast` | missing |  | P09b | `geometry/similarity_construction.rs` |
+| method `cast` | ported | Similarity2::cast |  | `geometry/similarity_construction.rs` |
 | method `new` | ported | Similarity2::new |  | `geometry/similarity_construction.rs` |
 
 #### Similarity3 (geometry)
 
-Cairo: Similarity3 · ported 2, partial 0, missing 6, excluded 0.
+Cairo: Similarity3 · ported 8, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Div<UnitQuaternion>` | missing |  | P09b | `geometry/similarity_ops.rs` |
+| impl `Div<UnitQuaternion>` | ported | Similarity3::div_unit_quaternion | renamed `div_unit_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
 | impl `Mul<UnitQuaternion>` | ported | Similarity3::mul_unit_quaternion | renamed `mul_unit_quaternion`: `iso * r`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/similarity_ops.rs` |
-| method `cast` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `face_towards` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `look_at_lh` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `look_at_rh` | missing |  | P09b | `geometry/similarity_construction.rs` |
+| method `cast` | ported | Similarity3::cast |  | `geometry/similarity_construction.rs` |
+| method `face_towards` | ported | Similarity3::face_towards |  | `geometry/similarity_construction.rs` |
+| method `look_at_lh` | ported | Similarity3::look_at_lh |  | `geometry/similarity_construction.rs` |
+| method `look_at_rh` | ported | Similarity3::look_at_rh |  | `geometry/similarity_construction.rs` |
 | method `new` | ported | Similarity3::new |  | `geometry/similarity_construction.rs` |
-| method `new_observer_frames` | missing |  | deprecated upstream; P09b; deprecated | `geometry/similarity_construction.rs` |
+| method `new_observer_frames` | ported | Similarity3::new_observer_frames | deprecated | `geometry/similarity_construction.rs` |
 
 #### SimilarityMatrix2 (geometry)
 
-Cairo: none · ported 0, partial 0, missing 2, excluded 0.
+Cairo: SimilarityMatrix2 · ported 2, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `cast` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `new` | missing |  | P09b | `geometry/similarity_construction.rs` |
+| method `cast` | ported | SimilarityMatrix2::cast |  | `geometry/similarity_construction.rs` |
+| method `new` | ported | SimilarityMatrix2::new |  | `geometry/similarity_construction.rs` |
 
 #### SimilarityMatrix3 (geometry)
 
-Cairo: none · ported 0, partial 0, missing 6, excluded 0.
+Cairo: SimilarityMatrix3 · ported 6, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `cast` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `face_towards` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `look_at_lh` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `look_at_rh` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `new` | missing |  | P09b | `geometry/similarity_construction.rs` |
-| method `new_observer_frames` | missing |  | deprecated upstream; P09b; deprecated | `geometry/similarity_construction.rs` |
+| method `cast` | ported | SimilarityMatrix3::cast |  | `geometry/similarity_construction.rs` |
+| method `face_towards` | ported | SimilarityMatrix3::face_towards |  | `geometry/similarity_construction.rs` |
+| method `look_at_lh` | ported | SimilarityMatrix3::look_at_lh |  | `geometry/similarity_construction.rs` |
+| method `look_at_rh` | ported | SimilarityMatrix3::look_at_rh |  | `geometry/similarity_construction.rs` |
+| method `new` | ported | SimilarityMatrix3::new |  | `geometry/similarity_construction.rs` |
+| method `new_observer_frames` | ported | SimilarityMatrix3::new_observer_frames | deprecated | `geometry/similarity_construction.rs` |
 
 #### SquareMatrix (geometry)
 
@@ -2653,7 +2657,7 @@ Cairo: none · ported 0, partial 0, missing 49, excluded 11.
 
 #### Translation (geometry)
 
-Cairo: Translation1/2/3/4/5/6 · ported 42, partial 1, missing 10, excluded 9.
+Cairo: Translation1/2/3/4/5/6 · ported 43, partial 1, missing 9, excluded 9.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2682,7 +2686,7 @@ Cairo: Translation1/2/3/4/5/6 · ported 42, partial 1, missing 10, excluded 9.
 | impl `Into<[T; N]>` | ported | Translation1/2/3/4/5/6 (impl `Into<[T; N]>`) |  | `geometry/translation_conversion.rs` |
 | impl `Mul<Isometry>` | ported | Translation2/3::mul_isometry | renamed `mul_isometry`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
 | impl `Mul<Point>` | ported | Translation1/2/3/4/5/6::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/translation_ops.rs` |
-| impl `Mul<Rotation>` | missing |  | P09a | `geometry/isometry_ops.rs` |
+| impl `Mul<Rotation>` | ported | Translation2/3::mul_rotation | renamed `mul_rotation`: Cairo-imposed: heterogeneous operator (rotation-matrix instances only) | `geometry/isometry_ops.rs` |
 | impl `Mul<Similarity>` | ported | Translation2/3::mul_similarity | renamed `mul_similarity`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
 | impl `Mul<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
 | impl `Mul<Translation>` | ported | Translation1/2/3/4/5/6 (impl `Mul<Translation>`) |  | `geometry/translation_ops.rs` |

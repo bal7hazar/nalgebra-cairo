@@ -36,6 +36,7 @@ jobs:
           - { name: "tests_geometry quaternions", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::quaternion nalgebra_tests_geometry::unit_quaternion" }
           - { name: "tests_geometry poses", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::isometry nalgebra_tests_geometry::rotation nalgebra_tests_geometry::similarity nalgebra_tests_geometry::translation nalgebra_tests_geometry::unit_complex" }
           - { name: tests_geometry_ext, package: nalgebra_tests_geometry_ext, filters: "nalgebra_tests_geometry_ext" }
+          - { name: tests_geometry_poses, package: nalgebra_tests_geometry_poses, filters: "nalgebra_tests_geometry_poses" }
           - { name: tests_linalg, package: nalgebra_tests_linalg, filters: "nalgebra_tests_linalg" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
           - { name: "shapes norms", package: nalgebra_shapes_tests_norms, filters: "nalgebra_shapes_tests_norms" }

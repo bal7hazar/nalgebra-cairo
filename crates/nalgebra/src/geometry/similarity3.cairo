@@ -9,11 +9,14 @@
 //! upstream's fixed-point-observable order (`rotate`, then `scale`, then `translate`) while
 //! avoiding a checked scalar addition after the scale.
 
+use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::isometry3::{Isometry3, Isometry3Trait};
+use super::quaternion::{ApproxEqTrait, Quaternion};
 use super::translation3::Translation3;
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
@@ -281,6 +284,104 @@ pub impl Similarity3Impl<
         self.isometry.abs_diff_eq(other.isometry, ulps)
             && R::abs_diff_eq(self.scaling, other.scaling, ulps)
     }
+
+    // --- P09b completion ---------------------------------------------------------------------
+
+    /// The rotation `r` about the point `p`, with the scale `scaling`: translation `r · (-p) + p`
+    /// (upstream's formula). Panics with `nalgebra: zero scale` on a zero scale. Upstream:
+    /// `Similarity::rotation_wrt_point`.
+    #[inline(always)]
+    fn rotation_wrt_point(r: UnitQuaternion<T>, p: Point3<T>, scaling: T) -> Similarity3<T> {
+        Self::from_isometry(Isometry3Trait::rotation_wrt_point(r, p), scaling)
+    }
+
+    /// `Isometry3::face_towards(eye, target, up)` with the scale `scaling`. Panics with
+    /// `nalgebra: zero scale` on zero. Upstream: `Similarity3::face_towards`.
+    #[inline(always)]
+    fn face_towards(
+        eye: Point3<T>, target: Point3<T>, up: Vector3<T>, scaling: T,
+    ) -> Similarity3<T> {
+        Self::from_isometry(Isometry3Trait::face_towards(eye, target, up), scaling)
+    }
+
+    /// Deprecated alias of `face_towards`. Upstream: `Similarity3::new_observer_frames`.
+    #[inline(always)]
+    fn new_observer_frames(
+        eye: Point3<T>, target: Point3<T>, up: Vector3<T>, scaling: T,
+    ) -> Similarity3<T> {
+        Self::face_towards(eye, target, up, scaling)
+    }
+
+    /// `Isometry3::look_at_rh(eye, target, up)` with the scale `scaling`. Upstream:
+    /// `Similarity3::look_at_rh`.
+    #[inline(always)]
+    fn look_at_rh(eye: Point3<T>, target: Point3<T>, up: Vector3<T>, scaling: T) -> Similarity3<T> {
+        Self::from_isometry(Isometry3Trait::look_at_rh(eye, target, up), scaling)
+    }
+
+    /// `Isometry3::look_at_lh(eye, target, up)` with the scale `scaling`. Upstream:
+    /// `Similarity3::look_at_lh`.
+    #[inline(always)]
+    fn look_at_lh(eye: Point3<T>, target: Point3<T>, up: Vector3<T>, scaling: T) -> Similarity3<T> {
+        Self::from_isometry(Isometry3Trait::look_at_lh(eye, target, up), scaling)
+    }
+
+    /// `self / r = self * r⁻¹`: rotation `rotation / r`, the translation and scale unchanged.
+    /// Upstream: `Div<UnitQuaternion> for Similarity3` (a named method: Cairo's `Div` is
+    /// homogeneous).
+    #[inline(always)]
+    fn div_unit_quaternion(self: Similarity3<T>, r: UnitQuaternion<T>) -> Similarity3<T> {
+        Similarity3 { isometry: self.isometry.div_unit_quaternion(r), scaling: self.scaling }
+    }
+
+    /// `self * iso`: translation `translation + scaling * (rotation · iso.translation)`, rotation
+    /// `rotation · iso.rotation`, the same scale. Upstream: `Mul<Isometry> for Similarity`.
+    #[inline(always)]
+    fn mul_isometry(self: Similarity3<T>, iso: Isometry3<T>) -> Similarity3<T> {
+        Similarity3 {
+            isometry: Isometry3 {
+                rotation: self.isometry.rotation * iso.rotation,
+                translation: Translation3 {
+                    vector: Similarity3InternalTrait::rotate_scale_translate(
+                        self.isometry.rotation,
+                        iso.translation.vector,
+                        self.scaling,
+                        self.isometry.translation.vector,
+                    ),
+                },
+            },
+            scaling: self.scaling,
+        }
+    }
+
+    /// `self / iso = self * iso⁻¹` (upstream's formula). Upstream: `Div<Isometry> for
+    /// Similarity`.
+    #[inline(always)]
+    fn div_isometry(self: Similarity3<T>, iso: Isometry3<T>) -> Similarity3<T> {
+        Self::mul_isometry(self, iso.inverse())
+    }
+
+    /// `relative_eq` of the isometries and of the scales. Upstream:
+    /// `approx::RelativeEq::relative_eq` (DESIGN D3).
+    fn relative_eq(
+        self: Similarity3<T>, other: Similarity3<T>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        self.isometry.relative_eq(other.isometry, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.scaling, other.scaling, epsilon, max_relative)
+    }
+
+    /// `ulps_eq` of the isometries and of the scales. Upstream: `approx::UlpsEq::ulps_eq`
+    /// (DESIGN D3).
+    fn ulps_eq(self: Similarity3<T>, other: Similarity3<T>, epsilon: u64, max_ulps: u32) -> bool {
+        self.isometry.ulps_eq(other.isometry, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.scaling, other.scaling, epsilon, max_ulps)
+    }
+
+    /// The same similarity with every scalar converted by `Into<T, U>` (the identity for the
+    /// single scalar `Fixed`). Upstream: `Similarity3::cast` (and `SubsetOf<Similarity>`).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Similarity3<T>) -> Similarity3<U> {
+        Similarity3 { isometry: self.isometry.cast(), scaling: self.scaling.into() }
+    }
 }
 
 /// Crate-internal kernels of `Similarity3<T>` (WP 8.0: the public API is strictly upstream's): the
@@ -377,5 +478,164 @@ pub impl Similarity3Mul<
             },
             scaling: lhs.scaling * rhs.scaling,
         }
+    }
+}
+
+/// `a / b = a * b⁻¹` (upstream's formula: the inverse is materialised). Upstream:
+/// `Div<Similarity>`.
+pub impl Similarity3Div<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Div<Similarity3<T>> {
+    #[inline(always)]
+    fn div(lhs: Similarity3<T>, rhs: Similarity3<T>) -> Similarity3<T> {
+        lhs * rhs.inverse()
+    }
+}
+
+/// `sim *= t`: `sim = sim * t`. Upstream: `MulAssign<Translation> for Similarity`.
+pub impl Similarity3MulAssignTranslation3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of MulAssign<Similarity3<T>, Translation3<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Similarity3<T>, rhs: Translation3<T>) {
+        self = self.mul_translation(rhs);
+    }
+}
+
+/// `sim *= iso`: `sim = sim * iso`. Upstream: `MulAssign<Isometry> for Similarity`.
+pub impl Similarity3MulAssignIsometry3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of MulAssign<Similarity3<T>, Isometry3<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Similarity3<T>, rhs: Isometry3<T>) {
+        self = self.mul_isometry(rhs);
+    }
+}
+
+/// `a *= b`: `a = a * b`. Upstream: `MulAssign<Similarity> for Similarity`.
+pub impl Similarity3MulAssign<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of MulAssign<Similarity3<T>, Similarity3<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Similarity3<T>, rhs: Similarity3<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `sim /= iso`: `sim = sim * iso⁻¹`. Upstream: `DivAssign<Isometry> for Similarity`.
+pub impl Similarity3DivAssignIsometry3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of DivAssign<Similarity3<T>, Isometry3<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Similarity3<T>, rhs: Isometry3<T>) {
+        self = self.div_isometry(rhs);
+    }
+}
+
+/// `a /= b`: `a = a * b⁻¹`. Upstream: `DivAssign<Similarity> for Similarity`.
+pub impl Similarity3DivAssign<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of DivAssign<Similarity3<T>, Similarity3<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Similarity3<T>, rhs: Similarity3<T>) {
+        self = self * rhs.inverse();
+    }
+}
+
+/// `Default::default()`: the identity. Upstream: `Default for Similarity`.
+pub impl Similarity3Default<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Default<Similarity3<T>> {
+    #[inline(always)]
+    fn default() -> Similarity3<T> {
+        let o = R::zero();
+        Similarity3 {
+            isometry: Isometry3 {
+                rotation: UnitQuaternion {
+                    quaternion: Quaternion { i: o, j: o, k: o, w: R::one() },
+                },
+                translation: Translation3 { vector: Vector3 { x: o, y: o, z: o } },
+            },
+            scaling: R::one(),
+        }
+    }
+}
+
+/// `One::one()`: the identity; `is_one` compares with it exactly. Upstream: `num::One for
+/// Similarity`.
+pub impl Similarity3One<
+    T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
+> of One<Similarity3<T>> {
+    #[inline(always)]
+    fn one() -> Similarity3<T> {
+        Similarity3Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_one(self: @Similarity3<T>) -> bool {
+        *self == Similarity3Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @Similarity3<T>) -> bool {
+        !Self::is_one(self)
     }
 }

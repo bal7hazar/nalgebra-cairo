@@ -336,7 +336,7 @@
     },
     "quaternion_cosh": {
       "baseline": 18040,
-      "closed_form": 112190
+      "closed_form": 112960
     },
     "quaternion_exp": {
       "baseline": 18040,
@@ -433,7 +433,7 @@
     "quaternion_sinh": {
       "alt_exp_difference": 175180,
       "baseline": 18040,
-      "closed_form": 112190
+      "closed_form": 112960
     },
     "quaternion_sqrt": {
       "algebraic": 53550,
@@ -451,7 +451,7 @@
     },
     "quaternion_tanh": {
       "baseline": 18040,
-      "upstream": 240560
+      "upstream": 242100
     },
     "quaternion_ulps_eq": {
       "baseline": 17640,
@@ -519,8 +519,9 @@
       "baseline": 18440
     },
     "rotation2_renormalize": {
+      "alt_first_column": 26920,
       "baseline": 18040,
-      "first_column": 26920
+      "closed_form_limit": 33020
     },
     "rotation2_rotation_between": {
       "algebraic": 35300,

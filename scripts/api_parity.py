@@ -1129,12 +1129,16 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "Translation4": ["Translation4"],
     "Translation5": ["Translation5"],
     "Translation6": ["Translation6"],
-    "Isometry": ["Isometry2", "Isometry3"],
+    "Isometry": ["Isometry2", "Isometry3", "IsometryMatrix2", "IsometryMatrix3"],
     "Isometry2": ["Isometry2"],
     "Isometry3": ["Isometry3"],
-    "Similarity": ["Similarity2", "Similarity3"],
+    "IsometryMatrix2": ["IsometryMatrix2"],
+    "IsometryMatrix3": ["IsometryMatrix3"],
+    "Similarity": ["Similarity2", "Similarity3", "SimilarityMatrix2", "SimilarityMatrix3"],
     "Similarity2": ["Similarity2"],
     "Similarity3": ["Similarity3"],
+    "SimilarityMatrix2": ["SimilarityMatrix2"],
+    "SimilarityMatrix3": ["SimilarityMatrix3"],
     "Quaternion": ["Quaternion"],
     "UnitQuaternion": ["UnitQuaternion"],
     "UnitComplex": ["UnitComplex"],
@@ -1190,8 +1194,16 @@ DIM_ONLY: dict[str, set[str]] = {
     # Upstream multiplies a translation by an isometry / similarity of the same dimension; the
     # `Isometry` / `Similarity` families exist in 2D and 3D only (upstream's aliases).
     **{name: {"Translation2", "Translation3", "Rotation2", "Rotation3", "UnitComplex",
-              "UnitQuaternion", "Isometry2", "Isometry3", "Similarity2", "Similarity3"}
+              "UnitQuaternion", "Isometry2", "Isometry3", "Similarity2", "Similarity3",
+              "IsometryMatrix2", "IsometryMatrix3", "SimilarityMatrix2", "SimilarityMatrix3"}
        for name in ("Mul<Isometry>", "Mul<Similarity>")},
+    # WP 8.4-P09b: upstream's `Isometry * Rotation` / `Similarity / Rotation` exist for the
+    # rotation-MATRIX instances only (`Isometry<T, Rotation<T, D>, D>`), `Translation * Rotation`
+    # in 2D and 3D, `Matrix * Rotation` for the shapes with 2 or 3 columns.
+    **{name: {"Rotation2", "Rotation3", "UnitComplex", "UnitQuaternion", "Translation2",
+              "Translation3", "IsometryMatrix2", "IsometryMatrix3", "SimilarityMatrix2",
+              "SimilarityMatrix3", *(shape_name(r, c) for r in DIMS for c in (2, 3))}
+       for name in ("Mul<Rotation>", "Div<Rotation>")},
 }
 
 EXCLUSIONS = {
@@ -1368,6 +1380,35 @@ RENAMES = (
          "Cairo-imposed: heterogeneous operator (2D only)"),
     rule(r"Translation", r"impl:Mul<UnitQuaternion>", "Translation3::mul_unit_quaternion",
          "Cairo-imposed: heterogeneous operator (3D only)"),
+    # WP 8.4-P09b: Isometry, Similarity completion (incl. `IsometryMatrix2/3`,
+    # `SimilarityMatrix2/3`) and the rotation-matrix operators P09a deferred.
+    rule(r"Isometry|Similarity|Translation", r"impl:Mul<Rotation>", "mul_rotation",
+         "Cairo-imposed: heterogeneous operator (rotation-matrix instances only)"),
+    rule(r"Isometry|Similarity", r"impl:Div<Rotation>", "div_rotation",
+         "Cairo-imposed: heterogeneous operator (rotation-matrix instances only)"),
+    rule(r"Isometry2|Similarity2", r"impl:Div<UnitComplex>", "div_unit_complex",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Isometry3|Similarity3", r"impl:Div<UnitQuaternion>", "div_unit_quaternion",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Isometry|Rotation", r"impl:Mul<Similarity>", "mul_similarity",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Isometry|Rotation", r"impl:Div<Similarity>", "div_similarity",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Similarity|Rotation", r"impl:Mul<Isometry>", "mul_isometry",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Similarity|Rotation", r"impl:Div<Isometry>", "div_isometry",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Rotation", r"impl:Mul<Translation>", "mul_translation",
+         "Cairo-imposed: heterogeneous operator (output `IsometryMatrix2/3`)"),
+    rule(r"Isometry|Similarity", r"impl:SubsetOf<Matrix>", "to_homogeneous",
+         "Cairo-imposed: `nalgebra::convert` into a matrix is `to_homogeneous`"),
+    rule(r"Isometry", r"impl:SubsetOf<Isometry>", "cast",
+         "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
+    rule(r"Similarity", r"impl:SubsetOf<Similarity>", "cast",
+         "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
+    rule(r"Isometry", r"impl:SubsetOf<Similarity>", "Similarity3::impl:From<Isometry>",
+         "Cairo-imposed: `nalgebra::convert` is `Into` (`Similarity2`, `SimilarityMatrix2/3` "
+         "likewise)"),
 )
 
 # Cairo-imposed forms (WP 8.0, owner's rule of 2026-09-24): public Cairo items that spell an
@@ -1389,6 +1430,15 @@ CAIRO_FORMS = (
      "the second method of upstream's `Bounded` impl (`RENAMES` maps the impl to `max_value`)"),
     (r"Isometry2|Similarity2", r"impl:From<(?:Rotation|Translation)>", "`convert(r)` / `convert(t)`",
      "the 2D side of upstream's `SubsetOf<Isometry | Similarity>` (`RENAMES` points at the 3D impls)"),
+    (r"Isometry[23]|IsometryMatrix[23]", r"impl:From<Isometry>", "`convert(iso)`",
+     "the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's "
+     "`SubsetOf<Isometry>` (`RENAMES` maps its scalar side to `cast`)"),
+    (r"Similarity[23]|SimilarityMatrix[23]", r"impl:From<Similarity>", "`convert(sim)`",
+     "the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's "
+     "`SubsetOf<Similarity>` (`RENAMES` maps its scalar side to `cast`)"),
+    (r"Similarity2|SimilarityMatrix[23]", r"impl:From<Isometry>", "`convert(iso)`",
+     "the other instances of upstream's generic `SubsetOf<Similarity> for Isometry` (`RENAMES` "
+     "points at `Similarity3`)"),
 )
 
 

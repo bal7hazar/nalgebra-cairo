@@ -33,8 +33,10 @@ use crate::base::point2::Point2;
 use crate::base::unit::Unit;
 use crate::base::vector2::Vector2;
 use super::isometry2::Isometry2;
+use super::isometry_matrix2::IsometryMatrix2;
 use super::quaternion::ApproxEqTrait;
 use super::similarity2::Similarity2;
+use super::similarity_matrix2::SimilarityMatrix2;
 use super::translation2::Translation2;
 use super::unit_complex::{UnitComplex, UnitComplexAngleTrait};
 
@@ -45,6 +47,8 @@ mod tests;
 pub mod errors {
     /// `r[(i, j)]` with `i > 1` or `j > 1`.
     pub const INDEX_OUT_OF_BOUNDS: felt252 = 'nalgebra: index out of bounds';
+    /// `renormalize` of a matrix whose first column is zero (upstream's result is `NaN`).
+    pub const ZERO_COLUMN: felt252 = 'nalgebra: zero column (NaN)';
 }
 
 /// A 2D rotation of angle `θ`, stored as the orthogonal matrix
@@ -104,10 +108,16 @@ pub trait Rotation2Trait<T> {
     /// The same rotation as a 3x3 homogeneous matrix (the rotation block, then `(0, 0, 1)`).
     /// Exact. Upstream: `to_homogeneous`.
     fn to_homogeneous(self: Rotation2<T>) -> Matrix3<T>;
-    /// Renormalizes exactly: normalizes the first column (one `norm2` and two exactly floored
-    /// divisions), then rebuilds the matrix from it, so `Rᵀ R = I` within a few ulp again.
-    /// Panics with `Fixed: division by zero` when that column is zero. Upstream:
-    /// `Rotation2::renormalize` (which does the same through `UnitComplex`, in place).
+    /// Renormalizes in place with upstream's formula, `from_matrix_eps(m, default_epsilon, 0,
+    /// guess)`: the rotation CLOSEST to the drifted matrix (maximising `tr(Rᵀ m)`), i.e. the
+    /// closed-form limit `from_matrix` — the pair `(m11 + m22, m21 - m12)` normalised (one
+    /// `norm2`, two correctly rounded divisions), both columns contributing, where normalising the
+    /// first column alone would privilege it. An exact rotation is a fixed point.
+    ///
+    /// Panics with `nalgebra: zero column (NaN)` when the first column is zero: upstream first
+    /// renormalises the guess `UnitComplex::from(self)`, which divides by zero there and makes
+    /// the result `NaN` (PLAN M8 fidelity rules). Panics on overflow of the two exact sums
+    /// (entries above about 1e9). Upstream: `Rotation2::renormalize`.
     fn renormalize(ref self: Rotation2<T>);
     /// `true` when every component is within `ulps` smallest units (raw units for fixed point) of
     /// the matching component of `other`; cannot overflow. Upstream:
@@ -143,6 +153,21 @@ pub trait Rotation2Trait<T> {
     /// The same rotation with every entry converted by `Into<T, U>` (the identity for the single
     /// scalar `Fixed`). Upstream: `cast` (and `SubsetOf<Rotation2<U>>`).
     fn cast<U, +Into<T, U>, +Drop<U>>(self: Rotation2<T>) -> Rotation2<U>;
+    /// `self * t`: the isometry of rotation `self` and translation `self · t` (two fused
+    /// kernels). Upstream: `Mul<Translation> for Rotation` (output `IsometryMatrix2`).
+    fn mul_translation(self: Rotation2<T>, t: Translation2<T>) -> IsometryMatrix2<T>;
+    /// `self * iso`: translation `self · iso.translation`, rotation `self · iso.rotation`.
+    /// Upstream: `Mul<Isometry<T, Rotation2<T>, 2>> for Rotation2`.
+    fn mul_isometry(self: Rotation2<T>, iso: IsometryMatrix2<T>) -> IsometryMatrix2<T>;
+    /// `self / iso = self * iso⁻¹` (upstream's formula: the inverse is materialised). Upstream:
+    /// `Div<Isometry<T, Rotation2<T>, 2>> for Rotation2`.
+    fn div_isometry(self: Rotation2<T>, iso: IsometryMatrix2<T>) -> IsometryMatrix2<T>;
+    /// `self * sim`: the similarity `(self * sim.isometry, sim.scaling)`. Upstream:
+    /// `Mul<Similarity<T, Rotation2<T>, 2>> for Rotation2`.
+    fn mul_similarity(self: Rotation2<T>, sim: SimilarityMatrix2<T>) -> SimilarityMatrix2<T>;
+    /// `self / sim = self * sim⁻¹` (upstream's formula). Upstream:
+    /// `Div<Similarity<T, Rotation2<T>, 2>> for Rotation2`.
+    fn div_similarity(self: Rotation2<T>, sim: SimilarityMatrix2<T>) -> SimilarityMatrix2<T>;
 }
 
 /// Operations of `Rotation2<T>` that go through an angle, hence their own trait: scalars may
@@ -302,11 +327,12 @@ pub impl Rotation2Impl<
         }
     }
 
-    #[inline(always)]
     fn renormalize(ref self: Rotation2<T>) {
-        let n = R::norm2(self.matrix.m11, self.matrix.m21);
-        let (re, im) = (R::div(self.matrix.m11, n), R::div(self.matrix.m21, n));
-        self = Rotation2 { matrix: Matrix2 { m11: re, m21: im, m12: -im, m22: re } };
+        let m = self.matrix;
+        if m.m11 == R::zero() && m.m21 == R::zero() {
+            core::panic_with_felt252(errors::ZERO_COLUMN);
+        }
+        self = Self::from_matrix(m);
     }
 
     #[inline(always)]
@@ -385,6 +411,51 @@ pub impl Rotation2Impl<
             },
         }
     }
+
+    #[inline(always)]
+    fn mul_translation(self: Rotation2<T>, t: Translation2<T>) -> IsometryMatrix2<T> {
+        IsometryMatrix2 {
+            rotation: self,
+            translation: Translation2 { vector: Self::transform_vector(self, t.vector) },
+        }
+    }
+
+    #[inline(always)]
+    fn mul_isometry(self: Rotation2<T>, iso: IsometryMatrix2<T>) -> IsometryMatrix2<T> {
+        IsometryMatrix2 {
+            rotation: self * iso.rotation,
+            translation: Translation2 {
+                vector: Self::transform_vector(self, iso.translation.vector),
+            },
+        }
+    }
+
+    #[inline(always)]
+    fn div_isometry(self: Rotation2<T>, iso: IsometryMatrix2<T>) -> IsometryMatrix2<T> {
+        Self::mul_isometry(self, Rotation2InternalTrait::inverse_isometry(iso))
+    }
+
+    #[inline(always)]
+    fn mul_similarity(self: Rotation2<T>, sim: SimilarityMatrix2<T>) -> SimilarityMatrix2<T> {
+        SimilarityMatrix2 { isometry: Self::mul_isometry(self, sim.isometry), scaling: sim.scaling }
+    }
+
+    #[inline(always)]
+    fn div_similarity(self: Rotation2<T>, sim: SimilarityMatrix2<T>) -> SimilarityMatrix2<T> {
+        // `SimilarityMatrix2::inverse`, spelled with the bounds of this impl.
+        let inv = Rotation2InternalTrait::inverse_isometry(sim.isometry);
+        let t = inv.translation.vector;
+        let inv_sim = SimilarityMatrix2 {
+            isometry: IsometryMatrix2 {
+                rotation: inv.rotation,
+                translation: Translation2 {
+                    vector: Vector2 { x: R::div(t.x, sim.scaling), y: R::div(t.y, sim.scaling) },
+                },
+            },
+            scaling: R::div(R::one(), sim.scaling),
+        };
+        Self::mul_similarity(self, inv_sim)
+    }
 }
 
 /// Crate-internal by-value forms of the in-place `renormalize` (WP 8.0: the
@@ -393,6 +464,21 @@ pub impl Rotation2Impl<
 pub(crate) impl Rotation2InternalImpl<
     T, impl R: Real<T>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>, +PartialEq<T>, +Copy<T>, +Drop<T>,
 > of Rotation2InternalTrait<T> {
+    /// `iso.inverse()` (`IsometryMatrix2::inverse`: the transposed rotation and
+    /// `rotationᵀ · (-translation)`), with the bounds of `Rotation2Trait`.
+    #[inline(always)]
+    fn inverse_isometry(iso: IsometryMatrix2<T>) -> IsometryMatrix2<T> {
+        let t = iso.translation.vector;
+        IsometryMatrix2 {
+            rotation: Rotation2Trait::inverse(iso.rotation),
+            translation: Translation2 {
+                vector: Rotation2Trait::inverse_transform_vector(
+                    iso.rotation, Vector2 { x: -t.x, y: -t.y },
+                ),
+            },
+        }
+    }
+
     /// `self` renormalized exactly (`Rotation2Trait::renormalize`), by value.
     #[inline(always)]
     fn renormalized(self: Rotation2<T>) -> Rotation2<T> {

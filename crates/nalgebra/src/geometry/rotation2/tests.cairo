@@ -55,7 +55,7 @@ fn test_renormalize_is_exact_on_a_rotation() {
 
 #[test]
 fn test_renormalize_recovers_orthogonality() {
-    // A matrix whose columns drifted apart: renormalizing the first column and rebuilding makes
+    // A matrix whose columns drifted apart: the closest rotation (upstream's formula) makes
     // `R · Rᵀ = I` hold again within 2 ulp.
     let c = UnitComplexAngleTrait::<Fixed>::new(fx(0x1f0a3d70a));
     let drifted = Rotation2 {
@@ -70,7 +70,7 @@ fn test_renormalize_recovers_orthogonality() {
 }
 
 #[test]
-#[should_panic(expected: 'Fixed: division by zero')]
+#[should_panic(expected: 'nalgebra: zero column (NaN)')]
 fn test_renormalize_of_a_zero_first_column_panics() {
     let m = Matrix2 {
         m11: Real::<Fixed>::zero(), m21: Real::zero(), m12: Real::one(), m22: Real::one(),

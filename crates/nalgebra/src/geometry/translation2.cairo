@@ -21,7 +21,9 @@ use crate::base::matrix3::Matrix3;
 use crate::base::point2::Point2;
 use crate::base::vector2::Vector2;
 use super::isometry2::Isometry2;
+use super::isometry_matrix2::IsometryMatrix2;
 use super::quaternion::ApproxEqTrait;
+use super::rotation2::Rotation2;
 use super::similarity2::Similarity2;
 use super::unit_complex::UnitComplex;
 
@@ -152,6 +154,13 @@ pub impl Translation2Impl<
     #[inline(always)]
     fn mul_unit_complex(self: Translation2<T>, r: UnitComplex<T>) -> Isometry2<T> {
         Isometry2 { rotation: r, translation: self }
+    }
+
+    /// `self * r`: the isometry of rotation `r` and translation `self` (no arithmetic). Upstream:
+    /// `Mul<Rotation> for Translation` (output `IsometryMatrix2`).
+    #[inline(always)]
+    fn mul_rotation(self: Translation2<T>, r: Rotation2<T>) -> IsometryMatrix2<T> {
+        IsometryMatrix2 { rotation: r, translation: self }
     }
 }
 
