@@ -331,10 +331,12 @@
       "into": 18040
     },
     "quaternion_cos": {
+      "alt_fixed": 122020,
       "baseline": 18040,
       "upstream": 112390
     },
     "quaternion_cosh": {
+      "alt_fixed": 125960,
       "baseline": 18040,
       "closed_form": 112960
     },
@@ -427,11 +429,13 @@
       "fused": 53060
     },
     "quaternion_sin": {
+      "alt_fixed": 121820,
       "baseline": 18040,
       "upstream": 112090
     },
     "quaternion_sinh": {
       "alt_exp_difference": 175180,
+      "alt_fixed": 125960,
       "baseline": 18040,
       "closed_form": 112960
     },
@@ -456,6 +460,12 @@
     "quaternion_ulps_eq": {
       "baseline": 17640,
       "components": 29880
+    },
+    "real_cosh_sinh": {
+      "alt_fixed": 73980,
+      "alt_recip": 46330,
+      "baseline": 16440,
+      "two_exp": 63510
     }
   },
   "nalgebra_tests_geometry::quaternion_inplace::benches": {

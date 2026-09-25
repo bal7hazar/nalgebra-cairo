@@ -854,6 +854,37 @@ fn test_sinh_alt_exp_difference_agrees() {
     }
 }
 
+/// The `Transcendental::{cosh, sinh, sinhc}` compositions of `fixed` 0.4.0 (kept as `alt_*_fixed`,
+/// dearer than the library's two `exp`) agree with `cos` / `sin` / `sinh` / `cosh` on the oracle
+/// cases, to the oracle tolerance.
+#[test]
+fn test_hyperbolic_alt_fixed_agree() {
+    let mut cases = oracle_ext::quaternion_cos_cases();
+    while let Some(case) = cases.pop_front() {
+        let (q, _, tol) = *case;
+        let q = qt(q);
+        assert!(super::benches_ext::alt_cos_fixed(q).abs_diff_eq(q.cos(), tol));
+    }
+    let mut cases = oracle_ext::quaternion_sin_cases();
+    while let Some(case) = cases.pop_front() {
+        let (q, _, tol) = *case;
+        let q = qt(q);
+        assert!(super::benches_ext::alt_sin_fixed(q).abs_diff_eq(q.sin(), tol));
+    }
+    let mut cases = oracle_ext::quaternion_sinh_cases();
+    while let Some(case) = cases.pop_front() {
+        let (q, _, tol) = *case;
+        let q = qt(q);
+        assert!(super::benches_ext::alt_sinh_fixed(q).abs_diff_eq(q.sinh(), tol));
+    }
+    let mut cases = oracle_ext::quaternion_cosh_cases();
+    while let Some(case) = cases.pop_front() {
+        let (q, _, tol) = *case;
+        let q = qt(q);
+        assert!(super::benches_ext::alt_cosh_fixed(q).abs_diff_eq(q.cosh(), tol));
+    }
+}
+
 /// `right_div` divides the fused product once; upstream's `a * b⁻¹` multiplies by the rounded
 /// inverse. They agree to a few ulp on moderate inputs.
 #[test]

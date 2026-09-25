@@ -469,12 +469,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `upstream` | 112390 | 94350 | x1.00 |
+| `alt_fixed` | 122020 | 103980 | x1.10 |
 
 ### quaternion_cosh
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `closed_form` | 112960 | 94920 | x1.00 |
+| `alt_fixed` | 125960 | 107920 | x1.14 |
 
 ### quaternion_exp
 
@@ -611,12 +613,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `upstream` | 112090 | 94050 | x1.00 |
+| `alt_fixed` | 121820 | 103780 | x1.10 |
 
 ### quaternion_sinh
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `closed_form` | 112960 | 94920 | x1.00 |
+| `alt_fixed` | 125960 | 107920 | x1.14 |
 | `alt_exp_difference` | 175180 | 157140 | x1.66 |
 
 ### quaternion_sqrt
@@ -650,6 +654,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `components` | 29880 | 12240 | x1.00 |
+
+### real_cosh_sinh
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_recip` | 46330 | 29890 | x1.00 |
+| `two_exp` | 63510 | 47070 | x1.57 |
+| `alt_fixed` | 73980 | 57540 | x1.93 |
 
 ## nalgebra_tests_geometry::quaternion_inplace::benches
 
