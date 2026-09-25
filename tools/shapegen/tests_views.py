@@ -1,5 +1,6 @@
 """Generated tests of the swizzles, rows, columns, blocks and edition (WP 8.2c, `views.py`): the
-packages `crates/shapes_tests_{views,blocks}` (`PACKAGES`).
+packages `crates/shapes_tests_{views,blocks}` (`PACKAGES`; one package for the three families
+measured 7.5 GB of peak `scarb build --test`).
 
 Tier A of `DESIGN.md` §3.3 on the 36 shapes and the six points: one exact case per (shape,
 family). Every operation of this WP only moves components, except `kronecker` (one floored
@@ -228,7 +229,7 @@ def blocks(f: File, s: Shape):
     o = Shape(s.r * b.r, s.c * b.c)
     kr = grid(o, lambda i, j: mul(at(s, a, i // b.r, j // b.c), vb[b.f(i % b.r, j % b.c)]))
     lines += [load(b, "b", vb), f"assert_raws(a.kronecker(b), {col(o, kr)});"]
-    f.add(f"test_{s.module}_blocks", lines, [f"{S}Trait"])
+    f.add(f"test_{s.module}_blocks", lines)
     o = Shape(1, s.c)
     f.add(f"test_{s.module}_rows_dimension_mismatch_panics",
           [load(s, "a", a), f"let _r: {o.name}<Fixed> = a.rows(0, 2);"], [],
@@ -387,8 +388,8 @@ def render_benches() -> str:
 # The test-only packages (compile budget: each under ~7 GB of peak `scarb build --test`), their
 # families, and the rows of the shapes of each file of a family.
 PACKAGES = {
-    "shapes_tests_views": [("swizzle", [(1, 6)]), ("rows", [(1, 3), (4, 6)])],
-    "shapes_tests_blocks": [("blocks", [(1, 3), (4, 6)])],
+    "shapes_tests_views": [("rows", [(1, 3), (4, 6)])],
+    "shapes_tests_blocks": [("blocks", [(1, 3), (4, 6)]), ("swizzle", [(1, 6)])],
 }
 BENCHES_IN = "shapes_tests_views"
 FAMILIES = {

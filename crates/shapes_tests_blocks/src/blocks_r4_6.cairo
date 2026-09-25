@@ -6,14 +6,10 @@
 use fixed::Fixed;
 use nalgebra::{
     ColumnPart, FixedColumns, FixedResize, FixedRows, FixedView, Matrix1, Matrix2, Matrix2x3,
-    Matrix2x4, Matrix2x5, Matrix3, Matrix3x2, Matrix3x4, Matrix3x5, Matrix3x6, Matrix4,
-    Matrix4Trait, Matrix4x2, Matrix4x2Trait, Matrix4x3, Matrix4x3Trait, Matrix4x5, Matrix4x5Trait,
-    Matrix4x6, Matrix4x6Trait, Matrix5, Matrix5Trait, Matrix5x2, Matrix5x2Trait, Matrix5x3,
-    Matrix5x3Trait, Matrix5x4, Matrix5x4Trait, Matrix5x6, Matrix5x6Trait, Matrix6, Matrix6Trait,
-    Matrix6x2, Matrix6x2Trait, Matrix6x3, Matrix6x3Trait, Matrix6x4, Matrix6x4Trait, Matrix6x5,
-    Matrix6x5Trait, MatrixKronecker, RowPart, RowVector2, RowVector3, RowVector4, RowVector5,
-    RowVector6, Vector2, Vector3, Vector4, Vector4Trait, Vector5, Vector5Trait, Vector6,
-    Vector6Trait,
+    Matrix2x4, Matrix2x5, Matrix3, Matrix3x2, Matrix3x4, Matrix3x5, Matrix3x6, Matrix4, Matrix4x2,
+    Matrix4x3, Matrix4x5, Matrix4x6, Matrix5, Matrix5x2, Matrix5x3, Matrix5x4, Matrix5x6, Matrix6,
+    Matrix6x2, Matrix6x3, Matrix6x4, Matrix6x5, MatrixKronecker, RowPart, RowVector2, RowVector3,
+    RowVector4, RowVector5, RowVector6, Vector2, Vector3, Vector4, Vector5, Vector6,
 };
 use crate::helpers::{assert_raws, fx, load};
 
