@@ -123,6 +123,14 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   1000 steps and keep a case only when it agrees with the SVD (3D) or closed-form (2D) maximiser of
   `tr(R^T m)`; the 3D result has the sign of upstream's final `from_rotation_matrix`.
 - `quaternion_half` is upstream's `q / 2` (nearest) floored by the oracle: 1 ulp.
+- Suite `pose_completion` (WP 8.4-P09b): the rotation-matrix poses `IsometryMatrix2/3` /
+  `SimilarityMatrix2/3` are emitted as SEPARATE fields — translation, ROW-major rotation matrix
+  (then scaling) — not as one group. The look-at ops (`isometry_matrix3_look_at_rh` / `_lh`,
+  `isometry3_look_at_lh`) use the `SensMag` policy with `mag = 32`: the translation
+  `rotation · (-eye)` multiplies the few-ulp error of the normalised frame by `|eye|`.
+  `quaternion_exp_real` / `_sinh_real` / `_cosh_real` pin upstream's identity / zero / identity
+  for a real quaternion (tolerance 0), `rotation2_renormalize` is upstream's
+  `from_matrix_eps(m, eps, 0, guess)` on a rotation plus a drift of at most 2^-10 per entry.
 - The scalar suite and every transcendental inside nalgebra go through the pure-Rust `libm`
   (`libm-force`), not the platform libm.
 

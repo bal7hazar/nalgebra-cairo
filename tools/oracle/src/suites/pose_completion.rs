@@ -273,7 +273,11 @@ fn isometry_matrix_ops() -> Vec<Op> {
         .input(iv("p", 3))
         .out(fv("point", 3))
         .tol(ROTATE)
-        .eval(|x| Some(flat(&isom3(x).inverse_transform_point(&p3(&x[12..])).coords))),
+        .eval(|x| {
+            Some(flat(
+                &isom3(x).inverse_transform_point(&p3(&x[12..])).coords,
+            ))
+        }),
         Op::new(
             "isometry_matrix3_face_towards",
             "IsometryMatrix3::face_towards(&eye, &target, &up)",
@@ -397,7 +401,11 @@ fn similarity_matrix_ops() -> Vec<Op> {
         .input(iv("p", 3))
         .out(fv("point", 3))
         .tol(ROTATE)
-        .eval(|x| Some(flat(&simm3(x).inverse_transform_point(&p3(&x[13..])).coords))),
+        .eval(|x| {
+            Some(flat(
+                &simm3(x).inverse_transform_point(&p3(&x[13..])).coords,
+            ))
+        }),
     ]
 }
 
