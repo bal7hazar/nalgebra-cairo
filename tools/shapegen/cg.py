@@ -233,7 +233,10 @@ def methods(s: Shape, form: str = CG_ADDEND) -> list[L.Fn]:
             "`v` transformed by the homogeneous matrix `self`: with the normaliser `n = m[" + str(K)
             + f", :{K}] . v` (one fused dot product), `m[:{K}, :{K}] * (v / n)` if `n != 0`, else "
             f"`m[:{K}, :{K}] * v` (upstream's branch); each quotient correctly rounded, each "
-            "output one fused dot product. Panics on overflow. Upstream: `transform_vector`.",
+            "output one fused dot product. Upstream's order (divide, then multiply) is kept: the "
+            "half-ulp rounding of each quotient is multiplied by the matrix entries, an absolute "
+            "error of up to `sum_k |m[i, k]| / 2` ulp. Panics on overflow. Upstream: "
+            "`transform_vector`.",
             f"fn transform_vector(self: {T}, v: {V.name}<T>) -> {V.name}<T>", body,
             inline=N <= 4))
     if N in (3, 4):

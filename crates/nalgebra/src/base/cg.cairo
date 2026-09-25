@@ -221,7 +221,9 @@ pub impl Matrix2CgImpl<
 
     /// `v` transformed by the homogeneous matrix `self`: with the normaliser `n = m[1, :1] . v`
     /// (one fused dot product), `m[:1, :1] * (v / n)` if `n != 0`, else `m[:1, :1] * v` (upstream's
-    /// branch); each quotient correctly rounded, each output one fused dot product. Panics on
+    /// branch); each quotient correctly rounded, each output one fused dot product. Upstream's
+    /// order (divide, then multiply) is kept: the half-ulp rounding of each quotient is multiplied
+    /// by the matrix entries, an absolute error of up to `sum_k |m[i, k]| / 2` ulp. Panics on
     /// overflow. Upstream: `transform_vector`.
     #[inline(always)]
     fn transform_vector(self: Matrix2<T>, v: Matrix1<T>) -> Matrix1<T> {
@@ -470,7 +472,9 @@ pub impl Matrix3CgImpl<
 
     /// `v` transformed by the homogeneous matrix `self`: with the normaliser `n = m[2, :2] . v`
     /// (one fused dot product), `m[:2, :2] * (v / n)` if `n != 0`, else `m[:2, :2] * v` (upstream's
-    /// branch); each quotient correctly rounded, each output one fused dot product. Panics on
+    /// branch); each quotient correctly rounded, each output one fused dot product. Upstream's
+    /// order (divide, then multiply) is kept: the half-ulp rounding of each quotient is multiplied
+    /// by the matrix entries, an absolute error of up to `sum_k |m[i, k]| / 2` ulp. Panics on
     /// overflow. Upstream: `transform_vector`.
     #[inline(always)]
     fn transform_vector(self: Matrix3<T>, v: Vector2<T>) -> Vector2<T> {
@@ -885,7 +889,9 @@ pub impl Matrix4CgImpl<
 
     /// `v` transformed by the homogeneous matrix `self`: with the normaliser `n = m[3, :3] . v`
     /// (one fused dot product), `m[:3, :3] * (v / n)` if `n != 0`, else `m[:3, :3] * v` (upstream's
-    /// branch); each quotient correctly rounded, each output one fused dot product. Panics on
+    /// branch); each quotient correctly rounded, each output one fused dot product. Upstream's
+    /// order (divide, then multiply) is kept: the half-ulp rounding of each quotient is multiplied
+    /// by the matrix entries, an absolute error of up to `sum_k |m[i, k]| / 2` ulp. Panics on
     /// overflow. Upstream: `transform_vector`.
     #[inline(always)]
     fn transform_vector(self: Matrix4<T>, v: Vector3<T>) -> Vector3<T> {
@@ -1523,7 +1529,9 @@ pub impl Matrix5CgImpl<
 
     /// `v` transformed by the homogeneous matrix `self`: with the normaliser `n = m[4, :4] . v`
     /// (one fused dot product), `m[:4, :4] * (v / n)` if `n != 0`, else `m[:4, :4] * v` (upstream's
-    /// branch); each quotient correctly rounded, each output one fused dot product. Panics on
+    /// branch); each quotient correctly rounded, each output one fused dot product. Upstream's
+    /// order (divide, then multiply) is kept: the half-ulp rounding of each quotient is multiplied
+    /// by the matrix entries, an absolute error of up to `sum_k |m[i, k]| / 2` ulp. Panics on
     /// overflow. Upstream: `transform_vector`.
     fn transform_vector(self: Matrix5<T>, v: Vector4<T>) -> Vector4<T> {
         let n = R::sum_prod4(self.m51, v.x, self.m52, v.y, self.m53, v.z, self.m54, v.w);
@@ -2122,7 +2130,9 @@ pub impl Matrix6CgImpl<
 
     /// `v` transformed by the homogeneous matrix `self`: with the normaliser `n = m[5, :5] . v`
     /// (one fused dot product), `m[:5, :5] * (v / n)` if `n != 0`, else `m[:5, :5] * v` (upstream's
-    /// branch); each quotient correctly rounded, each output one fused dot product. Panics on
+    /// branch); each quotient correctly rounded, each output one fused dot product. Upstream's
+    /// order (divide, then multiply) is kept: the half-ulp rounding of each quotient is multiplied
+    /// by the matrix entries, an absolute error of up to `sum_k |m[i, k]| / 2` ulp. Panics on
     /// overflow. Upstream: `transform_vector`.
     fn transform_vector(self: Matrix6<T>, v: Vector5<T>) -> Vector5<T> {
         let n = Fused::sum_prod5(
