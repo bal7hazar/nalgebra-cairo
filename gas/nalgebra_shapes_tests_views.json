@@ -1,0 +1,69 @@
+{
+  "nalgebra_shapes_tests_views::benches": {
+    "matrix2_kronecker_matrix3": {
+      "baseline": 207150,
+      "library": 275660
+    },
+    "matrix2x4_fixed_resize": {
+      "alt_direct": 86290,
+      "baseline": 84390,
+      "library": 86290
+    },
+    "matrix3_column": {
+      "baseline": 66040,
+      "library": 68350
+    },
+    "matrix3_row": {
+      "baseline": 66040,
+      "library": 68350
+    },
+    "matrix3_upper_triangle": {
+      "baseline": 87300,
+      "library": 88300
+    },
+    "matrix4_fixed_view": {
+      "alt_composed": 97930,
+      "alt_padded": 101760,
+      "baseline": 93220,
+      "library": 97030
+    },
+    "matrix4_insert_row": {
+      "baseline": 153380,
+      "library": 163280
+    },
+    "matrix4_remove_column": {
+      "baseline": 121700,
+      "library": 126520
+    },
+    "matrix4_row_part": {
+      "baseline": 89210,
+      "library": 92420
+    },
+    "matrix4_rows": {
+      "alt_fixed_rows": 111270,
+      "baseline": 107260,
+      "library": 111270
+    },
+    "matrix4_select_rows": {
+      "baseline": 107960,
+      "library": 114260
+    },
+    "matrix6_fixed_resize": {
+      "baseline": 177070,
+      "library": 181670
+    },
+    "matrix6_fixed_view": {
+      "alt_composed": 195570,
+      "baseline": 177470,
+      "library": 184670
+    },
+    "vector3_zyx": {
+      "baseline": 45780,
+      "library": 46480
+    },
+    "vector6_fixed_rows": {
+      "baseline": 56110,
+      "library": 58310
+    }
+  }
+}

@@ -20,6 +20,18 @@
       "alt_recip": 33330
     }
   },
+  "nalgebra::base::matrix3::benches_views": {
+    "matrix3_column_internal": {
+      "baseline": 18940,
+      "column": 20150,
+      "column2": 19240
+    },
+    "matrix3_row_internal": {
+      "baseline": 18940,
+      "row": 20150,
+      "row2": 19240
+    }
+  },
   "nalgebra::base::matrix3::tests": {
     "matrix3_adjugate": {
       "cofactors": 38360
