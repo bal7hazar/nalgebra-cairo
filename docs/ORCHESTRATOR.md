@@ -57,7 +57,8 @@ large directly.
    not obvious (the winner in the library, the losers in `benches::alt` with their benches).
 5. Tests: table-driven, compile budget (max file size, max number of fuzz tests), golden vectors
    from the reference oracle, panics with exact messages.
-6. Definition of done: the full gate run in the **foreground** (never a background command
+6. Definition of done: crate-scoped checks (the touched packages; never the whole-workspace gate on
+   the shared machine, the pull-request CI is the full gate) run in the **foreground** (never a background command
    followed by the end of the turn: in headless mode the session stops), gas snapshots
    regenerated, conventional commits with the trailer, push, PR via `gh pr create` following the
    template, `gh pr checks --watch` until green, **never merge**, `REPORT.md` in the imposed
@@ -84,6 +85,7 @@ large directly.
 
 - `scripts/agent.sh <worktree> <claude|codex> <model> <brief.md> <log> [--resume "<follow-up>"]`
   wraps the two CLIs with this strategy (framing system prompt, `--name`, `REPORT.md`).
-- Gas snapshots live in `gas/<module>.json` (one per CI shard); `./scripts/check.sh --update`
-  regenerates them all, CI checks each shard's file.
+- Gas snapshots live in `gas/<module>.json` (one per CI shard); `snforge test -p <pkg> | python3
+  scripts/gas_report.py --update gas/` regenerates a package's shards, `./scripts/check.sh --update`
+  all of them (orchestrator only), CI checks each shard's file.
 - `.github/PULL_REQUEST_TEMPLATE.md` is the PR format agents must follow.

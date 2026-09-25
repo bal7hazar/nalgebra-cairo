@@ -11,8 +11,13 @@ proven, so gas is a first-class requirement, on par with correctness.
 
 ## Toolchain
 
-`.tool-versions` pins scarb 2.19.4 and snforge 0.61.0 (asdf). Gate: `./scripts/check.sh`
-(fmt, lint, build, tests, gas snapshot). Refresh the snapshot with `./scripts/check.sh --update`.
+`.tool-versions` pins scarb 2.19.4 and snforge 0.61.0 (asdf). Gate: the pull-request CI (fmt,
+lint, build, every test shard, gas snapshots). Locally, work packages run crate-scoped checks only:
+`scarb build -p <pkg>`, `scarb lint -p <pkg> --deny-warnings`, `snforge test -p <pkg>` (unfiltered,
+piped into `python3 scripts/gas_report.py --update gas/` to refresh that package's snapshot), plus
+the cheap `scarb fmt --check`, `api_parity.py --check`, `shapegen.py --check`. `./scripts/check.sh`
+is the whole-workspace gate, for orchestrator-driven runs only (release, toolchain bump): the shared
+machine is CPU-capped (programme rule, 2026-09-25).
 
 ## Efficiency rules (measured, see docs/BENCHMARK.md)
 
@@ -50,8 +55,9 @@ proven, so gas is a first-class requirement, on par with correctness.
 - `test_<fn>_<scenario>` unit tests: exact cases, oracle vectors, identities, `#[should_panic]` cases.
 - `bench_<group>__<variant>` gas tests, all `#[inline(never)]`, inputs through
   `nalgebra_testing::black_box`, results asserted, one `bench_<group>__baseline` per group.
-- `gas/<module>.json` + `.md` regenerated (`./scripts/check.sh --update`); the PR explains any gas increase.
-- Gate run in the foreground, conventional commits with the trailer, push, PR following
+- `gas/<module>.json` + `.md` regenerated for the packages touched (`snforge test -p <pkg> |
+  python3 scripts/gas_report.py --update gas/`); the PR explains any gas increase.
+- Crate-scoped checks run in the foreground, conventional commits with the trailer, push, PR following
   `.github/PULL_REQUEST_TEMPLATE.md`, `gh pr checks --watch` until green, never merge. One work
   package per PR, plus a `REPORT.md` (git-ignored) at the worktree root: summary, API, gas table,
   deviations, deferred items, requested re-exports, escalations, PR URL.

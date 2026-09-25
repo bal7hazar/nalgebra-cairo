@@ -16,7 +16,7 @@
 
 ## Test plan
 
-- [ ] `./scripts/check.sh --update` green (fmt, lint, build, tests, gas snapshots)
+- [ ] Crate-scoped checks green locally (fmt, `api_parity.py` / `shapegen.py --check`, build, lint, tests and gas snapshots of the touched packages); CI is the full gate
 - [ ] Oracle vectors for the ported operations
 - [ ] CI green (`gh pr checks --watch`)
 
