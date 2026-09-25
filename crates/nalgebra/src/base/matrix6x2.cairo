@@ -9,7 +9,7 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, Range, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::Rotation2;
 use crate::geometry::quaternion::ApproxEqTrait;
@@ -32,9 +32,7 @@ use super::matrix_index::MatrixIndex;
 use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
-use super::matrix_view::{
-    ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, RowPart,
-};
+use super::matrix_view::{CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, ShapeDims};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
@@ -3690,8 +3688,8 @@ pub impl Matrix6x2UniformNorm<
 
 // --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
 
-/// The 1 consecutive rows of a `Matrix6x2` as a `RowVector2`. Upstream: `fixed_rows::<1>`, `rows(i,
-/// 1)`, `rows_range`, `select_rows`.
+/// The 1 consecutive rows of a `Matrix6x2` as a `RowVector2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
 pub impl Matrix6x2FixedRowsRowVector2<
     T, +Copy<T>, +Drop<T>,
 > of FixedRows<Matrix6x2<T>, RowVector2<T>> {
@@ -3709,23 +3707,6 @@ pub impl Matrix6x2FixedRowsRowVector2<
     }
 
     #[inline(always)]
-    fn rows(self: Matrix6x2<T>, first_row: usize, nrows: usize) -> RowVector2<T> {
-        if nrows != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: Matrix6x2<T>, rows: Range<usize>) -> RowVector2<T> {
-        let Range { start, end } = rows;
-        if end != start + 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
-    }
-
-    #[inline(always)]
     fn select_rows(self: Matrix6x2<T>, irows: Span<usize>) -> RowVector2<T> {
         if irows.len() != 1 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -3735,8 +3716,8 @@ pub impl Matrix6x2FixedRowsRowVector2<
     }
 }
 
-/// The 2 consecutive rows of a `Matrix6x2` as a `Matrix2`. Upstream: `fixed_rows::<2>`, `rows(i,
-/// 2)`, `rows_range`, `select_rows`.
+/// The 2 consecutive rows of a `Matrix6x2` as a `Matrix2` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
 pub impl Matrix6x2FixedRowsMatrix2<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6x2<T>, Matrix2<T>> {
     #[inline(always)]
     fn fixed_rows(self: Matrix6x2<T>, i: usize) -> Matrix2<T> {
@@ -3751,23 +3732,6 @@ pub impl Matrix6x2FixedRowsMatrix2<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6x2
     }
 
     #[inline(always)]
-    fn rows(self: Matrix6x2<T>, first_row: usize, nrows: usize) -> Matrix2<T> {
-        if nrows != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: Matrix6x2<T>, rows: Range<usize>) -> Matrix2<T> {
-        let Range { start, end } = rows;
-        if end != start + 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
-    }
-
-    #[inline(always)]
     fn select_rows(self: Matrix6x2<T>, irows: Span<usize>) -> Matrix2<T> {
         if irows.len() != 2 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -3778,8 +3742,8 @@ pub impl Matrix6x2FixedRowsMatrix2<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6x2
     }
 }
 
-/// The 3 consecutive rows of a `Matrix6x2` as a `Matrix3x2`. Upstream: `fixed_rows::<3>`, `rows(i,
-/// 3)`, `rows_range`, `select_rows`.
+/// The 3 consecutive rows of a `Matrix6x2` as a `Matrix3x2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<3>`, `select_rows`.
 pub impl Matrix6x2FixedRowsMatrix3x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedRows<Matrix6x2<T>, Matrix3x2<T>> {
@@ -3823,23 +3787,6 @@ pub impl Matrix6x2FixedRowsMatrix3x2<
     }
 
     #[inline(always)]
-    fn rows(self: Matrix6x2<T>, first_row: usize, nrows: usize) -> Matrix3x2<T> {
-        if nrows != 3 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: Matrix6x2<T>, rows: Range<usize>) -> Matrix3x2<T> {
-        let Range { start, end } = rows;
-        if end != start + 3 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
-    }
-
-    #[inline(always)]
     fn select_rows(self: Matrix6x2<T>, irows: Span<usize>) -> Matrix3x2<T> {
         if irows.len() != 3 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -3851,8 +3798,8 @@ pub impl Matrix6x2FixedRowsMatrix3x2<
     }
 }
 
-/// The 4 consecutive rows of a `Matrix6x2` as a `Matrix4x2`. Upstream: `fixed_rows::<4>`, `rows(i,
-/// 4)`, `rows_range`, `select_rows`.
+/// The 4 consecutive rows of a `Matrix6x2` as a `Matrix4x2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<4>`, `select_rows`.
 pub impl Matrix6x2FixedRowsMatrix4x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedRows<Matrix6x2<T>, Matrix4x2<T>> {
@@ -3894,23 +3841,6 @@ pub impl Matrix6x2FixedRowsMatrix4x2<
     }
 
     #[inline(always)]
-    fn rows(self: Matrix6x2<T>, first_row: usize, nrows: usize) -> Matrix4x2<T> {
-        if nrows != 4 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: Matrix6x2<T>, rows: Range<usize>) -> Matrix4x2<T> {
-        let Range { start, end } = rows;
-        if end != start + 4 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
-    }
-
-    #[inline(always)]
     fn select_rows(self: Matrix6x2<T>, irows: Span<usize>) -> Matrix4x2<T> {
         if irows.len() != 4 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -3925,8 +3855,8 @@ pub impl Matrix6x2FixedRowsMatrix4x2<
     }
 }
 
-/// The 5 consecutive rows of a `Matrix6x2` as a `Matrix5x2`. Upstream: `fixed_rows::<5>`, `rows(i,
-/// 5)`, `rows_range`, `select_rows`.
+/// The 5 consecutive rows of a `Matrix6x2` as a `Matrix5x2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<5>`, `select_rows`.
 pub impl Matrix6x2FixedRowsMatrix5x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedRows<Matrix6x2<T>, Matrix5x2<T>> {
@@ -3962,23 +3892,6 @@ pub impl Matrix6x2FixedRowsMatrix5x2<
     }
 
     #[inline(always)]
-    fn rows(self: Matrix6x2<T>, first_row: usize, nrows: usize) -> Matrix5x2<T> {
-        if nrows != 5 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: Matrix6x2<T>, rows: Range<usize>) -> Matrix5x2<T> {
-        let Range { start, end } = rows;
-        if end != start + 5 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
-    }
-
-    #[inline(always)]
     fn select_rows(self: Matrix6x2<T>, irows: Span<usize>) -> Matrix5x2<T> {
         if irows.len() != 5 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -4003,8 +3916,8 @@ pub impl Matrix6x2FixedRowsMatrix5x2<
     }
 }
 
-/// The 6 consecutive rows of a `Matrix6x2` as a `Matrix6x2`. Upstream: `fixed_rows::<6>`, `rows(i,
-/// 6)`, `rows_range`, `select_rows`.
+/// The 6 consecutive rows of a `Matrix6x2` as a `Matrix6x2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<6>`, `select_rows`.
 pub impl Matrix6x2FixedRowsMatrix6x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedRows<Matrix6x2<T>, Matrix6x2<T>> {
@@ -4027,23 +3940,6 @@ pub impl Matrix6x2FixedRowsMatrix6x2<
             },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn rows(self: Matrix6x2<T>, first_row: usize, nrows: usize) -> Matrix6x2<T> {
-        if nrows != 6 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: Matrix6x2<T>, rows: Range<usize>) -> Matrix6x2<T> {
-        let Range { start, end } = rows;
-        if end != start + 6 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
     }
 
     #[inline(always)]
@@ -4074,8 +3970,8 @@ pub impl Matrix6x2FixedRowsMatrix6x2<
     }
 }
 
-/// The 1 consecutive columns of a `Matrix6x2` as a `Vector6`. Upstream: `fixed_columns::<1>`,
-/// `columns(j, 1)`, `columns_range`, `select_columns`.
+/// The 1 consecutive columns of a `Matrix6x2` as a `Vector6` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
 pub impl Matrix6x2FixedColumnsVector6<
     T, +Copy<T>, +Drop<T>,
 > of FixedColumns<Matrix6x2<T>, Vector6<T>> {
@@ -4093,23 +3989,6 @@ pub impl Matrix6x2FixedColumnsVector6<
     }
 
     #[inline(always)]
-    fn columns(self: Matrix6x2<T>, first_col: usize, ncols: usize) -> Vector6<T> {
-        if ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, first_col)
-    }
-
-    #[inline(always)]
-    fn columns_range(self: Matrix6x2<T>, cols: Range<usize>) -> Vector6<T> {
-        let Range { start, end } = cols;
-        if end != start + 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, start)
-    }
-
-    #[inline(always)]
     fn select_columns(self: Matrix6x2<T>, icols: Span<usize>) -> Vector6<T> {
         if icols.len() != 1 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -4119,8 +3998,8 @@ pub impl Matrix6x2FixedColumnsVector6<
     }
 }
 
-/// The 2 consecutive columns of a `Matrix6x2` as a `Matrix6x2`. Upstream: `fixed_columns::<2>`,
-/// `columns(j, 2)`, `columns_range`, `select_columns`.
+/// The 2 consecutive columns of a `Matrix6x2` as a `Matrix6x2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
 pub impl Matrix6x2FixedColumnsMatrix6x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedColumns<Matrix6x2<T>, Matrix6x2<T>> {
@@ -4143,23 +4022,6 @@ pub impl Matrix6x2FixedColumnsMatrix6x2<
             },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn columns(self: Matrix6x2<T>, first_col: usize, ncols: usize) -> Matrix6x2<T> {
-        if ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, first_col)
-    }
-
-    #[inline(always)]
-    fn columns_range(self: Matrix6x2<T>, cols: Range<usize>) -> Matrix6x2<T> {
-        let Range { start, end } = cols;
-        if end != start + 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, start)
     }
 
     #[inline(always)]
@@ -4186,8 +4048,8 @@ pub impl Matrix6x2FixedColumnsMatrix6x2<
     }
 }
 
-/// The 1x1 blocks of a `Matrix6x2` as a `Matrix1`. Upstream: `fixed_view::<1, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 1x1 blocks of a `Matrix6x2` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
 pub impl Matrix6x2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2<T>, Matrix1<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix1<T> {
@@ -4213,30 +4075,10 @@ pub impl Matrix6x2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 1 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix1<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 1x2 blocks of a `Matrix6x2` as a `RowVector2`. Upstream: `fixed_view::<1, 2>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 1x2 blocks of a `Matrix6x2` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
 pub impl Matrix6x2FixedViewRowVector2<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<Matrix6x2<T>, RowVector2<T>> {
@@ -4255,30 +4097,10 @@ pub impl Matrix6x2FixedViewRowVector2<
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 1 || ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> RowVector2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 2x1 blocks of a `Matrix6x2` as a `Vector2`. Upstream: `fixed_view::<2, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 2x1 blocks of a `Matrix6x2` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
 pub impl Matrix6x2FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2<T>, Vector2<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector2<T> {
@@ -4302,30 +4124,10 @@ pub impl Matrix6x2FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 2 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 2x2 blocks of a `Matrix6x2` as a `Matrix2`. Upstream: `fixed_view::<2, 2>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 2x2 blocks of a `Matrix6x2` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
 pub impl Matrix6x2FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2<T>, Matrix2<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix2<T> {
@@ -4341,30 +4143,10 @@ pub impl Matrix6x2FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 2 || ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 3x1 blocks of a `Matrix6x2` as a `Vector3`. Upstream: `fixed_view::<3, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 3x1 blocks of a `Matrix6x2` as a `Vector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 1>`.
 pub impl Matrix6x2FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2<T>, Vector3<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector3<T> {
@@ -4386,30 +4168,10 @@ pub impl Matrix6x2FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 3 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector3<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 3x2 blocks of a `Matrix6x2` as a `Matrix3x2`. Upstream: `fixed_view::<3, 2>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 3x2 blocks of a `Matrix6x2` as a `Matrix3x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 2>`.
 pub impl Matrix6x2FixedViewMatrix3x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<Matrix6x2<T>, Matrix3x2<T>> {
@@ -4454,30 +4216,10 @@ pub impl Matrix6x2FixedViewMatrix3x2<
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 3 || ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x2<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 4x1 blocks of a `Matrix6x2` as a `Vector4`. Upstream: `fixed_view::<4, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 4x1 blocks of a `Matrix6x2` as a `Vector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 1>`.
 pub impl Matrix6x2FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2<T>, Vector4<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector4<T> {
@@ -4497,30 +4239,10 @@ pub impl Matrix6x2FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector4<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 4 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector4<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector4<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 4x2 blocks of a `Matrix6x2` as a `Matrix4x2`. Upstream: `fixed_view::<4, 2>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 4x2 blocks of a `Matrix6x2` as a `Matrix4x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 2>`.
 pub impl Matrix6x2FixedViewMatrix4x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<Matrix6x2<T>, Matrix4x2<T>> {
@@ -4563,30 +4285,10 @@ pub impl Matrix6x2FixedViewMatrix4x2<
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 4 || ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix4x2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x2<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 5x1 blocks of a `Matrix6x2` as a `Vector5`. Upstream: `fixed_view::<5, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 5x1 blocks of a `Matrix6x2` as a `Vector5` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<5, 1>`.
 pub impl Matrix6x2FixedViewVector5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2<T>, Vector5<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector5<T> {
@@ -4604,30 +4306,10 @@ pub impl Matrix6x2FixedViewVector5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector5<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 5 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector5<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector5<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 5x2 blocks of a `Matrix6x2` as a `Matrix5x2`. Upstream: `fixed_view::<5, 2>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 5x2 blocks of a `Matrix6x2` as a `Matrix5x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<5, 2>`.
 pub impl Matrix6x2FixedViewMatrix5x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<Matrix6x2<T>, Matrix5x2<T>> {
@@ -4664,30 +4346,10 @@ pub impl Matrix6x2FixedViewMatrix5x2<
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 5 || ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix5x2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x2<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 6x1 blocks of a `Matrix6x2` as a `Vector6`. Upstream: `fixed_view::<6, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 6x1 blocks of a `Matrix6x2` as a `Vector6` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<6, 1>`.
 pub impl Matrix6x2FixedViewVector6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2<T>, Vector6<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector6<T> {
@@ -4707,30 +4369,10 @@ pub impl Matrix6x2FixedViewVector6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6x2
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector6<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 6 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Vector6<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Vector6<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 6x2 blocks of a `Matrix6x2` as a `Matrix6x2`. Upstream: `fixed_view::<6, 2>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 6x2 blocks of a `Matrix6x2` as a `Matrix6x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<6, 2>`.
 pub impl Matrix6x2FixedViewMatrix6x2<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<Matrix6x2<T>, Matrix6x2<T>> {
@@ -4756,121 +4398,6 @@ pub impl Matrix6x2FixedViewMatrix6x2<
             },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn view(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 6 || ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix6x2<T>, irow: usize, icol: usize) -> Matrix6x2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix6x2<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x2<T> {
-        Self::view(self, start, shape)
-    }
-}
-
-/// The first 1 components of a row of a `Matrix6x2` as a `Matrix1`. Upstream: `row_part` (`n = 1`).
-pub impl Matrix6x2RowPartMatrix1<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6x2<T>, Matrix1<T>> {
-    #[inline(always)]
-    fn row_part(self: Matrix6x2<T>, i: usize, n: usize) -> Matrix1<T> {
-        if n != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, i, 0)
-    }
-}
-
-/// The first 2 components of a row of a `Matrix6x2` as a `RowVector2`. Upstream: `row_part` (`n =
-/// 2`).
-pub impl Matrix6x2RowPartRowVector2<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6x2<T>, RowVector2<T>> {
-    #[inline(always)]
-    fn row_part(self: Matrix6x2<T>, i: usize, n: usize) -> RowVector2<T> {
-        if n != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, i, 0)
-    }
-}
-
-/// The first 1 components of a column of a `Matrix6x2` as a `Matrix1`. Upstream: `column_part` (`n
-/// = 1`).
-pub impl Matrix6x2ColumnPartMatrix1<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6x2<T>, Matrix1<T>> {
-    #[inline(always)]
-    fn column_part(self: Matrix6x2<T>, i: usize, n: usize) -> Matrix1<T> {
-        if n != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
-    }
-}
-
-/// The first 2 components of a column of a `Matrix6x2` as a `Vector2`. Upstream: `column_part` (`n
-/// = 2`).
-pub impl Matrix6x2ColumnPartVector2<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6x2<T>, Vector2<T>> {
-    #[inline(always)]
-    fn column_part(self: Matrix6x2<T>, i: usize, n: usize) -> Vector2<T> {
-        if n != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
-    }
-}
-
-/// The first 3 components of a column of a `Matrix6x2` as a `Vector3`. Upstream: `column_part` (`n
-/// = 3`).
-pub impl Matrix6x2ColumnPartVector3<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6x2<T>, Vector3<T>> {
-    #[inline(always)]
-    fn column_part(self: Matrix6x2<T>, i: usize, n: usize) -> Vector3<T> {
-        if n != 3 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
-    }
-}
-
-/// The first 4 components of a column of a `Matrix6x2` as a `Vector4`. Upstream: `column_part` (`n
-/// = 4`).
-pub impl Matrix6x2ColumnPartVector4<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6x2<T>, Vector4<T>> {
-    #[inline(always)]
-    fn column_part(self: Matrix6x2<T>, i: usize, n: usize) -> Vector4<T> {
-        if n != 4 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
-    }
-}
-
-/// The first 5 components of a column of a `Matrix6x2` as a `Vector5`. Upstream: `column_part` (`n
-/// = 5`).
-pub impl Matrix6x2ColumnPartVector5<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6x2<T>, Vector5<T>> {
-    #[inline(always)]
-    fn column_part(self: Matrix6x2<T>, i: usize, n: usize) -> Vector5<T> {
-        if n != 5 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
-    }
-}
-
-/// The first 6 components of a column of a `Matrix6x2` as a `Vector6`. Upstream: `column_part` (`n
-/// = 6`).
-pub impl Matrix6x2ColumnPartVector6<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6x2<T>, Vector6<T>> {
-    #[inline(always)]
-    fn column_part(self: Matrix6x2<T>, i: usize, n: usize) -> Vector6<T> {
-        if n != 6 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
     }
 }
 
@@ -5047,7 +4574,10 @@ pub(crate) impl Matrix6x2CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix6x2
             m62: m.m62,
         }
     }
+}
 
+/// `(6, 2)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix6x2ShapeDims<T> of ShapeDims<Matrix6x2<T>> {
     #[inline(always)]
     fn dims() -> (usize, usize) {
         (6, 2)

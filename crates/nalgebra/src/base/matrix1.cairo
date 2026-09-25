@@ -9,7 +9,7 @@
 //! shape `MatrixMul::mul_mat` (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::{Bounded, One};
-use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, Range, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -43,9 +43,7 @@ use super::matrix_index::MatrixIndex;
 use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
-use super::matrix_view::{
-    ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, RowPart,
-};
+use super::matrix_view::{CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, ShapeDims};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
@@ -2071,8 +2069,8 @@ pub impl Matrix1UniformNorm<
 
 // --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
 
-/// The 1 consecutive rows of a `Matrix1` as a `Matrix1`. Upstream: `fixed_rows::<1>`, `rows(i, 1)`,
-/// `rows_range`, `select_rows`.
+/// The 1 consecutive rows of a `Matrix1` as a `Matrix1` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<1>`, `select_rows`.
 pub impl Matrix1FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix1<T>, Matrix1<T>> {
     #[inline(always)]
     fn fixed_rows(self: Matrix1<T>, i: usize) -> Matrix1<T> {
@@ -2080,23 +2078,6 @@ pub impl Matrix1FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix1<T>,
             0 => Matrix1 { x: self.x },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn rows(self: Matrix1<T>, first_row: usize, nrows: usize) -> Matrix1<T> {
-        if nrows != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: Matrix1<T>, rows: Range<usize>) -> Matrix1<T> {
-        let Range { start, end } = rows;
-        if end != start + 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
     }
 
     #[inline(always)]
@@ -2109,8 +2090,8 @@ pub impl Matrix1FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix1<T>,
     }
 }
 
-/// The 1 consecutive columns of a `Matrix1` as a `Matrix1`. Upstream: `fixed_columns::<1>`,
-/// `columns(j, 1)`, `columns_range`, `select_columns`.
+/// The 1 consecutive columns of a `Matrix1` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
 pub impl Matrix1FixedColumnsMatrix1<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix1<T>, Matrix1<T>> {
     #[inline(always)]
     fn fixed_columns(self: Matrix1<T>, i: usize) -> Matrix1<T> {
@@ -2118,23 +2099,6 @@ pub impl Matrix1FixedColumnsMatrix1<T, +Copy<T>, +Drop<T>> of FixedColumns<Matri
             0 => Matrix1 { x: self.x },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn columns(self: Matrix1<T>, first_col: usize, ncols: usize) -> Matrix1<T> {
-        if ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, first_col)
-    }
-
-    #[inline(always)]
-    fn columns_range(self: Matrix1<T>, cols: Range<usize>) -> Matrix1<T> {
-        let Range { start, end } = cols;
-        if end != start + 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, start)
     }
 
     #[inline(always)]
@@ -2147,8 +2111,8 @@ pub impl Matrix1FixedColumnsMatrix1<T, +Copy<T>, +Drop<T>> of FixedColumns<Matri
     }
 }
 
-/// The 1x1 blocks of a `Matrix1` as a `Matrix1`. Upstream: `fixed_view::<1, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 1x1 blocks of a `Matrix1` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
 pub impl Matrix1FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix1<T>, Matrix1<T>> {
     #[inline(always)]
     fn fixed_view(self: Matrix1<T>, irow: usize, icol: usize) -> Matrix1<T> {
@@ -2159,49 +2123,6 @@ pub impl Matrix1FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix1<T>,
             },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn view(self: Matrix1<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 1 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: Matrix1<T>, irow: usize, icol: usize) -> Matrix1<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: Matrix1<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
-        Self::view(self, start, shape)
-    }
-}
-
-/// The first 1 components of a row of a `Matrix1` as a `Matrix1`. Upstream: `row_part` (`n = 1`).
-pub impl Matrix1RowPartMatrix1<T, +Copy<T>, +Drop<T>> of RowPart<Matrix1<T>, Matrix1<T>> {
-    #[inline(always)]
-    fn row_part(self: Matrix1<T>, i: usize, n: usize) -> Matrix1<T> {
-        if n != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, i, 0)
-    }
-}
-
-/// The first 1 components of a column of a `Matrix1` as a `Matrix1`. Upstream: `column_part` (`n =
-/// 1`).
-pub impl Matrix1ColumnPartMatrix1<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix1<T>, Matrix1<T>> {
-    #[inline(always)]
-    fn column_part(self: Matrix1<T>, i: usize, n: usize) -> Matrix1<T> {
-        if n != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
     }
 }
 
@@ -3129,7 +3050,10 @@ pub(crate) impl Matrix1CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix1<T>,
     fn crop(m: Matrix6<T>) -> Matrix1<T> {
         Matrix1 { x: m.m11 }
     }
+}
 
+/// `(1, 1)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix1ShapeDims<T> of ShapeDims<Matrix1<T>> {
     #[inline(always)]
     fn dims() -> (usize, usize) {
         (1, 1)

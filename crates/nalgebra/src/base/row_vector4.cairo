@@ -9,7 +9,7 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, Range, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -29,9 +29,7 @@ use super::matrix_index::MatrixIndex;
 use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
-use super::matrix_view::{
-    ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, RowPart,
-};
+use super::matrix_view::{CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, ShapeDims};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
@@ -1861,8 +1859,8 @@ pub impl RowVector4UniformNorm<
 
 // --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
 
-/// The 1 consecutive rows of a `RowVector4` as a `RowVector4`. Upstream: `fixed_rows::<1>`,
-/// `rows(i, 1)`, `rows_range`, `select_rows`.
+/// The 1 consecutive rows of a `RowVector4` as a `RowVector4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
 pub impl RowVector4FixedRowsRowVector4<
     T, +Copy<T>, +Drop<T>,
 > of FixedRows<RowVector4<T>, RowVector4<T>> {
@@ -1875,23 +1873,6 @@ pub impl RowVector4FixedRowsRowVector4<
     }
 
     #[inline(always)]
-    fn rows(self: RowVector4<T>, first_row: usize, nrows: usize) -> RowVector4<T> {
-        if nrows != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, first_row)
-    }
-
-    #[inline(always)]
-    fn rows_range(self: RowVector4<T>, rows: Range<usize>) -> RowVector4<T> {
-        let Range { start, end } = rows;
-        if end != start + 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_rows(self, start)
-    }
-
-    #[inline(always)]
     fn select_rows(self: RowVector4<T>, irows: Span<usize>) -> RowVector4<T> {
         if irows.len() != 1 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -1901,8 +1882,8 @@ pub impl RowVector4FixedRowsRowVector4<
     }
 }
 
-/// The 1 consecutive columns of a `RowVector4` as a `Matrix1`. Upstream: `fixed_columns::<1>`,
-/// `columns(j, 1)`, `columns_range`, `select_columns`.
+/// The 1 consecutive columns of a `RowVector4` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
 pub impl RowVector4FixedColumnsMatrix1<
     T, +Copy<T>, +Drop<T>,
 > of FixedColumns<RowVector4<T>, Matrix1<T>> {
@@ -1918,23 +1899,6 @@ pub impl RowVector4FixedColumnsMatrix1<
     }
 
     #[inline(always)]
-    fn columns(self: RowVector4<T>, first_col: usize, ncols: usize) -> Matrix1<T> {
-        if ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, first_col)
-    }
-
-    #[inline(always)]
-    fn columns_range(self: RowVector4<T>, cols: Range<usize>) -> Matrix1<T> {
-        let Range { start, end } = cols;
-        if end != start + 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, start)
-    }
-
-    #[inline(always)]
     fn select_columns(self: RowVector4<T>, icols: Span<usize>) -> Matrix1<T> {
         if icols.len() != 1 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -1944,8 +1908,8 @@ pub impl RowVector4FixedColumnsMatrix1<
     }
 }
 
-/// The 2 consecutive columns of a `RowVector4` as a `RowVector2`. Upstream: `fixed_columns::<2>`,
-/// `columns(j, 2)`, `columns_range`, `select_columns`.
+/// The 2 consecutive columns of a `RowVector4` as a `RowVector2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
 pub impl RowVector4FixedColumnsRowVector2<
     T, +Copy<T>, +Drop<T>,
 > of FixedColumns<RowVector4<T>, RowVector2<T>> {
@@ -1960,23 +1924,6 @@ pub impl RowVector4FixedColumnsRowVector2<
     }
 
     #[inline(always)]
-    fn columns(self: RowVector4<T>, first_col: usize, ncols: usize) -> RowVector2<T> {
-        if ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, first_col)
-    }
-
-    #[inline(always)]
-    fn columns_range(self: RowVector4<T>, cols: Range<usize>) -> RowVector2<T> {
-        let Range { start, end } = cols;
-        if end != start + 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, start)
-    }
-
-    #[inline(always)]
     fn select_columns(self: RowVector4<T>, icols: Span<usize>) -> RowVector2<T> {
         if icols.len() != 2 {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
@@ -1987,8 +1934,8 @@ pub impl RowVector4FixedColumnsRowVector2<
     }
 }
 
-/// The 3 consecutive columns of a `RowVector4` as a `RowVector3`. Upstream: `fixed_columns::<3>`,
-/// `columns(j, 3)`, `columns_range`, `select_columns`.
+/// The 3 consecutive columns of a `RowVector4` as a `RowVector3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
 pub impl RowVector4FixedColumnsRowVector3<
     T, +Copy<T>, +Drop<T>,
 > of FixedColumns<RowVector4<T>, RowVector3<T>> {
@@ -1999,23 +1946,6 @@ pub impl RowVector4FixedColumnsRowVector3<
             1 => RowVector3 { x: self.y, y: self.z, z: self.w },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn columns(self: RowVector4<T>, first_col: usize, ncols: usize) -> RowVector3<T> {
-        if ncols != 3 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, first_col)
-    }
-
-    #[inline(always)]
-    fn columns_range(self: RowVector4<T>, cols: Range<usize>) -> RowVector3<T> {
-        let Range { start, end } = cols;
-        if end != start + 3 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, start)
     }
 
     #[inline(always)]
@@ -2030,8 +1960,8 @@ pub impl RowVector4FixedColumnsRowVector3<
     }
 }
 
-/// The 4 consecutive columns of a `RowVector4` as a `RowVector4`. Upstream: `fixed_columns::<4>`,
-/// `columns(j, 4)`, `columns_range`, `select_columns`.
+/// The 4 consecutive columns of a `RowVector4` as a `RowVector4` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<4>`, `select_columns`.
 pub impl RowVector4FixedColumnsRowVector4<
     T, +Copy<T>, +Drop<T>,
 > of FixedColumns<RowVector4<T>, RowVector4<T>> {
@@ -2041,23 +1971,6 @@ pub impl RowVector4FixedColumnsRowVector4<
             0 => RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn columns(self: RowVector4<T>, first_col: usize, ncols: usize) -> RowVector4<T> {
-        if ncols != 4 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, first_col)
-    }
-
-    #[inline(always)]
-    fn columns_range(self: RowVector4<T>, cols: Range<usize>) -> RowVector4<T> {
-        let Range { start, end } = cols;
-        if end != start + 4 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_columns(self, start)
     }
 
     #[inline(always)]
@@ -2073,8 +1986,8 @@ pub impl RowVector4FixedColumnsRowVector4<
     }
 }
 
-/// The 1x1 blocks of a `RowVector4` as a `Matrix1`. Upstream: `fixed_view::<1, 1>`, `view`, and the
-/// deprecated `fixed_slice` / `slice`.
+/// The 1x1 blocks of a `RowVector4` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
 pub impl RowVector4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<RowVector4<T>, Matrix1<T>> {
     #[inline(always)]
     fn fixed_view(self: RowVector4<T>, irow: usize, icol: usize) -> Matrix1<T> {
@@ -2098,30 +2011,10 @@ pub impl RowVector4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<RowVecto
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 1 || ncols != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: RowVector4<T>, irow: usize, icol: usize) -> Matrix1<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 1x2 blocks of a `RowVector4` as a `RowVector2`. Upstream: `fixed_view::<1, 2>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 1x2 blocks of a `RowVector4` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
 pub impl RowVector4FixedViewRowVector2<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<RowVector4<T>, RowVector2<T>> {
@@ -2143,30 +2036,10 @@ pub impl RowVector4FixedViewRowVector2<
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 1 || ncols != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: RowVector4<T>, irow: usize, icol: usize) -> RowVector2<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 1x3 blocks of a `RowVector4` as a `RowVector3`. Upstream: `fixed_view::<1, 3>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 1x3 blocks of a `RowVector4` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
 pub impl RowVector4FixedViewRowVector3<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<RowVector4<T>, RowVector3<T>> {
@@ -2184,30 +2057,10 @@ pub impl RowVector4FixedViewRowVector3<
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
     }
-
-    #[inline(always)]
-    fn view(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector3<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 1 || ncols != 3 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: RowVector4<T>, irow: usize, icol: usize) -> RowVector3<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector3<T> {
-        Self::view(self, start, shape)
-    }
 }
 
-/// The 1x4 blocks of a `RowVector4` as a `RowVector4`. Upstream: `fixed_view::<1, 4>`, `view`, and
-/// the deprecated `fixed_slice` / `slice`.
+/// The 1x4 blocks of a `RowVector4` as a `RowVector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 4>`.
 pub impl RowVector4FixedViewRowVector4<
     T, +Copy<T>, +Drop<T>,
 > of FixedView<RowVector4<T>, RowVector4<T>> {
@@ -2220,94 +2073,6 @@ pub impl RowVector4FixedViewRowVector4<
             },
             _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
         }
-    }
-
-    #[inline(always)]
-    fn view(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector4<T> {
-        let (irow, icol) = start;
-        let (nrows, ncols) = shape;
-        if nrows != 1 || ncols != 4 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn fixed_slice(self: RowVector4<T>, irow: usize, icol: usize) -> RowVector4<T> {
-        Self::fixed_view(self, irow, icol)
-    }
-
-    #[inline(always)]
-    fn slice(self: RowVector4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector4<T> {
-        Self::view(self, start, shape)
-    }
-}
-
-/// The first 1 components of a row of a `RowVector4` as a `Matrix1`. Upstream: `row_part` (`n =
-/// 1`).
-pub impl RowVector4RowPartMatrix1<T, +Copy<T>, +Drop<T>> of RowPart<RowVector4<T>, Matrix1<T>> {
-    #[inline(always)]
-    fn row_part(self: RowVector4<T>, i: usize, n: usize) -> Matrix1<T> {
-        if n != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, i, 0)
-    }
-}
-
-/// The first 2 components of a row of a `RowVector4` as a `RowVector2`. Upstream: `row_part` (`n =
-/// 2`).
-pub impl RowVector4RowPartRowVector2<
-    T, +Copy<T>, +Drop<T>,
-> of RowPart<RowVector4<T>, RowVector2<T>> {
-    #[inline(always)]
-    fn row_part(self: RowVector4<T>, i: usize, n: usize) -> RowVector2<T> {
-        if n != 2 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, i, 0)
-    }
-}
-
-/// The first 3 components of a row of a `RowVector4` as a `RowVector3`. Upstream: `row_part` (`n =
-/// 3`).
-pub impl RowVector4RowPartRowVector3<
-    T, +Copy<T>, +Drop<T>,
-> of RowPart<RowVector4<T>, RowVector3<T>> {
-    #[inline(always)]
-    fn row_part(self: RowVector4<T>, i: usize, n: usize) -> RowVector3<T> {
-        if n != 3 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, i, 0)
-    }
-}
-
-/// The first 4 components of a row of a `RowVector4` as a `RowVector4`. Upstream: `row_part` (`n =
-/// 4`).
-pub impl RowVector4RowPartRowVector4<
-    T, +Copy<T>, +Drop<T>,
-> of RowPart<RowVector4<T>, RowVector4<T>> {
-    #[inline(always)]
-    fn row_part(self: RowVector4<T>, i: usize, n: usize) -> RowVector4<T> {
-        if n != 4 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, i, 0)
-    }
-}
-
-/// The first 1 components of a column of a `RowVector4` as a `Matrix1`. Upstream: `column_part` (`n
-/// = 1`).
-pub impl RowVector4ColumnPartMatrix1<
-    T, +Copy<T>, +Drop<T>,
-> of ColumnPart<RowVector4<T>, Matrix1<T>> {
-    #[inline(always)]
-    fn column_part(self: RowVector4<T>, i: usize, n: usize) -> Matrix1<T> {
-        if n != 1 {
-            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
-        }
-        FixedView::fixed_view(self, 0, i)
     }
 }
 
@@ -2517,7 +2282,10 @@ pub(crate) impl RowVector4CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<RowVecto
     fn crop(m: Matrix6<T>) -> RowVector4<T> {
         RowVector4 { x: m.m11, y: m.m12, z: m.m13, w: m.m14 }
     }
+}
 
+/// `(1, 4)`: the size checks of the runtime-sized views.
+pub(crate) impl RowVector4ShapeDims<T> of ShapeDims<RowVector4<T>> {
     #[inline(always)]
     fn dims() -> (usize, usize) {
         (1, 4)

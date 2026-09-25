@@ -275,16 +275,11 @@ def fixed_rows_impl(s: Shape, d: int) -> str:
     fns = [
         method(f"fn fixed_rows(self: {S}<T>, i: usize) -> {O}<T>",
                match_arms("i", arms, panic()), small(o)),
-        method(f"fn rows(self: {S}<T>, first_row: usize, nrows: usize) -> {O}<T>",
-               check(f"nrows != {d}") + "Self::fixed_rows(self, first_row)"),
-        method(f"fn rows_range(self: {S}<T>, rows: Range<usize>) -> {O}<T>",
-               "let Range { start, end } = rows;\n" + check(f"end != start + {d}")
-               + "Self::fixed_rows(self, start)"),
         method(f"fn select_rows(self: {S}<T>, irows: Span<usize>) -> {O}<T>",
                check(f"irows.len() != {d}") + rows + "\n" + sel, small(o)),
     ]
-    return item(f"The {d} consecutive rows of a `{S}` as a `{O}`. Upstream: `fixed_rows::<{d}>`, "
-                f"`rows(i, {d})`, `rows_range`, `select_rows`.",
+    return item(f"The {d} consecutive rows of a `{S}` as a `{O}` (`rows` / `rows_range`: default "
+                f"methods). Upstream: `fixed_rows::<{d}>`, `select_rows`.",
                 impl(f"{S}FixedRows{O}", f"FixedRows<{S}<T>, {O}<T>>", BOUNDS, fns))
 
 
@@ -298,56 +293,37 @@ def fixed_columns_impl(s: Shape, d: int) -> str:
     fns = [
         method(f"fn fixed_columns(self: {S}<T>, i: usize) -> {O}<T>",
                match_arms("i", arms, panic()), small(o)),
-        method(f"fn columns(self: {S}<T>, first_col: usize, ncols: usize) -> {O}<T>",
-               check(f"ncols != {d}") + "Self::fixed_columns(self, first_col)"),
-        method(f"fn columns_range(self: {S}<T>, cols: Range<usize>) -> {O}<T>",
-               "let Range { start, end } = cols;\n" + check(f"end != start + {d}")
-               + "Self::fixed_columns(self, start)"),
         method(f"fn select_columns(self: {S}<T>, icols: Span<usize>) -> {O}<T>",
                check(f"icols.len() != {d}") + cols + "\n" + sel, small(o)),
     ]
-    return item(f"The {d} consecutive columns of a `{S}` as a `{O}`. Upstream: "
-                f"`fixed_columns::<{d}>`, `columns(j, {d})`, `columns_range`, `select_columns`.",
+    return item(f"The {d} consecutive columns of a `{S}` as a `{O}` (`columns` / `columns_range`: "
+                f"default methods). Upstream: `fixed_columns::<{d}>`, `select_columns`.",
                 impl(f"{S}FixedColumns{O}", f"FixedColumns<{S}<T>, {O}<T>>", BOUNDS, fns))
+
+
+# `nested`: ONE nested `match` selects the block literal (measured cheapest); `composed`:
+# `fixed_columns` then `fixed_rows` (less code, dearer).
+VIEW_KERNEL = "nested"
 
 
 def fixed_view_impl(s: Shape, o: Shape) -> str:
     S, O = s.name, o.name
-    outer = []
-    for dj in range(s.c - o.c + 1):
-        inner = [block(s, o, di, dj) for di in range(s.r - o.r + 1)]
-        outer.append(match_arms("irow", inner, panic()))
-    fns = [
-        method(f"fn fixed_view(self: {S}<T>, irow: usize, icol: usize) -> {O}<T>",
-               match_arms("icol", outer, panic()), small(o)),
-        method(f"fn view(self: {S}<T>, start: (usize, usize), shape: (usize, usize)) -> {O}<T>",
-               "let (irow, icol) = start;\nlet (nrows, ncols) = shape;\n"
-               + check(f"nrows != {o.r} || ncols != {o.c}") + "Self::fixed_view(self, irow, icol)"),
-        method(f"fn fixed_slice(self: {S}<T>, irow: usize, icol: usize) -> {O}<T>",
-               "Self::fixed_view(self, irow, icol)"),
-        method(f"fn slice(self: {S}<T>, start: (usize, usize), shape: (usize, usize)) -> {O}<T>",
-               "Self::view(self, start, shape)"),
-    ]
-    return item(f"The {o.r}x{o.c} blocks of a `{S}` as a `{O}`. Upstream: "
-                f"`fixed_view::<{o.r}, {o.c}>`, `view`, and the deprecated `fixed_slice` / "
-                f"`slice`.", impl(f"{S}FixedView{O}", f"FixedView<{S}<T>, {O}<T>>", BOUNDS, fns))
-
-
-def part_impl(s: Shape, n: int, row: bool) -> str:
-    S = s.name
-    o = Shape(1, n) if row else Shape(n, 1)
-    O = o.name
-    if row:
-        body = check(f"n != {n}") + "FixedView::fixed_view(self, i, 0)"
-        sig = f"fn row_part(self: {S}<T>, i: usize, n: usize) -> {O}<T>"
-        trait, what = "RowPart", f"The first {n} components of a row"
+    if VIEW_KERNEL == "nested":
+        outer = []
+        for dj in range(s.c - o.c + 1):
+            inner = [block(s, o, di, dj) for di in range(s.r - o.r + 1)]
+            outer.append(match_arms("irow", inner, panic()))
+        body, inline = match_arms("icol", outer, panic()), small(o)
     else:
-        body = check(f"n != {n}") + "FixedView::fixed_view(self, 0, i)"
-        sig = f"fn column_part(self: {S}<T>, i: usize, n: usize) -> {O}<T>"
-        trait, what = "ColumnPart", f"The first {n} components of a column"
-    up = "row_part" if row else "column_part"
-    return item(f"{what} of a `{S}` as a `{O}`. Upstream: `{up}` (`n = {n}`).",
-                impl(f"{S}{trait}{O}", f"{trait}<{S}<T>, {O}<T>>", BOUNDS, [method(sig, body)]))
+        mid = Shape(s.r, o.c)
+        body = (f"let c: {mid.name}<T> = FixedColumns::fixed_columns(self, icol);\n"
+                f"FixedRows::fixed_rows(c, irow)")
+        inline = True
+    fns = [method(f"fn fixed_view(self: {S}<T>, irow: usize, icol: usize) -> {O}<T>", body,
+                  inline)]
+    return item(f"The {o.r}x{o.c} blocks of a `{S}` as a `{O}` (`view`, `fixed_slice`, `slice`: "
+                f"default methods). Upstream: `fixed_view::<{o.r}, {o.c}>`.",
+                impl(f"{S}FixedView{O}", f"FixedView<{S}<T>, {O}<T>>", BOUNDS, fns))
 
 
 def kronecker_impl(a: Shape, b: Shape) -> str:
@@ -378,7 +354,9 @@ def resize_impls(s: Shape) -> list[str]:
         + method(f"fn pad(self: {S}<T>, val: T) -> Matrix6<T>", pad) + "\n}",
         f"/// The top-left `{S}` of a `Matrix6` (`FixedResize`).\n"
         f"pub(crate) impl {S}CropFrom6<{BOUNDS}> of CropFrom6<{S}<T>, T> {{\n"
-        + method(f"fn crop(m: Matrix6<T>) -> {S}<T>", crop) + "\n\n"
+        + method(f"fn crop(m: Matrix6<T>) -> {S}<T>", crop) + "\n}",
+        f"/// `({s.r}, {s.c})`: the size checks of the runtime-sized views.\n"
+        f"pub(crate) impl {S}ShapeDims<T> of ShapeDims<{S}<T>> {{\n"
         + method("fn dims() -> (usize, usize)", f"({s.r}, {s.c})") + "\n}",
     ]
 
@@ -388,17 +366,15 @@ def items(s: Shape) -> list[str]:
     out += [fixed_rows_impl(s, d) for d in range(1, s.r + 1)]
     out += [fixed_columns_impl(s, d) for d in range(1, s.c + 1)]
     out += [fixed_view_impl(s, Shape(r, c)) for r in range(1, s.r + 1) for c in range(1, s.c + 1)]
-    out += [part_impl(s, n, True) for n in range(1, s.c + 1)]
-    out += [part_impl(s, n, False) for n in range(1, s.r + 1)]
     out += [kronecker_impl(s, b) for b in kron_rhs(s)]
     out += resize_impls(s)
     return out
 
 
 def uses(s: Shape) -> list[str]:
-    out = ["core::ops::Range", "super::errors",
-           "super::matrix_view::{ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, "
-           "PadTo6, RowPart}", "super::matrix_kronecker::MatrixKronecker",
+    out = ["super::errors",
+           "super::matrix_view::{CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, "
+           "ShapeDims}", "super::matrix_kronecker::MatrixKronecker",
            "super::matrix_tr_mul::MatrixTrMul"]
     shapes = {Shape(1, s.c), Shape(s.r, 1), CANVAS, vec(s.c), vec(s.r)}
     shapes |= {Shape(d, s.c) for d in range(1, s.r + 1)}
@@ -428,6 +404,16 @@ HEADER = ("// Generated by tools/shapegen/shapegen.py: do not edit by hand. Temp
 
 
 def render_matrix_view() -> str:
+    vec_uses = "\n".join(f"use super::{v.module}::{v.name};"
+                         for v in sorted({Shape(1, n) for n in range(1, 7)}
+                                         | {Shape(n, 1) for n in range(1, 7)} | {CANVAS}))
+    lens = []
+    for n in range(1, 7):
+        for trait, v in (("RowVectorLen", Shape(1, n)), ("ColumnVectorLen", Shape(n, 1))):
+            if n == 1 and trait == "ColumnVectorLen":
+                v = Shape(1, 1)
+            lens.append(f"impl {v.name}{trait}<T> of {trait}<{v.name}<T>> {{\n"
+                        f"#[inline(always)]\nfn len() -> usize {{\n{n}\n}}\n}}")
     return HEADER + """//! Owned rows, columns and blocks of the static shapes (upstream `base/matrix_view.rs`,
 //! `base/edition.rs`).
 //!
@@ -438,32 +424,49 @@ def render_matrix_view() -> str:
 //!
 //! ```cairo
 //! let b: Matrix2x3<Fixed> = m.fixed_view(1, 0); // upstream m.fixed_view::<2, 3>(1, 0)
-//! let r: Matrix2x4<Fixed> = m.rows(1, 2);       // upstream m.rows(1, 2)
+//! let r: Matrix2x4<Fixed> = m.rows(1, 2); // upstream m.rows(1, 2)
 //! ```
 //!
-//! Each trait has one impl per (shape, output shape) pair, in the module of the source shape: a
-//! size that does not fit is a compile error, like upstream's. The runtime-sized forms (`rows`,
-//! `rows_range`, `view`, `row_part`, `select_rows`, `resize`...) panic with `nalgebra: dimension
-//! mismatch` when the requested size is not the output type's, and every position out of the
-//! shape panics with `nalgebra: index out of bounds`. A runtime position selects ONE struct
-//! literal through a `match` (no loop, no per-component test).
+//! `FixedRows`, `FixedColumns` and `FixedView` have one impl per (shape, output shape) pair, in
+//! the module of the source shape: a size that does not fit is a compile error, like upstream's.
+//! Their runtime-sized forms (`rows`, `rows_range`, `view`...) are default methods, and `RowPart`
+//! / `ColumnPart` / `FixedResize` blanket impls: they panic with `nalgebra: dimension mismatch`
+//! when the requested size is not the output type's. Every position out of the shape panics with
+//! `nalgebra: index out of bounds`. A runtime position selects ONE struct literal through a
+//! `match` (no loop, no per-component test).
 
-use super::matrix6::Matrix6;
+use super::errors;
+""" + vec_uses + """
 
 /// `D` consecutive rows (`Out` has `D` rows and the columns of `M`). Upstream: `fixed_rows`,
 /// `rows`, `rows_range`, `select_rows`.
 pub trait FixedRows<M, Out> {
     /// The rows `i .. i + D`. Upstream: `fixed_rows::<D>(i)`.
     fn fixed_rows(self: M, i: usize) -> Out;
-    /// The rows `first_row .. first_row + nrows`; `nrows` must be `D`. Upstream: `rows`.
-    fn rows(self: M, first_row: usize, nrows: usize) -> Out;
-    /// The rows of `rows` (`start .. end`, `end - start = D`). Upstream: `rows_range` (a
-    /// `Range<usize>` here; upstream also takes a single index and the other range forms).
-    fn rows_range(self: M, rows: core::ops::Range<usize>) -> Out;
     /// The rows at the `D` indices of `irows` (any order, repeats allowed). Upstream:
-    /// `select_rows` (an iterator of indices, a dynamic result; a `Span` and a static result
+    /// `select_rows` (an iterator of indices and a dynamic result; a `Span` and a static result
     /// here).
     fn select_rows(self: M, irows: Span<usize>) -> Out;
+    /// The rows `first_row .. first_row + nrows`; `nrows` must be `D`. Upstream: `rows`.
+    #[inline]
+    fn rows<+ShapeDims<Out>, +Drop<M>>(self: M, first_row: usize, nrows: usize) -> Out {
+        let (d, _) = ShapeDims::<Out>::dims();
+        if nrows != d {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+    /// The rows `start .. end` of `rows` (`end - start = D`). Upstream: `rows_range` (a
+    /// `Range<usize>` here; upstream also takes a single index and the other range forms).
+    #[inline]
+    fn rows_range<+ShapeDims<Out>, +Drop<M>>(self: M, rows: core::ops::Range<usize>) -> Out {
+        let (d, _) = ShapeDims::<Out>::dims();
+        let core::ops::Range { start, end } = rows;
+        if end != start + d {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
 }
 
 /// `D` consecutive columns (`Out` has the rows of `M` and `D` columns). Upstream:
@@ -471,12 +474,30 @@ pub trait FixedRows<M, Out> {
 pub trait FixedColumns<M, Out> {
     /// The columns `i .. i + D`. Upstream: `fixed_columns::<D>(i)`.
     fn fixed_columns(self: M, i: usize) -> Out;
-    /// The columns `first_col .. first_col + ncols`; `ncols` must be `D`. Upstream: `columns`.
-    fn columns(self: M, first_col: usize, ncols: usize) -> Out;
-    /// The columns of `cols` (`start .. end`, `end - start = D`). Upstream: `columns_range`.
-    fn columns_range(self: M, cols: core::ops::Range<usize>) -> Out;
-    /// The columns at the `D` indices of `icols`. Upstream: `select_columns`.
+    /// The columns at the `D` indices of `icols` (any order, repeats allowed). Upstream:
+    /// `select_columns` (an iterator of indices and a dynamic result; a `Span` and a static
+    /// result here).
     fn select_columns(self: M, icols: Span<usize>) -> Out;
+    /// The columns `first_col .. first_col + ncols`; `ncols` must be `D`. Upstream: `columns`.
+    #[inline]
+    fn columns<+ShapeDims<Out>, +Drop<M>>(self: M, first_col: usize, ncols: usize) -> Out {
+        let (_, d) = ShapeDims::<Out>::dims();
+        if ncols != d {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+    /// The columns `start .. end` of `cols` (`end - start = D`). Upstream: `columns_range` (a
+    /// `Range<usize>` here).
+    #[inline]
+    fn columns_range<+ShapeDims<Out>, +Drop<M>>(self: M, cols: core::ops::Range<usize>) -> Out {
+        let (_, d) = ShapeDims::<Out>::dims();
+        let core::ops::Range { start, end } = cols;
+        if end != start + d {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
 }
 
 /// An `R2 x C2` block (`Out`). Upstream: `fixed_view`, `view`, `fixed_slice`, `slice`.
@@ -486,21 +507,35 @@ pub trait FixedView<M, Out> {
     fn fixed_view(self: M, irow: usize, icol: usize) -> Out;
     /// The block at `start` (row, column) of size `shape`, which must be `(R2, C2)`. Upstream:
     /// `view`.
-    fn view(self: M, start: (usize, usize), shape: (usize, usize)) -> Out;
+    #[inline]
+    fn view<+ShapeDims<Out>, +Drop<M>>(self: M, start: (usize, usize), shape: (usize, usize)) -> Out {
+        if shape != ShapeDims::<Out>::dims() {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let (irow, icol) = start;
+        Self::fixed_view(self, irow, icol)
+    }
     /// `fixed_view` (deprecated upstream alias). Upstream: `fixed_slice`.
-    fn fixed_slice(self: M, irow: usize, icol: usize) -> Out;
+    #[inline(always)]
+    fn fixed_slice(self: M, irow: usize, icol: usize) -> Out {
+        Self::fixed_view(self, irow, icol)
+    }
     /// `view` (deprecated upstream alias). Upstream: `slice`.
-    fn slice(self: M, start: (usize, usize), shape: (usize, usize)) -> Out;
+    #[inline]
+    fn slice<+ShapeDims<Out>, +Drop<M>>(self: M, start: (usize, usize), shape: (usize, usize)) -> Out {
+        Self::view(self, start, shape)
+    }
 }
 
-/// The first `n` components of a row, as a row vector (`Out = RowVectorN`). Upstream: `row_part`.
+/// The first `n` components of a row, as a row vector (`Out = RowVectorN`, `Matrix1` for one).
+/// Upstream: `row_part`.
 pub trait RowPart<M, Out> {
     /// The first `n` components of row `i`; `n` must be `Out`'s length. Upstream: `row_part`.
     fn row_part(self: M, i: usize, n: usize) -> Out;
 }
 
-/// The first `n` components of a column, as a column vector (`Out = VectorN`). Upstream:
-/// `column_part`.
+/// The first `n` components of a column, as a column vector (`Out = VectorN`, `Matrix1` for
+/// one). Upstream: `column_part`.
 pub trait ColumnPart<M, Out> {
     /// The first `n` components of column `i`; `n` must be `Out`'s length. Upstream:
     /// `column_part`.
@@ -517,6 +552,21 @@ pub trait FixedResize<M, Out, T> {
     fn resize(self: M, new_nrows: usize, new_ncols: usize, val: T) -> Out;
 }
 
+/// The shape `(nrows, ncols)` of `S` (the size checks of the runtime-sized forms).
+pub(crate) trait ShapeDims<S> {
+    fn dims() -> (usize, usize);
+}
+
+/// The length of a row vector `S` (`RowPart`).
+pub(crate) trait RowVectorLen<S> {
+    fn len() -> usize;
+}
+
+/// The length of a column vector `S` (`ColumnPart`).
+pub(crate) trait ColumnVectorLen<S> {
+    fn len() -> usize;
+}
+
 /// `self` in the top-left corner of a `Matrix6` filled with `val` (the canvas of `FixedResize`).
 pub(crate) trait PadTo6<M, T> {
     fn pad(self: M, val: T) -> Matrix6<T>;
@@ -525,7 +575,34 @@ pub(crate) trait PadTo6<M, T> {
 /// The top-left block of a `Matrix6` of the shape `Out` (the canvas of `FixedResize`).
 pub(crate) trait CropFrom6<Out, T> {
     fn crop(m: Matrix6<T>) -> Out;
-    fn dims() -> (usize, usize);
+}
+
+""" + "\n\n".join(lens) + """
+
+/// `row_part` for every row-vector output: `fixed_view(i, 0)` after the length check.
+pub impl RowPartImpl<
+    M, Out, impl V: FixedView<M, Out>, impl L: RowVectorLen<Out>, +Drop<M>,
+> of RowPart<M, Out> {
+    #[inline(always)]
+    fn row_part(self: M, i: usize, n: usize) -> Out {
+        if n != L::len() {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        V::fixed_view(self, i, 0)
+    }
+}
+
+/// `column_part` for every column-vector output: `fixed_view(0, i)` after the length check.
+pub impl ColumnPartImpl<
+    M, Out, impl V: FixedView<M, Out>, impl L: ColumnVectorLen<Out>, +Drop<M>,
+> of ColumnPart<M, Out> {
+    #[inline(always)]
+    fn column_part(self: M, i: usize, n: usize) -> Out {
+        if n != L::len() {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        V::fixed_view(self, 0, i)
+    }
 }
 
 /// `FixedResize` for every pair of shapes: pad to the `Matrix6` canvas, crop to `Out`. Struct
@@ -533,17 +610,24 @@ pub(crate) trait CropFrom6<Out, T> {
 /// direct literal, `bench_matrix2x4_fixed_resize__alt_direct`) for 72 small impls instead of
 /// 1,296 literals.
 pub impl FixedResizeImpl<
-    M, Out, T, impl P: PadTo6<M, T>, impl C: CropFrom6<Out, T>, +Drop<M>, +Drop<T>,
+    M,
+    Out,
+    T,
+    impl P: PadTo6<M, T>,
+    impl C: CropFrom6<Out, T>,
+    impl D: ShapeDims<Out>,
+    +Drop<M>,
+    +Drop<T>,
 > of FixedResize<M, Out, T> {
-    #[inline]
+    #[inline(always)]
     fn fixed_resize(self: M, val: T) -> Out {
         C::crop(P::pad(self, val))
     }
 
-    #[inline]
+    #[inline(always)]
     fn resize(self: M, new_nrows: usize, new_ncols: usize, val: T) -> Out {
-        if (new_nrows, new_ncols) != C::dims() {
-            core::panic_with_felt252(super::errors::DIMENSION_MISMATCH)
+        if (new_nrows, new_ncols) != D::dims() {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
         }
         C::crop(P::pad(self, val))
     }
