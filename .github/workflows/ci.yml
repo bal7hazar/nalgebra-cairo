@@ -38,6 +38,7 @@ jobs:
           - { name: tests_geometry_poses, package: nalgebra_tests_geometry_poses, filters: "nalgebra_tests_geometry_poses" }
           - { name: tests_geometry_scale, package: nalgebra_tests_geometry_scale, filters: "nalgebra_tests_geometry_scale" }
           - { name: tests_geometry_dual, package: nalgebra_tests_geometry_dual, filters: "nalgebra_tests_geometry_dual" }
+          - { name: tests_geometry_projections, package: nalgebra_tests_geometry_projections, filters: "nalgebra_tests_geometry_projections" }
           - { name: tests_linalg, package: nalgebra_tests_linalg, filters: "nalgebra_tests_linalg" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
           - { name: "shapes norms", package: nalgebra_shapes_tests_norms, filters: "nalgebra_shapes_tests_norms" }
