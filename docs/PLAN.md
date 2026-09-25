@@ -63,7 +63,7 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 5.1 | `DVector`, `DMatrix`: construction, element-wise ops, `gemv`, `gemm`, `axpy`, `tr_mul`, `quadform`, static-kernel dispatch | M2 |
 | 5.2 | Dynamic `LU` / `Cholesky` solve | 5.1, M4 |
 
-Gate: rapier.cairo v1 explicitly cuts multibody joints, IK and soft bodies (confirmed 2026-09-20),
+Gate: rapier-cairo v1 explicitly cuts multibody joints, IK and soft bodies (confirmed 2026-09-20),
 so M5 stays deferred until a consumer exists.
 
 ## M4b — Consolidation
@@ -77,9 +77,23 @@ so M5 stays deferred until a consumer exists.
 
 | WP | Content | Depends on |
 |---|---|---|
-| 7.1 ✅ (#21) | Delete `simba::fixed` (the second Q32.32), `simba` = `Real` / `Transcendental` over glam.cairo's `fixed` (registry, pinned 0.3.0: `wide::Acc` and the `f64`-like nearest division were obtained by escalation), `simba_fixed` merged into `simba`, goldens and gas regenerated, prepared divisors (`Real::div3..div16`) | owner decision 2026-09-22 |
+| 7.1 ✅ (#21) | Delete `simba::fixed` (the second Q32.32), `simba` = `Real` / `Transcendental` over fixed-cairo's `fixed` (registry, pinned 0.3.0: `wide::Acc` and the `f64`-like nearest division were obtained by escalation), `simba_fixed` merged into `simba`, goldens and gas regenerated, prepared divisors (`Real::div3..div16`) | owner decision 2026-09-22 |
 | 7.2 ✅ (#22) | Re-rank the measured variants under `fixed` 0.3 (oracle tolerance > upstream formula > gas): no variant switched (each cheaper loser fails an oracle case or is not upstream's formula); bit-identical `divN` refactors (`Lu6::try_inverse` −3.4 %) | 7.1 |
 | 7.3 ✅ (#23) | API parity inventory against nalgebra-rs 0.35.0: `scripts/api_parity.py` + generated `docs/API_PARITY.md` (21.9 % coverage, 23 proposed packages) | 7.1 |
+
+## Repositories (2026-09-25)
+
+The stack mirrors the Rust ecosystem repository by repository (owner's decision; precedent:
+glam-cairo `docs/SPLIT.md`): bal7hazar/fixed-cairo (`fixed`, the scalar), bal7hazar/simba-cairo
+(`simba`, the scalar traits), bal7hazar/nalgebra-cairo (this repository, `nalgebra`),
+bal7hazar/glam-cairo, bal7hazar/glamx-cairo, bal7hazar/rapier-cairo (renamed from `*.cairo`; old
+URLs redirect). Scalar escalations go to the fixed-cairo orchestrator.
+
+| step | content | state |
+|---|---|---|
+| S1 | extract `simba-cairo` from this repository's history (prune commit, own gate, CI, docs, version 0.1.0, branch protection) | ✅ `6fd8a43` in simba-cairo |
+| S1b | publish `simba` 0.1.0 on scarbs.xyz from simba-cairo (tag `v0.1.0`) | owner |
+| S2 | remove `crates/simba` here, depend on `simba = "0.1.0"` (registry), drop the `Library (simba)` shard | after S1b |
 
 ## M8 — Complete coverage of nalgebra-rs 0.35.0, then release 0.1.0
 
@@ -87,18 +101,18 @@ Target (owner, 2026-09-23/24): publish `simba` and `nalgebra` 0.1.0 on scarbs.xy
 is **strictly nalgebra-rs 0.35.0's, neither more nor less** — every non-excluded item of
 [API_PARITY.md](API_PARITY.md) `ported`, and no Cairo-only public item beyond the renames Cairo
 imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progress is measured by
-`scripts/api_parity.py` (gate: `--check`). Started at 21.9 % (413 / 1,888); 22.9 % after 8.0 (extras 401 → 72, all the scalar-kernel exception); 25.6 % after 8.1b-3; 31.2 % after P08; 47.0 % after P09a, P02 and P09b; 53.0 % after P03 and P10. WP 8.0b aligns `simba::Real` names on simba-rs (`is_sign_negative`, `T::pi()`, …).
+`scripts/api_parity.py` (gate: `--check`). Started at 21.9 % (413 / 1,888); 22.9 % after 8.0 (extras 401 → 72, all the scalar-kernel exception); 25.6 % after 8.1b-3; 31.2 % after P08; 47.0 % after P09a, P02 and P09b; 53.0 % after P03 and P10; **64.0 % after P04 / P05 (8.2c) and P12** (1,198 ported, 16 partial, 658 missing, 564 excluded; 0 undocumented extras). WP 8.0b aligns `simba::Real` names on simba-rs (`is_sign_negative`, `T::pi()`, …).
 
 | WP | Content (parity packages) | Depends on |
 |---|---|---|
 | 8.0 ✅ (#25) | Strict removal of the Cairo-only public API (`SymMatrix2/3`, `conj_mul`, fused-kernel helpers, undocumented decomposition extras…), keeping implementation kernels private; ruling needed on `simba::Real`'s fused-kernel hooks (with gas figures) | 7.3 |
 | 8.1 (8.1a ✅ #26: design + prototype) | `tools/shapegen`: generator of the 54 static shapes (`Matrix1..6`, `MatrixRxC`, `Vector1..6`, `RowVector1..6`) from templates, committed output + `--check`; existing shapes migrated bit-identically, gas not worse (P01) | 8.0 |
-| 8.2 (P02 ✅ #34, P03 ✅ #36) | Static base completion through the generator: P02 (norms, component-wise, construction, conversions), P03 (`map` / `zip` / in-place), P04 (swizzles), P05 (rows, columns, blocks) | 8.1 |
+| 8.2 (P02 ✅ #34, P03 ✅ #36, P04 + P05 ✅ #39) | Static base completion through the generator: P02 (norms, component-wise, construction, conversions), P03 (`map` / `zip` / in-place), P04 (swizzles), P05 (rows, columns, blocks) | 8.1 |
 | 8.3 | P06 (statistics, BLAS-like), P07 (homogeneous / cg helpers) | 8.2 |
-| 8.4 (P08 ✅ #31, P09a ✅ #33, P09b ✅ #35, P10 ✅ #37) | Geometry: P08 (quaternions, unit complex) → P09a (rotation, translation, point) → P09b (isometry, similarity, `*Matrix` variants) → P10 (scale, reflection) → P11a/b (transform family, perspective, orthographic) → P12 (dual quaternions) | 8.0 (parallel with 8.1-8.3 where files are disjoint) |
+| 8.4 (P08 ✅ #31, P09a ✅ #33, P09b ✅ #35, P10 ✅ #37, P12 ✅ #38) | Geometry: P08 (quaternions, unit complex) → P09a (rotation, translation, point) → P09b (isometry, similarity, `*Matrix` variants) → P10 (scale, reflection) → P11a/b (transform family, perspective, orthographic) → P12 (dual quaternions) | 8.0 (parallel with 8.1-8.3 where files are disjoint) |
 | 8.5 | Dynamic: P13 (`DMatrix` / `DVector`, macros) → P14 (decomposition API, triangular solves) → P15 (full-pivot LU, col-pivot QR, LBLᵀ) → P16 (Schur, Hessenberg, bidiagonal, tridiagonal, general eigen) → P17 (exp, pow), P18 (convolution) | 8.2 |
-| 8.6 | P19 (glam.cairo conversions, `glam = "0.3.0"`), P20 (sparse `CsMatrix`, Matrix Market from strings), P21 (crate-root functions and macros) | 8.5 |
-| 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `simba` + `nalgebra` 0.1.0 (the owner pushes the tag) | all |
+| 8.6 | P19 (glam-cairo conversions, `glam = "0.3.0"`), P20 (sparse `CsMatrix`, Matrix Market from strings), P21 (crate-root functions and macros) | 8.5 |
+| 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `nalgebra` 0.1.0 (the owner pushes the tag; `simba` is released from simba-cairo) | all |
 
 Owner rulings for the shapes (2026-09-24): one heterogeneous-product name, `mul_mat` (every
 conformable product, `M * v` included; `mul_vec` / `tr_mul_vec` removed; `*` stays on square
@@ -122,10 +136,10 @@ design, Sonnet for mechanical template work; one PR per WP; parity figures repor
 
 | WP | Content | Depends on |
 |---|---|---|
-| 6.1 ✅ | `simba_fixed`: `Real` + `Transcendental` for glam.cairo's shared `fixed::Fixed` (git-pinned), bit-for-bit conformance suite between the two scalars, integration tests on `Vector3`/`SymMatrix3`/`UnitQuaternion`/`Isometry3<fixed::Fixed>` | M3, M4 |
-| 6.2 | Conversions with glam.cairo types, `scarb doc`, publication on scarbs.xyz | 6.1 |
+| 6.1 ✅ | `simba_fixed`: `Real` + `Transcendental` for glam-cairo's shared `fixed::Fixed` (git-pinned), bit-for-bit conformance suite between the two scalars, integration tests on `Vector3`/`SymMatrix3`/`UnitQuaternion`/`Isometry3<fixed::Fixed>` | M3, M4 |
+| 6.2 | Conversions with glam-cairo types, `scarb doc`, publication on scarbs.xyz | 6.1 |
 
-Conversions with glam.cairo, conformance suite against the oracle, `scarb doc`, publication of
+Conversions with glam-cairo, conformance suite against the oracle, `scarb doc`, publication of
 `simba` and `nalgebra` on scarbs.xyz (tag-driven), upgrade policy (toolchain bumps are separate
 PRs that re-run `benchmarks/` and review every ranking).
 

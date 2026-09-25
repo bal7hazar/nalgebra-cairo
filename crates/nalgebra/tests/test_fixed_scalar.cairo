@@ -1,4 +1,4 @@
-//! nalgebra types on the stack's scalar, glam.cairo's `fixed::Fixed`, as a downstream crate uses
+//! nalgebra types on the stack's scalar, fixed-cairo's `fixed::Fixed`, as a downstream crate uses
 //! them (formerly the integration tests of `simba_fixed`).
 //!
 //! The kernels that map one-to-one onto a `fixed` call are checked against that call (`dot` is

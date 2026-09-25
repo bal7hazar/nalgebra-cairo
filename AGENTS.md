@@ -1,12 +1,12 @@
 # AGENTS.md
 
-Canonical instructions for AI agents (and humans) working on nalgebra.cairo. Read
+Canonical instructions for AI agents (and humans) working on nalgebra-cairo. Read
 [docs/DESIGN.md](docs/DESIGN.md) and [docs/PLAN.md](docs/PLAN.md) before writing code.
 
 ## Mission
 
-A Cairo port of the Rust `nalgebra` crate on glam.cairo's Q32.32 `fixed::Fixed`, as a building block of a
-**provable physics engine for games** (siblings: glam.cairo, rapier.cairo). Every Cairo step is
+A Cairo port of the Rust `nalgebra` crate on fixed-cairo's Q32.32 `fixed::Fixed`, as a building block of a
+**provable physics engine for games** (siblings: fixed-cairo, simba-cairo, glam-cairo, glamx-cairo, rapier-cairo). Every Cairo step is
 proven, so gas is a first-class requirement, on par with correctness.
 
 ## Toolchain
@@ -35,10 +35,10 @@ proven, so gas is a first-class requirement, on par with correctness.
 
 ## Numeric rules
 
-- The scalar is `fixed` (glam.cairo, pinned version); its rounding is the spec: products and fused
+- The scalar is `fixed` (fixed-cairo, pinned version); its rounding is the spec: products and fused
   kernels floor once per output scalar, `/` / `recip` round to nearest ties-to-even like `f64 /`.
   Overflow panics; nothing may wrap silently.
-- A kernel or rounding mode `fixed` lacks is an ESCALATION to the glam.cairo orchestrator (in the
+- A kernel or rounding mode `fixed` lacks is an ESCALATION to the fixed-cairo orchestrator (in the
   report), never a local reimplementation.
 - Same inputs must give bit-identical outputs forever: changing the result of a function in its last
   bit is a breaking change.
@@ -69,7 +69,7 @@ proven, so gas is a first-class requirement, on par with correctness.
   `scarb build --test` peak under ~7 GB (split it and add a CI shard when it grows).
 - Errors are `felt252` constants in an `errors` module; panic messages are stable API.
 - Pure library: no `starknet` dependency, no storage, no proc macros; the only dependency is
-  glam.cairo's `fixed` (registry, pinned version).
+  fixed-cairo's `fixed` (registry, pinned version).
 - No `core::internal::bounded_int` in this repository: the bounded-int kernels live in `fixed`.
 
 ## Boundaries

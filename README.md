@@ -1,28 +1,33 @@
-# nalgebra.cairo
+# nalgebra-cairo
 
 Linear algebra for **provable game physics**: a Cairo port of the Rust
-[nalgebra](https://nalgebra.rs) crate on glam.cairo's Q32.32 fixed point, designed gas-first.
+[nalgebra](https://nalgebra.rs) crate on fixed-cairo's Q32.32 fixed point, designed gas-first.
 
-Part of a stack porting reputable Rust crates to Cairo — with
-[glam.cairo](https://github.com/bal7hazar/glam.cairo) and
-[rapier.cairo](https://github.com/bal7hazar/rapier.cairo) — towards games whose whole physics
-is provable.
+Part of a stack porting reputable Rust crates to Cairo, repository by repository like the Rust
+ecosystem: [fixed-cairo](https://github.com/bal7hazar/fixed-cairo) (the Q32.32 scalar, the `f64` of
+the stack), [simba-cairo](https://github.com/bal7hazar/simba-cairo) (the scalar traits),
+nalgebra-cairo (this repository), [glam-cairo](https://github.com/bal7hazar/glam-cairo),
+[glamx-cairo](https://github.com/bal7hazar/glamx-cairo) and
+[rapier-cairo](https://github.com/bal7hazar/rapier-cairo), towards games whose whole physics is
+provable.
 
-> Status: M1-M4 and M7 complete (static 2/3/4/6 types, geometry, small decompositions, on the
-> stack's single scalar `fixed`) with ~3,100 tests; see the [plan](docs/PLAN.md) for what remains.
+> Status: coverage of nalgebra-rs 0.35.0 at 64 % ([API_PARITY.md](docs/API_PARITY.md)): the 36
+> static shapes and 54 aliases, geometry (rotations, quaternions, dual quaternions, isometries,
+> similarities, scale, reflection) and small decompositions; ~5,000 tests. Release 0.1.0 when the
+> coverage is complete (see the [plan](docs/PLAN.md)).
 
 ## Packages
 
 | Package | Content |
 |---|---|
-| [`simba`](crates/simba) | Scalar traits (`Real`, `Transcendental`: fused kernels, wide accumulator, transcendentals) implemented for glam.cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/glam.cairo) 0.3.0, the scalar shared by the whole stack |
+| [`simba`](crates/simba) (moving to [simba-cairo](https://github.com/bal7hazar/simba-cairo)) | Scalar traits (`Real`, `Transcendental`: fused kernels, wide accumulator, transcendentals) implemented for fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.3.0, the scalar shared by the whole stack |
 | [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions), generic over `Real` |
 
 ## Why it is fast
 
 Measured on Cairo 2.19.4 ([full synthesis](docs/BENCHMARK.md)):
 
-| | existing Cairo libraries | nalgebra.cairo kernels |
+| | existing Cairo libraries | nalgebra-cairo kernels |
 |---|---:|---:|
 | fixed-point add | 4,050 gas | 640 |
 | dot3 | 15,450 - 37,820 | 1,980 |

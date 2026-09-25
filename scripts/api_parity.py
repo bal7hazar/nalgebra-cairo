@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate the nalgebra-rs 0.35.0 versus nalgebra.cairo public API inventory (docs/API_PARITY.md).
+"""Generate the nalgebra-rs 0.35.0 versus nalgebra-cairo public API inventory (docs/API_PARITY.md).
 
-Dependency free, like glam.cairo's scripts/api_parity.py which it mirrors.  It is not a Rust or
+Dependency free, like glam-cairo's scripts/api_parity.py which it mirrors.  It is not a Rust or
 Cairo parser: it masks comments and strings, finds balanced blocks, expands the handful of
 `macro_rules!` shapes nalgebra-rs uses to declare its API (positional binding of `$ident`
 fragments, geometry operator macros, swizzles) and recognizes declarations.  The Rust inventory
@@ -1255,8 +1255,8 @@ EXCLUSIONS = {
     "random": "`rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix "
               "helpers: a proof has no entropy source.",
     "interop": "Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` "
-               "scalar, and the `glam` types glam.cairo does not have: f64 `D*`, aligned `*A`, "
-               "`i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam.cairo has are "
+               "scalar, and the `glam` types glam-cairo does not have: f64 `D*`, aligned `*A`, "
+               "`i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam-cairo has are "
                "in scope.",
     "generic-dim": "Generic-dimension machinery subsumed by concrete types: `Dim`, `DimName`, "
                    "`Const`, `Dyn`, typenum `U*`, `Storage` / `RawStorage` / `ArrayStorage` / "
@@ -1575,7 +1575,7 @@ SIMBA_SUPERTRAIT_NAMES = {
 # without a simba-rs name. (owner, rendered item) fullmatch regexes; the rationale is shared.
 SCALAR_KERNELS_WHY = (
     "owner ruling 2026-09-24: fused scalar kernels, the numeric contract of the stack (DESIGN "
-    "D2-D3); confined to the scalar trait layer, like glam.cairo's `fixed::wide`. Constants "
+    "D2-D3); confined to the scalar trait layer, like fixed-cairo's `fixed::wide`. Constants "
     "without a simba-rs name stay associated constants because Cairo has no `f64` literal "
     "conversion such as upstream's `crate::convert(0.5)`"
 )
@@ -1852,7 +1852,7 @@ WORK_PACKAGES = (
         r"impl:MulAssign<Matrix>|from_rows|from_columns|is_identity|from_diagonal_element|"
         r"is_square|is_orthogonal|is_special_orthogonal|is_invertible)", r".*")),
     wp("P02", "Static base completion (Vector / Matrix 2-6)", "mechanical", "—",
-       "the operations upstream has on every `Matrix` that nalgebra.cairo only has on some types "
+       "the operations upstream has on every `Matrix` that nalgebra-cairo only has on some types "
        "(`norm`, `normalize`, `component_*`, `inf` / `sup`, `amax`..., `scale`, `dot` on "
        "matrices, `Vector6` gaps), construction (`from_fn`, `from_row_slice`, arrays, "
        "`from_partial_diagonal`), conversions, `Index`, `RelativeEq` / `UlpsEq`, `PartialOrd`, "
@@ -1936,8 +1936,8 @@ WORK_PACKAGES = (
     wp("P18", "Convolution", "mechanical", "P13",
        "`convolve_full` / `convolve_same` / `convolve_valid` on vectors",
        (r".*", r".*", r"linalg/convolution\.rs")),
-    wp("P19", "glam.cairo conversions", "mechanical", "WP 6.2 (glam.cairo pin)",
-       "`third_party/glam`: `From` / `Into` between nalgebra.cairo and glam.cairo "
+    wp("P19", "glam-cairo conversions", "mechanical", "WP 6.2 (glam-cairo pin)",
+       "`third_party/glam`: `From` / `Into` between nalgebra-cairo and glam-cairo "
        "(`Vec2/3/4`, `IVec*`, `UVec*`, `BVec*`, `Mat2/3/4`, `Quat`, `Affine2/3` through "
        "isometries); f64 / aligned variants are excluded (`interop`)",
        (r".*", r".*", r"third_party/glam/.*")),
@@ -2069,9 +2069,9 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
         "nalgebra-rs inventory is embedded at the end of this file, so neither the check nor the "
         "regeneration needs a Rust checkout.",
         "",
-        "The coverage target of nalgebra.cairo 0.1.0 is **strictly nalgebra-rs's public API, "
+        "The coverage target of nalgebra-cairo 0.1.0 is **strictly nalgebra-rs's public API, "
         "neither more nor less**, with Rust semantics mapped onto a generic `T: Real` scalar "
-        "(glam.cairo's `fixed::Fixed`), static unrolled types and no loops in static code "
+        "(fixed-cairo's `fixed::Fixed`), static unrolled types and no loops in static code "
         "(AGENTS.md).",
         "",
         "How to read it:",
@@ -2112,7 +2112,7 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
     out.append(f"| **total** | **{total['ported']}** | **{total['partial']}** | "
                f"**{total['missing']}** | **{total['excluded']}** | **{n}** | "
                f"**{pct(total['ported'], n - total['excluded'])}** |")
-    out += ["", f"nalgebra.cairo items with no upstream counterpart (undocumented extras): "
+    out += ["", f"nalgebra-cairo items with no upstream counterpart (undocumented extras): "
             f"**{len(extras)}** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed "
             f"forms of upstream operators, fields and `Deref` access: **{len(forms)}** "
             f"([list](#cairo-imposed-forms)); scalar layer: **{len(named)}** items named as in "
@@ -2160,7 +2160,7 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
         "## Concrete dimensions",
         "",
         "nalgebra-rs is generic over dimensions; its users name the aliases of "
-        "`src/base/alias.rs` (and the geometry `*_alias.rs`). nalgebra.cairo provides the "
+        "`src/base/alias.rs` (and the geometry `*_alias.rs`). nalgebra-cairo provides the "
         "shapes in **bold**; `✗` = no Cairo type yet (P01 static shapes, P13 dynamic).",
         "",
     ]
@@ -2177,7 +2177,7 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
            ("Transform", ["Affine2", "Affine3", "Projective2", "Projective3", "Transform2",
                           "Transform3", "Perspective3", "Orthographic3"]),
            ("Quaternion", ["Quaternion", "DualQuaternion", "UnitDualQuaternion"])]
-    out += ["", "| Family | Upstream aliases (**bold** = provided by nalgebra.cairo) |", "|---|---|"]
+    out += ["", "| Family | Upstream aliases (**bold** = provided by nalgebra-cairo) |", "|---|---|"]
     for fam, names in geo:
         out.append(f"| {fam} | " + ", ".join(f"**{n}**" if n in cairo_types else n
                                              for n in names) + " |")
@@ -2217,7 +2217,7 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
     out.append("")
 
     # Extras.
-    out += ["## Items in nalgebra.cairo but not upstream", "",
+    out += ["## Items in nalgebra-cairo but not upstream", "",
             "\"Neither more nor less\": each item below must be justified (rationale shown when "
             "documented) or removed before 0.1.0. Traits that only carry Cairo methods "
             "(`Vector3Trait`...) and concrete instances of generic upstream types "

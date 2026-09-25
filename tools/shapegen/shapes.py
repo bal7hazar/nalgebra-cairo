@@ -12,7 +12,7 @@ to them, and gives the 28 other shapes (`Matrix1`, `Matrix5`, `Vector5`, `RowVec
   216 impls). Cairo's `Mul` is homogeneous, so `*` / `*=` exist on the square shapes only, and
   the square `mul_mat` delegates to `*`;
 * for the 28 new shapes, the surface upstream's `Matrix` / `SquareMatrix` / `Vector` /
-  `RowSVector` items that nalgebra.cairo ports on the former shapes require on every shape
+  `RowSVector` items that nalgebra-cairo ports on the former shapes require on every shape
   (`scripts/api_parity.py`, `OWNER_CANDIDATES` / `DIM_ONLY`): `new`, `zeros`, `transpose`,
   `abs`, `scale`, `abs_diff_eq`, `+ - -x += -=`; on squares `identity`, `from_diagonal`,
   `from_diagonal_element`, `diagonal`, `trace`, `is_identity`, `* *=`; on column vectors `lerp`;

@@ -1,7 +1,7 @@
 # Sub-agent strategy (orchestrator)
 
 Instructions for the orchestrator session. This file is meant to be pasted verbatim into the
-prompt of an orchestrator of another repository (nalgebra.cairo, rapier.cairo). Porter-side rules
+prompt of an orchestrator of another repository (nalgebra-cairo, rapier-cairo). Porter-side rules
 live in `AGENTS.md`, design decisions in `docs/DESIGN.md`, sequencing in `docs/PLAN.md`.
 
 Role of the main session: orchestrate, split, brief, review, merge. Never implement anything
@@ -20,6 +20,14 @@ large directly.
   - `codex exec -C <worktree> -m <model> -c model_reasoning_effort=<low|medium|high|xhigh> --dangerously-bypass-approvals-and-sandbox -o REPORT.md "$(cat brief.md)"`.
 - The agent writes a `REPORT.md` (not committed) at the root of its worktree: the orchestrator
   reads that file and the log, not the transcript.
+- On a shared machine, launch each agent as a systemd user unit so that it survives desktop-session
+  restarts, with an OOM policy, the build-lock shims and long Bash timeouts (a headless `claude -p`
+  ends when its turn ends: agents must never background a command and stop):
+  `systemd-run --user --collect --unit=<repo>-<wp> -p OOMPolicy=continue -E PATH="$HOME/orchestrator/shims:$PATH" -E BASH_MAX_TIMEOUT_MS=3600000 -E BASH_DEFAULT_TIMEOUT_MS=1800000 --working-directory=<wt> scripts/agent.sh <wt> claude <model> <brief> <log>`;
+  the shims serialise `scarb` / `snforge` builds through `flock ~/orchestrator/heavy-build.lock`.
+- Test packages: an agent that needs a new test-only package (compile budget ≈ 7 GB each) adds the
+  workspace member and its CI matrix entry; the orchestrator adds the new check to the required
+  status checks at merge time (never before: a required check that does not run blocks every PR).
 
 ## Model choice by difficulty
 

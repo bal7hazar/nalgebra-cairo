@@ -103,7 +103,7 @@ rule(r"Matrix|SquareMatrix|Vector|RowVector|Matrix\w+|Vector\d|RowVector\d", r"i
 
 `mul_vec` is then a second Cairo name for the same upstream item; strict parity ("neither more nor
 less") wants one — **open question Q1** (recommendation: `mul_mat` everywhere, `mul_vec` removed
-once rapier.cairo has migrated, or kept as the documented rename of `M * v` if the owner prefers
+once rapier-cairo has migrated, or kept as the documented rename of `M * v` if the owner prefers
 the geometric name; the gas is identical either way).
 
 ### 1.4 `Index`
@@ -166,7 +166,7 @@ Variants measured (net gas, last component):
 Upstream `determinant` is closed-form for 1, 2, 3 and LU otherwise; `try_inverse` uses
 `do_inverse2/3/4` then LU. The generator follows it with specialisations: dimension 1 is a template
 (`m11`, `1 / m11`), 2 / 3 / 4 are the hand-written closed forms of `Matrix2/3/4` (the 4x4
-determinant from 2x2 minors is nalgebra.cairo's measured choice, DESIGN D6), 5 and 6 delegate to the
+determinant from 2x2 minors is nalgebra-cairo's measured choice, DESIGN D6), 5 and 6 delegate to the
 LU kernels (`Lu6` exists, `Lu5` has to be generated from the same template as P14 decides).
 
 ### 2.2 Preserving the hand-written kernels bit for bit (the 8.1b migration protocol)
@@ -570,7 +570,7 @@ PR that creates it; a package over 6 GB splits by shape group (`R ≤ 3` / `R �
   (`mul_3x4`: 216 names), a generic `MatrixMul::mul` (collides with `core::traits::Mul::mul` on
   square shapes: ambiguous method).
 - **Q2** flat `Vector6` / `Matrix6` (upstream layout and `Serde` order, equal gas) instead of the
-  blocks of DESIGN D4 — a breaking change of field paths for `linalg` and rapier.cairo.
+  blocks of DESIGN D4 — a breaking change of field paths for `linalg` and rapier-cairo.
   **Decided: flat** (owner, 2026-09-24; WP 8.1b-2, §2.4).
 - **Q3** the generated-tests packages are new workspace members and CI jobs (§5).
 - **Q4** the `nalgebra` unit-test crate is at 13.2 GB of 16 GB: moving the hand-written `base`

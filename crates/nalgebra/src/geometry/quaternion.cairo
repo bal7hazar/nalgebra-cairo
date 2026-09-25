@@ -12,7 +12,7 @@
 //! |---|---|
 //! | `new` arguments | `(w, i, j, k)`, like upstream `Quaternion::new` |
 //! | fields / `Serde` / `as_vector` | `(i, j, k, w)`, like upstream's `coords: Vector4` |
-//! | glam, for glam.cairo's conversions | `Quat::from_xyzw(x, y, z, w)` = `(i, j, k, w)` |
+//! | glam, for glam-cairo's conversions | `Quat::from_xyzw(x, y, z, w)` = `(i, j, k, w)` |
 //!
 //! The unit quaternion of a 3D rotation is `UnitQuaternion` (`geometry::unit_quaternion`); this
 //! type is the general algebra it is built on.
@@ -612,7 +612,7 @@ pub(crate) impl ApproxEqImpl<
 /// The transcendental functions of the quaternion algebra, over a `Real` + `Transcendental`
 /// scalar (the split mirrors `UnitQuaternionTrait` / `UnitQuaternionAngleTrait`).
 ///
-/// `fixed` has no hyperbolic functions (escalated to glam.cairo, WP 8.4-P08 report): `cosh` and
+/// `fixed` has no hyperbolic functions (escalated to fixed-cairo, WP 8.4-P08 report): `cosh` and
 /// `sinh` are composed here from two `exp` and ONE fused kernel each (`(e^z ± e^-z) / 2`,
 /// exactly floored). `sinh(z) / z` is then only ever multiplied by a component of `v` (whose
 /// magnitude is at most `z = |v|`), so the cancellation of `sinh` near zero costs a few ulp

@@ -14,7 +14,7 @@ if [[ "${1:-}" == "--resume" ]]; then resume=$2; fi
 cd "$worktree"
 task=$(basename "$worktree")
 
-framing='You are a sub-agent of an orchestrator, executing ONE work package of nalgebra.cairo in the git worktree you are started in (see docs/ORCHESTRATOR.md for the process, AGENTS.md for the rules). Hard rules:
+framing='You are a sub-agent of an orchestrator, executing ONE work package of nalgebra-cairo in the git worktree you are started in (see docs/ORCHESTRATOR.md for the process, AGENTS.md for the rules). Hard rules:
 - Stay strictly inside the scope and file allowlist of the brief. Shared files (workspace Scarb.toml, lib.cairo beyond adding your own lines where the brief allows it, .github, scripts, docs, gas snapshots of other modules) belong to the orchestrator: list what you need from them in the "Escalations" section of REPORT.md instead of editing them.
 - Do not ask questions: decide, document the decision in doc comments, report it. Do not widen the scope. Do not stop before the deliverables are complete.
 - Work incrementally: compile early and often, keep changes small, never delete tests to make the gate pass. Watch the compile budget of test files (the first cause of CI failures).

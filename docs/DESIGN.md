@@ -7,7 +7,7 @@ be overturned by a new measurement committed under `benchmarks/`.
 
 ```
 Scarb.toml            virtual workspace, shared versions, edition 2024_07, no `starknet` dependency
-crates/simba/         package `simba`: scalar traits (`Real`, `Transcendental`) implemented for glam.cairo's `fixed::Fixed`
+crates/simba/         package `simba` (moving to bal7hazar/simba-cairo, PLAN S2): scalar traits implemented for `fixed::Fixed`
 crates/nalgebra/      package `nalgebra`: `base`, `geometry`, `linalg` modules (mirrors upstream)
 benchmarks/           standalone workspaces: design-time micro-benchmarks (never a dependency)
 scripts/              gas_report.py (report + snapshot + CI gate), check.sh
@@ -17,16 +17,16 @@ docs/                 research, benchmark synthesis, design, roadmap
 
 Upstream nalgebra depends on `simba` for its scalar abstraction, and simba is a trait layer over the
 primitive `f32` / `f64` shared by glam, parry and rapier. We mirror that exactly (WP 7.1): the primitive
-is glam.cairo's `fixed` package (registry dependency, pinned version), `simba` only implements the
+is fixed-cairo's `fixed` package (registry dependency, pinned version), `simba` only implements the
 traits for it, and nalgebra is generic over them.
 
-## D2 — Scalar: glam.cairo's `fixed::Fixed` (Q32.32 on `i64`)
+## D2 — Scalar: fixed-cairo's `fixed::Fixed` (Q32.32 on `i64`)
 
-- There is ONE Q32.32 implementation in the stack: `fixed` (glam.cairo), `Fixed { raw: i64 }`,
-  range ±2.1e9, resolution 2.3e-10. nalgebra.cairo has none of its own (the former `simba::fixed`
+- There is ONE Q32.32 implementation in the stack: `fixed` (fixed-cairo), `Fixed { raw: i64 }`,
+  range ±2.1e9, resolution 2.3e-10. nalgebra-cairo has none of its own (the former `simba::fixed`
   was deleted in WP 7.1: two implementations with independent rounding choices would break the
-  bit-exact determinism rapier.cairo relies on when it mixes glam and nalgebra values).
-- Pinned by version (`fixed = "0.3.0"`): glam.cairo bumps MINOR on any numeric change, so the
+  bit-exact determinism rapier-cairo relies on when it mixes glam and nalgebra values).
+- Pinned by version (`fixed = "0.3.0"`): fixed-cairo bumps MINOR on any numeric change, so the
   version pins every golden file here.
 - Numeric semantics are `fixed`'s: `+ - neg` checked `i64`; `*`, fused kernels (`wide::dot*`,
   `mul_add`, `mul_sub`, `Acc`) rescale ONCE with **floor**; `sqrt` / `norm*` floor of the exact root;
@@ -34,7 +34,7 @@ traits for it, and nalgebra is generic over them.
   Rust reference); `%` is the exact truncated remainder, like Rust's float `%`; constants are
   rounded to nearest; `fixed::trig` rounds its final rescale to nearest.
 - **Overflow: panic** (`'Fixed: overflow'`, `'Fixed: division by zero'`, ...). Never wrap.
-- Anything `fixed` lacks (a kernel, a rounding mode) is an escalation to the glam.cairo
+- Anything `fixed` lacks (a kernel, a rounding mode) is an escalation to the fixed-cairo
   orchestrator, never a local reimplementation (WP 7.1 obtained `wide::Acc` in 0.2.0 and the
   nearest division in 0.3.0 that way).
 
@@ -107,7 +107,7 @@ Built only once the static surface is complete, and scoped by what multibody dyn
 
 | Function | Algorithm | Cost / accuracy (benchmarks/scalar) |
 |---|---|---|
-| scalar (`fixed`) | glam.cairo's kernels, see its `docs/DESIGN.md`; nalgebra.cairo measures them through `Real` | add 640, mul 1,580, div 3,300, recip 2,820, sqrt 1,820, sin_cos 31,500, atan2 29,930 |
+| scalar (`fixed`) | fixed-cairo's kernels, see its `docs/DESIGN.md`; nalgebra-cairo measures them through `Real` | add 640, mul 1,580, div 3,300, recip 2,820, sqrt 1,820, sin_cos 31,500, atan2 29,930 |
 | norm | `fixed::wide::norm*` / `Acc::sqrt` of the *unscaled* sum of squares | 2,220 (norm3) |
 | Jacobi `c = 1/√(1+t²)` | `recip(sqrt(1 + t²))` (more accurate SVD3 than the 96-bit-reciprocal `inv_norm2`, kept as the loser) | 6,750 |
 | det / inverse ≤ 4 | closed forms (cofactors; 4x4 determinant from 2x2 minors) on fused kernels, integer pre-scaled inverse; `try_inverse` returns `Option` on an exactly zero determinant | det3 10,350 / inv3 88,360 |
@@ -135,10 +135,10 @@ Every public function ships with:
 
 Scalar kernels additionally have a bit-exact Python integer model used to generate expectations.
 
-## D8 — Interop with glam.cairo / rapier.cairo
+## D8 — Interop with glam-cairo / rapier-cairo
 
-One scalar across the three repositories: glam.cairo's `fixed::Fixed`, a registry dependency pinned
-by version (rapier.cairo must pin the same `fixed` / `glam` / `glamx` version, or two incompatible
+One scalar across the three repositories: fixed-cairo's `fixed::Fixed`, a registry dependency pinned
+by version (rapier-cairo must pin the same `fixed` / `glam` / `glamx` version, or two incompatible
 `Fixed` types meet). nalgebra's results are bit-identical to glam's wherever both call the same
 `fixed` kernel. Conversions (WP 6.2) follow `nalgebra/src/third_party/glam`: mind `Matrix3::new`
 (row-major) vs `from_cols`, and `Quaternion::new(w, i, j, k)` vs `from_xyzw`. A module importing both

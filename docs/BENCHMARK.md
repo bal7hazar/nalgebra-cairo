@@ -30,7 +30,7 @@ after every toolchain bump.
   rapier ≥ 0.32 uses glam for every scalar path. nalgebra remains in rapier for the SIMD solver
   (irrelevant in Cairo), multibody joints / IK (`DMatrix`, `DVector`, LU, 6xN Jacobians, 6x6
   blocks), and soft bodies (small Cholesky, symmetric eigen).
-- Consequence: glam.cairo serves the rapier.cairo hot path; **nalgebra.cairo's unique value is
+- Consequence: glam-cairo serves the rapier-cairo hot path; **nalgebra-cairo's unique value is
   dimensions above 4 (`Vector6`, `Matrix6`), small decompositions, solvers, and dynamic
   algebra**, while still offering the full static 2/3/4 + geometry surface for users who want
   the nalgebra API. Both must share one scalar representation.
@@ -57,7 +57,7 @@ Measured against a hand-written reference (net gas):
 | integer sqrt u128 | alexandria `fast_sqrt` 740,770 | corelib `Sqrt` 1,180 |
 | u64 `>> 16` | alexandria `BitShift` 18,510 | constant division 1,010 |
 
-None of them can be a dependency of nalgebra.cairo.
+None of them can be a dependency of nalgebra-cairo.
 
 ## 3. Math vs bitwise vs loops
 
@@ -125,7 +125,7 @@ Measured on the merged code (snapshots in `gas/`), for the operations a physics 
 
 | operation | gas | note |
 |---|---:|---|
-| `Fixed` add / mul / div / sqrt | 640 / 1,580 / 3,300 / 1,820 | glam.cairo's `fixed` 0.3.0 (div rounds to nearest) |
+| `Fixed` add / mul / div / sqrt | 640 / 1,580 / 3,300 / 1,820 | fixed-cairo's `fixed` 0.3.0 (div rounds to nearest) |
 | `sin_cos` / `atan2` | 31,500 / 29,930 | `fixed::trig` (≈1.9× the former simba kernels) |
 | `Vector3` dot / cross / norm / normalize | 1,980 / 5,540 / 2,220 / 11,830 | normalize: one prepared divisor (`div3`) |
 | `Matrix3 * Matrix3` / `try_inverse` / `determinant` | 22,150 / 88,360 / 10,350 | fused rows |

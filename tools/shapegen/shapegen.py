@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generator of nalgebra.cairo's static shapes (see `DESIGN.md`).
+"""Generator of nalgebra-cairo's static shapes (see `DESIGN.md`).
 
 nalgebra-rs has one generic `Matrix<T, R, C>`; Cairo has no const generics, so every static shape
 is a named-field `Copy` struct with its own impls. This script writes them from ONE model of a

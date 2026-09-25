@@ -29,7 +29,7 @@ edition = "2024_07"
 cairo-version = "2.19.4"
 authors = ["bal7hazar"]
 license = "MIT"
-repository = "https://github.com/bal7hazar/nalgebra.cairo"
+repository = "https://github.com/bal7hazar/nalgebra-cairo"
 keywords = ["math", "linear-algebra", "fixed-point", "physics", "gamedev"]
 
 [workspace.dependencies]

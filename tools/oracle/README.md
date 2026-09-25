@@ -1,6 +1,6 @@
 # tools/oracle
 
-Offline generator of **golden test vectors** for nalgebra.cairo (DESIGN D7, ROADMAP WP 1.3).
+Offline generator of **golden test vectors** for nalgebra-cairo (DESIGN D7, ROADMAP WP 1.3).
 The oracle is the upstream Rust [`nalgebra`](https://crates.io/crates/nalgebra) crate (pinned to
 `0.35.0`): inputs are drawn as raw Q32.32 values, evaluated upstream, and the results are floored
 back to Q32.32 together with a suggested tolerance in raw units (ulp).
@@ -195,7 +195,7 @@ is provably exact) or loosen one with a justification in the test. A failure by 
 
 ### Cairo (`emit-cairo`)
 
-One module per suite, one function per op, **raw integers only** (no dependency on nalgebra.cairo
+One module per suite, one function per op, **raw integers only** (no dependency on nalgebra-cairo
 types, so the data compiles before the types exist and survives their refactoring):
 
 ```cairo
