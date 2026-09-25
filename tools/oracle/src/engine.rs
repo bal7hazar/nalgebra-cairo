@@ -542,6 +542,7 @@ fn gen_len(gen: &Gen) -> usize {
         | Gen::Singular(n)
         | Gen::Rot(n) => n * n,
         Gen::Group(parts) => parts.iter().map(gen_len).sum(),
+        Gen::UnitDual => 8,
     }
 }
 
@@ -597,4 +598,21 @@ pub fn isim3(name: &str) -> Input {
         fsim3(name),
         Gen::Group(vec![Gen::V(3), Gen::U(4), Gen::Range(0.25, 4.0)]),
     )
+}
+
+/// Dual quaternion `(real (w, i, j, k), dual (w, i, j, k))` (WP 8.4-P12).
+pub fn fdq(name: &str) -> Field {
+    field(
+        name,
+        Kind::Group(vec![Kind::Vector(4), Kind::Vector(4)]),
+        "(real (w, i, j, k), dual (w, i, j, k))",
+    )
+}
+/// General dual quaternion: eight components of the case's magnitude class.
+pub fn idq(name: &str) -> Input {
+    with(fdq(name), Gen::Group(vec![Gen::V(4), Gen::V(4)]))
+}
+/// Unit dual quaternion (`Gen::UnitDual`).
+pub fn iudq(name: &str) -> Input {
+    with(fdq(name), Gen::UnitDual)
 }

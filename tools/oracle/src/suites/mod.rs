@@ -9,6 +9,7 @@ use nalgebra::{
 use num_traits::{One, Zero};
 
 mod base;
+mod dual_quaternion;
 mod geometry;
 mod linalg;
 mod pose_completion;
@@ -24,6 +25,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(rotation_completion::suites());
     suites.extend(pose_completion::suites());
     suites.extend(scale_reflection::suites());
+    suites.extend(dual_quaternion::suites());
     suites.extend(linalg::suites());
     suites
 }
