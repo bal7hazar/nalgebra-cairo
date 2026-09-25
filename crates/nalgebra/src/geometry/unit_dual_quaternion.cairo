@@ -43,7 +43,7 @@ use crate::base::point3::Point3;
 use crate::base::unit::Unit;
 use crate::base::vector3::Vector3;
 use super::dual_quaternion::{DualQuaternion, DualQuaternionTrait};
-use super::isometry3::{Isometry3, Isometry3InternalTrait, Isometry3Trait};
+use super::isometry3::{Isometry3, Isometry3Trait};
 use super::quaternion::{Quaternion, QuaternionInternalTrait, QuaternionTrait};
 use super::rotation3::Rotation3;
 use super::similarity3::{Similarity3, Similarity3Trait};
@@ -296,19 +296,30 @@ pub impl UnitDualQuaternionImpl<
 
     // --- transforms --------------------------------------------------------------------------
 
-    /// The transformed point `real · p · real* + translation` through the fused isometry kernel
-    /// (`rotate_translate`) on `translation()`: 27 products, 6 roundings. Upstream's literal
-    /// `((real · (0, p) + 2 · dual) · real*).vector()` is the same value in exact arithmetic;
-    /// it costs 24 products but more gas, and rounds the scaled rotation `|real|² · p` instead of
-    /// the unit sandwich (`bench_unit_dual_quaternion_transform_point__alt_upstream_sandwich`,
-    /// both within the oracle tolerance). Panics on overflow. Upstream: `transform_point`
-    /// (`dq * p`).
+    /// The transformed point, upstream's literal `((real · (0, p) + 2 · dual) ·
+    /// real*).vector()`:
+    /// the product by the pure quaternion (12 products, each component floored once), the exact
+    /// doubling and sum, then the imaginary part of the fused product by the conjugate (12
+    /// products, floored once per component): 24 products, 7 roundings.
+    ///
+    /// Rotating with the unit-quaternion sandwich of `Isometry3` and adding `translation()`
+    /// (`to_isometry().transform_point(p)`) is the same value only for an EXACTLY unit `real`:
+    /// the literal form scales the rotated point by `|real|²`, which the rounded unit quaternions
+    /// of fixed point miss by a few ulp, so the two differ by up to `|p| · (|real|² - 1)`, tens
+    /// of thousands of ulp for `|p|` of a few thousand units. The literal form is kept (fidelity to
+    /// upstream, PLAN M8; `bench_unit_dual_quaternion_transform_point__alt_to_isometry`). Panics on
+    /// overflow. Upstream: `transform_point` (`dq * p`).
     #[inline(always)]
     fn transform_point(self: UnitDualQuaternion<T>, p: Point3<T>) -> Point3<T> {
-        let t = Self::translation(self);
-        let v = Isometry3InternalTrait::rotate_translate(
-            Self::rotation(self), Vector3 { x: p.x, y: p.y, z: p.z }, t.vector,
-        );
+        let DualQuaternion { real, dual } = self.dual_quaternion;
+        let a = UnitDualQuaternionInternalTrait::mul_pure(real, Vector3 { x: p.x, y: p.y, z: p.z });
+        let b = Quaternion {
+            i: a.i + dual.i + dual.i,
+            j: a.j + dual.j + dual.j,
+            k: a.k + dual.k + dual.k,
+            w: a.w + dual.w + dual.w,
+        };
+        let v = UnitDualQuaternionInternalTrait::vector_mul_conj(b, real);
         Point3 { x: v.x, y: v.y, z: v.z }
     }
 
@@ -326,18 +337,15 @@ pub impl UnitDualQuaternionImpl<
         Unit { value: Self::rotation(self).transform_vector(v.value) }
     }
 
-    /// `real* · (p - translation) · real`, WITHOUT forming the inverse dual quaternion: one
-    /// `translation()`, three exact subtractions and one inverse rotation (27 products, 6
-    /// roundings), where upstream's `self.inverse() * p` builds the inverse (32 products) and then
-    /// transforms
-    /// (`bench_unit_dual_quaternion_inverse_transform_point__alt_inverse_then_transform`, both
-    /// within the oracle tolerance). Panics on overflow. Upstream: `inverse_transform_point`.
+    /// `self.inverse().transform_point(p)`, upstream's composition: the literal inverse (see
+    /// `inverse`) then the literal sandwich of `transform_point` (56 products). Rotating `p -
+    /// translation()` by the conjugate instead (27 products) differs from upstream's result by up
+    /// to `|p| · (|real|² - 1)` (see `transform_point`;
+    /// `bench_unit_dual_quaternion_inverse_transform_point__alt_to_isometry`). Panics on overflow.
+    /// Upstream: `inverse_transform_point`.
     #[inline(always)]
     fn inverse_transform_point(self: UnitDualQuaternion<T>, p: Point3<T>) -> Point3<T> {
-        let t = Self::translation(self).vector;
-        let v = Self::rotation(self)
-            .inverse_transform_vector(Vector3 { x: p.x - t.x, y: p.y - t.y, z: p.z - t.z });
-        Point3 { x: v.x, y: v.y, z: v.z }
+        Self::transform_point(Self::inverse(self), p)
     }
 
     /// The vector rotated by the inverse rotation (`UnitQuaternionTrait::inverse_transform_vector`
@@ -482,8 +490,9 @@ pub impl UnitDualQuaternionImpl<
 }
 
 /// Crate-internal kernels of `UnitDualQuaternion<T>`: the products by a pure quaternion `(0, t)`
-/// with the halving folded into the accumulation (`from_parts`, the translation operators) and
-/// the doubled imaginary part of `dual · real*` (`translation`).
+/// (with the halving folded into the accumulation for `from_parts` and the translation
+/// operators), the imaginary part of a product by the conjugate (`transform_point`) and its
+/// doubled form (`translation`), each output component floored once.
 #[generate_trait]
 pub(crate) impl UnitDualQuaternionInternalImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
@@ -522,6 +531,35 @@ pub(crate) impl UnitDualQuaternionInternalImpl<
         let k = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), r.w, t.z), r.i, t.y);
         let k = R::wide_mul_scalar(R::wide_sub_prod(k, r.j, t.x), R::HALF);
         Quaternion { i, j, k, w }
+    }
+
+    /// `r · (0, t)`, each component ONE accumulation of three products (the Hamilton product with
+    /// a zero real part on the right), floored once.
+    fn mul_pure(r: Quaternion<T>, t: Vector3<T>) -> Quaternion<T> {
+        let w = R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), r.i, t.x), r.j, t.y);
+        let w = R::wide_rescale(R::wide_sub_prod(w, r.k, t.z));
+        let i = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), r.w, t.x), r.j, t.z);
+        let i = R::wide_rescale(R::wide_sub_prod(i, r.k, t.y));
+        let j = R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), r.w, t.y), r.i, t.z);
+        let j = R::wide_rescale(R::wide_add_prod(j, r.k, t.x));
+        let k = R::wide_add_prod(R::wide_add_prod(R::wide_zero(), r.w, t.z), r.i, t.y);
+        let k = R::wide_rescale(R::wide_sub_prod(k, r.j, t.x));
+        Quaternion { i, j, k, w }
+    }
+
+    /// `(b · r*).vector()`, each component ONE accumulation of four products (the imaginary part
+    /// of `QuaternionInternalTrait::mul_conj`), floored once.
+    fn vector_mul_conj(b: Quaternion<T>, r: Quaternion<T>) -> Vector3<T> {
+        let x = R::wide_sub_prod(R::wide_zero(), b.w, r.i);
+        let x = R::wide_sub_prod(R::wide_add_prod(x, b.i, r.w), b.j, r.k);
+        let x = R::wide_rescale(R::wide_add_prod(x, b.k, r.j));
+        let y = R::wide_sub_prod(R::wide_zero(), b.w, r.j);
+        let y = R::wide_add_prod(R::wide_add_prod(y, b.i, r.k), b.j, r.w);
+        let y = R::wide_rescale(R::wide_sub_prod(y, b.k, r.i));
+        let z = R::wide_sub_prod(R::wide_zero(), b.w, r.k);
+        let z = R::wide_add_prod(R::wide_sub_prod(z, b.i, r.j), b.j, r.i);
+        let z = R::wide_rescale(R::wide_add_prod(z, b.k, r.w));
+        Vector3 { x, y, z }
     }
 
     /// `2 · (d · r*).vector()`, each component ONE accumulation of the four products of

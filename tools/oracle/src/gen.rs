@@ -170,6 +170,11 @@ pub enum Gen {
     Rot(usize),
     /// Concatenation (isometry = translation + rotation, ...).
     Group(Vec<Gen>),
+    /// Unit dual quaternion `(real (w, i, j, k), dual (w, i, j, k))` (WP 8.4-P12): a quantised
+    /// unit quaternion `r` and a translation `t` of the case's magnitude class, then upstream's
+    /// `UnitDualQuaternion::from_parts(t, r)` evaluated in f64 on those raws and its dual part
+    /// quantised, so `real · dual* + dual · real*` vanishes within a few ulp, not exactly.
+    UnitDual,
 }
 
 fn quantize_all(values: &[f64]) -> Option<Vec<i64>> {
@@ -274,6 +279,22 @@ impl Gen {
                 quantize_all(&out)
             }
             Gen::Rot(n) => panic!("no rotation matrix of dimension {n}"),
+            Gen::UnitDual => {
+                let r = quantize_all(&rng.unit_vector(4))?;
+                let t: Vec<f64> = (0..3).map(|_| rng.scalar(dist)).collect();
+                let t = to_f64_all(&quantize_all(&t)?);
+                let q = to_f64_all(&r);
+                let dq = nalgebra::UnitDualQuaternion::from_parts(
+                    nalgebra::Translation3::new(t[0], t[1], t[2]),
+                    nalgebra::Unit::new_unchecked(nalgebra::Quaternion::new(
+                        q[0], q[1], q[2], q[3],
+                    )),
+                );
+                let d = dq.as_ref().dual;
+                let mut out = r;
+                out.extend(quantize_all(&[d.w, d.i, d.j, d.k])?);
+                Some(out)
+            }
             Gen::Group(parts) => {
                 let mut out = Vec::new();
                 for part in parts {
