@@ -128,6 +128,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_tests_geometry_scale"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_tests_linalg"
 version = "0.1.0"
 dependencies = [

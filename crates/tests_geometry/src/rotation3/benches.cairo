@@ -93,7 +93,8 @@ fn alt_renormalize_gram_schmidt(r: Rotation3<Fixed>) -> Rotation3<Fixed> {
     let c2 = Vector3 { x: m.m12, y: m.m22, z: m.m32 };
     let d = -Vector3Trait::dot(x, c2);
     let y = Vector3 {
-        x: Real::mul_add(d, x.x, c2.x), y: Real::mul_add(d, x.y, c2.y),
+        x: Real::mul_add(d, x.x, c2.x),
+        y: Real::mul_add(d, x.y, c2.y),
         z: Real::mul_add(d, x.z, c2.z),
     }
         .normalize();

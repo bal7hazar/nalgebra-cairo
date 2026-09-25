@@ -238,8 +238,9 @@ pub impl Rotation3Impl<
     /// 13x cheaper, the first column kept exactly, kept as `bench_rotation3_renormalize__alt_*`)
     /// the result is the closest rotation in Frobenius norm to first order in every column, and
     /// a scaled or singular matrix does not panic: the zero matrix gives the identity, a scaled
-    /// rotation the rotation. Orthonormal and within about 20 ulp per entry of the exact polar factor
-    /// (the accuracy of the closed form, see `UnitQuaternionAngleTrait::from_matrix_eps`). Upstream:
+    /// rotation the rotation. Orthonormal and within about 20 ulp per entry of the exact polar
+    /// factor (the accuracy of the closed form, see `UnitQuaternionAngleTrait::from_matrix_eps`).
+    /// Upstream:
     /// `Rotation3::renormalize`.
     fn renormalize(ref self: Rotation3<T>) {
         self =

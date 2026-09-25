@@ -1129,6 +1129,10 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "Translation4": ["Translation4"],
     "Translation5": ["Translation5"],
     "Translation6": ["Translation6"],
+    "Scale": [f"Scale{d}" for d in range(1, 7)],
+    **{f"Scale{d}": [f"Scale{d}"] for d in range(1, 7)},
+    "Reflection": [f"Reflection{d}" for d in range(1, 7)],
+    **{f"Reflection{d}": [f"Reflection{d}"] for d in range(1, 7)},
     "Isometry": ["Isometry2", "Isometry3", "IsometryMatrix2", "IsometryMatrix3"],
     "Isometry2": ["Isometry2"],
     "Isometry3": ["Isometry3"],
@@ -1179,6 +1183,8 @@ DIM_ONLY: dict[str, set[str]] = {
     # The homogeneous matrix of `Translation<D>` is `(D + 1)x(D + 1)`: `Matrix2..6` for
     # `Translation1..5` (no `Translation0`, no 7x7 matrix).
     "From<Translation>": set(SQUARES[1:]),
+    # Likewise `Scale<D>`: `Matrix2..6` for `Scale1..5` (no 7x7 matrix for `Scale6`).
+    "From<Scale>": set(SQUARES[1:]),
     "orthonormal_subspace_basis": {"Vector3"},
     # Square-matrix semantics, generated on the 6 squares (`Matrix1..6`).
     **{name: set(SQUARES) for name in (
@@ -1259,7 +1265,7 @@ RENAMES = (
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"tr_mul",
          r"MatrixTrMul::tr_mul", "method of the generic `MatrixTrMul` (one impl per pair of "
          "shapes with the same number of rows)"),
-    rule(r"Matrix|Vector|SquareMatrix|Point|Quaternion", r"impl:Mul<T>", "scale",
+    rule(r"Matrix|Vector|SquareMatrix|Point|Quaternion|Scale", r"impl:Mul<T>", "scale",
          "heterogeneous operators are named methods (DESIGN D4)"),
     rule(r"Matrix|Vector|SquareMatrix|Point|Quaternion", r"impl:Div<T>", "unscale",
          "heterogeneous operators are named methods (DESIGN D4)"),
@@ -1291,7 +1297,8 @@ RENAMES = (
          "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"eq", "impl:PartialEq",
          "the `PartialEq::eq` of the derived impl (`a == b`)"),
-    rule(r"Isometry[23]?|Similarity[23]?|Rotation[23]?|UnitQuaternion|UnitComplex|Translation[23]?",
+    rule(r"Isometry[23]?|Similarity[23]?|Rotation[23]?|UnitQuaternion|UnitComplex|Translation[23]?|"
+         r"Scale",
          r"impl:Mul<Point>", "transform_point", "heterogeneous operators are named methods"),
     rule(r"Isometry[23]?|Similarity[23]?|Rotation[23]?|UnitQuaternion|UnitComplex",
          r"impl:Mul<Matrix>", "transform_vector", "heterogeneous operators are named methods"),
@@ -1344,7 +1351,7 @@ RENAMES = (
          "Cairo-imposed: heterogeneous operator (`k * p` is `p.scale(k)`)"),
     rule(r"Point", r"impl:Bounded", "max_value",
          "num's `Bounded::min_value` / `max_value` as methods (Cairo's `Bounded` holds constants)"),
-    rule(r"Point|Rotation|Translation", r"impl:SubsetOf<Matrix>", "to_homogeneous",
+    rule(r"Point|Rotation|Translation|Scale", r"impl:SubsetOf<Matrix>", "to_homogeneous",
          "Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`"),
     rule(r"Point", r"impl:SubsetOf<Point>", "cast",
          "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
@@ -1409,6 +1416,11 @@ RENAMES = (
     rule(r"Isometry", r"impl:SubsetOf<Similarity>", "Similarity3::impl:From<Isometry>",
          "Cairo-imposed: `nalgebra::convert` is `Into` (`Similarity2`, `SimilarityMatrix2/3` "
          "likewise)"),
+    # WP 8.4-P10: Scale and Reflection.
+    rule(r"Scale", r"impl:Mul<Matrix>", "mul_vector",
+         "Cairo-imposed: heterogeneous operator (`s * v` on a column vector is `s.mul_vector(v)`)"),
+    rule(r"Scale", r"impl:SubsetOf<Scale>", "cast",
+         "Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast`"),
 )
 
 # Cairo-imposed forms (WP 8.0, owner's rule of 2026-09-24): public Cairo items that spell an
@@ -1508,7 +1520,7 @@ EXCLUDE = (
     exclude(r"RandomOrthogonal|RandomSDP|MatrixStrategy|MatrixParameters|DimRange|"
             r"nalgebra::proptest|nalgebra::debug", r".*", "random"),
     exclude(r".*", r"(?:simd_\w+|\w+_simd|type:Simd\w*|trait:Simd\w*)", "simd"),
-    exclude(r"Quaternion|UnitQuaternion|UnitComplex|Point|Rotation|Translation|Isometry|Similarity", r"impl:From<\[(?:Quaternion|UnitQuaternion|UnitComplex|Point|Rotation|Translation|Isometry|Similarity); N\]>", "simd"),
+    exclude(r"Quaternion|UnitQuaternion|UnitComplex|Point|Rotation|Translation|Scale|Isometry|Similarity", r"impl:From<\[(?:Quaternion|UnitQuaternion|UnitComplex|Point|Rotation|Translation|Scale|Isometry|Similarity); N\]>", "simd"),
     exclude(r"Matrix|Unit<Vector>", r"impl:From<\[(?:Matrix|Unit<Matrix>); N\]>", "simd"),
     exclude(r"Matrix", r"impl:From<Matrix>", "borrow"),
     exclude(r"Matrix|Vector", r"type:(?:MatrixComponentOp|MatrixCross|MatrixSum|VectorSum)", "generic-dim"),

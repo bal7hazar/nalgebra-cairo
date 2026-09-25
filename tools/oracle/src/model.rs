@@ -71,6 +71,8 @@ impl Kind {
         match self {
             Kind::Scalar => "i64".into(),
             Kind::Bool => "bool".into(),
+            // A 1-tuple needs its trailing comma in Cairo (`(i64,)`).
+            Kind::Vector(1) => "(i64,)".into(),
             Kind::Vector(n) => format!("({})", vec!["i64"; *n].join(", ")),
             Kind::Matrix(r, c) => format!("[[i64; {c}]; {r}]"),
             Kind::Group(kinds) => {
@@ -90,7 +92,11 @@ impl Kind {
                     .iter()
                     .map(|v| Kind::Scalar.cairo_literal(v))
                     .collect();
-                format!("({})", parts.join(", "))
+                if parts.len() == 1 {
+                    format!("({},)", parts[0])
+                } else {
+                    format!("({})", parts.join(", "))
+                }
             }
             (Kind::Matrix(r, c), Value::List(rows)) if rows.len() == *r => {
                 let rows: Vec<String> = rows
@@ -114,7 +120,11 @@ impl Kind {
                     .zip(items)
                     .map(|(k, v)| k.cairo_literal(v))
                     .collect();
-                format!("({})", parts.join(", "))
+                if parts.len() == 1 {
+                    format!("({},)", parts[0])
+                } else {
+                    format!("({})", parts.join(", "))
+                }
             }
             (kind, value) => panic!("value {value:?} does not have shape {kind:?}"),
         }
