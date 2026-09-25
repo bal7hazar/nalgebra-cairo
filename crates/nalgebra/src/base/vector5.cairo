@@ -9,7 +9,7 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, Range, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
@@ -20,9 +20,14 @@ use super::matrix5x2::Matrix5x2;
 use super::matrix5x3::Matrix5x3;
 use super::matrix5x4::Matrix5x4;
 use super::matrix5x6::Matrix5x6;
+use super::matrix6::Matrix6;
 use super::matrix_index::MatrixIndex;
+use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::matrix_view::{
+    ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, RowPart,
+};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
@@ -30,6 +35,9 @@ use super::row_vector4::RowVector4;
 use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
 use super::unit::Unit;
+use super::vector2::Vector2;
+use super::vector3::Vector3;
+use super::vector4::Vector4;
 use super::vector6::Vector6;
 
 /// A 5-dimensional column vector. Components are named like upstream's `Deref` targets (`x, y, z,
@@ -1411,6 +1419,371 @@ pub impl Vector5Impl<
     ) -> T {
         Nm::metric_distance(@norm, self, rhs)
     }
+
+    /// The number of rows, 5. Upstream: `nrows`.
+    #[inline(always)]
+    fn nrows(self: Vector5<T>) -> usize {
+        5
+    }
+
+    /// The number of columns, 1. Upstream: `ncols`.
+    #[inline(always)]
+    fn ncols(self: Vector5<T>) -> usize {
+        1
+    }
+
+    /// `(nrows, ncols)`, `(5, 1)`. Upstream: `shape`.
+    #[inline(always)]
+    fn shape(self: Vector5<T>) -> (usize, usize) {
+        (5, 1)
+    }
+
+    /// Whether the shape is square: `false`. Upstream: `is_square`.
+    #[inline(always)]
+    fn is_square(self: Vector5<T>) -> bool {
+        false
+    }
+
+    /// The `(row, column)` of the `i`-th component in column-major order: `(i % 5, i / 5)`, one
+    /// `DivRem` (no bounds check, like upstream). Upstream: `vector_to_matrix_index`.
+    #[inline(always)]
+    fn vector_to_matrix_index(self: Vector5<T>, i: usize) -> (usize, usize) {
+        (i, 0)
+    }
+
+    /// Row `i`, a `Matrix1` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `i >= 5`. ONE `match` on `i` selects the literal (the private
+    /// `row_at` of `swap_rows`). Upstream: `row` (a view).
+    #[inline(always)]
+    fn row(self: Vector5<T>, i: usize) -> Matrix1<T> {
+        Vector5EditTrait::row_at(self, i)
+    }
+
+    /// Column `j`, a `Vector5` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `j >= 1`. ONE `match` on `j` selects the literal (the private
+    /// `column_at` of `swap_columns`). Upstream: `column` (a view).
+    #[inline(always)]
+    fn column(self: Vector5<T>, j: usize) -> Vector5<T> {
+        Vector5EditTrait::column_at(self, j)
+    }
+
+    /// The upper triangle of `self` (the diagonal included), the components below the diagonal set
+    /// to zero. Exact. Upstream: `upper_triangle`.
+    #[inline(always)]
+    fn upper_triangle(self: Vector5<T>) -> Vector5<T> {
+        Vector5 { x: self.x, y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero() }
+    }
+
+    /// The lower triangle of `self` (the diagonal included), the components above the diagonal set
+    /// to zero. Exact. Upstream: `lower_triangle`.
+    #[inline(always)]
+    fn lower_triangle(self: Vector5<T>) -> Vector5<T> {
+        Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
+    }
+
+    /// The 5-dimensional column vector whose 5 rows are the given vectors, each a `Matrix1` of the
+    /// row's 1 components (the argument form of the former `Matrix2/3/4::from_rows`, used by
+    /// `linalg`). Exact. Upstream: `from_rows` (a slice of row vectors).
+    #[inline(always)]
+    fn from_rows(
+        r1: Matrix1<T>, r2: Matrix1<T>, r3: Matrix1<T>, r4: Matrix1<T>, r5: Matrix1<T>,
+    ) -> Vector5<T> {
+        Vector5 { x: r1.x, y: r2.x, z: r3.x, w: r4.x, a: r5.x }
+    }
+
+    /// The 5-dimensional column vector whose 1 columns are the given `Vector5`s. Exact. Upstream:
+    /// `from_columns` (a slice of column vectors).
+    #[inline(always)]
+    fn from_columns(c1: Vector5<T>) -> Vector5<T> {
+        Vector5 { x: c1.x, y: c1.y, z: c1.z, w: c1.w, a: c1.a }
+    }
+
+    /// Whether the columns of `self` are orthonormal: `|self|² = 1` within `ulps` (`selfᵀ *
+    /// self`
+    /// is the 1x1 `norm_squared`). Upstream: `is_orthogonal` (`eps`: here a tolerance in ulp,
+    /// DESIGN D3).
+    #[inline(always)]
+    fn is_orthogonal(self: Vector5<T>, ulps: u64) -> bool {
+        R::abs_diff_eq(Self::norm_squared(self), R::one(), ulps)
+    }
+
+    /// `self` with a row of `val` inserted at index `i` (`i <= 5`), a `Vector6`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 5`. Upstream: `insert_row`.
+    #[inline(always)]
+    fn insert_row(self: Vector5<T>, i: usize, val: T) -> Vector6<T> {
+        match i {
+            0 => Vector6 { x: val, y: self.x, z: self.y, w: self.z, a: self.w, b: self.a },
+            1 => Vector6 { x: self.x, y: val, z: self.y, w: self.z, a: self.w, b: self.a },
+            2 => Vector6 { x: self.x, y: self.y, z: val, w: self.z, a: self.w, b: self.a },
+            3 => Vector6 { x: self.x, y: self.y, z: self.z, w: val, a: self.w, b: self.a },
+            4 => Vector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: val, b: self.a },
+            5 => Vector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` with a column of `val` inserted at index `i` (`i <= 1`), a `Matrix5x2`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 1`. Upstream: `insert_column`.
+    #[inline(always)]
+    fn insert_column(self: Vector5<T>, i: usize, val: T) -> Matrix5x2<T> {
+        match i {
+            0 => Matrix5x2 {
+                m11: val,
+                m21: val,
+                m31: val,
+                m41: val,
+                m51: val,
+                m12: self.x,
+                m22: self.y,
+                m32: self.z,
+                m42: self.w,
+                m52: self.a,
+            },
+            1 => Matrix5x2 {
+                m11: self.x,
+                m21: self.y,
+                m31: self.z,
+                m41: self.w,
+                m51: self.a,
+                m12: val,
+                m22: val,
+                m32: val,
+                m42: val,
+                m52: val,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its row `i`, a `Vector4`. Panics with `nalgebra: index out of bounds` for `i
+    /// >= 5`. Upstream: `remove_row`.
+    #[inline(always)]
+    fn remove_row(self: Vector5<T>, i: usize) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: self.y, y: self.z, z: self.w, w: self.a },
+            1 => Vector4 { x: self.x, y: self.z, z: self.w, w: self.a },
+            2 => Vector4 { x: self.x, y: self.y, z: self.w, w: self.a },
+            3 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.a },
+            4 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// The `Vector2` `(x, x)` of components of `self`. Exact. Upstream: the `xx` swizzle.
+    #[inline(always)]
+    fn xx(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.x, y: self.x }
+    }
+
+    /// The `Vector3` `(x, x, x)` of components of `self`. Exact. Upstream: the `xxx` swizzle.
+    #[inline(always)]
+    fn xxx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.x, z: self.x }
+    }
+
+    /// The `Vector2` `(x, y)` of components of `self`. Exact. Upstream: the `xy` swizzle.
+    #[inline(always)]
+    fn xy(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.x, y: self.y }
+    }
+
+    /// The `Vector2` `(y, x)` of components of `self`. Exact. Upstream: the `yx` swizzle.
+    #[inline(always)]
+    fn yx(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.y, y: self.x }
+    }
+
+    /// The `Vector2` `(y, y)` of components of `self`. Exact. Upstream: the `yy` swizzle.
+    #[inline(always)]
+    fn yy(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.y, y: self.y }
+    }
+
+    /// The `Vector3` `(x, x, y)` of components of `self`. Exact. Upstream: the `xxy` swizzle.
+    #[inline(always)]
+    fn xxy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.x, z: self.y }
+    }
+
+    /// The `Vector3` `(x, y, x)` of components of `self`. Exact. Upstream: the `xyx` swizzle.
+    #[inline(always)]
+    fn xyx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.y, z: self.x }
+    }
+
+    /// The `Vector3` `(x, y, y)` of components of `self`. Exact. Upstream: the `xyy` swizzle.
+    #[inline(always)]
+    fn xyy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.y, z: self.y }
+    }
+
+    /// The `Vector3` `(y, x, x)` of components of `self`. Exact. Upstream: the `yxx` swizzle.
+    #[inline(always)]
+    fn yxx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.x, z: self.x }
+    }
+
+    /// The `Vector3` `(y, x, y)` of components of `self`. Exact. Upstream: the `yxy` swizzle.
+    #[inline(always)]
+    fn yxy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.x, z: self.y }
+    }
+
+    /// The `Vector3` `(y, y, x)` of components of `self`. Exact. Upstream: the `yyx` swizzle.
+    #[inline(always)]
+    fn yyx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.y, z: self.x }
+    }
+
+    /// The `Vector3` `(y, y, y)` of components of `self`. Exact. Upstream: the `yyy` swizzle.
+    #[inline(always)]
+    fn yyy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.y, z: self.y }
+    }
+
+    /// The `Vector2` `(x, z)` of components of `self`. Exact. Upstream: the `xz` swizzle.
+    #[inline(always)]
+    fn xz(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.x, y: self.z }
+    }
+
+    /// The `Vector2` `(y, z)` of components of `self`. Exact. Upstream: the `yz` swizzle.
+    #[inline(always)]
+    fn yz(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.y, y: self.z }
+    }
+
+    /// The `Vector2` `(z, x)` of components of `self`. Exact. Upstream: the `zx` swizzle.
+    #[inline(always)]
+    fn zx(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.z, y: self.x }
+    }
+
+    /// The `Vector2` `(z, y)` of components of `self`. Exact. Upstream: the `zy` swizzle.
+    #[inline(always)]
+    fn zy(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.z, y: self.y }
+    }
+
+    /// The `Vector2` `(z, z)` of components of `self`. Exact. Upstream: the `zz` swizzle.
+    #[inline(always)]
+    fn zz(self: Vector5<T>) -> Vector2<T> {
+        Vector2 { x: self.z, y: self.z }
+    }
+
+    /// The `Vector3` `(x, x, z)` of components of `self`. Exact. Upstream: the `xxz` swizzle.
+    #[inline(always)]
+    fn xxz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.x, z: self.z }
+    }
+
+    /// The `Vector3` `(x, y, z)` of components of `self`. Exact. Upstream: the `xyz` swizzle.
+    #[inline(always)]
+    fn xyz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.y, z: self.z }
+    }
+
+    /// The `Vector3` `(x, z, x)` of components of `self`. Exact. Upstream: the `xzx` swizzle.
+    #[inline(always)]
+    fn xzx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.z, z: self.x }
+    }
+
+    /// The `Vector3` `(x, z, y)` of components of `self`. Exact. Upstream: the `xzy` swizzle.
+    #[inline(always)]
+    fn xzy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.z, z: self.y }
+    }
+
+    /// The `Vector3` `(x, z, z)` of components of `self`. Exact. Upstream: the `xzz` swizzle.
+    #[inline(always)]
+    fn xzz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.z, z: self.z }
+    }
+
+    /// The `Vector3` `(y, x, z)` of components of `self`. Exact. Upstream: the `yxz` swizzle.
+    #[inline(always)]
+    fn yxz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.x, z: self.z }
+    }
+
+    /// The `Vector3` `(y, y, z)` of components of `self`. Exact. Upstream: the `yyz` swizzle.
+    #[inline(always)]
+    fn yyz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.y, z: self.z }
+    }
+
+    /// The `Vector3` `(y, z, x)` of components of `self`. Exact. Upstream: the `yzx` swizzle.
+    #[inline(always)]
+    fn yzx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.z, z: self.x }
+    }
+
+    /// The `Vector3` `(y, z, y)` of components of `self`. Exact. Upstream: the `yzy` swizzle.
+    #[inline(always)]
+    fn yzy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.z, z: self.y }
+    }
+
+    /// The `Vector3` `(y, z, z)` of components of `self`. Exact. Upstream: the `yzz` swizzle.
+    #[inline(always)]
+    fn yzz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.z, z: self.z }
+    }
+
+    /// The `Vector3` `(z, x, x)` of components of `self`. Exact. Upstream: the `zxx` swizzle.
+    #[inline(always)]
+    fn zxx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.x, z: self.x }
+    }
+
+    /// The `Vector3` `(z, x, y)` of components of `self`. Exact. Upstream: the `zxy` swizzle.
+    #[inline(always)]
+    fn zxy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.x, z: self.y }
+    }
+
+    /// The `Vector3` `(z, x, z)` of components of `self`. Exact. Upstream: the `zxz` swizzle.
+    #[inline(always)]
+    fn zxz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.x, z: self.z }
+    }
+
+    /// The `Vector3` `(z, y, x)` of components of `self`. Exact. Upstream: the `zyx` swizzle.
+    #[inline(always)]
+    fn zyx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.y, z: self.x }
+    }
+
+    /// The `Vector3` `(z, y, y)` of components of `self`. Exact. Upstream: the `zyy` swizzle.
+    #[inline(always)]
+    fn zyy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.y, z: self.y }
+    }
+
+    /// The `Vector3` `(z, y, z)` of components of `self`. Exact. Upstream: the `zyz` swizzle.
+    #[inline(always)]
+    fn zyz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.y, z: self.z }
+    }
+
+    /// The `Vector3` `(z, z, x)` of components of `self`. Exact. Upstream: the `zzx` swizzle.
+    #[inline(always)]
+    fn zzx(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.z, z: self.x }
+    }
+
+    /// The `Vector3` `(z, z, y)` of components of `self`. Exact. Upstream: the `zzy` swizzle.
+    #[inline(always)]
+    fn zzy(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.z, z: self.y }
+    }
+
+    /// The `Vector3` `(z, z, z)` of components of `self`. Exact. Upstream: the `zzz` swizzle.
+    #[inline(always)]
+    fn zzz(self: Vector5<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.z, z: self.z }
+    }
 }
 
 /// The operations of `Vector5<T>` that need `Transcendental` (inverse trigonometry, `exp`, `ln`):
@@ -2365,5 +2738,749 @@ pub impl Vector5UniformNorm<
     #[inline(always)]
     fn metric_distance(self: @UniformNorm, m1: Vector5<T>, m2: Vector5<T>) -> T {
         Vector5Trait::amax(m1 - m2)
+    }
+}
+
+// --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
+
+/// The 1 consecutive rows of a `Vector5` as a `Matrix1`. Upstream: `fixed_rows::<1>`, `rows(i, 1)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector5FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Vector5<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector5<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            3 => Matrix1 { x: self.w },
+            4 => Matrix1 { x: self.a },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector5<T>, first_row: usize, nrows: usize) -> Matrix1<T> {
+        if nrows != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector5<T>, rows: Range<usize>) -> Matrix1<T> {
+        let Range { start, end } = rows;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector5<T>, irows: Span<usize>) -> Matrix1<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector5EditTrait::row_at(self, *irows[0]);
+        Matrix1 { x: r0.x }
+    }
+}
+
+/// The 2 consecutive rows of a `Vector5` as a `Vector2`. Upstream: `fixed_rows::<2>`, `rows(i, 2)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector5FixedRowsVector2<T, +Copy<T>, +Drop<T>> of FixedRows<Vector5<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector5<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.x, y: self.y },
+            1 => Vector2 { x: self.y, y: self.z },
+            2 => Vector2 { x: self.z, y: self.w },
+            3 => Vector2 { x: self.w, y: self.a },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector5<T>, first_row: usize, nrows: usize) -> Vector2<T> {
+        if nrows != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector5<T>, rows: Range<usize>) -> Vector2<T> {
+        let Range { start, end } = rows;
+        if end != start + 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector5<T>, irows: Span<usize>) -> Vector2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector5EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector5EditTrait::row_at(self, *irows[1]);
+        Vector2 { x: r0.x, y: r1.x }
+    }
+}
+
+/// The 3 consecutive rows of a `Vector5` as a `Vector3`. Upstream: `fixed_rows::<3>`, `rows(i, 3)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector5FixedRowsVector3<T, +Copy<T>, +Drop<T>> of FixedRows<Vector5<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector5<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.x, y: self.y, z: self.z },
+            1 => Vector3 { x: self.y, y: self.z, z: self.w },
+            2 => Vector3 { x: self.z, y: self.w, z: self.a },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector5<T>, first_row: usize, nrows: usize) -> Vector3<T> {
+        if nrows != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector5<T>, rows: Range<usize>) -> Vector3<T> {
+        let Range { start, end } = rows;
+        if end != start + 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector5<T>, irows: Span<usize>) -> Vector3<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector5EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector5EditTrait::row_at(self, *irows[1]);
+        let r2 = Vector5EditTrait::row_at(self, *irows[2]);
+        Vector3 { x: r0.x, y: r1.x, z: r2.x }
+    }
+}
+
+/// The 4 consecutive rows of a `Vector5` as a `Vector4`. Upstream: `fixed_rows::<4>`, `rows(i, 4)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector5FixedRowsVector4<T, +Copy<T>, +Drop<T>> of FixedRows<Vector5<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector5<T>, i: usize) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            1 => Vector4 { x: self.y, y: self.z, z: self.w, w: self.a },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector5<T>, first_row: usize, nrows: usize) -> Vector4<T> {
+        if nrows != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector5<T>, rows: Range<usize>) -> Vector4<T> {
+        let Range { start, end } = rows;
+        if end != start + 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector5<T>, irows: Span<usize>) -> Vector4<T> {
+        if irows.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector5EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector5EditTrait::row_at(self, *irows[1]);
+        let r2 = Vector5EditTrait::row_at(self, *irows[2]);
+        let r3 = Vector5EditTrait::row_at(self, *irows[3]);
+        Vector4 { x: r0.x, y: r1.x, z: r2.x, w: r3.x }
+    }
+}
+
+/// The 5 consecutive rows of a `Vector5` as a `Vector5`. Upstream: `fixed_rows::<5>`, `rows(i, 5)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector5FixedRowsVector5<T, +Copy<T>, +Drop<T>> of FixedRows<Vector5<T>, Vector5<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector5<T>, i: usize) -> Vector5<T> {
+        match i {
+            0 => Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector5<T>, first_row: usize, nrows: usize) -> Vector5<T> {
+        if nrows != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector5<T>, rows: Range<usize>) -> Vector5<T> {
+        let Range { start, end } = rows;
+        if end != start + 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector5<T>, irows: Span<usize>) -> Vector5<T> {
+        if irows.len() != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector5EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector5EditTrait::row_at(self, *irows[1]);
+        let r2 = Vector5EditTrait::row_at(self, *irows[2]);
+        let r3 = Vector5EditTrait::row_at(self, *irows[3]);
+        let r4 = Vector5EditTrait::row_at(self, *irows[4]);
+        Vector5 { x: r0.x, y: r1.x, z: r2.x, w: r3.x, a: r4.x }
+    }
+}
+
+/// The 1 consecutive columns of a `Vector5` as a `Vector5`. Upstream: `fixed_columns::<1>`,
+/// `columns(j, 1)`, `columns_range`, `select_columns`.
+pub impl Vector5FixedColumnsVector5<T, +Copy<T>, +Drop<T>> of FixedColumns<Vector5<T>, Vector5<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Vector5<T>, i: usize) -> Vector5<T> {
+        match i {
+            0 => Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Vector5<T>, first_col: usize, ncols: usize) -> Vector5<T> {
+        if ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Vector5<T>, cols: Range<usize>) -> Vector5<T> {
+        let Range { start, end } = cols;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Vector5<T>, icols: Span<usize>) -> Vector5<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Vector5EditTrait::column_at(self, *icols[0]);
+        Vector5 { x: c0.x, y: c0.y, z: c0.z, w: c0.w, a: c0.a }
+    }
+}
+
+/// The 1x1 blocks of a `Vector5` as a `Matrix1`. Upstream: `fixed_view::<1, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector5FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Vector5<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector5<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                1 => Matrix1 { x: self.y },
+                2 => Matrix1 { x: self.z },
+                3 => Matrix1 { x: self.w },
+                4 => Matrix1 { x: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector5<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x1 blocks of a `Vector5` as a `Vector2`. Upstream: `fixed_view::<2, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector5FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Vector5<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector5<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.x, y: self.y },
+                1 => Vector2 { x: self.y, y: self.z },
+                2 => Vector2 { x: self.z, y: self.w },
+                3 => Vector2 { x: self.w, y: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector5<T>, irow: usize, icol: usize) -> Vector2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x1 blocks of a `Vector5` as a `Vector3`. Upstream: `fixed_view::<3, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector5FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Vector5<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector5<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.x, y: self.y, z: self.z },
+                1 => Vector3 { x: self.y, y: self.z, z: self.w },
+                2 => Vector3 { x: self.z, y: self.w, z: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector5<T>, irow: usize, icol: usize) -> Vector3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 4x1 blocks of a `Vector5` as a `Vector4`. Upstream: `fixed_view::<4, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector5FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Vector5<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector5<T>, irow: usize, icol: usize) -> Vector4<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+                1 => Vector4 { x: self.y, y: self.z, z: self.w, w: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 4 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector5<T>, irow: usize, icol: usize) -> Vector4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 5x1 blocks of a `Vector5` as a `Vector5`. Upstream: `fixed_view::<5, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector5FixedViewVector5<T, +Copy<T>, +Drop<T>> of FixedView<Vector5<T>, Vector5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector5<T>, irow: usize, icol: usize) -> Vector5<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 5 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector5<T>, irow: usize, icol: usize) -> Vector5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector5<T>, start: (usize, usize), shape: (usize, usize)) -> Vector5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The first 1 components of a row of a `Vector5` as a `Matrix1`. Upstream: `row_part` (`n = 1`).
+pub impl Vector5RowPartMatrix1<T, +Copy<T>, +Drop<T>> of RowPart<Vector5<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn row_part(self: Vector5<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 1 components of a column of a `Vector5` as a `Matrix1`. Upstream: `column_part` (`n =
+/// 1`).
+pub impl Vector5ColumnPartMatrix1<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector5<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector5<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 2 components of a column of a `Vector5` as a `Vector2`. Upstream: `column_part` (`n =
+/// 2`).
+pub impl Vector5ColumnPartVector2<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector5<T>, Vector2<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector5<T>, i: usize, n: usize) -> Vector2<T> {
+        if n != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 3 components of a column of a `Vector5` as a `Vector3`. Upstream: `column_part` (`n =
+/// 3`).
+pub impl Vector5ColumnPartVector3<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector5<T>, Vector3<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector5<T>, i: usize, n: usize) -> Vector3<T> {
+        if n != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 4 components of a column of a `Vector5` as a `Vector4`. Upstream: `column_part` (`n =
+/// 4`).
+pub impl Vector5ColumnPartVector4<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector5<T>, Vector4<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector5<T>, i: usize, n: usize) -> Vector4<T> {
+        if n != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 5 components of a column of a `Vector5` as a `Vector5`. Upstream: `column_part` (`n =
+/// 5`).
+pub impl Vector5ColumnPartVector5<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector5<T>, Vector5<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector5<T>, i: usize, n: usize) -> Vector5<T> {
+        if n != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The Kronecker product of a `Vector5` and a `Matrix1`, a `Vector5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector5KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector5<T>, Matrix1<T>> {
+    type Output = Vector5<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector5<T>, rhs: Matrix1<T>) -> Vector5<T> {
+        Vector5 {
+            x: self.x * rhs.x,
+            y: self.y * rhs.x,
+            z: self.z * rhs.x,
+            w: self.w * rhs.x,
+            a: self.a * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector5` and a `RowVector2`, a `Matrix5x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector5KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector5<T>, RowVector2<T>> {
+    type Output = Matrix5x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector5<T>, rhs: RowVector2<T>) -> Matrix5x2<T> {
+        Matrix5x2 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m51: self.a * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m52: self.a * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector5` and a `RowVector3`, a `Matrix5x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector5KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector5<T>, RowVector3<T>> {
+    type Output = Matrix5x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector5<T>, rhs: RowVector3<T>) -> Matrix5x3<T> {
+        Matrix5x3 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m51: self.a * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m52: self.a * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m53: self.a * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector5` and a `RowVector4`, a `Matrix5x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector5KroneckerRowVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector5<T>, RowVector4<T>> {
+    type Output = Matrix5x4<T>;
+    fn kronecker(self: Vector5<T>, rhs: RowVector4<T>) -> Matrix5x4<T> {
+        Matrix5x4 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m51: self.a * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m52: self.a * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m53: self.a * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+            m54: self.a * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector5` and a `RowVector5`, a `Matrix5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector5KroneckerRowVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector5<T>, RowVector5<T>> {
+    type Output = Matrix5<T>;
+    fn kronecker(self: Vector5<T>, rhs: RowVector5<T>) -> Matrix5<T> {
+        Matrix5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m51: self.a * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m52: self.a * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m53: self.a * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+            m54: self.a * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+            m45: self.w * rhs.a,
+            m55: self.a * rhs.a,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector5` and a `RowVector6`, a `Matrix5x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector5KroneckerRowVector6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector5<T>, RowVector6<T>> {
+    type Output = Matrix5x6<T>;
+    fn kronecker(self: Vector5<T>, rhs: RowVector6<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m51: self.a * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m52: self.a * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m53: self.a * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+            m54: self.a * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+            m45: self.w * rhs.a,
+            m55: self.a * rhs.a,
+            m16: self.x * rhs.b,
+            m26: self.y * rhs.b,
+            m36: self.z * rhs.b,
+            m46: self.w * rhs.b,
+            m56: self.a * rhs.b,
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Vector5PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Vector5<T>, T> {
+    #[inline(always)]
+    fn pad(self: Vector5<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: self.y,
+            m31: self.z,
+            m41: self.w,
+            m51: self.a,
+            m61: val,
+            m12: val,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Vector5` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Vector5CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Vector5<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Vector5<T> {
+        Vector5 { x: m.m11, y: m.m21, z: m.m31, w: m.m41, a: m.m51 }
+    }
+
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (5, 1)
     }
 }

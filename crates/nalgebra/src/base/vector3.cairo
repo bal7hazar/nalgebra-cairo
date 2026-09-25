@@ -19,20 +19,34 @@
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, Range, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
 use super::matrix1::Matrix1;
+use super::matrix2::Matrix2;
+use super::matrix2x3::Matrix2x3;
+use super::matrix2x4::Matrix2x4;
+use super::matrix2x5::Matrix2x5;
+use super::matrix2x6::Matrix2x6;
 use super::matrix3::Matrix3;
 use super::matrix3x2::Matrix3x2;
 use super::matrix3x4::Matrix3x4;
 use super::matrix3x5::Matrix3x5;
 use super::matrix3x6::Matrix3x6;
+use super::matrix6::Matrix6;
+use super::matrix6x2::Matrix6x2;
+use super::matrix6x3::Matrix6x3;
+use super::matrix6x4::Matrix6x4;
+use super::matrix6x5::Matrix6x5;
 use super::matrix_index::MatrixIndex;
+use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::matrix_view::{
+    ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, RowPart,
+};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
@@ -42,6 +56,7 @@ use super::row_vector6::RowVector6;
 use super::unit::Unit;
 use super::vector2::Vector2;
 use super::vector4::Vector4;
+use super::vector6::Vector6;
 
 #[cfg(test)]
 mod benches;
@@ -563,6 +578,122 @@ pub trait Vector3Trait<T> {
     fn apply_metric_distance<N, +Drop<N>, impl Nm: Norm<N, Vector3<T>, T>>(
         self: Vector3<T>, rhs: Vector3<T>, norm: N,
     ) -> T;
+    /// The number of rows, 3. Upstream: `nrows`.
+    fn nrows(self: Vector3<T>) -> usize;
+    /// The number of columns, 1. Upstream: `ncols`.
+    fn ncols(self: Vector3<T>) -> usize;
+    /// `(nrows, ncols)`, `(3, 1)`. Upstream: `shape`.
+    fn shape(self: Vector3<T>) -> (usize, usize);
+    /// Whether the shape is square: `false`. Upstream: `is_square`.
+    fn is_square(self: Vector3<T>) -> bool;
+    /// The `(row, column)` of the `i`-th component in column-major order: `(i % 3, i / 3)`, one
+    /// `DivRem` (no bounds check, like upstream). Upstream: `vector_to_matrix_index`.
+    fn vector_to_matrix_index(self: Vector3<T>, i: usize) -> (usize, usize);
+    /// Row `i`, a `Matrix1` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `i >= 3`. ONE `match` on `i` selects the literal (the private
+    /// `row_at` of `swap_rows`). Upstream: `row` (a view).
+    fn row(self: Vector3<T>, i: usize) -> Matrix1<T>;
+    /// Column `j`, a `Vector3` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `j >= 1`. ONE `match` on `j` selects the literal (the private
+    /// `column_at` of `swap_columns`). Upstream: `column` (a view).
+    fn column(self: Vector3<T>, j: usize) -> Vector3<T>;
+    /// The upper triangle of `self` (the diagonal included), the components below the diagonal set
+    /// to zero. Exact. Upstream: `upper_triangle`.
+    fn upper_triangle(self: Vector3<T>) -> Vector3<T>;
+    /// The lower triangle of `self` (the diagonal included), the components above the diagonal set
+    /// to zero. Exact. Upstream: `lower_triangle`.
+    fn lower_triangle(self: Vector3<T>) -> Vector3<T>;
+    /// The 3-dimensional column vector whose 3 rows are the given vectors, each a `Matrix1` of the
+    /// row's 1 components (the argument form of the former `Matrix2/3/4::from_rows`, used by
+    /// `linalg`). Exact. Upstream: `from_rows` (a slice of row vectors).
+    fn from_rows(r1: Matrix1<T>, r2: Matrix1<T>, r3: Matrix1<T>) -> Vector3<T>;
+    /// The 3-dimensional column vector whose 1 columns are the given `Vector3`s. Exact. Upstream:
+    /// `from_columns` (a slice of column vectors).
+    fn from_columns(c1: Vector3<T>) -> Vector3<T>;
+    /// Whether the columns of `self` are orthonormal: `|self|² = 1` within `ulps` (`selfᵀ *
+    /// self`
+    /// is the 1x1 `norm_squared`). Upstream: `is_orthogonal` (`eps`: here a tolerance in ulp,
+    /// DESIGN D3).
+    fn is_orthogonal(self: Vector3<T>, ulps: u64) -> bool;
+    /// `self` with a row of `val` inserted at index `i` (`i <= 3`), a `Vector4`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 3`. Upstream: `insert_row`.
+    fn insert_row(self: Vector3<T>, i: usize, val: T) -> Vector4<T>;
+    /// `self` with a column of `val` inserted at index `i` (`i <= 1`), a `Matrix3x2`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 1`. Upstream: `insert_column`.
+    fn insert_column(self: Vector3<T>, i: usize, val: T) -> Matrix3x2<T>;
+    /// `self` without its row `i`, a `Vector2`. Panics with `nalgebra: index out of bounds` for `i
+    /// >= 3`. Upstream: `remove_row`.
+    fn remove_row(self: Vector3<T>, i: usize) -> Vector2<T>;
+    /// The `Vector2` `(x, x)` of components of `self`. Exact. Upstream: the `xx` swizzle.
+    fn xx(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector3` `(x, x, x)` of components of `self`. Exact. Upstream: the `xxx` swizzle.
+    fn xxx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector2` `(y, x)` of components of `self`. Exact. Upstream: the `yx` swizzle.
+    fn yx(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector2` `(y, y)` of components of `self`. Exact. Upstream: the `yy` swizzle.
+    fn yy(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector3` `(x, x, y)` of components of `self`. Exact. Upstream: the `xxy` swizzle.
+    fn xxy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(x, y, x)` of components of `self`. Exact. Upstream: the `xyx` swizzle.
+    fn xyx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(x, y, y)` of components of `self`. Exact. Upstream: the `xyy` swizzle.
+    fn xyy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, x, x)` of components of `self`. Exact. Upstream: the `yxx` swizzle.
+    fn yxx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, x, y)` of components of `self`. Exact. Upstream: the `yxy` swizzle.
+    fn yxy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, y, x)` of components of `self`. Exact. Upstream: the `yyx` swizzle.
+    fn yyx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, y, y)` of components of `self`. Exact. Upstream: the `yyy` swizzle.
+    fn yyy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector2` `(x, z)` of components of `self`. Exact. Upstream: the `xz` swizzle.
+    fn xz(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector2` `(y, z)` of components of `self`. Exact. Upstream: the `yz` swizzle.
+    fn yz(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector2` `(z, x)` of components of `self`. Exact. Upstream: the `zx` swizzle.
+    fn zx(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector2` `(z, y)` of components of `self`. Exact. Upstream: the `zy` swizzle.
+    fn zy(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector2` `(z, z)` of components of `self`. Exact. Upstream: the `zz` swizzle.
+    fn zz(self: Vector3<T>) -> Vector2<T>;
+    /// The `Vector3` `(x, x, z)` of components of `self`. Exact. Upstream: the `xxz` swizzle.
+    fn xxz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(x, y, z)` of components of `self`. Exact. Upstream: the `xyz` swizzle.
+    fn xyz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(x, z, x)` of components of `self`. Exact. Upstream: the `xzx` swizzle.
+    fn xzx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(x, z, y)` of components of `self`. Exact. Upstream: the `xzy` swizzle.
+    fn xzy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(x, z, z)` of components of `self`. Exact. Upstream: the `xzz` swizzle.
+    fn xzz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, x, z)` of components of `self`. Exact. Upstream: the `yxz` swizzle.
+    fn yxz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, y, z)` of components of `self`. Exact. Upstream: the `yyz` swizzle.
+    fn yyz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, z, x)` of components of `self`. Exact. Upstream: the `yzx` swizzle.
+    fn yzx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, z, y)` of components of `self`. Exact. Upstream: the `yzy` swizzle.
+    fn yzy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(y, z, z)` of components of `self`. Exact. Upstream: the `yzz` swizzle.
+    fn yzz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, x, x)` of components of `self`. Exact. Upstream: the `zxx` swizzle.
+    fn zxx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, x, y)` of components of `self`. Exact. Upstream: the `zxy` swizzle.
+    fn zxy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, x, z)` of components of `self`. Exact. Upstream: the `zxz` swizzle.
+    fn zxz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, y, x)` of components of `self`. Exact. Upstream: the `zyx` swizzle.
+    fn zyx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, y, y)` of components of `self`. Exact. Upstream: the `zyy` swizzle.
+    fn zyy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, y, z)` of components of `self`. Exact. Upstream: the `zyz` swizzle.
+    fn zyz(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, z, x)` of components of `self`. Exact. Upstream: the `zzx` swizzle.
+    fn zzx(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, z, y)` of components of `self`. Exact. Upstream: the `zzy` swizzle.
+    fn zzy(self: Vector3<T>) -> Vector3<T>;
+    /// The `Vector3` `(z, z, z)` of components of `self`. Exact. Upstream: the `zzz` swizzle.
+    fn zzz(self: Vector3<T>) -> Vector3<T>;
 }
 
 /// `angle` needs inverse trigonometry, hence its own trait: scalars may implement `Real` only.
@@ -1508,6 +1639,271 @@ pub impl Vector3Impl<
     ) -> T {
         Nm::metric_distance(@norm, self, rhs)
     }
+
+    #[inline(always)]
+    fn nrows(self: Vector3<T>) -> usize {
+        3
+    }
+
+    #[inline(always)]
+    fn ncols(self: Vector3<T>) -> usize {
+        1
+    }
+
+    #[inline(always)]
+    fn shape(self: Vector3<T>) -> (usize, usize) {
+        (3, 1)
+    }
+
+    #[inline(always)]
+    fn is_square(self: Vector3<T>) -> bool {
+        false
+    }
+
+    #[inline(always)]
+    fn vector_to_matrix_index(self: Vector3<T>, i: usize) -> (usize, usize) {
+        (i, 0)
+    }
+
+    #[inline(always)]
+    fn row(self: Vector3<T>, i: usize) -> Matrix1<T> {
+        Vector3EditTrait::row_at(self, i)
+    }
+
+    #[inline(always)]
+    fn column(self: Vector3<T>, j: usize) -> Vector3<T> {
+        Vector3EditTrait::column_at(self, j)
+    }
+
+    #[inline(always)]
+    fn upper_triangle(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: R::zero(), z: R::zero() }
+    }
+
+    #[inline(always)]
+    fn lower_triangle(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.y, z: self.z }
+    }
+
+    #[inline(always)]
+    fn from_rows(r1: Matrix1<T>, r2: Matrix1<T>, r3: Matrix1<T>) -> Vector3<T> {
+        Vector3 { x: r1.x, y: r2.x, z: r3.x }
+    }
+
+    #[inline(always)]
+    fn from_columns(c1: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: c1.x, y: c1.y, z: c1.z }
+    }
+
+    #[inline(always)]
+    fn is_orthogonal(self: Vector3<T>, ulps: u64) -> bool {
+        R::abs_diff_eq(Self::norm_squared(self), R::one(), ulps)
+    }
+
+    #[inline(always)]
+    fn insert_row(self: Vector3<T>, i: usize, val: T) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: val, y: self.x, z: self.y, w: self.z },
+            1 => Vector4 { x: self.x, y: val, z: self.y, w: self.z },
+            2 => Vector4 { x: self.x, y: self.y, z: val, w: self.z },
+            3 => Vector4 { x: self.x, y: self.y, z: self.z, w: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn insert_column(self: Vector3<T>, i: usize, val: T) -> Matrix3x2<T> {
+        match i {
+            0 => Matrix3x2 { m11: val, m21: val, m31: val, m12: self.x, m22: self.y, m32: self.z },
+            1 => Matrix3x2 { m11: self.x, m21: self.y, m31: self.z, m12: val, m22: val, m32: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn remove_row(self: Vector3<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.y, y: self.z },
+            1 => Vector2 { x: self.x, y: self.z },
+            2 => Vector2 { x: self.x, y: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn xx(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.x, y: self.x }
+    }
+
+    #[inline(always)]
+    fn xxx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.x, z: self.x }
+    }
+
+    #[inline(always)]
+    fn yx(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.y, y: self.x }
+    }
+
+    #[inline(always)]
+    fn yy(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.y, y: self.y }
+    }
+
+    #[inline(always)]
+    fn xxy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.x, z: self.y }
+    }
+
+    #[inline(always)]
+    fn xyx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.y, z: self.x }
+    }
+
+    #[inline(always)]
+    fn xyy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.y, z: self.y }
+    }
+
+    #[inline(always)]
+    fn yxx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.x, z: self.x }
+    }
+
+    #[inline(always)]
+    fn yxy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.x, z: self.y }
+    }
+
+    #[inline(always)]
+    fn yyx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.y, z: self.x }
+    }
+
+    #[inline(always)]
+    fn yyy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.y, z: self.y }
+    }
+
+    #[inline(always)]
+    fn xz(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.x, y: self.z }
+    }
+
+    #[inline(always)]
+    fn yz(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.y, y: self.z }
+    }
+
+    #[inline(always)]
+    fn zx(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.z, y: self.x }
+    }
+
+    #[inline(always)]
+    fn zy(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.z, y: self.y }
+    }
+
+    #[inline(always)]
+    fn zz(self: Vector3<T>) -> Vector2<T> {
+        Vector2 { x: self.z, y: self.z }
+    }
+
+    #[inline(always)]
+    fn xxz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.x, z: self.z }
+    }
+
+    #[inline(always)]
+    fn xyz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.y, z: self.z }
+    }
+
+    #[inline(always)]
+    fn xzx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.z, z: self.x }
+    }
+
+    #[inline(always)]
+    fn xzy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.z, z: self.y }
+    }
+
+    #[inline(always)]
+    fn xzz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x, y: self.z, z: self.z }
+    }
+
+    #[inline(always)]
+    fn yxz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.x, z: self.z }
+    }
+
+    #[inline(always)]
+    fn yyz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.y, z: self.z }
+    }
+
+    #[inline(always)]
+    fn yzx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.z, z: self.x }
+    }
+
+    #[inline(always)]
+    fn yzy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.z, z: self.y }
+    }
+
+    #[inline(always)]
+    fn yzz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.y, y: self.z, z: self.z }
+    }
+
+    #[inline(always)]
+    fn zxx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.x, z: self.x }
+    }
+
+    #[inline(always)]
+    fn zxy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.x, z: self.y }
+    }
+
+    #[inline(always)]
+    fn zxz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.x, z: self.z }
+    }
+
+    #[inline(always)]
+    fn zyx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.y, z: self.x }
+    }
+
+    #[inline(always)]
+    fn zyy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.y, z: self.y }
+    }
+
+    #[inline(always)]
+    fn zyz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.y, z: self.z }
+    }
+
+    #[inline(always)]
+    fn zzx(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.z, z: self.x }
+    }
+
+    #[inline(always)]
+    fn zzy(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.z, z: self.y }
+    }
+
+    #[inline(always)]
+    fn zzz(self: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.z, y: self.z, z: self.z }
+    }
 }
 
 /// Crate-internal kernels of `Vector3<T>` with no upstream METHOD of that shape (WP 8.0: the public
@@ -2317,5 +2713,714 @@ pub impl Vector3UniformNorm<
     #[inline(always)]
     fn metric_distance(self: @UniformNorm, m1: Vector3<T>, m2: Vector3<T>) -> T {
         Vector3Trait::amax(m1 - m2)
+    }
+}
+
+// --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
+
+/// The 1 consecutive rows of a `Vector3` as a `Matrix1`. Upstream: `fixed_rows::<1>`, `rows(i, 1)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector3FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Vector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector3<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector3<T>, first_row: usize, nrows: usize) -> Matrix1<T> {
+        if nrows != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector3<T>, rows: Range<usize>) -> Matrix1<T> {
+        let Range { start, end } = rows;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector3<T>, irows: Span<usize>) -> Matrix1<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector3EditTrait::row_at(self, *irows[0]);
+        Matrix1 { x: r0.x }
+    }
+}
+
+/// The 2 consecutive rows of a `Vector3` as a `Vector2`. Upstream: `fixed_rows::<2>`, `rows(i, 2)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector3FixedRowsVector2<T, +Copy<T>, +Drop<T>> of FixedRows<Vector3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector3<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.x, y: self.y },
+            1 => Vector2 { x: self.y, y: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector3<T>, first_row: usize, nrows: usize) -> Vector2<T> {
+        if nrows != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector3<T>, rows: Range<usize>) -> Vector2<T> {
+        let Range { start, end } = rows;
+        if end != start + 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector3<T>, irows: Span<usize>) -> Vector2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector3EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector3EditTrait::row_at(self, *irows[1]);
+        Vector2 { x: r0.x, y: r1.x }
+    }
+}
+
+/// The 3 consecutive rows of a `Vector3` as a `Vector3`. Upstream: `fixed_rows::<3>`, `rows(i, 3)`,
+/// `rows_range`, `select_rows`.
+pub impl Vector3FixedRowsVector3<T, +Copy<T>, +Drop<T>> of FixedRows<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector3<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.x, y: self.y, z: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Vector3<T>, first_row: usize, nrows: usize) -> Vector3<T> {
+        if nrows != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Vector3<T>, rows: Range<usize>) -> Vector3<T> {
+        let Range { start, end } = rows;
+        if end != start + 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector3<T>, irows: Span<usize>) -> Vector3<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector3EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector3EditTrait::row_at(self, *irows[1]);
+        let r2 = Vector3EditTrait::row_at(self, *irows[2]);
+        Vector3 { x: r0.x, y: r1.x, z: r2.x }
+    }
+}
+
+/// The 1 consecutive columns of a `Vector3` as a `Vector3`. Upstream: `fixed_columns::<1>`,
+/// `columns(j, 1)`, `columns_range`, `select_columns`.
+pub impl Vector3FixedColumnsVector3<T, +Copy<T>, +Drop<T>> of FixedColumns<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Vector3<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.x, y: self.y, z: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Vector3<T>, first_col: usize, ncols: usize) -> Vector3<T> {
+        if ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Vector3<T>, cols: Range<usize>) -> Vector3<T> {
+        let Range { start, end } = cols;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Vector3<T>, icols: Span<usize>) -> Vector3<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Vector3EditTrait::column_at(self, *icols[0]);
+        Vector3 { x: c0.x, y: c0.y, z: c0.z }
+    }
+}
+
+/// The 1x1 blocks of a `Vector3` as a `Matrix1`. Upstream: `fixed_view::<1, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector3FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Vector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector3<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                1 => Matrix1 { x: self.y },
+                2 => Matrix1 { x: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector3<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector3<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector3<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x1 blocks of a `Vector3` as a `Vector2`. Upstream: `fixed_view::<2, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector3FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Vector3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector3<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.x, y: self.y },
+                1 => Vector2 { x: self.y, y: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector3<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector3<T>, irow: usize, icol: usize) -> Vector2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector3<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x1 blocks of a `Vector3` as a `Vector3`. Upstream: `fixed_view::<3, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Vector3FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector3<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.x, y: self.y, z: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Vector3<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Vector3<T>, irow: usize, icol: usize) -> Vector3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Vector3<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The first 1 components of a row of a `Vector3` as a `Matrix1`. Upstream: `row_part` (`n = 1`).
+pub impl Vector3RowPartMatrix1<T, +Copy<T>, +Drop<T>> of RowPart<Vector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn row_part(self: Vector3<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 1 components of a column of a `Vector3` as a `Matrix1`. Upstream: `column_part` (`n =
+/// 1`).
+pub impl Vector3ColumnPartMatrix1<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector3<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 2 components of a column of a `Vector3` as a `Vector2`. Upstream: `column_part` (`n =
+/// 2`).
+pub impl Vector3ColumnPartVector2<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector3<T>, i: usize, n: usize) -> Vector2<T> {
+        if n != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 3 components of a column of a `Vector3` as a `Vector3`. Upstream: `column_part` (`n =
+/// 3`).
+pub impl Vector3ColumnPartVector3<T, +Copy<T>, +Drop<T>> of ColumnPart<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn column_part(self: Vector3<T>, i: usize, n: usize) -> Vector3<T> {
+        if n != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix1`, a `Vector3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix1<T>> {
+    type Output = Vector3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: Matrix1<T>) -> Vector3<T> {
+        Vector3 { x: self.x * rhs.x, y: self.y * rhs.x, z: self.z * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector2`, a `Matrix3x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector2<T>> {
+    type Output = Matrix3x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector2<T>) -> Matrix3x2<T> {
+        Matrix3x2 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector3`, a `Matrix3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector3<T>> {
+    type Output = Matrix3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector4`, a `Matrix3x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector4<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector4<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector5`, a `Matrix3x5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector5<T>> {
+    type Output = Matrix3x5<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector5<T>) -> Matrix3x5<T> {
+        Matrix3x5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector6`, a `Matrix3x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector6<T>> {
+    type Output = Matrix3x6<T>;
+    fn kronecker(self: Vector3<T>, rhs: RowVector6<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+            m16: self.x * rhs.b,
+            m26: self.y * rhs.b,
+            m36: self.z * rhs.b,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Vector2`, a `Vector6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Vector2<T>> {
+    type Output = Vector6<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: Vector2<T>) -> Vector6<T> {
+        Vector6 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.y * rhs.x,
+            w: self.y * rhs.y,
+            a: self.z * rhs.x,
+            b: self.z * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2`, a `Matrix6x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: Matrix2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2x3`, a `Matrix6x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2x3<T>> {
+    type Output = Matrix6x3<T>;
+    fn kronecker(self: Vector3<T>, rhs: Matrix2x3<T>) -> Matrix6x3<T> {
+        Matrix6x3 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m53: self.z * rhs.m13,
+            m63: self.z * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2x4`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2x4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2x4<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Vector3<T>, rhs: Matrix2x4<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m53: self.z * rhs.m13,
+            m63: self.z * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.y * rhs.m14,
+            m44: self.y * rhs.m24,
+            m54: self.z * rhs.m14,
+            m64: self.z * rhs.m24,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2x5`, a `Matrix6x5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2x5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2x5<T>> {
+    type Output = Matrix6x5<T>;
+    fn kronecker(self: Vector3<T>, rhs: Matrix2x5<T>) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m53: self.z * rhs.m13,
+            m63: self.z * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.y * rhs.m14,
+            m44: self.y * rhs.m24,
+            m54: self.z * rhs.m14,
+            m64: self.z * rhs.m24,
+            m15: self.x * rhs.m15,
+            m25: self.x * rhs.m25,
+            m35: self.y * rhs.m15,
+            m45: self.y * rhs.m25,
+            m55: self.z * rhs.m15,
+            m65: self.z * rhs.m25,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2x6`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2x6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2x6<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Vector3<T>, rhs: Matrix2x6<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m53: self.z * rhs.m13,
+            m63: self.z * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.y * rhs.m14,
+            m44: self.y * rhs.m24,
+            m54: self.z * rhs.m14,
+            m64: self.z * rhs.m24,
+            m15: self.x * rhs.m15,
+            m25: self.x * rhs.m25,
+            m35: self.y * rhs.m15,
+            m45: self.y * rhs.m25,
+            m55: self.z * rhs.m15,
+            m65: self.z * rhs.m25,
+            m16: self.x * rhs.m16,
+            m26: self.x * rhs.m26,
+            m36: self.y * rhs.m16,
+            m46: self.y * rhs.m26,
+            m56: self.z * rhs.m16,
+            m66: self.z * rhs.m26,
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Vector3PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Vector3<T>, T> {
+    #[inline(always)]
+    fn pad(self: Vector3<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: self.y,
+            m31: self.z,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: val,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Vector3` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Vector3CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Vector3<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Vector3<T> {
+        Vector3 { x: m.m11, y: m.m21, z: m.m31 }
+    }
+
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (3, 1)
     }
 }

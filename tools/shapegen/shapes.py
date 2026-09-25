@@ -34,6 +34,7 @@ import textwrap
 
 import completion as C
 import functional as P03
+import views as P05
 import library as L
 from model import ALL_SHAPES, Shape
 
@@ -188,11 +189,15 @@ def legacy_extra(s: Shape, docs: dict[str, str]) -> L.Extra:
     pu, pi = products(s, docs)
     have = {f.name for f in L.surface((s.r, s.c))}
     base = C.missing(s, have)
-    return L.Extra(uses=[u for u in L.dedup(au + pu + C.uses(s) + P03.uses(s)) if u != use_of(s)],
-                   struct=ai, end=[L.section("products", 100)] + pi + C.items(s) + P03.items(s),
+    functional = P03.missing(s, have | {f.name for f in base})
+    return L.Extra(uses=[u for u in L.dedup(au + pu + C.uses(s) + P03.uses(s) + P05.uses(s))
+                         if u != use_of(s)],
+                   struct=ai, end=[L.section("products", 100)] + pi + C.items(s) + P03.items(s)
+                   + P05.items(s),
                    methods=base,
                    angle=[f for f in C.angle_methods(s) if f.name not in have],
-                   functional=P03.missing(s, have | {f.name for f in base}))
+                   functional=functional,
+                   views=P05.missing(s, have | {f.name for f in base + functional}))
 
 
 # --------------------------------------------------------------------------------------------
@@ -339,7 +344,8 @@ def render_new(s: Shape) -> str:
         uses.append("super::kernels::Fused")
     au, ai = aliases(s)
     pu, pi = products(s, {})
-    uses = [u for u in L.dedup(uses + au + pu + C.uses(s) + P03.uses(s)) if u != use_of(s)]
+    uses = [u for u in L.dedup(uses + au + pu + C.uses(s) + P03.uses(s) + P05.uses(s))
+            if u != use_of(s)]
     ops = "`+`, `-`, unary `-`" + (", `*` between matrices" if s.is_square else "")
     conv = f", conversions from / to `[T; {s.n}]`" if s.is_vector else ""
     module_doc = wrap(
@@ -362,6 +368,7 @@ def render_new(s: Shape) -> str:
     base = new_methods(s)
     fns = base + C.missing(s, {m.name for m in base})
     fns += P03.missing(s, {m.name for m in fns})
+    fns += P05.missing(s, {m.name for m in fns})
     methods = "\n\n".join(m.definition() for m in fns)
     impl = (f"/// Methods of `{S}<T>` for any `Real` scalar.\n#[generate_trait]\n"
             f"pub impl {S}Impl<\n{L.bounds(L.MATRIX_IMPL_BOUNDS)}\n> of {S}Trait<T> {{\n"
@@ -369,6 +376,7 @@ def render_new(s: Shape) -> str:
     blocks = [module_doc, "\n".join(f"use {u};" for u in uses), struct] + ai + [impl]
     blocks.append(C.angle_impl(s, C.angle_methods(s)))
     blocks += new_operators(s) + [L.section("products", 100)] + pi + C.items(s) + P03.items(s)
+    blocks += P05.items(s)
     return HEADER + "\n\n".join(blocks) + "\n"
 
 
@@ -513,6 +521,10 @@ pub const LP_NORM_P: felt252 = 'nalgebra: lp_norm needs p >= 1';
 /// `Vector3::orthonormal_subspace_basis` of more than 3 vectors (upstream: "The given set of
 /// vectors has no chance of being a free family.").
 pub const NOT_FREE_FAMILY: felt252 = 'nalgebra: not a free family';
+/// A runtime size different from the output type's: `rows(i, n)`, `view(start, shape)`,
+/// `rows_range`, `row_part`, `select_rows`, `resize`... (`base/matrix_view.cairo`: the output
+/// type is the size of upstream's const generic or dynamic view).
+pub const DIMENSION_MISMATCH: felt252 = 'nalgebra: dimension mismatch';
 """
 
 
@@ -581,7 +593,8 @@ pub struct UniformNorm {}
 
 SHARED_MODULES = {"kernels": render_kernels, "matrix_mul": render_matrix_mul,
                   "matrix_tr_mul": render_matrix_tr_mul, "errors": render_errors,
-                  "matrix_index": render_matrix_index, "norm": render_norm}
+                  "matrix_index": render_matrix_index, "norm": render_norm,
+                  **P05.SHARED_MODULES}
 
 
 def exported(s: Shape) -> list[str]:
@@ -594,7 +607,8 @@ def exported(s: Shape) -> list[str]:
 # Shared modules: (module, visibility, re-exported names).
 SHARED_EXPORTS = {"matrix_mul": ["MatrixMul"], "matrix_tr_mul": ["MatrixTrMul"],
                   "matrix_index": ["MatrixIndex"],
-                  "norm": ["EuclideanNorm", "LpNorm", "Norm", "OneNorm", "UniformNorm"]}
+                  "norm": ["EuclideanNorm", "LpNorm", "Norm", "OneNorm", "UniformNorm"],
+                  **P05.SHARED_EXPORTS}
 PRIVATE_MODULES = {"kernels"}
 
 

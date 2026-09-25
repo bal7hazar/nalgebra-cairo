@@ -19,21 +19,55 @@
 //! again, and is numerically far worse than a pivoted factorisation.
 
 use core::num::traits::{Bounded, One};
-use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, Range, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use crate::geometry::{Translation5, Translation5Trait};
+use crate::linalg::Matrix6LuTrait;
 use super::errors;
 use super::kernels::{Fused, Powi};
+use super::matrix1::Matrix1;
+use super::matrix2::Matrix2;
+use super::matrix2x3::Matrix2x3;
+use super::matrix2x4::Matrix2x4;
+use super::matrix2x5::Matrix2x5;
+use super::matrix2x6::Matrix2x6;
+use super::matrix3::Matrix3;
+use super::matrix3x2::Matrix3x2;
+use super::matrix3x4::Matrix3x4;
+use super::matrix3x5::Matrix3x5;
+use super::matrix3x6::Matrix3x6;
+use super::matrix4::Matrix4;
+use super::matrix4x2::Matrix4x2;
+use super::matrix4x3::Matrix4x3;
+use super::matrix4x5::Matrix4x5;
+use super::matrix4x6::Matrix4x6;
+use super::matrix5::Matrix5;
+use super::matrix5x2::Matrix5x2;
+use super::matrix5x3::Matrix5x3;
+use super::matrix5x4::Matrix5x4;
+use super::matrix5x6::Matrix5x6;
 use super::matrix6x2::Matrix6x2;
 use super::matrix6x3::Matrix6x3;
 use super::matrix6x4::Matrix6x4;
 use super::matrix6x5::Matrix6x5;
 use super::matrix_index::MatrixIndex;
+use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::matrix_view::{
+    ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, RowPart,
+};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
+use super::row_vector2::RowVector2;
+use super::row_vector3::RowVector3;
+use super::row_vector4::RowVector4;
+use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
+use super::vector2::Vector2;
+use super::vector3::Vector3;
+use super::vector4::Vector4;
+use super::vector5::Vector5;
 use super::vector6::Vector6;
 
 /// A 6x6 matrix. `mRC` is the component at row `R`, column `C`.
@@ -5797,6 +5831,667 @@ pub impl Matrix6Impl<
     ) -> T {
         Nm::metric_distance(@norm, self, rhs)
     }
+
+    // --- swizzles, rows, columns and blocks (WP 8.2c) ------------------------------------------
+
+    /// The number of rows, 6. Upstream: `nrows`.
+    #[inline(always)]
+    fn nrows(self: Matrix6<T>) -> usize {
+        6
+    }
+
+    /// The number of columns, 6. Upstream: `ncols`.
+    #[inline(always)]
+    fn ncols(self: Matrix6<T>) -> usize {
+        6
+    }
+
+    /// `(nrows, ncols)`, `(6, 6)`. Upstream: `shape`.
+    #[inline(always)]
+    fn shape(self: Matrix6<T>) -> (usize, usize) {
+        (6, 6)
+    }
+
+    /// Whether the shape is square: `true`. Upstream: `is_square`.
+    #[inline(always)]
+    fn is_square(self: Matrix6<T>) -> bool {
+        true
+    }
+
+    /// The `(row, column)` of the `i`-th component in column-major order: `(i % 6, i / 6)`, one
+    /// `DivRem` (no bounds check, like upstream). Upstream: `vector_to_matrix_index`.
+    #[inline(always)]
+    fn vector_to_matrix_index(self: Matrix6<T>, i: usize) -> (usize, usize) {
+        let (j, i) = DivRem::div_rem(i, 6);
+        (i, j)
+    }
+
+    /// Row `i`, a `RowVector6` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `i >= 6`. ONE `match` on `i` selects the literal (the private
+    /// `row_at` of `swap_rows`). Upstream: `row` (a view).
+    #[inline(always)]
+    fn row(self: Matrix6<T>, i: usize) -> RowVector6<T> {
+        Matrix6EditTrait::row_at(self, i)
+    }
+
+    /// Column `j`, a `Vector6` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `j >= 6`. ONE `match` on `j` selects the literal (the private
+    /// `column_at` of `swap_columns`). Upstream: `column` (a view).
+    #[inline(always)]
+    fn column(self: Matrix6<T>, j: usize) -> Vector6<T> {
+        Matrix6EditTrait::column_at(self, j)
+    }
+
+    /// The upper triangle of `self` (the diagonal included), the components below the diagonal set
+    /// to zero. Exact. Upstream: `upper_triangle`.
+    #[inline(always)]
+    fn upper_triangle(self: Matrix6<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m51: R::zero(),
+            m61: R::zero(),
+            m12: self.m12,
+            m22: self.m22,
+            m32: R::zero(),
+            m42: R::zero(),
+            m52: R::zero(),
+            m62: R::zero(),
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m43: R::zero(),
+            m53: R::zero(),
+            m63: R::zero(),
+            m14: self.m14,
+            m24: self.m24,
+            m34: self.m34,
+            m44: self.m44,
+            m54: R::zero(),
+            m64: R::zero(),
+            m15: self.m15,
+            m25: self.m25,
+            m35: self.m35,
+            m45: self.m45,
+            m55: self.m55,
+            m65: R::zero(),
+            m16: self.m16,
+            m26: self.m26,
+            m36: self.m36,
+            m46: self.m46,
+            m56: self.m56,
+            m66: self.m66,
+        }
+    }
+
+    /// The lower triangle of `self` (the diagonal included), the components above the diagonal set
+    /// to zero. Exact. Upstream: `lower_triangle`.
+    #[inline(always)]
+    fn lower_triangle(self: Matrix6<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: self.m41,
+            m51: self.m51,
+            m61: self.m61,
+            m12: R::zero(),
+            m22: self.m22,
+            m32: self.m32,
+            m42: self.m42,
+            m52: self.m52,
+            m62: self.m62,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: self.m33,
+            m43: self.m43,
+            m53: self.m53,
+            m63: self.m63,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: self.m44,
+            m54: self.m54,
+            m64: self.m64,
+            m15: R::zero(),
+            m25: R::zero(),
+            m35: R::zero(),
+            m45: R::zero(),
+            m55: self.m55,
+            m65: self.m65,
+            m16: R::zero(),
+            m26: R::zero(),
+            m36: R::zero(),
+            m46: R::zero(),
+            m56: R::zero(),
+            m66: self.m66,
+        }
+    }
+
+    /// The 6x6 matrix whose 6 rows are the given vectors, each a `Vector6` of the row's 6
+    /// components (the argument form of the former `Matrix2/3/4::from_rows`, used by `linalg`).
+    /// Exact. Upstream: `from_rows` (a slice of row vectors).
+    #[inline(always)]
+    fn from_rows(
+        r1: Vector6<T>,
+        r2: Vector6<T>,
+        r3: Vector6<T>,
+        r4: Vector6<T>,
+        r5: Vector6<T>,
+        r6: Vector6<T>,
+    ) -> Matrix6<T> {
+        Matrix6 {
+            m11: r1.x,
+            m21: r2.x,
+            m31: r3.x,
+            m41: r4.x,
+            m51: r5.x,
+            m61: r6.x,
+            m12: r1.y,
+            m22: r2.y,
+            m32: r3.y,
+            m42: r4.y,
+            m52: r5.y,
+            m62: r6.y,
+            m13: r1.z,
+            m23: r2.z,
+            m33: r3.z,
+            m43: r4.z,
+            m53: r5.z,
+            m63: r6.z,
+            m14: r1.w,
+            m24: r2.w,
+            m34: r3.w,
+            m44: r4.w,
+            m54: r5.w,
+            m64: r6.w,
+            m15: r1.a,
+            m25: r2.a,
+            m35: r3.a,
+            m45: r4.a,
+            m55: r5.a,
+            m65: r6.a,
+            m16: r1.b,
+            m26: r2.b,
+            m36: r3.b,
+            m46: r4.b,
+            m56: r5.b,
+            m66: r6.b,
+        }
+    }
+
+    /// The 6x6 matrix whose 6 columns are the given `Vector6`s. Exact. Upstream: `from_columns` (a
+    /// slice of column vectors).
+    #[inline(always)]
+    fn from_columns(
+        c1: Vector6<T>,
+        c2: Vector6<T>,
+        c3: Vector6<T>,
+        c4: Vector6<T>,
+        c5: Vector6<T>,
+        c6: Vector6<T>,
+    ) -> Matrix6<T> {
+        Matrix6 {
+            m11: c1.x,
+            m21: c1.y,
+            m31: c1.z,
+            m41: c1.w,
+            m51: c1.a,
+            m61: c1.b,
+            m12: c2.x,
+            m22: c2.y,
+            m32: c2.z,
+            m42: c2.w,
+            m52: c2.a,
+            m62: c2.b,
+            m13: c3.x,
+            m23: c3.y,
+            m33: c3.z,
+            m43: c3.w,
+            m53: c3.a,
+            m63: c3.b,
+            m14: c4.x,
+            m24: c4.y,
+            m34: c4.z,
+            m44: c4.w,
+            m54: c4.a,
+            m64: c4.b,
+            m15: c5.x,
+            m25: c5.y,
+            m35: c5.z,
+            m45: c5.w,
+            m55: c5.a,
+            m65: c5.b,
+            m16: c6.x,
+            m26: c6.y,
+            m36: c6.z,
+            m46: c6.w,
+            m56: c6.a,
+            m66: c6.b,
+        }
+    }
+
+    /// Whether the columns of `self` are orthonormal: `selfᵀ * self` (fused `tr_mul`, one
+    /// rounding per component) is the 6x6 identity within `ulps`. Upstream: `is_orthogonal` (`eps`:
+    /// here a tolerance in ulp, DESIGN D3).
+    #[inline(always)]
+    fn is_orthogonal(self: Matrix6<T>, ulps: u64) -> bool {
+        Self::is_identity(MatrixTrMul::tr_mul(self, self), ulps)
+    }
+
+    /// Whether `self` is invertible: `try_inverse()` is `Some` (through `Lu6`, like
+    /// `Matrix6::try_inverse`). Upstream: `is_invertible`.
+    fn is_invertible(self: Matrix6<T>) -> bool {
+        Matrix6LuTrait::try_inverse(self).is_some()
+    }
+
+    /// Whether `self` is a rotation: orthogonal within `ulps` (`is_orthogonal`) with a positive
+    /// determinant. Upstream: `is_special_orthogonal`.
+    fn is_special_orthogonal(self: Matrix6<T>, ulps: u64) -> bool {
+        Self::is_orthogonal(self, ulps) && Matrix6LuTrait::determinant(self) > R::zero()
+    }
+
+    /// `self` without its row `i`, a `Matrix5x6`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 6`. Upstream: `remove_row`.
+    fn remove_row(self: Matrix6<T>, i: usize) -> Matrix5x6<T> {
+        match i {
+            0 => Matrix5x6 {
+                m11: self.m21,
+                m21: self.m31,
+                m31: self.m41,
+                m41: self.m51,
+                m51: self.m61,
+                m12: self.m22,
+                m22: self.m32,
+                m32: self.m42,
+                m42: self.m52,
+                m52: self.m62,
+                m13: self.m23,
+                m23: self.m33,
+                m33: self.m43,
+                m43: self.m53,
+                m53: self.m63,
+                m14: self.m24,
+                m24: self.m34,
+                m34: self.m44,
+                m44: self.m54,
+                m54: self.m64,
+                m15: self.m25,
+                m25: self.m35,
+                m35: self.m45,
+                m45: self.m55,
+                m55: self.m65,
+                m16: self.m26,
+                m26: self.m36,
+                m36: self.m46,
+                m46: self.m56,
+                m56: self.m66,
+            },
+            1 => Matrix5x6 {
+                m11: self.m11,
+                m21: self.m31,
+                m31: self.m41,
+                m41: self.m51,
+                m51: self.m61,
+                m12: self.m12,
+                m22: self.m32,
+                m32: self.m42,
+                m42: self.m52,
+                m52: self.m62,
+                m13: self.m13,
+                m23: self.m33,
+                m33: self.m43,
+                m43: self.m53,
+                m53: self.m63,
+                m14: self.m14,
+                m24: self.m34,
+                m34: self.m44,
+                m44: self.m54,
+                m54: self.m64,
+                m15: self.m15,
+                m25: self.m35,
+                m35: self.m45,
+                m45: self.m55,
+                m55: self.m65,
+                m16: self.m16,
+                m26: self.m36,
+                m36: self.m46,
+                m46: self.m56,
+                m56: self.m66,
+            },
+            2 => Matrix5x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m41,
+                m41: self.m51,
+                m51: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m42,
+                m42: self.m52,
+                m52: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m43,
+                m43: self.m53,
+                m53: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m44,
+                m44: self.m54,
+                m54: self.m64,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m45,
+                m45: self.m55,
+                m55: self.m65,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m46,
+                m46: self.m56,
+                m56: self.m66,
+            },
+            3 => Matrix5x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m51,
+                m51: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m52,
+                m52: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m53,
+                m53: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m54,
+                m54: self.m64,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m55,
+                m55: self.m65,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+                m46: self.m56,
+                m56: self.m66,
+            },
+            4 => Matrix5x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m64,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m55: self.m65,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+                m46: self.m46,
+                m56: self.m66,
+            },
+            5 => Matrix5x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m55: self.m55,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+                m46: self.m46,
+                m56: self.m56,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its column `i`, a `Matrix6x5`. Panics with `nalgebra: index out of bounds`
+    /// for `i >= 6`. Upstream: `remove_column`.
+    fn remove_column(self: Matrix6<T>, i: usize) -> Matrix6x5<T> {
+        match i {
+            0 => Matrix6x5 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m51: self.m52,
+                m61: self.m62,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+                m52: self.m53,
+                m62: self.m63,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+                m43: self.m44,
+                m53: self.m54,
+                m63: self.m64,
+                m14: self.m15,
+                m24: self.m25,
+                m34: self.m35,
+                m44: self.m45,
+                m54: self.m55,
+                m64: self.m65,
+                m15: self.m16,
+                m25: self.m26,
+                m35: self.m36,
+                m45: self.m46,
+                m55: self.m56,
+                m65: self.m66,
+            },
+            1 => Matrix6x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+                m52: self.m53,
+                m62: self.m63,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+                m43: self.m44,
+                m53: self.m54,
+                m63: self.m64,
+                m14: self.m15,
+                m24: self.m25,
+                m34: self.m35,
+                m44: self.m45,
+                m54: self.m55,
+                m64: self.m65,
+                m15: self.m16,
+                m25: self.m26,
+                m35: self.m36,
+                m45: self.m46,
+                m55: self.m56,
+                m65: self.m66,
+            },
+            2 => Matrix6x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+                m43: self.m44,
+                m53: self.m54,
+                m63: self.m64,
+                m14: self.m15,
+                m24: self.m25,
+                m34: self.m35,
+                m44: self.m45,
+                m54: self.m55,
+                m64: self.m65,
+                m15: self.m16,
+                m25: self.m26,
+                m35: self.m36,
+                m45: self.m46,
+                m55: self.m56,
+                m65: self.m66,
+            },
+            3 => Matrix6x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+                m14: self.m15,
+                m24: self.m25,
+                m34: self.m35,
+                m44: self.m45,
+                m54: self.m55,
+                m64: self.m65,
+                m15: self.m16,
+                m25: self.m26,
+                m35: self.m36,
+                m45: self.m46,
+                m55: self.m56,
+                m65: self.m66,
+            },
+            4 => Matrix6x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m64: self.m64,
+                m15: self.m16,
+                m25: self.m26,
+                m35: self.m36,
+                m45: self.m46,
+                m55: self.m56,
+                m65: self.m66,
+            },
+            5 => Matrix6x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m64: self.m64,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m55: self.m55,
+                m65: self.m65,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
 }
 
 /// The operations of `Matrix6<T>` that need `Transcendental` (inverse trigonometry, `exp`, `ln`):
@@ -11137,5 +11832,6254 @@ pub impl Matrix6UniformNorm<
     #[inline(always)]
     fn metric_distance(self: @UniformNorm, m1: Matrix6<T>, m2: Matrix6<T>) -> T {
         Matrix6Trait::amax(m1 - m2)
+    }
+}
+
+// --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
+
+/// The 1 consecutive rows of a `Matrix6` as a `RowVector6`. Upstream: `fixed_rows::<1>`, `rows(i,
+/// 1)`, `rows_range`, `select_rows`.
+pub impl Matrix6FixedRowsRowVector6<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix6<T>, i: usize) -> RowVector6<T> {
+        match i {
+            0 => RowVector6 {
+                x: self.m11, y: self.m12, z: self.m13, w: self.m14, a: self.m15, b: self.m16,
+            },
+            1 => RowVector6 {
+                x: self.m21, y: self.m22, z: self.m23, w: self.m24, a: self.m25, b: self.m26,
+            },
+            2 => RowVector6 {
+                x: self.m31, y: self.m32, z: self.m33, w: self.m34, a: self.m35, b: self.m36,
+            },
+            3 => RowVector6 {
+                x: self.m41, y: self.m42, z: self.m43, w: self.m44, a: self.m45, b: self.m46,
+            },
+            4 => RowVector6 {
+                x: self.m51, y: self.m52, z: self.m53, w: self.m54, a: self.m55, b: self.m56,
+            },
+            5 => RowVector6 {
+                x: self.m61, y: self.m62, z: self.m63, w: self.m64, a: self.m65, b: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix6<T>, first_row: usize, nrows: usize) -> RowVector6<T> {
+        if nrows != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix6<T>, rows: Range<usize>) -> RowVector6<T> {
+        let Range { start, end } = rows;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix6<T>, irows: Span<usize>) -> RowVector6<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix6EditTrait::row_at(self, *irows[0]);
+        RowVector6 { x: r0.x, y: r0.y, z: r0.z, w: r0.w, a: r0.a, b: r0.b }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix6` as a `Matrix2x6`. Upstream: `fixed_rows::<2>`, `rows(i,
+/// 2)`, `rows_range`, `select_rows`.
+pub impl Matrix6FixedRowsMatrix2x6<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6<T>, Matrix2x6<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix6<T>, i: usize) -> Matrix2x6<T> {
+        match i {
+            0 => Matrix2x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+                m15: self.m15,
+                m25: self.m25,
+                m16: self.m16,
+                m26: self.m26,
+            },
+            1 => Matrix2x6 {
+                m11: self.m21,
+                m21: self.m31,
+                m12: self.m22,
+                m22: self.m32,
+                m13: self.m23,
+                m23: self.m33,
+                m14: self.m24,
+                m24: self.m34,
+                m15: self.m25,
+                m25: self.m35,
+                m16: self.m26,
+                m26: self.m36,
+            },
+            2 => Matrix2x6 {
+                m11: self.m31,
+                m21: self.m41,
+                m12: self.m32,
+                m22: self.m42,
+                m13: self.m33,
+                m23: self.m43,
+                m14: self.m34,
+                m24: self.m44,
+                m15: self.m35,
+                m25: self.m45,
+                m16: self.m36,
+                m26: self.m46,
+            },
+            3 => Matrix2x6 {
+                m11: self.m41,
+                m21: self.m51,
+                m12: self.m42,
+                m22: self.m52,
+                m13: self.m43,
+                m23: self.m53,
+                m14: self.m44,
+                m24: self.m54,
+                m15: self.m45,
+                m25: self.m55,
+                m16: self.m46,
+                m26: self.m56,
+            },
+            4 => Matrix2x6 {
+                m11: self.m51,
+                m21: self.m61,
+                m12: self.m52,
+                m22: self.m62,
+                m13: self.m53,
+                m23: self.m63,
+                m14: self.m54,
+                m24: self.m64,
+                m15: self.m55,
+                m25: self.m65,
+                m16: self.m56,
+                m26: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix6<T>, first_row: usize, nrows: usize) -> Matrix2x6<T> {
+        if nrows != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix6<T>, rows: Range<usize>) -> Matrix2x6<T> {
+        let Range { start, end } = rows;
+        if end != start + 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix6<T>, irows: Span<usize>) -> Matrix2x6<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix6EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix6EditTrait::row_at(self, *irows[1]);
+        Matrix2x6 {
+            m11: r0.x,
+            m21: r1.x,
+            m12: r0.y,
+            m22: r1.y,
+            m13: r0.z,
+            m23: r1.z,
+            m14: r0.w,
+            m24: r1.w,
+            m15: r0.a,
+            m25: r1.a,
+            m16: r0.b,
+            m26: r1.b,
+        }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix6` as a `Matrix3x6`. Upstream: `fixed_rows::<3>`, `rows(i,
+/// 3)`, `rows_range`, `select_rows`.
+pub impl Matrix6FixedRowsMatrix3x6<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6<T>, Matrix3x6<T>> {
+    fn fixed_rows(self: Matrix6<T>, i: usize) -> Matrix3x6<T> {
+        match i {
+            0 => Matrix3x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+            },
+            1 => Matrix3x6 {
+                m11: self.m21,
+                m21: self.m31,
+                m31: self.m41,
+                m12: self.m22,
+                m22: self.m32,
+                m32: self.m42,
+                m13: self.m23,
+                m23: self.m33,
+                m33: self.m43,
+                m14: self.m24,
+                m24: self.m34,
+                m34: self.m44,
+                m15: self.m25,
+                m25: self.m35,
+                m35: self.m45,
+                m16: self.m26,
+                m26: self.m36,
+                m36: self.m46,
+            },
+            2 => Matrix3x6 {
+                m11: self.m31,
+                m21: self.m41,
+                m31: self.m51,
+                m12: self.m32,
+                m22: self.m42,
+                m32: self.m52,
+                m13: self.m33,
+                m23: self.m43,
+                m33: self.m53,
+                m14: self.m34,
+                m24: self.m44,
+                m34: self.m54,
+                m15: self.m35,
+                m25: self.m45,
+                m35: self.m55,
+                m16: self.m36,
+                m26: self.m46,
+                m36: self.m56,
+            },
+            3 => Matrix3x6 {
+                m11: self.m41,
+                m21: self.m51,
+                m31: self.m61,
+                m12: self.m42,
+                m22: self.m52,
+                m32: self.m62,
+                m13: self.m43,
+                m23: self.m53,
+                m33: self.m63,
+                m14: self.m44,
+                m24: self.m54,
+                m34: self.m64,
+                m15: self.m45,
+                m25: self.m55,
+                m35: self.m65,
+                m16: self.m46,
+                m26: self.m56,
+                m36: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix6<T>, first_row: usize, nrows: usize) -> Matrix3x6<T> {
+        if nrows != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix6<T>, rows: Range<usize>) -> Matrix3x6<T> {
+        let Range { start, end } = rows;
+        if end != start + 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    fn select_rows(self: Matrix6<T>, irows: Span<usize>) -> Matrix3x6<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix6EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix6EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix6EditTrait::row_at(self, *irows[2]);
+        Matrix3x6 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+            m15: r0.a,
+            m25: r1.a,
+            m35: r2.a,
+            m16: r0.b,
+            m26: r1.b,
+            m36: r2.b,
+        }
+    }
+}
+
+/// The 4 consecutive rows of a `Matrix6` as a `Matrix4x6`. Upstream: `fixed_rows::<4>`, `rows(i,
+/// 4)`, `rows_range`, `select_rows`.
+pub impl Matrix6FixedRowsMatrix4x6<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6<T>, Matrix4x6<T>> {
+    fn fixed_rows(self: Matrix6<T>, i: usize) -> Matrix4x6<T> {
+        match i {
+            0 => Matrix4x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+                m46: self.m46,
+            },
+            1 => Matrix4x6 {
+                m11: self.m21,
+                m21: self.m31,
+                m31: self.m41,
+                m41: self.m51,
+                m12: self.m22,
+                m22: self.m32,
+                m32: self.m42,
+                m42: self.m52,
+                m13: self.m23,
+                m23: self.m33,
+                m33: self.m43,
+                m43: self.m53,
+                m14: self.m24,
+                m24: self.m34,
+                m34: self.m44,
+                m44: self.m54,
+                m15: self.m25,
+                m25: self.m35,
+                m35: self.m45,
+                m45: self.m55,
+                m16: self.m26,
+                m26: self.m36,
+                m36: self.m46,
+                m46: self.m56,
+            },
+            2 => Matrix4x6 {
+                m11: self.m31,
+                m21: self.m41,
+                m31: self.m51,
+                m41: self.m61,
+                m12: self.m32,
+                m22: self.m42,
+                m32: self.m52,
+                m42: self.m62,
+                m13: self.m33,
+                m23: self.m43,
+                m33: self.m53,
+                m43: self.m63,
+                m14: self.m34,
+                m24: self.m44,
+                m34: self.m54,
+                m44: self.m64,
+                m15: self.m35,
+                m25: self.m45,
+                m35: self.m55,
+                m45: self.m65,
+                m16: self.m36,
+                m26: self.m46,
+                m36: self.m56,
+                m46: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix6<T>, first_row: usize, nrows: usize) -> Matrix4x6<T> {
+        if nrows != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix6<T>, rows: Range<usize>) -> Matrix4x6<T> {
+        let Range { start, end } = rows;
+        if end != start + 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    fn select_rows(self: Matrix6<T>, irows: Span<usize>) -> Matrix4x6<T> {
+        if irows.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix6EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix6EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix6EditTrait::row_at(self, *irows[2]);
+        let r3 = Matrix6EditTrait::row_at(self, *irows[3]);
+        Matrix4x6 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m41: r3.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m42: r3.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m43: r3.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+            m44: r3.w,
+            m15: r0.a,
+            m25: r1.a,
+            m35: r2.a,
+            m45: r3.a,
+            m16: r0.b,
+            m26: r1.b,
+            m36: r2.b,
+            m46: r3.b,
+        }
+    }
+}
+
+/// The 5 consecutive rows of a `Matrix6` as a `Matrix5x6`. Upstream: `fixed_rows::<5>`, `rows(i,
+/// 5)`, `rows_range`, `select_rows`.
+pub impl Matrix6FixedRowsMatrix5x6<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6<T>, Matrix5x6<T>> {
+    fn fixed_rows(self: Matrix6<T>, i: usize) -> Matrix5x6<T> {
+        match i {
+            0 => Matrix5x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m55: self.m55,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+                m46: self.m46,
+                m56: self.m56,
+            },
+            1 => Matrix5x6 {
+                m11: self.m21,
+                m21: self.m31,
+                m31: self.m41,
+                m41: self.m51,
+                m51: self.m61,
+                m12: self.m22,
+                m22: self.m32,
+                m32: self.m42,
+                m42: self.m52,
+                m52: self.m62,
+                m13: self.m23,
+                m23: self.m33,
+                m33: self.m43,
+                m43: self.m53,
+                m53: self.m63,
+                m14: self.m24,
+                m24: self.m34,
+                m34: self.m44,
+                m44: self.m54,
+                m54: self.m64,
+                m15: self.m25,
+                m25: self.m35,
+                m35: self.m45,
+                m45: self.m55,
+                m55: self.m65,
+                m16: self.m26,
+                m26: self.m36,
+                m36: self.m46,
+                m46: self.m56,
+                m56: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix6<T>, first_row: usize, nrows: usize) -> Matrix5x6<T> {
+        if nrows != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix6<T>, rows: Range<usize>) -> Matrix5x6<T> {
+        let Range { start, end } = rows;
+        if end != start + 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    fn select_rows(self: Matrix6<T>, irows: Span<usize>) -> Matrix5x6<T> {
+        if irows.len() != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix6EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix6EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix6EditTrait::row_at(self, *irows[2]);
+        let r3 = Matrix6EditTrait::row_at(self, *irows[3]);
+        let r4 = Matrix6EditTrait::row_at(self, *irows[4]);
+        Matrix5x6 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m41: r3.x,
+            m51: r4.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m42: r3.y,
+            m52: r4.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m43: r3.z,
+            m53: r4.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+            m44: r3.w,
+            m54: r4.w,
+            m15: r0.a,
+            m25: r1.a,
+            m35: r2.a,
+            m45: r3.a,
+            m55: r4.a,
+            m16: r0.b,
+            m26: r1.b,
+            m36: r2.b,
+            m46: r3.b,
+            m56: r4.b,
+        }
+    }
+}
+
+/// The 6 consecutive rows of a `Matrix6` as a `Matrix6`. Upstream: `fixed_rows::<6>`, `rows(i, 6)`,
+/// `rows_range`, `select_rows`.
+pub impl Matrix6FixedRowsMatrix6<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix6<T>, Matrix6<T>> {
+    fn fixed_rows(self: Matrix6<T>, i: usize) -> Matrix6<T> {
+        match i {
+            0 => Matrix6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m64: self.m64,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m55: self.m55,
+                m65: self.m65,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+                m46: self.m46,
+                m56: self.m56,
+                m66: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix6<T>, first_row: usize, nrows: usize) -> Matrix6<T> {
+        if nrows != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix6<T>, rows: Range<usize>) -> Matrix6<T> {
+        let Range { start, end } = rows;
+        if end != start + 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    fn select_rows(self: Matrix6<T>, irows: Span<usize>) -> Matrix6<T> {
+        if irows.len() != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix6EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix6EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix6EditTrait::row_at(self, *irows[2]);
+        let r3 = Matrix6EditTrait::row_at(self, *irows[3]);
+        let r4 = Matrix6EditTrait::row_at(self, *irows[4]);
+        let r5 = Matrix6EditTrait::row_at(self, *irows[5]);
+        Matrix6 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m41: r3.x,
+            m51: r4.x,
+            m61: r5.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m42: r3.y,
+            m52: r4.y,
+            m62: r5.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m43: r3.z,
+            m53: r4.z,
+            m63: r5.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+            m44: r3.w,
+            m54: r4.w,
+            m64: r5.w,
+            m15: r0.a,
+            m25: r1.a,
+            m35: r2.a,
+            m45: r3.a,
+            m55: r4.a,
+            m65: r5.a,
+            m16: r0.b,
+            m26: r1.b,
+            m36: r2.b,
+            m46: r3.b,
+            m56: r4.b,
+            m66: r5.b,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix6` as a `Vector6`. Upstream: `fixed_columns::<1>`,
+/// `columns(j, 1)`, `columns_range`, `select_columns`.
+pub impl Matrix6FixedColumnsVector6<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix6<T>, Vector6<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix6<T>, i: usize) -> Vector6<T> {
+        match i {
+            0 => Vector6 {
+                x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+            },
+            1 => Vector6 {
+                x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+            },
+            2 => Vector6 {
+                x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+            },
+            3 => Vector6 {
+                x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+            },
+            4 => Vector6 {
+                x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+            },
+            5 => Vector6 {
+                x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix6<T>, first_col: usize, ncols: usize) -> Vector6<T> {
+        if ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix6<T>, cols: Range<usize>) -> Vector6<T> {
+        let Range { start, end } = cols;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix6<T>, icols: Span<usize>) -> Vector6<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix6EditTrait::column_at(self, *icols[0]);
+        Vector6 { x: c0.x, y: c0.y, z: c0.z, w: c0.w, a: c0.a, b: c0.b }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix6` as a `Matrix6x2`. Upstream: `fixed_columns::<2>`,
+/// `columns(j, 2)`, `columns_range`, `select_columns`.
+pub impl Matrix6FixedColumnsMatrix6x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix6<T>, Matrix6x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix6<T>, i: usize) -> Matrix6x2<T> {
+        match i {
+            0 => Matrix6x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+            },
+            1 => Matrix6x2 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m51: self.m52,
+                m61: self.m62,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+                m52: self.m53,
+                m62: self.m63,
+            },
+            2 => Matrix6x2 {
+                m11: self.m13,
+                m21: self.m23,
+                m31: self.m33,
+                m41: self.m43,
+                m51: self.m53,
+                m61: self.m63,
+                m12: self.m14,
+                m22: self.m24,
+                m32: self.m34,
+                m42: self.m44,
+                m52: self.m54,
+                m62: self.m64,
+            },
+            3 => Matrix6x2 {
+                m11: self.m14,
+                m21: self.m24,
+                m31: self.m34,
+                m41: self.m44,
+                m51: self.m54,
+                m61: self.m64,
+                m12: self.m15,
+                m22: self.m25,
+                m32: self.m35,
+                m42: self.m45,
+                m52: self.m55,
+                m62: self.m65,
+            },
+            4 => Matrix6x2 {
+                m11: self.m15,
+                m21: self.m25,
+                m31: self.m35,
+                m41: self.m45,
+                m51: self.m55,
+                m61: self.m65,
+                m12: self.m16,
+                m22: self.m26,
+                m32: self.m36,
+                m42: self.m46,
+                m52: self.m56,
+                m62: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix6<T>, first_col: usize, ncols: usize) -> Matrix6x2<T> {
+        if ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix6<T>, cols: Range<usize>) -> Matrix6x2<T> {
+        let Range { start, end } = cols;
+        if end != start + 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix6<T>, icols: Span<usize>) -> Matrix6x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix6EditTrait::column_at(self, *icols[1]);
+        Matrix6x2 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m51: c0.a,
+            m61: c0.b,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m52: c1.a,
+            m62: c1.b,
+        }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix6` as a `Matrix6x3`. Upstream: `fixed_columns::<3>`,
+/// `columns(j, 3)`, `columns_range`, `select_columns`.
+pub impl Matrix6FixedColumnsMatrix6x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix6<T>, Matrix6x3<T>> {
+    fn fixed_columns(self: Matrix6<T>, i: usize) -> Matrix6x3<T> {
+        match i {
+            0 => Matrix6x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+            },
+            1 => Matrix6x3 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m51: self.m52,
+                m61: self.m62,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+                m52: self.m53,
+                m62: self.m63,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+                m43: self.m44,
+                m53: self.m54,
+                m63: self.m64,
+            },
+            2 => Matrix6x3 {
+                m11: self.m13,
+                m21: self.m23,
+                m31: self.m33,
+                m41: self.m43,
+                m51: self.m53,
+                m61: self.m63,
+                m12: self.m14,
+                m22: self.m24,
+                m32: self.m34,
+                m42: self.m44,
+                m52: self.m54,
+                m62: self.m64,
+                m13: self.m15,
+                m23: self.m25,
+                m33: self.m35,
+                m43: self.m45,
+                m53: self.m55,
+                m63: self.m65,
+            },
+            3 => Matrix6x3 {
+                m11: self.m14,
+                m21: self.m24,
+                m31: self.m34,
+                m41: self.m44,
+                m51: self.m54,
+                m61: self.m64,
+                m12: self.m15,
+                m22: self.m25,
+                m32: self.m35,
+                m42: self.m45,
+                m52: self.m55,
+                m62: self.m65,
+                m13: self.m16,
+                m23: self.m26,
+                m33: self.m36,
+                m43: self.m46,
+                m53: self.m56,
+                m63: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix6<T>, first_col: usize, ncols: usize) -> Matrix6x3<T> {
+        if ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix6<T>, cols: Range<usize>) -> Matrix6x3<T> {
+        let Range { start, end } = cols;
+        if end != start + 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    fn select_columns(self: Matrix6<T>, icols: Span<usize>) -> Matrix6x3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix6EditTrait::column_at(self, *icols[2]);
+        Matrix6x3 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m51: c0.a,
+            m61: c0.b,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m52: c1.a,
+            m62: c1.b,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m43: c2.w,
+            m53: c2.a,
+            m63: c2.b,
+        }
+    }
+}
+
+/// The 4 consecutive columns of a `Matrix6` as a `Matrix6x4`. Upstream: `fixed_columns::<4>`,
+/// `columns(j, 4)`, `columns_range`, `select_columns`.
+pub impl Matrix6FixedColumnsMatrix6x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix6<T>, Matrix6x4<T>> {
+    fn fixed_columns(self: Matrix6<T>, i: usize) -> Matrix6x4<T> {
+        match i {
+            0 => Matrix6x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m64: self.m64,
+            },
+            1 => Matrix6x4 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m51: self.m52,
+                m61: self.m62,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+                m52: self.m53,
+                m62: self.m63,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+                m43: self.m44,
+                m53: self.m54,
+                m63: self.m64,
+                m14: self.m15,
+                m24: self.m25,
+                m34: self.m35,
+                m44: self.m45,
+                m54: self.m55,
+                m64: self.m65,
+            },
+            2 => Matrix6x4 {
+                m11: self.m13,
+                m21: self.m23,
+                m31: self.m33,
+                m41: self.m43,
+                m51: self.m53,
+                m61: self.m63,
+                m12: self.m14,
+                m22: self.m24,
+                m32: self.m34,
+                m42: self.m44,
+                m52: self.m54,
+                m62: self.m64,
+                m13: self.m15,
+                m23: self.m25,
+                m33: self.m35,
+                m43: self.m45,
+                m53: self.m55,
+                m63: self.m65,
+                m14: self.m16,
+                m24: self.m26,
+                m34: self.m36,
+                m44: self.m46,
+                m54: self.m56,
+                m64: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix6<T>, first_col: usize, ncols: usize) -> Matrix6x4<T> {
+        if ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix6<T>, cols: Range<usize>) -> Matrix6x4<T> {
+        let Range { start, end } = cols;
+        if end != start + 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    fn select_columns(self: Matrix6<T>, icols: Span<usize>) -> Matrix6x4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix6EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix6EditTrait::column_at(self, *icols[3]);
+        Matrix6x4 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m51: c0.a,
+            m61: c0.b,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m52: c1.a,
+            m62: c1.b,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m43: c2.w,
+            m53: c2.a,
+            m63: c2.b,
+            m14: c3.x,
+            m24: c3.y,
+            m34: c3.z,
+            m44: c3.w,
+            m54: c3.a,
+            m64: c3.b,
+        }
+    }
+}
+
+/// The 5 consecutive columns of a `Matrix6` as a `Matrix6x5`. Upstream: `fixed_columns::<5>`,
+/// `columns(j, 5)`, `columns_range`, `select_columns`.
+pub impl Matrix6FixedColumnsMatrix6x5<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix6<T>, Matrix6x5<T>> {
+    fn fixed_columns(self: Matrix6<T>, i: usize) -> Matrix6x5<T> {
+        match i {
+            0 => Matrix6x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m64: self.m64,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m55: self.m55,
+                m65: self.m65,
+            },
+            1 => Matrix6x5 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m51: self.m52,
+                m61: self.m62,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+                m52: self.m53,
+                m62: self.m63,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+                m43: self.m44,
+                m53: self.m54,
+                m63: self.m64,
+                m14: self.m15,
+                m24: self.m25,
+                m34: self.m35,
+                m44: self.m45,
+                m54: self.m55,
+                m64: self.m65,
+                m15: self.m16,
+                m25: self.m26,
+                m35: self.m36,
+                m45: self.m46,
+                m55: self.m56,
+                m65: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix6<T>, first_col: usize, ncols: usize) -> Matrix6x5<T> {
+        if ncols != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix6<T>, cols: Range<usize>) -> Matrix6x5<T> {
+        let Range { start, end } = cols;
+        if end != start + 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    fn select_columns(self: Matrix6<T>, icols: Span<usize>) -> Matrix6x5<T> {
+        if icols.len() != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix6EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix6EditTrait::column_at(self, *icols[3]);
+        let c4 = Matrix6EditTrait::column_at(self, *icols[4]);
+        Matrix6x5 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m51: c0.a,
+            m61: c0.b,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m52: c1.a,
+            m62: c1.b,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m43: c2.w,
+            m53: c2.a,
+            m63: c2.b,
+            m14: c3.x,
+            m24: c3.y,
+            m34: c3.z,
+            m44: c3.w,
+            m54: c3.a,
+            m64: c3.b,
+            m15: c4.x,
+            m25: c4.y,
+            m35: c4.z,
+            m45: c4.w,
+            m55: c4.a,
+            m65: c4.b,
+        }
+    }
+}
+
+/// The 6 consecutive columns of a `Matrix6` as a `Matrix6`. Upstream: `fixed_columns::<6>`,
+/// `columns(j, 6)`, `columns_range`, `select_columns`.
+pub impl Matrix6FixedColumnsMatrix6<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix6<T>, Matrix6<T>> {
+    fn fixed_columns(self: Matrix6<T>, i: usize) -> Matrix6<T> {
+        match i {
+            0 => Matrix6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m51: self.m51,
+                m61: self.m61,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m52: self.m52,
+                m62: self.m62,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m53: self.m53,
+                m63: self.m63,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+                m54: self.m54,
+                m64: self.m64,
+                m15: self.m15,
+                m25: self.m25,
+                m35: self.m35,
+                m45: self.m45,
+                m55: self.m55,
+                m65: self.m65,
+                m16: self.m16,
+                m26: self.m26,
+                m36: self.m36,
+                m46: self.m46,
+                m56: self.m56,
+                m66: self.m66,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix6<T>, first_col: usize, ncols: usize) -> Matrix6<T> {
+        if ncols != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix6<T>, cols: Range<usize>) -> Matrix6<T> {
+        let Range { start, end } = cols;
+        if end != start + 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    fn select_columns(self: Matrix6<T>, icols: Span<usize>) -> Matrix6<T> {
+        if icols.len() != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix6EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix6EditTrait::column_at(self, *icols[3]);
+        let c4 = Matrix6EditTrait::column_at(self, *icols[4]);
+        let c5 = Matrix6EditTrait::column_at(self, *icols[5]);
+        Matrix6 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m51: c0.a,
+            m61: c0.b,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m52: c1.a,
+            m62: c1.b,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m43: c2.w,
+            m53: c2.a,
+            m63: c2.b,
+            m14: c3.x,
+            m24: c3.y,
+            m34: c3.z,
+            m44: c3.w,
+            m54: c3.a,
+            m64: c3.b,
+            m15: c4.x,
+            m25: c4.y,
+            m35: c4.z,
+            m45: c4.w,
+            m55: c4.a,
+            m65: c4.b,
+            m16: c5.x,
+            m26: c5.y,
+            m36: c5.z,
+            m46: c5.w,
+            m56: c5.a,
+            m66: c5.b,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix6` as a `Matrix1`. Upstream: `fixed_view::<1, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                3 => Matrix1 { x: self.m41 },
+                4 => Matrix1 { x: self.m51 },
+                5 => Matrix1 { x: self.m61 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                3 => Matrix1 { x: self.m42 },
+                4 => Matrix1 { x: self.m52 },
+                5 => Matrix1 { x: self.m62 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                2 => Matrix1 { x: self.m33 },
+                3 => Matrix1 { x: self.m43 },
+                4 => Matrix1 { x: self.m53 },
+                5 => Matrix1 { x: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.m14 },
+                1 => Matrix1 { x: self.m24 },
+                2 => Matrix1 { x: self.m34 },
+                3 => Matrix1 { x: self.m44 },
+                4 => Matrix1 { x: self.m54 },
+                5 => Matrix1 { x: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix1 { x: self.m15 },
+                1 => Matrix1 { x: self.m25 },
+                2 => Matrix1 { x: self.m35 },
+                3 => Matrix1 { x: self.m45 },
+                4 => Matrix1 { x: self.m55 },
+                5 => Matrix1 { x: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Matrix1 { x: self.m16 },
+                1 => Matrix1 { x: self.m26 },
+                2 => Matrix1 { x: self.m36 },
+                3 => Matrix1 { x: self.m46 },
+                4 => Matrix1 { x: self.m56 },
+                5 => Matrix1 { x: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x2 blocks of a `Matrix6` as a `RowVector2`. Upstream: `fixed_view::<1, 2>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewRowVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                3 => RowVector2 { x: self.m41, y: self.m42 },
+                4 => RowVector2 { x: self.m51, y: self.m52 },
+                5 => RowVector2 { x: self.m61, y: self.m62 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                2 => RowVector2 { x: self.m32, y: self.m33 },
+                3 => RowVector2 { x: self.m42, y: self.m43 },
+                4 => RowVector2 { x: self.m52, y: self.m53 },
+                5 => RowVector2 { x: self.m62, y: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.m13, y: self.m14 },
+                1 => RowVector2 { x: self.m23, y: self.m24 },
+                2 => RowVector2 { x: self.m33, y: self.m34 },
+                3 => RowVector2 { x: self.m43, y: self.m44 },
+                4 => RowVector2 { x: self.m53, y: self.m54 },
+                5 => RowVector2 { x: self.m63, y: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => RowVector2 { x: self.m14, y: self.m15 },
+                1 => RowVector2 { x: self.m24, y: self.m25 },
+                2 => RowVector2 { x: self.m34, y: self.m35 },
+                3 => RowVector2 { x: self.m44, y: self.m45 },
+                4 => RowVector2 { x: self.m54, y: self.m55 },
+                5 => RowVector2 { x: self.m64, y: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => RowVector2 { x: self.m15, y: self.m16 },
+                1 => RowVector2 { x: self.m25, y: self.m26 },
+                2 => RowVector2 { x: self.m35, y: self.m36 },
+                3 => RowVector2 { x: self.m45, y: self.m46 },
+                4 => RowVector2 { x: self.m55, y: self.m56 },
+                5 => RowVector2 { x: self.m65, y: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x3 blocks of a `Matrix6` as a `RowVector3`. Upstream: `fixed_view::<1, 3>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewRowVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+                3 => RowVector3 { x: self.m41, y: self.m42, z: self.m43 },
+                4 => RowVector3 { x: self.m51, y: self.m52, z: self.m53 },
+                5 => RowVector3 { x: self.m61, y: self.m62, z: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.m12, y: self.m13, z: self.m14 },
+                1 => RowVector3 { x: self.m22, y: self.m23, z: self.m24 },
+                2 => RowVector3 { x: self.m32, y: self.m33, z: self.m34 },
+                3 => RowVector3 { x: self.m42, y: self.m43, z: self.m44 },
+                4 => RowVector3 { x: self.m52, y: self.m53, z: self.m54 },
+                5 => RowVector3 { x: self.m62, y: self.m63, z: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector3 { x: self.m13, y: self.m14, z: self.m15 },
+                1 => RowVector3 { x: self.m23, y: self.m24, z: self.m25 },
+                2 => RowVector3 { x: self.m33, y: self.m34, z: self.m35 },
+                3 => RowVector3 { x: self.m43, y: self.m44, z: self.m45 },
+                4 => RowVector3 { x: self.m53, y: self.m54, z: self.m55 },
+                5 => RowVector3 { x: self.m63, y: self.m64, z: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => RowVector3 { x: self.m14, y: self.m15, z: self.m16 },
+                1 => RowVector3 { x: self.m24, y: self.m25, z: self.m26 },
+                2 => RowVector3 { x: self.m34, y: self.m35, z: self.m36 },
+                3 => RowVector3 { x: self.m44, y: self.m45, z: self.m46 },
+                4 => RowVector3 { x: self.m54, y: self.m55, z: self.m56 },
+                5 => RowVector3 { x: self.m64, y: self.m65, z: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x4 blocks of a `Matrix6` as a `RowVector4`. Upstream: `fixed_view::<1, 4>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewRowVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+                1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+                2 => RowVector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 },
+                3 => RowVector4 { x: self.m41, y: self.m42, z: self.m43, w: self.m44 },
+                4 => RowVector4 { x: self.m51, y: self.m52, z: self.m53, w: self.m54 },
+                5 => RowVector4 { x: self.m61, y: self.m62, z: self.m63, w: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector4 { x: self.m12, y: self.m13, z: self.m14, w: self.m15 },
+                1 => RowVector4 { x: self.m22, y: self.m23, z: self.m24, w: self.m25 },
+                2 => RowVector4 { x: self.m32, y: self.m33, z: self.m34, w: self.m35 },
+                3 => RowVector4 { x: self.m42, y: self.m43, z: self.m44, w: self.m45 },
+                4 => RowVector4 { x: self.m52, y: self.m53, z: self.m54, w: self.m55 },
+                5 => RowVector4 { x: self.m62, y: self.m63, z: self.m64, w: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector4 { x: self.m13, y: self.m14, z: self.m15, w: self.m16 },
+                1 => RowVector4 { x: self.m23, y: self.m24, z: self.m25, w: self.m26 },
+                2 => RowVector4 { x: self.m33, y: self.m34, z: self.m35, w: self.m36 },
+                3 => RowVector4 { x: self.m43, y: self.m44, z: self.m45, w: self.m46 },
+                4 => RowVector4 { x: self.m53, y: self.m54, z: self.m55, w: self.m56 },
+                5 => RowVector4 { x: self.m63, y: self.m64, z: self.m65, w: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x5 blocks of a `Matrix6` as a `RowVector5`. Upstream: `fixed_view::<1, 5>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewRowVector5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, RowVector5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector5<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector5 { x: self.m11, y: self.m12, z: self.m13, w: self.m14, a: self.m15 },
+                1 => RowVector5 { x: self.m21, y: self.m22, z: self.m23, w: self.m24, a: self.m25 },
+                2 => RowVector5 { x: self.m31, y: self.m32, z: self.m33, w: self.m34, a: self.m35 },
+                3 => RowVector5 { x: self.m41, y: self.m42, z: self.m43, w: self.m44, a: self.m45 },
+                4 => RowVector5 { x: self.m51, y: self.m52, z: self.m53, w: self.m54, a: self.m55 },
+                5 => RowVector5 { x: self.m61, y: self.m62, z: self.m63, w: self.m64, a: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector5 { x: self.m12, y: self.m13, z: self.m14, w: self.m15, a: self.m16 },
+                1 => RowVector5 { x: self.m22, y: self.m23, z: self.m24, w: self.m25, a: self.m26 },
+                2 => RowVector5 { x: self.m32, y: self.m33, z: self.m34, w: self.m35, a: self.m36 },
+                3 => RowVector5 { x: self.m42, y: self.m43, z: self.m44, w: self.m45, a: self.m46 },
+                4 => RowVector5 { x: self.m52, y: self.m53, z: self.m54, w: self.m55, a: self.m56 },
+                5 => RowVector5 { x: self.m62, y: self.m63, z: self.m64, w: self.m65, a: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x6 blocks of a `Matrix6` as a `RowVector6`. Upstream: `fixed_view::<1, 6>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewRowVector6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector6<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector6 {
+                    x: self.m11, y: self.m12, z: self.m13, w: self.m14, a: self.m15, b: self.m16,
+                },
+                1 => RowVector6 {
+                    x: self.m21, y: self.m22, z: self.m23, w: self.m24, a: self.m25, b: self.m26,
+                },
+                2 => RowVector6 {
+                    x: self.m31, y: self.m32, z: self.m33, w: self.m34, a: self.m35, b: self.m36,
+                },
+                3 => RowVector6 {
+                    x: self.m41, y: self.m42, z: self.m43, w: self.m44, a: self.m45, b: self.m46,
+                },
+                4 => RowVector6 {
+                    x: self.m51, y: self.m52, z: self.m53, w: self.m54, a: self.m55, b: self.m56,
+                },
+                5 => RowVector6 {
+                    x: self.m61, y: self.m62, z: self.m63, w: self.m64, a: self.m65, b: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector6<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> RowVector6<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector6<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x1 blocks of a `Matrix6` as a `Vector2`. Upstream: `fixed_view::<2, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                2 => Vector2 { x: self.m31, y: self.m41 },
+                3 => Vector2 { x: self.m41, y: self.m51 },
+                4 => Vector2 { x: self.m51, y: self.m61 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                2 => Vector2 { x: self.m32, y: self.m42 },
+                3 => Vector2 { x: self.m42, y: self.m52 },
+                4 => Vector2 { x: self.m52, y: self.m62 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                1 => Vector2 { x: self.m23, y: self.m33 },
+                2 => Vector2 { x: self.m33, y: self.m43 },
+                3 => Vector2 { x: self.m43, y: self.m53 },
+                4 => Vector2 { x: self.m53, y: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector2 { x: self.m14, y: self.m24 },
+                1 => Vector2 { x: self.m24, y: self.m34 },
+                2 => Vector2 { x: self.m34, y: self.m44 },
+                3 => Vector2 { x: self.m44, y: self.m54 },
+                4 => Vector2 { x: self.m54, y: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Vector2 { x: self.m15, y: self.m25 },
+                1 => Vector2 { x: self.m25, y: self.m35 },
+                2 => Vector2 { x: self.m35, y: self.m45 },
+                3 => Vector2 { x: self.m45, y: self.m55 },
+                4 => Vector2 { x: self.m55, y: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Vector2 { x: self.m16, y: self.m26 },
+                1 => Vector2 { x: self.m26, y: self.m36 },
+                2 => Vector2 { x: self.m36, y: self.m46 },
+                3 => Vector2 { x: self.m46, y: self.m56 },
+                4 => Vector2 { x: self.m56, y: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Vector2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x2 blocks of a `Matrix6` as a `Matrix2`. Upstream: `fixed_view::<2, 2>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                2 => Matrix2 { m11: self.m31, m21: self.m41, m12: self.m32, m22: self.m42 },
+                3 => Matrix2 { m11: self.m41, m21: self.m51, m12: self.m42, m22: self.m52 },
+                4 => Matrix2 { m11: self.m51, m21: self.m61, m12: self.m52, m22: self.m62 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                1 => Matrix2 { m11: self.m22, m21: self.m32, m12: self.m23, m22: self.m33 },
+                2 => Matrix2 { m11: self.m32, m21: self.m42, m12: self.m33, m22: self.m43 },
+                3 => Matrix2 { m11: self.m42, m21: self.m52, m12: self.m43, m22: self.m53 },
+                4 => Matrix2 { m11: self.m52, m21: self.m62, m12: self.m53, m22: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+                1 => Matrix2 { m11: self.m23, m21: self.m33, m12: self.m24, m22: self.m34 },
+                2 => Matrix2 { m11: self.m33, m21: self.m43, m12: self.m34, m22: self.m44 },
+                3 => Matrix2 { m11: self.m43, m21: self.m53, m12: self.m44, m22: self.m54 },
+                4 => Matrix2 { m11: self.m53, m21: self.m63, m12: self.m54, m22: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix2 { m11: self.m14, m21: self.m24, m12: self.m15, m22: self.m25 },
+                1 => Matrix2 { m11: self.m24, m21: self.m34, m12: self.m25, m22: self.m35 },
+                2 => Matrix2 { m11: self.m34, m21: self.m44, m12: self.m35, m22: self.m45 },
+                3 => Matrix2 { m11: self.m44, m21: self.m54, m12: self.m45, m22: self.m55 },
+                4 => Matrix2 { m11: self.m54, m21: self.m64, m12: self.m55, m22: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix2 { m11: self.m15, m21: self.m25, m12: self.m16, m22: self.m26 },
+                1 => Matrix2 { m11: self.m25, m21: self.m35, m12: self.m26, m22: self.m36 },
+                2 => Matrix2 { m11: self.m35, m21: self.m45, m12: self.m36, m22: self.m46 },
+                3 => Matrix2 { m11: self.m45, m21: self.m55, m12: self.m46, m22: self.m56 },
+                4 => Matrix2 { m11: self.m55, m21: self.m65, m12: self.m56, m22: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x3 blocks of a `Matrix6` as a `Matrix2x3`. Upstream: `fixed_view::<2, 3>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix2x3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                },
+                2 => Matrix2x3 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m13: self.m33,
+                    m23: self.m43,
+                },
+                3 => Matrix2x3 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m13: self.m43,
+                    m23: self.m53,
+                },
+                4 => Matrix2x3 {
+                    m11: self.m51,
+                    m21: self.m61,
+                    m12: self.m52,
+                    m22: self.m62,
+                    m13: self.m53,
+                    m23: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m13: self.m24,
+                    m23: self.m34,
+                },
+                2 => Matrix2x3 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m13: self.m34,
+                    m23: self.m44,
+                },
+                3 => Matrix2x3 {
+                    m11: self.m42,
+                    m21: self.m52,
+                    m12: self.m43,
+                    m22: self.m53,
+                    m13: self.m44,
+                    m23: self.m54,
+                },
+                4 => Matrix2x3 {
+                    m11: self.m52,
+                    m21: self.m62,
+                    m12: self.m53,
+                    m22: self.m63,
+                    m13: self.m54,
+                    m23: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m13: self.m15,
+                    m23: self.m25,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m13: self.m25,
+                    m23: self.m35,
+                },
+                2 => Matrix2x3 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m13: self.m35,
+                    m23: self.m45,
+                },
+                3 => Matrix2x3 {
+                    m11: self.m43,
+                    m21: self.m53,
+                    m12: self.m44,
+                    m22: self.m54,
+                    m13: self.m45,
+                    m23: self.m55,
+                },
+                4 => Matrix2x3 {
+                    m11: self.m53,
+                    m21: self.m63,
+                    m12: self.m54,
+                    m22: self.m64,
+                    m13: self.m55,
+                    m23: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m13: self.m16,
+                    m23: self.m26,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m24,
+                    m21: self.m34,
+                    m12: self.m25,
+                    m22: self.m35,
+                    m13: self.m26,
+                    m23: self.m36,
+                },
+                2 => Matrix2x3 {
+                    m11: self.m34,
+                    m21: self.m44,
+                    m12: self.m35,
+                    m22: self.m45,
+                    m13: self.m36,
+                    m23: self.m46,
+                },
+                3 => Matrix2x3 {
+                    m11: self.m44,
+                    m21: self.m54,
+                    m12: self.m45,
+                    m22: self.m55,
+                    m13: self.m46,
+                    m23: self.m56,
+                },
+                4 => Matrix2x3 {
+                    m11: self.m54,
+                    m21: self.m64,
+                    m12: self.m55,
+                    m22: self.m65,
+                    m13: self.m56,
+                    m23: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x4 blocks of a `Matrix6` as a `Matrix2x4`. Upstream: `fixed_view::<2, 4>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix2x4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                },
+                1 => Matrix2x4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m14: self.m24,
+                    m24: self.m34,
+                },
+                2 => Matrix2x4 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m14: self.m34,
+                    m24: self.m44,
+                },
+                3 => Matrix2x4 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m13: self.m43,
+                    m23: self.m53,
+                    m14: self.m44,
+                    m24: self.m54,
+                },
+                4 => Matrix2x4 {
+                    m11: self.m51,
+                    m21: self.m61,
+                    m12: self.m52,
+                    m22: self.m62,
+                    m13: self.m53,
+                    m23: self.m63,
+                    m14: self.m54,
+                    m24: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m14: self.m15,
+                    m24: self.m25,
+                },
+                1 => Matrix2x4 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m14: self.m25,
+                    m24: self.m35,
+                },
+                2 => Matrix2x4 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m14: self.m35,
+                    m24: self.m45,
+                },
+                3 => Matrix2x4 {
+                    m11: self.m42,
+                    m21: self.m52,
+                    m12: self.m43,
+                    m22: self.m53,
+                    m13: self.m44,
+                    m23: self.m54,
+                    m14: self.m45,
+                    m24: self.m55,
+                },
+                4 => Matrix2x4 {
+                    m11: self.m52,
+                    m21: self.m62,
+                    m12: self.m53,
+                    m22: self.m63,
+                    m13: self.m54,
+                    m23: self.m64,
+                    m14: self.m55,
+                    m24: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m14: self.m16,
+                    m24: self.m26,
+                },
+                1 => Matrix2x4 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m13: self.m25,
+                    m23: self.m35,
+                    m14: self.m26,
+                    m24: self.m36,
+                },
+                2 => Matrix2x4 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m13: self.m35,
+                    m23: self.m45,
+                    m14: self.m36,
+                    m24: self.m46,
+                },
+                3 => Matrix2x4 {
+                    m11: self.m43,
+                    m21: self.m53,
+                    m12: self.m44,
+                    m22: self.m54,
+                    m13: self.m45,
+                    m23: self.m55,
+                    m14: self.m46,
+                    m24: self.m56,
+                },
+                4 => Matrix2x4 {
+                    m11: self.m53,
+                    m21: self.m63,
+                    m12: self.m54,
+                    m22: self.m64,
+                    m13: self.m55,
+                    m23: self.m65,
+                    m14: self.m56,
+                    m24: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x5 blocks of a `Matrix6` as a `Matrix2x5`. Upstream: `fixed_view::<2, 5>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix2x5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix2x5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x5<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x5 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m15: self.m15,
+                    m25: self.m25,
+                },
+                1 => Matrix2x5 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m15: self.m25,
+                    m25: self.m35,
+                },
+                2 => Matrix2x5 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m15: self.m35,
+                    m25: self.m45,
+                },
+                3 => Matrix2x5 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m13: self.m43,
+                    m23: self.m53,
+                    m14: self.m44,
+                    m24: self.m54,
+                    m15: self.m45,
+                    m25: self.m55,
+                },
+                4 => Matrix2x5 {
+                    m11: self.m51,
+                    m21: self.m61,
+                    m12: self.m52,
+                    m22: self.m62,
+                    m13: self.m53,
+                    m23: self.m63,
+                    m14: self.m54,
+                    m24: self.m64,
+                    m15: self.m55,
+                    m25: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x5 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m15: self.m16,
+                    m25: self.m26,
+                },
+                1 => Matrix2x5 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m14: self.m25,
+                    m24: self.m35,
+                    m15: self.m26,
+                    m25: self.m36,
+                },
+                2 => Matrix2x5 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m14: self.m35,
+                    m24: self.m45,
+                    m15: self.m36,
+                    m25: self.m46,
+                },
+                3 => Matrix2x5 {
+                    m11: self.m42,
+                    m21: self.m52,
+                    m12: self.m43,
+                    m22: self.m53,
+                    m13: self.m44,
+                    m23: self.m54,
+                    m14: self.m45,
+                    m24: self.m55,
+                    m15: self.m46,
+                    m25: self.m56,
+                },
+                4 => Matrix2x5 {
+                    m11: self.m52,
+                    m21: self.m62,
+                    m12: self.m53,
+                    m22: self.m63,
+                    m13: self.m54,
+                    m23: self.m64,
+                    m14: self.m55,
+                    m24: self.m65,
+                    m15: self.m56,
+                    m25: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x6 blocks of a `Matrix6` as a `Matrix2x6`. Upstream: `fixed_view::<2, 6>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix2x6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix2x6<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x6<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x6 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m16: self.m16,
+                    m26: self.m26,
+                },
+                1 => Matrix2x6 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m15: self.m25,
+                    m25: self.m35,
+                    m16: self.m26,
+                    m26: self.m36,
+                },
+                2 => Matrix2x6 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m15: self.m35,
+                    m25: self.m45,
+                    m16: self.m36,
+                    m26: self.m46,
+                },
+                3 => Matrix2x6 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m13: self.m43,
+                    m23: self.m53,
+                    m14: self.m44,
+                    m24: self.m54,
+                    m15: self.m45,
+                    m25: self.m55,
+                    m16: self.m46,
+                    m26: self.m56,
+                },
+                4 => Matrix2x6 {
+                    m11: self.m51,
+                    m21: self.m61,
+                    m12: self.m52,
+                    m22: self.m62,
+                    m13: self.m53,
+                    m23: self.m63,
+                    m14: self.m54,
+                    m24: self.m64,
+                    m15: self.m55,
+                    m25: self.m65,
+                    m16: self.m56,
+                    m26: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x6<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix2x6<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x6<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x1 blocks of a `Matrix6` as a `Vector3`. Upstream: `fixed_view::<3, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                1 => Vector3 { x: self.m21, y: self.m31, z: self.m41 },
+                2 => Vector3 { x: self.m31, y: self.m41, z: self.m51 },
+                3 => Vector3 { x: self.m41, y: self.m51, z: self.m61 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                1 => Vector3 { x: self.m22, y: self.m32, z: self.m42 },
+                2 => Vector3 { x: self.m32, y: self.m42, z: self.m52 },
+                3 => Vector3 { x: self.m42, y: self.m52, z: self.m62 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+                1 => Vector3 { x: self.m23, y: self.m33, z: self.m43 },
+                2 => Vector3 { x: self.m33, y: self.m43, z: self.m53 },
+                3 => Vector3 { x: self.m43, y: self.m53, z: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector3 { x: self.m14, y: self.m24, z: self.m34 },
+                1 => Vector3 { x: self.m24, y: self.m34, z: self.m44 },
+                2 => Vector3 { x: self.m34, y: self.m44, z: self.m54 },
+                3 => Vector3 { x: self.m44, y: self.m54, z: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Vector3 { x: self.m15, y: self.m25, z: self.m35 },
+                1 => Vector3 { x: self.m25, y: self.m35, z: self.m45 },
+                2 => Vector3 { x: self.m35, y: self.m45, z: self.m55 },
+                3 => Vector3 { x: self.m45, y: self.m55, z: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Vector3 { x: self.m16, y: self.m26, z: self.m36 },
+                1 => Vector3 { x: self.m26, y: self.m36, z: self.m46 },
+                2 => Vector3 { x: self.m36, y: self.m46, z: self.m56 },
+                3 => Vector3 { x: self.m46, y: self.m56, z: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Vector3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x2 blocks of a `Matrix6` as a `Matrix3x2`. Upstream: `fixed_view::<3, 2>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix3x2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                },
+                2 => Matrix3x2 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                },
+                3 => Matrix3x2 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m31: self.m61,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m32: self.m62,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                },
+                2 => Matrix3x2 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                },
+                3 => Matrix3x2 {
+                    m11: self.m42,
+                    m21: self.m52,
+                    m31: self.m62,
+                    m12: self.m43,
+                    m22: self.m53,
+                    m32: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                },
+                2 => Matrix3x2 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m31: self.m53,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m32: self.m54,
+                },
+                3 => Matrix3x2 {
+                    m11: self.m43,
+                    m21: self.m53,
+                    m31: self.m63,
+                    m12: self.m44,
+                    m22: self.m54,
+                    m32: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m24,
+                    m21: self.m34,
+                    m31: self.m44,
+                    m12: self.m25,
+                    m22: self.m35,
+                    m32: self.m45,
+                },
+                2 => Matrix3x2 {
+                    m11: self.m34,
+                    m21: self.m44,
+                    m31: self.m54,
+                    m12: self.m35,
+                    m22: self.m45,
+                    m32: self.m55,
+                },
+                3 => Matrix3x2 {
+                    m11: self.m44,
+                    m21: self.m54,
+                    m31: self.m64,
+                    m12: self.m45,
+                    m22: self.m55,
+                    m32: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m15,
+                    m21: self.m25,
+                    m31: self.m35,
+                    m12: self.m16,
+                    m22: self.m26,
+                    m32: self.m36,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m25,
+                    m21: self.m35,
+                    m31: self.m45,
+                    m12: self.m26,
+                    m22: self.m36,
+                    m32: self.m46,
+                },
+                2 => Matrix3x2 {
+                    m11: self.m35,
+                    m21: self.m45,
+                    m31: self.m55,
+                    m12: self.m36,
+                    m22: self.m46,
+                    m32: self.m56,
+                },
+                3 => Matrix3x2 {
+                    m11: self.m45,
+                    m21: self.m55,
+                    m31: self.m65,
+                    m12: self.m46,
+                    m22: self.m56,
+                    m32: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x3 blocks of a `Matrix6` as a `Matrix3`. Upstream: `fixed_view::<3, 3>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                },
+                1 => Matrix3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                },
+                2 => Matrix3 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                },
+                3 => Matrix3 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m31: self.m61,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m32: self.m62,
+                    m13: self.m43,
+                    m23: self.m53,
+                    m33: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                },
+                1 => Matrix3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                },
+                2 => Matrix3 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m33: self.m54,
+                },
+                3 => Matrix3 {
+                    m11: self.m42,
+                    m21: self.m52,
+                    m31: self.m62,
+                    m12: self.m43,
+                    m22: self.m53,
+                    m32: self.m63,
+                    m13: self.m44,
+                    m23: self.m54,
+                    m33: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix3 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                },
+                1 => Matrix3 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m13: self.m25,
+                    m23: self.m35,
+                    m33: self.m45,
+                },
+                2 => Matrix3 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m31: self.m53,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m32: self.m54,
+                    m13: self.m35,
+                    m23: self.m45,
+                    m33: self.m55,
+                },
+                3 => Matrix3 {
+                    m11: self.m43,
+                    m21: self.m53,
+                    m31: self.m63,
+                    m12: self.m44,
+                    m22: self.m54,
+                    m32: self.m64,
+                    m13: self.m45,
+                    m23: self.m55,
+                    m33: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix3 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                    m13: self.m16,
+                    m23: self.m26,
+                    m33: self.m36,
+                },
+                1 => Matrix3 {
+                    m11: self.m24,
+                    m21: self.m34,
+                    m31: self.m44,
+                    m12: self.m25,
+                    m22: self.m35,
+                    m32: self.m45,
+                    m13: self.m26,
+                    m23: self.m36,
+                    m33: self.m46,
+                },
+                2 => Matrix3 {
+                    m11: self.m34,
+                    m21: self.m44,
+                    m31: self.m54,
+                    m12: self.m35,
+                    m22: self.m45,
+                    m32: self.m55,
+                    m13: self.m36,
+                    m23: self.m46,
+                    m33: self.m56,
+                },
+                3 => Matrix3 {
+                    m11: self.m44,
+                    m21: self.m54,
+                    m31: self.m64,
+                    m12: self.m45,
+                    m22: self.m55,
+                    m32: self.m65,
+                    m13: self.m46,
+                    m23: self.m56,
+                    m33: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x4 blocks of a `Matrix6` as a `Matrix3x4`. Upstream: `fixed_view::<3, 4>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix3x4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                },
+                1 => Matrix3x4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                },
+                2 => Matrix3x4 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m34: self.m54,
+                },
+                3 => Matrix3x4 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m31: self.m61,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m32: self.m62,
+                    m13: self.m43,
+                    m23: self.m53,
+                    m33: self.m63,
+                    m14: self.m44,
+                    m24: self.m54,
+                    m34: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x4 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                },
+                1 => Matrix3x4 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m14: self.m25,
+                    m24: self.m35,
+                    m34: self.m45,
+                },
+                2 => Matrix3x4 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m33: self.m54,
+                    m14: self.m35,
+                    m24: self.m45,
+                    m34: self.m55,
+                },
+                3 => Matrix3x4 {
+                    m11: self.m42,
+                    m21: self.m52,
+                    m31: self.m62,
+                    m12: self.m43,
+                    m22: self.m53,
+                    m32: self.m63,
+                    m13: self.m44,
+                    m23: self.m54,
+                    m33: self.m64,
+                    m14: self.m45,
+                    m24: self.m55,
+                    m34: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix3x4 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                    m14: self.m16,
+                    m24: self.m26,
+                    m34: self.m36,
+                },
+                1 => Matrix3x4 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m13: self.m25,
+                    m23: self.m35,
+                    m33: self.m45,
+                    m14: self.m26,
+                    m24: self.m36,
+                    m34: self.m46,
+                },
+                2 => Matrix3x4 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m31: self.m53,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m32: self.m54,
+                    m13: self.m35,
+                    m23: self.m45,
+                    m33: self.m55,
+                    m14: self.m36,
+                    m24: self.m46,
+                    m34: self.m56,
+                },
+                3 => Matrix3x4 {
+                    m11: self.m43,
+                    m21: self.m53,
+                    m31: self.m63,
+                    m12: self.m44,
+                    m22: self.m54,
+                    m32: self.m64,
+                    m13: self.m45,
+                    m23: self.m55,
+                    m33: self.m65,
+                    m14: self.m46,
+                    m24: self.m56,
+                    m34: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x5 blocks of a `Matrix6` as a `Matrix3x5`. Upstream: `fixed_view::<3, 5>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix3x5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix3x5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x5<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x5 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                },
+                1 => Matrix3x5 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m15: self.m25,
+                    m25: self.m35,
+                    m35: self.m45,
+                },
+                2 => Matrix3x5 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m34: self.m54,
+                    m15: self.m35,
+                    m25: self.m45,
+                    m35: self.m55,
+                },
+                3 => Matrix3x5 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m31: self.m61,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m32: self.m62,
+                    m13: self.m43,
+                    m23: self.m53,
+                    m33: self.m63,
+                    m14: self.m44,
+                    m24: self.m54,
+                    m34: self.m64,
+                    m15: self.m45,
+                    m25: self.m55,
+                    m35: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x5 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                    m15: self.m16,
+                    m25: self.m26,
+                    m35: self.m36,
+                },
+                1 => Matrix3x5 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m14: self.m25,
+                    m24: self.m35,
+                    m34: self.m45,
+                    m15: self.m26,
+                    m25: self.m36,
+                    m35: self.m46,
+                },
+                2 => Matrix3x5 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m33: self.m54,
+                    m14: self.m35,
+                    m24: self.m45,
+                    m34: self.m55,
+                    m15: self.m36,
+                    m25: self.m46,
+                    m35: self.m56,
+                },
+                3 => Matrix3x5 {
+                    m11: self.m42,
+                    m21: self.m52,
+                    m31: self.m62,
+                    m12: self.m43,
+                    m22: self.m53,
+                    m32: self.m63,
+                    m13: self.m44,
+                    m23: self.m54,
+                    m33: self.m64,
+                    m14: self.m45,
+                    m24: self.m55,
+                    m34: self.m65,
+                    m15: self.m46,
+                    m25: self.m56,
+                    m35: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x6 blocks of a `Matrix6` as a `Matrix3x6`. Upstream: `fixed_view::<3, 6>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix3x6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix3x6<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x6<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x6 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                    m16: self.m16,
+                    m26: self.m26,
+                    m36: self.m36,
+                },
+                1 => Matrix3x6 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m15: self.m25,
+                    m25: self.m35,
+                    m35: self.m45,
+                    m16: self.m26,
+                    m26: self.m36,
+                    m36: self.m46,
+                },
+                2 => Matrix3x6 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m34: self.m54,
+                    m15: self.m35,
+                    m25: self.m45,
+                    m35: self.m55,
+                    m16: self.m36,
+                    m26: self.m46,
+                    m36: self.m56,
+                },
+                3 => Matrix3x6 {
+                    m11: self.m41,
+                    m21: self.m51,
+                    m31: self.m61,
+                    m12: self.m42,
+                    m22: self.m52,
+                    m32: self.m62,
+                    m13: self.m43,
+                    m23: self.m53,
+                    m33: self.m63,
+                    m14: self.m44,
+                    m24: self.m54,
+                    m34: self.m64,
+                    m15: self.m45,
+                    m25: self.m55,
+                    m35: self.m65,
+                    m16: self.m46,
+                    m26: self.m56,
+                    m36: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x6<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix3x6<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x6<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 4x1 blocks of a `Matrix6` as a `Vector4`. Upstream: `fixed_view::<4, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Vector4<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 },
+                1 => Vector4 { x: self.m21, y: self.m31, z: self.m41, w: self.m51 },
+                2 => Vector4 { x: self.m31, y: self.m41, z: self.m51, w: self.m61 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 },
+                1 => Vector4 { x: self.m22, y: self.m32, z: self.m42, w: self.m52 },
+                2 => Vector4 { x: self.m32, y: self.m42, z: self.m52, w: self.m62 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 },
+                1 => Vector4 { x: self.m23, y: self.m33, z: self.m43, w: self.m53 },
+                2 => Vector4 { x: self.m33, y: self.m43, z: self.m53, w: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 },
+                1 => Vector4 { x: self.m24, y: self.m34, z: self.m44, w: self.m54 },
+                2 => Vector4 { x: self.m34, y: self.m44, z: self.m54, w: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 },
+                1 => Vector4 { x: self.m25, y: self.m35, z: self.m45, w: self.m55 },
+                2 => Vector4 { x: self.m35, y: self.m45, z: self.m55, w: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Vector4 { x: self.m16, y: self.m26, z: self.m36, w: self.m46 },
+                1 => Vector4 { x: self.m26, y: self.m36, z: self.m46, w: self.m56 },
+                2 => Vector4 { x: self.m36, y: self.m46, z: self.m56, w: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 4 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Vector4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 4x2 blocks of a `Matrix6` as a `Matrix4x2`. Upstream: `fixed_view::<4, 2>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix4x2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                },
+                1 => Matrix4x2 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                },
+                2 => Matrix4x2 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m41: self.m61,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m42: self.m62,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                },
+                1 => Matrix4x2 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                },
+                2 => Matrix4x2 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m41: self.m62,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                    m42: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                },
+                1 => Matrix4x2 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m41: self.m53,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m42: self.m54,
+                },
+                2 => Matrix4x2 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m31: self.m53,
+                    m41: self.m63,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m32: self.m54,
+                    m42: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m41: self.m44,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                    m42: self.m45,
+                },
+                1 => Matrix4x2 {
+                    m11: self.m24,
+                    m21: self.m34,
+                    m31: self.m44,
+                    m41: self.m54,
+                    m12: self.m25,
+                    m22: self.m35,
+                    m32: self.m45,
+                    m42: self.m55,
+                },
+                2 => Matrix4x2 {
+                    m11: self.m34,
+                    m21: self.m44,
+                    m31: self.m54,
+                    m41: self.m64,
+                    m12: self.m35,
+                    m22: self.m45,
+                    m32: self.m55,
+                    m42: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m15,
+                    m21: self.m25,
+                    m31: self.m35,
+                    m41: self.m45,
+                    m12: self.m16,
+                    m22: self.m26,
+                    m32: self.m36,
+                    m42: self.m46,
+                },
+                1 => Matrix4x2 {
+                    m11: self.m25,
+                    m21: self.m35,
+                    m31: self.m45,
+                    m41: self.m55,
+                    m12: self.m26,
+                    m22: self.m36,
+                    m32: self.m46,
+                    m42: self.m56,
+                },
+                2 => Matrix4x2 {
+                    m11: self.m35,
+                    m21: self.m45,
+                    m31: self.m55,
+                    m41: self.m65,
+                    m12: self.m36,
+                    m22: self.m46,
+                    m32: self.m56,
+                    m42: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 4 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 4x3 blocks of a `Matrix6` as a `Matrix4x3`. Upstream: `fixed_view::<4, 3>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix4x3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix4x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                },
+                1 => Matrix4x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                },
+                2 => Matrix4x3 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m41: self.m61,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m42: self.m62,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                    m43: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix4x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                },
+                1 => Matrix4x3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m43: self.m54,
+                },
+                2 => Matrix4x3 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m41: self.m62,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                    m42: self.m63,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m33: self.m54,
+                    m43: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix4x3 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                    m43: self.m45,
+                },
+                1 => Matrix4x3 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m41: self.m53,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m42: self.m54,
+                    m13: self.m25,
+                    m23: self.m35,
+                    m33: self.m45,
+                    m43: self.m55,
+                },
+                2 => Matrix4x3 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m31: self.m53,
+                    m41: self.m63,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m32: self.m54,
+                    m42: self.m64,
+                    m13: self.m35,
+                    m23: self.m45,
+                    m33: self.m55,
+                    m43: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix4x3 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m41: self.m44,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                    m42: self.m45,
+                    m13: self.m16,
+                    m23: self.m26,
+                    m33: self.m36,
+                    m43: self.m46,
+                },
+                1 => Matrix4x3 {
+                    m11: self.m24,
+                    m21: self.m34,
+                    m31: self.m44,
+                    m41: self.m54,
+                    m12: self.m25,
+                    m22: self.m35,
+                    m32: self.m45,
+                    m42: self.m55,
+                    m13: self.m26,
+                    m23: self.m36,
+                    m33: self.m46,
+                    m43: self.m56,
+                },
+                2 => Matrix4x3 {
+                    m11: self.m34,
+                    m21: self.m44,
+                    m31: self.m54,
+                    m41: self.m64,
+                    m12: self.m35,
+                    m22: self.m45,
+                    m32: self.m55,
+                    m42: self.m65,
+                    m13: self.m36,
+                    m23: self.m46,
+                    m33: self.m56,
+                    m43: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 4 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 4x4 blocks of a `Matrix6` as a `Matrix4`. Upstream: `fixed_view::<4, 4>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                },
+                1 => Matrix4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m44: self.m54,
+                },
+                2 => Matrix4 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m41: self.m61,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m42: self.m62,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                    m43: self.m63,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m34: self.m54,
+                    m44: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix4 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                    m44: self.m45,
+                },
+                1 => Matrix4 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m43: self.m54,
+                    m14: self.m25,
+                    m24: self.m35,
+                    m34: self.m45,
+                    m44: self.m55,
+                },
+                2 => Matrix4 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m41: self.m62,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                    m42: self.m63,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m33: self.m54,
+                    m43: self.m64,
+                    m14: self.m35,
+                    m24: self.m45,
+                    m34: self.m55,
+                    m44: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix4 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                    m43: self.m45,
+                    m14: self.m16,
+                    m24: self.m26,
+                    m34: self.m36,
+                    m44: self.m46,
+                },
+                1 => Matrix4 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m41: self.m53,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m42: self.m54,
+                    m13: self.m25,
+                    m23: self.m35,
+                    m33: self.m45,
+                    m43: self.m55,
+                    m14: self.m26,
+                    m24: self.m36,
+                    m34: self.m46,
+                    m44: self.m56,
+                },
+                2 => Matrix4 {
+                    m11: self.m33,
+                    m21: self.m43,
+                    m31: self.m53,
+                    m41: self.m63,
+                    m12: self.m34,
+                    m22: self.m44,
+                    m32: self.m54,
+                    m42: self.m64,
+                    m13: self.m35,
+                    m23: self.m45,
+                    m33: self.m55,
+                    m43: self.m65,
+                    m14: self.m36,
+                    m24: self.m46,
+                    m34: self.m56,
+                    m44: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 4 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 4x5 blocks of a `Matrix6` as a `Matrix4x5`. Upstream: `fixed_view::<4, 5>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix4x5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix4x5<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x5<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x5 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                    m45: self.m45,
+                },
+                1 => Matrix4x5 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m44: self.m54,
+                    m15: self.m25,
+                    m25: self.m35,
+                    m35: self.m45,
+                    m45: self.m55,
+                },
+                2 => Matrix4x5 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m41: self.m61,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m42: self.m62,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                    m43: self.m63,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m34: self.m54,
+                    m44: self.m64,
+                    m15: self.m35,
+                    m25: self.m45,
+                    m35: self.m55,
+                    m45: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix4x5 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                    m44: self.m45,
+                    m15: self.m16,
+                    m25: self.m26,
+                    m35: self.m36,
+                    m45: self.m46,
+                },
+                1 => Matrix4x5 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m43: self.m54,
+                    m14: self.m25,
+                    m24: self.m35,
+                    m34: self.m45,
+                    m44: self.m55,
+                    m15: self.m26,
+                    m25: self.m36,
+                    m35: self.m46,
+                    m45: self.m56,
+                },
+                2 => Matrix4x5 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m31: self.m52,
+                    m41: self.m62,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m32: self.m53,
+                    m42: self.m63,
+                    m13: self.m34,
+                    m23: self.m44,
+                    m33: self.m54,
+                    m43: self.m64,
+                    m14: self.m35,
+                    m24: self.m45,
+                    m34: self.m55,
+                    m44: self.m65,
+                    m15: self.m36,
+                    m25: self.m46,
+                    m35: self.m56,
+                    m45: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 4 || ncols != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 4x6 blocks of a `Matrix6` as a `Matrix4x6`. Upstream: `fixed_view::<4, 6>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix4x6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix4x6<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x6<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x6 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                    m45: self.m45,
+                    m16: self.m16,
+                    m26: self.m26,
+                    m36: self.m36,
+                    m46: self.m46,
+                },
+                1 => Matrix4x6 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m44: self.m54,
+                    m15: self.m25,
+                    m25: self.m35,
+                    m35: self.m45,
+                    m45: self.m55,
+                    m16: self.m26,
+                    m26: self.m36,
+                    m36: self.m46,
+                    m46: self.m56,
+                },
+                2 => Matrix4x6 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m31: self.m51,
+                    m41: self.m61,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m32: self.m52,
+                    m42: self.m62,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m33: self.m53,
+                    m43: self.m63,
+                    m14: self.m34,
+                    m24: self.m44,
+                    m34: self.m54,
+                    m44: self.m64,
+                    m15: self.m35,
+                    m25: self.m45,
+                    m35: self.m55,
+                    m45: self.m65,
+                    m16: self.m36,
+                    m26: self.m46,
+                    m36: self.m56,
+                    m46: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x6<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 4 || ncols != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix4x6<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix4x6<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 5x1 blocks of a `Matrix6` as a `Vector5`. Upstream: `fixed_view::<5, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewVector5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Vector5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Vector5<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 },
+                1 => Vector5 { x: self.m21, y: self.m31, z: self.m41, w: self.m51, a: self.m61 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 },
+                1 => Vector5 { x: self.m22, y: self.m32, z: self.m42, w: self.m52, a: self.m62 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 },
+                1 => Vector5 { x: self.m23, y: self.m33, z: self.m43, w: self.m53, a: self.m63 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 },
+                1 => Vector5 { x: self.m24, y: self.m34, z: self.m44, w: self.m54, a: self.m64 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 },
+                1 => Vector5 { x: self.m25, y: self.m35, z: self.m45, w: self.m55, a: self.m65 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Vector5 { x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56 },
+                1 => Vector5 { x: self.m26, y: self.m36, z: self.m46, w: self.m56, a: self.m66 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 5 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Vector5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 5x2 blocks of a `Matrix6` as a `Matrix5x2`. Upstream: `fixed_view::<5, 2>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix5x2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix5x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix5x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                },
+                1 => Matrix5x2 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m51: self.m61,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m52: self.m62,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix5x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                },
+                1 => Matrix5x2 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m51: self.m62,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                    m52: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix5x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m51: self.m53,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m52: self.m54,
+                },
+                1 => Matrix5x2 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m41: self.m53,
+                    m51: self.m63,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m42: self.m54,
+                    m52: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix5x2 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m41: self.m44,
+                    m51: self.m54,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                    m42: self.m45,
+                    m52: self.m55,
+                },
+                1 => Matrix5x2 {
+                    m11: self.m24,
+                    m21: self.m34,
+                    m31: self.m44,
+                    m41: self.m54,
+                    m51: self.m64,
+                    m12: self.m25,
+                    m22: self.m35,
+                    m32: self.m45,
+                    m42: self.m55,
+                    m52: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix5x2 {
+                    m11: self.m15,
+                    m21: self.m25,
+                    m31: self.m35,
+                    m41: self.m45,
+                    m51: self.m55,
+                    m12: self.m16,
+                    m22: self.m26,
+                    m32: self.m36,
+                    m42: self.m46,
+                    m52: self.m56,
+                },
+                1 => Matrix5x2 {
+                    m11: self.m25,
+                    m21: self.m35,
+                    m31: self.m45,
+                    m41: self.m55,
+                    m51: self.m65,
+                    m12: self.m26,
+                    m22: self.m36,
+                    m32: self.m46,
+                    m42: self.m56,
+                    m52: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 5 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 5x3 blocks of a `Matrix6` as a `Matrix5x3`. Upstream: `fixed_view::<5, 3>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix5x3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix5x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix5x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                },
+                1 => Matrix5x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m51: self.m61,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m52: self.m62,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                    m53: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix5x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m53: self.m54,
+                },
+                1 => Matrix5x3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m51: self.m62,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                    m52: self.m63,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m43: self.m54,
+                    m53: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix5x3 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m51: self.m53,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m52: self.m54,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                    m43: self.m45,
+                    m53: self.m55,
+                },
+                1 => Matrix5x3 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m41: self.m53,
+                    m51: self.m63,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m42: self.m54,
+                    m52: self.m64,
+                    m13: self.m25,
+                    m23: self.m35,
+                    m33: self.m45,
+                    m43: self.m55,
+                    m53: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix5x3 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m41: self.m44,
+                    m51: self.m54,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                    m42: self.m45,
+                    m52: self.m55,
+                    m13: self.m16,
+                    m23: self.m26,
+                    m33: self.m36,
+                    m43: self.m46,
+                    m53: self.m56,
+                },
+                1 => Matrix5x3 {
+                    m11: self.m24,
+                    m21: self.m34,
+                    m31: self.m44,
+                    m41: self.m54,
+                    m51: self.m64,
+                    m12: self.m25,
+                    m22: self.m35,
+                    m32: self.m45,
+                    m42: self.m55,
+                    m52: self.m65,
+                    m13: self.m26,
+                    m23: self.m36,
+                    m33: self.m46,
+                    m43: self.m56,
+                    m53: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 5 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 5x4 blocks of a `Matrix6` as a `Matrix5x4`. Upstream: `fixed_view::<5, 4>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix5x4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix5x4<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix5x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m54: self.m54,
+                },
+                1 => Matrix5x4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m51: self.m61,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m52: self.m62,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                    m53: self.m63,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m44: self.m54,
+                    m54: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix5x4 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m53: self.m54,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                    m44: self.m45,
+                    m54: self.m55,
+                },
+                1 => Matrix5x4 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m51: self.m62,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                    m52: self.m63,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m43: self.m54,
+                    m53: self.m64,
+                    m14: self.m25,
+                    m24: self.m35,
+                    m34: self.m45,
+                    m44: self.m55,
+                    m54: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix5x4 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m51: self.m53,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m52: self.m54,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                    m43: self.m45,
+                    m53: self.m55,
+                    m14: self.m16,
+                    m24: self.m26,
+                    m34: self.m36,
+                    m44: self.m46,
+                    m54: self.m56,
+                },
+                1 => Matrix5x4 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m41: self.m53,
+                    m51: self.m63,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                    m42: self.m54,
+                    m52: self.m64,
+                    m13: self.m25,
+                    m23: self.m35,
+                    m33: self.m45,
+                    m43: self.m55,
+                    m53: self.m65,
+                    m14: self.m26,
+                    m24: self.m36,
+                    m34: self.m46,
+                    m44: self.m56,
+                    m54: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 5 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 5x5 blocks of a `Matrix6` as a `Matrix5`. Upstream: `fixed_view::<5, 5>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix5<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix5 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m54: self.m54,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                    m45: self.m45,
+                    m55: self.m55,
+                },
+                1 => Matrix5 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m51: self.m61,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m52: self.m62,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                    m53: self.m63,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m44: self.m54,
+                    m54: self.m64,
+                    m15: self.m25,
+                    m25: self.m35,
+                    m35: self.m45,
+                    m45: self.m55,
+                    m55: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix5 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m53: self.m54,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                    m44: self.m45,
+                    m54: self.m55,
+                    m15: self.m16,
+                    m25: self.m26,
+                    m35: self.m36,
+                    m45: self.m46,
+                    m55: self.m56,
+                },
+                1 => Matrix5 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m41: self.m52,
+                    m51: self.m62,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m42: self.m53,
+                    m52: self.m63,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                    m43: self.m54,
+                    m53: self.m64,
+                    m14: self.m25,
+                    m24: self.m35,
+                    m34: self.m45,
+                    m44: self.m55,
+                    m54: self.m65,
+                    m15: self.m26,
+                    m25: self.m36,
+                    m35: self.m46,
+                    m45: self.m56,
+                    m55: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 5 || ncols != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 5x6 blocks of a `Matrix6` as a `Matrix5x6`. Upstream: `fixed_view::<5, 6>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix5x6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix5x6<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x6<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix5x6 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m54: self.m54,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                    m45: self.m45,
+                    m55: self.m55,
+                    m16: self.m16,
+                    m26: self.m26,
+                    m36: self.m36,
+                    m46: self.m46,
+                    m56: self.m56,
+                },
+                1 => Matrix5x6 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m41: self.m51,
+                    m51: self.m61,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m42: self.m52,
+                    m52: self.m62,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m43: self.m53,
+                    m53: self.m63,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                    m44: self.m54,
+                    m54: self.m64,
+                    m15: self.m25,
+                    m25: self.m35,
+                    m35: self.m45,
+                    m45: self.m55,
+                    m55: self.m65,
+                    m16: self.m26,
+                    m26: self.m36,
+                    m36: self.m46,
+                    m46: self.m56,
+                    m56: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x6<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 5 || ncols != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix5x6<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix5x6<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 6x1 blocks of a `Matrix6` as a `Vector6`. Upstream: `fixed_view::<6, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewVector6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Vector6<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Vector6<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector6 {
+                    x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector6 {
+                    x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector6 {
+                    x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector6 {
+                    x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Vector6 {
+                    x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Vector6 {
+                    x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector6<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 6 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Vector6<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Vector6<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 6x2 blocks of a `Matrix6` as a `Matrix6x2`. Upstream: `fixed_view::<6, 2>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix6x2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix6x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix6x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m61: self.m61,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m62: self.m62,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix6x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m61: self.m62,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                    m62: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix6x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m51: self.m53,
+                    m61: self.m63,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m52: self.m54,
+                    m62: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix6x2 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m41: self.m44,
+                    m51: self.m54,
+                    m61: self.m64,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                    m42: self.m45,
+                    m52: self.m55,
+                    m62: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix6x2 {
+                    m11: self.m15,
+                    m21: self.m25,
+                    m31: self.m35,
+                    m41: self.m45,
+                    m51: self.m55,
+                    m61: self.m65,
+                    m12: self.m16,
+                    m22: self.m26,
+                    m32: self.m36,
+                    m42: self.m46,
+                    m52: self.m56,
+                    m62: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 6 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 6x3 blocks of a `Matrix6` as a `Matrix6x3`. Upstream: `fixed_view::<6, 3>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix6x3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix6x3<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix6x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m61: self.m61,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m62: self.m62,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                    m63: self.m63,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix6x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m61: self.m62,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                    m62: self.m63,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m53: self.m54,
+                    m63: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix6x3 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m51: self.m53,
+                    m61: self.m63,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m52: self.m54,
+                    m62: self.m64,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                    m43: self.m45,
+                    m53: self.m55,
+                    m63: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix6x3 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m31: self.m34,
+                    m41: self.m44,
+                    m51: self.m54,
+                    m61: self.m64,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m32: self.m35,
+                    m42: self.m45,
+                    m52: self.m55,
+                    m62: self.m65,
+                    m13: self.m16,
+                    m23: self.m26,
+                    m33: self.m36,
+                    m43: self.m46,
+                    m53: self.m56,
+                    m63: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 6 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 6x4 blocks of a `Matrix6` as a `Matrix6x4`. Upstream: `fixed_view::<6, 4>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix6x4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix6x4<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix6x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m61: self.m61,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m62: self.m62,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                    m63: self.m63,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m54: self.m54,
+                    m64: self.m64,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix6x4 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m61: self.m62,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                    m62: self.m63,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m53: self.m54,
+                    m63: self.m64,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                    m44: self.m45,
+                    m54: self.m55,
+                    m64: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix6x4 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m51: self.m53,
+                    m61: self.m63,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                    m52: self.m54,
+                    m62: self.m64,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m33: self.m35,
+                    m43: self.m45,
+                    m53: self.m55,
+                    m63: self.m65,
+                    m14: self.m16,
+                    m24: self.m26,
+                    m34: self.m36,
+                    m44: self.m46,
+                    m54: self.m56,
+                    m64: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 6 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 6x5 blocks of a `Matrix6` as a `Matrix6x5`. Upstream: `fixed_view::<6, 5>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix6x5<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix6x5<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x5<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix6x5 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m61: self.m61,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m62: self.m62,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                    m63: self.m63,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m54: self.m54,
+                    m64: self.m64,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                    m45: self.m45,
+                    m55: self.m55,
+                    m65: self.m65,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix6x5 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m51: self.m52,
+                    m61: self.m62,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m52: self.m53,
+                    m62: self.m63,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                    m53: self.m54,
+                    m63: self.m64,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m34: self.m35,
+                    m44: self.m45,
+                    m54: self.m55,
+                    m64: self.m65,
+                    m15: self.m16,
+                    m25: self.m26,
+                    m35: self.m36,
+                    m45: self.m46,
+                    m55: self.m56,
+                    m65: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x5<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 6 || ncols != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6x5<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6x5<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 6x6 blocks of a `Matrix6` as a `Matrix6`. Upstream: `fixed_view::<6, 6>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix6FixedViewMatrix6<T, +Copy<T>, +Drop<T>> of FixedView<Matrix6<T>, Matrix6<T>> {
+    fn fixed_view(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix6 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m51: self.m51,
+                    m61: self.m61,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m52: self.m52,
+                    m62: self.m62,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m53: self.m53,
+                    m63: self.m63,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                    m54: self.m54,
+                    m64: self.m64,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m35: self.m35,
+                    m45: self.m45,
+                    m55: self.m55,
+                    m65: self.m65,
+                    m16: self.m16,
+                    m26: self.m26,
+                    m36: self.m36,
+                    m46: self.m46,
+                    m56: self.m56,
+                    m66: self.m66,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 6 || ncols != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix6<T>, irow: usize, icol: usize) -> Matrix6<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix6<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix6<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The first 1 components of a row of a `Matrix6` as a `Matrix1`. Upstream: `row_part` (`n = 1`).
+pub impl Matrix6RowPartMatrix1<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix6<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 2 components of a row of a `Matrix6` as a `RowVector2`. Upstream: `row_part` (`n =
+/// 2`).
+pub impl Matrix6RowPartRowVector2<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix6<T>, i: usize, n: usize) -> RowVector2<T> {
+        if n != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 3 components of a row of a `Matrix6` as a `RowVector3`. Upstream: `row_part` (`n =
+/// 3`).
+pub impl Matrix6RowPartRowVector3<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix6<T>, i: usize, n: usize) -> RowVector3<T> {
+        if n != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 4 components of a row of a `Matrix6` as a `RowVector4`. Upstream: `row_part` (`n =
+/// 4`).
+pub impl Matrix6RowPartRowVector4<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix6<T>, i: usize, n: usize) -> RowVector4<T> {
+        if n != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 5 components of a row of a `Matrix6` as a `RowVector5`. Upstream: `row_part` (`n =
+/// 5`).
+pub impl Matrix6RowPartRowVector5<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6<T>, RowVector5<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix6<T>, i: usize, n: usize) -> RowVector5<T> {
+        if n != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 6 components of a row of a `Matrix6` as a `RowVector6`. Upstream: `row_part` (`n =
+/// 6`).
+pub impl Matrix6RowPartRowVector6<T, +Copy<T>, +Drop<T>> of RowPart<Matrix6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix6<T>, i: usize, n: usize) -> RowVector6<T> {
+        if n != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 1 components of a column of a `Matrix6` as a `Matrix1`. Upstream: `column_part` (`n =
+/// 1`).
+pub impl Matrix6ColumnPartMatrix1<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix6<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 2 components of a column of a `Matrix6` as a `Vector2`. Upstream: `column_part` (`n =
+/// 2`).
+pub impl Matrix6ColumnPartVector2<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6<T>, Vector2<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix6<T>, i: usize, n: usize) -> Vector2<T> {
+        if n != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 3 components of a column of a `Matrix6` as a `Vector3`. Upstream: `column_part` (`n =
+/// 3`).
+pub impl Matrix6ColumnPartVector3<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6<T>, Vector3<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix6<T>, i: usize, n: usize) -> Vector3<T> {
+        if n != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 4 components of a column of a `Matrix6` as a `Vector4`. Upstream: `column_part` (`n =
+/// 4`).
+pub impl Matrix6ColumnPartVector4<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6<T>, Vector4<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix6<T>, i: usize, n: usize) -> Vector4<T> {
+        if n != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 5 components of a column of a `Matrix6` as a `Vector5`. Upstream: `column_part` (`n =
+/// 5`).
+pub impl Matrix6ColumnPartVector5<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6<T>, Vector5<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix6<T>, i: usize, n: usize) -> Vector5<T> {
+        if n != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 6 components of a column of a `Matrix6` as a `Vector6`. Upstream: `column_part` (`n =
+/// 6`).
+pub impl Matrix6ColumnPartVector6<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix6<T>, Vector6<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix6<T>, i: usize, n: usize) -> Vector6<T> {
+        if n != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The Kronecker product of a `Matrix6` and a `Matrix1`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix6KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix6<T>, Matrix1<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Matrix6<T>, rhs: Matrix1<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m41: self.m41 * rhs.x,
+            m51: self.m51 * rhs.x,
+            m61: self.m61 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+            m42: self.m42 * rhs.x,
+            m52: self.m52 * rhs.x,
+            m62: self.m62 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m33: self.m33 * rhs.x,
+            m43: self.m43 * rhs.x,
+            m53: self.m53 * rhs.x,
+            m63: self.m63 * rhs.x,
+            m14: self.m14 * rhs.x,
+            m24: self.m24 * rhs.x,
+            m34: self.m34 * rhs.x,
+            m44: self.m44 * rhs.x,
+            m54: self.m54 * rhs.x,
+            m64: self.m64 * rhs.x,
+            m15: self.m15 * rhs.x,
+            m25: self.m25 * rhs.x,
+            m35: self.m35 * rhs.x,
+            m45: self.m45 * rhs.x,
+            m55: self.m55 * rhs.x,
+            m65: self.m65 * rhs.x,
+            m16: self.m16 * rhs.x,
+            m26: self.m26 * rhs.x,
+            m36: self.m36 * rhs.x,
+            m46: self.m46 * rhs.x,
+            m56: self.m56 * rhs.x,
+            m66: self.m66 * rhs.x,
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix6PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix6<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix6<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: self.m41,
+            m51: self.m51,
+            m61: self.m61,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: self.m42,
+            m52: self.m52,
+            m62: self.m62,
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m43: self.m43,
+            m53: self.m53,
+            m63: self.m63,
+            m14: self.m14,
+            m24: self.m24,
+            m34: self.m34,
+            m44: self.m44,
+            m54: self.m54,
+            m64: self.m64,
+            m15: self.m15,
+            m25: self.m25,
+            m35: self.m35,
+            m45: self.m45,
+            m55: self.m55,
+            m65: self.m65,
+            m16: self.m16,
+            m26: self.m26,
+            m36: self.m36,
+            m46: self.m46,
+            m56: self.m56,
+            m66: self.m66,
+        }
+    }
+}
+
+/// The top-left `Matrix6` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix6CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix6<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: m.m11,
+            m21: m.m21,
+            m31: m.m31,
+            m41: m.m41,
+            m51: m.m51,
+            m61: m.m61,
+            m12: m.m12,
+            m22: m.m22,
+            m32: m.m32,
+            m42: m.m42,
+            m52: m.m52,
+            m62: m.m62,
+            m13: m.m13,
+            m23: m.m23,
+            m33: m.m33,
+            m43: m.m43,
+            m53: m.m53,
+            m63: m.m63,
+            m14: m.m14,
+            m24: m.m24,
+            m34: m.m34,
+            m44: m.m44,
+            m54: m.m54,
+            m64: m.m64,
+            m15: m.m15,
+            m25: m.m25,
+            m35: m.m35,
+            m45: m.m45,
+            m55: m.m55,
+            m65: m.m65,
+            m16: m.m16,
+            m26: m.m26,
+            m36: m.m36,
+            m46: m.m46,
+            m56: m.m56,
+            m66: m.m66,
+        }
+    }
+
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (6, 6)
     }
 }

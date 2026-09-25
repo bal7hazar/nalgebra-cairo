@@ -9,25 +9,38 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use core::num::traits::Bounded;
-use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, Range, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
+use super::matrix1::Matrix1;
+use super::matrix2::Matrix2;
+use super::matrix2x3::Matrix2x3;
+use super::matrix2x4::Matrix2x4;
 use super::matrix3::Matrix3;
 use super::matrix3x2::Matrix3x2;
 use super::matrix3x5::Matrix3x5;
 use super::matrix3x6::Matrix3x6;
-use super::matrix4::Matrix4;
+use super::matrix4::{Matrix4, Matrix4Trait};
 use super::matrix4x2::Matrix4x2;
 use super::matrix4x3::Matrix4x3;
 use super::matrix4x5::Matrix4x5;
 use super::matrix4x6::Matrix4x6;
+use super::matrix6::Matrix6;
+use super::matrix6x4::Matrix6x4;
 use super::matrix_index::MatrixIndex;
+use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::matrix_view::{
+    ColumnPart, CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, RowPart,
+};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
+use super::row_vector2::RowVector2;
+use super::row_vector3::RowVector3;
 use super::row_vector4::RowVector4;
+use super::vector2::Vector2;
 use super::vector3::Vector3;
 use super::vector4::Vector4;
 
@@ -2085,6 +2098,412 @@ pub impl Matrix3x4Impl<
     ) -> T {
         Nm::metric_distance(@norm, self, rhs)
     }
+
+    /// The number of rows, 3. Upstream: `nrows`.
+    #[inline(always)]
+    fn nrows(self: Matrix3x4<T>) -> usize {
+        3
+    }
+
+    /// The number of columns, 4. Upstream: `ncols`.
+    #[inline(always)]
+    fn ncols(self: Matrix3x4<T>) -> usize {
+        4
+    }
+
+    /// `(nrows, ncols)`, `(3, 4)`. Upstream: `shape`.
+    #[inline(always)]
+    fn shape(self: Matrix3x4<T>) -> (usize, usize) {
+        (3, 4)
+    }
+
+    /// Whether the shape is square: `false`. Upstream: `is_square`.
+    #[inline(always)]
+    fn is_square(self: Matrix3x4<T>) -> bool {
+        false
+    }
+
+    /// The `(row, column)` of the `i`-th component in column-major order: `(i % 3, i / 3)`, one
+    /// `DivRem` (no bounds check, like upstream). Upstream: `vector_to_matrix_index`.
+    #[inline(always)]
+    fn vector_to_matrix_index(self: Matrix3x4<T>, i: usize) -> (usize, usize) {
+        let (j, i) = DivRem::div_rem(i, 3);
+        (i, j)
+    }
+
+    /// Row `i`, a `RowVector4` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `i >= 3`. ONE `match` on `i` selects the literal (the private
+    /// `row_at` of `swap_rows`). Upstream: `row` (a view).
+    #[inline(always)]
+    fn row(self: Matrix3x4<T>, i: usize) -> RowVector4<T> {
+        Matrix3x4EditTrait::row_at(self, i)
+    }
+
+    /// Column `j`, a `Vector3` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `j >= 4`. ONE `match` on `j` selects the literal (the private
+    /// `column_at` of `swap_columns`). Upstream: `column` (a view).
+    #[inline(always)]
+    fn column(self: Matrix3x4<T>, j: usize) -> Vector3<T> {
+        Matrix3x4EditTrait::column_at(self, j)
+    }
+
+    /// The upper triangle of `self` (the diagonal included), the components below the diagonal set
+    /// to zero. Exact. Upstream: `upper_triangle`.
+    #[inline(always)]
+    fn upper_triangle(self: Matrix3x4<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.m11,
+            m21: R::zero(),
+            m31: R::zero(),
+            m12: self.m12,
+            m22: self.m22,
+            m32: R::zero(),
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m14: self.m14,
+            m24: self.m24,
+            m34: self.m34,
+        }
+    }
+
+    /// The lower triangle of `self` (the diagonal included), the components above the diagonal set
+    /// to zero. Exact. Upstream: `lower_triangle`.
+    #[inline(always)]
+    fn lower_triangle(self: Matrix3x4<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m12: R::zero(),
+            m22: self.m22,
+            m32: self.m32,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: self.m33,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+        }
+    }
+
+    /// The 3x4 matrix whose 3 rows are the given vectors, each a `Vector4` of the row's 4
+    /// components (the argument form of the former `Matrix2/3/4::from_rows`, used by `linalg`).
+    /// Exact. Upstream: `from_rows` (a slice of row vectors).
+    #[inline(always)]
+    fn from_rows(r1: Vector4<T>, r2: Vector4<T>, r3: Vector4<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: r1.x,
+            m21: r2.x,
+            m31: r3.x,
+            m12: r1.y,
+            m22: r2.y,
+            m32: r3.y,
+            m13: r1.z,
+            m23: r2.z,
+            m33: r3.z,
+            m14: r1.w,
+            m24: r2.w,
+            m34: r3.w,
+        }
+    }
+
+    /// The 3x4 matrix whose 4 columns are the given `Vector3`s. Exact. Upstream: `from_columns` (a
+    /// slice of column vectors).
+    #[inline(always)]
+    fn from_columns(
+        c1: Vector3<T>, c2: Vector3<T>, c3: Vector3<T>, c4: Vector3<T>,
+    ) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: c1.x,
+            m21: c1.y,
+            m31: c1.z,
+            m12: c2.x,
+            m22: c2.y,
+            m32: c2.z,
+            m13: c3.x,
+            m23: c3.y,
+            m33: c3.z,
+            m14: c4.x,
+            m24: c4.y,
+            m34: c4.z,
+        }
+    }
+
+    /// Whether the columns of `self` are orthonormal: `selfᵀ * self` (fused `tr_mul`, one
+    /// rounding per component) is the 4x4 identity within `ulps`. Upstream: `is_orthogonal` (`eps`:
+    /// here a tolerance in ulp, DESIGN D3).
+    #[inline(always)]
+    fn is_orthogonal(self: Matrix3x4<T>, ulps: u64) -> bool {
+        Matrix4Trait::is_identity(MatrixTrMul::tr_mul(self, self), ulps)
+    }
+
+    /// `self` with a row of `val` inserted at index `i` (`i <= 3`), a `Matrix4`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 3`. Upstream: `insert_row`.
+    #[inline(always)]
+    fn insert_row(self: Matrix3x4<T>, i: usize, val: T) -> Matrix4<T> {
+        match i {
+            0 => Matrix4 {
+                m11: val,
+                m21: self.m11,
+                m31: self.m21,
+                m41: self.m31,
+                m12: val,
+                m22: self.m12,
+                m32: self.m22,
+                m42: self.m32,
+                m13: val,
+                m23: self.m13,
+                m33: self.m23,
+                m43: self.m33,
+                m14: val,
+                m24: self.m14,
+                m34: self.m24,
+                m44: self.m34,
+            },
+            1 => Matrix4 {
+                m11: self.m11,
+                m21: val,
+                m31: self.m21,
+                m41: self.m31,
+                m12: self.m12,
+                m22: val,
+                m32: self.m22,
+                m42: self.m32,
+                m13: self.m13,
+                m23: val,
+                m33: self.m23,
+                m43: self.m33,
+                m14: self.m14,
+                m24: val,
+                m34: self.m24,
+                m44: self.m34,
+            },
+            2 => Matrix4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: val,
+                m41: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: val,
+                m42: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: val,
+                m43: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: val,
+                m44: self.m34,
+            },
+            3 => Matrix4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: val,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: val,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: val,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: val,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` with a column of `val` inserted at index `i` (`i <= 4`), a `Matrix3x5`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 4`. Upstream: `insert_column`.
+    #[inline(always)]
+    fn insert_column(self: Matrix3x4<T>, i: usize, val: T) -> Matrix3x5<T> {
+        match i {
+            0 => Matrix3x5 {
+                m11: val,
+                m21: val,
+                m31: val,
+                m12: self.m11,
+                m22: self.m21,
+                m32: self.m31,
+                m13: self.m12,
+                m23: self.m22,
+                m33: self.m32,
+                m14: self.m13,
+                m24: self.m23,
+                m34: self.m33,
+                m15: self.m14,
+                m25: self.m24,
+                m35: self.m34,
+            },
+            1 => Matrix3x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: val,
+                m22: val,
+                m32: val,
+                m13: self.m12,
+                m23: self.m22,
+                m33: self.m32,
+                m14: self.m13,
+                m24: self.m23,
+                m34: self.m33,
+                m15: self.m14,
+                m25: self.m24,
+                m35: self.m34,
+            },
+            2 => Matrix3x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: val,
+                m23: val,
+                m33: val,
+                m14: self.m13,
+                m24: self.m23,
+                m34: self.m33,
+                m15: self.m14,
+                m25: self.m24,
+                m35: self.m34,
+            },
+            3 => Matrix3x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: val,
+                m24: val,
+                m34: val,
+                m15: self.m14,
+                m25: self.m24,
+                m35: self.m34,
+            },
+            4 => Matrix3x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m15: val,
+                m25: val,
+                m35: val,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its row `i`, a `Matrix2x4`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 3`. Upstream: `remove_row`.
+    #[inline(always)]
+    fn remove_row(self: Matrix3x4<T>, i: usize) -> Matrix2x4<T> {
+        match i {
+            0 => Matrix2x4 {
+                m11: self.m21,
+                m21: self.m31,
+                m12: self.m22,
+                m22: self.m32,
+                m13: self.m23,
+                m23: self.m33,
+                m14: self.m24,
+                m24: self.m34,
+            },
+            1 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m31,
+                m12: self.m12,
+                m22: self.m32,
+                m13: self.m13,
+                m23: self.m33,
+                m14: self.m14,
+                m24: self.m34,
+            },
+            2 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its column `i`, a `Matrix3`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 4`. Upstream: `remove_column`.
+    #[inline(always)]
+    fn remove_column(self: Matrix3x4<T>, i: usize) -> Matrix3<T> {
+        match i {
+            0 => Matrix3 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+            },
+            1 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+            },
+            2 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+            },
+            3 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
 }
 
 /// The operations of `Matrix3x4<T>` that need `Transcendental` (inverse trigonometry, `exp`, `ln`):
@@ -3353,5 +3772,1279 @@ pub impl Matrix3x4UniformNorm<
     #[inline(always)]
     fn metric_distance(self: @UniformNorm, m1: Matrix3x4<T>, m2: Matrix3x4<T>) -> T {
         Matrix3x4Trait::amax(m1 - m2)
+    }
+}
+
+// --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
+
+/// The 1 consecutive rows of a `Matrix3x4` as a `RowVector4`. Upstream: `fixed_rows::<1>`, `rows(i,
+/// 1)`, `rows_range`, `select_rows`.
+pub impl Matrix3x4FixedRowsRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x4<T>, i: usize) -> RowVector4<T> {
+        match i {
+            0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+            1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+            2 => RowVector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix3x4<T>, first_row: usize, nrows: usize) -> RowVector4<T> {
+        if nrows != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix3x4<T>, rows: Range<usize>) -> RowVector4<T> {
+        let Range { start, end } = rows;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x4<T>, irows: Span<usize>) -> RowVector4<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x4EditTrait::row_at(self, *irows[0]);
+        RowVector4 { x: r0.x, y: r0.y, z: r0.z, w: r0.w }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix3x4` as a `Matrix2x4`. Upstream: `fixed_rows::<2>`, `rows(i,
+/// 2)`, `rows_range`, `select_rows`.
+pub impl Matrix3x4FixedRowsMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x4<T>, i: usize) -> Matrix2x4<T> {
+        match i {
+            0 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+            },
+            1 => Matrix2x4 {
+                m11: self.m21,
+                m21: self.m31,
+                m12: self.m22,
+                m22: self.m32,
+                m13: self.m23,
+                m23: self.m33,
+                m14: self.m24,
+                m24: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix3x4<T>, first_row: usize, nrows: usize) -> Matrix2x4<T> {
+        if nrows != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix3x4<T>, rows: Range<usize>) -> Matrix2x4<T> {
+        let Range { start, end } = rows;
+        if end != start + 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x4<T>, irows: Span<usize>) -> Matrix2x4<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3x4EditTrait::row_at(self, *irows[1]);
+        Matrix2x4 {
+            m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y, m13: r0.z, m23: r1.z, m14: r0.w, m24: r1.w,
+        }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix3x4` as a `Matrix3x4`. Upstream: `fixed_rows::<3>`, `rows(i,
+/// 3)`, `rows_range`, `select_rows`.
+pub impl Matrix3x4FixedRowsMatrix3x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x4<T>, i: usize) -> Matrix3x4<T> {
+        match i {
+            0 => Matrix3x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn rows(self: Matrix3x4<T>, first_row: usize, nrows: usize) -> Matrix3x4<T> {
+        if nrows != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, first_row)
+    }
+
+    #[inline(always)]
+    fn rows_range(self: Matrix3x4<T>, rows: Range<usize>) -> Matrix3x4<T> {
+        let Range { start, end } = rows;
+        if end != start + 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_rows(self, start)
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x4<T>, irows: Span<usize>) -> Matrix3x4<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3x4EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix3x4EditTrait::row_at(self, *irows[2]);
+        Matrix3x4 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix3x4` as a `Vector3`. Upstream: `fixed_columns::<1>`,
+/// `columns(j, 1)`, `columns_range`, `select_columns`.
+pub impl Matrix3x4FixedColumnsVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+            1 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+            2 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+            3 => Vector3 { x: self.m14, y: self.m24, z: self.m34 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix3x4<T>, first_col: usize, ncols: usize) -> Vector3<T> {
+        if ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix3x4<T>, cols: Range<usize>) -> Vector3<T> {
+        let Range { start, end } = cols;
+        if end != start + 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Vector3<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        Vector3 { x: c0.x, y: c0.y, z: c0.z }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix3x4` as a `Matrix3x2`. Upstream: `fixed_columns::<2>`,
+/// `columns(j, 2)`, `columns_range`, `select_columns`.
+pub impl Matrix3x4FixedColumnsMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Matrix3x2<T> {
+        match i {
+            0 => Matrix3x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+            },
+            1 => Matrix3x2 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+            },
+            2 => Matrix3x2 {
+                m11: self.m13,
+                m21: self.m23,
+                m31: self.m33,
+                m12: self.m14,
+                m22: self.m24,
+                m32: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix3x4<T>, first_col: usize, ncols: usize) -> Matrix3x2<T> {
+        if ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix3x4<T>, cols: Range<usize>) -> Matrix3x2<T> {
+        let Range { start, end } = cols;
+        if end != start + 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Matrix3x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3x4EditTrait::column_at(self, *icols[1]);
+        Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix3x4` as a `Matrix3`. Upstream: `fixed_columns::<3>`,
+/// `columns(j, 3)`, `columns_range`, `select_columns`.
+pub impl Matrix3x4FixedColumnsMatrix3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Matrix3<T> {
+        match i {
+            0 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+            },
+            1 => Matrix3 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix3x4<T>, first_col: usize, ncols: usize) -> Matrix3<T> {
+        if ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix3x4<T>, cols: Range<usize>) -> Matrix3<T> {
+        let Range { start, end } = cols;
+        if end != start + 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Matrix3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3x4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix3x4EditTrait::column_at(self, *icols[2]);
+        Matrix3 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+        }
+    }
+}
+
+/// The 4 consecutive columns of a `Matrix3x4` as a `Matrix3x4`. Upstream: `fixed_columns::<4>`,
+/// `columns(j, 4)`, `columns_range`, `select_columns`.
+pub impl Matrix3x4FixedColumnsMatrix3x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Matrix3x4<T> {
+        match i {
+            0 => Matrix3x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn columns(self: Matrix3x4<T>, first_col: usize, ncols: usize) -> Matrix3x4<T> {
+        if ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, first_col)
+    }
+
+    #[inline(always)]
+    fn columns_range(self: Matrix3x4<T>, cols: Range<usize>) -> Matrix3x4<T> {
+        let Range { start, end } = cols;
+        if end != start + 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_columns(self, start)
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Matrix3x4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3x4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix3x4EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix3x4EditTrait::column_at(self, *icols[3]);
+        Matrix3x4 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m14: c3.x,
+            m24: c3.y,
+            m34: c3.z,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix3x4` as a `Matrix1`. Upstream: `fixed_view::<1, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                2 => Matrix1 { x: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.m14 },
+                1 => Matrix1 { x: self.m24 },
+                2 => Matrix1 { x: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix1<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x2 blocks of a `Matrix3x4` as a `RowVector2`. Upstream: `fixed_view::<1, 2>`, `view`, and
+/// the deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                2 => RowVector2 { x: self.m32, y: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.m13, y: self.m14 },
+                1 => RowVector2 { x: self.m23, y: self.m24 },
+                2 => RowVector2 { x: self.m33, y: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x3 blocks of a `Matrix3x4` as a `RowVector3`. Upstream: `fixed_view::<1, 3>`, `view`, and
+/// the deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.m12, y: self.m13, z: self.m14 },
+                1 => RowVector3 { x: self.m22, y: self.m23, z: self.m24 },
+                2 => RowVector3 { x: self.m32, y: self.m33, z: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 1x4 blocks of a `Matrix3x4` as a `RowVector4`. Upstream: `fixed_view::<1, 4>`, `view`, and
+/// the deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+                1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+                2 => RowVector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 1 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> RowVector4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x1 blocks of a `Matrix3x4` as a `Vector2`. Upstream: `fixed_view::<2, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                1 => Vector2 { x: self.m23, y: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector2 { x: self.m14, y: self.m24 },
+                1 => Vector2 { x: self.m24, y: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Vector2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Vector2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x2 blocks of a `Matrix3x4` as a `Matrix2`. Upstream: `fixed_view::<2, 2>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                1 => Matrix2 { m11: self.m22, m21: self.m32, m12: self.m23, m22: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+                1 => Matrix2 { m11: self.m23, m21: self.m33, m12: self.m24, m22: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x3 blocks of a `Matrix3x4` as a `Matrix2x3`. Upstream: `fixed_view::<2, 3>`, `view`, and
+/// the deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m13: self.m24,
+                    m23: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 2x4 blocks of a `Matrix3x4` as a `Matrix2x4`. Upstream: `fixed_view::<2, 4>`, `view`, and
+/// the deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                },
+                1 => Matrix2x4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m14: self.m24,
+                    m24: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 2 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix2x4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x1 blocks of a `Matrix3x4` as a `Vector3`. Upstream: `fixed_view::<3, 1>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector3 { x: self.m14, y: self.m24, z: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Vector3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Vector3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x2 blocks of a `Matrix3x4` as a `Matrix3x2`. Upstream: `fixed_view::<3, 2>`, `view`, and
+/// the deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x2<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x2<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x3 blocks of a `Matrix3x4` as a `Matrix3`. Upstream: `fixed_view::<3, 3>`, `view`, and the
+/// deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewMatrix3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The 3x4 blocks of a `Matrix3x4` as a `Matrix3x4`. Upstream: `fixed_view::<3, 4>`, `view`, and
+/// the deprecated `fixed_slice` / `slice`.
+pub impl Matrix3x4FixedViewMatrix3x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn view(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x4<T> {
+        let (irow, icol) = start;
+        let (nrows, ncols) = shape;
+        if nrows != 3 || ncols != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn fixed_slice(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3x4<T> {
+        Self::fixed_view(self, irow, icol)
+    }
+
+    #[inline(always)]
+    fn slice(self: Matrix3x4<T>, start: (usize, usize), shape: (usize, usize)) -> Matrix3x4<T> {
+        Self::view(self, start, shape)
+    }
+}
+
+/// The first 1 components of a row of a `Matrix3x4` as a `Matrix1`. Upstream: `row_part` (`n = 1`).
+pub impl Matrix3x4RowPartMatrix1<T, +Copy<T>, +Drop<T>> of RowPart<Matrix3x4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix3x4<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 2 components of a row of a `Matrix3x4` as a `RowVector2`. Upstream: `row_part` (`n =
+/// 2`).
+pub impl Matrix3x4RowPartRowVector2<T, +Copy<T>, +Drop<T>> of RowPart<Matrix3x4<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix3x4<T>, i: usize, n: usize) -> RowVector2<T> {
+        if n != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 3 components of a row of a `Matrix3x4` as a `RowVector3`. Upstream: `row_part` (`n =
+/// 3`).
+pub impl Matrix3x4RowPartRowVector3<T, +Copy<T>, +Drop<T>> of RowPart<Matrix3x4<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix3x4<T>, i: usize, n: usize) -> RowVector3<T> {
+        if n != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 4 components of a row of a `Matrix3x4` as a `RowVector4`. Upstream: `row_part` (`n =
+/// 4`).
+pub impl Matrix3x4RowPartRowVector4<T, +Copy<T>, +Drop<T>> of RowPart<Matrix3x4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn row_part(self: Matrix3x4<T>, i: usize, n: usize) -> RowVector4<T> {
+        if n != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, i, 0)
+    }
+}
+
+/// The first 1 components of a column of a `Matrix3x4` as a `Matrix1`. Upstream: `column_part` (`n
+/// = 1`).
+pub impl Matrix3x4ColumnPartMatrix1<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix3x4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix3x4<T>, i: usize, n: usize) -> Matrix1<T> {
+        if n != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 2 components of a column of a `Matrix3x4` as a `Vector2`. Upstream: `column_part` (`n
+/// = 2`).
+pub impl Matrix3x4ColumnPartVector2<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix3x4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix3x4<T>, i: usize, n: usize) -> Vector2<T> {
+        if n != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The first 3 components of a column of a `Matrix3x4` as a `Vector3`. Upstream: `column_part` (`n
+/// = 3`).
+pub impl Matrix3x4ColumnPartVector3<T, +Copy<T>, +Drop<T>> of ColumnPart<Matrix3x4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn column_part(self: Matrix3x4<T>, i: usize, n: usize) -> Vector3<T> {
+        if n != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        FixedView::fixed_view(self, 0, i)
+    }
+}
+
+/// The Kronecker product of a `Matrix3x4` and a `Matrix1`, a `Matrix3x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x4KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x4<T>, Matrix1<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix3x4<T>, rhs: Matrix1<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m33: self.m33 * rhs.x,
+            m14: self.m14 * rhs.x,
+            m24: self.m24 * rhs.x,
+            m34: self.m34 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x4` and a `Vector2`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x4KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x4<T>, Vector2<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Matrix3x4<T>, rhs: Vector2<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m51: self.m31 * rhs.x,
+            m61: self.m31 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+            m52: self.m32 * rhs.x,
+            m62: self.m32 * rhs.y,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m23 * rhs.x,
+            m43: self.m23 * rhs.y,
+            m53: self.m33 * rhs.x,
+            m63: self.m33 * rhs.y,
+            m14: self.m14 * rhs.x,
+            m24: self.m14 * rhs.y,
+            m34: self.m24 * rhs.x,
+            m44: self.m24 * rhs.y,
+            m54: self.m34 * rhs.x,
+            m64: self.m34 * rhs.y,
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix3x4PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix3x4<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: self.m14,
+            m24: self.m24,
+            m34: self.m34,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix3x4` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix3x4CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: m.m11,
+            m21: m.m21,
+            m31: m.m31,
+            m12: m.m12,
+            m22: m.m22,
+            m32: m.m32,
+            m13: m.m13,
+            m23: m.m23,
+            m33: m.m33,
+            m14: m.m14,
+            m24: m.m24,
+            m34: m.m34,
+        }
+    }
+
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (3, 4)
     }
 }
