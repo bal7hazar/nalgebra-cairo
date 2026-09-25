@@ -17,8 +17,8 @@ How to read it:
 
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
-| base | 283 | 11 | 194 | 316 | 804 | 58.0% |
-| geometry | 577 | 2 | 349 | 120 | 1048 | 62.2% |
+| base | 354 | 7 | 127 | 316 | 804 | 72.5% |
+| geometry | 612 | 2 | 314 | 120 | 1048 | 65.9% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
 | io | 0 | 0 | 2 | 0 | 2 | 0.0% |
@@ -26,7 +26,7 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **936** | **19** | **913** | **568** | **2436** | **50.1%** |
+| **total** | **1042** | **15** | **811** | **568** | **2436** | **55.8%** |
 
 nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -39,8 +39,8 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P01](#p01-rectangular-and-remaining-static-shapes) | Rectangular and remaining static shapes | 1 | mechanical | — | `base/matrix.rs` (1) |
 | [P02](#p02-static-base-completion-vector-matrix-2-6) | Static base completion (Vector / Matrix 2-6) | 12 | mechanical | — | `base/unit.rs` (8), `base/ops.rs` (3), `geometry/scale_conversion.rs` (1) |
 | [P03](#p03-functional-and-in-place-variants) | Functional and in-place variants | 31 | mechanical | — | `geometry/quaternion_ops.rs` (9), `geometry/unit_complex_ops.rs` (6), `geometry/quaternion.rs` (5), `geometry/similarity.rs` (3), `geometry/point.rs` (2) |
-| [P04](#p04-swizzles) | Swizzles | 71 | mechanical | P01 (Vector2/3 results) | `base/swizzle.rs` (36), `geometry/swizzle.rs` (35) |
-| [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 28 | mechanical | P01 | `base/matrix_view.rs` (14), `base/matrix.rs` (4), `base/properties.rs` (4), `base/edition.rs` (3), `base/construction.rs` (2) |
+| [P04](#p04-swizzles) | Swizzles | 0 | mechanical | P01 (Vector2/3 results) |  |
+| [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 0 | mechanical | P01 |  |
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 37 | standard numerics | P01, P05 | `base/blas.rs` (21), `base/statistics.rs` (16) |
 | [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 32 | standard numerics | P01 | `base/cg.rs` (32) |
 | [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 3 | standard numerics | — | `geometry/quaternion_conversion.rs` (2), `geometry/unit_complex_conversion.rs` (1) |
@@ -50,7 +50,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P11a](#p11a-transform-affine-projective) | Transform, Affine, Projective | 59 | standard numerics | P07, P09b | `geometry/transform.rs` (24), `geometry/transform_ops.rs` (23), `geometry/transform_alias.rs` (6), `geometry/transform_construction.rs` (3), `geometry/transform_conversion.rs` (3) |
 | [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 63 | standard numerics | P07 | `geometry/orthographic.rs` (35), `geometry/perspective.rs` (28) |
 | [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 96 | standard numerics | P08, P09b | `geometry/dual_quaternion.rs` (44), `geometry/dual_quaternion_ops.rs` (31), `geometry/dual_quaternion_construction.rs` (12), `geometry/dual_quaternion_conversion.rs` (9) |
-| [P13](#p13-dmatrix-dvector-core) | DMatrix / DVector core | 62 | standard numerics | P01-P05 (API to mirror) | `base/edition.rs` (22), `base/alias.rs` (15), `base/construction.rs` (12), `base/conversion.rs` (3), `base/ops.rs` (3) |
+| [P13](#p13-dmatrix-dvector-core) | DMatrix / DVector core | 55 | standard numerics | P01-P05 (API to mirror) | `base/alias.rs` (15), `base/edition.rs` (15), `base/construction.rs` (12), `base/conversion.rs` (3), `base/ops.rs` (3) |
 | [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 100 | standard numerics | P01, P05 | `linalg/solve.rs` (26), `linalg/givens.rs` (14), `linalg/cholesky.rs` (11), `linalg/decomposition.rs` (11), `linalg/lu.rs` (8) |
 | [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 48 | standard numerics | P14 | `linalg/col_piv_qr.rs` (18), `linalg/full_piv_lu.rs` (17), `linalg/lblt.rs` (10), `linalg/decomposition.rs` (3) |
 | [P16](#p16-schur-hessenberg-bidiagonal-tridiagonal-general-eigen) | Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen | 64 | hard numerics | P14 | `linalg/bidiagonal.rs` (14), `linalg/symmetric_tridiagonal.rs` (13), `linalg/hessenberg.rs` (12), `linalg/schur.rs` (12), `linalg/eigen.rs` (6) |
@@ -90,17 +90,13 @@ the operations upstream has on every `Matrix` that nalgebra.cairo only has on so
 
 ### P04 Swizzles
 
-`xx()` .. `zzz()` on vectors and points (`base/swizzle.rs`, `geometry/swizzle.rs`). Tier: mechanical. Depends on: P01 (Vector2/3 results). 71 items (`*` = partial):
+`xx()` .. `zzz()` on vectors and points (`base/swizzle.rs`, `geometry/swizzle.rs`). Tier: mechanical. Depends on: P01 (Vector2/3 results). 0 items (`*` = partial):
 
-- **Point**: `xx`, `xxx`, `xxy`, `xxz`, `xyx`, `xyy`, `xyz`, `xz`, `xzx`, `xzy`, `xzz`, `yx`, `yxx`, `yxy`, `yxz`, `yy`, `yyx`, `yyy`, `yyz`, `yz`, `yzx`, `yzy`, `yzz`, `zx`, `zxx`, `zxy`, `zxz`, `zy`, `zyx`, `zyy`, `zyz`, `zz`, `zzx`, `zzy`, `zzz`
-- **Vector**: `xx`, `xxx`, `xxy`, `xxz`, `xy`*, `xyx`, `xyy`, `xyz`*, `xz`, `xzx`, `xzy`, `xzz`, `yx`, `yxx`, `yxy`, `yxz`, `yy`, `yyx`, `yyy`, `yyz`, `yz`, `yzx`, `yzy`, `yzz`, `zx`, `zxx`, `zxy`, `zxz`, `zy`, `zyx`, `zyy`, `zyz`, `zz`, `zzx`, `zzy`, `zzz`
 
 ### P05 Rows, columns, blocks and edition
 
-`row` / `column` / `rows` / `columns` / `fixed_rows` / `fixed_columns` / `view` / `fixed_view` returning owned values, `*_range`, `set_row` / `set_column`, `upper_triangle` / `lower_triangle`, `fixed_resize`, `transpose` on vectors (row vectors). Tier: mechanical. Depends on: P01. 28 items (`*` = partial):
+`row` / `column` / `rows` / `columns` / `fixed_rows` / `fixed_columns` / `view` / `fixed_view` returning owned values, `*_range`, `set_row` / `set_column`, `upper_triangle` / `lower_triangle`, `fixed_resize`, `transpose` on vectors (row vectors). Tier: mechanical. Depends on: P01. 0 items (`*` = partial):
 
-- **Matrix**: `column`, `column_part`, `columns`, `columns_range`, `fixed_columns`, `fixed_resize`, `fixed_rows`, `fixed_slice`, `fixed_view`, `from_columns`*, `from_rows`*, `is_orthogonal`, `is_square`, `kronecker`, `lower_triangle`, `ncols`, `nrows`, `row`, `row_part`, `rows`, `rows_range`, `shape`, `slice`, `upper_triangle`, `vector_to_matrix_index`, `view`
-- **SquareMatrix**: `is_invertible`, `is_special_orthogonal`
 
 ### P06 Statistics and BLAS-like kernels
 
@@ -183,11 +179,11 @@ dual quaternions: construction, ops, `sclerp`, conversion to / from isometries. 
 
 ### P13 DMatrix / DVector core
 
-D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `MatrixNxX` aliases: construction, element-wise ops, resize / insert / remove, `from_vec`, `Sum`, the `dmatrix!` / `dvector!` macros. Tier: standard numerics. Depends on: P01-P05 (API to mirror). 62 items (`*` = partial):
+D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `MatrixNxX` aliases: construction, element-wise ops, resize / insert / remove, `from_vec`, `Sum`, the `dmatrix!` / `dvector!` macros. Tier: standard numerics. Depends on: P01-P05 (API to mirror). 55 items (`*` = partial):
 
 - **DMatrix**: `impl:From<Matrix>`, `impl:Sum`, `impl:Sum<Matrix>`, `from_diagonal_element`, `from_element`, `from_fn`, `from_iterator`, `from_partial_diagonal`, `from_row_iterator`, `identity`, `repeat`, `resize_horizontally_mut`, `resize_mut`, `resize_vertically_mut`, `zeros`, `type:DMatrix`
 - **DVector**: `impl:From<Vec>`, `type:DVector`
-- **Matrix**: `impl:Sum`, `compress_columns`, `compress_rows`, `compress_rows_tr`, `from_iterator`, `from_row_iterator`, `from_vec`, `insert_column`, `insert_columns`, `insert_fixed_columns`, `insert_fixed_rows`, `insert_row`, `insert_rows`, `is_empty`, `len`, `remove_column`, `remove_columns`, `remove_columns_at`, `remove_fixed_columns`, `remove_fixed_rows`, `remove_row`, `remove_rows`, `remove_rows_at`, `resize`, `resize_horizontally`, `resize_vertically`, `select_columns`, `select_rows`, `type:Matrix1xX`, `type:Matrix2xX`, `type:Matrix3xX`, `type:Matrix4xX`, `type:Matrix5xX`, `type:Matrix6xX`, `type:MatrixXx1`, `type:MatrixXx2`, `type:MatrixXx3`, `type:MatrixXx4`, `type:MatrixXx5`, `type:MatrixXx6`
+- **Matrix**: `impl:Sum`, `compress_columns`, `compress_rows`, `compress_rows_tr`, `from_iterator`, `from_row_iterator`, `from_vec`, `insert_columns`, `insert_fixed_columns`, `insert_fixed_rows`, `insert_rows`, `is_empty`, `len`, `remove_columns`, `remove_columns_at`, `remove_fixed_columns`, `remove_fixed_rows`, `remove_rows`, `remove_rows_at`, `resize_horizontally`, `resize_vertically`, `type:Matrix1xX`, `type:Matrix2xX`, `type:Matrix3xX`, `type:Matrix4xX`, `type:Matrix5xX`, `type:Matrix6xX`, `type:MatrixXx1`, `type:MatrixXx2`, `type:MatrixXx3`, `type:MatrixXx4`, `type:MatrixXx5`, `type:MatrixXx6`
 - **RowDVector**: `impl:From<Vec>`, `type:RowDVector`
 - **nalgebra**: `macro:dmatrix!`, `macro:dvector!`
 
@@ -658,7 +654,7 @@ Cairo: LpNorm · ported 4, partial 0, missing 0, excluded 0.
 
 #### Matrix (base)
 
-Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 184, partial 3, missing 90, excluded 134.
+Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 217, partial 1, missing 59, excluded 134.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -739,23 +735,23 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `clone_owned` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `clone_owned_sum` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `cmpy` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::cmpy |  | `base/componentwise.rs` |
-| method `column` | missing |  | P05 | `base/matrix_view.rs` |
+| method `column` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::column |  | `base/matrix_view.rs` |
 | method `column_iter` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `column_iter_mut` | excluded |  | borrow | `base/matrix.rs` |
 | method `column_mean` | missing |  | P06 | `base/statistics.rs` |
 | method `column_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
-| method `column_part` | missing |  | P05 | `base/matrix_view.rs` |
+| method `column_part` | ported | ColumnPart::column_part | method of the generic `ColumnPart<M, Out>` (owned copy; the output vector is the length) | `base/matrix_view.rs` |
 | method `column_part_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `column_product` | missing |  | P06 | `base/statistics.rs` |
 | method `column_sum` | missing |  | P06 | `base/statistics.rs` |
 | method `column_variance` | missing |  | P06 | `base/statistics.rs` |
-| method `columns` | missing |  | P05 | `base/matrix_view.rs` |
+| method `columns` | ported | FixedColumns::columns | method of the generic `FixedColumns<M, Out>` (owned copy; the output type is the column count) | `base/matrix_view.rs` |
 | method `columns_generic` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `columns_generic_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `columns_generic_with_step` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `columns_generic_with_step_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `columns_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
-| method `columns_range` | missing |  | P05 | `base/matrix_view.rs` |
+| method `columns_range` | ported | FixedColumns::columns_range | method of the generic `FixedColumns<M, Out>` (owned copy; the output type is the column count) | `base/matrix_view.rs` |
 | method `columns_range_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `columns_range_pair` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `columns_range_pair_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
@@ -788,20 +784,20 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `fill_upper_triangle` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::fill_upper_triangle |  | `base/edition.rs` |
 | method `fill_with` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::fill_with |  | `base/edition.rs` |
 | method `fill_with_identity` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::fill_with_identity |  | `base/edition.rs` |
-| method `fixed_columns` | missing |  | P05 | `base/matrix_view.rs` |
+| method `fixed_columns` | ported | FixedColumns::fixed_columns | method of the generic `FixedColumns<M, Out>` (owned copy; the output type is the column count) | `base/matrix_view.rs` |
 | method `fixed_columns_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `fixed_columns_with_step` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `fixed_columns_with_step_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
-| method `fixed_resize` | missing |  | P05 | `base/edition.rs` |
-| method `fixed_rows` | missing |  | P05 | `base/matrix_view.rs` |
+| method `fixed_resize` | ported | FixedResize::fixed_resize | method of the generic `FixedResize<M, Out, T>` (the output type is the new shape) | `base/edition.rs` |
+| method `fixed_rows` | ported | FixedRows::fixed_rows | method of the generic `FixedRows<M, Out>` (owned copy; the output type is the row count, upstream's const generic or runtime size) | `base/matrix_view.rs` |
 | method `fixed_rows_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `fixed_rows_with_step` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `fixed_rows_with_step_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
-| method `fixed_slice` | missing |  | deprecated upstream; P05; deprecated | `base/matrix_view.rs` |
+| method `fixed_slice` | ported | FixedView::fixed_slice | method of the generic `FixedView<M, Out>` (owned copy; the output type is the block size); deprecated | `base/matrix_view.rs` |
 | method `fixed_slice_mut` | excluded |  | generic-dim; deprecated | `base/matrix_view.rs` |
 | method `fixed_slice_with_steps` | excluded |  | generic-dim; deprecated | `base/matrix_view.rs` |
 | method `fixed_slice_with_steps_mut` | excluded |  | generic-dim; deprecated | `base/matrix_view.rs` |
-| method `fixed_view` | missing |  | P05 | `base/matrix_view.rs` |
+| method `fixed_view` | ported | FixedView::fixed_view | method of the generic `FixedView<M, Out>` (owned copy; the output type is the block size) | `base/matrix_view.rs` |
 | method `fixed_view_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `fixed_view_with_steps` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `fixed_view_with_steps_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
@@ -810,7 +806,7 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `from_array_storage` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `from_column_slice` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::from_column_slice |  | `base/construction.rs` |
 | method `from_column_slice_generic` | excluded |  | generic-dim | `base/construction.rs` |
-| method `from_columns` | partial | Matrix2/3/4::from_columns | not on Matrix6; P05 | `base/construction.rs` |
+| method `from_columns` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::from_columns |  | `base/construction.rs` |
 | method `from_data` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `from_diagonal_element` | ported | Matrix1/2/3/4/5/6::from_diagonal_element |  | `base/construction.rs` |
 | method `from_diagonal_element_generic` | excluded |  | generic-dim | `base/construction.rs` |
@@ -828,7 +824,7 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `from_row_iterator_generic` | excluded |  | generic-dim | `base/construction.rs` |
 | method `from_row_slice` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::from_row_slice |  | `base/construction.rs` |
 | method `from_row_slice_generic` | excluded |  | generic-dim | `base/construction.rs` |
-| method `from_rows` | partial | Matrix2/3/4::from_rows | not on Matrix6; P05 | `base/construction.rs` |
+| method `from_rows` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::from_rows |  | `base/construction.rs` |
 | method `from_vec` | missing |  | P13 | `base/construction.rs` |
 | method `from_vec_generic` | excluded |  | generic-dim | `base/construction.rs` |
 | method `gemm` | missing |  | P06 | `base/blas.rs` |
@@ -856,23 +852,23 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `index_mut` | excluded |  | borrow | `base/indexing.rs` |
 | method `inf` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::inf |  | `base/componentwise.rs` |
 | method `inf_sup` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::inf_sup |  | `base/componentwise.rs` |
-| method `insert_column` | missing |  | P13 | `base/edition.rs` |
+| method `insert_column` | ported | Matrix1/2/3/4/5, RowVector2/3/4/5, Vector2/3/4/5/6, Matrix2x3/4/5, Matrix3x2/4/5, Matrix4x2/3/5, Matrix5x2/3/4, Matrix6x2/3/4/5::insert_column |  | `base/edition.rs` |
 | method `insert_columns` | missing |  | P13 | `base/edition.rs` |
 | method `insert_fixed_columns` | missing |  | P13 | `base/edition.rs` |
 | method `insert_fixed_rows` | missing |  | P13 | `base/edition.rs` |
-| method `insert_row` | missing |  | P13 | `base/edition.rs` |
+| method `insert_row` | ported | Matrix1/2/3/4/5, RowVector2/3/4/5/6, Vector2/3/4/5, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6::insert_row |  | `base/edition.rs` |
 | method `insert_rows` | missing |  | P13 | `base/edition.rs` |
 | method `into_owned` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `into_owned_sum` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `is_empty` | missing |  | P13 | `base/properties.rs` |
 | method `is_identity` | ported | Matrix1/2/3/4/5/6::is_identity |  | `base/properties.rs` |
-| method `is_orthogonal` | missing |  | P05 | `base/properties.rs` |
-| method `is_square` | missing |  | P05 | `base/properties.rs` |
+| method `is_orthogonal` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::is_orthogonal |  | `base/properties.rs` |
+| method `is_square` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::is_square |  | `base/properties.rs` |
 | method `iter` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `iter_mut` | excluded |  | borrow | `base/matrix.rs` |
-| method `kronecker` | missing |  | P05 | `base/ops.rs` |
+| method `kronecker` | ported | MatrixKronecker::kronecker | method of the generic `MatrixKronecker` (one impl per pair whose product fits in 6x6) | `base/ops.rs` |
 | method `len` | missing |  | P13 | `base/properties.rs` |
-| method `lower_triangle` | missing |  | P05 | `base/edition.rs` |
+| method `lower_triangle` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::lower_triangle |  | `base/edition.rs` |
 | method `lp_norm` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::lp_norm |  | `base/norm.rs` |
 | method `magnitude` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::magnitude |  | `base/norm.rs` |
 | method `magnitude_squared` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::magnitude_squared |  | `base/norm.rs` |
@@ -883,7 +879,7 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `metric_distance` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::metric_distance |  | `base/norm.rs` |
 | method `min` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::min |  | `base/min_max.rs` |
 | method `mul_to` | ported | MatrixMul::mul_to | default method of the generic `MatrixMul` (`out = self.mul_mat(rhs)`, the output of the product's own shape) | `base/ops.rs` |
-| method `ncols` | missing |  | P05 | `base/matrix.rs` |
+| method `ncols` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::ncols |  | `base/matrix.rs` |
 | method `neg_mut` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::neg_mut |  | `base/ops.rs` |
 | method `new` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::new |  | `base/construction.rs` |
 | method `new_random` | excluded |  | random | `base/construction.rs` |
@@ -892,37 +888,37 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `norm_squared` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::norm_squared |  | `base/norm.rs` |
 | method `normalize` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::normalize |  | `base/norm.rs` |
 | method `normalize_mut` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::normalize_mut |  | `base/norm.rs` |
-| method `nrows` | missing |  | P05 | `base/matrix.rs` |
+| method `nrows` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::nrows |  | `base/matrix.rs` |
 | method `one_norm` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::one_norm |  | `base/norm.rs` |
 | method `par_column_iter` | excluded |  | rayon | `base/par_iter.rs` |
 | method `par_column_iter_mut` | excluded |  | rayon | `base/par_iter.rs` |
 | method `perp` | ported | Vector2::perp |  | `base/matrix.rs` |
 | method `product` | missing |  | P06 | `base/statistics.rs` |
 | method `relative_eq` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::relative_eq |  | `base/matrix.rs` |
-| method `remove_column` | missing |  | P13 | `base/edition.rs` |
+| method `remove_column` | ported | RowVector2/3/4/5/6, Matrix2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::remove_column |  | `base/edition.rs` |
 | method `remove_columns` | missing |  | P13 | `base/edition.rs` |
 | method `remove_columns_at` | missing |  | P13 | `base/edition.rs` |
 | method `remove_columns_generic` | excluded |  | generic-dim | `base/edition.rs` |
 | method `remove_fixed_columns` | missing |  | P13 | `base/edition.rs` |
 | method `remove_fixed_rows` | missing |  | P13 | `base/edition.rs` |
-| method `remove_row` | missing |  | P13 | `base/edition.rs` |
+| method `remove_row` | ported | Vector2/3/4/5/6, Matrix2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::remove_row |  | `base/edition.rs` |
 | method `remove_rows` | missing |  | P13 | `base/edition.rs` |
 | method `remove_rows_at` | missing |  | P13 | `base/edition.rs` |
 | method `remove_rows_generic` | excluded |  | generic-dim | `base/edition.rs` |
 | method `repeat` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::repeat |  | `base/construction.rs` |
 | method `repeat_generic` | excluded |  | generic-dim | `base/construction.rs` |
 | method `reshape_generic` | excluded |  | generic-dim | `base/edition.rs` |
-| method `resize` | missing |  | P13 | `base/edition.rs` |
+| method `resize` | ported | FixedResize::resize | method of the generic `FixedResize<M, Out, T>` (the output type is the new shape) | `base/edition.rs` |
 | method `resize_generic` | excluded |  | generic-dim | `base/edition.rs` |
 | method `resize_horizontally` | missing |  | P13 | `base/edition.rs` |
 | method `resize_vertically` | missing |  | P13 | `base/edition.rs` |
-| method `row` | missing |  | P05 | `base/matrix_view.rs` |
+| method `row` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::row |  | `base/matrix_view.rs` |
 | method `row_iter` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `row_iter_mut` | excluded |  | borrow | `base/matrix.rs` |
 | method `row_mean` | missing |  | P06 | `base/statistics.rs` |
 | method `row_mean_tr` | missing |  | P06 | `base/statistics.rs` |
 | method `row_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
-| method `row_part` | missing |  | P05 | `base/matrix_view.rs` |
+| method `row_part` | ported | RowPart::row_part | method of the generic `RowPart<M, Out>` (owned copy; the output row vector is the length) | `base/matrix_view.rs` |
 | method `row_part_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `row_product` | missing |  | P06 | `base/statistics.rs` |
 | method `row_product_tr` | missing |  | P06 | `base/statistics.rs` |
@@ -930,13 +926,13 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `row_sum_tr` | missing |  | P06 | `base/statistics.rs` |
 | method `row_variance` | missing |  | P06 | `base/statistics.rs` |
 | method `row_variance_tr` | missing |  | P06 | `base/statistics.rs` |
-| method `rows` | missing |  | P05 | `base/matrix_view.rs` |
+| method `rows` | ported | FixedRows::rows | method of the generic `FixedRows<M, Out>` (owned copy; the output type is the row count, upstream's const generic or runtime size) | `base/matrix_view.rs` |
 | method `rows_generic` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `rows_generic_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `rows_generic_with_step` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `rows_generic_with_step_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `rows_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
-| method `rows_range` | missing |  | P05 | `base/matrix_view.rs` |
+| method `rows_range` | ported | FixedRows::rows_range | method of the generic `FixedRows<M, Out>` (owned copy; the output type is the row count, upstream's const generic or runtime size) | `base/matrix_view.rs` |
 | method `rows_range_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `rows_range_pair` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `rows_range_pair_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
@@ -944,19 +940,19 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `rows_with_step_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `scale` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::scale |  | `base/matrix.rs` |
 | method `scale_mut` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::scale_mut |  | `base/matrix.rs` |
-| method `select_columns` | missing |  | P13 | `base/edition.rs` |
-| method `select_rows` | missing |  | P13 | `base/edition.rs` |
+| method `select_columns` | ported | FixedColumns::select_columns | method of the generic `FixedColumns<M, Out>` (owned copy; the output type is the column count) | `base/edition.rs` |
+| method `select_rows` | ported | FixedRows::select_rows | method of the generic `FixedRows<M, Out>` (owned copy; the output type is the row count, upstream's const generic or runtime size) | `base/edition.rs` |
 | method `set_column` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::set_column |  | `base/edition.rs` |
 | method `set_diagonal` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::set_diagonal |  | `base/edition.rs` |
 | method `set_magnitude` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::set_magnitude |  | `base/norm.rs` |
 | method `set_partial_diagonal` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::set_partial_diagonal |  | `base/edition.rs` |
 | method `set_row` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::set_row |  | `base/edition.rs` |
-| method `shape` | missing |  | P05 | `base/matrix.rs` |
+| method `shape` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::shape |  | `base/matrix.rs` |
 | method `shape_generic` | excluded |  | generic-dim | `base/matrix.rs` |
 | method `simd_cap_magnitude` | excluded |  | simd | `base/norm.rs` |
 | method `simd_try_normalize` | excluded |  | simd | `base/norm.rs` |
 | method `simd_try_normalize_mut` | excluded |  | simd | `base/norm.rs` |
-| method `slice` | missing |  | deprecated upstream; P05; deprecated | `base/matrix_view.rs` |
+| method `slice` | ported | FixedView::slice | method of the generic `FixedView<M, Out>` (owned copy; the output type is the block size); deprecated | `base/matrix_view.rs` |
 | method `slice_mut` | excluded |  | generic-dim; deprecated | `base/matrix_view.rs` |
 | method `slice_range` | excluded |  | generic-dim; deprecated | `base/matrix_view.rs` |
 | method `slice_range_mut` | excluded |  | generic-dim; deprecated | `base/matrix_view.rs` |
@@ -983,10 +979,10 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `uninit` | excluded |  | unsafe | `base/construction.rs` |
 | method `unscale` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::unscale |  | `base/matrix.rs` |
 | method `unscale_mut` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::unscale_mut |  | `base/matrix.rs` |
-| method `upper_triangle` | missing |  | P05 | `base/edition.rs` |
+| method `upper_triangle` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::upper_triangle |  | `base/edition.rs` |
 | method `variance` | missing |  | P06 | `base/statistics.rs` |
-| method `vector_to_matrix_index` | missing |  | P05 | `base/matrix.rs` |
-| method `view` | missing |  | P05 | `base/matrix_view.rs` |
+| method `vector_to_matrix_index` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::vector_to_matrix_index |  | `base/matrix.rs` |
+| method `view` | ported | FixedView::view | method of the generic `FixedView<M, Out>` (owned copy; the output type is the block size) | `base/matrix_view.rs` |
 | method `view_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `view_range` | excluded |  | generic-dim | `base/matrix_view.rs` |
 | method `view_range_mut` | excluded |  | generic-dim | `base/matrix_view.rs` |
@@ -1344,7 +1340,7 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 1.
 
 #### SquareMatrix (base)
 
-Cairo: Matrix1/2/3/4/5/6 · ported 14, partial 0, missing 24, excluded 0.
+Cairo: Matrix1/2/3/4/5/6 · ported 16, partial 0, missing 22, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -1364,8 +1360,8 @@ Cairo: Matrix1/2/3/4/5/6 · ported 14, partial 0, missing 24, excluded 0.
 | method `fill_upper_triangle_with_lower_triangle` | ported | Matrix1/2/3/4/5/6::fill_upper_triangle_with_lower_triangle |  | `base/edition.rs` |
 | method `from_diagonal` | ported | Matrix1/2/3/4/5/6::from_diagonal |  | `base/construction.rs` |
 | method `hermitian_part` | ported | Matrix1/2/3/4/5/6::hermitian_part |  | `base/matrix.rs` |
-| method `is_invertible` | missing |  | P05 | `base/properties.rs` |
-| method `is_special_orthogonal` | missing |  | P05 | `base/properties.rs` |
+| method `is_invertible` | ported | Matrix2/3/4/6::is_invertible |  | `base/properties.rs` |
+| method `is_special_orthogonal` | ported | Matrix2/3/4/6::is_special_orthogonal |  | `base/properties.rs` |
 | method `map_diagonal` | ported | Matrix1/2/3/4/5/6::map_diagonal |  | `base/matrix.rs` |
 | method `new_nonuniform_scaling` | missing |  | P07 | `base/cg.rs` |
 | method `new_scaling` | missing |  | P07 | `base/cg.rs` |
@@ -1508,7 +1504,7 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 18.
 
 #### Vector (base)
 
-Cairo: Matrix1, Vector2/3/4/5/6 · ported 38, partial 2, missing 41, excluded 8.
+Cairo: Matrix1, Vector2/3/4/5/6 · ported 74, partial 0, missing 7, excluded 8.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -1547,46 +1543,46 @@ Cairo: Matrix1, Vector2/3/4/5/6 · ported 38, partial 2, missing 41, excluded 8.
 | method `w_axis` | ported | Unit::w_axis | on `Unit<VectorN>` (`Unit2Trait`, `UnitVector5Trait`...) | `base/construction.rs` |
 | method `x` | ported | Matrix1, Vector2/3/4/5/6::x |  | `base/construction.rs` |
 | method `x_axis` | ported | Unit::x_axis | on `Unit<VectorN>` (`Unit2Trait`, `UnitVector5Trait`...) | `base/construction.rs` |
-| method `xx` | missing |  | P04 | `base/swizzle.rs` |
-| method `xxx` | missing |  | P04 | `base/swizzle.rs` |
-| method `xxy` | missing |  | P04 | `base/swizzle.rs` |
-| method `xxz` | missing |  | P04 | `base/swizzle.rs` |
-| method `xy` | partial | Vector3/4::xy | not on Vector6; P04 | `base/swizzle.rs` |
-| method `xyx` | missing |  | P04 | `base/swizzle.rs` |
-| method `xyy` | missing |  | P04 | `base/swizzle.rs` |
-| method `xyz` | partial | Vector4::xyz | not on Vector6; P04 | `base/swizzle.rs` |
-| method `xz` | missing |  | P04 | `base/swizzle.rs` |
-| method `xzx` | missing |  | P04 | `base/swizzle.rs` |
-| method `xzy` | missing |  | P04 | `base/swizzle.rs` |
-| method `xzz` | missing |  | P04 | `base/swizzle.rs` |
+| method `xx` | ported | Matrix1, Vector2/3/4/5/6::xx |  | `base/swizzle.rs` |
+| method `xxx` | ported | Matrix1, Vector2/3/4/5/6::xxx |  | `base/swizzle.rs` |
+| method `xxy` | ported | Vector2/3/4/5/6::xxy |  | `base/swizzle.rs` |
+| method `xxz` | ported | Vector3/4/5/6::xxz |  | `base/swizzle.rs` |
+| method `xy` | ported | Vector2/3/4/5/6::xy |  | `base/swizzle.rs` |
+| method `xyx` | ported | Vector2/3/4/5/6::xyx |  | `base/swizzle.rs` |
+| method `xyy` | ported | Vector2/3/4/5/6::xyy |  | `base/swizzle.rs` |
+| method `xyz` | ported | Vector3/4/5/6::xyz |  | `base/swizzle.rs` |
+| method `xz` | ported | Vector3/4/5/6::xz |  | `base/swizzle.rs` |
+| method `xzx` | ported | Vector3/4/5/6::xzx |  | `base/swizzle.rs` |
+| method `xzy` | ported | Vector3/4/5/6::xzy |  | `base/swizzle.rs` |
+| method `xzz` | ported | Vector3/4/5/6::xzz |  | `base/swizzle.rs` |
 | method `y` | ported | Vector2/3/4/5/6::y |  | `base/construction.rs` |
 | method `y_axis` | ported | Unit::y_axis | on `Unit<VectorN>` (`Unit2Trait`, `UnitVector5Trait`...) | `base/construction.rs` |
-| method `yx` | missing |  | P04 | `base/swizzle.rs` |
-| method `yxx` | missing |  | P04 | `base/swizzle.rs` |
-| method `yxy` | missing |  | P04 | `base/swizzle.rs` |
-| method `yxz` | missing |  | P04 | `base/swizzle.rs` |
-| method `yy` | missing |  | P04 | `base/swizzle.rs` |
-| method `yyx` | missing |  | P04 | `base/swizzle.rs` |
-| method `yyy` | missing |  | P04 | `base/swizzle.rs` |
-| method `yyz` | missing |  | P04 | `base/swizzle.rs` |
-| method `yz` | missing |  | P04 | `base/swizzle.rs` |
-| method `yzx` | missing |  | P04 | `base/swizzle.rs` |
-| method `yzy` | missing |  | P04 | `base/swizzle.rs` |
-| method `yzz` | missing |  | P04 | `base/swizzle.rs` |
+| method `yx` | ported | Vector2/3/4/5/6::yx |  | `base/swizzle.rs` |
+| method `yxx` | ported | Vector2/3/4/5/6::yxx |  | `base/swizzle.rs` |
+| method `yxy` | ported | Vector2/3/4/5/6::yxy |  | `base/swizzle.rs` |
+| method `yxz` | ported | Vector3/4/5/6::yxz |  | `base/swizzle.rs` |
+| method `yy` | ported | Vector2/3/4/5/6::yy |  | `base/swizzle.rs` |
+| method `yyx` | ported | Vector2/3/4/5/6::yyx |  | `base/swizzle.rs` |
+| method `yyy` | ported | Vector2/3/4/5/6::yyy |  | `base/swizzle.rs` |
+| method `yyz` | ported | Vector3/4/5/6::yyz |  | `base/swizzle.rs` |
+| method `yz` | ported | Vector3/4/5/6::yz |  | `base/swizzle.rs` |
+| method `yzx` | ported | Vector3/4/5/6::yzx |  | `base/swizzle.rs` |
+| method `yzy` | ported | Vector3/4/5/6::yzy |  | `base/swizzle.rs` |
+| method `yzz` | ported | Vector3/4/5/6::yzz |  | `base/swizzle.rs` |
 | method `z` | ported | Vector3/4/5/6::z |  | `base/construction.rs` |
 | method `z_axis` | ported | Unit::z_axis | on `Unit<VectorN>` (`Unit2Trait`, `UnitVector5Trait`...) | `base/construction.rs` |
-| method `zx` | missing |  | P04 | `base/swizzle.rs` |
-| method `zxx` | missing |  | P04 | `base/swizzle.rs` |
-| method `zxy` | missing |  | P04 | `base/swizzle.rs` |
-| method `zxz` | missing |  | P04 | `base/swizzle.rs` |
-| method `zy` | missing |  | P04 | `base/swizzle.rs` |
-| method `zyx` | missing |  | P04 | `base/swizzle.rs` |
-| method `zyy` | missing |  | P04 | `base/swizzle.rs` |
-| method `zyz` | missing |  | P04 | `base/swizzle.rs` |
-| method `zz` | missing |  | P04 | `base/swizzle.rs` |
-| method `zzx` | missing |  | P04 | `base/swizzle.rs` |
-| method `zzy` | missing |  | P04 | `base/swizzle.rs` |
-| method `zzz` | missing |  | P04 | `base/swizzle.rs` |
+| method `zx` | ported | Vector3/4/5/6::zx |  | `base/swizzle.rs` |
+| method `zxx` | ported | Vector3/4/5/6::zxx |  | `base/swizzle.rs` |
+| method `zxy` | ported | Vector3/4/5/6::zxy |  | `base/swizzle.rs` |
+| method `zxz` | ported | Vector3/4/5/6::zxz |  | `base/swizzle.rs` |
+| method `zy` | ported | Vector3/4/5/6::zy |  | `base/swizzle.rs` |
+| method `zyx` | ported | Vector3/4/5/6::zyx |  | `base/swizzle.rs` |
+| method `zyy` | ported | Vector3/4/5/6::zyy |  | `base/swizzle.rs` |
+| method `zyz` | ported | Vector3/4/5/6::zyz |  | `base/swizzle.rs` |
+| method `zz` | ported | Vector3/4/5/6::zz |  | `base/swizzle.rs` |
+| method `zzx` | ported | Vector3/4/5/6::zzx |  | `base/swizzle.rs` |
+| method `zzy` | ported | Vector3/4/5/6::zzy |  | `base/swizzle.rs` |
+| method `zzz` | ported | Vector3/4/5/6::zzz |  | `base/swizzle.rs` |
 | type `OVector` | excluded |  | generic-dim | `base/alias.rs` |
 | type `SVector` | excluded |  | generic-dim | `base/alias.rs` |
 | type `UninitVector` | excluded |  | generic-dim | `base/alias.rs` |
@@ -1985,7 +1981,7 @@ Cairo: none · ported 0, partial 0, missing 27, excluded 6.
 
 #### Point (geometry)
 
-Cairo: Point1/2/3/4/5/6 · ported 53, partial 1, missing 37, excluded 15.
+Cairo: Point1/2/3/4/5/6 · ported 88, partial 1, missing 2, excluded 15.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2048,42 +2044,42 @@ Cairo: Point1/2/3/4/5/6 · ported 53, partial 1, missing 37, excluded 15.
 | method `stride` | ported | Point1/2/3/4/5/6::stride | deprecated | `geometry/point.rs` |
 | method `sup` | ported | Point1/2/3/4/5/6::sup |  | `geometry/point.rs` |
 | method `to_homogeneous` | ported | Point1/2/3/4/5::to_homogeneous |  | `geometry/point.rs` |
-| method `xx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xxx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xxy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xxz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xy` | ported | Point3::xy |  | `geometry/swizzle.rs` |
-| method `xyx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xyy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xyz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xzx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xzy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `xzz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yxx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yxy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yxz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yyx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yyy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yyz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yzx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yzy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `yzz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zxx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zxy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zxz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zyx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zyy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zyz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zz` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zzx` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zzy` | missing |  | P04 | `geometry/swizzle.rs` |
-| method `zzz` | missing |  | P04 | `geometry/swizzle.rs` |
+| method `xx` | ported | Point1/2/3/4/5/6::xx |  | `geometry/swizzle.rs` |
+| method `xxx` | ported | Point1/2/3/4/5/6::xxx |  | `geometry/swizzle.rs` |
+| method `xxy` | ported | Point2/3/4/5/6::xxy |  | `geometry/swizzle.rs` |
+| method `xxz` | ported | Point3/4/5/6::xxz |  | `geometry/swizzle.rs` |
+| method `xy` | ported | Point2/3/4/5/6::xy |  | `geometry/swizzle.rs` |
+| method `xyx` | ported | Point2/3/4/5/6::xyx |  | `geometry/swizzle.rs` |
+| method `xyy` | ported | Point2/3/4/5/6::xyy |  | `geometry/swizzle.rs` |
+| method `xyz` | ported | Point3/4/5/6::xyz |  | `geometry/swizzle.rs` |
+| method `xz` | ported | Point3/4/5/6::xz |  | `geometry/swizzle.rs` |
+| method `xzx` | ported | Point3/4/5/6::xzx |  | `geometry/swizzle.rs` |
+| method `xzy` | ported | Point3/4/5/6::xzy |  | `geometry/swizzle.rs` |
+| method `xzz` | ported | Point3/4/5/6::xzz |  | `geometry/swizzle.rs` |
+| method `yx` | ported | Point2/3/4/5/6::yx |  | `geometry/swizzle.rs` |
+| method `yxx` | ported | Point2/3/4/5/6::yxx |  | `geometry/swizzle.rs` |
+| method `yxy` | ported | Point2/3/4/5/6::yxy |  | `geometry/swizzle.rs` |
+| method `yxz` | ported | Point3/4/5/6::yxz |  | `geometry/swizzle.rs` |
+| method `yy` | ported | Point2/3/4/5/6::yy |  | `geometry/swizzle.rs` |
+| method `yyx` | ported | Point2/3/4/5/6::yyx |  | `geometry/swizzle.rs` |
+| method `yyy` | ported | Point2/3/4/5/6::yyy |  | `geometry/swizzle.rs` |
+| method `yyz` | ported | Point3/4/5/6::yyz |  | `geometry/swizzle.rs` |
+| method `yz` | ported | Point3/4/5/6::yz |  | `geometry/swizzle.rs` |
+| method `yzx` | ported | Point3/4/5/6::yzx |  | `geometry/swizzle.rs` |
+| method `yzy` | ported | Point3/4/5/6::yzy |  | `geometry/swizzle.rs` |
+| method `yzz` | ported | Point3/4/5/6::yzz |  | `geometry/swizzle.rs` |
+| method `zx` | ported | Point3/4/5/6::zx |  | `geometry/swizzle.rs` |
+| method `zxx` | ported | Point3/4/5/6::zxx |  | `geometry/swizzle.rs` |
+| method `zxy` | ported | Point3/4/5/6::zxy |  | `geometry/swizzle.rs` |
+| method `zxz` | ported | Point3/4/5/6::zxz |  | `geometry/swizzle.rs` |
+| method `zy` | ported | Point3/4/5/6::zy |  | `geometry/swizzle.rs` |
+| method `zyx` | ported | Point3/4/5/6::zyx |  | `geometry/swizzle.rs` |
+| method `zyy` | ported | Point3/4/5/6::zyy |  | `geometry/swizzle.rs` |
+| method `zyz` | ported | Point3/4/5/6::zyz |  | `geometry/swizzle.rs` |
+| method `zz` | ported | Point3/4/5/6::zz |  | `geometry/swizzle.rs` |
+| method `zzx` | ported | Point3/4/5/6::zzx |  | `geometry/swizzle.rs` |
+| method `zzy` | ported | Point3/4/5/6::zzy |  | `geometry/swizzle.rs` |
+| method `zzz` | ported | Point3/4/5/6::zzz |  | `geometry/swizzle.rs` |
 | type `OPoint` | excluded |  | generic-dim | `geometry/point.rs` |
 | type `Point` | ported | Point1/2/3/4/5/6 | generic upstream type, concrete Cairo types | `geometry/point_alias.rs` |
 | type `Point1` | ported | Point1 |  | `geometry/point_alias.rs` |
