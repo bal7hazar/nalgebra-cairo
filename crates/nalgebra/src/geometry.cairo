@@ -1,6 +1,7 @@
 //! Rotations, translations and rigid-body transformations (upstream `nalgebra::geometry`).
 
 pub mod abstract_rotation;
+pub mod dual_quaternion;
 pub mod isometry2;
 pub mod isometry3;
 pub mod isometry_matrix2;
@@ -36,8 +37,10 @@ pub mod translation4;
 pub mod translation5;
 pub mod translation6;
 pub mod unit_complex;
+pub mod unit_dual_quaternion;
 pub mod unit_quaternion;
 pub use abstract_rotation::AbstractRotation;
+pub use dual_quaternion::{DualQuaternion, DualQuaternionTrait};
 
 pub use isometry2::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
 pub use isometry3::{Isometry3, Isometry3AngleTrait, Isometry3Trait};
@@ -80,4 +83,8 @@ pub use translation4::{Translation4, Translation4Trait};
 pub use translation5::{Translation5, Translation5Trait};
 pub use translation6::{Translation6, Translation6Trait};
 pub use unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
+pub use unit_dual_quaternion::{
+    Isometry3DualQuaternionTrait, Translation3DualQuaternionTrait, UnitDualQuaternion,
+    UnitDualQuaternionAngleTrait, UnitDualQuaternionTrait, UnitQuaternionDualQuaternionTrait,
+};
 pub use unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
