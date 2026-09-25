@@ -87,7 +87,9 @@ The stack mirrors the Rust ecosystem repository by repository (owner's decision;
 glam-cairo `docs/SPLIT.md`): bal7hazar/fixed-cairo (`fixed`, the scalar), bal7hazar/simba-cairo
 (`simba`, the scalar traits), bal7hazar/nalgebra-cairo (this repository, `nalgebra`),
 bal7hazar/glam-cairo, bal7hazar/glamx-cairo, bal7hazar/rapier-cairo (renamed from `*.cairo`; old
-URLs redirect). Scalar escalations go to the fixed-cairo orchestrator.
+URLs redirect). Escalations (scalar included) and cross-repository questions go to the
+programme-management session "Angry Birds Cairo orchestration" (`/home/claude/projects/pm/`), which
+relays them to the sibling orchestrators.
 
 | step | content | state |
 |---|---|---|
@@ -129,8 +131,11 @@ accept `−q` like upstream's `approx` impls; an upstream result that would be `
 negative real quaternion) panics instead of returning a Cairo-only convention, like `fixed`'s
 `sqrt` of a negative. Applied in P09a, P09b and P10.
 
-Execution: at most two agents at a time (shared machine), Opus 5.5 for numerics and generator
-design, Sonnet for mechanical template work; one PR per WP; parity figures reported per PR.
+Execution: at most two agents at a time (shared machine), one whenever rapier-cairo or the
+programme tasks (`pm-*` units) need it: nalgebra-cairo is not on the critical path of the
+programme's first game (programme management, 2026-09-25; machine rules in
+`/home/claude/projects/pm/OPERATIONS.md` §3). Opus 5.5 for numerics and generator design, Sonnet
+for mechanical template work; one PR per WP; parity figures reported per PR.
 
 ## M6 — Interop and release
 

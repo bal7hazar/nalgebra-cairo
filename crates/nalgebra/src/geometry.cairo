@@ -6,6 +6,8 @@ pub mod isometry2;
 pub mod isometry3;
 pub mod isometry_matrix2;
 pub mod isometry_matrix3;
+pub mod orthographic3;
+pub mod perspective3;
 pub mod point;
 pub mod point1;
 pub mod point4;
@@ -46,6 +48,12 @@ pub use isometry2::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
 pub use isometry3::{Isometry3, Isometry3AngleTrait, Isometry3Trait};
 pub use isometry_matrix2::{IsometryMatrix2, IsometryMatrix2AngleTrait, IsometryMatrix2Trait};
 pub use isometry_matrix3::{IsometryMatrix3, IsometryMatrix3AngleTrait, IsometryMatrix3Trait};
+pub use orthographic3::{
+    Matrix4OrthographicTrait, Orthographic3, Orthographic3AngleTrait, Orthographic3Trait,
+};
+pub use perspective3::{
+    Matrix4PerspectiveTrait, Perspective3, Perspective3AngleTrait, Perspective3Trait,
+};
 pub use point::{
     Point2ExtTrait, Point2Index, Point2PartialOrd, Point3ExtTrait, Point3Index, Point3PartialOrd,
 };

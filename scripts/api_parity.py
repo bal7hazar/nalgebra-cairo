@@ -1174,6 +1174,9 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "UnitComplex": ["UnitComplex"],
     "DualQuaternion": ["DualQuaternion"],
     "UnitDualQuaternion": ["UnitDualQuaternion"],
+    # WP 8.4-P11b: camera projections (a `Matrix4` wrapper each).
+    "Perspective3": ["Perspective3"],
+    "Orthographic3": ["Orthographic3"],
     "Cholesky": ["Cholesky2", "Cholesky3", "Cholesky4", "Cholesky6"],
     "UDU": ["Udu2", "Udu3", "Udu4", "Udu6"],
     "LU": ["Lu2", "Lu3", "Lu4", "Lu6"],
