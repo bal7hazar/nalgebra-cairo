@@ -22,9 +22,9 @@ provable.
 |---|---|
 | [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions), generic over `simba::scalar::Real` |
 
-Its scalar layer is the registry package `simba = "0.1.0"`
+Its scalar layer is the registry package `simba = "0.2.0"`
 ([simba-cairo](https://github.com/bal7hazar/simba-cairo): `Real` / `Transcendental` implemented for
-fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.3.0, the scalar
+fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.4.0, the scalar
 shared by the whole stack), like nalgebra-rs depends on simba-rs.
 
 ## Why it is fast

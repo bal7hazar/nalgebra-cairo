@@ -28,7 +28,7 @@ How to read it:
 | debug | 0 | 0 | 0 | 12 | 12 | — |
 | **total** | **1438** | **9** | **426** | **563** | **2436** | **76.8%** |
 
-nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **96** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
+nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **96** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
 ## Proposed work packages
 
@@ -361,7 +361,7 @@ The `simba` package ([simba-cairo](https://github.com/bal7hazar/simba-cairo), a 
 | simba::Real | `default_epsilon` | approx::AbsDiffEq |
 | simba::Real | `one` | num::One |
 | simba::Real | `zero` | num::Zero |
-| simba::Transcendental | `acos`, `asin`, `atan2`, `atan`, `cos`, `exp`, `ln`, `sin_cos`, `sin`, `tan` | RealField / ComplexField / Field |
+| simba::Transcendental | `acos`, `asin`, `atan2`, `atan`, `cos`, `cosh`, `coshc`, `exp`, `ln`, `sin_cos`, `sin`, `sinh`, `sinhc`, `tan`, `tanh` | RealField / ComplexField / Field |
 
 ### Documented exception: fused scalar kernels and constants
 

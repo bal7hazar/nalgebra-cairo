@@ -7,7 +7,7 @@ be overturned by a new measurement committed under `benchmarks/`.
 
 ```
 Scarb.toml            virtual workspace, shared versions, edition 2024_07, no `starknet` dependency;
-                      `simba = "0.1.0"` (registry, bal7hazar/simba-cairo) is the scalar layer
+                      `simba = "0.2.0"` (registry, bal7hazar/simba-cairo) is the scalar layer
 crates/nalgebra/      package `nalgebra`: `base`, `geometry`, `linalg` modules (mirrors upstream)
 benchmarks/           standalone workspaces: design-time micro-benchmarks (never a dependency)
 scripts/              gas_report.py (report + snapshot + CI gate), check.sh
@@ -26,7 +26,7 @@ traits for it, and nalgebra is generic over them.
   range ±2.1e9, resolution 2.3e-10. nalgebra-cairo has none of its own (the former `simba::fixed`
   was deleted in WP 7.1: two implementations with independent rounding choices would break the
   bit-exact determinism rapier-cairo relies on when it mixes glam and nalgebra values).
-- Pinned by version (`fixed = "0.3.0"`): fixed-cairo bumps MINOR on any numeric change, so the
+- Pinned by version (`fixed = "0.4.0"`): fixed-cairo bumps MINOR on any numeric change, so the
   version pins every golden file here.
 - Numeric semantics are `fixed`'s: `+ - neg` checked `i64`; `*`, fused kernels (`wide::dot*`,
   `mul_add`, `mul_sub`, `Acc`) rescale ONCE with **floor**; `sqrt` / `norm*` floor of the exact root;
@@ -119,7 +119,7 @@ Built only once the static surface is complete, and scoped by what multibody dyn
 | rotations | `UnitComplex` / `UnitQuaternion` as raw pairs/quads (no `Unit` wrapper), Hamilton product on the `Wide` accumulator, algebraic `rotation_between`, quaternion transform for 1 vector and matrix for ≥ 2 | `q*q` 11,550, `uq.transform_vector` 22,070, `rotation_between` 62,870 |
 | isometries | `rotate_translate` fused kernel (translation folded into the accumulator), direct `inv_mul` on the crate-internal fused `conj_mul` (conjugate signs folded into the accumulation, no negation), quaternion internally, `lerp_nlerp` (trig-free) | `Isometry3::transform_point` 23,270, `inv_mul` 38,640, `*` 35,320 |
 
-Figures are net gas on `fixed` 0.3.0 (snapshots in `gas/`). When the best implementation is ambiguous, ship the variants behind one trait
+Figures are net gas on `fixed` 0.4.0 (snapshots in `gas/`). When the best implementation is ambiguous, ship the variants behind one trait
 (`one trait, one impl per algorithm`), benchmark them side by side, export the cheapest.
 
 ## D7 — Tests and gas tracking (definition of done)
