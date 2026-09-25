@@ -15,4 +15,10 @@ pub trait MatrixTrMul<Lhs, Rhs> {
     type Output;
     /// `selfᵀ * rhs`.
     fn tr_mul(self: Lhs, rhs: Rhs) -> Self::Output;
+    /// `selfᴴ * rhs`, the adjoint (conjugate transpose) times `rhs`: `tr_mul` for a real scalar.
+    /// Upstream: `ad_mul`.
+    #[inline(always)]
+    fn ad_mul(self: Lhs, rhs: Rhs) -> Self::Output {
+        Self::tr_mul(self, rhs)
+    }
 }

@@ -6,6 +6,9 @@
 //!   norms and interpolation, generic over a `simba::scalar::Real` scalar;
 //! - `Vector2AngleTrait` / `Vector2AngleImpl`: `angle`, which additionally needs
 //!   `simba::scalar::Transcendental`;
+//! - the base completion (WP 8.2a): the rest of upstream's `Matrix` / `Vector` API, in
+//! `Vector2Trait`
+//!   and, for the operations that need `Transcendental`, `Vector2AngleTrait`;
 //! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a scalar, and
 //!   conversions from / to `[T; 2]`: their impls live in this module, where the
 //!   compiler finds them without any import;
@@ -15,14 +18,19 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
-use core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
+use core::num::traits::Bounded;
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
+use crate::geometry::quaternion::ApproxEqTrait;
+use super::errors;
+use super::kernels::Powi;
 use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
 use super::matrix2x3::Matrix2x3;
 use super::matrix2x4::Matrix2x4;
 use super::matrix2x5::Matrix2x5;
 use super::matrix2x6::Matrix2x6;
+use super::matrix_index::MatrixIndex;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
 use super::row_vector2::RowVector2;
@@ -170,6 +178,122 @@ pub trait Vector2Trait<T> {
     /// floor rounding). `t` is not clamped; `t = 0` gives `self` and `t = 1` gives `rhs` exactly.
     /// Panics on overflow of the result. Upstream: `lerp` (`self * (1 - t) + rhs * t`).
     fn lerp(self: Vector2<T>, rhs: Vector2<T>, t: T) -> Vector2<T>;
+    /// The 2-dimensional column vector whose component `(i, j)` (row, column, 0-based) is `f(i,
+    /// j)`, `f` being called in column-major order like upstream. `f` is any closure or `Fn` value
+    /// of `(usize, usize)` whose output converts `Into<T>` (the identity included): Cairo cannot
+    /// state `Output = T` on the closure without the `associated_item_constraints` experimental
+    /// feature. Upstream: `Vector2::from_fn`.
+    fn from_fn<
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (usize, usize)>,
+        +Into<Func::Output, T>,
+        +Drop<Func::Output>,
+    >(
+        f: F,
+    ) -> Vector2<T>;
+    /// The 2-dimensional column vector of the 2 values of `data`, in row-major order. Panics with
+    /// `nalgebra: wrong slice length` unless `data.len() == 2`. Upstream: `Vector2::from_row_slice`
+    /// (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 2]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
+    fn from_row_slice(data: Span<T>) -> Vector2<T>;
+    /// The 2-dimensional column vector of the 2 values of `data`, in column-major order. Panics
+    /// with `nalgebra: wrong slice length` unless `data.len() == 2`. Upstream:
+    /// `Vector2::from_column_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 2]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
+    fn from_column_slice(data: Span<T>) -> Vector2<T>;
+    /// The 2-dimensional column vector whose first `data.len()` diagonal components are `data`,
+    /// every other component zero. Panics with `nalgebra: diagonal too long` when `data.len() > 1`.
+    /// Upstream: `Vector2::from_partial_diagonal` (`&[T]`).
+    fn from_partial_diagonal(data: Span<T>) -> Vector2<T>;
+    /// The vector whose component `i` is `val`, every other one zero. Panics with `nalgebra: index
+    /// out of bounds` for `i >= 2`. Upstream: `Vector2::ith`.
+    fn ith(i: usize, val: T) -> Vector2<T>;
+    /// The unit vector along axis `i` (`ith(i, 1)`). Panics with `nalgebra: index out of bounds`
+    /// for `i >= 2`. Upstream: `Vector2::ith_axis`.
+    fn ith_axis(i: usize) -> Unit<Vector2<T>>;
+    /// `self = self.component_mul(rhs)`. Upstream: `component_mul_assign`.
+    fn component_mul_assign(ref self: Vector2<T>, rhs: Vector2<T>);
+    /// `self = self.component_div(rhs)`. Upstream: `component_div_assign`.
+    fn component_div_assign(ref self: Vector2<T>, rhs: Vector2<T>);
+    /// `self + k` added to every component. Exact; panics on overflow. Upstream: `add_scalar`.
+    fn add_scalar(self: Vector2<T>, k: T) -> Vector2<T>;
+    /// `self = alpha * a ∘ b + beta * self` (component-wise product): per component `alpha * a`
+    /// is floored, then the two products are ONE fused `sum_prod2` (floored once). Panics on
+    /// overflow.
+    /// Upstream: `cmpy` (which skips reading `self` when `beta` is zero: a difference only for NaN,
+    /// which fixed point has not).
+    fn cmpy(ref self: Vector2<T>, alpha: T, a: Vector2<T>, b: Vector2<T>, beta: T);
+    /// `self = alpha * a / b + beta * self` (component-wise quotient): per component `alpha * a` is
+    /// floored, divided by `b` (rounded to nearest), then `beta * self + quotient` is ONE `mul_add`
+    /// (floored once). Panics on a zero component of `b` and on overflow. Upstream: `cdpy`.
+    fn cdpy(ref self: Vector2<T>, alpha: T, a: Vector2<T>, b: Vector2<T>, beta: T);
+    /// `amin`: the modulus of a real scalar is its absolute value. Upstream: `camin`.
+    fn camin(self: Vector2<T>) -> T;
+    /// `amax`: the modulus of a real scalar is its absolute value. Upstream: `camax`.
+    fn camax(self: Vector2<T>) -> T;
+    /// `(row, column)` of the component with the largest absolute value, the first one in
+    /// column-major order on ties. Panics on the scalar's `MIN`. Upstream: `iamax_full`.
+    fn iamax_full(self: Vector2<T>) -> (usize, usize);
+    /// `iamax_full`: the modulus of a real scalar is its absolute value. Upstream: `icamax_full`.
+    fn icamax_full(self: Vector2<T>) -> (usize, usize);
+    /// `(index, value)` of the smallest component, the first one on ties. Exact. Upstream:
+    /// `argmin`.
+    fn argmin(self: Vector2<T>) -> (usize, T);
+    /// `(index, value)` of the largest component, the first one on ties. Exact. Upstream: `argmax`.
+    fn argmax(self: Vector2<T>) -> (usize, T);
+    /// `iamax`: the modulus of a real scalar is its absolute value. Upstream: `icamax`.
+    fn icamax(self: Vector2<T>) -> usize;
+    /// Scales `self` to the norm `magnitude` (`self.scale(magnitude / norm)`, the ratio rounded to
+    /// nearest) when its norm is `> min_magnitude`, leaves it unchanged otherwise. Upstream:
+    /// `try_set_magnitude` (`&mut self`).
+    fn try_set_magnitude(ref self: Vector2<T>, magnitude: T, min_magnitude: T);
+    /// The induced 1-norm: the largest absolute column sum (the L1 norm of a column vector, the
+    /// largest absolute value of a row vector). Exact; panics on overflow. Upstream: `one_norm`.
+    fn one_norm(self: Vector2<T>) -> T;
+    /// The conjugate transpose, a `RowVector2`: the transpose for a real scalar. Exact. Upstream:
+    /// `adjoint`.
+    fn adjoint(self: Vector2<T>) -> RowVector2<T>;
+    /// Alias of `adjoint` (deprecated upstream). Upstream: `conjugate_transpose`.
+    fn conjugate_transpose(self: Vector2<T>) -> RowVector2<T>;
+    /// The component-wise conjugate: `self` for a real scalar. Upstream: `conjugate`.
+    fn conjugate(self: Vector2<T>) -> Vector2<T>;
+    /// The first 2 components of `v` when its last one is zero (a homogeneous VECTOR), `None`
+    /// otherwise. Exact. Upstream: `Vector2::from_homogeneous`.
+    fn from_homogeneous(v: Vector3<T>) -> Option<Vector2<T>>;
+    /// Gram-Schmidt on `vs`, like upstream: each vector minus its projections on the basis found so
+    /// far (each component ONE fused `diff_prod`), normalized when its norm is not zero; the
+    /// orthonormal vectors are moved to the front (the first dependent residual taking the place of
+    /// each new basis vector, upstream's `swap`), and the vectors after the 2-th basis vector are
+    /// left untouched. Returns the number of basis vectors. Upstream: `orthonormalize(vs: &mut
+    /// [Self]) -> usize`: Cairo arrays cannot be written in place, so `vs` is rebuilt (`ref`); the
+    /// loop runs on the runtime length of `vs`.
+    fn orthonormalize(ref vs: Array<Vector2<T>>) -> usize;
+    /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
+    /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
+    /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Vector2<T>) -> Vector2<U>;
+    /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
+    /// conversion fails. Upstream: `try_cast`.
+    fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Vector2<T>) -> Option<Vector2<U>>;
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_relative` times the larger magnitude of the two (`|a - b| <= max(|a|, |b|)
+    /// · max_relative`). Panics on a component equal to the scalar's `MIN`, and on overflow of
+    /// that product (only possible with `max_relative > 1`). Upstream:
+    /// `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp instead of a float epsilon
+    /// (DESIGN D3).
+    fn relative_eq(self: Vector2<T>, other: Vector2<T>, epsilon: u64, max_relative: T) -> bool;
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_ulps` ulp (in fixed point the distance in ulp IS the raw difference; the
+    /// `max_ulps` budget does not cross zero, like upstream's float `ulps_eq`). Cannot overflow.
+    /// Upstream: `approx::UlpsEq::ulps_eq`.
+    fn ulps_eq(self: Vector2<T>, other: Vector2<T>, epsilon: u64, max_ulps: u32) -> bool;
 }
 
 /// `angle` needs inverse trigonometry, hence its own trait: scalars may implement `Real` only.
@@ -185,6 +309,20 @@ pub trait Vector2AngleTrait<T> {
     /// `bench_vector2_angle__alt_acos`: that one returns exactly 0 for two directions 2^-20 rad
     /// apart (its cosine floors to 1) and panics on vectors whose norms multiply out of range.
     fn angle(self: Vector2<T>, other: Vector2<T>) -> T;
+    /// The entrywise Lp norm `(Σ |a|^p)^(1/p)`. `p = 1` is the exact sum of the absolute values
+    /// and `p = 2` the fused `norm` (both exact up to their one rounding); above, the components
+    /// are first divided by the largest absolute value `m` (so no power can overflow), `Σ (|a| /
+    /// m)^p`
+    /// is summed (`p` floored products each), and the root is `m * exp(ln(Σ) / p)`: a few ulp
+    /// relative to the result, the rounding of `exp` / `ln`. Panics with `nalgebra: lp_norm needs p
+    /// >= 1` for `p < 1` (upstream returns meaningless values: an infinite root for `p = 0`).
+    /// Upstream: `lp_norm`.
+    fn lp_norm(self: Vector2<T>, p: i32) -> T;
+    /// Spherical interpolation of the DIRECTIONS of `self` and `rhs`: both are normalized, then
+    /// `Unit::slerp` (the unit result along the great arc, with constant angular velocity; `t` is
+    /// not clamped). Returns the normalized `self` when the directions are opposite (the arc is not
+    /// defined), like upstream. Panics when a norm is zero or does not fit. Upstream: `slerp`.
+    fn slerp(self: Vector2<T>, rhs: Vector2<T>, t: T) -> Vector2<T>;
 }
 
 pub impl Vector2Impl<
@@ -411,17 +549,260 @@ pub impl Vector2Impl<
     fn lerp(self: Vector2<T>, rhs: Vector2<T>, t: T) -> Vector2<T> {
         Vector2 { x: R::lerp(self.x, rhs.x, t), y: R::lerp(self.y, rhs.y, t) }
     }
+
+    fn from_fn<
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (usize, usize)>,
+        +Into<Func::Output, T>,
+        +Drop<Func::Output>,
+    >(
+        f: F,
+    ) -> Vector2<T> {
+        Vector2 { x: f(0, 0).into(), y: f(1, 0).into() }
+    }
+
+    #[inline(always)]
+    fn from_row_slice(data: Span<T>) -> Vector2<T> {
+        let boxed: @Box<[T; 2]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1] = boxed.unbox();
+        Vector2 { x: v0, y: v1 }
+    }
+
+    #[inline(always)]
+    fn from_column_slice(data: Span<T>) -> Vector2<T> {
+        let boxed: @Box<[T; 2]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1] = boxed.unbox();
+        Vector2 { x: v0, y: v1 }
+    }
+
+    #[inline(always)]
+    fn from_partial_diagonal(data: Span<T>) -> Vector2<T> {
+        let len = data.len();
+        if len > 1 {
+            core::panic_with_felt252(errors::TOO_MANY_DIAGONAL);
+        }
+        Vector2 { x: if len > 0 {
+            *data[0]
+        } else {
+            R::zero()
+        }, y: R::zero() }
+    }
+
+    #[inline(always)]
+    fn ith(i: usize, val: T) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: val, y: R::zero() },
+            1 => Vector2 { x: R::zero(), y: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn ith_axis(i: usize) -> Unit<Vector2<T>> {
+        Unit { value: Self::ith(i, R::one()) }
+    }
+
+    #[inline(always)]
+    fn component_mul_assign(ref self: Vector2<T>, rhs: Vector2<T>) {
+        self = Vector2 { x: self.x * rhs.x, y: self.y * rhs.y };
+    }
+
+    #[inline(always)]
+    fn component_div_assign(ref self: Vector2<T>, rhs: Vector2<T>) {
+        self = Vector2 { x: R::div(self.x, rhs.x), y: R::div(self.y, rhs.y) };
+    }
+
+    #[inline(always)]
+    fn add_scalar(self: Vector2<T>, k: T) -> Vector2<T> {
+        Vector2 { x: self.x + k, y: self.y + k }
+    }
+
+    #[inline(always)]
+    fn cmpy(ref self: Vector2<T>, alpha: T, a: Vector2<T>, b: Vector2<T>, beta: T) {
+        self =
+            Vector2 {
+                x: R::sum_prod2(alpha * a.x, b.x, beta, self.x),
+                y: R::sum_prod2(alpha * a.y, b.y, beta, self.y),
+            };
+    }
+
+    #[inline(always)]
+    fn cdpy(ref self: Vector2<T>, alpha: T, a: Vector2<T>, b: Vector2<T>, beta: T) {
+        self =
+            Vector2 {
+                x: R::mul_add(beta, self.x, R::div(alpha * a.x, b.x)),
+                y: R::mul_add(beta, self.y, R::div(alpha * a.y, b.y)),
+            };
+    }
+
+    #[inline(always)]
+    fn camin(self: Vector2<T>) -> T {
+        R::min(R::abs(self.x), R::abs(self.y))
+    }
+
+    #[inline(always)]
+    fn camax(self: Vector2<T>) -> T {
+        R::max(R::abs(self.x), R::abs(self.y))
+    }
+
+    #[inline(always)]
+    fn iamax_full(self: Vector2<T>) -> (usize, usize) {
+        let mut best: (usize, usize) = (0, 0);
+        let m = R::abs(self.x);
+        let v = R::abs(self.y);
+        if v > m {
+            best = (1, 0);
+        }
+        best
+    }
+
+    #[inline(always)]
+    fn icamax_full(self: Vector2<T>) -> (usize, usize) {
+        Self::iamax_full(self)
+    }
+
+    #[inline(always)]
+    fn argmin(self: Vector2<T>) -> (usize, T) {
+        let mut i: usize = 0;
+        let mut m = self.x;
+        if self.y < m {
+            m = self.y;
+            i = 1;
+        }
+        (i, m)
+    }
+
+    #[inline(always)]
+    fn argmax(self: Vector2<T>) -> (usize, T) {
+        let mut i: usize = 0;
+        let mut m = self.x;
+        if self.y > m {
+            m = self.y;
+            i = 1;
+        }
+        (i, m)
+    }
+
+    #[inline(always)]
+    fn icamax(self: Vector2<T>) -> usize {
+        Self::iamax(self)
+    }
+
+    #[inline(always)]
+    fn try_set_magnitude(ref self: Vector2<T>, magnitude: T, min_magnitude: T) {
+        let n = Self::norm(self);
+        if n > min_magnitude {
+            self = Self::scale(self, R::div(magnitude, n));
+        }
+    }
+
+    #[inline(always)]
+    fn one_norm(self: Vector2<T>) -> T {
+        R::abs(self.x) + R::abs(self.y)
+    }
+
+    #[inline(always)]
+    fn adjoint(self: Vector2<T>) -> RowVector2<T> {
+        Self::transpose(self)
+    }
+
+    #[inline(always)]
+    fn conjugate_transpose(self: Vector2<T>) -> RowVector2<T> {
+        Self::transpose(self)
+    }
+
+    #[inline(always)]
+    fn conjugate(self: Vector2<T>) -> Vector2<T> {
+        self
+    }
+
+    #[inline(always)]
+    fn from_homogeneous(v: Vector3<T>) -> Option<Vector2<T>> {
+        if v.z == R::zero() {
+            Some(Vector2 { x: v.x, y: v.y })
+        } else {
+            None
+        }
+    }
+
+    fn orthonormalize(ref vs: Array<Vector2<T>>) -> usize {
+        let mut basis: Array<Vector2<T>> = array![];
+        let mut deps: Array<Vector2<T>> = array![];
+        let mut rest = vs.span();
+        let mut nb: usize = 0;
+        while nb < 2 {
+            let v = match rest.pop_front() {
+                Option::Some(v) => *v,
+                Option::None => { break; },
+            };
+            let mut elt = v;
+            for b in basis.span() {
+                let b = *b;
+                let d = Self::dot(elt, b);
+                elt =
+                    Vector2 {
+                        x: R::diff_prod(elt.x, R::one(), b.x, d),
+                        y: R::diff_prod(elt.y, R::one(), b.y, d),
+                    };
+            }
+            let n = Self::norm(elt);
+            if n > R::zero() {
+                basis.append(Self::unscale(elt, n));
+                nb += 1;
+                if let Option::Some(first) = deps.pop_front() {
+                    deps.append(first);
+                }
+            } else {
+                deps.append(elt);
+            }
+        }
+        for d in deps.span() {
+            basis.append(*d);
+        }
+        for r in rest {
+            basis.append(*r);
+        }
+        vs = basis;
+        nb
+    }
+
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Vector2<T>) -> Vector2<U> {
+        Vector2 { x: self.x.into(), y: self.y.into() }
+    }
+
+    fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Vector2<T>) -> Option<Vector2<U>> {
+        let x: U = self.x.try_into()?;
+        let y: U = self.y.try_into()?;
+        Option::Some(Vector2 { x, y })
+    }
+
+    #[inline(always)]
+    fn relative_eq(self: Vector2<T>, other: Vector2<T>, epsilon: u64, max_relative: T) -> bool {
+        ApproxEqTrait::relative_eq(self.x, other.x, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.y, other.y, epsilon, max_relative)
+    }
+
+    #[inline(always)]
+    fn ulps_eq(self: Vector2<T>, other: Vector2<T>, epsilon: u64, max_ulps: u32) -> bool {
+        ApproxEqTrait::ulps_eq(self.x, other.x, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.y, other.y, epsilon, max_ulps)
+    }
 }
 
 pub impl Vector2AngleImpl<
     T,
     impl R: Real<T>,
     impl Tr: Transcendental<T>,
-    +Add<T>,
-    +Sub<T>,
-    +PartialEq<T>,
     +Copy<T>,
     +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
 > of Vector2AngleTrait<T> {
     fn angle(self: Vector2<T>, other: Vector2<T>) -> T {
         let n1 = R::norm2(self.x, self.y);
@@ -435,6 +816,32 @@ pub impl Vector2AngleImpl<
         let s = R::norm2(u.x + v.x, u.y + v.y);
         let half = Tr::atan2(d, s);
         half + half
+    }
+
+    fn lp_norm(self: Vector2<T>, p: i32) -> T {
+        if p < 1 {
+            core::panic_with_felt252(errors::LP_NORM_P);
+        }
+        if p == 1 {
+            return R::abs(self.x) + R::abs(self.y);
+        }
+        if p == 2 {
+            return Vector2Trait::norm(self);
+        }
+        let m = Vector2Trait::amax(self);
+        if m == R::zero() {
+            return R::zero();
+        }
+        let r = Vector2Trait::unscale(Vector2Trait::abs(self), m);
+        let q: u32 = p.try_into().unwrap();
+        let s = Powi::powi(r.x, q) + Powi::powi(r.y, q);
+        m * Tr::exp(R::div(Tr::ln(s), R::from_int(p)))
+    }
+
+    fn slerp(self: Vector2<T>, rhs: Vector2<T>, t: T) -> Vector2<T> {
+        let me = Vector2Trait::normalize(self);
+        let other = Vector2Trait::normalize(rhs);
+        slerp_unit(me, other, t, R::default_epsilon()).unwrap_or(me)
     }
 }
 
@@ -700,4 +1107,261 @@ pub impl Vector2TrMulMatrix2x6<
     fn tr_mul(self: Vector2<T>, rhs: Matrix2x6<T>) -> RowVector6<T> {
         MatrixMul::mul_mat(RowVector2 { x: self.x, y: self.y }, rhs)
     }
+}
+
+// --- indexing, comparisons, conversions ----------------------------------------------------------
+
+/// `m.get(i)` / `m.index(..)`: the component `index` in column-major (storage) order. `get` is
+/// `None` out of bounds, `index` panics with `nalgebra: index out of bounds`. Upstream:
+/// `Matrix::get` / `Matrix::index` (their `MatrixIndex` argument).
+pub impl Vector2MatrixIndexLinear<T, +Copy<T>, +Drop<T>> of MatrixIndex<Vector2<T>, usize> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Vector2<T>, index: usize) -> Option<T> {
+        match index {
+            0 => Option::Some(self.x),
+            1 => Option::Some(self.y),
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Vector2<T>, index: usize) -> T {
+        match index {
+            0 => self.x,
+            1 => self.y,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[i]`: the component `index` in column-major (storage) order. Panics with `nalgebra: index out
+/// of bounds`. Upstream: `Index<usize>`.
+pub impl Vector2IndexLinear<T, +Copy<T>, +Drop<T>> of IndexView<Vector2<T>, usize> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Vector2<T>, index: usize) -> T {
+        match index {
+            0 => *self.x,
+            1 => *self.y,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m.get((i, j))` / `m.index(..)`: the component at `(row, column)`. `get` is `None` out of
+/// bounds, `index` panics with `nalgebra: index out of bounds`. Upstream: `Matrix::get` /
+/// `Matrix::index` (their `MatrixIndex` argument).
+pub impl Vector2MatrixIndexPair<T, +Copy<T>, +Drop<T>> of MatrixIndex<Vector2<T>, (usize, usize)> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Vector2<T>, index: (usize, usize)) -> Option<T> {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => Option::Some(self.x),
+                1 => Option::Some(self.y),
+                _ => Option::None,
+            },
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Vector2<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => self.x,
+                1 => self.y,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[(i, j)]`: the component at `(row, column)`. Panics with `nalgebra: index out of bounds`.
+/// Upstream: `Index<(usize, usize)>`.
+pub impl Vector2IndexPair<T, +Copy<T>, +Drop<T>> of IndexView<Vector2<T>, (usize, usize)> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Vector2<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => *self.x,
+                1 => *self.y,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The component-wise partial order: `a < b` when EVERY component of `a` is smaller than `b`'s
+/// (likewise `<=`, `>`, `>=`), so two matrices may be unordered (`!(a < b) && !(a >= b)`).
+/// Upstream: `PartialOrd for Matrix`.
+pub impl Vector2PartialOrd<T, +PartialOrd<T>, +Copy<T>, +Drop<T>> of PartialOrd<Vector2<T>> {
+    #[inline(always)]
+    fn lt(lhs: Vector2<T>, rhs: Vector2<T>) -> bool {
+        lhs.x < rhs.x && lhs.y < rhs.y
+    }
+    #[inline(always)]
+    fn le(lhs: Vector2<T>, rhs: Vector2<T>) -> bool {
+        lhs.x <= rhs.x && lhs.y <= rhs.y
+    }
+    #[inline(always)]
+    fn gt(lhs: Vector2<T>, rhs: Vector2<T>) -> bool {
+        lhs.x > rhs.x && lhs.y > rhs.y
+    }
+    #[inline(always)]
+    fn ge(lhs: Vector2<T>, rhs: Vector2<T>) -> bool {
+        lhs.x >= rhs.x && lhs.y >= rhs.y
+    }
+}
+
+/// The component-wise bounds: every component `Bounded::<T>::MIN` / `MAX`. Upstream: `num::Bounded
+/// for Matrix`.
+pub impl Vector2Bounded<T, +Bounded<T>, +Drop<T>> of Bounded<Vector2<T>> {
+    const MIN: Vector2<T> = Vector2 { x: Bounded::<T>::MIN, y: Bounded::<T>::MIN };
+    const MAX: Vector2<T> = Vector2 { x: Bounded::<T>::MAX, y: Bounded::<T>::MAX };
+}
+
+/// The 2-dimensional column vector of the given COLUMNS (`[[m11, m21, ..], [m12, ..], ..]`).
+/// Upstream: `From<[[T; R]; C]>`.
+pub impl Vector2FromColumnArrays<T, +Drop<T>> of Into<[[T; 2]; 1], Vector2<T>> {
+    #[inline(always)]
+    fn into(self: [[T; 2]; 1]) -> Vector2<T> {
+        let [c0] = self;
+        let [x, y] = c0;
+        Vector2 { x, y }
+    }
+}
+
+/// The columns of the 2-dimensional column vector as nested arrays (`[[m11, m21, ..], [m12, ..],
+/// ..]`). Upstream: `Into<[[T; R]; C]>`.
+pub impl Vector2IntoColumnArrays<T, +Drop<T>> of Into<Vector2<T>, [[T; 2]; 1]> {
+    #[inline(always)]
+    fn into(self: Vector2<T>) -> [[T; 2]; 1] {
+        let Vector2 { x, y } = self;
+        [[x, y]]
+    }
+}
+
+/// Methods of `UnitVector2<T>` (`Unit<Vector2<T>>`) specific to the shape.
+#[generate_trait]
+pub impl UnitVector2Impl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of UnitVector2Trait<T> {
+    /// The unit vector with every component converted by `Into<T, U>` (the identity for `Fixed`).
+    /// Upstream: `Unit::cast`.
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Unit<Vector2<T>>) -> Unit<Vector2<U>> {
+        Unit { value: Vector2 { x: self.value.x.into(), y: self.value.y.into() } }
+    }
+
+    /// `relative_eq` of the two vectors (see `Vector2Trait::relative_eq`). Upstream:
+    /// `approx::RelativeEq` for `Unit`.
+    #[inline(always)]
+    fn relative_eq(
+        self: Unit<Vector2<T>>, other: Unit<Vector2<T>>, epsilon: u64, max_relative: T,
+    ) -> bool {
+        Vector2Trait::relative_eq(self.value, other.value, epsilon, max_relative)
+    }
+
+    /// `ulps_eq` of the two vectors (see `Vector2Trait::ulps_eq`). Upstream: `approx::UlpsEq` for
+    /// `Unit`.
+    #[inline(always)]
+    fn ulps_eq(
+        self: Unit<Vector2<T>>, other: Unit<Vector2<T>>, epsilon: u64, max_ulps: u32,
+    ) -> bool {
+        Vector2Trait::ulps_eq(self.value, other.value, epsilon, max_ulps)
+    }
+}
+
+/// The interpolations of `UnitVector2<T>`, which need `Transcendental`.
+#[generate_trait]
+pub impl UnitVector2AngleImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of UnitVector2AngleTrait<T> {
+    /// Spherical linear interpolation between two unit vectors along the great arc, with constant
+    /// angular velocity (`t` is not clamped). Returns `self` when the vectors are opposite (the arc
+    /// is not defined), like upstream. Upstream: `Unit::slerp`.
+    fn slerp(self: Unit<Vector2<T>>, rhs: Unit<Vector2<T>>, t: T) -> Unit<Vector2<T>> {
+        Unit {
+            value: slerp_unit(self.value, rhs.value, t, R::default_epsilon()).unwrap_or(self.value),
+        }
+    }
+
+    /// `slerp`, or `None` when `sin` of the angle between the vectors is `<= epsilon` (nearly
+    /// parallel or opposite vectors: the interpolation plane is ill-conditioned; `self` is returned
+    /// as is for exactly equal ones). `epsilon` is in scalar units. Upstream: `Unit::try_slerp`.
+    fn try_slerp(
+        self: Unit<Vector2<T>>, rhs: Unit<Vector2<T>>, t: T, epsilon: T,
+    ) -> Option<Unit<Vector2<T>>> {
+        match slerp_unit(self.value, rhs.value, t, epsilon) {
+            Option::Some(v) => Option::Some(Unit { value: v }),
+            Option::None => Option::None,
+        }
+    }
+}
+
+/// `Unit::try_slerp` on the values `a`, `b` of two unit vectors (upstream `interpolation.rs`): `a`
+/// when they are equal, `None` when `sin θ <= epsilon`, otherwise each component is ONE
+/// `sum_prod2` of the weights `sin((1 - t) θ) / sin θ` and `sin(t θ) / sin θ`.
+///
+/// The angle comes from the Kahan half-angle form of `angle`: `θ = 2 atan2(|a - b|, |a + b|)` and
+/// `sin θ = |a - b| |a + b| / 2` (unit vectors), two fused norms of exact differences / sums.
+/// Upstream's `acos(a · b)` and `sqrt(1 - (a · b)²)` lose the last bit of `1 - c²` near `c = 1`
+/// (a unit vector interpolated with itself came out √2 too long); that form is kept as a
+/// benchmark (`bench_vector4_slerp__alt_acos`: 141 180 gas against 155 000 for this one).
+fn slerp_unit<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+>(
+    a: Vector2<T>, b: Vector2<T>, t: T, epsilon: T,
+) -> Option<Vector2<T>> {
+    let d = R::norm2(a.x - b.x, a.y - b.y);
+    if d == R::zero() {
+        return Option::Some(a);
+    }
+    let s = R::norm2(a.x + b.x, a.y + b.y);
+    let half = Tr::atan2(d, s);
+    let hang = half + half;
+    let shang = (d * s) * R::HALF;
+    if shang <= epsilon {
+        return Option::None;
+    }
+    let ta = R::div(Tr::sin((R::one() - t) * hang), shang);
+    let tb = R::div(Tr::sin(t * hang), shang);
+    Option::Some(Vector2 { x: R::sum_prod2(a.x, ta, b.x, tb), y: R::sum_prod2(a.y, ta, b.y, tb) })
 }

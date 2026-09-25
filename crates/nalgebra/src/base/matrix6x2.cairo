@@ -8,8 +8,13 @@
 //! `Matrix6x2Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
-use core::ops::{AddAssign, SubAssign};
-use simba::scalar::Real;
+use core::num::traits::Bounded;
+use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use simba::scalar::{Real, Transcendental};
+use crate::geometry::Rotation2;
+use crate::geometry::quaternion::ApproxEqTrait;
+use super::errors;
+use super::kernels::Powi;
 use super::matrix2::Matrix2;
 use super::matrix2x3::Matrix2x3;
 use super::matrix2x4::Matrix2x4;
@@ -19,6 +24,7 @@ use super::matrix6::Matrix6;
 use super::matrix6x3::Matrix6x3;
 use super::matrix6x4::Matrix6x4;
 use super::matrix6x5::Matrix6x5;
+use super::matrix_index::MatrixIndex;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
 use super::vector2::Vector2;
@@ -171,6 +177,1009 @@ pub impl Matrix6x2Impl<
             && R::abs_diff_eq(self.m42, other.m42, ulps)
             && R::abs_diff_eq(self.m52, other.m52, ulps)
             && R::abs_diff_eq(self.m62, other.m62, ulps)
+    }
+
+    /// The 6x2 matrix whose components all equal `elem`. Upstream: `Matrix6x2::repeat`.
+    #[inline(always)]
+    fn repeat(elem: T) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: elem,
+            m21: elem,
+            m31: elem,
+            m41: elem,
+            m51: elem,
+            m61: elem,
+            m12: elem,
+            m22: elem,
+            m32: elem,
+            m42: elem,
+            m52: elem,
+            m62: elem,
+        }
+    }
+
+    /// Alias of `repeat`. Upstream: `Matrix6x2::from_element`.
+    #[inline(always)]
+    fn from_element(elem: T) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: elem,
+            m21: elem,
+            m31: elem,
+            m41: elem,
+            m51: elem,
+            m61: elem,
+            m12: elem,
+            m22: elem,
+            m32: elem,
+            m42: elem,
+            m52: elem,
+            m62: elem,
+        }
+    }
+
+    /// The 6x2 matrix whose component `(i, j)` (row, column, 0-based) is `f(i, j)`, `f` being
+    /// called in column-major order like upstream. `f` is any closure or `Fn` value of `(usize,
+    /// usize)` whose output converts `Into<T>` (the identity included): Cairo cannot state `Output
+    /// = T` on the closure without the `associated_item_constraints` experimental feature.
+    /// Upstream: `Matrix6x2::from_fn`.
+    fn from_fn<
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (usize, usize)>,
+        +Into<Func::Output, T>,
+        +Drop<Func::Output>,
+    >(
+        f: F,
+    ) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: f(0, 0).into(),
+            m21: f(1, 0).into(),
+            m31: f(2, 0).into(),
+            m41: f(3, 0).into(),
+            m51: f(4, 0).into(),
+            m61: f(5, 0).into(),
+            m12: f(0, 1).into(),
+            m22: f(1, 1).into(),
+            m32: f(2, 1).into(),
+            m42: f(3, 1).into(),
+            m52: f(4, 1).into(),
+            m62: f(5, 1).into(),
+        }
+    }
+
+    /// The 6x2 matrix of the 12 values of `data`, in row-major order. Panics with `nalgebra: wrong
+    /// slice length` unless `data.len() == 12`. Upstream: `Matrix6x2::from_row_slice` (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 12]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
+    #[inline(always)]
+    fn from_row_slice(data: Span<T>) -> Matrix6x2<T> {
+        let boxed: @Box<[T; 12]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = boxed.unbox();
+        Matrix6x2 {
+            m11: v0,
+            m21: v2,
+            m31: v4,
+            m41: v6,
+            m51: v8,
+            m61: v10,
+            m12: v1,
+            m22: v3,
+            m32: v5,
+            m42: v7,
+            m52: v9,
+            m62: v11,
+        }
+    }
+
+    /// The 6x2 matrix of the 12 values of `data`, in column-major order. Panics with `nalgebra:
+    /// wrong slice length` unless `data.len() == 12`. Upstream: `Matrix6x2::from_column_slice`
+    /// (`&[T]`).
+    ///
+    /// `data` is read as ONE fixed-size array (`Span -> @Box<[T; 12]>`, one length check): measured
+    /// about 5 times cheaper than a bounds-checked `*data[k]` per component
+    /// (`bench_matrix3_from_row_slice__alt_span_index`).
+    #[inline(always)]
+    fn from_column_slice(data: Span<T>) -> Matrix6x2<T> {
+        let boxed: @Box<[T; 12]> = data.try_into().expect(errors::SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = boxed.unbox();
+        Matrix6x2 {
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m41: v3,
+            m51: v4,
+            m61: v5,
+            m12: v6,
+            m22: v7,
+            m32: v8,
+            m42: v9,
+            m52: v10,
+            m62: v11,
+        }
+    }
+
+    /// The 6x2 matrix whose first `data.len()` diagonal components are `data`, every other
+    /// component zero. Panics with `nalgebra: diagonal too long` when `data.len() > 2`. Upstream:
+    /// `Matrix6x2::from_partial_diagonal` (`&[T]`).
+    #[inline(always)]
+    fn from_partial_diagonal(data: Span<T>) -> Matrix6x2<T> {
+        let len = data.len();
+        if len > 2 {
+            core::panic_with_felt252(errors::TOO_MANY_DIAGONAL);
+        }
+        Matrix6x2 {
+            m11: if len > 0 {
+                *data[0]
+            } else {
+                R::zero()
+            },
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m51: R::zero(),
+            m61: R::zero(),
+            m12: R::zero(),
+            m22: if len > 1 {
+                *data[1]
+            } else {
+                R::zero()
+            },
+            m32: R::zero(),
+            m42: R::zero(),
+            m52: R::zero(),
+            m62: R::zero(),
+        }
+    }
+
+    /// `true` when every component is zero. Upstream: `Zero::is_zero`.
+    #[inline(always)]
+    fn is_zero(self: Matrix6x2<T>) -> bool {
+        self.m11 == R::zero()
+            && self.m21 == R::zero()
+            && self.m31 == R::zero()
+            && self.m41 == R::zero()
+            && self.m51 == R::zero()
+            && self.m61 == R::zero()
+            && self.m12 == R::zero()
+            && self.m22 == R::zero()
+            && self.m32 == R::zero()
+            && self.m42 == R::zero()
+            && self.m52 == R::zero()
+            && self.m62 == R::zero()
+    }
+
+    /// Component-wise (Hadamard) product, each component floored once. Panics on overflow.
+    /// Upstream: `component_mul`.
+    #[inline(always)]
+    fn component_mul(self: Matrix6x2<T>, rhs: Matrix6x2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m21 * rhs.m21,
+            m31: self.m31 * rhs.m31,
+            m41: self.m41 * rhs.m41,
+            m51: self.m51 * rhs.m51,
+            m61: self.m61 * rhs.m61,
+            m12: self.m12 * rhs.m12,
+            m22: self.m22 * rhs.m22,
+            m32: self.m32 * rhs.m32,
+            m42: self.m42 * rhs.m42,
+            m52: self.m52 * rhs.m52,
+            m62: self.m62 * rhs.m62,
+        }
+    }
+
+    /// `self = self.component_mul(rhs)`. Upstream: `component_mul_assign`.
+    #[inline(always)]
+    fn component_mul_assign(ref self: Matrix6x2<T>, rhs: Matrix6x2<T>) {
+        self =
+            Matrix6x2 {
+                m11: self.m11 * rhs.m11,
+                m21: self.m21 * rhs.m21,
+                m31: self.m31 * rhs.m31,
+                m41: self.m41 * rhs.m41,
+                m51: self.m51 * rhs.m51,
+                m61: self.m61 * rhs.m61,
+                m12: self.m12 * rhs.m12,
+                m22: self.m22 * rhs.m22,
+                m32: self.m32 * rhs.m32,
+                m42: self.m42 * rhs.m42,
+                m52: self.m52 * rhs.m52,
+                m62: self.m62 * rhs.m62,
+            };
+    }
+
+    /// Component-wise quotient, each component rounded to nearest (ties to even). Panics on a zero
+    /// component of `rhs` and on overflow. Upstream: `component_div`.
+    #[inline(always)]
+    fn component_div(self: Matrix6x2<T>, rhs: Matrix6x2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: R::div(self.m11, rhs.m11),
+            m21: R::div(self.m21, rhs.m21),
+            m31: R::div(self.m31, rhs.m31),
+            m41: R::div(self.m41, rhs.m41),
+            m51: R::div(self.m51, rhs.m51),
+            m61: R::div(self.m61, rhs.m61),
+            m12: R::div(self.m12, rhs.m12),
+            m22: R::div(self.m22, rhs.m22),
+            m32: R::div(self.m32, rhs.m32),
+            m42: R::div(self.m42, rhs.m42),
+            m52: R::div(self.m52, rhs.m52),
+            m62: R::div(self.m62, rhs.m62),
+        }
+    }
+
+    /// `self = self.component_div(rhs)`. Upstream: `component_div_assign`.
+    #[inline(always)]
+    fn component_div_assign(ref self: Matrix6x2<T>, rhs: Matrix6x2<T>) {
+        self =
+            Matrix6x2 {
+                m11: R::div(self.m11, rhs.m11),
+                m21: R::div(self.m21, rhs.m21),
+                m31: R::div(self.m31, rhs.m31),
+                m41: R::div(self.m41, rhs.m41),
+                m51: R::div(self.m51, rhs.m51),
+                m61: R::div(self.m61, rhs.m61),
+                m12: R::div(self.m12, rhs.m12),
+                m22: R::div(self.m22, rhs.m22),
+                m32: R::div(self.m32, rhs.m32),
+                m42: R::div(self.m42, rhs.m42),
+                m52: R::div(self.m52, rhs.m52),
+                m62: R::div(self.m62, rhs.m62),
+            };
+    }
+
+    /// Component-wise minimum (infimum). Exact. Upstream: `inf`.
+    #[inline(always)]
+    fn inf(self: Matrix6x2<T>, other: Matrix6x2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: R::min(self.m11, other.m11),
+            m21: R::min(self.m21, other.m21),
+            m31: R::min(self.m31, other.m31),
+            m41: R::min(self.m41, other.m41),
+            m51: R::min(self.m51, other.m51),
+            m61: R::min(self.m61, other.m61),
+            m12: R::min(self.m12, other.m12),
+            m22: R::min(self.m22, other.m22),
+            m32: R::min(self.m32, other.m32),
+            m42: R::min(self.m42, other.m42),
+            m52: R::min(self.m52, other.m52),
+            m62: R::min(self.m62, other.m62),
+        }
+    }
+
+    /// Component-wise maximum (supremum). Exact. Upstream: `sup`.
+    #[inline(always)]
+    fn sup(self: Matrix6x2<T>, other: Matrix6x2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: R::max(self.m11, other.m11),
+            m21: R::max(self.m21, other.m21),
+            m31: R::max(self.m31, other.m31),
+            m41: R::max(self.m41, other.m41),
+            m51: R::max(self.m51, other.m51),
+            m61: R::max(self.m61, other.m61),
+            m12: R::max(self.m12, other.m12),
+            m22: R::max(self.m22, other.m22),
+            m32: R::max(self.m32, other.m32),
+            m42: R::max(self.m42, other.m42),
+            m52: R::max(self.m52, other.m52),
+            m62: R::max(self.m62, other.m62),
+        }
+    }
+
+    /// `(self.inf(other), self.sup(other))`. Exact. Upstream: `inf_sup`.
+    #[inline(always)]
+    fn inf_sup(self: Matrix6x2<T>, other: Matrix6x2<T>) -> (Matrix6x2<T>, Matrix6x2<T>) {
+        (Self::inf(self, other), Self::sup(self, other))
+    }
+
+    /// `self + k` added to every component. Exact; panics on overflow. Upstream: `add_scalar`.
+    #[inline(always)]
+    fn add_scalar(self: Matrix6x2<T>, k: T) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.m11 + k,
+            m21: self.m21 + k,
+            m31: self.m31 + k,
+            m41: self.m41 + k,
+            m51: self.m51 + k,
+            m61: self.m61 + k,
+            m12: self.m12 + k,
+            m22: self.m22 + k,
+            m32: self.m32 + k,
+            m42: self.m42 + k,
+            m52: self.m52 + k,
+            m62: self.m62 + k,
+        }
+    }
+
+    /// `self = alpha * a ∘ b + beta * self` (component-wise product): per component `alpha * a`
+    /// is floored, then the two products are ONE fused `sum_prod2` (floored once). Panics on
+    /// overflow.
+    /// Upstream: `cmpy` (which skips reading `self` when `beta` is zero: a difference only for NaN,
+    /// which fixed point has not).
+    #[inline(always)]
+    fn cmpy(ref self: Matrix6x2<T>, alpha: T, a: Matrix6x2<T>, b: Matrix6x2<T>, beta: T) {
+        self =
+            Matrix6x2 {
+                m11: R::sum_prod2(alpha * a.m11, b.m11, beta, self.m11),
+                m21: R::sum_prod2(alpha * a.m21, b.m21, beta, self.m21),
+                m31: R::sum_prod2(alpha * a.m31, b.m31, beta, self.m31),
+                m41: R::sum_prod2(alpha * a.m41, b.m41, beta, self.m41),
+                m51: R::sum_prod2(alpha * a.m51, b.m51, beta, self.m51),
+                m61: R::sum_prod2(alpha * a.m61, b.m61, beta, self.m61),
+                m12: R::sum_prod2(alpha * a.m12, b.m12, beta, self.m12),
+                m22: R::sum_prod2(alpha * a.m22, b.m22, beta, self.m22),
+                m32: R::sum_prod2(alpha * a.m32, b.m32, beta, self.m32),
+                m42: R::sum_prod2(alpha * a.m42, b.m42, beta, self.m42),
+                m52: R::sum_prod2(alpha * a.m52, b.m52, beta, self.m52),
+                m62: R::sum_prod2(alpha * a.m62, b.m62, beta, self.m62),
+            };
+    }
+
+    /// `self = alpha * a / b + beta * self` (component-wise quotient): per component `alpha * a` is
+    /// floored, divided by `b` (rounded to nearest), then `beta * self + quotient` is ONE `mul_add`
+    /// (floored once). Panics on a zero component of `b` and on overflow. Upstream: `cdpy`.
+    #[inline(always)]
+    fn cdpy(ref self: Matrix6x2<T>, alpha: T, a: Matrix6x2<T>, b: Matrix6x2<T>, beta: T) {
+        self =
+            Matrix6x2 {
+                m11: R::mul_add(beta, self.m11, R::div(alpha * a.m11, b.m11)),
+                m21: R::mul_add(beta, self.m21, R::div(alpha * a.m21, b.m21)),
+                m31: R::mul_add(beta, self.m31, R::div(alpha * a.m31, b.m31)),
+                m41: R::mul_add(beta, self.m41, R::div(alpha * a.m41, b.m41)),
+                m51: R::mul_add(beta, self.m51, R::div(alpha * a.m51, b.m51)),
+                m61: R::mul_add(beta, self.m61, R::div(alpha * a.m61, b.m61)),
+                m12: R::mul_add(beta, self.m12, R::div(alpha * a.m12, b.m12)),
+                m22: R::mul_add(beta, self.m22, R::div(alpha * a.m22, b.m22)),
+                m32: R::mul_add(beta, self.m32, R::div(alpha * a.m32, b.m32)),
+                m42: R::mul_add(beta, self.m42, R::div(alpha * a.m42, b.m42)),
+                m52: R::mul_add(beta, self.m52, R::div(alpha * a.m52, b.m52)),
+                m62: R::mul_add(beta, self.m62, R::div(alpha * a.m62, b.m62)),
+            };
+    }
+
+    /// The smallest component. Exact. Upstream: `min`.
+    #[inline(always)]
+    fn min(self: Matrix6x2<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(
+                        R::min(
+                            R::min(
+                                R::min(
+                                    R::min(
+                                        R::min(
+                                            R::min(R::min(self.m11, self.m21), self.m31), self.m41,
+                                        ),
+                                        self.m51,
+                                    ),
+                                    self.m61,
+                                ),
+                                self.m12,
+                            ),
+                            self.m22,
+                        ),
+                        self.m32,
+                    ),
+                    self.m42,
+                ),
+                self.m52,
+            ),
+            self.m62,
+        )
+    }
+
+    /// The largest component. Exact. Upstream: `max`.
+    #[inline(always)]
+    fn max(self: Matrix6x2<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(
+                        R::max(
+                            R::max(
+                                R::max(
+                                    R::max(
+                                        R::max(
+                                            R::max(R::max(self.m11, self.m21), self.m31), self.m41,
+                                        ),
+                                        self.m51,
+                                    ),
+                                    self.m61,
+                                ),
+                                self.m12,
+                            ),
+                            self.m22,
+                        ),
+                        self.m32,
+                    ),
+                    self.m42,
+                ),
+                self.m52,
+            ),
+            self.m62,
+        )
+    }
+
+    /// The smallest absolute value of a component. Panics on the scalar's `MIN`. Upstream: `amin`.
+    #[inline(always)]
+    fn amin(self: Matrix6x2<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(
+                        R::min(
+                            R::min(
+                                R::min(
+                                    R::min(
+                                        R::min(
+                                            R::min(
+                                                R::min(R::abs(self.m11), R::abs(self.m21)),
+                                                R::abs(self.m31),
+                                            ),
+                                            R::abs(self.m41),
+                                        ),
+                                        R::abs(self.m51),
+                                    ),
+                                    R::abs(self.m61),
+                                ),
+                                R::abs(self.m12),
+                            ),
+                            R::abs(self.m22),
+                        ),
+                        R::abs(self.m32),
+                    ),
+                    R::abs(self.m42),
+                ),
+                R::abs(self.m52),
+            ),
+            R::abs(self.m62),
+        )
+    }
+
+    /// The largest absolute value of a component (the uniform norm). Panics on the scalar's `MIN`.
+    /// Upstream: `amax`.
+    #[inline(always)]
+    fn amax(self: Matrix6x2<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(
+                        R::max(
+                            R::max(
+                                R::max(
+                                    R::max(
+                                        R::max(
+                                            R::max(
+                                                R::max(R::abs(self.m11), R::abs(self.m21)),
+                                                R::abs(self.m31),
+                                            ),
+                                            R::abs(self.m41),
+                                        ),
+                                        R::abs(self.m51),
+                                    ),
+                                    R::abs(self.m61),
+                                ),
+                                R::abs(self.m12),
+                            ),
+                            R::abs(self.m22),
+                        ),
+                        R::abs(self.m32),
+                    ),
+                    R::abs(self.m42),
+                ),
+                R::abs(self.m52),
+            ),
+            R::abs(self.m62),
+        )
+    }
+
+    /// `amin`: the modulus of a real scalar is its absolute value. Upstream: `camin`.
+    #[inline(always)]
+    fn camin(self: Matrix6x2<T>) -> T {
+        R::min(
+            R::min(
+                R::min(
+                    R::min(
+                        R::min(
+                            R::min(
+                                R::min(
+                                    R::min(
+                                        R::min(
+                                            R::min(
+                                                R::min(R::abs(self.m11), R::abs(self.m21)),
+                                                R::abs(self.m31),
+                                            ),
+                                            R::abs(self.m41),
+                                        ),
+                                        R::abs(self.m51),
+                                    ),
+                                    R::abs(self.m61),
+                                ),
+                                R::abs(self.m12),
+                            ),
+                            R::abs(self.m22),
+                        ),
+                        R::abs(self.m32),
+                    ),
+                    R::abs(self.m42),
+                ),
+                R::abs(self.m52),
+            ),
+            R::abs(self.m62),
+        )
+    }
+
+    /// `amax`: the modulus of a real scalar is its absolute value. Upstream: `camax`.
+    #[inline(always)]
+    fn camax(self: Matrix6x2<T>) -> T {
+        R::max(
+            R::max(
+                R::max(
+                    R::max(
+                        R::max(
+                            R::max(
+                                R::max(
+                                    R::max(
+                                        R::max(
+                                            R::max(
+                                                R::max(R::abs(self.m11), R::abs(self.m21)),
+                                                R::abs(self.m31),
+                                            ),
+                                            R::abs(self.m41),
+                                        ),
+                                        R::abs(self.m51),
+                                    ),
+                                    R::abs(self.m61),
+                                ),
+                                R::abs(self.m12),
+                            ),
+                            R::abs(self.m22),
+                        ),
+                        R::abs(self.m32),
+                    ),
+                    R::abs(self.m42),
+                ),
+                R::abs(self.m52),
+            ),
+            R::abs(self.m62),
+        )
+    }
+
+    /// `(row, column)` of the component with the largest absolute value, the first one in
+    /// column-major order on ties. Panics on the scalar's `MIN`. Upstream: `iamax_full`.
+    fn iamax_full(self: Matrix6x2<T>) -> (usize, usize) {
+        let mut best: (usize, usize) = (0, 0);
+        let mut m = R::abs(self.m11);
+        let v = R::abs(self.m21);
+        if v > m {
+            m = v;
+            best = (1, 0);
+        }
+        let v = R::abs(self.m31);
+        if v > m {
+            m = v;
+            best = (2, 0);
+        }
+        let v = R::abs(self.m41);
+        if v > m {
+            m = v;
+            best = (3, 0);
+        }
+        let v = R::abs(self.m51);
+        if v > m {
+            m = v;
+            best = (4, 0);
+        }
+        let v = R::abs(self.m61);
+        if v > m {
+            m = v;
+            best = (5, 0);
+        }
+        let v = R::abs(self.m12);
+        if v > m {
+            m = v;
+            best = (0, 1);
+        }
+        let v = R::abs(self.m22);
+        if v > m {
+            m = v;
+            best = (1, 1);
+        }
+        let v = R::abs(self.m32);
+        if v > m {
+            m = v;
+            best = (2, 1);
+        }
+        let v = R::abs(self.m42);
+        if v > m {
+            m = v;
+            best = (3, 1);
+        }
+        let v = R::abs(self.m52);
+        if v > m {
+            m = v;
+            best = (4, 1);
+        }
+        let v = R::abs(self.m62);
+        if v > m {
+            best = (5, 1);
+        }
+        best
+    }
+
+    /// `iamax_full`: the modulus of a real scalar is its absolute value. Upstream: `icamax_full`.
+    #[inline(always)]
+    fn icamax_full(self: Matrix6x2<T>) -> (usize, usize) {
+        Self::iamax_full(self)
+    }
+
+    /// Dot product (the sum of the component-wise products, upstream's Frobenius inner product for
+    /// matrices): the exact sum is floored ONCE, only the result must fit. Upstream: `dot`.
+    fn dot(self: Matrix6x2<T>, rhs: Matrix6x2<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11, rhs.m11);
+        let w = R::wide_add_prod(w, self.m21, rhs.m21);
+        let w = R::wide_add_prod(w, self.m31, rhs.m31);
+        let w = R::wide_add_prod(w, self.m41, rhs.m41);
+        let w = R::wide_add_prod(w, self.m51, rhs.m51);
+        let w = R::wide_add_prod(w, self.m61, rhs.m61);
+        let w = R::wide_add_prod(w, self.m12, rhs.m12);
+        let w = R::wide_add_prod(w, self.m22, rhs.m22);
+        let w = R::wide_add_prod(w, self.m32, rhs.m32);
+        let w = R::wide_add_prod(w, self.m42, rhs.m42);
+        let w = R::wide_add_prod(w, self.m52, rhs.m52);
+        R::wide_rescale(R::wide_add_prod(w, self.m62, rhs.m62))
+    }
+
+    /// Squared Euclidean (Frobenius) norm: the exact sum of squares floored once. Panics on
+    /// overflow (above a norm of about 46 340 in Q32.32 only `norm` works). Upstream:
+    /// `norm_squared`.
+    fn norm_squared(self: Matrix6x2<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11, self.m11);
+        let w = R::wide_add_prod(w, self.m21, self.m21);
+        let w = R::wide_add_prod(w, self.m31, self.m31);
+        let w = R::wide_add_prod(w, self.m41, self.m41);
+        let w = R::wide_add_prod(w, self.m51, self.m51);
+        let w = R::wide_add_prod(w, self.m61, self.m61);
+        let w = R::wide_add_prod(w, self.m12, self.m12);
+        let w = R::wide_add_prod(w, self.m22, self.m22);
+        let w = R::wide_add_prod(w, self.m32, self.m32);
+        let w = R::wide_add_prod(w, self.m42, self.m42);
+        let w = R::wide_add_prod(w, self.m52, self.m52);
+        R::wide_rescale(R::wide_add_prod(w, self.m62, self.m62))
+    }
+
+    /// Euclidean (Frobenius) norm: square root of the UNSCALED exact sum of squares, floored once.
+    /// No intermediate overflow: only the result must fit. Upstream: `norm`.
+    fn norm(self: Matrix6x2<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11, self.m11);
+        let w = R::wide_add_prod(w, self.m21, self.m21);
+        let w = R::wide_add_prod(w, self.m31, self.m31);
+        let w = R::wide_add_prod(w, self.m41, self.m41);
+        let w = R::wide_add_prod(w, self.m51, self.m51);
+        let w = R::wide_add_prod(w, self.m61, self.m61);
+        let w = R::wide_add_prod(w, self.m12, self.m12);
+        let w = R::wide_add_prod(w, self.m22, self.m22);
+        let w = R::wide_add_prod(w, self.m32, self.m32);
+        let w = R::wide_add_prod(w, self.m42, self.m42);
+        let w = R::wide_add_prod(w, self.m52, self.m52);
+        R::wide_sqrt(R::wide_add_prod(w, self.m62, self.m62))
+    }
+
+    /// Alias of `norm_squared`. Upstream: `magnitude_squared`.
+    #[inline(always)]
+    fn magnitude_squared(self: Matrix6x2<T>) -> T {
+        Self::norm_squared(self)
+    }
+
+    /// Alias of `norm`. Upstream: `magnitude`.
+    #[inline(always)]
+    fn magnitude(self: Matrix6x2<T>) -> T {
+        Self::norm(self)
+    }
+
+    /// `(self - rhs).norm()`: the differences are exact, then one fused norm. Panics when a
+    /// difference or the result overflows. Upstream: `metric_distance`.
+    fn metric_distance(self: Matrix6x2<T>, rhs: Matrix6x2<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.m11 - rhs.m11, self.m11 - rhs.m11);
+        let w = R::wide_add_prod(w, self.m21 - rhs.m21, self.m21 - rhs.m21);
+        let w = R::wide_add_prod(w, self.m31 - rhs.m31, self.m31 - rhs.m31);
+        let w = R::wide_add_prod(w, self.m41 - rhs.m41, self.m41 - rhs.m41);
+        let w = R::wide_add_prod(w, self.m51 - rhs.m51, self.m51 - rhs.m51);
+        let w = R::wide_add_prod(w, self.m61 - rhs.m61, self.m61 - rhs.m61);
+        let w = R::wide_add_prod(w, self.m12 - rhs.m12, self.m12 - rhs.m12);
+        let w = R::wide_add_prod(w, self.m22 - rhs.m22, self.m22 - rhs.m22);
+        let w = R::wide_add_prod(w, self.m32 - rhs.m32, self.m32 - rhs.m32);
+        let w = R::wide_add_prod(w, self.m42 - rhs.m42, self.m42 - rhs.m42);
+        let w = R::wide_add_prod(w, self.m52 - rhs.m52, self.m52 - rhs.m52);
+        R::wide_sqrt(R::wide_add_prod(w, self.m62 - rhs.m62, self.m62 - rhs.m62))
+    }
+
+    /// `self / k`, each component the correctly rounded quotient (nearest, ties to even), through 2
+    /// prepared-divisor `Real::divN` call(s), bit-identical to one `Real::div` per component.
+    /// Panics on a zero `k` and on overflow. Upstream: `unscale` (`self / k`).
+    fn unscale(self: Matrix6x2<T>, k: T) -> Matrix6x2<T> {
+        let (m11, m21, m31, m41, m51, m61, m12, m22, m32) = R::div9(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m41,
+            self.m51,
+            self.m61,
+            self.m12,
+            self.m22,
+            self.m32,
+            k,
+        );
+        let (m42, m52, m62) = R::div3(self.m42, self.m52, self.m62, k);
+        Matrix6x2 { m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62 }
+    }
+
+    /// `self / self.norm()`: the floored norm, then `unscale`. Panics with a division by zero when
+    /// the norm is zero, and on overflow when the norm does not fit. Upstream: `normalize`.
+    fn normalize(self: Matrix6x2<T>) -> Matrix6x2<T> {
+        Self::unscale(self, Self::norm(self))
+    }
+
+    /// `Some(self.normalize())`, or `None` when the norm is `<= min_norm` (never divides by zero
+    /// for `min_norm >= 0`). Upstream: `try_normalize`.
+    fn try_normalize(self: Matrix6x2<T>, min_norm: T) -> Option<Matrix6x2<T>> {
+        let n = Self::norm(self);
+        if n <= min_norm {
+            None
+        } else {
+            Some(Self::unscale(self, n))
+        }
+    }
+
+    /// `self` when its norm is `<= max`, otherwise `self.scale(max / norm)` (the ratio rounded to
+    /// nearest, like upstream's `max / n`). Panics only when the norm does not fit. Upstream:
+    /// `cap_magnitude`.
+    fn cap_magnitude(self: Matrix6x2<T>, max: T) -> Matrix6x2<T> {
+        let n = Self::norm(self);
+        if n <= max {
+            self
+        } else {
+            Self::scale(self, R::div(max, n))
+        }
+    }
+
+    /// Scales `self` to the norm `magnitude` (`self.scale(magnitude / norm)`, the ratio rounded to
+    /// nearest) when its norm is `> min_magnitude`, leaves it unchanged otherwise. Upstream:
+    /// `try_set_magnitude` (`&mut self`).
+    fn try_set_magnitude(ref self: Matrix6x2<T>, magnitude: T, min_magnitude: T) {
+        let n = Self::norm(self);
+        if n > min_magnitude {
+            self = Self::scale(self, R::div(magnitude, n));
+        }
+    }
+
+    /// The induced 1-norm: the largest absolute column sum (the L1 norm of a column vector, the
+    /// largest absolute value of a row vector). Exact; panics on overflow. Upstream: `one_norm`.
+    #[inline(always)]
+    fn one_norm(self: Matrix6x2<T>) -> T {
+        R::max(
+            R::abs(self.m11)
+                + R::abs(self.m21)
+                + R::abs(self.m31)
+                + R::abs(self.m41)
+                + R::abs(self.m51)
+                + R::abs(self.m61),
+            R::abs(self.m12)
+                + R::abs(self.m22)
+                + R::abs(self.m32)
+                + R::abs(self.m42)
+                + R::abs(self.m52)
+                + R::abs(self.m62),
+        )
+    }
+
+    /// The conjugate transpose, a `Matrix2x6`: the transpose for a real scalar. Exact. Upstream:
+    /// `adjoint`.
+    #[inline(always)]
+    fn adjoint(self: Matrix6x2<T>) -> Matrix2x6<T> {
+        Self::transpose(self)
+    }
+
+    /// Alias of `adjoint` (deprecated upstream). Upstream: `conjugate_transpose`.
+    #[inline(always)]
+    fn conjugate_transpose(self: Matrix6x2<T>) -> Matrix2x6<T> {
+        Self::transpose(self)
+    }
+
+    /// The component-wise conjugate: `self` for a real scalar. Upstream: `conjugate`.
+    #[inline(always)]
+    fn conjugate(self: Matrix6x2<T>) -> Matrix6x2<T> {
+        self
+    }
+
+    /// `self / r` = `self * rᵀ` (the inverse of a rotation is its transpose), a `Matrix6x2`: each
+    /// component one fused `sum_prod2` (floored once). Panics on overflow. Upstream:
+    /// `Div<Rotation2> for Matrix` (`m / r`; Cairo's `Div` is homogeneous, so the heterogeneous
+    /// operator is a named method, like `UnitQuaternion::div_rotation`).
+    fn div_rotation(self: Matrix6x2<T>, r: Rotation2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: R::sum_prod2(self.m11, r.matrix.m11, self.m12, r.matrix.m12),
+            m21: R::sum_prod2(self.m21, r.matrix.m11, self.m22, r.matrix.m12),
+            m31: R::sum_prod2(self.m31, r.matrix.m11, self.m32, r.matrix.m12),
+            m41: R::sum_prod2(self.m41, r.matrix.m11, self.m42, r.matrix.m12),
+            m51: R::sum_prod2(self.m51, r.matrix.m11, self.m52, r.matrix.m12),
+            m61: R::sum_prod2(self.m61, r.matrix.m11, self.m62, r.matrix.m12),
+            m12: R::sum_prod2(self.m11, r.matrix.m21, self.m12, r.matrix.m22),
+            m22: R::sum_prod2(self.m21, r.matrix.m21, self.m22, r.matrix.m22),
+            m32: R::sum_prod2(self.m31, r.matrix.m21, self.m32, r.matrix.m22),
+            m42: R::sum_prod2(self.m41, r.matrix.m21, self.m42, r.matrix.m22),
+            m52: R::sum_prod2(self.m51, r.matrix.m21, self.m52, r.matrix.m22),
+            m62: R::sum_prod2(self.m61, r.matrix.m21, self.m62, r.matrix.m22),
+        }
+    }
+
+    /// The same shape with every component converted by `Into<T, U>`. With the single scalar of
+    /// this library (`Fixed`) it is the identity; it exists for scalar-generic code. Upstream:
+    /// `cast` (and `SubsetOf<Matrix<U>>`, the `nalgebra::convert` it goes through).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Matrix6x2<T>) -> Matrix6x2<U> {
+        Matrix6x2 {
+            m11: self.m11.into(),
+            m21: self.m21.into(),
+            m31: self.m31.into(),
+            m41: self.m41.into(),
+            m51: self.m51.into(),
+            m61: self.m61.into(),
+            m12: self.m12.into(),
+            m22: self.m22.into(),
+            m32: self.m32.into(),
+            m42: self.m42.into(),
+            m52: self.m52.into(),
+            m62: self.m62.into(),
+        }
+    }
+
+    /// `Some` of the shape with every component converted by `TryInto<T, U>`, `None` as soon as one
+    /// conversion fails. Upstream: `try_cast`.
+    fn try_cast<U, +TryInto<T, U>, +Drop<U>>(self: Matrix6x2<T>) -> Option<Matrix6x2<U>> {
+        let m11: U = self.m11.try_into()?;
+        let m21: U = self.m21.try_into()?;
+        let m31: U = self.m31.try_into()?;
+        let m41: U = self.m41.try_into()?;
+        let m51: U = self.m51.try_into()?;
+        let m61: U = self.m61.try_into()?;
+        let m12: U = self.m12.try_into()?;
+        let m22: U = self.m22.try_into()?;
+        let m32: U = self.m32.try_into()?;
+        let m42: U = self.m42.try_into()?;
+        let m52: U = self.m52.try_into()?;
+        let m62: U = self.m62.try_into()?;
+        Option::Some(Matrix6x2 { m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62 })
+    }
+
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_relative` times the larger magnitude of the two (`|a - b| <= max(|a|, |b|)
+    /// · max_relative`). Panics on a component equal to the scalar's `MIN`, and on overflow of
+    /// that product (only possible with `max_relative > 1`). Upstream:
+    /// `approx::RelativeEq::relative_eq`, `epsilon` counted in ulp instead of a float epsilon
+    /// (DESIGN D3).
+    #[inline(always)]
+    fn relative_eq(self: Matrix6x2<T>, other: Matrix6x2<T>, epsilon: u64, max_relative: T) -> bool {
+        ApproxEqTrait::relative_eq(self.m11, other.m11, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m21, other.m21, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m31, other.m31, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m41, other.m41, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m51, other.m51, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m61, other.m61, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m12, other.m12, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m22, other.m22, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m32, other.m32, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m42, other.m42, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m52, other.m52, epsilon, max_relative)
+            && ApproxEqTrait::relative_eq(self.m62, other.m62, epsilon, max_relative)
+    }
+
+    /// `true` when every component is within `epsilon` ulp of `other`'s, or has the same sign and
+    /// lies within `max_ulps` ulp (in fixed point the distance in ulp IS the raw difference; the
+    /// `max_ulps` budget does not cross zero, like upstream's float `ulps_eq`). Cannot overflow.
+    /// Upstream: `approx::UlpsEq::ulps_eq`.
+    #[inline(always)]
+    fn ulps_eq(self: Matrix6x2<T>, other: Matrix6x2<T>, epsilon: u64, max_ulps: u32) -> bool {
+        ApproxEqTrait::ulps_eq(self.m11, other.m11, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m21, other.m21, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m31, other.m31, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m41, other.m41, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m51, other.m51, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m61, other.m61, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m12, other.m12, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m22, other.m22, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m32, other.m32, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m42, other.m42, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m52, other.m52, epsilon, max_ulps)
+            && ApproxEqTrait::ulps_eq(self.m62, other.m62, epsilon, max_ulps)
+    }
+}
+
+/// The operations of `Matrix6x2<T>` that need `Transcendental` (inverse trigonometry, `exp`, `ln`):
+/// a scalar may implement `Real` only.
+#[generate_trait]
+pub impl Matrix6x2AngleImpl<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix6x2AngleTrait<T> {
+    /// The angle between `self` and `other` seen as vectors of the Frobenius inner product, in `[0,
+    /// π]` (up to the rounding of `atan2`); `0` when one of them is zero. Computed as `2 *
+    /// atan2(|u - v|, |u + v|)` on the normalized `u`, `v` (Kahan): unlike upstream's `acos(dot /
+    /// (|a| *
+    /// |b|))` it cannot overflow on long inputs and stays accurate for nearly parallel ones. Panics
+    /// when a norm does not fit. Upstream: `angle`.
+    fn angle(self: Matrix6x2<T>, other: Matrix6x2<T>) -> T {
+        let n1 = Matrix6x2Trait::norm(self);
+        let n2 = Matrix6x2Trait::norm(other);
+        if n1 == R::zero() || n2 == R::zero() {
+            return R::zero();
+        }
+        let u = Matrix6x2Trait::unscale(self, n1);
+        let v = Matrix6x2Trait::unscale(other, n2);
+        let half = Tr::atan2(Matrix6x2Trait::metric_distance(u, v), Matrix6x2Trait::norm(u + v));
+        half + half
+    }
+
+    /// The entrywise Lp norm `(Σ |a|^p)^(1/p)`. `p = 1` is the exact sum of the absolute values
+    /// and `p = 2` the fused `norm` (both exact up to their one rounding); above, the components
+    /// are first divided by the largest absolute value `m` (so no power can overflow), `Σ (|a| /
+    /// m)^p`
+    /// is summed (`p` floored products each), and the root is `m * exp(ln(Σ) / p)`: a few ulp
+    /// relative to the result, the rounding of `exp` / `ln`. Panics with `nalgebra: lp_norm needs p
+    /// >= 1` for `p < 1` (upstream returns meaningless values: an infinite root for `p = 0`).
+    /// Upstream: `lp_norm`.
+    fn lp_norm(self: Matrix6x2<T>, p: i32) -> T {
+        if p < 1 {
+            core::panic_with_felt252(errors::LP_NORM_P);
+        }
+        if p == 1 {
+            return R::abs(self.m11)
+                + R::abs(self.m21)
+                + R::abs(self.m31)
+                + R::abs(self.m41)
+                + R::abs(self.m51)
+                + R::abs(self.m61)
+                + R::abs(self.m12)
+                + R::abs(self.m22)
+                + R::abs(self.m32)
+                + R::abs(self.m42)
+                + R::abs(self.m52)
+                + R::abs(self.m62);
+        }
+        if p == 2 {
+            return Matrix6x2Trait::norm(self);
+        }
+        let m = Matrix6x2Trait::amax(self);
+        if m == R::zero() {
+            return R::zero();
+        }
+        let r = Matrix6x2Trait::unscale(Matrix6x2Trait::abs(self), m);
+        let q: u32 = p.try_into().unwrap();
+        let s = Powi::powi(r.m11, q)
+            + Powi::powi(r.m21, q)
+            + Powi::powi(r.m31, q)
+            + Powi::powi(r.m41, q)
+            + Powi::powi(r.m51, q)
+            + Powi::powi(r.m61, q)
+            + Powi::powi(r.m12, q)
+            + Powi::powi(r.m22, q)
+            + Powi::powi(r.m32, q)
+            + Powi::powi(r.m42, q)
+            + Powi::powi(r.m52, q)
+            + Powi::powi(r.m62, q);
+        m * Tr::exp(R::div(Tr::ln(s), R::from_int(p)))
     }
 }
 
@@ -636,5 +1645,356 @@ pub impl Matrix6x2TrMulMatrix6<
             },
             rhs,
         )
+    }
+}
+
+// --- indexing, comparisons, conversions ----------------------------------------------------------
+
+/// `m.get(i)` / `m.index(..)`: the component `index` in column-major (storage) order. `get` is
+/// `None` out of bounds, `index` panics with `nalgebra: index out of bounds`. Upstream:
+/// `Matrix::get` / `Matrix::index` (their `MatrixIndex` argument).
+pub impl Matrix6x2MatrixIndexLinear<T, +Copy<T>, +Drop<T>> of MatrixIndex<Matrix6x2<T>, usize> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Matrix6x2<T>, index: usize) -> Option<T> {
+        match index {
+            0 => Option::Some(self.m11),
+            1 => Option::Some(self.m21),
+            2 => Option::Some(self.m31),
+            3 => Option::Some(self.m41),
+            4 => Option::Some(self.m51),
+            5 => Option::Some(self.m61),
+            6 => Option::Some(self.m12),
+            7 => Option::Some(self.m22),
+            8 => Option::Some(self.m32),
+            9 => Option::Some(self.m42),
+            10 => Option::Some(self.m52),
+            11 => Option::Some(self.m62),
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Matrix6x2<T>, index: usize) -> T {
+        match index {
+            0 => self.m11,
+            1 => self.m21,
+            2 => self.m31,
+            3 => self.m41,
+            4 => self.m51,
+            5 => self.m61,
+            6 => self.m12,
+            7 => self.m22,
+            8 => self.m32,
+            9 => self.m42,
+            10 => self.m52,
+            11 => self.m62,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[i]`: the component `index` in column-major (storage) order. Panics with `nalgebra: index out
+/// of bounds`. Upstream: `Index<usize>`.
+pub impl Matrix6x2IndexLinear<T, +Copy<T>, +Drop<T>> of IndexView<Matrix6x2<T>, usize> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Matrix6x2<T>, index: usize) -> T {
+        match index {
+            0 => *self.m11,
+            1 => *self.m21,
+            2 => *self.m31,
+            3 => *self.m41,
+            4 => *self.m51,
+            5 => *self.m61,
+            6 => *self.m12,
+            7 => *self.m22,
+            8 => *self.m32,
+            9 => *self.m42,
+            10 => *self.m52,
+            11 => *self.m62,
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m.get((i, j))` / `m.index(..)`: the component at `(row, column)`. `get` is `None` out of
+/// bounds, `index` panics with `nalgebra: index out of bounds`. Upstream: `Matrix::get` /
+/// `Matrix::index` (their `MatrixIndex` argument).
+pub impl Matrix6x2MatrixIndexPair<
+    T, +Copy<T>, +Drop<T>,
+> of MatrixIndex<Matrix6x2<T>, (usize, usize)> {
+    type Output = T;
+    #[inline(always)]
+    fn get(self: Matrix6x2<T>, index: (usize, usize)) -> Option<T> {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => Option::Some(self.m11),
+                1 => Option::Some(self.m21),
+                2 => Option::Some(self.m31),
+                3 => Option::Some(self.m41),
+                4 => Option::Some(self.m51),
+                5 => Option::Some(self.m61),
+                _ => Option::None,
+            },
+            1 => match i {
+                0 => Option::Some(self.m12),
+                1 => Option::Some(self.m22),
+                2 => Option::Some(self.m32),
+                3 => Option::Some(self.m42),
+                4 => Option::Some(self.m52),
+                5 => Option::Some(self.m62),
+                _ => Option::None,
+            },
+            _ => Option::None,
+        }
+    }
+    #[inline(always)]
+    fn index(self: Matrix6x2<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => self.m11,
+                1 => self.m21,
+                2 => self.m31,
+                3 => self.m41,
+                4 => self.m51,
+                5 => self.m61,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match i {
+                0 => self.m12,
+                1 => self.m22,
+                2 => self.m32,
+                3 => self.m42,
+                4 => self.m52,
+                5 => self.m62,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `m[(i, j)]`: the component at `(row, column)`. Panics with `nalgebra: index out of bounds`.
+/// Upstream: `Index<(usize, usize)>`.
+pub impl Matrix6x2IndexPair<T, +Copy<T>, +Drop<T>> of IndexView<Matrix6x2<T>, (usize, usize)> {
+    type Target = T;
+    #[inline(always)]
+    fn index(self: @Matrix6x2<T>, index: (usize, usize)) -> T {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => *self.m11,
+                1 => *self.m21,
+                2 => *self.m31,
+                3 => *self.m41,
+                4 => *self.m51,
+                5 => *self.m61,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match i {
+                0 => *self.m12,
+                1 => *self.m22,
+                2 => *self.m32,
+                3 => *self.m42,
+                4 => *self.m52,
+                5 => *self.m62,
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The component-wise partial order: `a < b` when EVERY component of `a` is smaller than `b`'s
+/// (likewise `<=`, `>`, `>=`), so two matrices may be unordered (`!(a < b) && !(a >= b)`).
+/// Upstream: `PartialOrd for Matrix`.
+pub impl Matrix6x2PartialOrd<T, +PartialOrd<T>, +Copy<T>, +Drop<T>> of PartialOrd<Matrix6x2<T>> {
+    #[inline(always)]
+    fn lt(lhs: Matrix6x2<T>, rhs: Matrix6x2<T>) -> bool {
+        lhs.m11 < rhs.m11
+            && lhs.m21 < rhs.m21
+            && lhs.m31 < rhs.m31
+            && lhs.m41 < rhs.m41
+            && lhs.m51 < rhs.m51
+            && lhs.m61 < rhs.m61
+            && lhs.m12 < rhs.m12
+            && lhs.m22 < rhs.m22
+            && lhs.m32 < rhs.m32
+            && lhs.m42 < rhs.m42
+            && lhs.m52 < rhs.m52
+            && lhs.m62 < rhs.m62
+    }
+    #[inline(always)]
+    fn le(lhs: Matrix6x2<T>, rhs: Matrix6x2<T>) -> bool {
+        lhs.m11 <= rhs.m11
+            && lhs.m21 <= rhs.m21
+            && lhs.m31 <= rhs.m31
+            && lhs.m41 <= rhs.m41
+            && lhs.m51 <= rhs.m51
+            && lhs.m61 <= rhs.m61
+            && lhs.m12 <= rhs.m12
+            && lhs.m22 <= rhs.m22
+            && lhs.m32 <= rhs.m32
+            && lhs.m42 <= rhs.m42
+            && lhs.m52 <= rhs.m52
+            && lhs.m62 <= rhs.m62
+    }
+    #[inline(always)]
+    fn gt(lhs: Matrix6x2<T>, rhs: Matrix6x2<T>) -> bool {
+        lhs.m11 > rhs.m11
+            && lhs.m21 > rhs.m21
+            && lhs.m31 > rhs.m31
+            && lhs.m41 > rhs.m41
+            && lhs.m51 > rhs.m51
+            && lhs.m61 > rhs.m61
+            && lhs.m12 > rhs.m12
+            && lhs.m22 > rhs.m22
+            && lhs.m32 > rhs.m32
+            && lhs.m42 > rhs.m42
+            && lhs.m52 > rhs.m52
+            && lhs.m62 > rhs.m62
+    }
+    #[inline(always)]
+    fn ge(lhs: Matrix6x2<T>, rhs: Matrix6x2<T>) -> bool {
+        lhs.m11 >= rhs.m11
+            && lhs.m21 >= rhs.m21
+            && lhs.m31 >= rhs.m31
+            && lhs.m41 >= rhs.m41
+            && lhs.m51 >= rhs.m51
+            && lhs.m61 >= rhs.m61
+            && lhs.m12 >= rhs.m12
+            && lhs.m22 >= rhs.m22
+            && lhs.m32 >= rhs.m32
+            && lhs.m42 >= rhs.m42
+            && lhs.m52 >= rhs.m52
+            && lhs.m62 >= rhs.m62
+    }
+}
+
+/// The component-wise bounds: every component `Bounded::<T>::MIN` / `MAX`. Upstream: `num::Bounded
+/// for Matrix`.
+pub impl Matrix6x2Bounded<T, +Bounded<T>, +Drop<T>> of Bounded<Matrix6x2<T>> {
+    const MIN: Matrix6x2<T> = Matrix6x2 {
+        m11: Bounded::<T>::MIN,
+        m21: Bounded::<T>::MIN,
+        m31: Bounded::<T>::MIN,
+        m41: Bounded::<T>::MIN,
+        m51: Bounded::<T>::MIN,
+        m61: Bounded::<T>::MIN,
+        m12: Bounded::<T>::MIN,
+        m22: Bounded::<T>::MIN,
+        m32: Bounded::<T>::MIN,
+        m42: Bounded::<T>::MIN,
+        m52: Bounded::<T>::MIN,
+        m62: Bounded::<T>::MIN,
+    };
+    const MAX: Matrix6x2<T> = Matrix6x2 {
+        m11: Bounded::<T>::MAX,
+        m21: Bounded::<T>::MAX,
+        m31: Bounded::<T>::MAX,
+        m41: Bounded::<T>::MAX,
+        m51: Bounded::<T>::MAX,
+        m61: Bounded::<T>::MAX,
+        m12: Bounded::<T>::MAX,
+        m22: Bounded::<T>::MAX,
+        m32: Bounded::<T>::MAX,
+        m42: Bounded::<T>::MAX,
+        m52: Bounded::<T>::MAX,
+        m62: Bounded::<T>::MAX,
+    };
+}
+
+/// The 6x2 matrix of the given COLUMNS (`[[m11, m21, ..], [m12, ..], ..]`). Upstream: `From<[[T;
+/// R]; C]>`.
+pub impl Matrix6x2FromColumnArrays<T, +Drop<T>> of Into<[[T; 6]; 2], Matrix6x2<T>> {
+    #[inline(always)]
+    fn into(self: [[T; 6]; 2]) -> Matrix6x2<T> {
+        let [c0, c1] = self;
+        let [m11, m21, m31, m41, m51, m61] = c0;
+        let [m12, m22, m32, m42, m52, m62] = c1;
+        Matrix6x2 { m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62 }
+    }
+}
+
+/// The columns of the 6x2 matrix as nested arrays (`[[m11, m21, ..], [m12, ..], ..]`). Upstream:
+/// `Into<[[T; R]; C]>`.
+pub impl Matrix6x2IntoColumnArrays<T, +Drop<T>> of Into<Matrix6x2<T>, [[T; 6]; 2]> {
+    #[inline(always)]
+    fn into(self: Matrix6x2<T>) -> [[T; 6]; 2] {
+        let Matrix6x2 { m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62 } = self;
+        [[m11, m21, m31, m41, m51, m61], [m12, m22, m32, m42, m52, m62]]
+    }
+}
+
+/// `self *= k` for a scalar `k`: `scale` in place, each component floored once. Panics on overflow.
+/// Upstream: `MulAssign<T>`.
+pub impl Matrix6x2MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Matrix6x2<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Matrix6x2<T>, rhs: T) {
+        self =
+            Matrix6x2 {
+                m11: self.m11 * rhs,
+                m21: self.m21 * rhs,
+                m31: self.m31 * rhs,
+                m41: self.m41 * rhs,
+                m51: self.m51 * rhs,
+                m61: self.m61 * rhs,
+                m12: self.m12 * rhs,
+                m22: self.m22 * rhs,
+                m32: self.m32 * rhs,
+                m42: self.m42 * rhs,
+                m52: self.m52 * rhs,
+                m62: self.m62 * rhs,
+            };
+    }
+}
+
+/// `self /= k` for a scalar `k`: `unscale` in place, each component correctly rounded. Panics on a
+/// zero `k` and on overflow. Upstream: `DivAssign<T>`.
+pub impl Matrix6x2DivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Matrix6x2<T>, T> {
+    fn div_assign(ref self: Matrix6x2<T>, rhs: T) {
+        let (m11, m21, m31, m41, m51, m61, m12, m22, m32) = R::div9(
+            self.m11,
+            self.m21,
+            self.m31,
+            self.m41,
+            self.m51,
+            self.m61,
+            self.m12,
+            self.m22,
+            self.m32,
+            rhs,
+        );
+        let (m42, m52, m62) = R::div3(self.m42, self.m52, self.m62, rhs);
+        self = Matrix6x2 { m11, m21, m31, m41, m51, m61, m12, m22, m32, m42, m52, m62 };
+    }
+}
+
+/// `self * r`, a `Matrix6x2`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m * r`).
+pub impl Matrix6x2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix6x2<T>, Rotation2<T>> {
+    type Output = Matrix6x2<T>;
+
+    fn mul_mat(self: Matrix6x2<T>, rhs: Rotation2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: R::sum_prod2(self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21),
+            m21: R::sum_prod2(self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21),
+            m31: R::sum_prod2(self.m31, rhs.matrix.m11, self.m32, rhs.matrix.m21),
+            m41: R::sum_prod2(self.m41, rhs.matrix.m11, self.m42, rhs.matrix.m21),
+            m51: R::sum_prod2(self.m51, rhs.matrix.m11, self.m52, rhs.matrix.m21),
+            m61: R::sum_prod2(self.m61, rhs.matrix.m11, self.m62, rhs.matrix.m21),
+            m12: R::sum_prod2(self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22),
+            m22: R::sum_prod2(self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22),
+            m32: R::sum_prod2(self.m31, rhs.matrix.m12, self.m32, rhs.matrix.m22),
+            m42: R::sum_prod2(self.m41, rhs.matrix.m12, self.m42, rhs.matrix.m22),
+            m52: R::sum_prod2(self.m51, rhs.matrix.m12, self.m52, rhs.matrix.m22),
+            m62: R::sum_prod2(self.m61, rhs.matrix.m12, self.m62, rhs.matrix.m22),
+        }
     }
 }

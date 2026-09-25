@@ -286,6 +286,48 @@ partial sum could panic in one order and not the other.
 Compile budget (cold builds, this machine, peak RSS): library 1.37 GB / 4.9 s → 2.10 GB / 9.5 s;
 `nalgebra` unit-test crate 12.5 GB / 100 s → 13.3 GB / 117 s; `shapes_tests_core` 7.0 GB / 93 s.
 
+### 2.6 WP 8.2a outcome: the base completion (API_PARITY P02) on the 36 shapes
+
+`completion.py` holds one template per upstream family (`norm.rs`, `componentwise.rs`,
+`min_max.rs`, `construction.rs`, `matrix.rs`, `ops.rs`, `conversion.rs`, `interpolation.rs`) and
+applies it to every shape; a shape that already has a method of that name keeps it (the kernels
+of `library.py` / `specialisations/` and `shapes.py` are untouched, so `gas/` did not move: every
+committed figure is byte-identical). `shapes.py` appends the missing methods to the new shapes,
+`library.py` to `Vector2/3/4/6` (their explicit trait) and `Matrix2/3/4/6` (a `base completion`
+section); both add the `<S>AngleTrait` (`Transcendental`: `angle`, `lp_norm`, `slerp`) and the
+top-level items. Decisions:
+
+- **Kernels**: sums of products / squares as in §2 (`sum_prodK`, `normK`, one `Real::Wide` chain
+  above 4 terms); a common divisor through the prepared-divisor `Real::divN`, chunked to the
+  fewest calls (`div_chunks`: `Matrix6::unscale` = `div16 + div16 + div4`, 159 090 gas against
+  160 160 for four `div9`; `Matrix2x3::unscale` = one `div6`, 18 930 against 29 640 per
+  component).
+- **`from_row_slice` / `from_column_slice`**: ONE fixed-size-array read (`Span -> @Box<[T; N]>`,
+  one length check): `Matrix3` 1 500 gas net against 9 860 for `*data[k]` per component.
+- **`from_fn`**: any `core::ops::Fn<F, (usize, usize)>` whose `Output` converts `Into<T>`: the
+  `Output = T` constraint needs the `associated_item_constraints` experimental feature (not
+  enabled in `crates/nalgebra`).
+- **`get` / `index`**: the generic `MatrixIndex<M, I>` (`base/matrix_index.cairo`, impls for
+  `usize` column-major and `(usize, usize)` in each shape's module), `m[i]` / `m[(i, j)]` the
+  `IndexView` impls (nested `match`, DESIGN §1.4); panics `nalgebra: index out of bounds`
+  (`base/errors.cairo`, generated).
+- **`slerp`**: the Kahan half-angle form of `angle` (`θ = 2 atan2(|u - v|, |u + v|)`, `sin θ =
+  |u - v| |u + v| / 2`): upstream's `acos(c)` / `sqrt(1 - c²)` loses the last bit of `1 - c²`
+  near `c = 1` in fixed point (a unit vector interpolated with itself came out √2 too long);
+  155 000 gas against 141 180 (`bench_vector4_slerp__alt_acos`).
+- **`Normalizable` is renamed `Normed`** (upstream's trait, implemented for `Vector1..6`), a
+  breaking change of a trait name that only `Unit` used.
+- Cairo-imposed forms (`api_parity.py` `RENAMES`): `k * m` is `m.scale(k)`, `m * p` / `m * r`
+  are `mul_mat`, `m / r` is `m.div_rotation(r)`, `SubsetOf` is `cast`, `ad_mul` a default
+  method of `MatrixTrMul`, `eq` the derived `PartialEq`.
+
+Tests: `tests_ops.py` writes four test-only packages, `crates/shapes_tests_{norms,componentwise,
+construction,structure}` (one package measured 13.8 GB, two 9.0 / 9.3 GB; four 5.8 / 6.1 / 4.1 /
+6.8 GB peak `snforge test`, library 2.9 GB), 392 tests: Tier A (§3.3) with the integer model
+extended to `isqrt` of the exact sum (norms) and the half-to-even quotient (`Fraction`, every
+division), Tier B float comparisons for `angle`, `lp_norm(3)`, `slerp`, `orthonormalize` and
+`orthonormal_subspace_basis`, and the benches of `gas/nalgebra_shapes_tests_norms`.
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is

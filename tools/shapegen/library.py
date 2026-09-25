@@ -126,6 +126,8 @@ class Extra:
     uses: list[str] = field(default_factory=list)
     struct: list[str] = field(default_factory=list)
     end: list[str] = field(default_factory=list)
+    methods: list["Fn"] = field(default_factory=list)  # appended to the shape's main trait
+    angle: list["Fn"] = field(default_factory=list)  # the `Transcendental` trait (`angle`...)
 
 
 def dedup(xs: list[str]) -> list[str]:
@@ -525,6 +527,10 @@ VECTOR_IMPL_BOUNDS = ["T", "impl R: Real<T>", "+Add<T>", "+Sub<T>", "+Mul<T>", "
                       "+PartialEq<T>", "+PartialOrd<T>", "+Copy<T>", "+Drop<T>"]
 VECTOR_ANGLE_BOUNDS = ["T", "impl R: Real<T>", "impl Tr: Transcendental<T>", "+Add<T>", "+Sub<T>",
                        "+PartialEq<T>", "+Copy<T>", "+Drop<T>"]
+# The bounds of an `AngleImpl` that also carries the base completion's `lp_norm` / `slerp`.
+EXTENDED_ANGLE_BOUNDS = ["T", "impl R: Real<T>", "impl Tr: Transcendental<T>", "+Copy<T>",
+                         "+Drop<T>", "+Drop<R::Wide>", "+Add<T>", "+Sub<T>", "+Mul<T>", "+Neg<T>",
+                         "+PartialEq<T>", "+PartialOrd<T>"]
 
 
 def slot_fns(order: list[str], templates: dict, specs: dict[str, Fn]) -> list[Fn]:
@@ -575,12 +581,14 @@ def render_vector(n: int, module: str, test_modules: list[str], extra: Extra) ->
     S, T = v.S, v.ty()
     specs = read_specs(module)
     fns, angle = vector_surface(n, module)
+    fns = fns + extra.methods
+    angles = ([angle] if angle else []) + extra.angle
     if n in VECTOR_SURFACE:
         others = []
     else:
         others = sorted({f"super::vector{m}::Vector{m}" for m in range(2, n + 2 if n < MAX_VECTOR
                                                                       else n) if m != n})
-    scalar = "simba::scalar::{Real, Transcendental}" if angle else "simba::scalar::Real"
+    scalar = "simba::scalar::{Real, Transcendental}" if angles else "simba::scalar::Real"
     uses = dedup(["core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}", scalar] + others
                  + [f"super::row_vector{n}::RowVector{n}"] + specs.uses + extra.uses)
     mods = "\n".join(f"#[cfg(test)]\nmod {m};" for m in test_modules)
@@ -593,6 +601,9 @@ def render_vector(n: int, module: str, test_modules: list[str], extra: Extra) ->
         f"products,\n//!   norms and interpolation, generic over a `simba::scalar::Real` scalar;\n"
         + (f"//! - `{S}AngleTrait` / `{S}AngleImpl`: `angle`, which additionally needs\n"
            f"//!   `simba::scalar::Transcendental`;\n" if angle else "")
+        + (f"//! - the base completion (WP 8.2a): the rest of upstream's `Matrix` / `Vector` "
+           f"API, in `{S}Trait`\n//!   and, for the operations that need `Transcendental`, "
+           f"`{S}AngleTrait`;\n" if extra.methods else "")
         + f"//! - operators `+`, `-`, unary `-`, `+=`, `-=` between vectors, `*=` and `/=` by a "
         f"scalar, and\n//!   conversions from / to `[T; {n}]`: their impls live in this module, "
         f"where the\n//!   compiler finds them without any import;\n"
@@ -611,16 +622,19 @@ def render_vector(n: int, module: str, test_modules: list[str], extra: Extra) ->
     blocks += items_at(specs, "struct") + extra.struct
     blocks.append(f"/// Operations of `{T}` over a `Real` scalar. By value, unrolled, no loop.\n"
                   f"pub trait {S}Trait<T> {{\n{decls}\n}}")
-    if angle:
+    if angles:
         blocks.append("/// `angle` needs inverse trigonometry, hence its own trait: scalars may "
                       "implement `Real` only.\n"
-                      f"pub trait {S}AngleTrait<T> {{\n{angle.declaration()}\n}}")
+                      f"pub trait {S}AngleTrait<T> {{\n"
+                      + "\n".join(a.declaration() for a in angles) + "\n}")
     impl_bounds = VECTOR_IMPL_BOUNDS + (["+Drop<R::Wide>"] if n > 4 else [])
     blocks.append(f"pub impl {S}Impl<\n{bounds(impl_bounds)}\n> of {S}Trait<T> {{\n{defs}\n}}")
     blocks += items_at(specs, "impl")
-    if angle:
-        blocks.append(f"pub impl {S}AngleImpl<\n{bounds(VECTOR_ANGLE_BOUNDS)}\n> of "
-                      f"{S}AngleTrait<T> {{\n{angle.definition(with_doc=False)}\n}}")
+    if angles:
+        angle_bounds = VECTOR_ANGLE_BOUNDS if not extra.angle else EXTENDED_ANGLE_BOUNDS
+        blocks.append(f"pub impl {S}AngleImpl<\n{bounds(angle_bounds)}\n> of "
+                      f"{S}AngleTrait<T> {{\n"
+                      + "\n\n".join(a.definition(with_doc=False) for a in angles) + "\n}")
     blocks += vector_operators(v)
     blocks += items_at(specs, "end") + extra.end
     return "\n\n".join(blocks) + "\n"
@@ -890,8 +904,14 @@ def render_matrix(n: int, module: str, test_modules: list[str], extra: Extra) ->
     specs = read_specs(module)
     sections = ["\n\n".join([section(title, 94)] + [x.definition() for x in fns])
                 for title, fns in matrix_sections(n, module)]
+    if extra.methods:
+        sections.append("\n\n".join([section("base completion (WP 8.2a)", 94)]
+                                      + [x.definition() for x in extra.methods]))
     internal = slot_fns(MATRIX_INTERNAL_ORDER[n], matrix_internal_fns(m), specs.internal)
-    uses = dedup(["core::ops::{AddAssign, MulAssign, SubAssign}", "simba::scalar::Real",
+    scalar = "simba::scalar::{Real, Transcendental}" if extra.angle else "simba::scalar::Real"
+    ops = ("core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}" if extra.methods else
+           "core::ops::{AddAssign, MulAssign, SubAssign}")
+    uses = dedup([ops, scalar,
                   f"super::vector{n}::Vector{n}"] + specs.uses + extra.uses)
     blocks = [
         f"//! `{S}`: a statically sized {n}x{n} matrix (upstream `nalgebra::{S}`).\n//!\n"
@@ -919,6 +939,12 @@ def render_matrix(n: int, module: str, test_modules: list[str], extra: Extra) ->
                   f"pub impl {S}Impl<\n{bounds(MATRIX_IMPL_BOUNDS)}\n> of {S}Trait<T> {{\n"
                   + "\n\n".join(sections) + "\n}")
     blocks += items_at(specs, "impl")
+    if extra.angle:
+        blocks.append(f"/// The operations of `{T}` that need `Transcendental` (inverse "
+                      f"trigonometry, `exp`, `ln`):\n/// a scalar may implement `Real` only.\n"
+                      f"#[generate_trait]\npub impl {S}AngleImpl<\n{bounds(EXTENDED_ANGLE_BOUNDS)}"
+                      f"\n> of {S}AngleTrait<T> {{\n"
+                      + "\n\n".join(x.definition() for x in extra.angle) + "\n}")
     if internal:
         doc = specs.docs.get("internal")
         if doc is None:
