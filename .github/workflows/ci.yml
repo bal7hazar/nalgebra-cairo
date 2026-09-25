@@ -26,7 +26,6 @@ jobs:
         # `filters`: snforge test filters run one after the other in the same job (a filter's cost is
         # proportional to the tests it selects; `--partition` would compile the whole package).
         include:
-          - { name: simba, package: simba, filters: "simba" }
           - { name: nalgebra_testing, package: nalgebra_testing, filters: "nalgebra_testing" }
           # `nalgebra`: only the tests of crate-internal items (and the integration tests); the
           # public-API tests live in the test-only packages `nalgebra_tests_*` (WP 8.1c).

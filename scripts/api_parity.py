@@ -31,9 +31,11 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import functools
 import itertools
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -918,8 +920,20 @@ def parse_simba(simba_root: Path) -> list[str]:
 # Cairo side
 # --------------------------------------------------------------------------------------------
 
-CAIRO_CRATES = ("crates/nalgebra/src", "crates/simba/src")
-TEST_FILE = re.compile(r"^(?:tests|benches|oracle.*|matrix_test_utils)$")
+CAIRO_CRATES = ("crates/nalgebra/src",)
+
+
+@functools.cache
+def simba_root() -> Path:
+    """Root of the `simba` dependency (registry package from simba-cairo, fetched by Scarb)."""
+    meta = json.loads(subprocess.run(
+        ["scarb", "--json", "metadata", "--format-version", "1"], cwd=ROOT, check=True,
+        capture_output=True, text=True).stdout.splitlines()[-1])
+    roots = [Path(p["root"]) for p in meta["packages"] if p["name"] == "simba"]
+    if not roots:
+        raise SystemExit("simba package not found in `scarb metadata`")
+    return roots[0]
+TEST_FILE = re.compile(r"^(?:tests|testing|benches|oracle.*|matrix_test_utils)$")
 CAIRO_CORE_TRAITS = {
     "Add", "AddAssign", "Sub", "SubAssign", "Mul", "MulAssign", "Div", "DivAssign", "Neg",
     "Into", "TryInto", "Default", "PartialEq", "PartialOrd", "Hash", "Serde", "Debug", "Display",
@@ -973,9 +987,9 @@ def cairo_impl_item(trait_expr: str, owner: str) -> tuple[str, str] | None:
 
 def cairo_files() -> list[Path]:
     paths = []
-    for crate in CAIRO_CRATES:
-        for path in sorted((ROOT / crate).rglob("*.cairo")):
-            rel = path.relative_to(ROOT / crate)
+    for src in [ROOT / crate for crate in CAIRO_CRATES] + [simba_root() / "src"]:
+        for path in sorted(src.rglob("*.cairo")):
+            rel = path.relative_to(src)
             if any(TEST_FILE.match(Path(part).stem) for part in rel.parts):
                 continue
             paths.append(path)
@@ -996,8 +1010,10 @@ def parse_cairo() -> list[Item]:
     trait_re = re.compile(r"\bpub\s+trait\s+([A-Za-z_]\w*)[^{;]*\{")
     impl_re = re.compile(r"(#\[generate_trait\]\s*)?\bpub\s+impl\s+([A-Za-z_]\w*)")
     for path, text in files:
-        source = str(path.relative_to(ROOT))
-        crate = "simba" if "crates/simba" in source else "nalgebra"
+        if path.is_relative_to(ROOT / "crates/nalgebra"):
+            crate, source = "nalgebra", str(path.relative_to(ROOT))
+        else:
+            crate, source = "simba", str(Path("simba") / path.relative_to(simba_root()))
         module = "simba" if crate == "simba" else (
             path.relative_to(ROOT / "crates/nalgebra/src").parts[0].removesuffix(".cairo"))
         test_spans = []
@@ -2113,7 +2129,7 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
                f"**{total['missing']}** | **{total['excluded']}** | **{n}** | "
                f"**{pct(total['ported'], n - total['excluded'])}** |")
     out += ["", f"nalgebra-cairo items with no upstream counterpart (undocumented extras): "
-            f"**{len(extras)}** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed "
+            f"**{len(extras)}** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed "
             f"forms of upstream operators, fields and `Deref` access: **{len(forms)}** "
             f"([list](#cairo-imposed-forms)); scalar layer: **{len(named)}** items named as in "
             f"simba-rs, **{len(kernels)}** documented exceptions "
@@ -2235,7 +2251,8 @@ def render(rust: list[Item], cairo: list[Item], simba: list[str]) -> str:
 
     # Scalar layer.
     out += ["## Scalar layer (simba)", "",
-            f"`crates/simba` is the counterpart of simba-rs {SIMBA_VERSION}'s `RealField`: every "
+            "The `simba` package ([simba-cairo](https://github.com/bal7hazar/simba-cairo), a "
+            f"registry dependency) is the counterpart of simba-rs {SIMBA_VERSION}'s `RealField`: every "
             "scalar item that has a simba-rs name carries it (`num::Zero::zero`, "
             "`num::One::one`, `RealField::pi`, `RealField::is_sign_negative`, "
             "`approx::AbsDiffEq::default_epsilon`, ...), and the rest is the one documented "

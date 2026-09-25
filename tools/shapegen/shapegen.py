@@ -1075,7 +1075,7 @@ cairo-version = "2.19.4"
 publish = false
 
 [dependencies]
-simba = {{ path = "{root}/crates/simba" }}
+simba = "0.1.0"
 
 [dev-dependencies]
 fixed = "0.3.0"

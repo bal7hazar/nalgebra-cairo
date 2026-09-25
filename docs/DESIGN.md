@@ -6,8 +6,8 @@ be overturned by a new measurement committed under `benchmarks/`.
 ## D1 — Workspace
 
 ```
-Scarb.toml            virtual workspace, shared versions, edition 2024_07, no `starknet` dependency
-crates/simba/         package `simba` (moving to bal7hazar/simba-cairo, PLAN S2): scalar traits implemented for `fixed::Fixed`
+Scarb.toml            virtual workspace, shared versions, edition 2024_07, no `starknet` dependency;
+                      `simba = "0.1.0"` (registry, bal7hazar/simba-cairo) is the scalar layer
 crates/nalgebra/      package `nalgebra`: `base`, `geometry`, `linalg` modules (mirrors upstream)
 benchmarks/           standalone workspaces: design-time micro-benchmarks (never a dependency)
 scripts/              gas_report.py (report + snapshot + CI gate), check.sh

@@ -10,7 +10,7 @@ repository.workspace = true
 keywords.workspace = true
 
 [dependencies]
-simba = { path = "../simba", version = "0.1.0" }
+simba.workspace = true
 
 [dev-dependencies]
 fixed = "0.3.0"

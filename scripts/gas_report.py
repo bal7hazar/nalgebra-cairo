@@ -9,14 +9,14 @@ Reports are keyed by the module path of the test (`package::module::…::tests`)
 that runs only part of the workspace (`snforge test -p nalgebra nalgebra::base`) can check its
 slice of the snapshot with `--filter nalgebra::base`.
 
-Snapshots are split per CI shard (`simba`, `nalgebra::base`, ...) into `gas/<shard>.json` +
+Snapshots are split per CI shard (`nalgebra-base`, `nalgebra_tests_base`, ...) into `gas/<shard>.json` +
 `gas/<shard>.md`, so parallel PRs on different modules never touch a common file.
 
 Usage:
     snforge test --workspace | python3 scripts/gas_report.py --update gas/
     snforge test -p nalgebra nalgebra::base | python3 scripts/gas_report.py --check gas/ --filter nalgebra::base
     snforge test -p nalgebra nalgebra::base::vector | python3 scripts/gas_report.py --check gas/ --partial
-    snforge test -p simba | python3 scripts/gas_report.py            # print a report
+    snforge test -p nalgebra | python3 scripts/gas_report.py         # print a report
 """
 
 import argparse
