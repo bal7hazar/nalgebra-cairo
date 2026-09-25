@@ -145,6 +145,30 @@ pub impl Similarity2Impl<
         }
     }
 
+    /// `self = self.inverse()` in place: the by-value form is the cheapest (a rotation and a
+    /// translation to rebuild, nothing to reuse), so the bits are those of `inverse`. Panics as
+    /// `inverse` does. Upstream: `inverse_mut`.
+    #[inline(always)]
+    fn inverse_mut(ref self: Similarity2<T>) {
+        self = Self::inverse(self);
+    }
+
+    /// `self = self.prepend_scaling(s)` in place: only the stored scale is multiplied by `s`.
+    /// Panics with `nalgebra: zero scale` on a zero `s`, and on overflow. Upstream:
+    /// `prepend_scaling_mut`.
+    #[inline(always)]
+    fn prepend_scaling_mut(ref self: Similarity2<T>, s: T) {
+        self = Self::prepend_scaling(self, s);
+    }
+
+    /// `self = self.append_scaling(s)` in place: the translation and the scale are multiplied by
+    /// `s`. Panics with `nalgebra: zero scale` on a zero `s`, and on overflow. Upstream:
+    /// `append_scaling_mut`.
+    #[inline(always)]
+    fn append_scaling_mut(ref self: Similarity2<T>, s: T) {
+        self = Self::append_scaling(self, s);
+    }
+
     /// `self * p = translation + scaling * (rotation · p)`. Panics on overflow. Upstream:
     /// `transform_point` (`sim * p`).
     #[inline(always)]

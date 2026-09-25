@@ -36,7 +36,7 @@
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
 use core::num::traits::{One, Zero};
-use core::ops::Index;
+use core::ops::{AddAssign, DivAssign, Index, MulAssign, SubAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::base::unit::{Unit, UnitTrait};
 use crate::base::vector3::Vector3;
@@ -231,6 +231,39 @@ pub impl QuaternionImpl<
                     Quaternion { i, j, k, w }
                 },
             )
+        }
+    }
+
+    /// `self = self.conjugate()` in place (three negations). Exact; panics on overflow (`-MIN`).
+    /// Upstream: `conjugate_mut`.
+    #[inline(always)]
+    fn conjugate_mut(ref self: Quaternion<T>) {
+        self = Quaternion { i: -self.i, j: -self.j, k: -self.k, w: self.w };
+    }
+
+    /// `self = self.normalize()` in place and returns the norm it had (the floored `norm4`, then
+    /// one correctly rounded division per component, bit for bit `normalize`). Panics with
+    /// `Fixed: division by zero` on a zero quaternion. Upstream: `normalize_mut`.
+    #[inline(always)]
+    fn normalize_mut(ref self: Quaternion<T>) -> T {
+        let n = R::norm4(self.i, self.j, self.k, self.w);
+        self = Self::unscale(self, n);
+        n
+    }
+
+    /// `self = self⁻¹` in place and `true`, or `self` unchanged and `false` when `|self|²`
+    /// floors to zero: the same bits and the same criterion as `try_inverse`. Upstream:
+    /// `try_inverse_mut`
+    /// (whose `SimdBool` is a `bool` here).
+    #[inline(always)]
+    fn try_inverse_mut(ref self: Quaternion<T>) -> bool {
+        let n2 = R::norm_squared4(self.i, self.j, self.k, self.w);
+        if n2 == R::zero() {
+            false
+        } else {
+            let (i, j, k, w) = R::div4(-self.i, -self.j, -self.k, self.w, n2);
+            self = Quaternion { i, j, k, w };
+            true
         }
     }
 
@@ -1000,6 +1033,58 @@ pub impl QuaternionMul<
         let k = R::wide_sub_prod(R::wide_add_prod(k, lhs.i, rhs.j), lhs.j, rhs.i);
         let k = R::wide_rescale(R::wide_add_prod(k, lhs.k, rhs.w));
         Quaternion { i, j, k, w }
+    }
+}
+
+/// `a += b`, component-wise. Exact; panics on overflow. Upstream: `AddAssign<Quaternion>`.
+pub impl QuaternionAddAssign<
+    T, +Add<T>, +Copy<T>, +Drop<T>,
+> of AddAssign<Quaternion<T>, Quaternion<T>> {
+    #[inline(always)]
+    fn add_assign(ref self: Quaternion<T>, rhs: Quaternion<T>) {
+        self = self + rhs;
+    }
+}
+
+/// `a -= b`, component-wise. Exact; panics on overflow. Upstream: `SubAssign<Quaternion>`.
+pub impl QuaternionSubAssign<
+    T, +Sub<T>, +Copy<T>, +Drop<T>,
+> of SubAssign<Quaternion<T>, Quaternion<T>> {
+    #[inline(always)]
+    fn sub_assign(ref self: Quaternion<T>, rhs: Quaternion<T>) {
+        self = self - rhs;
+    }
+}
+
+/// `a *= b`: `a = a * b`, the fused Hamilton product (`QuaternionMul`). Upstream:
+/// `MulAssign<Quaternion>`.
+pub impl QuaternionMulAssign<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MulAssign<Quaternion<T>, Quaternion<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Quaternion<T>, rhs: Quaternion<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `a *= k`: `a = a.scale(k)`, each component floored once. Panics on overflow. Upstream:
+/// `MulAssign<T>`.
+pub impl QuaternionMulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Quaternion<T>, T> {
+    #[inline(always)]
+    fn mul_assign(ref self: Quaternion<T>, rhs: T) {
+        self = Quaternion { i: self.i * rhs, j: self.j * rhs, k: self.k * rhs, w: self.w * rhs };
+    }
+}
+
+/// `a /= k`: `a = a.unscale(k)`, each component correctly rounded. Panics on a zero `k` and on
+/// overflow. Upstream: `DivAssign<T>`.
+pub impl QuaternionDivAssignScalar<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Quaternion<T>, T> {
+    #[inline(always)]
+    fn div_assign(ref self: Quaternion<T>, rhs: T) {
+        let (i, j, k, w) = R::div4(self.i, self.j, self.k, self.w, rhs);
+        self = Quaternion { i, j, k, w };
     }
 }
 

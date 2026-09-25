@@ -166,6 +166,51 @@ pub impl UnitDualQuaternionImpl<
         self.dual_quaternion
     }
 
+    /// Deprecated upstream (use `into_inner`): the underlying dual quaternion. Upstream:
+    /// `Unit::unwrap`.
+    #[inline(always)]
+    fn unwrap(self: UnitDualQuaternion<T>) -> DualQuaternion<T> {
+        self.dual_quaternion
+    }
+
+    /// `(new_normalize(dq), |real|)`: the unit dual quaternion and the norm of the real part it
+    /// was divided by. Panics with `Fixed: division by zero` on a zero real part. Upstream:
+    /// `Unit::new_and_get` on `Unit<DualQuaternion>`.
+    #[inline(always)]
+    fn new_and_get(dq: DualQuaternion<T>) -> (UnitDualQuaternion<T>, T) {
+        let n = dq.real.norm();
+        (
+            UnitDualQuaternion {
+                dual_quaternion: DualQuaternion {
+                    real: dq.real.unscale(n), dual: dq.dual.unscale(n),
+                },
+            },
+            n,
+        )
+    }
+
+    /// `Some((new_normalize(dq), |real|))`, or `None` when the norm of the real part is
+    /// `<= min_norm`. With `min_norm >= 0` it never divides by zero. Upstream:
+    /// `Unit::try_new_and_get` on `Unit<DualQuaternion>`.
+    #[inline(always)]
+    fn try_new_and_get(dq: DualQuaternion<T>, min_norm: T) -> Option<(UnitDualQuaternion<T>, T)> {
+        let n = dq.real.norm();
+        if n <= min_norm {
+            None
+        } else {
+            Some(
+                (
+                    UnitDualQuaternion {
+                        dual_quaternion: DualQuaternion {
+                            real: dq.real.unscale(n), dual: dq.dual.unscale(n),
+                        },
+                    },
+                    n,
+                ),
+            )
+        }
+    }
+
     /// The underlying dual quaternion (a copy: everything is by value here). Upstream:
     /// `UnitDualQuaternion::dual_quaternion` (`as_ref`).
     #[inline(always)]

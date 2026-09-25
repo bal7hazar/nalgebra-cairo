@@ -16,6 +16,7 @@
 //! products is formed here, so no fused kernel is needed.
 
 use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::point2::Point2;
@@ -63,6 +64,13 @@ pub impl Translation2Impl<
     #[inline(always)]
     fn inverse(self: Translation2<T>) -> Translation2<T> {
         Translation2 { vector: Vector2 { x: -self.vector.x, y: -self.vector.y } }
+    }
+
+    /// `self = self.inverse()` in place (`-vector`; the by-value form is the cheapest, so the bits
+    /// are those of `inverse`). Exact; panics on overflow (`-MIN`). Upstream: `inverse_mut`.
+    #[inline(always)]
+    fn inverse_mut(ref self: Translation2<T>) {
+        self = Self::inverse(self);
     }
 
     /// `self * p`: the point translated by `vector`. Exact; panics on overflow. Upstream:
@@ -190,6 +198,26 @@ pub impl Translation2Div<T, +Sub<T>, +Copy<T>, +Drop<T>> of Div<Translation2<T>>
     fn div(lhs: Translation2<T>, rhs: Translation2<T>) -> Translation2<T> {
         let (a, b) = (lhs.vector, rhs.vector);
         Translation2 { vector: Vector2 { x: a.x - b.x, y: a.y - b.y } }
+    }
+}
+
+/// `a *= b`: `a = a * b` (component-wise sums, exact). Upstream: `MulAssign<Translation>`.
+pub impl Translation2MulAssign<
+    T, +Add<T>, +Copy<T>, +Drop<T>,
+> of MulAssign<Translation2<T>, Translation2<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Translation2<T>, rhs: Translation2<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `a /= b`: `a = a / b` (component-wise differences, exact). Upstream: `DivAssign<Translation>`.
+pub impl Translation2DivAssign<
+    T, +Sub<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Translation2<T>, Translation2<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Translation2<T>, rhs: Translation2<T>) {
+        self = self / rhs;
     }
 }
 

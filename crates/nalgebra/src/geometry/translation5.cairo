@@ -6,6 +6,7 @@
 //! operation is an exact addition, subtraction or negation: nothing rounds; overflow panics.
 
 use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::vector5::Vector5;
@@ -52,6 +53,13 @@ pub impl Translation5Impl<
     fn inverse(self: Translation5<T>) -> Translation5<T> {
         let v = self.vector;
         Translation5 { vector: Vector5 { x: -v.x, y: -v.y, z: -v.z, w: -v.w, a: -v.a } }
+    }
+
+    /// `self = self.inverse()` in place (`-vector`; the by-value form is the cheapest, so the bits
+    /// are those of `inverse`). Exact; panics on overflow (`-MIN`). Upstream: `inverse_mut`.
+    #[inline(always)]
+    fn inverse_mut(ref self: Translation5<T>) {
+        self = Self::inverse(self);
     }
 
     /// `self * p`: the point translated by `vector`. Exact; panics on overflow. Upstream:
@@ -195,6 +203,26 @@ pub impl Translation5Div<T, +Sub<T>, +Copy<T>, +Drop<T>> of Div<Translation5<T>>
                 x: a.x - b.x, y: a.y - b.y, z: a.z - b.z, w: a.w - b.w, a: a.a - b.a,
             },
         }
+    }
+}
+
+/// `a *= b`: `a = a * b` (component-wise sums, exact). Upstream: `MulAssign<Translation>`.
+pub impl Translation5MulAssign<
+    T, +Add<T>, +Copy<T>, +Drop<T>,
+> of MulAssign<Translation5<T>, Translation5<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Translation5<T>, rhs: Translation5<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `a /= b`: `a = a / b` (component-wise differences, exact). Upstream: `DivAssign<Translation>`.
+pub impl Translation5DivAssign<
+    T, +Sub<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Translation5<T>, Translation5<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Translation5<T>, rhs: Translation5<T>) {
+        self = self / rhs;
     }
 }
 

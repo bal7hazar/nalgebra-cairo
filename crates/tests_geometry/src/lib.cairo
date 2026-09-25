@@ -5,6 +5,8 @@ mod isometry3;
 #[cfg(test)]
 mod quaternion;
 #[cfg(test)]
+mod quaternion_inplace;
+#[cfg(test)]
 mod rotation2;
 #[cfg(test)]
 mod rotation3;

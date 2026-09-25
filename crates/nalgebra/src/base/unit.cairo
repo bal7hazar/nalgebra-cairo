@@ -325,6 +325,8 @@ pub trait UnitTrait<V, T> {
     fn try_new_and_get(v: V, min_norm: T) -> Option<(Unit<V>, T)>;
     /// The wrapped vector. Upstream: `Unit::into_inner`.
     fn into_inner(self: Unit<V>) -> V;
+    /// Deprecated upstream (use `into_inner`): the wrapped vector. Upstream: `Unit::unwrap`.
+    fn unwrap(self: Unit<V>) -> V;
     /// Renormalizes exactly, in place: `self` becomes `Unit::new_normalize(self.value)`, i.e. one
     /// norm and one exactly correctly rounded division per component, and the norm it had is
     /// returned. Panics on a zero norm. Upstream: `Unit::renormalize` (`&mut self`, returns the
@@ -415,6 +417,11 @@ pub impl UnitImpl<
 
     #[inline(always)]
     fn into_inner(self: Unit<V>) -> V {
+        self.value
+    }
+
+    #[inline(always)]
+    fn unwrap(self: Unit<V>) -> V {
         self.value
     }
 

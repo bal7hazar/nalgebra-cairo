@@ -215,6 +215,33 @@ pub impl Point5Impl<
         }
     }
 
+    /// The point of `f(c)` for every coordinate `c`, in order (`x, y, ..`). `f` is any closure or
+    /// `Fn` value; Cairo closures take their arguments by value. Upstream: `map`.
+    #[inline]
+    fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
+        self: Point5<T>, f: F,
+    ) -> Point5<Func::Output> {
+        Point5 { x: f(self.x), y: f(self.y), z: f(self.z), w: f(self.w), a: f(self.a) }
+    }
+
+    /// Replaces every coordinate `c` by `f(c)`, in order. Upstream's closure is `FnMut(&mut T)`,
+    /// writing through the reference; a Cairo closure cannot, so it RETURNS the new coordinate (its
+    /// output converts `Into<T>`). Same bits as `map` followed by the conversion. Upstream:
+    /// `apply`.
+    #[inline]
+    fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        ref self: Point5<T>, f: F,
+    ) {
+        self =
+            Point5 {
+                x: f(self.x).into(),
+                y: f(self.y).into(),
+                z: f(self.z).into(),
+                w: f(self.w).into(),
+                a: f(self.a).into(),
+            };
+    }
+
     /// The point of coordinates `s[0], .., s[4]`. Panics with `nalgebra: wrong slice length`
     /// unless `s` holds exactly 5 elements (upstream's `from_row_slice` assertion). Upstream:
     /// `from_slice`.

@@ -18,6 +18,8 @@ mod common;
 #[cfg(test)]
 mod dual_quaternion;
 #[cfg(test)]
+mod inplace;
+#[cfg(test)]
 mod oracle;
 #[cfg(test)]
 mod unit_dual_quaternion;

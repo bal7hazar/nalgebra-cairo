@@ -11,6 +11,22 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `direct` | 62580 | 22170 | x1.00 |
 | `trait` | 62580 | 22170 | x1.00 |
 
+## nalgebra_tests_geometry_ext::inplace::benches
+
+### point3_apply
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_map` | 16640 | 700 | x1.00 |
+| `apply` | 16640 | 700 | x1.00 |
+
+### rotation2_mul_assign_unit_complex
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `mul_assign` | 68780 | 10050 | x1.00 |
+| `alt_by_value` | 68880 | 10150 | x1.01 |
+
 ## nalgebra_tests_geometry_ext::point::benches
 
 ### point3_from_slice

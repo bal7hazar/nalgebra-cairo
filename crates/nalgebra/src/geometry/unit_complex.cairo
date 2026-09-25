@@ -22,6 +22,7 @@
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
 use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
@@ -186,6 +187,32 @@ pub trait UnitComplexTrait<T> {
     fn from_complex(q: Vector2<T>) -> UnitComplex<T>;
     /// `(from_complex(q), |q|)`. Upstream: `UnitComplex::from_complex_and_get`.
     fn from_complex_and_get(q: Vector2<T>) -> (UnitComplex<T>, T);
+    /// Wraps the complex number `(re, im) = q` WITHOUT normalizing it: the caller guarantees a unit
+    /// norm (a `Vector2`, like `from_complex`: there is no `Complex` type here). Exact. Upstream:
+    /// `Unit::new_unchecked` on `Unit<Complex>`.
+    fn new_unchecked(q: Vector2<T>) -> UnitComplex<T>;
+    /// `q / |q|` (alias of `from_complex`): one `norm2`, two correctly rounded divisions. Panics
+    /// with `Fixed: division by zero` on zero. Upstream: `Unit::new_normalize` on
+    /// `Unit<Complex>`.
+    fn new_normalize(q: Vector2<T>) -> UnitComplex<T>;
+    /// `(new_normalize(q), |q|)` (alias of `from_complex_and_get`). Upstream: `Unit::new_and_get`
+    /// on `Unit<Complex>`.
+    fn new_and_get(q: Vector2<T>) -> (UnitComplex<T>, T);
+    /// `Some(new_normalize(q))`, or `None` when `|q| <= min_norm`. With `min_norm >= 0` it never
+    /// divides by zero. Upstream: `Unit::try_new` on `Unit<Complex>`.
+    fn try_new(q: Vector2<T>, min_norm: T) -> Option<UnitComplex<T>>;
+    /// `Some((new_normalize(q), |q|))`, or `None` when `|q| <= min_norm`. Upstream:
+    /// `Unit::try_new_and_get` on `Unit<Complex>`.
+    fn try_new_and_get(q: Vector2<T>, min_norm: T) -> Option<(UnitComplex<T>, T)>;
+    /// The wrapped complex number `(re, im)` as a `Vector2` (same as `complex`). Upstream:
+    /// `Unit::into_inner`.
+    fn into_inner(self: UnitComplex<T>) -> Vector2<T>;
+    /// Deprecated upstream (use `into_inner`): the wrapped complex number. Upstream:
+    /// `Unit::unwrap`.
+    fn unwrap(self: UnitComplex<T>) -> Vector2<T>;
+    /// `self = self.conjugate()` in place (one negation). Exact; panics on overflow (`-MIN`).
+    /// Upstream: `conjugate_mut`.
+    fn conjugate_mut(ref self: UnitComplex<T>);
     /// The rotation whose matrix has the columns `basis[0]`, `basis[1]`, WITHOUT checking them:
     /// `(re, im)` is the first column, like `from_rotation_matrix`. Exact. Upstream:
     /// `UnitComplex::from_basis_unchecked`.
@@ -472,6 +499,60 @@ pub impl UnitComplexImpl<
     }
 
     #[inline(always)]
+    fn new_unchecked(q: Vector2<T>) -> UnitComplex<T> {
+        UnitComplex { re: q.x, im: q.y }
+    }
+
+    #[inline(always)]
+    fn new_normalize(q: Vector2<T>) -> UnitComplex<T> {
+        let n = R::norm2(q.x, q.y);
+        UnitComplex { re: R::div(q.x, n), im: R::div(q.y, n) }
+    }
+
+    #[inline(always)]
+    fn new_and_get(q: Vector2<T>) -> (UnitComplex<T>, T) {
+        let n = R::norm2(q.x, q.y);
+        (UnitComplex { re: R::div(q.x, n), im: R::div(q.y, n) }, n)
+    }
+
+    #[inline(always)]
+    fn try_new(q: Vector2<T>, min_norm: T) -> Option<UnitComplex<T>> {
+        let n = R::norm2(q.x, q.y);
+        // `n <= min_norm` without `PartialOrd`: `max(n, min_norm) == min_norm`.
+        if R::max(n, min_norm) == min_norm {
+            None
+        } else {
+            Some(UnitComplex { re: R::div(q.x, n), im: R::div(q.y, n) })
+        }
+    }
+
+    #[inline(always)]
+    fn try_new_and_get(q: Vector2<T>, min_norm: T) -> Option<(UnitComplex<T>, T)> {
+        let n = R::norm2(q.x, q.y);
+        // `n <= min_norm` without `PartialOrd`: `max(n, min_norm) == min_norm`.
+        if R::max(n, min_norm) == min_norm {
+            None
+        } else {
+            Some((UnitComplex { re: R::div(q.x, n), im: R::div(q.y, n) }, n))
+        }
+    }
+
+    #[inline(always)]
+    fn into_inner(self: UnitComplex<T>) -> Vector2<T> {
+        Vector2 { x: self.re, y: self.im }
+    }
+
+    #[inline(always)]
+    fn unwrap(self: UnitComplex<T>) -> Vector2<T> {
+        Vector2 { x: self.re, y: self.im }
+    }
+
+    #[inline(always)]
+    fn conjugate_mut(ref self: UnitComplex<T>) {
+        self = UnitComplex { re: self.re, im: -self.im };
+    }
+
+    #[inline(always)]
     fn from_basis_unchecked(basis: [Vector2<T>; 2]) -> UnitComplex<T> {
         let [x, _y] = basis;
         UnitComplex { re: x.x, im: x.y }
@@ -751,6 +832,60 @@ pub impl UnitComplexDiv<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Div<UnitCompl
             re: R::sum_prod2(lhs.re, rhs.re, lhs.im, rhs.im),
             im: R::diff_prod(lhs.im, rhs.re, lhs.re, rhs.im),
         }
+    }
+}
+
+/// `a *= b`: `a = a * b` (`UnitComplexMul`, two fused kernels). Upstream:
+/// `MulAssign<UnitComplex>`.
+pub impl UnitComplexMulAssign<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of MulAssign<UnitComplex<T>, UnitComplex<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: UnitComplex<T>, rhs: UnitComplex<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `a /= b`: `a = a / b` (`UnitComplexDiv`, two fused kernels). Upstream:
+/// `DivAssign<UnitComplex>`.
+pub impl UnitComplexDivAssign<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<UnitComplex<T>, UnitComplex<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: UnitComplex<T>, rhs: UnitComplex<T>) {
+        self = self / rhs;
+    }
+}
+
+/// `a *= r` with a rotation matrix: `a = a.mul_rotation(r)` (two fused kernels). Upstream:
+/// `MulAssign<Rotation>`.
+pub impl UnitComplexMulAssignRotation2<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of MulAssign<UnitComplex<T>, Rotation2<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: UnitComplex<T>, rhs: Rotation2<T>) {
+        let (re, im) = (rhs.matrix.m11, rhs.matrix.m21);
+        self =
+            UnitComplex {
+                re: R::diff_prod(self.re, re, self.im, im),
+                im: R::sum_prod2(self.re, im, self.im, re),
+            };
+    }
+}
+
+/// `a /= r` with a rotation matrix: `a = a.div_rotation(r)` (two fused kernels). Upstream:
+/// `DivAssign<Rotation>`.
+pub impl UnitComplexDivAssignRotation2<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<UnitComplex<T>, Rotation2<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: UnitComplex<T>, rhs: Rotation2<T>) {
+        let (re, im) = (rhs.matrix.m11, rhs.matrix.m21);
+        self =
+            UnitComplex {
+                re: R::sum_prod2(self.re, re, self.im, im),
+                im: R::diff_prod(self.im, re, self.re, im),
+            };
     }
 }
 
