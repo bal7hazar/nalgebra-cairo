@@ -174,11 +174,8 @@ pub impl Perm2Impl of Perm2Trait {
                 0
             };
             assert(lo >= last, PERMUTATION_ORDER);
-            let v: u8 = (hi + 1).try_into().unwrap();
-            match lo {
-                0 => self.p1 = v,
-                _ => {},
-            }
+            // `lo < hi < 2`: the only step is the first.
+            self.p1 = (hi + 1).try_into().unwrap();
         }
     }
 

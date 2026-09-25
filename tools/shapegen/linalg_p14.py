@@ -67,10 +67,7 @@ pub impl GivensRotationImpl<
     /// Upstream: `GivensRotation::new`.
     #[inline(always)]
     fn new(c: T, s: T) -> (GivensRotation<T>, T) {
-        match Self::try_new(c, s, R::zero()) {
-            Option::Some(r) => r,
-            Option::None => (Self::identity(), R::zero()),
-        }
+        Self::try_new(c, s, R::zero()).unwrap_or_else(|| (Self::identity(), R::zero()))
     }
 
     /// The rotation normalised from the components `c` and `s`, with the signed norm `r =

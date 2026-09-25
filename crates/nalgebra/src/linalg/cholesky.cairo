@@ -367,10 +367,7 @@ pub impl Cholesky2Impl<
     /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
     #[inline(always)]
     fn new_unchecked(matrix: Matrix2<T>) -> Cholesky2<T> {
-        match Self::new(matrix) {
-            Option::Some(c) => c,
-            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
-        }
+        Self::new(matrix).expect(NOT_POSITIVE_DEFINITE)
     }
 
     /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:
@@ -676,10 +673,7 @@ pub impl Cholesky3Impl<
     /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
     #[inline(always)]
     fn new_unchecked(matrix: Matrix3<T>) -> Cholesky3<T> {
-        match Self::new(matrix) {
-            Option::Some(c) => c,
-            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
-        }
+        Self::new(matrix).expect(NOT_POSITIVE_DEFINITE)
     }
 
     /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:
@@ -1132,10 +1126,7 @@ pub impl Cholesky4Impl<
     /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
     #[inline(always)]
     fn new_unchecked(matrix: Matrix4<T>) -> Cholesky4<T> {
-        match Self::new(matrix) {
-            Option::Some(c) => c,
-            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
-        }
+        Self::new(matrix).expect(NOT_POSITIVE_DEFINITE)
     }
 
     /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:
@@ -1815,10 +1806,7 @@ pub impl Cholesky6Impl<
     /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
     #[inline(always)]
     fn new_unchecked(matrix: Matrix6<T>) -> Cholesky6<T> {
-        match Self::new(matrix) {
-            Option::Some(c) => c,
-            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
-        }
+        Self::new(matrix).expect(NOT_POSITIVE_DEFINITE)
     }
 
     /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:

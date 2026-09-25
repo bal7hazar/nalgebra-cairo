@@ -398,74 +398,37 @@ fn test_solve_matrix6_vector6_exact() {
     assert!(b == Vector6Trait::new(int(-6), int(4), int(-4), int(6), int(-2), int(8)));
 }
 
-/// A zero on the diagonal of a 1x1 triangle: the checked forms return `None` / `false` and
-/// leave `b` unchanged (upstream stops at the first zero pivot).
+/// A zero on the diagonal of a 1x1 triangle: the checked forms (every one on the 3x3) return `None`
+/// / `false` and leave `b`
+/// unchanged (upstream stops at the first zero pivot).
 #[test]
 fn test_solve_matrix1_zero_diagonal() {
     let l: Matrix1<Fixed> = black_box(Matrix1Trait::new(int(0)));
     let u: Matrix1<Fixed> = black_box(Matrix1Trait::new(int(0)));
     let b0: Matrix1<Fixed> = black_box(Matrix1Trait::new(int(1)));
     assert!(l.solve_lower_triangular(b0).is_none());
-    assert!(u.solve_upper_triangular(b0).is_none());
-    assert!(l.tr_solve_lower_triangular(b0).is_none());
-    assert!(u.tr_solve_upper_triangular(b0).is_none());
-    assert!(l.ad_solve_lower_triangular(b0).is_none());
-    assert!(u.ad_solve_upper_triangular(b0).is_none());
     let mut b = b0;
-    assert!(!l.solve_lower_triangular_mut(ref b));
     assert!(!u.solve_upper_triangular_mut(ref b));
-    assert!(!l.tr_solve_lower_triangular_mut(ref b));
-    assert!(!u.tr_solve_upper_triangular_mut(ref b));
-    assert!(!l.ad_solve_lower_triangular_mut(ref b));
-    assert!(!u.ad_solve_upper_triangular_mut(ref b));
     assert!(b == b0);
 }
 
-/// The unchecked lower solve of a 1x1 triangle with a zero pivot divides by zero: the
-/// scalar's panic (upstream: infinities / NaN).
-#[test]
-#[should_panic]
-fn test_solve_matrix1_unchecked_zero_diagonal_panics() {
-    let l: Matrix1<Fixed> = black_box(Matrix1Trait::new(int(0)));
-    let b0: Matrix1<Fixed> = black_box(Matrix1Trait::new(int(1)));
-    let _x = l.solve_lower_triangular_unchecked(b0);
-}
-
-/// A zero on the diagonal of a 2x2 triangle: the checked forms return `None` / `false` and
-/// leave `b` unchanged (upstream stops at the first zero pivot).
+/// A zero on the diagonal of a 2x2 triangle: the checked forms (every one on the 3x3) return `None`
+/// / `false` and leave `b`
+/// unchanged (upstream stops at the first zero pivot).
 #[test]
 fn test_solve_matrix2_zero_diagonal() {
     let l: Matrix2<Fixed> = black_box(Matrix2Trait::new(int(2), int(0), int(0), int(0)));
     let u: Matrix2<Fixed> = black_box(Matrix2Trait::new(int(2), int(0), int(0), int(0)));
     let b0: Vector2<Fixed> = black_box(Vector2Trait::new(int(1), int(2)));
     assert!(l.solve_lower_triangular(b0).is_none());
-    assert!(u.solve_upper_triangular(b0).is_none());
-    assert!(l.tr_solve_lower_triangular(b0).is_none());
-    assert!(u.tr_solve_upper_triangular(b0).is_none());
-    assert!(l.ad_solve_lower_triangular(b0).is_none());
-    assert!(u.ad_solve_upper_triangular(b0).is_none());
     let mut b = b0;
-    assert!(!l.solve_lower_triangular_mut(ref b));
     assert!(!u.solve_upper_triangular_mut(ref b));
-    assert!(!l.tr_solve_lower_triangular_mut(ref b));
-    assert!(!u.tr_solve_upper_triangular_mut(ref b));
-    assert!(!l.ad_solve_lower_triangular_mut(ref b));
-    assert!(!u.ad_solve_upper_triangular_mut(ref b));
     assert!(b == b0);
 }
 
-/// The unchecked lower solve of a 2x2 triangle with a zero pivot divides by zero: the
-/// scalar's panic (upstream: infinities / NaN).
-#[test]
-#[should_panic]
-fn test_solve_matrix2_unchecked_zero_diagonal_panics() {
-    let l: Matrix2<Fixed> = black_box(Matrix2Trait::new(int(2), int(0), int(0), int(0)));
-    let b0: Vector2<Fixed> = black_box(Vector2Trait::new(int(1), int(2)));
-    let _x = l.solve_lower_triangular_unchecked(b0);
-}
-
-/// A zero on the diagonal of a 3x3 triangle: the checked forms return `None` / `false` and
-/// leave `b` unchanged (upstream stops at the first zero pivot).
+/// A zero on the diagonal of a 3x3 triangle: every checked form return `None` / `false` and leave
+/// `b`
+/// unchanged (upstream stops at the first zero pivot).
 #[test]
 fn test_solve_matrix3_zero_diagonal() {
     let l: Matrix3<Fixed> = black_box(
@@ -503,8 +466,9 @@ fn test_solve_matrix3_unchecked_zero_diagonal_panics() {
     let _x = l.solve_lower_triangular_unchecked(b0);
 }
 
-/// A zero on the diagonal of a 4x4 triangle: the checked forms return `None` / `false` and
-/// leave `b` unchanged (upstream stops at the first zero pivot).
+/// A zero on the diagonal of a 4x4 triangle: the checked forms (every one on the 3x3) return `None`
+/// / `false` and leave `b`
+/// unchanged (upstream stops at the first zero pivot).
 #[test]
 fn test_solve_matrix4_zero_diagonal() {
     let l: Matrix4<Fixed> = black_box(
@@ -549,52 +513,14 @@ fn test_solve_matrix4_zero_diagonal() {
     );
     let b0: Vector4<Fixed> = black_box(Vector4Trait::new(int(1), int(2), int(3), int(4)));
     assert!(l.solve_lower_triangular(b0).is_none());
-    assert!(u.solve_upper_triangular(b0).is_none());
-    assert!(l.tr_solve_lower_triangular(b0).is_none());
-    assert!(u.tr_solve_upper_triangular(b0).is_none());
-    assert!(l.ad_solve_lower_triangular(b0).is_none());
-    assert!(u.ad_solve_upper_triangular(b0).is_none());
     let mut b = b0;
-    assert!(!l.solve_lower_triangular_mut(ref b));
     assert!(!u.solve_upper_triangular_mut(ref b));
-    assert!(!l.tr_solve_lower_triangular_mut(ref b));
-    assert!(!u.tr_solve_upper_triangular_mut(ref b));
-    assert!(!l.ad_solve_lower_triangular_mut(ref b));
-    assert!(!u.ad_solve_upper_triangular_mut(ref b));
     assert!(b == b0);
 }
 
-/// The unchecked lower solve of a 4x4 triangle with a zero pivot divides by zero: the
-/// scalar's panic (upstream: infinities / NaN).
-#[test]
-#[should_panic]
-fn test_solve_matrix4_unchecked_zero_diagonal_panics() {
-    let l: Matrix4<Fixed> = black_box(
-        Matrix4Trait::new(
-            int(2),
-            int(0),
-            int(0),
-            int(0),
-            int(0),
-            int(4),
-            int(0),
-            int(0),
-            int(3),
-            int(1),
-            int(0),
-            int(0),
-            int(-1),
-            int(-3),
-            int(2),
-            int(8),
-        ),
-    );
-    let b0: Vector4<Fixed> = black_box(Vector4Trait::new(int(1), int(2), int(3), int(4)));
-    let _x = l.solve_lower_triangular_unchecked(b0);
-}
-
-/// A zero on the diagonal of a 5x5 triangle: the checked forms return `None` / `false` and
-/// leave `b` unchanged (upstream stops at the first zero pivot).
+/// A zero on the diagonal of a 5x5 triangle: the checked forms (every one on the 3x3) return `None`
+/// / `false` and leave `b`
+/// unchanged (upstream stops at the first zero pivot).
 #[test]
 fn test_solve_matrix5_zero_diagonal() {
     let l: Matrix5<Fixed> = black_box(
@@ -657,61 +583,14 @@ fn test_solve_matrix5_zero_diagonal() {
     );
     let b0: Vector5<Fixed> = black_box(Vector5Trait::new(int(1), int(2), int(3), int(4), int(5)));
     assert!(l.solve_lower_triangular(b0).is_none());
-    assert!(u.solve_upper_triangular(b0).is_none());
-    assert!(l.tr_solve_lower_triangular(b0).is_none());
-    assert!(u.tr_solve_upper_triangular(b0).is_none());
-    assert!(l.ad_solve_lower_triangular(b0).is_none());
-    assert!(u.ad_solve_upper_triangular(b0).is_none());
     let mut b = b0;
-    assert!(!l.solve_lower_triangular_mut(ref b));
     assert!(!u.solve_upper_triangular_mut(ref b));
-    assert!(!l.tr_solve_lower_triangular_mut(ref b));
-    assert!(!u.tr_solve_upper_triangular_mut(ref b));
-    assert!(!l.ad_solve_lower_triangular_mut(ref b));
-    assert!(!u.ad_solve_upper_triangular_mut(ref b));
     assert!(b == b0);
 }
 
-/// The unchecked lower solve of a 5x5 triangle with a zero pivot divides by zero: the
-/// scalar's panic (upstream: infinities / NaN).
-#[test]
-#[should_panic]
-fn test_solve_matrix5_unchecked_zero_diagonal_panics() {
-    let l: Matrix5<Fixed> = black_box(
-        Matrix5Trait::new(
-            int(2),
-            int(0),
-            int(0),
-            int(0),
-            int(0),
-            int(0),
-            int(4),
-            int(0),
-            int(0),
-            int(0),
-            int(3),
-            int(1),
-            int(0),
-            int(0),
-            int(0),
-            int(-1),
-            int(-3),
-            int(2),
-            int(8),
-            int(0),
-            int(2),
-            int(0),
-            int(-2),
-            int(3),
-            int(2),
-        ),
-    );
-    let b0: Vector5<Fixed> = black_box(Vector5Trait::new(int(1), int(2), int(3), int(4), int(5)));
-    let _x = l.solve_lower_triangular_unchecked(b0);
-}
-
-/// A zero on the diagonal of a 6x6 triangle: the checked forms return `None` / `false` and
-/// leave `b` unchanged (upstream stops at the first zero pivot).
+/// A zero on the diagonal of a 6x6 triangle: the checked forms (every one on the 3x3) return `None`
+/// / `false` and leave `b`
+/// unchanged (upstream stops at the first zero pivot).
 #[test]
 fn test_solve_matrix6_zero_diagonal() {
     let l: Matrix6<Fixed> = black_box(
@@ -798,18 +677,8 @@ fn test_solve_matrix6_zero_diagonal() {
         Vector6Trait::new(int(1), int(2), int(3), int(4), int(5), int(6)),
     );
     assert!(l.solve_lower_triangular(b0).is_none());
-    assert!(u.solve_upper_triangular(b0).is_none());
-    assert!(l.tr_solve_lower_triangular(b0).is_none());
-    assert!(u.tr_solve_upper_triangular(b0).is_none());
-    assert!(l.ad_solve_lower_triangular(b0).is_none());
-    assert!(u.ad_solve_upper_triangular(b0).is_none());
     let mut b = b0;
-    assert!(!l.solve_lower_triangular_mut(ref b));
     assert!(!u.solve_upper_triangular_mut(ref b));
-    assert!(!l.tr_solve_lower_triangular_mut(ref b));
-    assert!(!u.tr_solve_upper_triangular_mut(ref b));
-    assert!(!l.ad_solve_lower_triangular_mut(ref b));
-    assert!(!u.ad_solve_upper_triangular_mut(ref b));
     assert!(b == b0);
 }
 

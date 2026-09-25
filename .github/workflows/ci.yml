@@ -41,6 +41,9 @@ jobs:
           - { name: tests_geometry_projections, package: nalgebra_tests_geometry_projections, filters: "nalgebra_tests_geometry_projections" }
           - { name: tests_geometry_transform, package: nalgebra_tests_geometry_transform, filters: "nalgebra_tests_geometry_transform" }
           - { name: tests_linalg, package: nalgebra_tests_linalg, filters: "nalgebra_tests_linalg" }
+          - { name: tests_linalg_solve, package: nalgebra_tests_linalg_solve, filters: "nalgebra_tests_linalg_solve" }
+          - { name: tests_linalg_solve_rhs, package: nalgebra_tests_linalg_solve_rhs, filters: "nalgebra_tests_linalg_solve_rhs" }
+          - { name: tests_linalg_factor, package: nalgebra_tests_linalg_factor, filters: "nalgebra_tests_linalg_factor" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
           - { name: "shapes norms", package: nalgebra_shapes_tests_norms, filters: "nalgebra_shapes_tests_norms" }
           - { name: "shapes componentwise", package: nalgebra_shapes_tests_componentwise, filters: "nalgebra_shapes_tests_componentwise" }
