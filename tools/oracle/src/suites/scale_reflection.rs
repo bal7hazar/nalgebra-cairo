@@ -66,21 +66,27 @@ fn scale_ops<const N: usize>() -> Vec<Op> {
             .input(iv("b", N))
             .out(fv("product", N))
             .ring(ring!(scale_mul, N)),
-        Op::new(format!("{p}_transform_point"), "s.transform_point(&p) = s * p")
-            .input(iv("s", N))
-            .input(iv("p", N))
-            .out(fv("point", N))
-            .ring(ring!(scale_transform_point, N)),
+        Op::new(
+            format!("{p}_transform_point"),
+            "s.transform_point(&p) = s * p",
+        )
+        .input(iv("s", N))
+        .input(iv("p", N))
+        .out(fv("point", N))
+        .ring(ring!(scale_transform_point, N)),
         Op::new(format!("{p}_mul_vector"), "s * v")
             .input(iv("s", N))
             .input(iv("v", N))
             .out(fv("vector", N))
             .ring(ring!(scale_mul_vector, N)),
-        Op::new(format!("{p}_scale"), "s * k (every factor times the scalar)")
-            .input(iv("s", N))
-            .input(with(fs("k"), Gen::S))
-            .out(fv("product", N))
-            .ring(ring!(scale_scale, N)),
+        Op::new(
+            format!("{p}_scale"),
+            "s * k (every factor times the scalar)",
+        )
+        .input(iv("s", N))
+        .input(with(fs("k"), Gen::S))
+        .out(fv("product", N))
+        .ring(ring!(scale_scale, N)),
         Op::new(format!("{p}_try_inverse"), "s.try_inverse().unwrap()")
             .input(ifactors("s", N))
             .out(fv("inverse", N))
@@ -94,11 +100,14 @@ fn scale_ops<const N: usize>() -> Vec<Op> {
         .input(ifactors("s", N))
         .out(fv("inverse", N))
         .tol(Tol::Ulp(1))
-        .special(&{
-            let mut zeros = [0.5; N];
-            zeros[0] = 0.0;
-            zeros
-        }[..], 1)
+        .special(
+            &{
+                let mut zeros = [0.5; N];
+                zeros[0] = 0.0;
+                zeros
+            }[..],
+            1,
+        )
         .eval(move |x| Some(flat(&s(x).pseudo_inverse().vector))),
         Op::new(
             format!("{p}_try_inverse_transform_point"),
