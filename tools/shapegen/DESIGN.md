@@ -510,7 +510,7 @@ lock taken before the timer); raw results in `budget-results.jsonl`. Library bui
 - **Where the library's 6.07 GB go.** An empty library costs 0.75 GB (corelib, simba, plugins).
   Leaves are measured by removal, the rest (used everywhere) by duplication: a second copy of the
   code compiled next to the original, which the removals calibrate (`statistics` −221 / +229 MB,
-  `blas` −317 / +345 MB, `cg` −35 / +51 MB). Marginal costs: functional methods (P03) 865 MB, of
+  `blas` −317 / +345 MB, `cg` −35 / +51 MB). Marginal costs: functional methods (P03) 862 MB, of
   which the 13 closure methods (`map`, `fold`, `apply`, `zip_*`...) 609 MB for 12.4k lines (the
   costliest code per line); `geometry` ≈ 840 MB (P11a transforms 155 MB); completion methods (P02)
   ≈ 590 MB; `blas` 317 MB; derived `Debug` + `Hash` 257 MB; `statistics` 221 MB; `linalg` ≈ 200 MB;
