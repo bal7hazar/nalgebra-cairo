@@ -518,6 +518,7 @@ pub impl RowVector4Impl<
     /// The 4-dimensional row vector of `f(x)` for every component `x` (called in column-major
     /// order). `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
     /// cannot mutate their captures. Upstream: `map`.
+    #[inline]
     fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
         self: RowVector4<T>, f: F,
     ) -> RowVector4<Func::Output> {
@@ -527,6 +528,7 @@ pub impl RowVector4Impl<
     /// The 4-dimensional row vector of `f(i, j, x)` for every component `x` at row `i`, column `j`
     /// (0-based, column-major order). `f` is any closure or `Fn` value; Cairo closures take their
     /// arguments by value and cannot mutate their captures. Upstream: `map_with_location`.
+    #[inline]
     fn map_with_location<
         F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
     >(
@@ -540,6 +542,7 @@ pub impl RowVector4Impl<
     /// The 4-dimensional row vector of `f(a, b)` for the components `a` of `self` and `b` of `rhs`
     /// at the same position. `f` is any closure or `Fn` value; Cairo closures take their arguments
     /// by value and cannot mutate their captures. Upstream: `zip_map`.
+    #[inline]
     fn zip_map<
         T2,
         +Copy<T2>,
@@ -559,6 +562,7 @@ pub impl RowVector4Impl<
     /// The 4-dimensional row vector of `f(a, b, c)` for the components of `self`, `b` and `c` at
     /// the same position. `f` is any closure or `Fn` value; Cairo closures take their arguments by
     /// value and cannot mutate their captures. Upstream: `zip_zip_map`.
+    #[inline]
     fn zip_zip_map<
         T2,
         T3,
@@ -586,6 +590,7 @@ pub impl RowVector4Impl<
     /// without the `associated_item_constraints` experimental feature. `f` is any closure or `Fn`
     /// value; Cairo closures take their arguments by value and cannot mutate their captures.
     /// Upstream: `fold`.
+    #[inline]
     fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
         self: RowVector4<T>, init: Acc, f: F,
     ) -> Acc {
@@ -600,6 +605,7 @@ pub impl RowVector4Impl<
     /// matrix, which a static shape never is). The accumulator has the type of `init_f`'s output;
     /// `f`'s output converts `Into` it. The closures receive values instead of upstream's `&T`.
     /// Upstream: `fold_with`.
+    #[inline]
     fn fold_with<
         G,
         +Drop<G>,
@@ -621,6 +627,7 @@ pub impl RowVector4Impl<
     /// `fold` over the pairs of components of `self` and `rhs` at the same position: `f(acc, a,
     /// b)`, column-major. `f` is any closure or `Fn` value; Cairo closures take their arguments by
     /// value and cannot mutate their captures. Upstream: `zip_fold`.
+    #[inline]
     fn zip_fold<
         T2,
         +Copy<T2>,
@@ -642,6 +649,7 @@ pub impl RowVector4Impl<
     /// Replaces every component `x` by `f(x)` (column-major order). Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply`.
+    #[inline]
     fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         ref self: RowVector4<T>, f: F,
     ) {
@@ -654,6 +662,7 @@ pub impl RowVector4Impl<
     /// `self` with every component `x` replaced by `f(x)`: `apply` by value. Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply_into`.
+    #[inline]
     fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         self: RowVector4<T>, f: F,
     ) -> RowVector4<T> {
@@ -666,6 +675,7 @@ pub impl RowVector4Impl<
     /// Upstream's closure is `FnMut(&mut T)`, writing through the reference; a Cairo closure
     /// cannot, so it RETURNS the new component (its output converts `Into<T>`). Upstream:
     /// `zip_apply`.
+    #[inline]
     fn zip_apply<
         T2,
         +Copy<T2>,
@@ -690,6 +700,7 @@ pub impl RowVector4Impl<
     /// the same position. Upstream's closure is `FnMut(&mut T)`, writing through the reference; a
     /// Cairo closure cannot, so it RETURNS the new component (its output converts `Into<T>`).
     /// Upstream: `zip_zip_apply`.
+    #[inline]
     fn zip_zip_apply<
         T2,
         T3,
@@ -715,6 +726,7 @@ pub impl RowVector4Impl<
 
     /// Sets every component to `f()` (one call per component, column-major). The closure's output
     /// converts `Into<T>`. Upstream: `fill_with` (`impl Fn() -> T`).
+    #[inline]
     fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
         ref self: RowVector4<T>, f: F,
     ) {
@@ -742,6 +754,9 @@ pub impl RowVector4Impl<
 
     /// Sets the 4 components of row `i` to `val`. Panics with `nalgebra: index out of bounds` for
     /// `i >= 1`. Upstream: `fill_row`.
+    ///
+    /// ONE `match` on `i` selects the literal: measured 2.1 times cheaper than one comparison per
+    /// component (`bench_matrix4_fill_row__alt_per_component`).
     #[inline(always)]
     fn fill_row(ref self: RowVector4<T>, i: usize, val: T) {
         self = match i {
@@ -765,8 +780,9 @@ pub impl RowVector4Impl<
 
     /// Sets every component `(i, j)` with `i >= j + shift` to `val`: the lower triangle with the
     /// diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` subdiagonals as
-    /// well above; nothing changes for `shift >= 1`. ONE `match` on `shift` selects the literal.
-    /// Upstream: `fill_lower_triangle`.
+    /// well above; nothing changes for `shift >= 1`. ONE `match` on `shift` selects the literal:
+    /// measured 2.7 times cheaper than one threshold test per component
+    /// (`bench_matrix4_fill_lower_triangle__alt_per_component`). Upstream: `fill_lower_triangle`.
     #[inline(always)]
     fn fill_lower_triangle(ref self: RowVector4<T>, val: T, shift: usize) {
         self = match shift {
@@ -859,6 +875,7 @@ pub impl RowVector4Impl<
 
     /// Exchanges the components at `row_cols1` and `row_cols2` (`(row, column)`). Panics with
     /// `nalgebra: index out of bounds` when either is out of the shape. Upstream: `swap`.
+    #[inline]
     fn swap(ref self: RowVector4<T>, row_cols1: (usize, usize), row_cols2: (usize, usize)) {
         let a = MatrixIndex::index(self, row_cols1);
         let b = MatrixIndex::index(self, row_cols2);
@@ -870,6 +887,12 @@ pub impl RowVector4Impl<
 
     /// Exchanges rows `irow1` and `irow2`. Panics with `nalgebra: index out of bounds` when either
     /// is `>= 1`. Upstream: `swap_rows`.
+    ///
+    /// Two reads and two writes of a row (one `match` each). ONE nested `match` on both rows is 940
+    /// gas (15%) cheaper on `Matrix3` (`bench_matrix3_swap_rows__alt_pair_match`) but generates R²
+    /// whole-shape literals (about 40 000 lines over the 36 shapes, per method): kept as a
+    /// benchmark.
+    #[inline]
     fn swap_rows(ref self: RowVector4<T>, irow1: usize, irow2: usize) {
         let a = RowVector4EditTrait::row_at(self, irow1);
         let b = RowVector4EditTrait::row_at(self, irow2);
@@ -879,6 +902,7 @@ pub impl RowVector4Impl<
 
     /// Exchanges columns `icol1` and `icol2`. Panics with `nalgebra: index out of bounds` when
     /// either is `>= 4`. Upstream: `swap_columns`.
+    #[inline]
     fn swap_columns(ref self: RowVector4<T>, icol1: usize, icol2: usize) {
         let a = RowVector4EditTrait::column_at(self, icol1);
         let b = RowVector4EditTrait::column_at(self, icol2);
@@ -997,6 +1021,7 @@ pub impl RowVector4Impl<
     /// The norm `norm` of `self`: `EuclideanNorm {}` (`norm`), `LpNorm { p }` (`lp_norm(p)`),
     /// `OneNorm {}` (`one_norm`) or `UniformNorm {}` (`amax`), through their `Norm` impls (static
     /// dispatch). Upstream: `apply_norm` (`&impl Norm<T>`; the markers are `Copy` values here).
+    #[inline]
     fn apply_norm<N, +Drop<N>, impl Nm: Norm<N, RowVector4<T>, T>>(
         self: RowVector4<T>, norm: N,
     ) -> T {
@@ -1006,6 +1031,7 @@ pub impl RowVector4Impl<
     /// The distance between `self` and `rhs` in the norm `norm` (see `apply_norm`; the Euclidean
     /// one is the fused `metric_distance`, the others the norm of the exact difference). Upstream:
     /// `apply_metric_distance`.
+    #[inline]
     fn apply_metric_distance<N, +Drop<N>, impl Nm: Norm<N, RowVector4<T>, T>>(
         self: RowVector4<T>, rhs: RowVector4<T>, norm: N,
     ) -> T {
@@ -1531,6 +1557,7 @@ pub impl RowVector4DivAssignScalar<
 impl RowVector4EditImpl<T, +Copy<T>, +Drop<T>> of RowVector4EditTrait<T> {
     /// `self` with the component at `index` (`(row, column)`) replaced by `v`; panics out of
     /// bounds.
+    #[inline(always)]
     fn replace(self: RowVector4<T>, index: (usize, usize), v: T) -> RowVector4<T> {
         let (i, j) = index;
         match j {
@@ -1555,6 +1582,7 @@ impl RowVector4EditImpl<T, +Copy<T>, +Drop<T>> of RowVector4EditTrait<T> {
     }
 
     /// Row `i`, a `RowVector4`; panics out of bounds.
+    #[inline(always)]
     fn row_at(self: RowVector4<T>, i: usize) -> RowVector4<T> {
         match i {
             0 => RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w },
@@ -1563,6 +1591,7 @@ impl RowVector4EditImpl<T, +Copy<T>, +Drop<T>> of RowVector4EditTrait<T> {
     }
 
     /// Column `j`, a `Matrix1`; panics out of bounds.
+    #[inline(always)]
     fn column_at(self: RowVector4<T>, j: usize) -> Matrix1<T> {
         match j {
             0 => Matrix1 { x: self.x },

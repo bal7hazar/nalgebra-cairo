@@ -5,9 +5,9 @@
 
 use fixed::Fixed;
 use nalgebra::{
-    EuclideanNorm, Matrix2, Matrix2Trait, Matrix2x3, Matrix2x3Trait, Matrix3, Matrix3Trait, Matrix4,
-    Matrix4Trait, Matrix6, Matrix6Trait, MatrixMul, RowVector3, RowVector3Trait, UniformNorm,
-    Vector3, Vector3Trait, Vector4, Vector4Trait,
+    EuclideanNorm, Matrix2, Matrix2Trait, Matrix2x3, Matrix2x3Trait, Matrix3, Matrix3Trait,
+    Matrix3x2, Matrix4, Matrix4Trait, Matrix6, Matrix6Trait, MatrixMul, RowVector3, RowVector3Trait,
+    UniformNorm, Vector3, Vector3Trait, Vector4, Vector4Trait, Vector6,
 };
 use nalgebra_testing::black_box;
 use crate::helpers::{fx, load};
@@ -777,6 +777,12 @@ fn bench_matrix6_set_column__baseline() {
                 .span(),
         ),
     );
+    let _column: Vector6<Fixed> = black_box(
+        load(
+            array![52229791697, 51089564102, -26856082457, -62307463463, -67387807187, 56717969459]
+                .span(),
+        ),
+    );
     let e: Matrix6<Fixed> = black_box(
         load(
             array![
@@ -809,6 +815,12 @@ fn bench_matrix6_set_column__library() {
                 .span(),
         ),
     );
+    let column: Vector6<Fixed> = black_box(
+        load(
+            array![52229791697, 51089564102, -26856082457, -62307463463, -67387807187, 56717969459]
+                .span(),
+        ),
+    );
     let e: Matrix6<Fixed> = black_box(
         load(
             array![
@@ -822,25 +834,11 @@ fn bench_matrix6_set_column__library() {
                 .span(),
         ),
     );
-    assert!(
-        {
-            let mut m = a;
-            m
-                .set_column(
-                    black_box(3_usize),
-                    black_box(
-                        load(
-                            array![
-                                52229791697, 51089564102, -26856082457, -62307463463, -67387807187,
-                                56717969459,
-                            ]
-                                .span(),
-                        ),
-                    ),
-                );
-            m
-        } == e,
-    );
+    assert!({
+        let mut m = a;
+        m.set_column(black_box(3_usize), column);
+        m
+    } == e);
 }
 
 #[test]
@@ -926,6 +924,12 @@ fn bench_matrix2x3_mul_to__baseline() {
                 .span(),
         ),
     );
+    let _rhs: Matrix3x2<Fixed> = black_box(
+        load(
+            array![2598380075, -46537835941, -46201997992, -55801639598, -48935645117, -48163805976]
+                .span(),
+        ),
+    );
     let e: Matrix2<Fixed> = black_box(
         load(array![-1105978120270, 54992233419, -704059335506, 758048172879].span()),
     );
@@ -941,28 +945,20 @@ fn bench_matrix2x3_mul_to__library() {
                 .span(),
         ),
     );
+    let rhs: Matrix3x2<Fixed> = black_box(
+        load(
+            array![2598380075, -46537835941, -46201997992, -55801639598, -48935645117, -48163805976]
+                .span(),
+        ),
+    );
     let e: Matrix2<Fixed> = black_box(
         load(array![-1105978120270, 54992233419, -704059335506, 758048172879].span()),
     );
-    assert!(
-        {
-            let mut o: Matrix2<Fixed> = Matrix2Trait::zeros();
-            a
-                .mul_to(
-                    black_box(
-                        load(
-                            array![
-                                2598380075, -46537835941, -46201997992, -55801639598, -48935645117,
-                                -48163805976,
-                            ]
-                                .span(),
-                        ),
-                    ),
-                    ref o,
-                );
-            o
-        } == e,
-    );
+    assert!({
+        let mut o: Matrix2<Fixed> = Matrix2Trait::zeros();
+        a.mul_to(rhs, ref o);
+        o
+    } == e);
 }
 
 #[test]
@@ -974,23 +970,16 @@ fn bench_matrix2x3_mul_to__alt_mul_mat() {
                 .span(),
         ),
     );
+    let rhs: Matrix3x2<Fixed> = black_box(
+        load(
+            array![2598380075, -46537835941, -46201997992, -55801639598, -48935645117, -48163805976]
+                .span(),
+        ),
+    );
     let e: Matrix2<Fixed> = black_box(
         load(array![-1105978120270, 54992233419, -704059335506, 758048172879].span()),
     );
-    assert!(
-        a
-            .mul_mat(
-                black_box(
-                    load(
-                        array![
-                            2598380075, -46537835941, -46201997992, -55801639598, -48935645117,
-                            -48163805976,
-                        ]
-                            .span(),
-                    ),
-                ),
-            ) == e,
-    );
+    assert!(a.mul_mat(rhs) == e);
 }
 
 #[test]

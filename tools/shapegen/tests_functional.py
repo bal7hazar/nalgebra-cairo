@@ -287,7 +287,8 @@ def render_benches() -> str:
     fns, need = [], {"Matrix3", "Matrix4", "Matrix3Trait", "Matrix4Trait"}
     bb = lambda s, var, v: f"let {var}: {s.name}<Fixed> = black_box(load({col(s, v)}));"  # noqa: E731
 
-    def group(name: str, s: Shape, expr, expected, variants=(), k: int | None = None):
+    def group(name: str, s: Shape, expr, expected, variants=(), k: int | None = None,
+              extra: tuple[str, ...] = ()):
         need.update({s.name, f"{s.name}Trait"})
         rng = random.Random(f"tests_functional/bench/{name}")
         a, b = raws(rng, s), {x: nonzero_raw(rng) for x in s.fields}
@@ -297,9 +298,10 @@ def render_benches() -> str:
             pre.append(bb(s, "b", b))
         if k is not None:
             pre.append(f"let k: Fixed = black_box(fx({k}));")
+        pre += list(extra)
         ty, val = expected(a, b, k)
         pre.append(f"let e: {ty} = black_box({val});")
-        base = [re.sub(r"let (a|b|k):", r"let _\1:", line) for line in pre]
+        base = [re.sub(r"let (a|b|k|column|rhs):", r"let _\1:", line) for line in pre]
         fns.append(bench(name, "baseline", base + ["assert!(e == e);"]))
         fns.append(bench(name, "library", pre + [f"assert!({code} == e);"]))
         for v, alt in variants:
@@ -351,9 +353,9 @@ def render_benches() -> str:
     rng = random.Random("tests_functional/bench/matrix6_set_column/column")
     cv = raws(rng, v6)
     group("matrix6_set_column", m6,
-          lambda a, b, k: f"{{\nlet mut m = {a};\nm.set_column(black_box(3_usize), "
-                          f"black_box(load({col(v6, cv)})));\nm\n}}",
-          lambda a, b, k: shape_of(m6, put(m6, a, lambda i, j: j == 3, lambda x: cv[v6.f(ij(m6)[x][0], 0)])))
+          lambda a, b, k: f"{{\nlet mut m = {a};\nm.set_column(black_box(3_usize), column);\nm\n}}",
+          lambda a, b, k: shape_of(m6, put(m6, a, lambda i, j: j == 3, lambda x: cv[v6.f(ij(m6)[x][0], 0)])),
+          extra=(f"let column: Vector6<Fixed> = black_box(load({col(v6, cv)}));",))
     # in place
     v3 = Shape(3, 1)
     group("vector3_normalize_mut", v3,
@@ -368,10 +370,11 @@ def render_benches() -> str:
     rhs = raws(rng, m32)
     group("matrix2x3_mul_to", m23,
           lambda a, b, k: f"{{\nlet mut o: Matrix2<Fixed> = Matrix2Trait::zeros();\n"
-                          f"{a}.mul_to(black_box(load({col(m32, rhs)})), ref o);\no\n}}",
+                          f"{a}.mul_to(rhs, ref o);\no\n}}",
           lambda a, b, k: shape_of(Shape(2, 2), model_mul(m23, m32, a, rhs)),
-          [("alt_mul_mat", lambda a, b, k: f"{a}.mul_mat(black_box(load({col(m32, rhs)})))")])
-    need.update({"Matrix2Trait", "Vector3Trait"})
+          [("alt_mul_mat", lambda a, b, k: f"{a}.mul_mat(rhs)")],
+          extra=(f"let rhs: Matrix3x2<Fixed> = black_box(load({col(m32, rhs)}));",))
+    need.update({"Matrix2Trait", "Vector3Trait", "Matrix3x2", "Vector6"})
     group("matrix3_apply_norm", m3, lambda a, b, k: f"{a}.apply_norm(EuclideanNorm {{}})",
           lambda a, b, k: scalar(math.isqrt(sum(v * v for v in a.values()))),
           [("alt_norm", lambda a, b, k: f"{a}.norm()")])

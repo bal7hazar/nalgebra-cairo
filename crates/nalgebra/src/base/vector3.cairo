@@ -459,14 +459,18 @@ pub trait Vector3Trait<T> {
     fn fill_with_identity(ref self: Vector3<T>);
     /// Sets the 1 components of row `i` to `val`. Panics with `nalgebra: index out of bounds` for
     /// `i >= 3`. Upstream: `fill_row`.
+    ///
+    /// ONE `match` on `i` selects the literal: measured 2.1 times cheaper than one comparison per
+    /// component (`bench_matrix4_fill_row__alt_per_component`).
     fn fill_row(ref self: Vector3<T>, i: usize, val: T);
     /// Sets the 3 components of column `j` to `val`. Panics with `nalgebra: index out of bounds`
     /// for `j >= 1`. Upstream: `fill_column`.
     fn fill_column(ref self: Vector3<T>, j: usize, val: T);
     /// Sets every component `(i, j)` with `i >= j + shift` to `val`: the lower triangle with the
     /// diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` subdiagonals as
-    /// well above; nothing changes for `shift >= 3`. ONE `match` on `shift` selects the literal.
-    /// Upstream: `fill_lower_triangle`.
+    /// well above; nothing changes for `shift >= 3`. ONE `match` on `shift` selects the literal:
+    /// measured 2.7 times cheaper than one threshold test per component
+    /// (`bench_matrix4_fill_lower_triangle__alt_per_component`). Upstream: `fill_lower_triangle`.
     fn fill_lower_triangle(ref self: Vector3<T>, val: T, shift: usize);
     /// Sets every component `(i, j)` with `j >= i + shift` to `val`: the upper triangle with the
     /// diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` superdiagonals as
@@ -500,6 +504,11 @@ pub trait Vector3Trait<T> {
     fn swap(ref self: Vector3<T>, row_cols1: (usize, usize), row_cols2: (usize, usize));
     /// Exchanges rows `irow1` and `irow2`. Panics with `nalgebra: index out of bounds` when either
     /// is `>= 3`. Upstream: `swap_rows`.
+    ///
+    /// Two reads and two writes of a row (one `match` each). ONE nested `match` on both rows is 940
+    /// gas (15%) cheaper on `Matrix3` (`bench_matrix3_swap_rows__alt_pair_match`) but generates R²
+    /// whole-shape literals (about 40 000 lines over the 36 shapes, per method): kept as a
+    /// benchmark.
     fn swap_rows(ref self: Vector3<T>, irow1: usize, irow2: usize);
     /// Exchanges columns `icol1` and `icol2`. Panics with `nalgebra: index out of bounds` when
     /// either is `>= 1`. Upstream: `swap_columns`.
@@ -1126,12 +1135,14 @@ pub impl Vector3Impl<
             && ApproxEqTrait::ulps_eq(self.z, other.z, epsilon, max_ulps)
     }
 
+    #[inline]
     fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
         self: Vector3<T>, f: F,
     ) -> Vector3<Func::Output> {
         Vector3 { x: f(self.x), y: f(self.y), z: f(self.z) }
     }
 
+    #[inline]
     fn map_with_location<
         F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
     >(
@@ -1140,6 +1151,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(0, 0, self.x), y: f(1, 0, self.y), z: f(2, 0, self.z) }
     }
 
+    #[inline]
     fn zip_map<
         T2,
         +Copy<T2>,
@@ -1154,6 +1166,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(self.x, rhs.x), y: f(self.y, rhs.y), z: f(self.z, rhs.z) }
     }
 
+    #[inline]
     fn zip_zip_map<
         T2,
         T3,
@@ -1171,6 +1184,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(self.x, b.x, c.x), y: f(self.y, b.y, c.y), z: f(self.z, b.z, c.z) }
     }
 
+    #[inline]
     fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
         self: Vector3<T>, init: Acc, f: F,
     ) -> Acc {
@@ -1179,6 +1193,7 @@ pub impl Vector3Impl<
         f(acc, self.z).into()
     }
 
+    #[inline]
     fn fold_with<
         G,
         +Drop<G>,
@@ -1196,6 +1211,7 @@ pub impl Vector3Impl<
         f(acc, self.z).into()
     }
 
+    #[inline]
     fn zip_fold<
         T2,
         +Copy<T2>,
@@ -1213,18 +1229,21 @@ pub impl Vector3Impl<
         f(acc, self.z, rhs.z).into()
     }
 
+    #[inline]
     fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         ref self: Vector3<T>, f: F,
     ) {
         self = Vector3 { x: f(self.x).into(), y: f(self.y).into(), z: f(self.z).into() };
     }
 
+    #[inline]
     fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         self: Vector3<T>, f: F,
     ) -> Vector3<T> {
         Vector3 { x: f(self.x).into(), y: f(self.y).into(), z: f(self.z).into() }
     }
 
+    #[inline]
     fn zip_apply<
         T2,
         +Copy<T2>,
@@ -1242,6 +1261,7 @@ pub impl Vector3Impl<
             };
     }
 
+    #[inline]
     fn zip_zip_apply<
         T2,
         T3,
@@ -1264,6 +1284,7 @@ pub impl Vector3Impl<
             };
     }
 
+    #[inline]
     fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
         ref self: Vector3<T>, f: F,
     ) {
@@ -1369,6 +1390,7 @@ pub impl Vector3Impl<
         self = Vector3 { x: other.x, y: other.y, z: other.z };
     }
 
+    #[inline]
     fn swap(ref self: Vector3<T>, row_cols1: (usize, usize), row_cols2: (usize, usize)) {
         let a = MatrixIndex::index(self, row_cols1);
         let b = MatrixIndex::index(self, row_cols2);
@@ -1376,6 +1398,7 @@ pub impl Vector3Impl<
             Vector3EditTrait::replace(Vector3EditTrait::replace(self, row_cols1, b), row_cols2, a);
     }
 
+    #[inline]
     fn swap_rows(ref self: Vector3<T>, irow1: usize, irow2: usize) {
         let a = Vector3EditTrait::row_at(self, irow1);
         let b = Vector3EditTrait::row_at(self, irow2);
@@ -1383,6 +1406,7 @@ pub impl Vector3Impl<
         Self::set_row(ref self, irow2, a);
     }
 
+    #[inline]
     fn swap_columns(ref self: Vector3<T>, icol1: usize, icol2: usize) {
         let a = Vector3EditTrait::column_at(self, icol1);
         let b = Vector3EditTrait::column_at(self, icol2);
@@ -1473,10 +1497,12 @@ pub impl Vector3Impl<
         out = self - rhs;
     }
 
+    #[inline]
     fn apply_norm<N, +Drop<N>, impl Nm: Norm<N, Vector3<T>, T>>(self: Vector3<T>, norm: N) -> T {
         Nm::norm(@norm, self)
     }
 
+    #[inline]
     fn apply_metric_distance<N, +Drop<N>, impl Nm: Norm<N, Vector3<T>, T>>(
         self: Vector3<T>, rhs: Vector3<T>, norm: N,
     ) -> T {
@@ -2158,6 +2184,7 @@ fn slerp_unit<
 impl Vector3EditImpl<T, +Copy<T>, +Drop<T>> of Vector3EditTrait<T> {
     /// `self` with the component at `index` (`(row, column)`) replaced by `v`; panics out of
     /// bounds.
+    #[inline(always)]
     fn replace(self: Vector3<T>, index: (usize, usize), v: T) -> Vector3<T> {
         let (i, j) = index;
         match j {
@@ -2172,6 +2199,7 @@ impl Vector3EditImpl<T, +Copy<T>, +Drop<T>> of Vector3EditTrait<T> {
     }
 
     /// Row `i`, a `Matrix1`; panics out of bounds.
+    #[inline(always)]
     fn row_at(self: Vector3<T>, i: usize) -> Matrix1<T> {
         match i {
             0 => Matrix1 { x: self.x },
@@ -2182,6 +2210,7 @@ impl Vector3EditImpl<T, +Copy<T>, +Drop<T>> of Vector3EditTrait<T> {
     }
 
     /// Column `j`, a `Vector3`; panics out of bounds.
+    #[inline(always)]
     fn column_at(self: Vector3<T>, j: usize) -> Vector3<T> {
         match j {
             0 => Vector3 { x: self.x, y: self.y, z: self.z },

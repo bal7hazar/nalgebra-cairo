@@ -44,6 +44,19 @@ CLOSURE_NOTE = ("`f` is any closure or `Fn` value; Cairo closures take their arg
                 "cannot mutate their captures.")
 
 
+class Hinted(L.Fn):
+    """A method with the `#[inline]` HINT: `#[inline(always)]` is refused on functions with impl
+    generic parameters (the closures, `Norm`), and the hint is measured to remove their call
+    (`bench_matrix3_apply_norm`: equal to a direct `norm()`)."""
+
+    def attrs(self) -> list[str]:
+        return ["#[inline]"]
+
+
+def hinted(f: L.Fn) -> L.Fn:
+    return Hinted(f.name, f.doc, f.sig, f.body, False)
+
+
 def use_of(s: Shape) -> str:
     return f"super::{s.module}::{s.name}"
 
@@ -210,7 +223,9 @@ def methods(s: Shape) -> list[L.Fn]:
                   small))
     out.append(fn(
         "fill_row", f"Sets the {s.c} components of row `i` to `val`. Panics with `nalgebra: "
-                    f"index out of bounds` for `i >= {s.r}`. Upstream: `fill_row`.",
+                    f"index out of bounds` for `i >= {s.r}`. Upstream: `fill_row`.\n\nONE `match` on `i` "
+                    f"selects the literal: measured 2.1 times cheaper than one comparison per "
+                    f"component (`bench_matrix4_fill_row__alt_per_component`).",
         f"fn fill_row(ref self: {T}, i: usize, val: T)",
         "self = " + match_arms("i", [put(lambda k, r=r: ij[k][0] == r, lambda k: "val")
                                      for r in range(s.r)], panic()) + ";", small))
@@ -225,7 +240,9 @@ def methods(s: Shape) -> list[L.Fn]:
         f"Sets every component `(i, j)` with `i >= j + shift` to `val`: the lower triangle with "
         f"the diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` "
         f"subdiagonals as well above; nothing changes for `shift >= {s.r}`. ONE `match` on "
-        f"`shift` selects the literal. Upstream: `fill_lower_triangle`.",
+        f"`shift` selects the literal: measured 2.7 times cheaper than one threshold test per "
+        f"component (`bench_matrix4_fill_lower_triangle__alt_per_component`). Upstream: "
+        f"`fill_lower_triangle`.",
         f"fn fill_lower_triangle(ref self: {T}, val: T, shift: usize)",
         "self = " + match_arms("shift", [put(lambda k, h=h: ij[k][0] >= ij[k][1] + h,
                                              lambda k: "val") for h in range(s.r)], "self")
@@ -313,7 +330,11 @@ def methods(s: Shape) -> list[L.Fn]:
         False))
     out.append(fn(
         "swap_rows", f"Exchanges rows `irow1` and `irow2`. Panics with `nalgebra: index out of "
-                     f"bounds` when either is `>= {s.r}`. Upstream: `swap_rows`.",
+                     f"bounds` when either is `>= {s.r}`. Upstream: `swap_rows`.\n\nTwo reads and two "
+                     f"writes of a row (one `match` each). ONE nested `match` on both rows is 940 gas "
+                     f"(15%) cheaper on `Matrix3` (`bench_matrix3_swap_rows__alt_pair_match`) but "
+                     f"generates R² whole-shape literals (about 40 000 lines over the 36 shapes, "
+                     f"per method): kept as a benchmark.",
         f"fn swap_rows(ref self: {T}, irow1: usize, irow2: usize)",
         f"let a = {S}EditTrait::row_at(self, irow1);\nlet b = {S}EditTrait::row_at(self, irow2);\n"
         f"Self::set_row(ref self, irow1, b);\nSelf::set_row(ref self, irow2, a);", False))
@@ -404,7 +425,13 @@ def methods(s: Shape) -> list[L.Fn]:
         f"fn apply_metric_distance<N, +Drop<N>, impl Nm: Norm<N, {T}, T>>(self: {T}, rhs: {T}, "
         f"norm: N) -> T",
         "Nm::metric_distance(@norm, self, rhs)", False))
-    return out
+    return [hinted(f) if not f.inline and f.name in HINTED else f for f in out]
+
+
+# Methods with impl generic parameters or runtime positions, measured cheaper with the hint.
+HINTED = {"map", "map_with_location", "zip_map", "zip_zip_map", "fold", "fold_with", "zip_fold",
+          "apply", "apply_into", "zip_apply", "zip_zip_apply", "fill_with", "map_diagonal",
+          "swap", "swap_rows", "swap_columns", "apply_norm", "apply_metric_distance"}
 
 
 def missing(s: Shape, have: set[str]) -> list[L.Fn]:
@@ -419,6 +446,7 @@ def missing(s: Shape, have: set[str]) -> list[L.Fn]:
 def items(s: Shape) -> list[str]:
     S, T, F = s.name, f"{s.name}<T>", s.fields
     rw, cl = row_of(s), col_of(s)
+    small = s.n <= 16
     out = [L.section("functional and in-place variants", 100)]
     # Private helpers of `swap`, `swap_rows`, `swap_columns`.
     rows = [L.lit(rw.name, [(rw.f(0, j), f"self.{s.f(i, j)}") for j in range(s.c)])
@@ -434,13 +462,13 @@ def items(s: Shape) -> list[str]:
         L.Fn("replace", "/// `self` with the component at `index` (`(row, column)`) replaced by "
                         "`v`; panics out of bounds.", f"fn replace(self: {T}, index: (usize, "
                         f"usize), v: T) -> {T}",
-             "let (i, j) = index;\n" + match_arms("j", arms, panic()), False),
+             "let (i, j) = index;\n" + match_arms("j", arms, panic()), small),
         L.Fn("row_at", f"/// Row `i`, a `{rw.name}`; panics out of bounds.",
              f"fn row_at(self: {T}, i: usize) -> {rw.name}<T>", match_arms("i", rows, panic()),
-             False),
+             small),
         L.Fn("column_at", f"/// Column `j`, a `{cl.name}`; panics out of bounds.",
              f"fn column_at(self: {T}, j: usize) -> {cl.name}<T>",
-             match_arms("j", cols, panic()), False),
+             match_arms("j", cols, panic()), small),
     ]
     for h in helpers:
         h.raw_doc = [h.doc]
