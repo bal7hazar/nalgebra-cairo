@@ -26,9 +26,11 @@
 
 pub mod cholesky;
 pub mod givens;
+pub mod householder;
 pub mod inverse;
 pub(crate) mod ldlt;
 pub mod lu;
+pub mod lu_steps;
 #[cfg(test)]
 mod oracle_cholesky;
 #[cfg(test)]
@@ -50,11 +52,13 @@ pub use cholesky::{
     Cholesky6Trait,
 };
 pub use givens::{GivensRotate, GivensRotateRows, GivensRotation, GivensRotationTrait};
+pub use householder::reflection_axis_mut;
 pub use lu::{
     Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix3LuTrait,
     Matrix4LuTrait, Matrix6LuTrait, Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4, Perm4Trait, Perm6,
     Perm6Trait,
 };
+pub use lu_steps::{gauss_step, gauss_step_swap, try_invert_to};
 pub use permutation_sequence::{PermuteColumns, PermuteRows};
 pub use qr::{
     Matrix2QrTrait, Matrix3QrTrait, Matrix4QrTrait, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait,

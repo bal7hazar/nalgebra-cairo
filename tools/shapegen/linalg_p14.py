@@ -175,7 +175,7 @@ def givens_impls() -> list[str]:
         body = "let c = self.c;\nlet s = self.s;\nrhs = " + lit(s, lambda i, j: (
             f"R::diff_prod(c, rhs.{s.f(0, j)}, s, rhs.{s.f(1, j)})" if i == 0 else
             f"R::sum_prod2(s, rhs.{s.f(0, j)}, c, rhs.{s.f(1, j)})")) + ";"
-        out.append(f"impl GivensRotationRotate{s.name}<\n{L.bounds(GIVENS_BOUNDS)}\n> of "
+        out.append(f"pub impl GivensRotationRotate{s.name}<\n{L.bounds(GIVENS_BOUNDS)}\n> of "
                    f"GivensRotate<T, {s.name}<T>> {{\n{inline}fn rotate(self: GivensRotation<T>, "
                    f"ref rhs: {s.name}<T>) {{\n{body}\n}}\n}}")
     for r in DIMS:
@@ -184,7 +184,7 @@ def givens_impls() -> list[str]:
         body = "let c = self.c;\nlet s = self.s;\nlhs = " + lit(s, lambda i, j: (
             f"R::sum_prod2(c, lhs.{s.f(i, 0)}, s, lhs.{s.f(i, 1)})" if j == 0 else
             f"R::diff_prod(c, lhs.{s.f(i, 1)}, s, lhs.{s.f(i, 0)})")) + ";"
-        out.append(f"impl GivensRotationRotateRows{s.name}<\n{L.bounds(GIVENS_BOUNDS)}\n> of "
+        out.append(f"pub impl GivensRotationRotateRows{s.name}<\n{L.bounds(GIVENS_BOUNDS)}\n> of "
                    f"GivensRotateRows<T, {s.name}<T>> {{\n{inline}fn rotate_rows(self: "
                    f"GivensRotation<T>, ref lhs: {s.name}<T>) {{\n{body}\n}}\n}}")
     return out
@@ -258,7 +258,7 @@ def perm_impls() -> list[str]:
         for c in DIMS:
             s = Shape(n, c)
             out.append(
-                f"impl Perm{n}PermuteRows{s.name}<T, +Copy<T>, +Drop<T>> of "
+                f"pub impl Perm{n}PermuteRows{s.name}<T, +Copy<T>, +Drop<T>> of "
                 f"PermuteRows<Perm{n}, {s.name}<T>> {{\n"
                 f"fn permute_rows(self: Perm{n}, ref rhs: {s.name}<T>) {{\n"
                 f"{permute_body(n, s, True, False)}\n}}\n\n"
@@ -267,7 +267,7 @@ def perm_impls() -> list[str]:
         for r in DIMS:
             s = Shape(r, n)
             out.append(
-                f"impl Perm{n}PermuteColumns{s.name}<T, +Copy<T>, +Drop<T>> of "
+                f"pub impl Perm{n}PermuteColumns{s.name}<T, +Copy<T>, +Drop<T>> of "
                 f"PermuteColumns<Perm{n}, {s.name}<T>> {{\n"
                 f"fn permute_columns(self: Perm{n}, ref rhs: {s.name}<T>) {{\n"
                 f"{permute_body(n, s, False, False)}\n}}\n\n"
@@ -291,3 +291,213 @@ def render_permutation() -> str:
 
 
 LINALG_MODULES = {"givens": render_givens, "permutation_sequence": render_permutation}
+
+
+# --------------------------------------------------------------------------------------------
+# LU steps: `gauss_step`, `gauss_step_swap`, `try_invert_to`
+# --------------------------------------------------------------------------------------------
+
+LU_BOUNDS = ["T", "impl R: Real<T>", "+Copy<T>", "+Drop<T>", "+Drop<R::Wide>", "+Neg<T>"]
+LU_SIZES = (2, 3, 4, 6)
+
+LU_STEPS = """/// The elimination steps of one square shape (crate-private: the free functions below are
+/// upstream's interface).
+pub(crate) trait LuSteps<M, T> {
+    fn gauss_step(ref matrix: M, diag: T, i: usize);
+    fn gauss_step_swap(ref matrix: M, diag: T, i: usize, piv: usize);
+}
+
+/// The LU inverse of one square shape (crate-private).
+pub(crate) trait LuInvert<M> {
+    fn try_invert_to(matrix: M, ref out: M) -> bool;
+}
+
+/// One step of Gaussian elimination at the 0-based pivot `(i, i)` of `matrix`, in place: each
+/// entry `a_ri` below the pivot becomes the multiplier `a_ri / diag` (a correctly rounded quotient,
+/// one prepared divisor per step from 3 rows on), and each entry `a_rq` of the trailing submatrix
+/// (`r, q > i`) becomes `a_rq - a_iq * (a_ri / diag)`, ONE fused `Real::mul_add` (one floor).
+/// Upstream multiplies by `1 / diag` (two roundings per multiplier); the quotient is the
+/// project's rule (`LuN::new` divides the same way). `diag` is the pivot the caller chose
+/// (upstream: `matrix[(i, i)]`). Panics with `nalgebra: index out of bounds` when `i` is not a row
+/// of the square, on a zero `diag` (the scalar's division error, when there is a row below) and on
+/// overflow. Squares 1 to 6. Upstream: `nalgebra::linalg::gauss_step` (`#[doc(hidden)]`).
+pub fn gauss_step<M, T, impl S: LuSteps<M, T>>(ref matrix: M, diag: T, i: usize) {
+    S::gauss_step(ref matrix, diag, i)
+}
+
+/// `gauss_step` after exchanging the rows `i` and `piv > i` in the columns `i..` (the columns
+/// before `i` are the caller's, like upstream's `LU::new`, which swaps them itself); `diag` is
+/// the pivot, upstream's `matrix[(piv, i)]` before the exchange. Panics with `nalgebra: index out
+/// of bounds` unless `i < piv < D`. Squares 1 to 6. Upstream:
+/// `nalgebra::linalg::gauss_step_swap` (`#[doc(hidden)]`).
+pub fn gauss_step_swap<M, T, impl S: LuSteps<M, T>>(ref matrix: M, diag: T, i: usize, piv: usize) {
+    S::gauss_step_swap(ref matrix, diag, i, piv)
+}
+
+/// Overwrites `out` with the inverse of `matrix` by LU decomposition with partial pivoting and
+/// returns `true`, or returns `false` and leaves `out` unchanged when a pivot is exactly zero
+/// (upstream fills `out` with the identity first and leaves a partial result). The inverse is
+/// `LuN::new(matrix).try_inverse()`, bit for bit. The squares that have an LU decomposition:
+/// `Matrix2`, `Matrix3`, `Matrix4`, `Matrix6`. Upstream: `nalgebra::linalg::try_invert_to`.
+pub fn try_invert_to<M, impl I: LuInvert<M>>(matrix: M, ref out: M) -> bool {
+    I::try_invert_to(matrix, ref out)
+}"""
+
+
+def gauss_arm(s: Shape, k: int) -> str:
+    """The body of step `k` (0-based) on the square `s`, reading and rewriting `matrix`."""
+    n = s.r
+    rows = list(range(k + 1, n))
+    if not rows:
+        return "{}"
+    lines = divide_lets([f"c{r}" for r in rows], [f"matrix.{s.f(r, k)}" for r in rows], "diag")
+    lines += [f"let n{q} = -matrix.{s.f(k, q)};" for q in rows]
+
+    def entry(i, j):
+        if i > k and j == k:
+            return f"c{i}"
+        if i > k and j > k:
+            return f"R::mul_add(n{j}, c{i}, matrix.{s.f(i, j)})"
+        return f"matrix.{s.f(i, j)}"
+    lines.append("matrix = " + lit(s, entry) + ";")
+    return "{\n" + "\n".join(lines) + "\n}"
+
+
+def divide_lets(names: list[str], values: list[str], divisor: str) -> list[str]:
+    lines, i = [], 0
+    for d in div_chunks(len(names)):
+        ns, vs = names[i:i + d], values[i:i + d]
+        i += d
+        if d == 1:
+            lines.append(f"let {ns[0]} = R::div({vs[0]}, {divisor});")
+        else:
+            lines.append(f"let ({', '.join(ns)}) = R::div{d}({', '.join(vs)}, {divisor});")
+    return lines
+
+
+def swap_literal(s: Shape, k: int, t: int) -> str:
+    def entry(i, j):
+        if j >= k and i == k:
+            return f"matrix.{s.f(t, j)}"
+        if j >= k and i == t:
+            return f"matrix.{s.f(k, j)}"
+        return f"matrix.{s.f(i, j)}"
+    return "matrix = " + lit(s, entry) + ";"
+
+
+def lu_step_impls() -> list[str]:
+    out = []
+    for n in DIMS:
+        s = Shape(n, n)
+        arms = "\n".join(f"{k} => {gauss_arm(s, k)}," for k in range(n))
+        step = f"match i {{\n{arms}\n_ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),\n}}"
+        if n == 1:
+            step = "let _ = diag;\n" + step
+        swap_arms = []
+        for k in range(n - 1):
+            inner = "\n".join(f"{t} => {{\n{swap_literal(s, k, t)}\n}}," for t in range(k + 1, n))
+            swap_arms.append(f"{k} => match piv {{\n{inner}\n_ => core::panic_with_felt252("
+                             "INDEX_OUT_OF_BOUNDS),\n},")
+        swap = ("match i {\n" + "\n".join(swap_arms)
+                + "\n_ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),\n}\n"
+                "Self::gauss_step(ref matrix, diag, i);")
+        if n == 1:
+            swap = ("let _ = diag;\nlet _ = i;\nlet _ = piv;\n"
+                    "core::panic_with_felt252(INDEX_OUT_OF_BOUNDS)")
+        out.append(f"impl {s.name}LuSteps<\n{L.bounds(LU_BOUNDS)}\n> of LuSteps<{s.name}<T>, T> {{\n"
+                   f"fn gauss_step(ref matrix: {s.name}<T>, diag: T, i: usize) {{\n{step}\n}}\n\n"
+                   f"fn gauss_step_swap(ref matrix: {s.name}<T>, diag: T, i: usize, piv: usize) "
+                   f"{{\n{swap}\n}}\n}}")
+    for n in LU_SIZES:
+        M = f"Matrix{n}<T>"
+        out.append(f"impl Matrix{n}LuInvert<\nT,\nimpl R: Real<T>,\n+Copy<T>,\n+Drop<T>,\n"
+                   f"+Drop<R::Wide>,\n+Add<T>,\n+Sub<T>,\n+Mul<T>,\n+Neg<T>,\n+PartialEq<T>,\n"
+                   f"+PartialOrd<T>,\n> of LuInvert<{M}> {{\n#[inline(always)]\n"
+                   f"fn try_invert_to(matrix: {M}, ref out: {M}) -> bool {{\n"
+                   f"Lu{n}Trait::try_inverse_to(Lu{n}Trait::new(matrix), ref out)\n}}\n}}")
+    return out
+
+
+def render_lu_steps() -> str:
+    uses = ["simba::scalar::Real", "crate::base::errors::INDEX_OUT_OF_BOUNDS"] + [
+        f"crate::base::matrix{n}::Matrix{n}" for n in DIMS] + [
+        f"super::lu::Lu{n}Trait" for n in LU_SIZES]
+    doc = ("//! Upstream's LU building blocks, `nalgebra::linalg::{gauss_step, gauss_step_swap, "
+           "try_invert_to}`\n//! (`src/linalg/lu.rs`), as free functions over the static squares "
+           "(`gauss_step(ref m, diag, i)`).\n//! The 0-based step index is a run-time value: "
+           "each square matches it on its unrolled steps.\n")
+    return (HEADER + doc + "\n" + "".join(f"use {u};\n" for u in uses) + "\n"
+            + "\n\n".join([LU_STEPS] + lu_step_impls()) + "\n")
+
+
+# --------------------------------------------------------------------------------------------
+# Householder: `reflection_axis_mut`
+# --------------------------------------------------------------------------------------------
+
+HOUSEHOLDER = """/// The Householder axis of one column vector shape (crate-private: the free function below is
+/// upstream's interface).
+pub(crate) trait HouseholderAxis<V, T> {
+    fn reflection_axis_mut(ref column: V) -> (T, bool);
+}
+
+/// Turns `column` into the unit axis of the Householder reflection that maps it onto `-r e_0`,
+/// and returns `(r, true)` with `r = -sign(column[0]) * |column|` (`sign(0) = 1`), or leaves it
+/// unchanged and returns `(0, false)` when it is exactly zero. Upstream:
+/// `nalgebra::linalg::reflection_axis_mut` (`#[doc(hidden)]`), `D = 1..6`.
+///
+/// `|column|` is ONE rounding (the exact sum of squares, its square root floored). The axis is
+/// `column + sign * |column| e_0` normalised ONCE: its norm recomputed exactly and floored, then
+/// one correctly rounded quotient per component (one prepared divisor). Upstream divides by
+/// `sqrt(2 (|column|² + |column[0]| |column|))` — that very norm in exact arithmetic — and then
+/// normalises again; the second pass only repeats the first, so the single normalisation is
+/// kept (cheaper, and one rounding per component instead of two). Panics on overflow.
+pub fn reflection_axis_mut<V, T, impl H: HouseholderAxis<V, T>>(ref column: V) -> (T, bool) {
+    H::reflection_axis_mut(ref column)
+}"""
+
+HH_BOUNDS = ["T", "impl R: Real<T>", "+Copy<T>", "+Drop<T>", "+Drop<R::Wide>", "+Add<T>",
+             "+Neg<T>", "+PartialEq<T>", "+PartialOrd<T>"]
+
+
+def wide_squares(xs: list[str]) -> str:
+    acc = "R::wide_zero()"
+    for x in xs:
+        acc = f"R::wide_add_prod({acc}, {x}, {x})"
+    return acc
+
+
+def householder_impls() -> list[str]:
+    out = []
+    for n in DIMS:
+        s = Shape(n, 1)
+        comps = [f"column.{s.f(i, 0)}" for i in range(n)]
+        y = ["y0"] + comps[1:]
+        names = [f"u{i}" for i in range(n)]
+        body = [f"let norm = R::wide_sqrt({wide_squares(comps)});",
+                "if norm == R::zero() {\nreturn (R::zero(), false);\n}",
+                f"let x0 = {comps[0]};",
+                "let signed = if x0 < R::zero() {\n-norm\n} else {\nnorm\n};",
+                "let y0 = x0 + signed;",
+                f"let d = R::wide_sqrt({wide_squares(y)});"]
+        body += divide_lets(names, y, "d")
+        body += ["column = " + lit(s, lambda i, j: f"u{i}") + ";", "(-signed, true)"]
+        out.append(f"impl {s.name}HouseholderAxis<\n{L.bounds(HH_BOUNDS)}\n> of HouseholderAxis<"
+                   f"{s.name}<T>, T> {{\nfn reflection_axis_mut(ref column: {s.name}<T>) -> (T, "
+                   f"bool) {{\n" + "\n".join(body) + "\n}\n}")
+    return out
+
+
+def render_householder() -> str:
+    uses = ["simba::scalar::Real"] + [f"crate::base::{Shape(n, 1).module}::{Shape(n, 1).name}"
+                                      for n in DIMS]
+    doc = ("//! Householder building blocks (upstream `nalgebra::linalg::householder`, "
+           "`src/linalg/householder.rs`):\n//! `reflection_axis_mut` on the static column "
+           "vectors. `clear_column_unchecked`,\n//! `clear_row_unchecked` and `assemble_q` belong "
+           "to the Householder reductions of P16\n//! (`Bidiagonal`, `Hessenberg`, "
+           "`SymmetricTridiagonal`) and come with them.\n")
+    return (HEADER + doc + "\n" + "".join(f"use {u};\n" for u in uses) + "\n"
+            + "\n\n".join([HOUSEHOLDER] + householder_impls()) + "\n")
+
+
+LINALG_MODULES = {"givens": render_givens, "permutation_sequence": render_permutation,
+                  "lu_steps": render_lu_steps, "householder": render_householder}

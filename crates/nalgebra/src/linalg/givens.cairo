@@ -152,7 +152,7 @@ pub trait GivensRotateRows<T, M> {
     fn rotate_rows(self: GivensRotation<T>, ref lhs: M);
 }
 
-impl GivensRotationRotateVector2<
+pub impl GivensRotationRotateVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotate<T, Vector2<T>> {
     #[inline(always)]
@@ -163,7 +163,7 @@ impl GivensRotationRotateVector2<
     }
 }
 
-impl GivensRotationRotateMatrix2<
+pub impl GivensRotationRotateMatrix2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotate<T, Matrix2<T>> {
     #[inline(always)]
@@ -180,7 +180,7 @@ impl GivensRotationRotateMatrix2<
     }
 }
 
-impl GivensRotationRotateMatrix2x3<
+pub impl GivensRotationRotateMatrix2x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotate<T, Matrix2x3<T>> {
     fn rotate(self: GivensRotation<T>, ref rhs: Matrix2x3<T>) {
@@ -198,7 +198,7 @@ impl GivensRotationRotateMatrix2x3<
     }
 }
 
-impl GivensRotationRotateMatrix2x4<
+pub impl GivensRotationRotateMatrix2x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotate<T, Matrix2x4<T>> {
     fn rotate(self: GivensRotation<T>, ref rhs: Matrix2x4<T>) {
@@ -218,7 +218,7 @@ impl GivensRotationRotateMatrix2x4<
     }
 }
 
-impl GivensRotationRotateMatrix2x5<
+pub impl GivensRotationRotateMatrix2x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotate<T, Matrix2x5<T>> {
     fn rotate(self: GivensRotation<T>, ref rhs: Matrix2x5<T>) {
@@ -240,7 +240,7 @@ impl GivensRotationRotateMatrix2x5<
     }
 }
 
-impl GivensRotationRotateMatrix2x6<
+pub impl GivensRotationRotateMatrix2x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotate<T, Matrix2x6<T>> {
     fn rotate(self: GivensRotation<T>, ref rhs: Matrix2x6<T>) {
@@ -264,7 +264,7 @@ impl GivensRotationRotateMatrix2x6<
     }
 }
 
-impl GivensRotationRotateRowsRowVector2<
+pub impl GivensRotationRotateRowsRowVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotateRows<T, RowVector2<T>> {
     #[inline(always)]
@@ -276,7 +276,7 @@ impl GivensRotationRotateRowsRowVector2<
     }
 }
 
-impl GivensRotationRotateRowsMatrix2<
+pub impl GivensRotationRotateRowsMatrix2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotateRows<T, Matrix2<T>> {
     #[inline(always)]
@@ -293,7 +293,7 @@ impl GivensRotationRotateRowsMatrix2<
     }
 }
 
-impl GivensRotationRotateRowsMatrix3x2<
+pub impl GivensRotationRotateRowsMatrix3x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotateRows<T, Matrix3x2<T>> {
     fn rotate_rows(self: GivensRotation<T>, ref lhs: Matrix3x2<T>) {
@@ -311,7 +311,7 @@ impl GivensRotationRotateRowsMatrix3x2<
     }
 }
 
-impl GivensRotationRotateRowsMatrix4x2<
+pub impl GivensRotationRotateRowsMatrix4x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotateRows<T, Matrix4x2<T>> {
     fn rotate_rows(self: GivensRotation<T>, ref lhs: Matrix4x2<T>) {
@@ -331,7 +331,7 @@ impl GivensRotationRotateRowsMatrix4x2<
     }
 }
 
-impl GivensRotationRotateRowsMatrix5x2<
+pub impl GivensRotationRotateRowsMatrix5x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotateRows<T, Matrix5x2<T>> {
     fn rotate_rows(self: GivensRotation<T>, ref lhs: Matrix5x2<T>) {
@@ -353,7 +353,7 @@ impl GivensRotationRotateRowsMatrix5x2<
     }
 }
 
-impl GivensRotationRotateRowsMatrix6x2<
+pub impl GivensRotationRotateRowsMatrix6x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
 > of GivensRotateRows<T, Matrix6x2<T>> {
     fn rotate_rows(self: GivensRotation<T>, ref lhs: Matrix6x2<T>) {

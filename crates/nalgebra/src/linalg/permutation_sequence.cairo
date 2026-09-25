@@ -63,7 +63,7 @@ pub trait PermuteColumns<P, M> {
     fn inv_permute_columns(self: P, ref rhs: M);
 }
 
-impl Perm2PermuteRowsVector2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Vector2<T>> {
+pub impl Perm2PermuteRowsVector2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Vector2<T>> {
     fn permute_rows(self: Perm2, ref rhs: Vector2<T>) {
         let mut a00 = rhs.x;
         let mut a10 = rhs.y;
@@ -87,7 +87,7 @@ impl Perm2PermuteRowsVector2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Vector
     }
 }
 
-impl Perm2PermuteRowsMatrix2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2<T>> {
+pub impl Perm2PermuteRowsMatrix2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2<T>> {
     fn permute_rows(self: Perm2, ref rhs: Matrix2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -121,7 +121,7 @@ impl Perm2PermuteRowsMatrix2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix
     }
 }
 
-impl Perm2PermuteRowsMatrix2x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x3<T>> {
+pub impl Perm2PermuteRowsMatrix2x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x3<T>> {
     fn permute_rows(self: Perm2, ref rhs: Matrix2x3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -165,7 +165,7 @@ impl Perm2PermuteRowsMatrix2x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matr
     }
 }
 
-impl Perm2PermuteRowsMatrix2x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x4<T>> {
+pub impl Perm2PermuteRowsMatrix2x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x4<T>> {
     fn permute_rows(self: Perm2, ref rhs: Matrix2x4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -225,7 +225,7 @@ impl Perm2PermuteRowsMatrix2x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matr
     }
 }
 
-impl Perm2PermuteRowsMatrix2x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x5<T>> {
+pub impl Perm2PermuteRowsMatrix2x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x5<T>> {
     fn permute_rows(self: Perm2, ref rhs: Matrix2x5<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -313,7 +313,7 @@ impl Perm2PermuteRowsMatrix2x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matr
     }
 }
 
-impl Perm2PermuteRowsMatrix2x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x6<T>> {
+pub impl Perm2PermuteRowsMatrix2x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x6<T>> {
     fn permute_rows(self: Perm2, ref rhs: Matrix2x6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -415,7 +415,9 @@ impl Perm2PermuteRowsMatrix2x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matr
     }
 }
 
-impl Perm2PermuteColumnsRowVector2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, RowVector2<T>> {
+pub impl Perm2PermuteColumnsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm2, RowVector2<T>> {
     fn permute_columns(self: Perm2, ref rhs: RowVector2<T>) {
         let mut a00 = rhs.x;
         let mut a01 = rhs.y;
@@ -439,7 +441,7 @@ impl Perm2PermuteColumnsRowVector2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm
     }
 }
 
-impl Perm2PermuteColumnsMatrix2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, Matrix2<T>> {
+pub impl Perm2PermuteColumnsMatrix2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, Matrix2<T>> {
     fn permute_columns(self: Perm2, ref rhs: Matrix2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -473,7 +475,9 @@ impl Perm2PermuteColumnsMatrix2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, 
     }
 }
 
-impl Perm2PermuteColumnsMatrix3x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, Matrix3x2<T>> {
+pub impl Perm2PermuteColumnsMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm2, Matrix3x2<T>> {
     fn permute_columns(self: Perm2, ref rhs: Matrix3x2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -517,7 +521,9 @@ impl Perm2PermuteColumnsMatrix3x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2
     }
 }
 
-impl Perm2PermuteColumnsMatrix4x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, Matrix4x2<T>> {
+pub impl Perm2PermuteColumnsMatrix4x2<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm2, Matrix4x2<T>> {
     fn permute_columns(self: Perm2, ref rhs: Matrix4x2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -577,7 +583,9 @@ impl Perm2PermuteColumnsMatrix4x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2
     }
 }
 
-impl Perm2PermuteColumnsMatrix5x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, Matrix5x2<T>> {
+pub impl Perm2PermuteColumnsMatrix5x2<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm2, Matrix5x2<T>> {
     fn permute_columns(self: Perm2, ref rhs: Matrix5x2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -665,7 +673,9 @@ impl Perm2PermuteColumnsMatrix5x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2
     }
 }
 
-impl Perm2PermuteColumnsMatrix6x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2, Matrix6x2<T>> {
+pub impl Perm2PermuteColumnsMatrix6x2<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm2, Matrix6x2<T>> {
     fn permute_columns(self: Perm2, ref rhs: Matrix6x2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -767,7 +777,7 @@ impl Perm2PermuteColumnsMatrix6x2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm2
     }
 }
 
-impl Perm3PermuteRowsVector3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Vector3<T>> {
+pub impl Perm3PermuteRowsVector3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Vector3<T>> {
     fn permute_rows(self: Perm3, ref rhs: Vector3<T>) {
         let mut a00 = rhs.x;
         let mut a10 = rhs.y;
@@ -811,7 +821,7 @@ impl Perm3PermuteRowsVector3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Vector
     }
 }
 
-impl Perm3PermuteRowsMatrix3x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x2<T>> {
+pub impl Perm3PermuteRowsMatrix3x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x2<T>> {
     fn permute_rows(self: Perm3, ref rhs: Matrix3x2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -879,7 +889,7 @@ impl Perm3PermuteRowsMatrix3x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matr
     }
 }
 
-impl Perm3PermuteRowsMatrix3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3<T>> {
+pub impl Perm3PermuteRowsMatrix3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3<T>> {
     fn permute_rows(self: Perm3, ref rhs: Matrix3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -993,7 +1003,7 @@ impl Perm3PermuteRowsMatrix3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix
     }
 }
 
-impl Perm3PermuteRowsMatrix3x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x4<T>> {
+pub impl Perm3PermuteRowsMatrix3x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x4<T>> {
     fn permute_rows(self: Perm3, ref rhs: Matrix3x4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -1137,7 +1147,7 @@ impl Perm3PermuteRowsMatrix3x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matr
     }
 }
 
-impl Perm3PermuteRowsMatrix3x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x5<T>> {
+pub impl Perm3PermuteRowsMatrix3x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x5<T>> {
     fn permute_rows(self: Perm3, ref rhs: Matrix3x5<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -1311,7 +1321,7 @@ impl Perm3PermuteRowsMatrix3x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matr
     }
 }
 
-impl Perm3PermuteRowsMatrix3x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x6<T>> {
+pub impl Perm3PermuteRowsMatrix3x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matrix3x6<T>> {
     fn permute_rows(self: Perm3, ref rhs: Matrix3x6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -1515,7 +1525,9 @@ impl Perm3PermuteRowsMatrix3x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, Matr
     }
 }
 
-impl Perm3PermuteColumnsRowVector3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, RowVector3<T>> {
+pub impl Perm3PermuteColumnsRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm3, RowVector3<T>> {
     fn permute_columns(self: Perm3, ref rhs: RowVector3<T>) {
         let mut a00 = rhs.x;
         let mut a01 = rhs.y;
@@ -1559,7 +1571,9 @@ impl Perm3PermuteColumnsRowVector3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm
     }
 }
 
-impl Perm3PermuteColumnsMatrix2x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, Matrix2x3<T>> {
+pub impl Perm3PermuteColumnsMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm3, Matrix2x3<T>> {
     fn permute_columns(self: Perm3, ref rhs: Matrix2x3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -1627,7 +1641,7 @@ impl Perm3PermuteColumnsMatrix2x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3
     }
 }
 
-impl Perm3PermuteColumnsMatrix3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, Matrix3<T>> {
+pub impl Perm3PermuteColumnsMatrix3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, Matrix3<T>> {
     fn permute_columns(self: Perm3, ref rhs: Matrix3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -1741,7 +1755,9 @@ impl Perm3PermuteColumnsMatrix3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, 
     }
 }
 
-impl Perm3PermuteColumnsMatrix4x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, Matrix4x3<T>> {
+pub impl Perm3PermuteColumnsMatrix4x3<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm3, Matrix4x3<T>> {
     fn permute_columns(self: Perm3, ref rhs: Matrix4x3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -1885,7 +1901,9 @@ impl Perm3PermuteColumnsMatrix4x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3
     }
 }
 
-impl Perm3PermuteColumnsMatrix5x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, Matrix5x3<T>> {
+pub impl Perm3PermuteColumnsMatrix5x3<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm3, Matrix5x3<T>> {
     fn permute_columns(self: Perm3, ref rhs: Matrix5x3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -2059,7 +2077,9 @@ impl Perm3PermuteColumnsMatrix5x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3
     }
 }
 
-impl Perm3PermuteColumnsMatrix6x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3, Matrix6x3<T>> {
+pub impl Perm3PermuteColumnsMatrix6x3<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm3, Matrix6x3<T>> {
     fn permute_columns(self: Perm3, ref rhs: Matrix6x3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -2263,7 +2283,7 @@ impl Perm3PermuteColumnsMatrix6x3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm3
     }
 }
 
-impl Perm4PermuteRowsVector4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Vector4<T>> {
+pub impl Perm4PermuteRowsVector4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Vector4<T>> {
     fn permute_rows(self: Perm4, ref rhs: Vector4<T>) {
         let mut a00 = rhs.x;
         let mut a10 = rhs.y;
@@ -2335,7 +2355,7 @@ impl Perm4PermuteRowsVector4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Vector
     }
 }
 
-impl Perm4PermuteRowsMatrix4x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x2<T>> {
+pub impl Perm4PermuteRowsMatrix4x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x2<T>> {
     fn permute_rows(self: Perm4, ref rhs: Matrix4x2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -2457,7 +2477,7 @@ impl Perm4PermuteRowsMatrix4x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matr
     }
 }
 
-impl Perm4PermuteRowsMatrix4x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x3<T>> {
+pub impl Perm4PermuteRowsMatrix4x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x3<T>> {
     fn permute_rows(self: Perm4, ref rhs: Matrix4x3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -2645,7 +2665,7 @@ impl Perm4PermuteRowsMatrix4x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matr
     }
 }
 
-impl Perm4PermuteRowsMatrix4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4<T>> {
+pub impl Perm4PermuteRowsMatrix4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4<T>> {
     fn permute_rows(self: Perm4, ref rhs: Matrix4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -2885,7 +2905,7 @@ impl Perm4PermuteRowsMatrix4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix
     }
 }
 
-impl Perm4PermuteRowsMatrix4x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x5<T>> {
+pub impl Perm4PermuteRowsMatrix4x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x5<T>> {
     fn permute_rows(self: Perm4, ref rhs: Matrix4x5<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -3177,7 +3197,7 @@ impl Perm4PermuteRowsMatrix4x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matr
     }
 }
 
-impl Perm4PermuteRowsMatrix4x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x6<T>> {
+pub impl Perm4PermuteRowsMatrix4x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x6<T>> {
     fn permute_rows(self: Perm4, ref rhs: Matrix4x6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -3521,7 +3541,9 @@ impl Perm4PermuteRowsMatrix4x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matr
     }
 }
 
-impl Perm4PermuteColumnsRowVector4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, RowVector4<T>> {
+pub impl Perm4PermuteColumnsRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm4, RowVector4<T>> {
     fn permute_columns(self: Perm4, ref rhs: RowVector4<T>) {
         let mut a00 = rhs.x;
         let mut a01 = rhs.y;
@@ -3593,7 +3615,9 @@ impl Perm4PermuteColumnsRowVector4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm
     }
 }
 
-impl Perm4PermuteColumnsMatrix2x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, Matrix2x4<T>> {
+pub impl Perm4PermuteColumnsMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm4, Matrix2x4<T>> {
     fn permute_columns(self: Perm4, ref rhs: Matrix2x4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -3715,7 +3739,9 @@ impl Perm4PermuteColumnsMatrix2x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4
     }
 }
 
-impl Perm4PermuteColumnsMatrix3x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, Matrix3x4<T>> {
+pub impl Perm4PermuteColumnsMatrix3x4<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm4, Matrix3x4<T>> {
     fn permute_columns(self: Perm4, ref rhs: Matrix3x4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -3903,7 +3929,7 @@ impl Perm4PermuteColumnsMatrix3x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4
     }
 }
 
-impl Perm4PermuteColumnsMatrix4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, Matrix4<T>> {
+pub impl Perm4PermuteColumnsMatrix4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, Matrix4<T>> {
     fn permute_columns(self: Perm4, ref rhs: Matrix4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -4143,7 +4169,9 @@ impl Perm4PermuteColumnsMatrix4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, 
     }
 }
 
-impl Perm4PermuteColumnsMatrix5x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, Matrix5x4<T>> {
+pub impl Perm4PermuteColumnsMatrix5x4<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm4, Matrix5x4<T>> {
     fn permute_columns(self: Perm4, ref rhs: Matrix5x4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -4435,7 +4463,9 @@ impl Perm4PermuteColumnsMatrix5x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4
     }
 }
 
-impl Perm4PermuteColumnsMatrix6x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4, Matrix6x4<T>> {
+pub impl Perm4PermuteColumnsMatrix6x4<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm4, Matrix6x4<T>> {
     fn permute_columns(self: Perm4, ref rhs: Matrix6x4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -4779,7 +4809,7 @@ impl Perm4PermuteColumnsMatrix6x4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm4
     }
 }
 
-impl Perm6PermuteRowsVector6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Vector6<T>> {
+pub impl Perm6PermuteRowsVector6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Vector6<T>> {
     fn permute_rows(self: Perm6, ref rhs: Vector6<T>) {
         let mut a00 = rhs.x;
         let mut a10 = rhs.y;
@@ -4931,7 +4961,7 @@ impl Perm6PermuteRowsVector6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Vector
     }
 }
 
-impl Perm6PermuteRowsMatrix6x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x2<T>> {
+pub impl Perm6PermuteRowsMatrix6x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x2<T>> {
     fn permute_rows(self: Perm6, ref rhs: Matrix6x2<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -5213,7 +5243,7 @@ impl Perm6PermuteRowsMatrix6x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matr
     }
 }
 
-impl Perm6PermuteRowsMatrix6x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x3<T>> {
+pub impl Perm6PermuteRowsMatrix6x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x3<T>> {
     fn permute_rows(self: Perm6, ref rhs: Matrix6x3<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -5609,7 +5639,7 @@ impl Perm6PermuteRowsMatrix6x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matr
     }
 }
 
-impl Perm6PermuteRowsMatrix6x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x4<T>> {
+pub impl Perm6PermuteRowsMatrix6x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x4<T>> {
     fn permute_rows(self: Perm6, ref rhs: Matrix6x4<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -6119,7 +6149,7 @@ impl Perm6PermuteRowsMatrix6x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matr
     }
 }
 
-impl Perm6PermuteRowsMatrix6x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x5<T>> {
+pub impl Perm6PermuteRowsMatrix6x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x5<T>> {
     fn permute_rows(self: Perm6, ref rhs: Matrix6x5<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -6743,7 +6773,7 @@ impl Perm6PermuteRowsMatrix6x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matr
     }
 }
 
-impl Perm6PermuteRowsMatrix6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6<T>> {
+pub impl Perm6PermuteRowsMatrix6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6<T>> {
     fn permute_rows(self: Perm6, ref rhs: Matrix6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -7481,7 +7511,9 @@ impl Perm6PermuteRowsMatrix6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix
     }
 }
 
-impl Perm6PermuteColumnsRowVector6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6, RowVector6<T>> {
+pub impl Perm6PermuteColumnsRowVector6<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm6, RowVector6<T>> {
     fn permute_columns(self: Perm6, ref rhs: RowVector6<T>) {
         let mut a00 = rhs.x;
         let mut a01 = rhs.y;
@@ -7633,7 +7665,9 @@ impl Perm6PermuteColumnsRowVector6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm
     }
 }
 
-impl Perm6PermuteColumnsMatrix2x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6, Matrix2x6<T>> {
+pub impl Perm6PermuteColumnsMatrix2x6<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm6, Matrix2x6<T>> {
     fn permute_columns(self: Perm6, ref rhs: Matrix2x6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -7915,7 +7949,9 @@ impl Perm6PermuteColumnsMatrix2x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6
     }
 }
 
-impl Perm6PermuteColumnsMatrix3x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6, Matrix3x6<T>> {
+pub impl Perm6PermuteColumnsMatrix3x6<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm6, Matrix3x6<T>> {
     fn permute_columns(self: Perm6, ref rhs: Matrix3x6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -8311,7 +8347,9 @@ impl Perm6PermuteColumnsMatrix3x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6
     }
 }
 
-impl Perm6PermuteColumnsMatrix4x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6, Matrix4x6<T>> {
+pub impl Perm6PermuteColumnsMatrix4x6<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm6, Matrix4x6<T>> {
     fn permute_columns(self: Perm6, ref rhs: Matrix4x6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -8821,7 +8859,9 @@ impl Perm6PermuteColumnsMatrix4x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6
     }
 }
 
-impl Perm6PermuteColumnsMatrix5x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6, Matrix5x6<T>> {
+pub impl Perm6PermuteColumnsMatrix5x6<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm6, Matrix5x6<T>> {
     fn permute_columns(self: Perm6, ref rhs: Matrix5x6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
@@ -9445,7 +9485,7 @@ impl Perm6PermuteColumnsMatrix5x6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6
     }
 }
 
-impl Perm6PermuteColumnsMatrix6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6, Matrix6<T>> {
+pub impl Perm6PermuteColumnsMatrix6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm6, Matrix6<T>> {
     fn permute_columns(self: Perm6, ref rhs: Matrix6<T>) {
         let mut a00 = rhs.m11;
         let mut a10 = rhs.m21;
