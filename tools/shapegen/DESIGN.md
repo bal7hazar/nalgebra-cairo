@@ -352,7 +352,7 @@ section of `Matrix2/3/4/6`. Decisions:
   method over the 36 shapes): kept as `bench_matrix3_swap_rows__alt_pair_match`.
 - **In-place forms** delegate to the by-value kernels (`self = self.op()`), bit-identical;
   `mul_to` / `tr_mul_to` / `ad_mul_to` are default methods of `MatrixMul` / `MatrixTrMul`
-  (`mul_to` = `mul_mat`, 37 350 = 37 350 gas on `Matrix2x3 * Matrix3x2`).
+  (`mul_to` = `mul_mat`, 12 550 = 12 550 net gas on `Matrix2x3 * Matrix3x2`).
 - **`Norm<N, M, T>`** (`base/norm.cairo`): upstream's `Norm<T>` is generic over the matrix; Cairo
   has no common matrix type, so the trait is generic over the marker AND the shape, implemented in
   each shape's module for the four markers (`Matrix3EuclideanNorm`...). `api_parity.py` attributes
