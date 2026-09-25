@@ -76,6 +76,7 @@ class Fn:
     body: str
     inline: bool = True
     raw_doc: list[str] | None = None  # verbatim `///` lines of a specialisation
+    feature: str | None = None  # the Scarb feature that compiles it (`shapes.FEATURES`), if any
 
     def doc_lines(self) -> list[str]:
         if self.raw_doc is not None:
@@ -88,11 +89,13 @@ class Fn:
         return [INLINE] if self.inline else []
 
     def definition(self, with_doc: bool = True) -> str:
-        head = (self.doc_lines() if with_doc else []) + self.attrs()
+        cfg = [f"#[cfg(feature: '{self.feature}')]"] if self.feature else []
+        head = (self.doc_lines() if with_doc else []) + cfg + self.attrs()
         return "\n".join(head + [f"{self.sig} {{", self.body, "}"])
 
     def declaration(self) -> str:
-        return "\n".join(self.doc_lines() + [f"{self.sig};"])
+        cfg = [f"#[cfg(feature: '{self.feature}')]"] if self.feature else []
+        return "\n".join(self.doc_lines() + cfg + [f"{self.sig};"])
 
 
 def parse_fn(name: str, text: str) -> Fn:

@@ -74,8 +74,9 @@ def drop_names(text: str, names: set[str]) -> str:
                 and n not in names]
         if not kept:
             return ""
-        return f"{m.group(1)}{{{', '.join(kept)}}};"
-    return re.sub(r"((?:pub )?use [\w:]+::)\{([^}]*)\};", fix, text)
+        return m.group(0).replace(m.group(2), ", ".join(kept))
+    return re.sub(r"(?:#\[cfg\(feature: '\w+'\)\]\s*)?((?:pub )?use [\w:]+::)\{([^}]*)\};",
+                  fix, text)
 
 
 def remove_module(ws: Path, parent: str, module: str, file_or_dir: list[str]):
@@ -165,6 +166,28 @@ def dup_family(module_name: str, only=None):
     return patch
 
 
+def drop_family(module_name: str, items: bool = True):
+    def patch(**mods):
+        m = mods[module_name]
+        m.missing = lambda s, have: []
+        if items:
+            m.items = lambda s: []
+            m.uses = lambda s: []
+    return patch
+
+
+def keep_only(module_name: str, drop):
+    def patch(**mods):
+        m = mods[module_name]
+        orig = m.missing
+        m.missing = lambda s, have: [f for f in orig(s, have) if not drop(f)]
+    return patch
+
+
+def closure(f) -> bool:
+    return "core::ops::Fn<" in f.sig or "Func" in f.sig
+
+
 def swizzle(f) -> bool:
     return re.fullmatch(r"[xyzwab]{2,3}", f.name) is not None
 
@@ -208,6 +231,52 @@ def set_features(ws: Path, package: str, spec: str):
     p.write_text(text)
 
 
+def split_module(ws: Path, module: str):
+    """`base/<module>.cairo` as one submodule per `#[generate_trait]` impl (`base/<module>/*.cairo`),
+    the head of the file (`use` lines, private helpers) repeated in each."""
+    p = ws / SRC / "base" / f"{module}.cairo"
+    text = p.read_text()
+    starts = [m.start() for m in re.finditer(r"(?:///[^\n]*\n)*#\[generate_trait\]", text)]
+    head = text[:starts[0]]
+    uses = "\n".join(re.sub(r"\bsuper::", "crate::base::", line)
+                     for line in head.split("\n") if line.startswith("use "))
+    parts = [text[a:b] for a, b in zip(starts, starts[1:] + [len(text)])]
+    (ws / SRC / "base" / module).mkdir()
+    mods, exports = [], []
+    for i, part in enumerate(parts):
+        trait = re.search(r"\bof (\w+)<", part).group(1)
+        name = f"part{i}"
+        (ws / SRC / "base" / module / f"{name}.cairo").write_text(
+            "#[allow(unused_imports)]\n" + uses.replace("\nuse ", "\n#[allow(unused_imports)]\nuse ")
+            + "\n\n" + part)
+        mods.append(f"pub mod {name};")
+        exports.append(f"pub use {name}::{trait};")
+    p.write_text("\n".join(line for line in head.split("\n") if not line.startswith("use "))
+                 + "\n" + "\n".join(mods + exports) + "\n")
+
+
+def strip_derives(ws: Path, derives: set[str]):
+    for f in (ws / SRC).rglob("*.cairo"):
+        text = f.read_text()
+
+        def fix(m: re.Match) -> str:
+            kept = [d.strip() for d in m.group(1).split(",") if d.strip() not in derives]
+            return f"#[derive({', '.join(kept)})]"
+        f.write_text(re.sub(r"#\[derive\(([^)]*)\)\]", fix, text))
+
+
+def empty_tests(ws: Path):
+    """The test package reduced to one test: the library's own cost in a test unit."""
+    for pkg in (ws / "crates").iterdir():
+        if pkg.name.startswith(("shapes_tests", "tests_")):
+            shutil.rmtree(pkg / "src")
+            (pkg / "src").mkdir()
+            (pkg / "src" / "lib.cairo").write_text(
+                "#[cfg(test)]\nmod tests {\n    use nalgebra::Vector3;\n\n    #[test]\n"
+                "    fn one() {\n        let v: Vector3<u32> = Vector3 { x: 1, y: 2, z: 3 };\n"
+                "        assert!(v.x == 1);\n    }\n}\n")
+
+
 VARIANTS = {
     "full": ("HEAD", lambda ws: None),
     "-linalg": ("without `linalg`", lambda ws: remove_module(ws, "lib.cairo", "linalg",
@@ -234,10 +303,26 @@ VARIANTS = {
                     lambda ws: regenerate(ws, dup_family("completion"))),
     "+functional": ("the functional methods (P03) twice",
                     lambda ws: regenerate(ws, dup_family("functional"))),
+    "-functional": ("without the functional family (P03: methods, operators, `Norm` impls)",
+                    lambda ws: regenerate(ws, drop_family("functional"))),
+    "-functional-methods": ("without the functional methods (P03), its items kept",
+                            lambda ws: regenerate(ws, drop_family("functional", False))),
+    "-closures": ("without the functional methods taking a closure (`map`, `fold`, `apply`...)",
+                  lambda ws: regenerate(ws, keep_only("functional", closure))),
+    "-functional-plain": ("without the functional methods taking no closure (edition, in place)",
+                          lambda ws: regenerate(ws, keep_only("functional",
+                                                              lambda f: not closure(f)))),
     "+views": ("the view methods (P04/P05, swizzles included) twice",
                lambda ws: regenerate(ws, dup_family("views"))),
     "+swizzles": ("the swizzle methods twice",
                   lambda ws: regenerate(ws, dup_family("views", swizzle))),
+    "split-statistics": ("`statistics` as 36 submodules (one per shape)",
+                         lambda ws: split_module(ws, "statistics")),
+    "split-blas": ("`blas` as one submodule per `#[generate_trait]`",
+                   lambda ws: split_module(ws, "blas")),
+    "-debug-hash": ("no derived `Debug` / `Hash` in the library",
+                    lambda ws: strip_derives(ws, {"Debug", "Hash"})),
+    "empty-tests": ("the test package reduced to one trivial test", empty_tests),
     "-inline": ("no `#[inline(always)]` in the generated base modules",
                 lambda ws: strip_inline(ws, generated_files(ws))),
     "-inline-all": ("no `#[inline(always)]` anywhere in the library",
@@ -254,6 +339,9 @@ def make_workspace(label: str, package: str | None) -> Path:
     ws = WORK / re.sub(r"[^\w.-]", "_", label)
     shutil.rmtree(ws, ignore_errors=True)
     members = MEMBERS + ([f"crates/{package}"] if package else [])
+    if package:
+        deps = re.findall(r'path = "\.\./(\w+)"', (ROOT / "crates" / package / "Scarb.toml").read_text())
+        members += [f"crates/{d}" for d in deps if f"crates/{d}" not in members]
     for m in members:
         shutil.copytree(ROOT / m, ws / m, ignore=shutil.ignore_patterns("target", ".snfoundry_cache"))
     manifest = (ROOT / "Scarb.toml").read_text()
@@ -269,8 +357,7 @@ def measure(ws: Path, args: list[str]) -> dict:
     env.setdefault("SCARB_INCREMENTAL", "false")
     shutil.rmtree(ws / "target", ignore_errors=True)
     timing = ws / "time.txt"
-    cmd = ["flock", LOCK, "nice", "-n", "10", "/usr/bin/time", "-v", "-o", str(timing), "scarb",
-           *args]
+    cmd = ["flock", LOCK, "nice", "-n", "10", "/usr/bin/time", "-v", "-o", str(timing), *args]
     run = subprocess.run(cmd, cwd=ws, env=env, capture_output=True, text=True)
     log = run.stdout + run.stderr
     t = timing.read_text() if timing.exists() else ""
@@ -288,7 +375,8 @@ def measure(ws: Path, args: list[str]) -> dict:
     return {"ok": ok, "rss_mb": round(field("Maximum resident set size (kbytes)") / 1024),
             "cpu_s": round(field("User time (seconds)") + field("System time (seconds)"), 1),
             "wall_s": round(field("Elapsed (wall clock) time (h:mm:ss or m:ss)"), 1),
-            "units": re.findall(r"Compiling (.*?) v", log), "log": "" if ok else log[-4000:]}
+            "units": re.findall(r"Compiling (.*?) v", log), "log": "" if ok else log[-4000:],
+            "output": log}
 
 
 def library_lines(ws: Path) -> int:
@@ -305,6 +393,9 @@ def main() -> int:
                    help="replaces the test package's dependency options on nalgebra: e.g. "
                         "'default-features = false', or '' for the defaults")
     p.add_argument("--scarb-args", default=None, help="extra arguments of the scarb command")
+    p.add_argument("--snforge", action="store_true",
+                   help="--target test: measure `snforge test` (build, CASM, run) and keep its "
+                        "output in <work>/<variant>.snforge.txt")
     p.add_argument("--keep", action="store_true", help="keep the copied workspace")
     args = p.parse_args()
     desc, apply = VARIANTS[args.variant]
@@ -315,11 +406,12 @@ def main() -> int:
     if args.features is not None and package:
         set_features(ws, package, args.features)
     if args.target == "lib":
-        cmd = ["build", "-p", "nalgebra"]
+        cmd = ["scarb", "build", "-p", "nalgebra"]
     else:
         name = re.search(r'name = "([^"]+)"',
                          (ws / "crates" / package / "Scarb.toml").read_text()).group(1)
-        cmd = ["build", "--test", "-p", name]
+        cmd = (["snforge", "test", "-p", name] if args.snforge
+               else ["scarb", "build", "--test", "-p", name])
     if args.scarb_args:
         cmd += args.scarb_args.split()
     started = time.time()
@@ -329,6 +421,12 @@ def main() -> int:
              incremental=os.environ.get("SCARB_INCREMENTAL", "false"),
              lines=library_lines(ws), at=time.strftime("%Y-%m-%d %H:%M"),
              total_s=round(time.time() - started))
+    r["snforge"] = args.snforge
+    output = r.pop("output")
+    if args.snforge:
+        (WORK / f"{label}.snforge.txt").write_text(output)
+        m = re.search(r"Tests: (\d+) passed, (\d+) failed", output)
+        r["tests"] = m.group(0) if m else "?"
     WORK.mkdir(parents=True, exist_ok=True)
     with RESULTS.open("a") as f:
         f.write(json.dumps({k: v for k, v in r.items() if k != "log"}) + "\n")

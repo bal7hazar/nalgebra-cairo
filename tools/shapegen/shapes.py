@@ -615,13 +615,13 @@ SHARED_EXPORTS = {"matrix_mul": ["MatrixMul"], "matrix_tr_mul": ["MatrixTrMul"],
 PRIVATE_MODULES = {"kernels"}
 
 # Scarb features (WP 8.1d, `DESIGN.md` §2.11): shared module -> the feature of
-# `crates/nalgebra/Scarb.toml` that compiles it. The module, its re-exports in `base.cairo` and in
-# `lib.cairo` carry `#[cfg(feature: '..')]`; the features are all in `default`, so the public API
-# (and `scripts/api_parity.py`) is unchanged by default, and a dependent that does not need them
-# writes `nalgebra = { .., default-features = false }` to skip their compilation (measured: the
-# library and every compilation unit that includes it, -0.55 to -0.6 GB for both). Only leaves
-# qualify: nothing else in the crate may use a gated module (`cg` does not: P11a's transforms
-# use it).
+# `crates/nalgebra/Scarb.toml` that compiles it (the per-method one is `functional.FEATURE`). The
+# module and its re-exports in `base.cairo` and `lib.cairo` carry `#[cfg(feature: '..')]`; every
+# feature is in `default`, so the public API (and `scripts/api_parity.py`) is unchanged, and a
+# dependent that does not need them writes `nalgebra = { .., default-features = false }` to skip
+# their compilation (measured: -0.55 GB for both, on the library and on every compilation unit
+# that includes it). Only leaves qualify: nothing else in the crate may use a gated module (`cg`
+# is not one: the P11a transforms use it).
 FEATURES = {"statistics": "statistics", "blas": "blas"}
 
 
