@@ -36,6 +36,8 @@ import completion as C
 import functional as P03
 import views as P05
 import cg as P07
+import blas as P06B
+import stats as P06
 import library as L
 from model import ALL_SHAPES, Shape
 
@@ -595,7 +597,7 @@ pub struct UniformNorm {}
 SHARED_MODULES = {"kernels": render_kernels, "matrix_mul": render_matrix_mul,
                   "matrix_tr_mul": render_matrix_tr_mul, "errors": render_errors,
                   "matrix_index": render_matrix_index, "norm": render_norm,
-                  **P05.SHARED_MODULES, **P07.SHARED_MODULES}
+                  **P05.SHARED_MODULES, **P06.SHARED_MODULES, **P06B.SHARED_MODULES, **P07.SHARED_MODULES}
 
 
 def exported(s: Shape) -> list[str]:
@@ -609,7 +611,7 @@ def exported(s: Shape) -> list[str]:
 SHARED_EXPORTS = {"matrix_mul": ["MatrixMul"], "matrix_tr_mul": ["MatrixTrMul"],
                   "matrix_index": ["MatrixIndex"],
                   "norm": ["EuclideanNorm", "LpNorm", "Norm", "OneNorm", "UniformNorm"],
-                  **P05.SHARED_EXPORTS, **P07.SHARED_EXPORTS}
+                  **P05.SHARED_EXPORTS, **P06.SHARED_EXPORTS, **P06B.SHARED_EXPORTS, **P07.SHARED_EXPORTS}
 PRIVATE_MODULES = {"kernels"}
 
 

@@ -153,6 +153,15 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   that apply a rounded inverse to large data (`inverse_transform_*`, `affine3_div_projective3`)
   use `sensitivity + magnitude` (`mag = 4`): the one-ulp roundings of the inverse's entries are
   multiplied by the coordinates of the point / the entries of the dividend.
+- Suites `statistics` and `blas` (WP 8.3-P06, `src/suites/blas_statistics.rs`): upstream
+  `base/statistics.rs` / `base/blas.rs` on a sample of the static shapes (their Cairo tests live
+  in `crates/shapes_tests_stats` / `crates/shapes_tests_blas`, emitted with `--max-per-dist 2`).
+  Means use a constant 2 ulp, variances 6 ulp (the f64 roundings of the squares of `medium`
+  inputs), `product` the sensitivity policy. The `alpha * sum + beta * c` ops (`gemv`, `gemm`,
+  `ger`, `axcpy`...) use a constant 3 ulp on `small` / `unit` inputs only: on `medium` ones the
+  f64 triple products carry hundreds of Q32.32 ulp of their own rounding; `quadform*` use the
+  sensitivity policy (the rounded intermediate product is amplified by `alpha` and the other
+  factor). `matrix2x3_tr_dot` is an exact-integer op (tolerance 0).
 - The scalar suite and every transcendental inside nalgebra go through the pure-Rust `libm`
   (`libm-force`), not the platform libm.
 
