@@ -645,13 +645,18 @@ pub(crate) impl ApproxEqImpl<
 /// The transcendental functions of the quaternion algebra, over a `Real` + `Transcendental`
 /// scalar (the split mirrors `UnitQuaternionTrait` / `UnitQuaternionAngleTrait`).
 ///
-/// `fixed` has no hyperbolic functions (escalated to fixed-cairo, WP 8.4-P08 report): `cosh` and
-/// `sinh` are composed here from two `exp` and ONE fused kernel each (`(e^z ± e^-z) / 2`,
-/// exactly floored). `sinh(z) / z` is then only ever multiplied by a component of `v` (whose
-/// magnitude is at most `z = |v|`), so the cancellation of `sinh` near zero costs a few ulp
-/// absolute on the result, not a relative error. `exp` panics for arguments above about 21.49
-/// (`Fixed: exp overflow`), which bounds the real part (`exp`, `sinh`, `cosh`) or the imaginary
-/// norm (`sin`, `cos`) of the accepted inputs.
+/// The scalar hyperbolics behind `cos`, `sin`, `sinh` and `cosh` are composed here from two `exp`
+/// and ONE fused kernel each (`(e^z ± e^-z) / 2`, exactly floored), although `fixed` 0.4.0 (simba
+/// 0.2.0) now provides `Transcendental::{sinh, cosh, sinhc}` (the WP 8.4-P08 escalation): measured
+/// in WP 8.4-H, `cosh` + `sinh` cost 57 540 gas net against 47 070 for the two-`exp` pair, which
+/// makes `cos` and `sin` 10 % and `sinh` / `cosh` 14 % dearer for the same accuracy
+/// (`bench_real_cosh_sinh__alt_fixed`, `bench_quaternion_{cos, sin, sinh, cosh}__alt_fixed`,
+/// `test_hyperbolic_alt_fixed_agree`).
+/// Steps criterion: the cheaper formulation stays. `sinh(z) / z` is only ever multiplied by a
+/// component of `v` (whose magnitude is at most `z = |v|`), so the cancellation of `sinh` near
+/// zero costs a few ulp absolute on the result, not a relative error. `exp` panics for arguments
+/// above about 21.49 (`Fixed: exp overflow`), which bounds the real part (`exp`, `sinh`, `cosh`)
+/// or the imaginary norm (`sin`, `cos`) of the accepted inputs.
 ///
 /// The inverse functions (`acos`, `asin`, `atan`, `asinh`, `acosh`, `atanh`) are upstream's
 /// compositions of `ln`, `sqrt` and products, in upstream's order; every intermediate rounds,
@@ -913,7 +918,7 @@ pub(crate) impl QuaternionTranscendentalInternalImpl<
     +PartialOrd<T>,
 > of QuaternionTranscendentalInternalTrait<T> {
     /// `(cosh x, sinh x)` from `e^x` and `e^-x`, each `(e^x ± e^-x) / 2` one fused kernel
-    /// (exactly floored). `fixed` has no hyperbolic functions (escalation, see the trait doc).
+    /// (exactly floored): cheaper than `Transcendental::{cosh, sinh}` (see the trait doc).
     #[inline(always)]
     fn cosh_sinh(x: T) -> (T, T) {
         let (ep, em) = (Tr::exp(x), Tr::exp(-x));

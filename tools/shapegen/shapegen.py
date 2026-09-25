@@ -1078,10 +1078,10 @@ cairo-version = "2.19.4"
 publish = false
 
 [dependencies]
-simba = "0.1.0"
+simba = "0.2.0"
 
 [dev-dependencies]
-fixed = "0.3.0"
+fixed = "0.4.0"
 {nalgebra}nalgebra_testing = {{ path = "{root}/crates/testing" }}
 snforge_std = "0.61.0"
 assert_macros = "2.19.4"

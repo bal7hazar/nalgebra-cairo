@@ -13,7 +13,7 @@ publish = false
 [dependencies]
 nalgebra = { path = "../nalgebra" }
 simba.workspace = true
-fixed = "0.3.0"
+fixed.workspace = true
 
 [dev-dependencies]
 snforge_std.workspace = true

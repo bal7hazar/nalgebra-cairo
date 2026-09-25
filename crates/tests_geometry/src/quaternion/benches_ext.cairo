@@ -9,12 +9,12 @@
 //! Moved from `crates/nalgebra/src/geometry/quaternion/benches_ext.cairo` (WP 8.1c, test-only
 //! package).
 
-use core::num::traits::One;
+use core::num::traits::{One, Zero};
 use fixed::Fixed;
 use nalgebra::geometry::quaternion::{Quaternion, QuaternionTrait, QuaternionTranscendentalTrait};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{fx, qt, u3t, v3t};
-use simba::scalar::Real;
+use simba::scalar::{Real, Transcendental};
 use crate::quaternion::tests_ext::alt_ln_acos;
 
 /// `0.5 + 0.25i - 0.5j + 0.75k`.
@@ -39,6 +39,106 @@ pub(crate) fn alt_inner_products(a: Quaternion<Fixed>, b: Quaternion<Fixed>) -> 
 /// (`test_sinh_alt_exp_difference_agrees`).
 pub(crate) fn alt_sinh_exp_difference(q: Quaternion<Fixed>) -> Quaternion<Fixed> {
     (q.exp() - (-q).exp()).half()
+}
+
+/// `(cosh x, sinh x)` from `fixed` 0.4.0's `Transcendental::{cosh, sinh}`: 1.5 ulp each, but
+/// 57 540 gas against 47 070 for the library's two `exp` and one fused kernel each
+/// (`bench_real_cosh_sinh__*`, `test_hyperbolic_alt_fixed_agree`).
+fn alt_cosh_sinh_fixed(x: Fixed) -> (Fixed, Fixed) {
+    (Transcendental::cosh(x), Transcendental::sinh(x))
+}
+
+/// The library's `(cosh x, sinh x)`: two `exp` and one fused kernel each, `(e^x ± e^-x) / 2`.
+fn cosh_sinh_two_exp(x: Fixed) -> (Fixed, Fixed) {
+    let (ep, em) = (Transcendental::exp(x), Transcendental::exp(-x));
+    let h = fx(0x80000000);
+    let w = Real::<Fixed>::wide_add_prod(Real::<Fixed>::wide_zero(), ep, h);
+    (
+        Real::<Fixed>::wide_rescale(Real::<Fixed>::wide_add_prod(w, em, h)),
+        Real::<Fixed>::wide_rescale(Real::<Fixed>::wide_sub_prod(w, em, h)),
+    )
+}
+
+/// `(cosh x, sinh x)` from ONE `exp` and a reciprocal, `e^-x = 1 / e^x` (36 % cheaper than the two
+/// `exp`, `bench_real_cosh_sinh__alt_recip`). Only accurate for `x >= 0`, where `e^x >= 1`: the
+/// reciprocal of a small `e^x` (negative `x`) loses its relative accuracy, so a shipped version
+/// needs the absolute value and a sign fix-up; not adopted here (numerics change, deferred).
+fn alt_cosh_sinh_recip(x: Fixed) -> (Fixed, Fixed) {
+    let ep = Transcendental::exp(x);
+    let em = Real::<Fixed>::div(Real::<Fixed>::one(), ep);
+    let h = fx(0x80000000);
+    let w = Real::<Fixed>::wide_add_prod(Real::<Fixed>::wide_zero(), ep, h);
+    (
+        Real::<Fixed>::wide_rescale(Real::<Fixed>::wide_add_prod(w, em, h)),
+        Real::<Fixed>::wide_rescale(Real::<Fixed>::wide_sub_prod(w, em, h)),
+    )
+}
+
+/// `(cosh z, sinh z / z)` with `z = |v|` from `Transcendental::{cosh, sinhc}`.
+fn alt_cosh_sinhc_fixed(q: Quaternion<Fixed>) -> (Fixed, Fixed) {
+    let z = Real::<Fixed>::norm3(q.i, q.j, q.k);
+    (Transcendental::cosh(z), Transcendental::sinhc(z))
+}
+
+/// `(sin z / z, cos z)` with `z = |v|`, `None` at or under `default_epsilon` (as the library).
+fn alt_sinc_cos(q: Quaternion<Fixed>) -> Option<(Fixed, Fixed)> {
+    let z = Real::<Fixed>::norm3(q.i, q.j, q.k);
+    if z <= Real::<Fixed>::default_epsilon() {
+        return None;
+    }
+    let (s, c) = Transcendental::sin_cos(z);
+    Some((Real::<Fixed>::div(s, z), c))
+}
+
+/// `(w, v · f · g)`, each imaginary component the exact triple product floored once.
+fn alt_scale_parts(q: Quaternion<Fixed>, w: Fixed, f: Fixed, g: Fixed) -> Quaternion<Fixed> {
+    let z = Real::<Fixed>::wide_zero();
+    Quaternion {
+        i: Real::<Fixed>::wide_mul_scalar(Real::<Fixed>::wide_add_prod(z, q.i, f), g),
+        j: Real::<Fixed>::wide_mul_scalar(Real::<Fixed>::wide_add_prod(z, q.j, f), g),
+        k: Real::<Fixed>::wide_mul_scalar(Real::<Fixed>::wide_add_prod(z, q.k, f), g),
+        w,
+    }
+}
+
+/// `cos` with `fixed` 0.4.0's `Transcendental::{cosh, sinh, sinhc}`.
+pub(crate) fn alt_cos_fixed(q: Quaternion<Fixed>) -> Quaternion<Fixed> {
+    let (sw, cw) = Transcendental::sin_cos(q.w);
+    let (ch, f) = alt_cosh_sinhc_fixed(q);
+    alt_scale_parts(q, cw * ch, f, -sw)
+}
+
+/// `sin` with `fixed` 0.4.0's `Transcendental::{cosh, sinh, sinhc}`.
+pub(crate) fn alt_sin_fixed(q: Quaternion<Fixed>) -> Quaternion<Fixed> {
+    let (sw, cw) = Transcendental::sin_cos(q.w);
+    let (ch, f) = alt_cosh_sinhc_fixed(q);
+    alt_scale_parts(q, sw * ch, f, cw)
+}
+
+/// `sinh` with `fixed` 0.4.0's `Transcendental::{cosh, sinh}`.
+pub(crate) fn alt_sinh_fixed(q: Quaternion<Fixed>) -> Quaternion<Fixed> {
+    match alt_sinc_cos(q) {
+        Some((
+            f, c,
+        )) => {
+            let (ch, sh) = alt_cosh_sinh_fixed(q.w);
+            alt_scale_parts(q, sh * c, f, ch)
+        },
+        None => Quaternion { i: Zero::zero(), j: Zero::zero(), k: Zero::zero(), w: Zero::zero() },
+    }
+}
+
+/// `cosh` with `fixed` 0.4.0's `Transcendental::{cosh, sinh}`.
+pub(crate) fn alt_cosh_fixed(q: Quaternion<Fixed>) -> Quaternion<Fixed> {
+    match alt_sinc_cos(q) {
+        Some((
+            f, c,
+        )) => {
+            let (ch, sh) = alt_cosh_sinh_fixed(q.w);
+            alt_scale_parts(q, ch * c, f, sh)
+        },
+        None => QuaternionTrait::identity(),
+    }
 }
 
 // --- magnitude
@@ -586,6 +686,14 @@ fn bench_quaternion_cos__upstream() {
     assert!(x.cos() == e);
 }
 
+#[test]
+#[inline(never)]
+fn bench_quaternion_cos__alt_fixed() {
+    let x = black_box(s());
+    let e = black_box(qt((5542011728, -593204889, 1186409777, -1779614666)));
+    assert!(alt_cos_fixed(x) == e);
+}
+
 // --- sin
 
 #[test]
@@ -602,6 +710,14 @@ fn bench_quaternion_sin__upstream() {
     let x = black_box(s());
     let e = black_box(qt((3027614805, 1085854265, -2171708531, 3257562795)));
     assert!(x.sin() == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_quaternion_sin__alt_fixed() {
+    let x = black_box(s());
+    let e = black_box(qt((3027614805, 1085854265, -2171708531, 3257562795)));
+    assert!(alt_sin_fixed(x) == e);
 }
 
 // --- tan
@@ -642,6 +758,14 @@ fn bench_quaternion_sinh__closed_form() {
 
 #[test]
 #[inline(never)]
+fn bench_quaternion_sinh__alt_fixed() {
+    let x = black_box(s());
+    let e = black_box(qt((1328271221, 1041773225, -2083546451, 3125319676)));
+    assert!(alt_sinh_fixed(x) == e);
+}
+
+#[test]
+#[inline(never)]
 fn bench_quaternion_sinh__alt_exp_difference() {
     let x = black_box(s());
     let e = black_box(qt((1328271222, 1041773225, -2083546450, 3125319676)));
@@ -664,6 +788,14 @@ fn bench_quaternion_cosh__closed_form() {
     let x = black_box(s());
     let e = black_box(qt((2874317042, 481421281, -962842563, 1444263844)));
     assert!(x.cosh() == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_quaternion_cosh__alt_fixed() {
+    let x = black_box(s());
+    let e = black_box(qt((2874317043, 481421281, -962842563, 1444263844)));
+    assert!(alt_cosh_fixed(x) == e);
 }
 
 // --- tanh
@@ -790,4 +922,38 @@ fn bench_quaternion_atanh__upstream() {
     let x = black_box(s());
     let e = black_box(qt((1096989674, 939832513, -1879665026, 2819497539)));
     assert!(x.atanh() == e);
+}
+
+// --- cosh_sinh (the scalar pair behind `cos`, `sin`, `sinh` and `cosh`), at x = 1.5
+
+#[test]
+#[inline(never)]
+fn bench_real_cosh_sinh__baseline() {
+    let _x = black_box(fx(0x180000000));
+    let e = black_box((fx(10103522363), fx(9145185623)));
+    assert!(e == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_cosh_sinh__two_exp() {
+    let x = black_box(fx(0x180000000));
+    let e = black_box((fx(10103522363), fx(9145185623)));
+    assert!(cosh_sinh_two_exp(x) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_cosh_sinh__alt_fixed() {
+    let x = black_box(fx(0x180000000));
+    let e = black_box((fx(10103522364), fx(9145185624)));
+    assert!(alt_cosh_sinh_fixed(x) == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_real_cosh_sinh__alt_recip() {
+    let x = black_box(fx(0x180000000));
+    let e = black_box((fx(10103522364), fx(9145185623)));
+    assert!(alt_cosh_sinh_recip(x) == e);
 }
