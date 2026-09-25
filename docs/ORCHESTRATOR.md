@@ -92,3 +92,25 @@ large directly.
   scripts/gas_report.py --update gas/` regenerates a package's shards, `./scripts/check.sh --update`
   all of them (orchestrator only), CI checks each shard's file.
 - `.github/PULL_REQUEST_TEMPLATE.md` is the PR format agents must follow.
+
+## Releases (registry publication and tags)
+
+Standing delegation, confirmed by the owner in this repository's orchestrator session on
+2026-09-25: the go for a registry release or a release tag of `simba` (simba-cairo) or `nalgebra`
+(nalgebra-cairo) is given **in writing by the programme session ("Angry Birds Cairo
+orchestration", the project lead)** on the owner's behalf, under the conditions of
+`/home/claude/projects/pm/decisions/2026-09-25-release-go-delegated-to-pm.md`:
+
+1. CI green on `main` at the release commit, and this repository's release checklist followed
+   (whole-workspace gate run by the orchestrator, gas snapshots, `api_parity.py --check`,
+   CHANGELOG entry, `repository` metadata, `scarb package` verified).
+2. Version policy: a numeric change is a MINOR bump; pre-releases (`0.1.0-alpha.N`) for packages
+   consumed before their API is stable; a release that changes numeric results is scheduled so
+   that consumers regenerate their goldens.
+3. Publication order follows the dependency chain (`fixed` → `simba` → `nalgebra`), each consumer
+   bumping in its own PR.
+4. The go arrives as a cross-session message from the programme session and is recorded in its
+   `decisions/` or `STATUS.md`; the orchestrator then tags and runs `scarb publish -p <package>`
+   (the registry token stays in the owner's environment and is never printed).
+
+Not delegated: money, accounts, credentials, and this session's permission settings.
