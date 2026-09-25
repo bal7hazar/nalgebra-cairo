@@ -29,6 +29,7 @@ pub use point3::Point3;
 pub use unit::{Normed, Unit, UnitTrait};
 
 // shapegen: begin
+pub mod blas;
 pub mod cg;
 pub mod errors;
 mod kernels;
@@ -70,11 +71,24 @@ pub mod row_vector3;
 pub mod row_vector4;
 pub mod row_vector5;
 pub mod row_vector6;
+pub mod statistics;
 pub mod vector2;
 pub mod vector3;
 pub mod vector4;
 pub mod vector5;
 pub mod vector6;
+pub use blas::{
+    Matrix1BlasTrait, Matrix2BlasTrait, Matrix2x3BlasTrait, Matrix2x4BlasTrait, Matrix2x5BlasTrait,
+    Matrix2x6BlasTrait, Matrix3BlasTrait, Matrix3x2BlasTrait, Matrix3x4BlasTrait,
+    Matrix3x5BlasTrait, Matrix3x6BlasTrait, Matrix4BlasTrait, Matrix4x2BlasTrait,
+    Matrix4x3BlasTrait, Matrix4x5BlasTrait, Matrix4x6BlasTrait, Matrix5BlasTrait,
+    Matrix5x2BlasTrait, Matrix5x3BlasTrait, Matrix5x4BlasTrait, Matrix5x6BlasTrait,
+    Matrix6BlasTrait, Matrix6x2BlasTrait, Matrix6x3BlasTrait, Matrix6x4BlasTrait,
+    Matrix6x5BlasTrait, MatrixGemm, MatrixGemmTr, MatrixGemv, MatrixGemvTr, MatrixQuadform,
+    MatrixQuadformTr, RowVector2BlasTrait, RowVector3BlasTrait, RowVector4BlasTrait,
+    RowVector5BlasTrait, RowVector6BlasTrait, Vector2BlasTrait, Vector3BlasTrait, Vector4BlasTrait,
+    Vector5BlasTrait, Vector6BlasTrait,
+};
 pub use cg::{
     Matrix1CgTrait, Matrix2CgTrait, Matrix3CgAngleTrait, Matrix3CgTrait, Matrix4CgAngleTrait,
     Matrix4CgTrait, Matrix5CgTrait, Matrix6CgTrait,
@@ -123,6 +137,20 @@ pub use row_vector3::{Matrix1x3, RowVector3, RowVector3AngleTrait, RowVector3Tra
 pub use row_vector4::{Matrix1x4, RowVector4, RowVector4AngleTrait, RowVector4Trait};
 pub use row_vector5::{Matrix1x5, RowVector5, RowVector5AngleTrait, RowVector5Trait};
 pub use row_vector6::{Matrix1x6, RowVector6, RowVector6AngleTrait, RowVector6Trait};
+pub use statistics::{
+    Matrix1StatisticsTrait, Matrix2StatisticsTrait, Matrix2x3StatisticsTrait,
+    Matrix2x4StatisticsTrait, Matrix2x5StatisticsTrait, Matrix2x6StatisticsTrait,
+    Matrix3StatisticsTrait, Matrix3x2StatisticsTrait, Matrix3x4StatisticsTrait,
+    Matrix3x5StatisticsTrait, Matrix3x6StatisticsTrait, Matrix4StatisticsTrait,
+    Matrix4x2StatisticsTrait, Matrix4x3StatisticsTrait, Matrix4x5StatisticsTrait,
+    Matrix4x6StatisticsTrait, Matrix5StatisticsTrait, Matrix5x2StatisticsTrait,
+    Matrix5x3StatisticsTrait, Matrix5x4StatisticsTrait, Matrix5x6StatisticsTrait,
+    Matrix6StatisticsTrait, Matrix6x2StatisticsTrait, Matrix6x3StatisticsTrait,
+    Matrix6x4StatisticsTrait, Matrix6x5StatisticsTrait, RowVector2StatisticsTrait,
+    RowVector3StatisticsTrait, RowVector4StatisticsTrait, RowVector5StatisticsTrait,
+    RowVector6StatisticsTrait, Vector2StatisticsTrait, Vector3StatisticsTrait,
+    Vector4StatisticsTrait, Vector5StatisticsTrait, Vector6StatisticsTrait,
+};
 pub use vector2::{
     Matrix2x1, UnitVector2, UnitVector2AngleTrait, UnitVector2Trait, Vector2, Vector2AngleTrait,
     Vector2Trait,
