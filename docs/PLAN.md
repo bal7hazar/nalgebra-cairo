@@ -92,12 +92,12 @@ URLs redirect). Scalar escalations go to the fixed-cairo orchestrator.
 | step | content | state |
 |---|---|---|
 | S1 | extract `simba-cairo` from this repository's history (prune commit, own gate, CI, docs, version 0.1.0, branch protection) | ✅ `6fd8a43` in simba-cairo |
-| S1b | publish `simba` 0.1.0 on scarbs.xyz from simba-cairo (tag `v0.1.0`) | owner |
-| S2 | remove `crates/simba` here, depend on `simba = "0.1.0"` (registry), drop the `Library (simba)` shard | after S1b |
+| S1b | publish `simba` 0.1.0 on scarbs.xyz from simba-cairo (tag `v0.1.0`; `simba_testing` folded into a test-only module, simba-cairo #1) | ✅ 2026-09-25 |
+| S2 | remove `crates/simba` here, depend on `simba = "0.1.0"` (registry), drop the `Library (simba)` shard; `api_parity.py` reads simba's sources from the registry package | ✅ |
 
 ## M8 — Complete coverage of nalgebra-rs 0.35.0, then release 0.1.0
 
-Target (owner, 2026-09-23/24): publish `simba` and `nalgebra` 0.1.0 on scarbs.xyz once the public API
+Target (owner, 2026-09-23/24): publish `nalgebra` 0.1.0 (`simba` 0.1.0 is out, from simba-cairo) on scarbs.xyz once the public API
 is **strictly nalgebra-rs 0.35.0's, neither more nor less** — every non-excluded item of
 [API_PARITY.md](API_PARITY.md) `ported`, and no Cairo-only public item beyond the renames Cairo
 imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progress is measured by
@@ -112,7 +112,7 @@ imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progr
 | 8.4 (P08 ✅ #31, P09a ✅ #33, P09b ✅ #35, P10 ✅ #37, P12 ✅ #38) | Geometry: P08 (quaternions, unit complex) → P09a (rotation, translation, point) → P09b (isometry, similarity, `*Matrix` variants) → P10 (scale, reflection) → P11a/b (transform family, perspective, orthographic) → P12 (dual quaternions) | 8.0 (parallel with 8.1-8.3 where files are disjoint) |
 | 8.5 | Dynamic: P13 (`DMatrix` / `DVector`, macros) → P14 (decomposition API, triangular solves) → P15 (full-pivot LU, col-pivot QR, LBLᵀ) → P16 (Schur, Hessenberg, bidiagonal, tridiagonal, general eigen) → P17 (exp, pow), P18 (convolution) | 8.2 |
 | 8.6 | P19 (glam-cairo conversions, `glam = "0.3.0"`), P20 (sparse `CsMatrix`, Matrix Market from strings), P21 (crate-root functions and macros) | 8.5 |
-| 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `nalgebra` 0.1.0 (the owner pushes the tag; `simba` is released from simba-cairo) | all |
+| 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `nalgebra` 0.1.0 (`scarb package` refuses path-only dependencies, dev ones included: `nalgebra_testing` must become a test-only module or get a registry version first, as simba-cairo #1 did) | all |
 
 Owner rulings for the shapes (2026-09-24): one heterogeneous-product name, `mul_mat` (every
 conformable product, `M * v` included; `mul_vec` / `tr_mul_vec` removed; `*` stays on square

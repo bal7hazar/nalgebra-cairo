@@ -231,10 +231,10 @@ dependencies = [
 [[package]]
 name = "simba"
 version = "0.1.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:fdc93c2d527a51d5ba7d435e4da3614d74f3609710c4f2a99508dd7353b731a2"
 dependencies = [
  "fixed",
- "nalgebra_testing",
- "snforge_std",
 ]
 
 [[package]]

@@ -20,8 +20,12 @@ provable.
 
 | Package | Content |
 |---|---|
-| [`simba`](crates/simba) (moving to [simba-cairo](https://github.com/bal7hazar/simba-cairo)) | Scalar traits (`Real`, `Transcendental`: fused kernels, wide accumulator, transcendentals) implemented for fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.3.0, the scalar shared by the whole stack |
-| [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions), generic over `Real` |
+| [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions), generic over `simba::scalar::Real` |
+
+Its scalar layer is the registry package `simba = "0.1.0"`
+([simba-cairo](https://github.com/bal7hazar/simba-cairo): `Real` / `Transcendental` implemented for
+fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.3.0, the scalar
+shared by the whole stack), like nalgebra-rs depends on simba-rs.
 
 ## Why it is fast
 

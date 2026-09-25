@@ -28,7 +28,7 @@ How to read it:
 | debug | 0 | 0 | 0 | 12 | 12 | — |
 | **total** | **1198** | **16** | **658** | **564** | **2436** | **64.0%** |
 
-nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
+nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
 ## Proposed work packages
 
@@ -363,7 +363,7 @@ Public Cairo items that spell an upstream operator, field or `Deref` access Cair
 
 ## Scalar layer (simba)
 
-`crates/simba` is the counterpart of simba-rs 0.10.2's `RealField`: every scalar item that has a simba-rs name carries it (`num::Zero::zero`, `num::One::one`, `RealField::pi`, `RealField::is_sign_negative`, `approx::AbsDiffEq::default_epsilon`, ...), and the rest is the one documented exception below.
+The `simba` package ([simba-cairo](https://github.com/bal7hazar/simba-cairo), a registry dependency) is the counterpart of simba-rs 0.10.2's `RealField`: every scalar item that has a simba-rs name carries it (`num::Zero::zero`, `num::One::one`, `RealField::pi`, `RealField::is_sign_negative`, `approx::AbsDiffEq::default_epsilon`, ...), and the rest is the one documented exception below.
 
 ### Named as in simba-rs
 
