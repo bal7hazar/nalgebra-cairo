@@ -29,6 +29,7 @@
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
 use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix4::Matrix4;
@@ -157,6 +158,34 @@ pub impl UnitQuaternionImpl<
         self.quaternion
     }
 
+    /// Deprecated upstream (use `into_inner`): the underlying quaternion. Upstream:
+    /// `Unit::unwrap`.
+    #[inline(always)]
+    fn unwrap(self: UnitQuaternion<T>) -> Quaternion<T> {
+        self.quaternion
+    }
+
+    /// `(new_normalize(q), |q|)`: the unit quaternion and the norm it was divided by (one norm,
+    /// one division per component). Panics with `Fixed: division by zero` on a zero quaternion.
+    /// Upstream: `Unit::new_and_get`.
+    #[inline(always)]
+    fn new_and_get(q: Quaternion<T>) -> (UnitQuaternion<T>, T) {
+        let n = q.norm();
+        (UnitQuaternion { quaternion: q.unscale(n) }, n)
+    }
+
+    /// `Some((new_normalize(q), |q|))`, or `None` when `|q| <= min_norm`. With `min_norm >= 0` it
+    /// never divides by zero. Upstream: `Unit::try_new_and_get`.
+    #[inline(always)]
+    fn try_new_and_get(q: Quaternion<T>, min_norm: T) -> Option<(UnitQuaternion<T>, T)> {
+        let n = q.norm();
+        if n <= min_norm {
+            None
+        } else {
+            Some((UnitQuaternion { quaternion: q.unscale(n) }, n))
+        }
+    }
+
     /// The imaginary part `(i, j, k)` = `axis · sin(angle / 2)`. Upstream: `imag` (through
     /// `Deref`), used by rapier's angular-velocity code.
     #[inline(always)]
@@ -177,6 +206,14 @@ pub impl UnitQuaternionImpl<
     #[inline(always)]
     fn conjugate(self: UnitQuaternion<T>) -> UnitQuaternion<T> {
         UnitQuaternion { quaternion: self.quaternion.conjugate() }
+    }
+
+    /// `self = self.conjugate()` in place (three negations, the inverse rotation). Exact; panics
+    /// on overflow (`-MIN`). Upstream: `conjugate_mut`.
+    #[inline(always)]
+    fn conjugate_mut(ref self: UnitQuaternion<T>) {
+        let q = self.quaternion;
+        self = UnitQuaternion { quaternion: Quaternion { i: -q.i, j: -q.j, k: -q.k, w: q.w } };
     }
 
     /// The inverse rotation, which for a unit quaternion is the conjugate (no division, unlike
@@ -1605,6 +1642,78 @@ pub impl UnitQuaternionDiv<
         UnitQuaternion {
             quaternion: QuaternionInternalTrait::mul_conj(lhs.quaternion, rhs.quaternion),
         }
+    }
+}
+
+/// `a *= b`: `a = a * b` (the Hamilton product, `UnitQuaternionMul`). Upstream:
+/// `MulAssign<UnitQuaternion>`.
+pub impl UnitQuaternionMulAssign<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MulAssign<UnitQuaternion<T>, UnitQuaternion<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: UnitQuaternion<T>, rhs: UnitQuaternion<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `a /= b`: `a = a / b` (one fused product by the conjugate, `UnitQuaternionDiv`). Upstream:
+/// `DivAssign<UnitQuaternion>`.
+pub impl UnitQuaternionDivAssign<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of DivAssign<UnitQuaternion<T>, UnitQuaternion<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: UnitQuaternion<T>, rhs: UnitQuaternion<T>) {
+        self = self / rhs;
+    }
+}
+
+/// `a *= r` with a rotation matrix: `a = a.mul_rotation(r)`. Upstream: `MulAssign<Rotation>`.
+pub impl UnitQuaternionMulAssignRotation3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of MulAssign<UnitQuaternion<T>, Rotation3<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: UnitQuaternion<T>, rhs: Rotation3<T>) {
+        self = self.mul_rotation(rhs);
+    }
+}
+
+/// `a /= r` with a rotation matrix: `a = a.div_rotation(r)`. Upstream: `DivAssign<Rotation>`.
+pub impl UnitQuaternionDivAssignRotation3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of DivAssign<UnitQuaternion<T>, Rotation3<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: UnitQuaternion<T>, rhs: Rotation3<T>) {
+        self = self.div_rotation(rhs);
     }
 }
 

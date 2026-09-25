@@ -121,6 +121,14 @@ pub impl IsometryMatrix2Impl<
         }
     }
 
+    /// `self = self.inverse()` in place: the by-value form is the cheapest (a rotation and a
+    /// translation to rebuild, nothing to reuse), so the bits are those of `inverse`. Panics as
+    /// `inverse` does. Upstream: `inverse_mut`.
+    #[inline(always)]
+    fn inverse_mut(ref self: IsometryMatrix2<T>) {
+        self = Self::inverse(self);
+    }
+
     /// `self⁻¹ * other` without materialising the inverse: translation `rotationᵀ ·
     /// (other.translation - self.translation)`, rotation `rotationᵀ · other.rotation` (the
     /// transpose is exact, then four fused kernels). Upstream: `inv_mul`.

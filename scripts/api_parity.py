@@ -1773,6 +1773,12 @@ EXCLUDE = (
     exclude(r".*", r"(?:as_slice|as_mut_slice|get_mut|index_mut|\w+_mut_unchecked|"
             r"iter_mut|column_iter_mut|row_iter_mut|as_mut|as_mut_unchecked|"
             r"coords_mut|vector_mut|matrix_mut\w*|as_mut_\w+)", "borrow"),
+    # `&mut` / `&T -> &Unit<T>` accessors (WP 8.4-R, owner-validated reason `borrow`): a Cairo
+    # value is `Copy` and passed by value, so `Quaternion::as_vector_mut` (`&mut Vector4`),
+    # `Vector1::as_scalar_mut` (`&mut T`) and `Unit::from_ref_unchecked` (`&T -> &Unit<T>`) have
+    # no Cairo counterpart (`*_mut` in-place forms are `ref self` methods).
+    exclude(r"Quaternion|Matrix1|Vector1|Unit", r"(?:as_vector_mut|as_scalar_mut|from_ref_unchecked)",
+            "borrow"),
     exclude(r"Dyn|Const|U\d+|Dim|DimName|DimAdd|DimSub|DimMul|DimDiv|DimMin|DimMax|"
             r"DimNameAdd|DimNameSub|DimNameMul|DimNameDiv|ToTypenum|ToConst|IsDynamic|"
             r"IsNotStaticOne|ArrayStorage|ArrayStorageVisitor|VecStorage|Storage|StorageMut|"

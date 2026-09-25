@@ -112,6 +112,13 @@ pub impl Rotation3Impl<
         Rotation3 { matrix: self.matrix.transpose() }
     }
 
+    /// `self = self.transpose()` in place (three entry pairs swapped, exact). Upstream:
+    /// `transpose_mut`.
+    #[inline(always)]
+    fn transpose_mut(ref self: Rotation3<T>) {
+        self = Rotation3 { matrix: self.matrix.transpose() };
+    }
+
     /// The rotation as a homogeneous 4x4 matrix: the rotation block, a zero translation and
     /// `m44 = 1`. Exact. Upstream: `to_homogeneous`.
     #[inline(always)]

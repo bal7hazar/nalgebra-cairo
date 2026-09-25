@@ -15,6 +15,8 @@
 #[cfg(test)]
 mod abstract_rotation;
 #[cfg(test)]
+mod inplace;
+#[cfg(test)]
 mod oracle;
 #[cfg(test)]
 mod point;

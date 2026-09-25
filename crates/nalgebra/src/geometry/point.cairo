@@ -55,6 +55,26 @@ pub impl Point2ExtImpl<
         Point2 { x: self.x.into(), y: self.y.into() }
     }
 
+    /// The point of `f(c)` for every coordinate `c`, in order (`x, y, ..`). `f` is any closure or
+    /// `Fn` value; Cairo closures take their arguments by value. Upstream: `map`.
+    #[inline]
+    fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
+        self: Point2<T>, f: F,
+    ) -> Point2<Func::Output> {
+        Point2 { x: f(self.x), y: f(self.y) }
+    }
+
+    /// Replaces every coordinate `c` by `f(c)`, in order. Upstream's closure is `FnMut(&mut T)`,
+    /// writing through the reference; a Cairo closure cannot, so it RETURNS the new coordinate (its
+    /// output converts `Into<T>`). Same bits as `map` followed by the conversion. Upstream:
+    /// `apply`.
+    #[inline]
+    fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        ref self: Point2<T>, f: F,
+    ) {
+        self = Point2 { x: f(self.x).into(), y: f(self.y).into() };
+    }
+
     /// The point of coordinates `s[0], .., s[1]`. Panics with `nalgebra: wrong slice length`
     /// unless `s` holds exactly 2 elements (upstream's `from_row_slice` assertion). Upstream:
     /// `from_slice`.
@@ -164,6 +184,26 @@ pub impl Point3ExtImpl<
     /// single scalar `Fixed`). Upstream: `cast` (and `SubsetOf<Point<U>>`).
     fn cast<U, +Into<T, U>, +Drop<U>>(self: Point3<T>) -> Point3<U> {
         Point3 { x: self.x.into(), y: self.y.into(), z: self.z.into() }
+    }
+
+    /// The point of `f(c)` for every coordinate `c`, in order (`x, y, ..`). `f` is any closure or
+    /// `Fn` value; Cairo closures take their arguments by value. Upstream: `map`.
+    #[inline]
+    fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
+        self: Point3<T>, f: F,
+    ) -> Point3<Func::Output> {
+        Point3 { x: f(self.x), y: f(self.y), z: f(self.z) }
+    }
+
+    /// Replaces every coordinate `c` by `f(c)`, in order. Upstream's closure is `FnMut(&mut T)`,
+    /// writing through the reference; a Cairo closure cannot, so it RETURNS the new coordinate (its
+    /// output converts `Into<T>`). Same bits as `map` followed by the conversion. Upstream:
+    /// `apply`.
+    #[inline]
+    fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        ref self: Point3<T>, f: F,
+    ) {
+        self = Point3 { x: f(self.x).into(), y: f(self.y).into(), z: f(self.z).into() };
     }
 
     /// The point of coordinates `s[0], .., s[2]`. Panics with `nalgebra: wrong slice length`

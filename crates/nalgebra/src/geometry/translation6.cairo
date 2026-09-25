@@ -9,6 +9,7 @@
 //! shapes stop at 6 (DESIGN D4). Out of scope for 0.1.0 by owner ruling (issue #41).
 
 use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::Real;
 use crate::base::vector6::Vector6;
 use super::point6::Point6;
@@ -54,6 +55,13 @@ pub impl Translation6Impl<
     fn inverse(self: Translation6<T>) -> Translation6<T> {
         let v = self.vector;
         Translation6 { vector: Vector6 { x: -v.x, y: -v.y, z: -v.z, w: -v.w, a: -v.a, b: -v.b } }
+    }
+
+    /// `self = self.inverse()` in place (`-vector`; the by-value form is the cheapest, so the bits
+    /// are those of `inverse`). Exact; panics on overflow (`-MIN`). Upstream: `inverse_mut`.
+    #[inline(always)]
+    fn inverse_mut(ref self: Translation6<T>) {
+        self = Self::inverse(self);
     }
 
     /// `self * p`: the point translated by `vector`. Exact; panics on overflow. Upstream:
@@ -165,6 +173,26 @@ pub impl Translation6Div<T, +Sub<T>, +Copy<T>, +Drop<T>> of Div<Translation6<T>>
                 x: a.x - b.x, y: a.y - b.y, z: a.z - b.z, w: a.w - b.w, a: a.a - b.a, b: a.b - b.b,
             },
         }
+    }
+}
+
+/// `a *= b`: `a = a * b` (component-wise sums, exact). Upstream: `MulAssign<Translation>`.
+pub impl Translation6MulAssign<
+    T, +Add<T>, +Copy<T>, +Drop<T>,
+> of MulAssign<Translation6<T>, Translation6<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Translation6<T>, rhs: Translation6<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `a /= b`: `a = a / b` (component-wise differences, exact). Upstream: `DivAssign<Translation>`.
+pub impl Translation6DivAssign<
+    T, +Sub<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Translation6<T>, Translation6<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Translation6<T>, rhs: Translation6<T>) {
+        self = self / rhs;
     }
 }
 

@@ -24,7 +24,7 @@
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
 use core::num::traits::One;
-use core::ops::Index;
+use core::ops::{DivAssign, Index, MulAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix1::Matrix1;
 use crate::base::matrix2::Matrix2;
@@ -89,6 +89,9 @@ pub trait Rotation2Trait<T> {
     /// The transposed matrix, wrapped as a rotation: the same thing as `inverse`. Exact.
     /// Upstream: `transpose`.
     fn transpose(self: Rotation2<T>) -> Rotation2<T>;
+    /// `self = self.transpose()` in place (two entries swapped, exact). Upstream:
+    /// `transpose_mut`.
+    fn transpose_mut(ref self: Rotation2<T>);
     /// The rotation taking the direction of `a` to the direction of `b`, or the identity when
     /// either vector is zero: `UnitComplexTrait::rotation_between` expanded into a matrix (see
     /// its accuracy notes). Upstream: `Rotation2::rotation_between`.
@@ -265,6 +268,19 @@ pub impl Rotation2Impl<
                 m22: self.matrix.m22,
             },
         }
+    }
+
+    #[inline(always)]
+    fn transpose_mut(ref self: Rotation2<T>) {
+        self =
+            Rotation2 {
+                matrix: Matrix2 {
+                    m11: self.matrix.m11,
+                    m21: self.matrix.m12,
+                    m12: self.matrix.m21,
+                    m22: self.matrix.m22,
+                },
+            };
     }
 
     fn rotation_between(a: Vector2<T>, b: Vector2<T>) -> Rotation2<T> {
@@ -624,6 +640,46 @@ pub impl Rotation2Div<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Div<Rotation2<T
                 m22: R::sum_prod2(a.m21, b.m21, a.m22, b.m22),
             },
         }
+    }
+}
+
+/// `a *= c`: `a = a * c.to_rotation_matrix()`, upstream's formulation (the FOUR fused kernels of
+/// `Rotation2Mul`, bit for bit the matrix product, see there for why the two-kernel complex form
+/// is not used). Panics on overflow (`-MIN`). Upstream: `MulAssign<UnitComplex> for Rotation2`.
+pub impl Rotation2MulAssignUnitComplex<
+    T, impl R: Real<T>, +Neg<T>, +Copy<T>, +Drop<T>,
+> of MulAssign<Rotation2<T>, UnitComplex<T>> {
+    fn mul_assign(ref self: Rotation2<T>, rhs: UnitComplex<T>) {
+        let (a, b) = (self.matrix, Matrix2 { m11: rhs.re, m21: rhs.im, m12: -rhs.im, m22: rhs.re });
+        self =
+            Rotation2 {
+                matrix: Matrix2 {
+                    m11: R::sum_prod2(a.m11, b.m11, a.m12, b.m21),
+                    m21: R::sum_prod2(a.m21, b.m11, a.m22, b.m21),
+                    m12: R::sum_prod2(a.m11, b.m12, a.m12, b.m22),
+                    m22: R::sum_prod2(a.m21, b.m12, a.m22, b.m22),
+                },
+            };
+    }
+}
+
+/// `a /= c`: `a = a / c.to_rotation_matrix()`, upstream's formulation (the FOUR fused kernels of
+/// `Rotation2Div`, the product with the transpose). Panics on overflow (`-MIN`). Upstream:
+/// `DivAssign<UnitComplex> for Rotation2`.
+pub impl Rotation2DivAssignUnitComplex<
+    T, impl R: Real<T>, +Neg<T>, +Copy<T>, +Drop<T>,
+> of DivAssign<Rotation2<T>, UnitComplex<T>> {
+    fn div_assign(ref self: Rotation2<T>, rhs: UnitComplex<T>) {
+        let (a, b) = (self.matrix, Matrix2 { m11: rhs.re, m21: rhs.im, m12: -rhs.im, m22: rhs.re });
+        self =
+            Rotation2 {
+                matrix: Matrix2 {
+                    m11: R::sum_prod2(a.m11, b.m11, a.m12, b.m12),
+                    m21: R::sum_prod2(a.m21, b.m11, a.m22, b.m12),
+                    m12: R::sum_prod2(a.m11, b.m21, a.m12, b.m22),
+                    m22: R::sum_prod2(a.m21, b.m21, a.m22, b.m22),
+                },
+            };
     }
 }
 

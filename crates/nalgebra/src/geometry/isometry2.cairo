@@ -119,6 +119,14 @@ pub impl Isometry2Impl<
         }
     }
 
+    /// `self = self.inverse()` in place: the by-value form is the cheapest (a rotation and a
+    /// translation to rebuild, nothing to reuse), so the bits are those of `inverse`. Panics as
+    /// `inverse` does. Upstream: `inverse_mut`.
+    #[inline(always)]
+    fn inverse_mut(ref self: Isometry2<T>) {
+        self = Self::inverse(self);
+    }
+
     /// `self⁻¹ * other`, the RELATIVE pose rapier computes for every contact and joint
     /// (docs/research/01, §3.3), WITHOUT materialising the inverse: the translation is
     /// `rotation⁻¹ · (other.translation - self.translation)` (one exact subtraction and two
