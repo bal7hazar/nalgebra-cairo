@@ -12,6 +12,7 @@ members = [
     "crates/shapes_tests_inplace",
     "crates/shapes_tests_views",
     "crates/shapes_tests_blocks",
+    "crates/shapes_tests_cg",
     "crates/tests_utils",
     "crates/tests_base",
     "crates/tests_geometry",

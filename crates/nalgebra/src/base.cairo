@@ -29,6 +29,7 @@ pub use point3::Point3;
 pub use unit::{Normed, Unit, UnitTrait};
 
 // shapegen: begin
+pub mod cg;
 pub mod errors;
 mod kernels;
 pub mod matrix1;
@@ -74,6 +75,10 @@ pub mod vector3;
 pub mod vector4;
 pub mod vector5;
 pub mod vector6;
+pub use cg::{
+    Matrix1CgTrait, Matrix2CgTrait, Matrix3CgAngleTrait, Matrix3CgTrait, Matrix4CgAngleTrait,
+    Matrix4CgTrait, Matrix5CgTrait, Matrix6CgTrait,
+};
 pub use matrix1::{
     Matrix1, Matrix1AngleTrait, Matrix1Trait, RowVector1, UnitVector1, UnitVector1AngleTrait,
     UnitVector1Trait, Vector1,

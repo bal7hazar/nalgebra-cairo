@@ -1,0 +1,89 @@
+{
+  "nalgebra_shapes_tests_cg::benches": {
+    "matrix3_append_nonuniform_scaling": {
+      "baseline": 97190,
+      "library": 108770
+    },
+    "matrix3_append_translation": {
+      "baseline": 97190,
+      "library": 109970
+    },
+    "matrix3_new_translation": {
+      "baseline": 62260,
+      "library": 62260
+    },
+    "matrix3_prepend_translation": {
+      "alt_plain": 109680,
+      "baseline": 97190,
+      "library": 105230
+    },
+    "matrix3_transform_point": {
+      "alt_plain": 90690,
+      "baseline": 70050,
+      "library": 89070
+    },
+    "matrix3_transform_vector": {
+      "baseline": 70050,
+      "library": 84170
+    },
+    "matrix4_append_nonuniform_scaling": {
+      "baseline": 152810,
+      "library": 175370
+    },
+    "matrix4_append_translation": {
+      "alt_plain": 190380,
+      "baseline": 152810,
+      "library": 177770
+    },
+    "matrix4_from_euler_angles": {
+      "baseline": 16740,
+      "library": 129970
+    },
+    "matrix4_look_at_rh": {
+      "baseline": 60650,
+      "library": 119210
+    },
+    "matrix4_new_rotation": {
+      "baseline": 30510,
+      "library": 107510
+    },
+    "matrix4_new_translation": {
+      "baseline": 94710,
+      "library": 96710
+    },
+    "matrix4_prepend_translation": {
+      "alt_plain": 172620,
+      "baseline": 152810,
+      "library": 165130
+    },
+    "matrix4_transform_point": {
+      "alt_plain": 133670,
+      "baseline": 103880,
+      "library": 131510
+    },
+    "matrix4_transform_vector": {
+      "baseline": 103880,
+      "library": 124470
+    },
+    "matrix6_append_nonuniform_scaling": {
+      "baseline": 299830,
+      "library": 355030
+    },
+    "matrix6_append_translation": {
+      "baseline": 299830,
+      "library": 370460
+    },
+    "matrix6_new_translation": {
+      "baseline": 175530,
+      "library": 179730
+    },
+    "matrix6_prepend_translation": {
+      "baseline": 299830,
+      "library": 332540
+    },
+    "matrix6_transform_vector": {
+      "baseline": 183920,
+      "library": 230000
+    }
+  }
+}

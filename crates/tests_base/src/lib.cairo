@@ -1,4 +1,6 @@
 #[cfg(test)]
+mod cg;
+#[cfg(test)]
 mod matrix2;
 #[cfg(test)]
 mod matrix3;
@@ -6,6 +8,8 @@ mod matrix3;
 mod matrix4;
 #[cfg(test)]
 mod matrix6;
+#[cfg(test)]
+mod oracle_cg;
 #[cfg(test)]
 mod oracle_dim6_matrix;
 #[cfg(test)]
