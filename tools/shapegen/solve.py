@@ -40,9 +40,14 @@ def pairs() -> list[tuple[Shape, Shape]]:
 
 
 def small(b: Shape) -> bool:
-    """`#[inline(always)]` for vector right-hand sides of at most 4 components (the products'
-    rule, `blas.small`)."""
-    return b.is_vector and b.n <= 4
+    """`#[inline(always)]` on EVERY kernel, measured (`crates/tests_linalg_solve`, net gas of
+    `solve_lower_triangular_unchecked`): with the products' rule (inline only vector outputs of at
+    most 4 components) the call of an out-of-line kernel, whose struct operands are copied in and
+    out, cost `Vector6` 44 740 against 31 090 inlined, `Matrix3` right-hand side 54 410 against 39 980
+    and `Matrix6` 227 000 against 174 260: 23 to 36 % of the solve. Inlined, the per-column form
+    (`alt_columns`, the vector kernel per column) is 4 to 7 % dearer than the shared prepared divisor
+    of the direct kernel."""
+    return True
 
 
 # --------------------------------------------------------------------------------------------
