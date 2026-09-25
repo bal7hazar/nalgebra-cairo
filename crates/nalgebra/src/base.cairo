@@ -58,9 +58,12 @@ pub mod matrix6x3;
 pub mod matrix6x4;
 pub mod matrix6x5;
 pub mod matrix_index;
+pub mod matrix_kronecker;
 pub mod matrix_mul;
 pub mod matrix_tr_mul;
+pub mod matrix_view;
 pub mod norm;
+pub mod point_swizzle;
 pub mod row_vector2;
 pub mod row_vector3;
 pub mod row_vector4;
@@ -101,9 +104,15 @@ pub use matrix6x3::{Matrix6x3, Matrix6x3AngleTrait, Matrix6x3Trait};
 pub use matrix6x4::{Matrix6x4, Matrix6x4AngleTrait, Matrix6x4Trait};
 pub use matrix6x5::{Matrix6x5, Matrix6x5AngleTrait, Matrix6x5Trait};
 pub use matrix_index::MatrixIndex;
+pub use matrix_kronecker::MatrixKronecker;
 pub use matrix_mul::MatrixMul;
 pub use matrix_tr_mul::MatrixTrMul;
+pub use matrix_view::{ColumnPart, FixedColumns, FixedResize, FixedRows, FixedView, RowPart};
 pub use norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
+pub use point_swizzle::{
+    Point1SwizzleTrait, Point2SwizzleTrait, Point3SwizzleTrait, Point4SwizzleTrait,
+    Point5SwizzleTrait, Point6SwizzleTrait,
+};
 pub use row_vector2::{Matrix1x2, RowVector2, RowVector2AngleTrait, RowVector2Trait};
 pub use row_vector3::{Matrix1x3, RowVector3, RowVector3AngleTrait, RowVector3Trait};
 pub use row_vector4::{Matrix1x4, RowVector4, RowVector4AngleTrait, RowVector4Trait};

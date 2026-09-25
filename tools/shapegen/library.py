@@ -129,6 +129,7 @@ class Extra:
     methods: list["Fn"] = field(default_factory=list)  # appended to the shape's main trait
     angle: list["Fn"] = field(default_factory=list)  # the `Transcendental` trait (`angle`...)
     functional: list["Fn"] = field(default_factory=list)  # WP 8.2b (P03), main trait
+    views: list["Fn"] = field(default_factory=list)  # WP 8.2c (P04, P05), main trait
 
 
 def dedup(xs: list[str]) -> list[str]:
@@ -582,7 +583,7 @@ def render_vector(n: int, module: str, test_modules: list[str], extra: Extra) ->
     S, T = v.S, v.ty()
     specs = read_specs(module)
     fns, angle = vector_surface(n, module)
-    fns = fns + extra.methods + extra.functional
+    fns = fns + extra.methods + extra.functional + extra.views
     angles = ([angle] if angle else []) + extra.angle
     if n in VECTOR_SURFACE:
         others = []
@@ -911,6 +912,9 @@ def render_matrix(n: int, module: str, test_modules: list[str], extra: Extra) ->
     if extra.functional:
         sections.append("\n\n".join([section("functional and in-place variants (WP 8.2b)", 94)]
                                       + [x.definition() for x in extra.functional]))
+    if extra.views:
+        sections.append("\n\n".join([section("swizzles, rows, columns and blocks (WP 8.2c)", 94)]
+                                      + [x.definition() for x in extra.views]))
     internal = slot_fns(MATRIX_INTERNAL_ORDER[n], matrix_internal_fns(m), specs.internal)
     scalar = "simba::scalar::{Real, Transcendental}" if extra.angle else "simba::scalar::Real"
     ops = ("core::ops::{AddAssign, DivAssign, MulAssign, SubAssign}" if extra.methods else

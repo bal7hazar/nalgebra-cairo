@@ -17,3 +17,7 @@ pub const LP_NORM_P: felt252 = 'nalgebra: lp_norm needs p >= 1';
 /// `Vector3::orthonormal_subspace_basis` of more than 3 vectors (upstream: "The given set of
 /// vectors has no chance of being a free family.").
 pub const NOT_FREE_FAMILY: felt252 = 'nalgebra: not a free family';
+/// A runtime size different from the output type's: `rows(i, n)`, `view(start, shape)`,
+/// `rows_range`, `row_part`, `select_rows`, `resize`... (`base/matrix_view.cairo`: the output
+/// type is the size of upstream's const generic or dynamic view).
+pub const DIMENSION_MISMATCH: felt252 = 'nalgebra: dimension mismatch';

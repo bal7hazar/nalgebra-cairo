@@ -37,6 +37,22 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | `alt_div_n` | 39610 | - | x1.19 |
 | `alt_div` | 40380 | - | x1.21 |
 
+## nalgebra::base::matrix3::benches_views
+
+### matrix3_column_internal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `column2` | 19240 | 300 | x1.00 |
+| `column` | 20150 | 1210 | x4.03 |
+
+### matrix3_row_internal
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `row2` | 19240 | 300 | x1.00 |
+| `row` | 20150 | 1210 | x4.03 |
+
 ## nalgebra::base::matrix3::tests
 
 ### matrix3_adjugate

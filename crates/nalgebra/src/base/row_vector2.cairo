@@ -16,20 +16,42 @@ use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::Powi;
 use super::matrix1::Matrix1;
-use super::matrix2::Matrix2;
+use super::matrix2::{Matrix2, Matrix2Trait};
 use super::matrix2x3::Matrix2x3;
 use super::matrix2x4::Matrix2x4;
 use super::matrix2x5::Matrix2x5;
 use super::matrix2x6::Matrix2x6;
+use super::matrix3::Matrix3;
+use super::matrix3x2::Matrix3x2;
+use super::matrix3x4::Matrix3x4;
+use super::matrix3x6::Matrix3x6;
+use super::matrix4::Matrix4;
+use super::matrix4x2::Matrix4x2;
+use super::matrix4x3::Matrix4x3;
+use super::matrix4x6::Matrix4x6;
+use super::matrix5x2::Matrix5x2;
+use super::matrix5x3::Matrix5x3;
+use super::matrix5x4::Matrix5x4;
+use super::matrix5x6::Matrix5x6;
+use super::matrix6::Matrix6;
+use super::matrix6x2::Matrix6x2;
+use super::matrix6x3::Matrix6x3;
+use super::matrix6x4::Matrix6x4;
 use super::matrix_index::MatrixIndex;
+use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::matrix_view::{CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, ShapeDims};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector3::RowVector3;
 use super::row_vector4::RowVector4;
 use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
 use super::vector2::Vector2;
+use super::vector3::Vector3;
+use super::vector4::Vector4;
+use super::vector5::Vector5;
+use super::vector6::Vector6;
 
 /// A 2-dimensional row vector. Components are named like upstream's `Deref` targets (`x, y, z, w,
 /// a, b`).
@@ -959,6 +981,124 @@ pub impl RowVector2Impl<
     ) -> T {
         Nm::metric_distance(@norm, self, rhs)
     }
+
+    /// The number of rows, 1. Upstream: `nrows`.
+    #[inline(always)]
+    fn nrows(self: RowVector2<T>) -> usize {
+        1
+    }
+
+    /// The number of columns, 2. Upstream: `ncols`.
+    #[inline(always)]
+    fn ncols(self: RowVector2<T>) -> usize {
+        2
+    }
+
+    /// `(nrows, ncols)`, `(1, 2)`. Upstream: `shape`.
+    #[inline(always)]
+    fn shape(self: RowVector2<T>) -> (usize, usize) {
+        (1, 2)
+    }
+
+    /// Whether the shape is square: `false`. Upstream: `is_square`.
+    #[inline(always)]
+    fn is_square(self: RowVector2<T>) -> bool {
+        false
+    }
+
+    /// The `(row, column)` of the `i`-th component in column-major order: `(i % 1, i / 1)`, one
+    /// `DivRem` (no bounds check, like upstream). Upstream: `vector_to_matrix_index`.
+    #[inline(always)]
+    fn vector_to_matrix_index(self: RowVector2<T>, i: usize) -> (usize, usize) {
+        (0, i)
+    }
+
+    /// Row `i`, a `RowVector2` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `i >= 1`. ONE `match` on `i` selects the literal (the private
+    /// `row_at` of `swap_rows`). Upstream: `row` (a view).
+    #[inline(always)]
+    fn row(self: RowVector2<T>, i: usize) -> RowVector2<T> {
+        RowVector2EditTrait::row_at(self, i)
+    }
+
+    /// Column `j`, a `Matrix1` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `j >= 2`. ONE `match` on `j` selects the literal (the private
+    /// `column_at` of `swap_columns`). Upstream: `column` (a view).
+    #[inline(always)]
+    fn column(self: RowVector2<T>, j: usize) -> Matrix1<T> {
+        RowVector2EditTrait::column_at(self, j)
+    }
+
+    /// The upper triangle of `self` (the diagonal included), the components below the diagonal set
+    /// to zero. Exact. Upstream: `upper_triangle`.
+    #[inline(always)]
+    fn upper_triangle(self: RowVector2<T>) -> RowVector2<T> {
+        RowVector2 { x: self.x, y: self.y }
+    }
+
+    /// The lower triangle of `self` (the diagonal included), the components above the diagonal set
+    /// to zero. Exact. Upstream: `lower_triangle`.
+    #[inline(always)]
+    fn lower_triangle(self: RowVector2<T>) -> RowVector2<T> {
+        RowVector2 { x: self.x, y: R::zero() }
+    }
+
+    /// The 2-dimensional row vector whose 1 rows are the given vectors, each a `Vector2` of the
+    /// row's 2 components (the argument form of the former `Matrix2/3/4::from_rows`, used by
+    /// `linalg`). Exact. Upstream: `from_rows` (a slice of row vectors).
+    #[inline(always)]
+    fn from_rows(r1: Vector2<T>) -> RowVector2<T> {
+        RowVector2 { x: r1.x, y: r1.y }
+    }
+
+    /// The 2-dimensional row vector whose 2 columns are the given `Matrix1`s. Exact. Upstream:
+    /// `from_columns` (a slice of column vectors).
+    #[inline(always)]
+    fn from_columns(c1: Matrix1<T>, c2: Matrix1<T>) -> RowVector2<T> {
+        RowVector2 { x: c1.x, y: c2.x }
+    }
+
+    /// Whether the columns of `self` are orthonormal: `selfᵀ * self` (fused `tr_mul`, one
+    /// rounding per component) is the 2x2 identity within `ulps`. Upstream: `is_orthogonal` (`eps`:
+    /// here a tolerance in ulp, DESIGN D3).
+    #[inline(always)]
+    fn is_orthogonal(self: RowVector2<T>, ulps: u64) -> bool {
+        Matrix2Trait::is_identity(MatrixTrMul::tr_mul(self, self), ulps)
+    }
+
+    /// `self` with a row of `val` inserted at index `i` (`i <= 1`), a `Matrix2`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 1`. Upstream: `insert_row`.
+    #[inline(always)]
+    fn insert_row(self: RowVector2<T>, i: usize, val: T) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: val, m21: self.x, m12: val, m22: self.y },
+            1 => Matrix2 { m11: self.x, m21: val, m12: self.y, m22: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` with a column of `val` inserted at index `i` (`i <= 2`), a `RowVector3`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 2`. Upstream: `insert_column`.
+    #[inline(always)]
+    fn insert_column(self: RowVector2<T>, i: usize, val: T) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: val, y: self.x, z: self.y },
+            1 => RowVector3 { x: self.x, y: val, z: self.y },
+            2 => RowVector3 { x: self.x, y: self.y, z: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its column `i`, a `Matrix1`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 2`. Upstream: `remove_column`.
+    #[inline(always)]
+    fn remove_column(self: RowVector2<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.y },
+            1 => Matrix1 { x: self.x },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
 }
 
 /// The operations of `RowVector2<T>` that need `Transcendental` (inverse trigonometry, `exp`,
@@ -1594,5 +1734,644 @@ pub impl RowVector2UniformNorm<
     #[inline(always)]
     fn metric_distance(self: @UniformNorm, m1: RowVector2<T>, m2: RowVector2<T>) -> T {
         RowVector2Trait::amax(m1 - m2)
+    }
+}
+
+// --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
+
+/// The 1 consecutive rows of a `RowVector2` as a `RowVector2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl RowVector2FixedRowsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<RowVector2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: RowVector2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.x, y: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: RowVector2<T>, irows: Span<usize>) -> RowVector2<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = RowVector2EditTrait::row_at(self, *irows[0]);
+        RowVector2 { x: r0.x, y: r0.y }
+    }
+}
+
+/// The 1 consecutive columns of a `RowVector2` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl RowVector2FixedColumnsMatrix1<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector2<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector2<T>, icols: Span<usize>) -> Matrix1<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector2EditTrait::column_at(self, *icols[0]);
+        Matrix1 { x: c0.x }
+    }
+}
+
+/// The 2 consecutive columns of a `RowVector2` as a `RowVector2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl RowVector2FixedColumnsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.x, y: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector2<T>, icols: Span<usize>) -> RowVector2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector2EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector2EditTrait::column_at(self, *icols[1]);
+        RowVector2 { x: c0.x, y: c1.x }
+    }
+}
+
+/// The 1x1 blocks of a `RowVector2` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl RowVector2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<RowVector2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector2<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `RowVector2` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl RowVector2FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector2<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.x, y: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix1`, a `RowVector2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix1<T>> {
+    type Output = RowVector2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix1<T>) -> RowVector2<T> {
+        RowVector2 { x: self.x * rhs.x, y: self.y * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `RowVector2`, a `RowVector4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, RowVector2<T>> {
+    type Output = RowVector4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: RowVector2<T>) -> RowVector4<T> {
+        RowVector4 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.y * rhs.x, w: self.y * rhs.y }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `RowVector3`, a `RowVector6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, RowVector3<T>> {
+    type Output = RowVector6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: RowVector3<T>) -> RowVector6<T> {
+        RowVector6 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.x * rhs.z,
+            w: self.y * rhs.x,
+            a: self.y * rhs.y,
+            b: self.y * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector2`, a `Matrix2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector2<T>> {
+    type Output = Matrix2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector2<T>) -> Matrix2<T> {
+        Matrix2 {
+            m11: self.x * rhs.x, m21: self.x * rhs.y, m12: self.y * rhs.x, m22: self.y * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix2`, a `Matrix2x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix2<T>> {
+    type Output = Matrix2x4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix2<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix2x3`, a `Matrix2x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix2x3<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix2x3<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector3`, a `Matrix3x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector3<T>> {
+    type Output = Matrix3x2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector3<T>) -> Matrix3x2<T> {
+        Matrix3x2 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix3x2`, a `Matrix3x4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix3x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix3x2<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix3x2<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix3`, a `Matrix3x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix3<T>> {
+    type Output = Matrix3x6<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix3<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m34: self.y * rhs.m31,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m35: self.y * rhs.m32,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+            m36: self.y * rhs.m33,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector4`, a `Matrix4x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector4<T>> {
+    type Output = Matrix4x2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector4<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix4x2`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix4x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix4x2<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix4x2<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix4x3`, a `Matrix4x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix4x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix4x3<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix4x3<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m34: self.y * rhs.m31,
+            m44: self.y * rhs.m41,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m35: self.y * rhs.m32,
+            m45: self.y * rhs.m42,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+            m36: self.y * rhs.m33,
+            m46: self.y * rhs.m43,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector5`, a `Matrix5x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector5<T>> {
+    type Output = Matrix5x2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector5<T>) -> Matrix5x2<T> {
+        Matrix5x2 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m51: self.x * rhs.a,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m52: self.y * rhs.a,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix5x2`, a `Matrix5x4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix5x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix5x2<T>> {
+    type Output = Matrix5x4<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix5x2<T>) -> Matrix5x4<T> {
+        Matrix5x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m53: self.y * rhs.m51,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+            m54: self.y * rhs.m52,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix5x3`, a `Matrix5x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix5x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix5x3<T>> {
+    type Output = Matrix5x6<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix5x3<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+            m53: self.x * rhs.m53,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m34: self.y * rhs.m31,
+            m44: self.y * rhs.m41,
+            m54: self.y * rhs.m51,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m35: self.y * rhs.m32,
+            m45: self.y * rhs.m42,
+            m55: self.y * rhs.m52,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+            m36: self.y * rhs.m33,
+            m46: self.y * rhs.m43,
+            m56: self.y * rhs.m53,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector6`, a `Matrix6x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector6<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector6<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m51: self.x * rhs.a,
+            m61: self.x * rhs.b,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m52: self.y * rhs.a,
+            m62: self.y * rhs.b,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix6x2`, a `Matrix6x4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix6x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix6x2<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix6x2<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m61: self.x * rhs.m61,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m62: self.x * rhs.m62,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m53: self.y * rhs.m51,
+            m63: self.y * rhs.m61,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+            m54: self.y * rhs.m52,
+            m64: self.y * rhs.m62,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix6x3`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix6x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix6x3<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix6x3<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m61: self.x * rhs.m61,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m62: self.x * rhs.m62,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+            m53: self.x * rhs.m53,
+            m63: self.x * rhs.m63,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m34: self.y * rhs.m31,
+            m44: self.y * rhs.m41,
+            m54: self.y * rhs.m51,
+            m64: self.y * rhs.m61,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m35: self.y * rhs.m32,
+            m45: self.y * rhs.m42,
+            m55: self.y * rhs.m52,
+            m65: self.y * rhs.m62,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+            m36: self.y * rhs.m33,
+            m46: self.y * rhs.m43,
+            m56: self.y * rhs.m53,
+            m66: self.y * rhs.m63,
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl RowVector2PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<RowVector2<T>, T> {
+    #[inline(always)]
+    fn pad(self: RowVector2<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: val,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.y,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `RowVector2` of a `Matrix6` (`FixedResize`).
+pub(crate) impl RowVector2CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<RowVector2<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> RowVector2<T> {
+        RowVector2 { x: m.m11, y: m.m12 }
+    }
+}
+
+/// `(1, 2)`: the size checks of the runtime-sized views.
+pub(crate) impl RowVector2ShapeDims<T> of ShapeDims<RowVector2<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (1, 2)
     }
 }

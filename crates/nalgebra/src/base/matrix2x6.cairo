@@ -14,21 +14,31 @@ use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::{Fused, Powi};
+use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
 use super::matrix2x3::Matrix2x3;
 use super::matrix2x4::Matrix2x4;
 use super::matrix2x5::Matrix2x5;
-use super::matrix6::Matrix6;
+use super::matrix3x6::Matrix3x6;
+use super::matrix4x6::Matrix4x6;
+use super::matrix6::{Matrix6, Matrix6Trait};
 use super::matrix6x2::Matrix6x2;
 use super::matrix6x3::Matrix6x3;
 use super::matrix6x4::Matrix6x4;
 use super::matrix6x5::Matrix6x5;
 use super::matrix_index::MatrixIndex;
+use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::matrix_view::{CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, ShapeDims};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
+use super::row_vector2::RowVector2;
+use super::row_vector3::RowVector3;
+use super::row_vector4::RowVector4;
+use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
 use super::vector2::Vector2;
+use super::vector3::Vector3;
 use super::vector6::Vector6;
 
 /// A 2x6 matrix. `mRC` is the component at row `R`, column `C`.
@@ -2125,6 +2135,314 @@ pub impl Matrix2x6Impl<
     ) -> T {
         Nm::metric_distance(@norm, self, rhs)
     }
+
+    /// The number of rows, 2. Upstream: `nrows`.
+    #[inline(always)]
+    fn nrows(self: Matrix2x6<T>) -> usize {
+        2
+    }
+
+    /// The number of columns, 6. Upstream: `ncols`.
+    #[inline(always)]
+    fn ncols(self: Matrix2x6<T>) -> usize {
+        6
+    }
+
+    /// `(nrows, ncols)`, `(2, 6)`. Upstream: `shape`.
+    #[inline(always)]
+    fn shape(self: Matrix2x6<T>) -> (usize, usize) {
+        (2, 6)
+    }
+
+    /// Whether the shape is square: `false`. Upstream: `is_square`.
+    #[inline(always)]
+    fn is_square(self: Matrix2x6<T>) -> bool {
+        false
+    }
+
+    /// The `(row, column)` of the `i`-th component in column-major order: `(i % 2, i / 2)`, one
+    /// `DivRem` (no bounds check, like upstream). Upstream: `vector_to_matrix_index`.
+    #[inline(always)]
+    fn vector_to_matrix_index(self: Matrix2x6<T>, i: usize) -> (usize, usize) {
+        let (j, i) = DivRem::div_rem(i, 2);
+        (i, j)
+    }
+
+    /// Row `i`, a `RowVector6` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `i >= 2`. ONE `match` on `i` selects the literal (the private
+    /// `row_at` of `swap_rows`). Upstream: `row` (a view).
+    #[inline(always)]
+    fn row(self: Matrix2x6<T>, i: usize) -> RowVector6<T> {
+        Matrix2x6EditTrait::row_at(self, i)
+    }
+
+    /// Column `j`, a `Vector2` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `j >= 6`. ONE `match` on `j` selects the literal (the private
+    /// `column_at` of `swap_columns`). Upstream: `column` (a view).
+    #[inline(always)]
+    fn column(self: Matrix2x6<T>, j: usize) -> Vector2<T> {
+        Matrix2x6EditTrait::column_at(self, j)
+    }
+
+    /// The upper triangle of `self` (the diagonal included), the components below the diagonal set
+    /// to zero. Exact. Upstream: `upper_triangle`.
+    #[inline(always)]
+    fn upper_triangle(self: Matrix2x6<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.m11,
+            m21: R::zero(),
+            m12: self.m12,
+            m22: self.m22,
+            m13: self.m13,
+            m23: self.m23,
+            m14: self.m14,
+            m24: self.m24,
+            m15: self.m15,
+            m25: self.m25,
+            m16: self.m16,
+            m26: self.m26,
+        }
+    }
+
+    /// The lower triangle of `self` (the diagonal included), the components above the diagonal set
+    /// to zero. Exact. Upstream: `lower_triangle`.
+    #[inline(always)]
+    fn lower_triangle(self: Matrix2x6<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.m11,
+            m21: self.m21,
+            m12: R::zero(),
+            m22: self.m22,
+            m13: R::zero(),
+            m23: R::zero(),
+            m14: R::zero(),
+            m24: R::zero(),
+            m15: R::zero(),
+            m25: R::zero(),
+            m16: R::zero(),
+            m26: R::zero(),
+        }
+    }
+
+    /// The 2x6 matrix whose 2 rows are the given vectors, each a `Vector6` of the row's 6
+    /// components (the argument form of the former `Matrix2/3/4::from_rows`, used by `linalg`).
+    /// Exact. Upstream: `from_rows` (a slice of row vectors).
+    #[inline(always)]
+    fn from_rows(r1: Vector6<T>, r2: Vector6<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: r1.x,
+            m21: r2.x,
+            m12: r1.y,
+            m22: r2.y,
+            m13: r1.z,
+            m23: r2.z,
+            m14: r1.w,
+            m24: r2.w,
+            m15: r1.a,
+            m25: r2.a,
+            m16: r1.b,
+            m26: r2.b,
+        }
+    }
+
+    /// The 2x6 matrix whose 6 columns are the given `Vector2`s. Exact. Upstream: `from_columns` (a
+    /// slice of column vectors).
+    #[inline(always)]
+    fn from_columns(
+        c1: Vector2<T>,
+        c2: Vector2<T>,
+        c3: Vector2<T>,
+        c4: Vector2<T>,
+        c5: Vector2<T>,
+        c6: Vector2<T>,
+    ) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: c1.x,
+            m21: c1.y,
+            m12: c2.x,
+            m22: c2.y,
+            m13: c3.x,
+            m23: c3.y,
+            m14: c4.x,
+            m24: c4.y,
+            m15: c5.x,
+            m25: c5.y,
+            m16: c6.x,
+            m26: c6.y,
+        }
+    }
+
+    /// Whether the columns of `self` are orthonormal: `selfᵀ * self` (fused `tr_mul`, one
+    /// rounding per component) is the 6x6 identity within `ulps`. Upstream: `is_orthogonal` (`eps`:
+    /// here a tolerance in ulp, DESIGN D3).
+    #[inline(always)]
+    fn is_orthogonal(self: Matrix2x6<T>, ulps: u64) -> bool {
+        Matrix6Trait::is_identity(MatrixTrMul::tr_mul(self, self), ulps)
+    }
+
+    /// `self` with a row of `val` inserted at index `i` (`i <= 2`), a `Matrix3x6`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 2`. Upstream: `insert_row`.
+    fn insert_row(self: Matrix2x6<T>, i: usize, val: T) -> Matrix3x6<T> {
+        match i {
+            0 => Matrix3x6 {
+                m11: val,
+                m21: self.m11,
+                m31: self.m21,
+                m12: val,
+                m22: self.m12,
+                m32: self.m22,
+                m13: val,
+                m23: self.m13,
+                m33: self.m23,
+                m14: val,
+                m24: self.m14,
+                m34: self.m24,
+                m15: val,
+                m25: self.m15,
+                m35: self.m25,
+                m16: val,
+                m26: self.m16,
+                m36: self.m26,
+            },
+            1 => Matrix3x6 {
+                m11: self.m11,
+                m21: val,
+                m31: self.m21,
+                m12: self.m12,
+                m22: val,
+                m32: self.m22,
+                m13: self.m13,
+                m23: val,
+                m33: self.m23,
+                m14: self.m14,
+                m24: val,
+                m34: self.m24,
+                m15: self.m15,
+                m25: val,
+                m35: self.m25,
+                m16: self.m16,
+                m26: val,
+                m36: self.m26,
+            },
+            2 => Matrix3x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: val,
+                m12: self.m12,
+                m22: self.m22,
+                m32: val,
+                m13: self.m13,
+                m23: self.m23,
+                m33: val,
+                m14: self.m14,
+                m24: self.m24,
+                m34: val,
+                m15: self.m15,
+                m25: self.m25,
+                m35: val,
+                m16: self.m16,
+                m26: self.m26,
+                m36: val,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its row `i`, a `RowVector6`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 2`. Upstream: `remove_row`.
+    #[inline(always)]
+    fn remove_row(self: Matrix2x6<T>, i: usize) -> RowVector6<T> {
+        match i {
+            0 => RowVector6 {
+                x: self.m21, y: self.m22, z: self.m23, w: self.m24, a: self.m25, b: self.m26,
+            },
+            1 => RowVector6 {
+                x: self.m11, y: self.m12, z: self.m13, w: self.m14, a: self.m15, b: self.m16,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its column `i`, a `Matrix2x5`. Panics with `nalgebra: index out of bounds`
+    /// for `i >= 6`. Upstream: `remove_column`.
+    #[inline(always)]
+    fn remove_column(self: Matrix2x6<T>, i: usize) -> Matrix2x5<T> {
+        match i {
+            0 => Matrix2x5 {
+                m11: self.m12,
+                m21: self.m22,
+                m12: self.m13,
+                m22: self.m23,
+                m13: self.m14,
+                m23: self.m24,
+                m14: self.m15,
+                m24: self.m25,
+                m15: self.m16,
+                m25: self.m26,
+            },
+            1 => Matrix2x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m13,
+                m22: self.m23,
+                m13: self.m14,
+                m23: self.m24,
+                m14: self.m15,
+                m24: self.m25,
+                m15: self.m16,
+                m25: self.m26,
+            },
+            2 => Matrix2x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m14,
+                m23: self.m24,
+                m14: self.m15,
+                m24: self.m25,
+                m15: self.m16,
+                m25: self.m26,
+            },
+            3 => Matrix2x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m15,
+                m24: self.m25,
+                m15: self.m16,
+                m25: self.m26,
+            },
+            4 => Matrix2x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+                m15: self.m16,
+                m25: self.m26,
+            },
+            5 => Matrix2x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+                m15: self.m15,
+                m25: self.m25,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
 }
 
 /// The operations of `Matrix2x6<T>` that need `Transcendental` (inverse trigonometry, `exp`, `ln`):
@@ -3829,5 +4147,985 @@ pub impl Matrix2x6UniformNorm<
     #[inline(always)]
     fn metric_distance(self: @UniformNorm, m1: Matrix2x6<T>, m2: Matrix2x6<T>) -> T {
         Matrix2x6Trait::amax(m1 - m2)
+    }
+}
+
+// --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
+
+/// The 1 consecutive rows of a `Matrix2x6` as a `RowVector6` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix2x6FixedRowsRowVector6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix2x6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2x6<T>, i: usize) -> RowVector6<T> {
+        match i {
+            0 => RowVector6 {
+                x: self.m11, y: self.m12, z: self.m13, w: self.m14, a: self.m15, b: self.m16,
+            },
+            1 => RowVector6 {
+                x: self.m21, y: self.m22, z: self.m23, w: self.m24, a: self.m25, b: self.m26,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2x6<T>, irows: Span<usize>) -> RowVector6<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2x6EditTrait::row_at(self, *irows[0]);
+        RowVector6 { x: r0.x, y: r0.y, z: r0.z, w: r0.w, a: r0.a, b: r0.b }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix2x6` as a `Matrix2x6` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix2x6FixedRowsMatrix2x6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix2x6<T>, Matrix2x6<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2x6<T>, i: usize) -> Matrix2x6<T> {
+        match i {
+            0 => Matrix2x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+                m15: self.m15,
+                m25: self.m25,
+                m16: self.m16,
+                m26: self.m26,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2x6<T>, irows: Span<usize>) -> Matrix2x6<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2x6EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix2x6EditTrait::row_at(self, *irows[1]);
+        Matrix2x6 {
+            m11: r0.x,
+            m21: r1.x,
+            m12: r0.y,
+            m22: r1.y,
+            m13: r0.z,
+            m23: r1.z,
+            m14: r0.w,
+            m24: r1.w,
+            m15: r0.a,
+            m25: r1.a,
+            m16: r0.b,
+            m26: r1.b,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix2x6` as a `Vector2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix2x6FixedColumnsVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x6<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x6<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.m11, y: self.m21 },
+            1 => Vector2 { x: self.m12, y: self.m22 },
+            2 => Vector2 { x: self.m13, y: self.m23 },
+            3 => Vector2 { x: self.m14, y: self.m24 },
+            4 => Vector2 { x: self.m15, y: self.m25 },
+            5 => Vector2 { x: self.m16, y: self.m26 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x6<T>, icols: Span<usize>) -> Vector2<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x6EditTrait::column_at(self, *icols[0]);
+        Vector2 { x: c0.x, y: c0.y }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix2x6` as a `Matrix2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix2x6FixedColumnsMatrix2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x6<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x6<T>, i: usize) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+            1 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+            2 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+            3 => Matrix2 { m11: self.m14, m21: self.m24, m12: self.m15, m22: self.m25 },
+            4 => Matrix2 { m11: self.m15, m21: self.m25, m12: self.m16, m22: self.m26 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x6<T>, icols: Span<usize>) -> Matrix2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x6EditTrait::column_at(self, *icols[1]);
+        Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix2x6` as a `Matrix2x3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl Matrix2x6FixedColumnsMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x6<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x6<T>, i: usize) -> Matrix2x3<T> {
+        match i {
+            0 => Matrix2x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+            },
+            1 => Matrix2x3 {
+                m11: self.m12,
+                m21: self.m22,
+                m12: self.m13,
+                m22: self.m23,
+                m13: self.m14,
+                m23: self.m24,
+            },
+            2 => Matrix2x3 {
+                m11: self.m13,
+                m21: self.m23,
+                m12: self.m14,
+                m22: self.m24,
+                m13: self.m15,
+                m23: self.m25,
+            },
+            3 => Matrix2x3 {
+                m11: self.m14,
+                m21: self.m24,
+                m12: self.m15,
+                m22: self.m25,
+                m13: self.m16,
+                m23: self.m26,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x6<T>, icols: Span<usize>) -> Matrix2x3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix2x6EditTrait::column_at(self, *icols[2]);
+        Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y }
+    }
+}
+
+/// The 4 consecutive columns of a `Matrix2x6` as a `Matrix2x4` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<4>`, `select_columns`.
+pub impl Matrix2x6FixedColumnsMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x6<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x6<T>, i: usize) -> Matrix2x4<T> {
+        match i {
+            0 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+            },
+            1 => Matrix2x4 {
+                m11: self.m12,
+                m21: self.m22,
+                m12: self.m13,
+                m22: self.m23,
+                m13: self.m14,
+                m23: self.m24,
+                m14: self.m15,
+                m24: self.m25,
+            },
+            2 => Matrix2x4 {
+                m11: self.m13,
+                m21: self.m23,
+                m12: self.m14,
+                m22: self.m24,
+                m13: self.m15,
+                m23: self.m25,
+                m14: self.m16,
+                m24: self.m26,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x6<T>, icols: Span<usize>) -> Matrix2x4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix2x6EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix2x6EditTrait::column_at(self, *icols[3]);
+        Matrix2x4 {
+            m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y, m14: c3.x, m24: c3.y,
+        }
+    }
+}
+
+/// The 5 consecutive columns of a `Matrix2x6` as a `Matrix2x5` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<5>`, `select_columns`.
+pub impl Matrix2x6FixedColumnsMatrix2x5<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x6<T>, Matrix2x5<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x6<T>, i: usize) -> Matrix2x5<T> {
+        match i {
+            0 => Matrix2x5 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+                m15: self.m15,
+                m25: self.m25,
+            },
+            1 => Matrix2x5 {
+                m11: self.m12,
+                m21: self.m22,
+                m12: self.m13,
+                m22: self.m23,
+                m13: self.m14,
+                m23: self.m24,
+                m14: self.m15,
+                m24: self.m25,
+                m15: self.m16,
+                m25: self.m26,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x6<T>, icols: Span<usize>) -> Matrix2x5<T> {
+        if icols.len() != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix2x6EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix2x6EditTrait::column_at(self, *icols[3]);
+        let c4 = Matrix2x6EditTrait::column_at(self, *icols[4]);
+        Matrix2x5 {
+            m11: c0.x,
+            m21: c0.y,
+            m12: c1.x,
+            m22: c1.y,
+            m13: c2.x,
+            m23: c2.y,
+            m14: c3.x,
+            m24: c3.y,
+            m15: c4.x,
+            m25: c4.y,
+        }
+    }
+}
+
+/// The 6 consecutive columns of a `Matrix2x6` as a `Matrix2x6` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<6>`, `select_columns`.
+pub impl Matrix2x6FixedColumnsMatrix2x6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x6<T>, Matrix2x6<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x6<T>, i: usize) -> Matrix2x6<T> {
+        match i {
+            0 => Matrix2x6 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+                m15: self.m15,
+                m25: self.m25,
+                m16: self.m16,
+                m26: self.m26,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x6<T>, icols: Span<usize>) -> Matrix2x6<T> {
+        if icols.len() != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x6EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x6EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix2x6EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix2x6EditTrait::column_at(self, *icols[3]);
+        let c4 = Matrix2x6EditTrait::column_at(self, *icols[4]);
+        let c5 = Matrix2x6EditTrait::column_at(self, *icols[5]);
+        Matrix2x6 {
+            m11: c0.x,
+            m21: c0.y,
+            m12: c1.x,
+            m22: c1.y,
+            m13: c2.x,
+            m23: c2.y,
+            m14: c3.x,
+            m24: c3.y,
+            m15: c4.x,
+            m25: c4.y,
+            m16: c5.x,
+            m26: c5.y,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix2x6` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix2x6FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x6<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.m14 },
+                1 => Matrix1 { x: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix1 { x: self.m15 },
+                1 => Matrix1 { x: self.m25 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Matrix1 { x: self.m16 },
+                1 => Matrix1 { x: self.m26 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix2x6` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix2x6FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.m13, y: self.m14 },
+                1 => RowVector2 { x: self.m23, y: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => RowVector2 { x: self.m14, y: self.m15 },
+                1 => RowVector2 { x: self.m24, y: self.m25 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => RowVector2 { x: self.m15, y: self.m16 },
+                1 => RowVector2 { x: self.m25, y: self.m26 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `Matrix2x6` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl Matrix2x6FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.m12, y: self.m13, z: self.m14 },
+                1 => RowVector3 { x: self.m22, y: self.m23, z: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector3 { x: self.m13, y: self.m14, z: self.m15 },
+                1 => RowVector3 { x: self.m23, y: self.m24, z: self.m25 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => RowVector3 { x: self.m14, y: self.m15, z: self.m16 },
+                1 => RowVector3 { x: self.m24, y: self.m25, z: self.m26 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x4 blocks of a `Matrix2x6` as a `RowVector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 4>`.
+pub impl Matrix2x6FixedViewRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+                1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector4 { x: self.m12, y: self.m13, z: self.m14, w: self.m15 },
+                1 => RowVector4 { x: self.m22, y: self.m23, z: self.m24, w: self.m25 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector4 { x: self.m13, y: self.m14, z: self.m15, w: self.m16 },
+                1 => RowVector4 { x: self.m23, y: self.m24, z: self.m25, w: self.m26 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x5 blocks of a `Matrix2x6` as a `RowVector5` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 5>`.
+pub impl Matrix2x6FixedViewRowVector5<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, RowVector5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> RowVector5<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector5 { x: self.m11, y: self.m12, z: self.m13, w: self.m14, a: self.m15 },
+                1 => RowVector5 { x: self.m21, y: self.m22, z: self.m23, w: self.m24, a: self.m25 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector5 { x: self.m12, y: self.m13, z: self.m14, w: self.m15, a: self.m16 },
+                1 => RowVector5 { x: self.m22, y: self.m23, z: self.m24, w: self.m25, a: self.m26 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x6 blocks of a `Matrix2x6` as a `RowVector6` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 6>`.
+pub impl Matrix2x6FixedViewRowVector6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> RowVector6<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector6 {
+                    x: self.m11, y: self.m12, z: self.m13, w: self.m14, a: self.m15, b: self.m16,
+                },
+                1 => RowVector6 {
+                    x: self.m21, y: self.m22, z: self.m23, w: self.m24, a: self.m25, b: self.m26,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix2x6` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix2x6FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x6<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector2 { x: self.m14, y: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Vector2 { x: self.m15, y: self.m25 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Vector2 { x: self.m16, y: self.m26 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix2x6` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix2x6FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x6<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix2 { m11: self.m14, m21: self.m24, m12: self.m15, m22: self.m25 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix2 { m11: self.m15, m21: self.m25, m12: self.m16, m22: self.m26 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x3 blocks of a `Matrix2x6` as a `Matrix2x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 3>`.
+pub impl Matrix2x6FixedViewMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m13: self.m15,
+                    m23: self.m25,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m14,
+                    m21: self.m24,
+                    m12: self.m15,
+                    m22: self.m25,
+                    m13: self.m16,
+                    m23: self.m26,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x4 blocks of a `Matrix2x6` as a `Matrix2x4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 4>`.
+pub impl Matrix2x6FixedViewMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m14: self.m15,
+                    m24: self.m25,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m13: self.m15,
+                    m23: self.m25,
+                    m14: self.m16,
+                    m24: self.m26,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x5 blocks of a `Matrix2x6` as a `Matrix2x5` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 5>`.
+pub impl Matrix2x6FixedViewMatrix2x5<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, Matrix2x5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> Matrix2x5<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x5 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m15: self.m15,
+                    m25: self.m25,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x5 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m14: self.m15,
+                    m24: self.m25,
+                    m15: self.m16,
+                    m25: self.m26,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x6 blocks of a `Matrix2x6` as a `Matrix2x6` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 6>`.
+pub impl Matrix2x6FixedViewMatrix2x6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x6<T>, Matrix2x6<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x6<T>, irow: usize, icol: usize) -> Matrix2x6<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x6 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m15: self.m15,
+                    m25: self.m25,
+                    m16: self.m16,
+                    m26: self.m26,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x6` and a `Matrix1`, a `Matrix2x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x6KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x6<T>, Matrix1<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2x6<T>, rhs: Matrix1<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m14: self.m14 * rhs.x,
+            m24: self.m24 * rhs.x,
+            m15: self.m15 * rhs.x,
+            m25: self.m25 * rhs.x,
+            m16: self.m16 * rhs.x,
+            m26: self.m26 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x6` and a `Vector2`, a `Matrix4x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x6KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x6<T>, Vector2<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: Matrix2x6<T>, rhs: Vector2<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m23 * rhs.x,
+            m43: self.m23 * rhs.y,
+            m14: self.m14 * rhs.x,
+            m24: self.m14 * rhs.y,
+            m34: self.m24 * rhs.x,
+            m44: self.m24 * rhs.y,
+            m15: self.m15 * rhs.x,
+            m25: self.m15 * rhs.y,
+            m35: self.m25 * rhs.x,
+            m45: self.m25 * rhs.y,
+            m16: self.m16 * rhs.x,
+            m26: self.m16 * rhs.y,
+            m36: self.m26 * rhs.x,
+            m46: self.m26 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x6` and a `Vector3`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x6KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x6<T>, Vector3<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Matrix2x6<T>, rhs: Vector3<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m11 * rhs.z,
+            m41: self.m21 * rhs.x,
+            m51: self.m21 * rhs.y,
+            m61: self.m21 * rhs.z,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m12 * rhs.z,
+            m42: self.m22 * rhs.x,
+            m52: self.m22 * rhs.y,
+            m62: self.m22 * rhs.z,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m13 * rhs.z,
+            m43: self.m23 * rhs.x,
+            m53: self.m23 * rhs.y,
+            m63: self.m23 * rhs.z,
+            m14: self.m14 * rhs.x,
+            m24: self.m14 * rhs.y,
+            m34: self.m14 * rhs.z,
+            m44: self.m24 * rhs.x,
+            m54: self.m24 * rhs.y,
+            m64: self.m24 * rhs.z,
+            m15: self.m15 * rhs.x,
+            m25: self.m15 * rhs.y,
+            m35: self.m15 * rhs.z,
+            m45: self.m25 * rhs.x,
+            m55: self.m25 * rhs.y,
+            m65: self.m25 * rhs.z,
+            m16: self.m16 * rhs.x,
+            m26: self.m16 * rhs.y,
+            m36: self.m16 * rhs.z,
+            m46: self.m26 * rhs.x,
+            m56: self.m26 * rhs.y,
+            m66: self.m26 * rhs.z,
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix2x6PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix2x6<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix2x6<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: self.m14,
+            m24: self.m24,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: self.m15,
+            m25: self.m25,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: self.m16,
+            m26: self.m26,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix2x6` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix2x6CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix2x6<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: m.m11,
+            m21: m.m21,
+            m12: m.m12,
+            m22: m.m22,
+            m13: m.m13,
+            m23: m.m23,
+            m14: m.m14,
+            m24: m.m24,
+            m15: m.m15,
+            m25: m.m25,
+            m16: m.m16,
+            m26: m.m26,
+        }
+    }
+}
+
+/// `(2, 6)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix2x6ShapeDims<T> of ShapeDims<Matrix2x6<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (2, 6)
     }
 }

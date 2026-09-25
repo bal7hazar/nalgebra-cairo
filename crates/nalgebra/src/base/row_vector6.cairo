@@ -15,19 +15,29 @@ use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
 use super::kernels::{Fused, Powi};
 use super::matrix1::Matrix1;
-use super::matrix6::Matrix6;
+use super::matrix2x6::Matrix2x6;
+use super::matrix3x6::Matrix3x6;
+use super::matrix4x6::Matrix4x6;
+use super::matrix5x6::Matrix5x6;
+use super::matrix6::{Matrix6, Matrix6Trait};
 use super::matrix6x2::Matrix6x2;
 use super::matrix6x3::Matrix6x3;
 use super::matrix6x4::Matrix6x4;
 use super::matrix6x5::Matrix6x5;
 use super::matrix_index::MatrixIndex;
+use super::matrix_kronecker::MatrixKronecker;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::matrix_view::{CropFrom6, FixedColumns, FixedRows, FixedView, PadTo6, ShapeDims};
 use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
 use super::row_vector4::RowVector4;
 use super::row_vector5::RowVector5;
+use super::vector2::Vector2;
+use super::vector3::Vector3;
+use super::vector4::Vector4;
+use super::vector5::Vector5;
 use super::vector6::Vector6;
 
 /// A 6-dimensional row vector. Components are named like upstream's `Deref` targets (`x, y, z, w,
@@ -1245,6 +1255,151 @@ pub impl RowVector6Impl<
     ) -> T {
         Nm::metric_distance(@norm, self, rhs)
     }
+
+    /// The number of rows, 1. Upstream: `nrows`.
+    #[inline(always)]
+    fn nrows(self: RowVector6<T>) -> usize {
+        1
+    }
+
+    /// The number of columns, 6. Upstream: `ncols`.
+    #[inline(always)]
+    fn ncols(self: RowVector6<T>) -> usize {
+        6
+    }
+
+    /// `(nrows, ncols)`, `(1, 6)`. Upstream: `shape`.
+    #[inline(always)]
+    fn shape(self: RowVector6<T>) -> (usize, usize) {
+        (1, 6)
+    }
+
+    /// Whether the shape is square: `false`. Upstream: `is_square`.
+    #[inline(always)]
+    fn is_square(self: RowVector6<T>) -> bool {
+        false
+    }
+
+    /// The `(row, column)` of the `i`-th component in column-major order: `(i % 1, i / 1)`, one
+    /// `DivRem` (no bounds check, like upstream). Upstream: `vector_to_matrix_index`.
+    #[inline(always)]
+    fn vector_to_matrix_index(self: RowVector6<T>, i: usize) -> (usize, usize) {
+        (0, i)
+    }
+
+    /// Row `i`, a `RowVector6` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `i >= 1`. ONE `match` on `i` selects the literal (the private
+    /// `row_at` of `swap_rows`). Upstream: `row` (a view).
+    #[inline(always)]
+    fn row(self: RowVector6<T>, i: usize) -> RowVector6<T> {
+        RowVector6EditTrait::row_at(self, i)
+    }
+
+    /// Column `j`, a `Matrix1` (an owned copy: Cairo has no borrowed views). Panics with `nalgebra:
+    /// index out of bounds` for `j >= 6`. ONE `match` on `j` selects the literal (the private
+    /// `column_at` of `swap_columns`). Upstream: `column` (a view).
+    #[inline(always)]
+    fn column(self: RowVector6<T>, j: usize) -> Matrix1<T> {
+        RowVector6EditTrait::column_at(self, j)
+    }
+
+    /// The upper triangle of `self` (the diagonal included), the components below the diagonal set
+    /// to zero. Exact. Upstream: `upper_triangle`.
+    #[inline(always)]
+    fn upper_triangle(self: RowVector6<T>) -> RowVector6<T> {
+        RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
+    }
+
+    /// The lower triangle of `self` (the diagonal included), the components above the diagonal set
+    /// to zero. Exact. Upstream: `lower_triangle`.
+    #[inline(always)]
+    fn lower_triangle(self: RowVector6<T>) -> RowVector6<T> {
+        RowVector6 {
+            x: self.x, y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+        }
+    }
+
+    /// The 6-dimensional row vector whose 1 rows are the given vectors, each a `Vector6` of the
+    /// row's 6 components (the argument form of the former `Matrix2/3/4::from_rows`, used by
+    /// `linalg`). Exact. Upstream: `from_rows` (a slice of row vectors).
+    #[inline(always)]
+    fn from_rows(r1: Vector6<T>) -> RowVector6<T> {
+        RowVector6 { x: r1.x, y: r1.y, z: r1.z, w: r1.w, a: r1.a, b: r1.b }
+    }
+
+    /// The 6-dimensional row vector whose 6 columns are the given `Matrix1`s. Exact. Upstream:
+    /// `from_columns` (a slice of column vectors).
+    #[inline(always)]
+    fn from_columns(
+        c1: Matrix1<T>,
+        c2: Matrix1<T>,
+        c3: Matrix1<T>,
+        c4: Matrix1<T>,
+        c5: Matrix1<T>,
+        c6: Matrix1<T>,
+    ) -> RowVector6<T> {
+        RowVector6 { x: c1.x, y: c2.x, z: c3.x, w: c4.x, a: c5.x, b: c6.x }
+    }
+
+    /// Whether the columns of `self` are orthonormal: `selfᵀ * self` (fused `tr_mul`, one
+    /// rounding per component) is the 6x6 identity within `ulps`. Upstream: `is_orthogonal` (`eps`:
+    /// here a tolerance in ulp, DESIGN D3).
+    #[inline(always)]
+    fn is_orthogonal(self: RowVector6<T>, ulps: u64) -> bool {
+        Matrix6Trait::is_identity(MatrixTrMul::tr_mul(self, self), ulps)
+    }
+
+    /// `self` with a row of `val` inserted at index `i` (`i <= 1`), a `Matrix2x6`. Panics with
+    /// `nalgebra: index out of bounds` for `i > 1`. Upstream: `insert_row`.
+    #[inline(always)]
+    fn insert_row(self: RowVector6<T>, i: usize, val: T) -> Matrix2x6<T> {
+        match i {
+            0 => Matrix2x6 {
+                m11: val,
+                m21: self.x,
+                m12: val,
+                m22: self.y,
+                m13: val,
+                m23: self.z,
+                m14: val,
+                m24: self.w,
+                m15: val,
+                m25: self.a,
+                m16: val,
+                m26: self.b,
+            },
+            1 => Matrix2x6 {
+                m11: self.x,
+                m21: val,
+                m12: self.y,
+                m22: val,
+                m13: self.z,
+                m23: val,
+                m14: self.w,
+                m24: val,
+                m15: self.a,
+                m25: val,
+                m16: self.b,
+                m26: val,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// `self` without its column `i`, a `RowVector5`. Panics with `nalgebra: index out of bounds`
+    /// for `i >= 6`. Upstream: `remove_column`.
+    #[inline(always)]
+    fn remove_column(self: RowVector6<T>, i: usize) -> RowVector5<T> {
+        match i {
+            0 => RowVector5 { x: self.y, y: self.z, z: self.w, w: self.a, a: self.b },
+            1 => RowVector5 { x: self.x, y: self.z, z: self.w, w: self.a, a: self.b },
+            2 => RowVector5 { x: self.x, y: self.y, z: self.w, w: self.a, a: self.b },
+            3 => RowVector5 { x: self.x, y: self.y, z: self.z, w: self.a, a: self.b },
+            4 => RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.b },
+            5 => RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
 }
 
 /// The operations of `RowVector6<T>` that need `Transcendental` (inverse trigonometry, `exp`,
@@ -2300,5 +2455,621 @@ pub impl RowVector6UniformNorm<
     #[inline(always)]
     fn metric_distance(self: @UniformNorm, m1: RowVector6<T>, m2: RowVector6<T>) -> T {
         RowVector6Trait::amax(m1 - m2)
+    }
+}
+
+// --- rows, columns, blocks and edition (WP 8.2c) -------------------------------------------------
+
+/// The 1 consecutive rows of a `RowVector6` as a `RowVector6` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl RowVector6FixedRowsRowVector6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<RowVector6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: RowVector6<T>, i: usize) -> RowVector6<T> {
+        match i {
+            0 => RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: RowVector6<T>, irows: Span<usize>) -> RowVector6<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = RowVector6EditTrait::row_at(self, *irows[0]);
+        RowVector6 { x: r0.x, y: r0.y, z: r0.z, w: r0.w, a: r0.a, b: r0.b }
+    }
+}
+
+/// The 1 consecutive columns of a `RowVector6` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl RowVector6FixedColumnsMatrix1<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector6<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector6<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            3 => Matrix1 { x: self.w },
+            4 => Matrix1 { x: self.a },
+            5 => Matrix1 { x: self.b },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector6<T>, icols: Span<usize>) -> Matrix1<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector6EditTrait::column_at(self, *icols[0]);
+        Matrix1 { x: c0.x }
+    }
+}
+
+/// The 2 consecutive columns of a `RowVector6` as a `RowVector2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl RowVector6FixedColumnsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector6<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector6<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.x, y: self.y },
+            1 => RowVector2 { x: self.y, y: self.z },
+            2 => RowVector2 { x: self.z, y: self.w },
+            3 => RowVector2 { x: self.w, y: self.a },
+            4 => RowVector2 { x: self.a, y: self.b },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector6<T>, icols: Span<usize>) -> RowVector2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector6EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector6EditTrait::column_at(self, *icols[1]);
+        RowVector2 { x: c0.x, y: c1.x }
+    }
+}
+
+/// The 3 consecutive columns of a `RowVector6` as a `RowVector3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl RowVector6FixedColumnsRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector6<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector6<T>, i: usize) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: self.x, y: self.y, z: self.z },
+            1 => RowVector3 { x: self.y, y: self.z, z: self.w },
+            2 => RowVector3 { x: self.z, y: self.w, z: self.a },
+            3 => RowVector3 { x: self.w, y: self.a, z: self.b },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector6<T>, icols: Span<usize>) -> RowVector3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector6EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector6EditTrait::column_at(self, *icols[1]);
+        let c2 = RowVector6EditTrait::column_at(self, *icols[2]);
+        RowVector3 { x: c0.x, y: c1.x, z: c2.x }
+    }
+}
+
+/// The 4 consecutive columns of a `RowVector6` as a `RowVector4` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<4>`, `select_columns`.
+pub impl RowVector6FixedColumnsRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector6<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector6<T>, i: usize) -> RowVector4<T> {
+        match i {
+            0 => RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            1 => RowVector4 { x: self.y, y: self.z, z: self.w, w: self.a },
+            2 => RowVector4 { x: self.z, y: self.w, z: self.a, w: self.b },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector6<T>, icols: Span<usize>) -> RowVector4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector6EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector6EditTrait::column_at(self, *icols[1]);
+        let c2 = RowVector6EditTrait::column_at(self, *icols[2]);
+        let c3 = RowVector6EditTrait::column_at(self, *icols[3]);
+        RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x }
+    }
+}
+
+/// The 5 consecutive columns of a `RowVector6` as a `RowVector5` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<5>`, `select_columns`.
+pub impl RowVector6FixedColumnsRowVector5<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector6<T>, RowVector5<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector6<T>, i: usize) -> RowVector5<T> {
+        match i {
+            0 => RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a },
+            1 => RowVector5 { x: self.y, y: self.z, z: self.w, w: self.a, a: self.b },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector6<T>, icols: Span<usize>) -> RowVector5<T> {
+        if icols.len() != 5 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector6EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector6EditTrait::column_at(self, *icols[1]);
+        let c2 = RowVector6EditTrait::column_at(self, *icols[2]);
+        let c3 = RowVector6EditTrait::column_at(self, *icols[3]);
+        let c4 = RowVector6EditTrait::column_at(self, *icols[4]);
+        RowVector5 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x }
+    }
+}
+
+/// The 6 consecutive columns of a `RowVector6` as a `RowVector6` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<6>`, `select_columns`.
+pub impl RowVector6FixedColumnsRowVector6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector6<T>, i: usize) -> RowVector6<T> {
+        match i {
+            0 => RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector6<T>, icols: Span<usize>) -> RowVector6<T> {
+        if icols.len() != 6 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector6EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector6EditTrait::column_at(self, *icols[1]);
+        let c2 = RowVector6EditTrait::column_at(self, *icols[2]);
+        let c3 = RowVector6EditTrait::column_at(self, *icols[3]);
+        let c4 = RowVector6EditTrait::column_at(self, *icols[4]);
+        let c5 = RowVector6EditTrait::column_at(self, *icols[5]);
+        RowVector6 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x, b: c5.x }
+    }
+}
+
+/// The 1x1 blocks of a `RowVector6` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl RowVector6FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<RowVector6<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector6<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => Matrix1 { x: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            5 => match irow {
+                0 => Matrix1 { x: self.b },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `RowVector6` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl RowVector6FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector6<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector6<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.x, y: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.y, y: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.z, y: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => RowVector2 { x: self.w, y: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            4 => match irow {
+                0 => RowVector2 { x: self.a, y: self.b },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `RowVector6` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl RowVector6FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector6<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector6<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.x, y: self.y, z: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.y, y: self.z, z: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector3 { x: self.z, y: self.w, z: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => RowVector3 { x: self.w, y: self.a, z: self.b },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x4 blocks of a `RowVector6` as a `RowVector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 4>`.
+pub impl RowVector6FixedViewRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector6<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector6<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector4 { x: self.y, y: self.z, z: self.w, w: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector4 { x: self.z, y: self.w, z: self.a, w: self.b },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x5 blocks of a `RowVector6` as a `RowVector5` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 5>`.
+pub impl RowVector6FixedViewRowVector5<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector6<T>, RowVector5<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector6<T>, irow: usize, icol: usize) -> RowVector5<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector5 { x: self.y, y: self.z, z: self.w, w: self.a, a: self.b },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x6 blocks of a `RowVector6` as a `RowVector6` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 6>`.
+pub impl RowVector6FixedViewRowVector6<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector6<T>, RowVector6<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector6<T>, irow: usize, icol: usize) -> RowVector6<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector6 {
+                    x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector6` and a `Matrix1`, a `RowVector6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector6KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector6<T>, Matrix1<T>> {
+    type Output = RowVector6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector6<T>, rhs: Matrix1<T>) -> RowVector6<T> {
+        RowVector6 {
+            x: self.x * rhs.x,
+            y: self.y * rhs.x,
+            z: self.z * rhs.x,
+            w: self.w * rhs.x,
+            a: self.a * rhs.x,
+            b: self.b * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector6` and a `Vector2`, a `Matrix2x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector6KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector6<T>, Vector2<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector6<T>, rhs: Vector2<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m15: self.a * rhs.x,
+            m25: self.a * rhs.y,
+            m16: self.b * rhs.x,
+            m26: self.b * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector6` and a `Vector3`, a `Matrix3x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector6KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector6<T>, Vector3<T>> {
+    type Output = Matrix3x6<T>;
+    fn kronecker(self: RowVector6<T>, rhs: Vector3<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m34: self.w * rhs.z,
+            m15: self.a * rhs.x,
+            m25: self.a * rhs.y,
+            m35: self.a * rhs.z,
+            m16: self.b * rhs.x,
+            m26: self.b * rhs.y,
+            m36: self.b * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector6` and a `Vector4`, a `Matrix4x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector6KroneckerVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector6<T>, Vector4<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: RowVector6<T>, rhs: Vector4<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m43: self.z * rhs.w,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m34: self.w * rhs.z,
+            m44: self.w * rhs.w,
+            m15: self.a * rhs.x,
+            m25: self.a * rhs.y,
+            m35: self.a * rhs.z,
+            m45: self.a * rhs.w,
+            m16: self.b * rhs.x,
+            m26: self.b * rhs.y,
+            m36: self.b * rhs.z,
+            m46: self.b * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector6` and a `Vector5`, a `Matrix5x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector6KroneckerVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector6<T>, Vector5<T>> {
+    type Output = Matrix5x6<T>;
+    fn kronecker(self: RowVector6<T>, rhs: Vector5<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m51: self.x * rhs.a,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m52: self.y * rhs.a,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m43: self.z * rhs.w,
+            m53: self.z * rhs.a,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m34: self.w * rhs.z,
+            m44: self.w * rhs.w,
+            m54: self.w * rhs.a,
+            m15: self.a * rhs.x,
+            m25: self.a * rhs.y,
+            m35: self.a * rhs.z,
+            m45: self.a * rhs.w,
+            m55: self.a * rhs.a,
+            m16: self.b * rhs.x,
+            m26: self.b * rhs.y,
+            m36: self.b * rhs.z,
+            m46: self.b * rhs.w,
+            m56: self.b * rhs.a,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector6` and a `Vector6`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector6KroneckerVector6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector6<T>, Vector6<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: RowVector6<T>, rhs: Vector6<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m51: self.x * rhs.a,
+            m61: self.x * rhs.b,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m52: self.y * rhs.a,
+            m62: self.y * rhs.b,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m43: self.z * rhs.w,
+            m53: self.z * rhs.a,
+            m63: self.z * rhs.b,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m34: self.w * rhs.z,
+            m44: self.w * rhs.w,
+            m54: self.w * rhs.a,
+            m64: self.w * rhs.b,
+            m15: self.a * rhs.x,
+            m25: self.a * rhs.y,
+            m35: self.a * rhs.z,
+            m45: self.a * rhs.w,
+            m55: self.a * rhs.a,
+            m65: self.a * rhs.b,
+            m16: self.b * rhs.x,
+            m26: self.b * rhs.y,
+            m36: self.b * rhs.z,
+            m46: self.b * rhs.w,
+            m56: self.b * rhs.a,
+            m66: self.b * rhs.b,
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl RowVector6PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<RowVector6<T>, T> {
+    #[inline(always)]
+    fn pad(self: RowVector6<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: val,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.y,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.z,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: self.w,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: self.a,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: self.b,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `RowVector6` of a `Matrix6` (`FixedResize`).
+pub(crate) impl RowVector6CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<RowVector6<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> RowVector6<T> {
+        RowVector6 { x: m.m11, y: m.m12, z: m.m13, w: m.m14, a: m.m15, b: m.m16 }
+    }
+}
+
+/// `(1, 6)`: the size checks of the runtime-sized views.
+pub(crate) impl RowVector6ShapeDims<T> of ShapeDims<RowVector6<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (1, 6)
     }
 }

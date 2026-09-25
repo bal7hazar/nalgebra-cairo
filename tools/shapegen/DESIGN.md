@@ -363,6 +363,61 @@ with the integer model of §3.3; `LpNorm` on the `TRANSCENDENTAL_SAMPLE` only, `
 `exp` / `ln` instantiation being heavy) and the benches of `gas/nalgebra_shapes_tests_functional`.
 Peak `scarb build --test`: 6.4 / 3.3 / 6.4 GB (one package for the last two measured 7.9 GB).
 
+### 2.8 WP 8.2c outcome: swizzles, rows, columns and blocks (API_PARITY P04, P05) on the 36 shapes
+
+`views.py` holds the P04 / P05 templates, applied like `functional.py` (a shape keeps a method it
+already has; no existing kernel changes): `shapes.py` appends them to the new shapes, `library.py`
+to `Vector2/3/4/6` and to a `swizzles, rows, columns and blocks (WP 8.2c)` section of
+`Matrix2/3/4/6`. Decisions:
+
+- **Owned copies, the output type as the size.** Cairo has neither borrowed views nor const
+  generics: `row(i)` / `column(j)` return a `RowVectorC` / `VectorR`, and upstream's
+  const-generic views are the methods of generic traits whose OUTPUT type is the size, inferred
+  like `Into`'s (`let b: Matrix2x3<Fixed> = m.fixed_view(1, 0);` for `m.fixed_view::<2, 3>(1,
+  0)`): `FixedRows` (`fixed_rows`, `select_rows`, default `rows` / `rows_range`), `FixedColumns`
+  (likewise), `FixedView` (`fixed_view`, default `view` / `fixed_slice` / `slice`), in
+  `base/matrix_view.cairo`, one impl per (shape, output shape) pair in the module of the source
+  shape (126 + 126 + 441), so a size that does not fit is a compile error like upstream's. The
+  runtime-sized forms (`rows(i, n)`, `view(start, shape)`, `rows_range(a..b)`, `row_part(i, n)`,
+  `select_rows(span)`, `resize(r, c, v)`) panic with `nalgebra: dimension mismatch` when the
+  requested size is not the output type's (their size check folds away for a literal size:
+  `bench_matrix4_rows` = `fixed_rows`). `RowPart` / `ColumnPart` / `FixedResize` are blanket
+  impls over crate-private helper traits (`ShapeDims`, `RowVectorLen`, `ColumnVectorLen`,
+  `PadTo6`, `CropFrom6`), which resolve from other crates. `MatrixKronecker` (`type Output`) has
+  one impl per pair whose product fits in 6x6 (196).
+- **Kernels.** A runtime position selects ONE literal through a `match`, nested for a block:
+  `Matrix4 -> Matrix2` 3,810 net gas against 4,710 for `fixed_columns` then `fixed_rows` and 8,540
+  for a crop of the `Matrix6` canvas after a bounds check; `Matrix6 -> Matrix3` 7,200 against
+  18,100 composed (`bench_matrix{4,6}_fixed_view__alt_*`). `fixed_resize` pads to the `Matrix6`
+  canvas and crops (constant positions): struct moves are free once inlined, so it costs exactly
+  the direct literal (`bench_matrix2x4_fixed_resize`: 1,900 = 1,900) for 72 small impls instead
+  of 1,296 literals. `kronecker` is one floored product per component.
+- **The internal `column1..N` / `row1..N`** of `Matrix2/3/4InternalTrait` stay: `linalg` calls
+  them, `row2()` returns a `Vector3` where `row(1)` returns a `RowVector3`, and the compile-time
+  position is cheaper (`base/matrix3/benches_views.cairo`: `column2()` 300 net gas, `column(j)`
+  1,210). The public `row` / `column` reuse the private `row_at` / `column_at` of `swap_rows`.
+- **`from_rows` takes column vectors** (`VectorC`, one argument per row), the form of the former
+  `Matrix2/3/4::from_rows` that `linalg` calls (upstream: a slice of row vectors).
+- **Edition into the neighbouring shape**: `insert_row` / `insert_column` / `remove_row` /
+  `remove_column` return the shape with one row / column more or less when it exists (`DIM_ONLY`:
+  no 7-row, no 0-row shape); upstream's `insert_rows(i, n)`, `remove_rows`, `resize_vertically`
+  and the fixed variants stay with the dynamic matrices (P13).
+- **Swizzles**: the `impl_swizzle!` set on the column vectors (`Vector1` is `Matrix1`) in
+  `<S>Trait`, and on the six points in `base/point_swizzle.cairo` (`Point1..6SwizzleTrait`;
+  `Point3::xy`, `Vector3/4::xy` and `Vector4::xyz` predate them and keep their traits).
+- **Properties**: `is_orthogonal(ulps)` is `selfᵀ * self` (fused `tr_mul`) against the identity
+  (the 1x1 `norm_squared` on column vectors); `is_invertible` / `is_special_orthogonal` exist
+  where `try_inverse` / `determinant` do (`Matrix2/3/4/6`, `Lu6` for 6).
+
+Compile budget (cold `SCARB_INCREMENTAL=false`, peak RSS, this machine): library
+(`scarb build -p nalgebra`) 4.54 → 5.26 GB (5.9 GB with every runtime-sized form in each impl,
+4.97 GB with the composed `fixed_view`); `nalgebra` unit-test crate 7.46 → 8.76 GB; every
+generated test package about +1.1 GB (`shapes_tests_edition` 5.53 → 6.71 GB,
+`shapes_tests_core` 8.70 → 9.80 GB). Tests: `tests_views.py` writes
+`crates/shapes_tests_{views,blocks}` (Tier A on the 36 shapes and the six points: 121 / 110
+tests, 7.1 / 6.5 GB; one package measured 7.5 GB) and the benches of
+`gas/nalgebra_shapes_tests_views`.
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is

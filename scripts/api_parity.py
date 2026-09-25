@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import itertools
 import json
 import re
 import sys
@@ -1178,7 +1179,13 @@ DIM_ONLY: dict[str, set[str]] = {
     # `Vector1..6`, `b()` on `Vector6` only).
     **{a: set(COLUMNS[k:]) for k, a in enumerate("xyzwab")},
     "x_axis": {"Unit"}, "y_axis": {"Unit"}, "z_axis": {"Unit"}, "w_axis": {"Unit"},
-    "a_axis": {"Unit"}, "b_axis": {"Unit"}, "xyz": set(V[2:]), "xy": set(V[1:]),
+    "a_axis": {"Unit"}, "b_axis": {"Unit"},
+    # Upstream's swizzles (`impl_swizzle!`, `base/swizzle.rs`, `geometry/swizzle.rs`) exist on the
+    # vectors and points whose dimension exceeds their largest index (`xx` from 1 on, `zyx` from
+    # 3 on): `Vector1` is `Matrix1`.
+    **{name: set(COLUMNS[max(idx):]) | {f"Point{d}" for d in range(max(idx) + 1, 7)}
+       for k in (2, 3) for idx in itertools.product(range(3), repeat=k)
+       for name in ["".join("xyz"[i] for i in idx)]},
     # One dimension more (`push`, homogeneous coordinates): upstream's aliases, hence the Cairo
     # shapes, stop at 6, so `Vector6` / `Matrix6` have none. `Matrix1` is both `Vector1` and a
     # 1x1 square: upstream's two `to_homogeneous` (`Vector1 -> Vector2`, `Matrix1 -> Matrix2`)
@@ -1201,11 +1208,17 @@ DIM_ONLY: dict[str, set[str]] = {
     **{name: set(SQUARES) for name in (
         "trace", "identity", "is_identity", "from_diagonal_element", "MulAssign<Matrix>")},
     # Backed by a closed form or a decomposition that exists for 2, 3, 4, 6 only: `Matrix1` and
-    # `Matrix5` come with the LU / QR / SVD completion (P14, WP 8.5). `from_rows` /
-    # `from_columns` (vector arguments) are P05.
+    # `Matrix5` come with the LU / QR / SVD completion (P14, WP 8.5); `is_invertible` /
+    # `is_special_orthogonal` are `try_inverse` / `determinant` (WP 8.2c).
     **{name: set(M) for name in (
-        "determinant", "try_inverse", "from_rows", "from_columns", "lu", "qr", "svd",
-        "pseudo_inverse", "singular_values")},
+        "determinant", "try_inverse", "lu", "qr", "svd", "pseudo_inverse", "singular_values",
+        "is_invertible", "is_special_orthogonal")},
+    # One row / column more or less (WP 8.2c): the neighbouring static shape, when it exists
+    # (upstream's aliases, hence the Cairo shapes, stop at 6; no 0-row shape).
+    "insert_row": {shape_name(r, c) for r in range(1, 6) for c in DIMS},
+    "remove_row": {shape_name(r, c) for r in range(2, 7) for c in DIMS},
+    "insert_column": {shape_name(r, c) for r in DIMS for c in range(1, 6)},
+    "remove_column": {shape_name(r, c) for r in DIMS for c in range(2, 7)},
     # 1x1 only (upstream `Matrix1` / `Vector1` impls).
     **{name: {"Matrix1"} for name in ("into_scalar", "as_scalar", "to_scalar", "as_scalar_mut")},
     # Upstream multiplies a translation by an isometry / similarity of the same dimension; the
@@ -1307,6 +1320,25 @@ RENAMES = (
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d",
          r"(get|index)", r"MatrixIndex::\1", "method of the generic `MatrixIndex` (one impl per "
          "shape and index type: `usize`, `(usize, usize)`)"),
+    # WP 8.2c: upstream's views, sized by const generics or at run time, are owned copies whose
+    # size is the OUTPUT type of a generic trait (`base/matrix_view.cairo`), inferred like `Into`.
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"(fixed_rows|rows|rows_range|select_rows)",
+         r"FixedRows::\1", "method of the generic `FixedRows<M, Out>` (owned copy; the output "
+         "type is the row count, upstream's const generic or runtime size)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"(fixed_columns|columns|columns_range|select_columns)",
+         r"FixedColumns::\1", "method of the generic `FixedColumns<M, Out>` (owned copy; the "
+         "output type is the column count)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"(fixed_view|view|fixed_slice|slice)", r"FixedView::\1",
+         "method of the generic `FixedView<M, Out>` (owned copy; the output type is the block "
+         "size)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"row_part", r"RowPart::row_part", "method of the generic `RowPart<M, Out>` "
+         "(owned copy; the output row vector is the length)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"column_part", r"ColumnPart::column_part", "method of the generic "
+         "`ColumnPart<M, Out>` (owned copy; the output vector is the length)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"(fixed_resize|resize)", r"FixedResize::\1", "method of the generic "
+         "`FixedResize<M, Out, T>` (the output type is the new shape)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"kronecker", r"MatrixKronecker::kronecker", "method of the generic "
+         "`MatrixKronecker` (one impl per pair whose product fits in 6x6)"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<Matrix> for T", "scale",
          "Cairo-imposed: heterogeneous operator (`k * m` is `m.scale(k)`)"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector", r"impl:Mul<(?:Point|Rotation)>",
