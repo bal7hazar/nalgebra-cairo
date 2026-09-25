@@ -18,7 +18,7 @@ How to read it:
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
 | base | 354 | 7 | 127 | 316 | 804 | 72.5% |
-| geometry | 668 | 3 | 260 | 117 | 1048 | 71.8% |
+| geometry | 768 | 3 | 161 | 116 | 1048 | 82.4% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
 | io | 0 | 0 | 2 | 0 | 2 | 0.0% |
@@ -26,7 +26,7 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1098** | **16** | **757** | **565** | **2436** | **58.7%** |
+| **total** | **1198** | **16** | **658** | **564** | **2436** | **64.0%** |
 
 nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -43,13 +43,13 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 0 | mechanical | P01 |  |
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 37 | standard numerics | P01, P05 | `base/blas.rs` (21), `base/statistics.rs` (16) |
 | [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 32 | standard numerics | P01 | `base/cg.rs` (32) |
-| [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 3 | standard numerics | — | `geometry/quaternion_conversion.rs` (2), `geometry/unit_complex_conversion.rs` (1) |
-| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 6 | mechanical | P08 | `geometry/translation_conversion.rs` (3), `geometry/rotation_conversion.rs` (2), `geometry/point_conversion.rs` (1) |
-| [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 3 | mechanical | P09a | `geometry/isometry_conversion.rs` (2), `geometry/similarity_conversion.rs` (1) |
+| [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 2 | standard numerics | — | `geometry/quaternion_conversion.rs` (1), `geometry/unit_complex_conversion.rs` (1) |
+| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 4 | mechanical | P08 | `geometry/translation_conversion.rs` (2), `geometry/point_conversion.rs` (1), `geometry/rotation_conversion.rs` (1) |
+| [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 2 | mechanical | P09a | `geometry/isometry_conversion.rs` (1), `geometry/similarity_conversion.rs` (1) |
 | [P10](#p10-scale-and-reflection) | Scale and Reflection | 2 | mechanical | P09a | `geometry/scale_conversion.rs` (2) |
 | [P11a](#p11a-transform-affine-projective) | Transform, Affine, Projective | 59 | standard numerics | P07, P09b | `geometry/transform.rs` (24), `geometry/transform_ops.rs` (23), `geometry/transform_alias.rs` (6), `geometry/transform_construction.rs` (3), `geometry/transform_conversion.rs` (3) |
 | [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 63 | standard numerics | P07 | `geometry/orthographic.rs` (35), `geometry/perspective.rs` (28) |
-| [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 96 | standard numerics | P08, P09b | `geometry/dual_quaternion.rs` (44), `geometry/dual_quaternion_ops.rs` (31), `geometry/dual_quaternion_construction.rs` (12), `geometry/dual_quaternion_conversion.rs` (9) |
+| [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 1 | standard numerics | P08, P09b | `geometry/dual_quaternion_conversion.rs` (1) |
 | [P13](#p13-dmatrix-dvector-core) | DMatrix / DVector core | 55 | standard numerics | P01-P05 (API to mirror) | `base/alias.rs` (15), `base/edition.rs` (15), `base/construction.rs` (12), `base/conversion.rs` (3), `base/ops.rs` (3) |
 | [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 100 | standard numerics | P01, P05 | `linalg/solve.rs` (26), `linalg/givens.rs` (14), `linalg/cholesky.rs` (11), `linalg/decomposition.rs` (11), `linalg/lu.rs` (8) |
 | [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 48 | standard numerics | P14 | `linalg/col_piv_qr.rs` (18), `linalg/full_piv_lu.rs` (17), `linalg/lblt.rs` (10), `linalg/decomposition.rs` (3) |
@@ -116,26 +116,24 @@ the operations upstream has on every `Matrix` that nalgebra.cairo only has on so
 
 ### P08 Quaternion, UnitQuaternion, UnitComplex completion
 
-quaternion transcendental functions (`exp`, `ln`, `powf`, `sqrt`, trig), polar decomposition, `from_matrix` / `*_eps` constructors, `mean_of`, operator impls with rotations / isometries, `Index`, `RelativeEq`, `cast`. Tier: standard numerics. Depends on: —. 3 items (`*` = partial):
+quaternion transcendental functions (`exp`, `ln`, `powf`, `sqrt`, trig), polar decomposition, `from_matrix` / `*_eps` constructors, `mean_of`, operator impls with rotations / isometries, `Index`, `RelativeEq`, `cast`. Tier: standard numerics. Depends on: —. 2 items (`*` = partial):
 
 - **UnitComplex**: `impl:SubsetOf<Transform>`
-- **UnitQuaternion**: `impl:SubsetOf<Transform>`, `impl:SubsetOf<UnitDualQuaternion>`
+- **UnitQuaternion**: `impl:SubsetOf<Transform>`
 
 ### P09a Rotation, Translation, Point completion
 
-cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 6 items (`*` = partial):
+cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 4 items (`*` = partial):
 
 - **Point**: `impl:SubsetOf<Matrix>`*
 - **Rotation**: `impl:SubsetOf<Transform>`
-- **Rotation3**: `impl:SubsetOf<UnitDualQuaternion>`
-- **Translation**: `impl:SubsetOf<Matrix>`*, `impl:SubsetOf<Transform>`, `impl:SubsetOf<UnitDualQuaternion>`
+- **Translation**: `impl:SubsetOf<Matrix>`*, `impl:SubsetOf<Transform>`
 
 ### P09b Isometry, Similarity completion (incl. rotation-matrix variants)
 
-`IsometryMatrix2/3`, `SimilarityMatrix2/3`, cross-type operators (`Isometry / Rotation`, `Similarity * Translation`...), `look_at_lh`, `new_observer_frames`, `rotation_wrt_point`, `to_matrix`, `inverse_transform_unit_vector`, `cast`. Tier: mechanical. Depends on: P09a. 3 items (`*` = partial):
+`IsometryMatrix2/3`, `SimilarityMatrix2/3`, cross-type operators (`Isometry / Rotation`, `Similarity * Translation`...), `look_at_lh`, `new_observer_frames`, `rotation_wrt_point`, `to_matrix`, `inverse_transform_unit_vector`, `cast`. Tier: mechanical. Depends on: P09a. 2 items (`*` = partial):
 
 - **Isometry**: `impl:SubsetOf<Transform>`
-- **Isometry3**: `impl:SubsetOf<UnitDualQuaternion>`
 - **Similarity**: `impl:SubsetOf<Transform>`
 
 ### P10 Scale and Reflection
@@ -167,14 +165,9 @@ camera projections: construction, accessors / setters, `project_*` / `unproject_
 
 ### P12 DualQuaternion, UnitDualQuaternion
 
-dual quaternions: construction, ops, `sclerp`, conversion to / from isometries. Tier: standard numerics. Depends on: P08, P09b. 96 items (`*` = partial):
+dual quaternions: construction, ops, `sclerp`, conversion to / from isometries. Tier: standard numerics. Depends on: P08, P09b. 1 items (`*` = partial):
 
-- **DualQuaternion**: `impl:AbsDiffEq`, `impl:Add<DualQuaternion>`, `impl:Clone`, `impl:Copy`, `impl:Default`, `impl:Deserialize`, `impl:Div<T>`, `impl:Div<UnitDualQuaternion>`, `impl:DivAssign<T>`, `impl:Eq`, `impl:Index<usize>`, `impl:Mul<DualQuaternion>`, `impl:Mul<DualQuaternion> for T`, `impl:Mul<T>`, `impl:Mul<UnitDualQuaternion>`, `impl:MulAssign<T>`, `impl:Neg`, `impl:One`, `impl:PartialEq`, `impl:RelativeEq`, `impl:Serialize`, `impl:Sub<DualQuaternion>`, `impl:SubsetOf<DualQuaternion>`, `impl:UlpsEq`, `impl:Zero`, `cast`, `conjugate`, `conjugate_mut`, `from_real`, `from_real_and_dual`, `identity`, `lerp`, `normalize`, `normalize_mut`, `try_inverse`, `try_inverse_mut`, `type:DualQuaternion`
-- **Isometry3**: `impl:Div<UnitDualQuaternion>`, `impl:From<UnitDualQuaternion>`, `impl:Mul<UnitDualQuaternion>`
-- **Matrix4**: `impl:From<UnitDualQuaternion>`
-- **Translation**: `impl:Div<UnitDualQuaternion>`, `impl:Mul<UnitDualQuaternion>`
-- **UnitDualQuaternion**: `impl:AbsDiffEq`, `impl:Default`, `impl:Div<Isometry>`, `impl:Div<Translation>`, `impl:Div<UnitDualQuaternion>`, `impl:Div<UnitQuaternion>`, `impl:Eq`, `impl:From<Isometry>`, `impl:Mul<DualQuaternion>`, `impl:Mul<Isometry>`, `impl:Mul<Matrix>`, `impl:Mul<Point>`, `impl:Mul<Translation>`, `impl:Mul<Unit<Matrix>>`, `impl:Mul<UnitDualQuaternion>`, `impl:Mul<UnitQuaternion>`, `impl:Neg`, `impl:One`, `impl:PartialEq`, `impl:RelativeEq`, `impl:SubsetOf<Isometry>`, `impl:SubsetOf<Matrix>`, `impl:SubsetOf<Similarity>`, `impl:SubsetOf<Transform>`, `impl:SubsetOf<UnitDualQuaternion>`, `impl:UlpsEq`, `cast`, `conjugate`, `conjugate_mut`, `dual_quaternion`, `from_isometry`, `from_parts`, `from_rotation`, `identity`, `inverse`, `inverse_mut`, `inverse_transform_point`, `inverse_transform_unit_vector`, `inverse_transform_vector`, `isometry_to`, `lerp`, `nlerp`, `rotation`, `sclerp`, `to_homogeneous`, `to_isometry`, `transform_point`, `transform_vector`, `translation`, `try_sclerp`, `type:UnitDualQuaternion`
-- **UnitQuaternion**: `impl:Div<UnitDualQuaternion>`, `impl:Mul<UnitDualQuaternion>`
+- **UnitDualQuaternion**: `impl:SubsetOf<Transform>`
 
 ### P13 DMatrix / DVector core
 
@@ -307,7 +300,7 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | Isometry | **Isometry2**, **Isometry3**, **IsometryMatrix2**, **IsometryMatrix3** |
 | Similarity | **Similarity2**, **Similarity3**, **SimilarityMatrix2**, **SimilarityMatrix3** |
 | Transform | Affine2, Affine3, Projective2, Projective3, Transform2, Transform3, Perspective3, Orthographic3 |
-| Quaternion | **Quaternion**, DualQuaternion, UnitDualQuaternion |
+| Quaternion | **Quaternion**, **DualQuaternion**, **UnitDualQuaternion** |
 
 ## Exclusion reasons (closed list)
 
@@ -317,7 +310,7 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | `rayon` | 4 | `rayon` parallel iterators: a Cairo program is sequential. |
 | `unsafe` | 38 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
 | `borrow` | 44 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
-| `fmt` | 41 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
+| `fmt` | 40 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
 | `glue` | 44 | Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, `encase`, the `serde` visitor types). |
 | `random` | 65 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
 | `interop` | 68 | Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` scalar, and the `glam` types glam.cairo does not have: f64 `D*`, aligned `*A`, `i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam.cairo has are in scope. |
@@ -1424,31 +1417,31 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 6.
 
 #### Unit (base)
 
-Cairo: Unit, UnitComplex, UnitQuaternion · ported 9, partial 6, missing 2, excluded 6.
+Cairo: Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion · ported 9, partial 6, missing 2, excluded 6.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Archive` | excluded |  | glue | `base/unit.rs` |
 | impl `AsRef` | excluded |  | borrow | `base/unit.rs` |
-| impl `Clone` | ported | Unit, UnitComplex, UnitQuaternion (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `base/unit.rs` |
-| impl `Copy` | ported | Unit, UnitComplex, UnitQuaternion (impl `Copy`) |  | `base/unit.rs` |
-| impl `Debug` | ported | Unit, UnitComplex, UnitQuaternion (impl `Debug`) |  | `base/unit.rs` |
+| impl `Clone` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `base/unit.rs` |
+| impl `Copy` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion (impl `Copy`) |  | `base/unit.rs` |
+| impl `Debug` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion (impl `Debug`) |  | `base/unit.rs` |
 | impl `Deref` | excluded |  | generic-dim | `base/unit.rs` |
-| impl `Deserialize` | ported | Unit, UnitComplex, UnitQuaternion (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `base/unit.rs` |
-| impl `Hash` | ported | Unit, UnitComplex, UnitQuaternion (impl `Hash`) |  | `base/unit.rs` |
+| impl `Deserialize` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `base/unit.rs` |
+| impl `Hash` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion (impl `Hash`) |  | `base/unit.rs` |
 | impl `Pod` | excluded |  | glue | `base/unit.rs` |
-| impl `Serialize` | ported | Unit, UnitComplex, UnitQuaternion (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `base/unit.rs` |
+| impl `Serialize` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `base/unit.rs` |
 | impl `Zeroable` | excluded |  | glue | `base/unit.rs` |
 | method `as_mut_unchecked` | excluded |  | borrow | `base/unit.rs` |
 | method `from_ref_unchecked` | missing |  | P02 | `base/unit.rs` |
-| method `into_inner` | partial | Unit, UnitQuaternion::into_inner | not on UnitComplex; P02 | `base/unit.rs` |
-| method `new_and_get` | partial | Unit::new_and_get | not on UnitComplex, UnitQuaternion; P02 | `base/unit.rs` |
-| method `new_normalize` | partial | Unit, UnitQuaternion::new_normalize | not on UnitComplex; P02 | `base/unit.rs` |
-| method `new_unchecked` | partial | Unit, UnitQuaternion::new_unchecked | not on UnitComplex; P02 | `base/unit.rs` |
-| method `renormalize` | ported | Unit, UnitComplex, UnitQuaternion::renormalize |  | `base/unit.rs` |
-| method `renormalize_fast` | ported | Unit, UnitComplex, UnitQuaternion::renormalize_fast |  | `base/unit.rs` |
-| method `try_new` | partial | Unit, UnitQuaternion::try_new | not on UnitComplex; P02 | `base/unit.rs` |
-| method `try_new_and_get` | partial | Unit::try_new_and_get | not on UnitComplex, UnitQuaternion; P02 | `base/unit.rs` |
+| method `into_inner` | partial | Unit, UnitQuaternion, UnitDualQuaternion::into_inner | not on UnitComplex; P02 | `base/unit.rs` |
+| method `new_and_get` | partial | Unit::new_and_get | not on UnitComplex, UnitQuaternion, UnitDualQuaternion; P02 | `base/unit.rs` |
+| method `new_normalize` | partial | Unit, UnitQuaternion, UnitDualQuaternion::new_normalize | not on UnitComplex; P02 | `base/unit.rs` |
+| method `new_unchecked` | partial | Unit, UnitQuaternion, UnitDualQuaternion::new_unchecked | not on UnitComplex; P02 | `base/unit.rs` |
+| method `renormalize` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion::renormalize |  | `base/unit.rs` |
+| method `renormalize_fast` | ported | Unit, UnitComplex, UnitQuaternion, UnitDualQuaternion::renormalize_fast |  | `base/unit.rs` |
+| method `try_new` | partial | Unit, UnitQuaternion, UnitDualQuaternion::try_new | not on UnitComplex; P02 | `base/unit.rs` |
+| method `try_new_and_get` | partial | Unit::try_new_and_get | not on UnitComplex, UnitQuaternion, UnitDualQuaternion; P02 | `base/unit.rs` |
 | method `unwrap` | missing |  | deprecated upstream; P02; deprecated | `base/unit.rs` |
 | type `Unit` | ported | Unit |  | `base/unit.rs` |
 
@@ -1663,55 +1656,55 @@ Cairo: none · ported 1, partial 0, missing 0, excluded 0.
 
 #### DualQuaternion (geometry)
 
-Cairo: none · ported 0, partial 0, missing 37, excluded 8.
+Cairo: DualQuaternion · ported 38, partial 0, missing 0, excluded 7.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `AbsDiffEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Add<DualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `AbsDiffEq` | ported | DualQuaternion::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `geometry/dual_quaternion.rs` |
+| impl `Add<DualQuaternion>` | ported | DualQuaternion (impl `Add<DualQuaternion>`) |  | `geometry/dual_quaternion_ops.rs` |
 | impl `Arbitrary` | excluded |  | random | `geometry/dual_quaternion_construction.rs` |
 | impl `Archive` | excluded |  | glue | `geometry/dual_quaternion.rs` |
 | impl `AsMut` | excluded |  | borrow | `geometry/dual_quaternion_ops.rs` |
 | impl `AsRef` | excluded |  | borrow | `geometry/dual_quaternion_ops.rs` |
-| impl `Clone` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Copy` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Debug` | excluded |  | fmt | `geometry/dual_quaternion.rs` |
-| impl `Default` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Deserialize` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Div<T>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Div<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `DivAssign<T>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Eq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Index<usize>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `Clone` | ported | DualQuaternion (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/dual_quaternion.rs` |
+| impl `Copy` | ported | DualQuaternion (impl `Copy`) |  | `geometry/dual_quaternion.rs` |
+| impl `Debug` | ported | DualQuaternion (impl `Debug`) |  | `geometry/dual_quaternion.rs` |
+| impl `Default` | ported | DualQuaternion (impl `Default`) |  | `geometry/dual_quaternion.rs` |
+| impl `Deserialize` | ported | DualQuaternion (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/dual_quaternion.rs` |
+| impl `Div<T>` | ported | DualQuaternion::unscale | renamed `unscale`: Cairo-imposed: heterogeneous operator (`dq / k` is `dq.unscale(k)`) | `geometry/dual_quaternion_ops.rs` |
+| impl `Div<UnitDualQuaternion>` | ported | DualQuaternion::div_unit_dual_quaternion | renamed `div_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `DivAssign<T>` | ported | DualQuaternion (impl `DivAssign<T>`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `Eq` | ported | DualQuaternion (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/dual_quaternion.rs` |
+| impl `Index<usize>` | ported | DualQuaternion (impl `Index<usize>`) |  | `geometry/dual_quaternion_ops.rs` |
 | impl `IndexMut<usize>` | excluded |  | borrow | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<DualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<DualQuaternion> for T` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<T>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `MulAssign<T>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Neg` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `One` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| impl `PartialEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
+| impl `Mul<DualQuaternion>` | ported | DualQuaternion (impl `Mul<DualQuaternion>`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<DualQuaternion> for T` | ported | DualQuaternion::scale | renamed `scale`: Cairo-imposed: heterogeneous operator (`dq * k` / `k * dq` is `dq.scale(k)`) | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<T>` | ported | DualQuaternion::scale | renamed `scale`: Cairo-imposed: heterogeneous operator (`dq * k` / `k * dq` is `dq.scale(k)`) | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<UnitDualQuaternion>` | ported | DualQuaternion::mul_unit_dual_quaternion | renamed `mul_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `MulAssign<T>` | ported | DualQuaternion (impl `MulAssign<T>`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `Neg` | ported | DualQuaternion (impl `Neg`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `One` | ported | DualQuaternion (impl `One`) |  | `geometry/dual_quaternion_construction.rs` |
+| impl `PartialEq` | ported | DualQuaternion (impl `PartialEq`) |  | `geometry/dual_quaternion.rs` |
 | impl `Pod` | excluded |  | glue | `geometry/dual_quaternion.rs` |
-| impl `RelativeEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Serialize` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Sub<DualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `SubsetOf<DualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
-| impl `UlpsEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `Zero` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
+| impl `RelativeEq` | ported | DualQuaternion::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/dual_quaternion.rs` |
+| impl `Serialize` | ported | DualQuaternion (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/dual_quaternion.rs` |
+| impl `Sub<DualQuaternion>` | ported | DualQuaternion (impl `Sub<DualQuaternion>`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `SubsetOf<DualQuaternion>` | ported | DualQuaternion::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/dual_quaternion_conversion.rs` |
+| impl `UlpsEq` | ported | DualQuaternion::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/dual_quaternion.rs` |
+| impl `Zero` | ported | DualQuaternion (impl `Zero`) |  | `geometry/dual_quaternion_construction.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/dual_quaternion.rs` |
-| method `cast` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `conjugate` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `conjugate_mut` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `from_real` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `from_real_and_dual` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `identity` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `lerp` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `normalize` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `normalize_mut` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `try_inverse` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `try_inverse_mut` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| type `DualQuaternion` | missing |  | P12 | `geometry/dual_quaternion.rs` |
+| method `cast` | ported | DualQuaternion::cast |  | `geometry/dual_quaternion_construction.rs` |
+| method `conjugate` | ported | DualQuaternion::conjugate |  | `geometry/dual_quaternion.rs` |
+| method `conjugate_mut` | ported | DualQuaternion::conjugate_mut |  | `geometry/dual_quaternion.rs` |
+| method `from_real` | ported | DualQuaternion::from_real |  | `geometry/dual_quaternion_construction.rs` |
+| method `from_real_and_dual` | ported | DualQuaternion::from_real_and_dual |  | `geometry/dual_quaternion_construction.rs` |
+| method `identity` | ported | DualQuaternion::identity |  | `geometry/dual_quaternion_construction.rs` |
+| method `lerp` | ported | DualQuaternion::lerp |  | `geometry/dual_quaternion.rs` |
+| method `normalize` | ported | DualQuaternion::normalize |  | `geometry/dual_quaternion.rs` |
+| method `normalize_mut` | ported | DualQuaternion::normalize_mut |  | `geometry/dual_quaternion.rs` |
+| method `try_inverse` | ported | DualQuaternion::try_inverse |  | `geometry/dual_quaternion.rs` |
+| method `try_inverse_mut` | ported | DualQuaternion::try_inverse_mut |  | `geometry/dual_quaternion.rs` |
+| type `DualQuaternion` | ported | DualQuaternion |  | `geometry/dual_quaternion.rs` |
 
 #### Isometry (geometry)
 
@@ -1800,16 +1793,16 @@ Cairo: Isometry2 · ported 7, partial 0, missing 0, excluded 0.
 
 #### Isometry3 (geometry)
 
-Cairo: Isometry3 · ported 12, partial 0, missing 4, excluded 0.
+Cairo: Isometry3 · ported 16, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Div<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `Div<UnitDualQuaternion>` | ported | Isometry3::div_unit_dual_quaternion | renamed `div_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
 | impl `Div<UnitQuaternion>` | ported | Isometry3::div_unit_quaternion | renamed `div_unit_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
-| impl `From<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
-| impl `Mul<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `From<UnitDualQuaternion>` | ported | Isometry3 (impl `From<UnitDualQuaternion>`) |  | `geometry/dual_quaternion_conversion.rs` |
+| impl `Mul<UnitDualQuaternion>` | ported | Isometry3::mul_unit_dual_quaternion | renamed `mul_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
 | impl `Mul<UnitQuaternion>` | ported | Isometry3::mul_unit_quaternion | renamed `mul_unit_quaternion`: `iso * r`: Cairo's `Mul` is homogeneous, the heterogeneous operator is a named method | `geometry/isometry_ops.rs` |
-| impl `SubsetOf<UnitDualQuaternion>` | missing |  | P09b | `geometry/isometry_conversion.rs` |
+| impl `SubsetOf<UnitDualQuaternion>` | ported | UnitDualQuaternion (impl `From<Isometry>`) | renamed `From<Isometry>`: Cairo-imposed: `nalgebra::convert` is `Into` | `geometry/isometry_conversion.rs` |
 | method `cast` | ported | Isometry3::cast |  | `geometry/isometry_construction.rs` |
 | method `face_towards` | ported | Isometry3::face_towards |  | `geometry/isometry_construction.rs` |
 | method `lerp_slerp` | ported | Isometry3::lerp_slerp |  | `geometry/isometry_interpolation.rs` |
@@ -1881,14 +1874,14 @@ Cairo: Matrix3 · ported 3, partial 0, missing 0, excluded 0.
 
 #### Matrix4 (geometry)
 
-Cairo: Matrix4 · ported 2, partial 0, missing 3, excluded 0.
+Cairo: Matrix4 · ported 3, partial 0, missing 2, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<Orthographic3>` | missing |  | P11b | `geometry/orthographic.rs` |
 | impl `From<Perspective3>` | missing |  | P11b | `geometry/perspective.rs` |
 | impl `From<Rotation>` | ported | Matrix4 (impl `From<Rotation>`) |  | `geometry/rotation_conversion.rs` |
-| impl `From<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
+| impl `From<UnitDualQuaternion>` | ported | Matrix4 (impl `From<UnitDualQuaternion>`) |  | `geometry/dual_quaternion_conversion.rs` |
 | impl `From<UnitQuaternion>` | ported | Matrix4 (impl `From<UnitQuaternion>`) |  | `geometry/quaternion_conversion.rs` |
 
 #### Orthographic3 (geometry)
@@ -2321,7 +2314,7 @@ Cairo: Rotation2 · ported 18, partial 0, missing 2, excluded 2.
 
 #### Rotation3 (geometry)
 
-Cairo: Rotation3 · ported 30, partial 0, missing 1, excluded 2.
+Cairo: Rotation3 · ported 31, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2330,7 +2323,7 @@ Cairo: Rotation3 · ported 30, partial 0, missing 1, excluded 2.
 | impl `Div<UnitQuaternion>` | ported | Rotation3::div_unit_quaternion | renamed `div_unit_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/quaternion_ops.rs` |
 | impl `From<UnitQuaternion>` | ported | Rotation3 (impl `From<UnitQuaternion>`) |  | `geometry/quaternion_conversion.rs` |
 | impl `Mul<UnitQuaternion>` | ported | Rotation3::mul_unit_quaternion | renamed `mul_unit_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/quaternion_ops.rs` |
-| impl `SubsetOf<UnitDualQuaternion>` | missing |  | P09a | `geometry/rotation_conversion.rs` |
+| impl `SubsetOf<UnitDualQuaternion>` | ported | UnitDualQuaternion (impl `From<Rotation>`) | renamed `From<Rotation>`: Cairo-imposed: `nalgebra::convert` is `Into` | `geometry/rotation_conversion.rs` |
 | impl `SubsetOf<UnitQuaternion>` | ported | UnitQuaternion (impl `From<Rotation>`) | renamed `From<Rotation>`: Cairo-imposed: `nalgebra::convert` is `Into` | `geometry/rotation_conversion.rs` |
 | method `angle` | ported | Rotation3::angle |  | `geometry/rotation_specialization.rs` |
 | method `angle_to` | ported | Rotation3::angle_to |  | `geometry/rotation_specialization.rs` |
@@ -2650,7 +2643,7 @@ Cairo: none · ported 0, partial 0, missing 49, excluded 11.
 
 #### Translation (geometry)
 
-Cairo: Translation1/2/3/4/5/6 · ported 43, partial 1, missing 9, excluded 9.
+Cairo: Translation1/2/3/4/5/6 · ported 46, partial 1, missing 6, excluded 9.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2668,7 +2661,7 @@ Cairo: Translation1/2/3/4/5/6 · ported 43, partial 1, missing 9, excluded 9.
 | impl `Distribution` | excluded |  | random | `geometry/translation_construction.rs` |
 | impl `Div<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
 | impl `Div<Translation>` | ported | Translation1/2/3/4/5/6 (impl `Div<Translation>`) |  | `geometry/translation_ops.rs` |
-| impl `Div<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `Div<UnitDualQuaternion>` | ported | Translation3::div_unit_dual_quaternion | renamed `div_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
 | impl `DivAssign<Translation>` | missing |  | P03 | `geometry/translation_ops.rs` |
 | impl `Eq` | ported | Translation1/2/3/4/5/6 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/translation.rs` |
 | impl `From<Matrix>` | ported | Translation1/2/3/4/5/6 (impl `From<Matrix>`) |  | `geometry/translation_conversion.rs` |
@@ -2684,7 +2677,7 @@ Cairo: Translation1/2/3/4/5/6 · ported 43, partial 1, missing 9, excluded 9.
 | impl `Mul<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
 | impl `Mul<Translation>` | ported | Translation1/2/3/4/5/6 (impl `Mul<Translation>`) |  | `geometry/translation_ops.rs` |
 | impl `Mul<UnitComplex>` | ported | Translation2::mul_unit_complex | renamed `mul_unit_complex`: Cairo-imposed: heterogeneous operator (2D only) | `geometry/unit_complex_ops.rs` |
-| impl `Mul<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<UnitDualQuaternion>` | ported | Translation3::mul_unit_dual_quaternion | renamed `mul_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
 | impl `Mul<UnitQuaternion>` | ported | Translation3::mul_unit_quaternion | renamed `mul_unit_quaternion`: Cairo-imposed: heterogeneous operator (3D only) | `geometry/isometry_ops.rs` |
 | impl `MulAssign<Translation>` | missing |  | P03 | `geometry/translation_ops.rs` |
 | impl `One` | ported | Translation1/2/3/4/5/6 (impl `One`) |  | `geometry/translation_construction.rs` |
@@ -2697,7 +2690,7 @@ Cairo: Translation1/2/3/4/5/6 · ported 43, partial 1, missing 9, excluded 9.
 | impl `SubsetOf<Similarity>` | ported | Similarity3 (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (`Similarity2` likewise) | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Transform>` | missing |  | P09a | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Translation>` | ported | Translation1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/translation_conversion.rs` |
-| impl `SubsetOf<UnitDualQuaternion>` | missing |  | P09a | `geometry/translation_conversion.rs` |
+| impl `SubsetOf<UnitDualQuaternion>` | ported | UnitDualQuaternion (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (3D only) | `geometry/translation_conversion.rs` |
 | impl `UlpsEq` | ported | Translation1/2/3/4/5/6::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/translation.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/translation.rs` |
 | method `cast` | ported | Translation1/2/3/4/5/6::cast |  | `geometry/translation_construction.rs` |
@@ -2797,67 +2790,67 @@ Cairo: UnitComplex · ported 60, partial 0, missing 7, excluded 4.
 
 #### UnitDualQuaternion (geometry)
 
-Cairo: none · ported 0, partial 0, missing 51, excluded 2.
+Cairo: UnitDualQuaternion · ported 50, partial 0, missing 1, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `AbsDiffEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
+| impl `AbsDiffEq` | ported | UnitDualQuaternion::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `geometry/dual_quaternion.rs` |
 | impl `Arbitrary` | excluded |  | random | `geometry/dual_quaternion_construction.rs` |
-| impl `Default` | missing |  | P12 | `geometry/dual_quaternion.rs` |
+| impl `Default` | ported | UnitDualQuaternion (impl `Default`) |  | `geometry/dual_quaternion.rs` |
 | impl `Display` | excluded |  | fmt | `geometry/dual_quaternion.rs` |
-| impl `Div<Isometry>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Div<Translation>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Div<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Div<UnitQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Eq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `From<Isometry>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
-| impl `Mul<DualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<Isometry>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<Matrix>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<Point>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<Translation>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<Unit<Matrix>>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Mul<UnitQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `Neg` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
-| impl `One` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| impl `PartialEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `RelativeEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| impl `SubsetOf<Isometry>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
-| impl `SubsetOf<Matrix>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
-| impl `SubsetOf<Similarity>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
+| impl `Div<Isometry>` | ported | UnitDualQuaternion::div_isometry | renamed `div_isometry`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `Div<Translation>` | ported | UnitDualQuaternion::div_translation | renamed `div_translation`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `Div<UnitDualQuaternion>` | ported | UnitDualQuaternion (impl `Div<UnitDualQuaternion>`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `Div<UnitQuaternion>` | ported | UnitDualQuaternion::div_unit_quaternion | renamed `div_unit_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `Eq` | ported | UnitDualQuaternion (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/dual_quaternion.rs` |
+| impl `From<Isometry>` | ported | UnitDualQuaternion (impl `From<Isometry>`) |  | `geometry/dual_quaternion_conversion.rs` |
+| impl `Mul<DualQuaternion>` | ported | UnitDualQuaternion::mul_dual_quaternion | renamed `mul_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<Isometry>` | ported | UnitDualQuaternion::mul_isometry | renamed `mul_isometry`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<Matrix>` | ported | UnitDualQuaternion::transform_vector | renamed `transform_vector`: heterogeneous operators are named methods | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<Point>` | ported | UnitDualQuaternion::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<Translation>` | ported | UnitDualQuaternion::mul_translation | renamed `mul_translation`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<Unit<Matrix>>` | ported | UnitDualQuaternion::transform_unit_vector | renamed `transform_unit_vector`: heterogeneous operators are named methods | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<UnitDualQuaternion>` | ported | UnitDualQuaternion (impl `Mul<UnitDualQuaternion>`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<UnitQuaternion>` | ported | UnitDualQuaternion::mul_unit_quaternion | renamed `mul_unit_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
+| impl `Neg` | ported | UnitDualQuaternion (impl `Neg`) |  | `geometry/dual_quaternion_ops.rs` |
+| impl `One` | ported | UnitDualQuaternion (impl `One`) |  | `geometry/dual_quaternion_construction.rs` |
+| impl `PartialEq` | ported | UnitDualQuaternion (impl `PartialEq`) |  | `geometry/dual_quaternion.rs` |
+| impl `RelativeEq` | ported | UnitDualQuaternion::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/dual_quaternion.rs` |
+| impl `SubsetOf<Isometry>` | ported | Isometry3 (impl `From<UnitDualQuaternion>`) | renamed `From<UnitDualQuaternion>`: Cairo-imposed: `nalgebra::convert` is `Into` | `geometry/dual_quaternion_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | UnitDualQuaternion::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix is `to_homogeneous` | `geometry/dual_quaternion_conversion.rs` |
+| impl `SubsetOf<Similarity>` | ported | Similarity3 (impl `From<UnitDualQuaternion>`) | renamed `From<UnitDualQuaternion>`: Cairo-imposed: `nalgebra::convert` is `Into` | `geometry/dual_quaternion_conversion.rs` |
 | impl `SubsetOf<Transform>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
-| impl `SubsetOf<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_conversion.rs` |
-| impl `UlpsEq` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `cast` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `conjugate` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `conjugate_mut` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `dual_quaternion` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `from_isometry` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `from_parts` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `from_rotation` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `identity` | missing |  | P12 | `geometry/dual_quaternion_construction.rs` |
-| method `inverse` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `inverse_mut` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `inverse_transform_point` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `inverse_transform_unit_vector` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `inverse_transform_vector` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `isometry_to` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `lerp` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `nlerp` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `rotation` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `sclerp` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `to_homogeneous` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `to_isometry` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `transform_point` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `transform_vector` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `translation` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| method `try_sclerp` | missing |  | P12 | `geometry/dual_quaternion.rs` |
-| type `UnitDualQuaternion` | missing |  | P12 | `geometry/dual_quaternion.rs` |
+| impl `SubsetOf<UnitDualQuaternion>` | ported | UnitDualQuaternion::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/dual_quaternion_conversion.rs` |
+| impl `UlpsEq` | ported | UnitDualQuaternion::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/dual_quaternion.rs` |
+| method `cast` | ported | UnitDualQuaternion::cast |  | `geometry/dual_quaternion_construction.rs` |
+| method `conjugate` | ported | UnitDualQuaternion::conjugate |  | `geometry/dual_quaternion.rs` |
+| method `conjugate_mut` | ported | UnitDualQuaternion::conjugate_mut |  | `geometry/dual_quaternion.rs` |
+| method `dual_quaternion` | ported | UnitDualQuaternion::dual_quaternion |  | `geometry/dual_quaternion.rs` |
+| method `from_isometry` | ported | UnitDualQuaternion::from_isometry |  | `geometry/dual_quaternion_construction.rs` |
+| method `from_parts` | ported | UnitDualQuaternion::from_parts |  | `geometry/dual_quaternion_construction.rs` |
+| method `from_rotation` | ported | UnitDualQuaternion::from_rotation |  | `geometry/dual_quaternion_construction.rs` |
+| method `identity` | ported | UnitDualQuaternion::identity |  | `geometry/dual_quaternion_construction.rs` |
+| method `inverse` | ported | UnitDualQuaternion::inverse |  | `geometry/dual_quaternion.rs` |
+| method `inverse_mut` | ported | UnitDualQuaternion::inverse_mut |  | `geometry/dual_quaternion.rs` |
+| method `inverse_transform_point` | ported | UnitDualQuaternion::inverse_transform_point |  | `geometry/dual_quaternion.rs` |
+| method `inverse_transform_unit_vector` | ported | UnitDualQuaternion::inverse_transform_unit_vector |  | `geometry/dual_quaternion.rs` |
+| method `inverse_transform_vector` | ported | UnitDualQuaternion::inverse_transform_vector |  | `geometry/dual_quaternion.rs` |
+| method `isometry_to` | ported | UnitDualQuaternion::isometry_to |  | `geometry/dual_quaternion.rs` |
+| method `lerp` | ported | UnitDualQuaternion::lerp |  | `geometry/dual_quaternion.rs` |
+| method `nlerp` | ported | UnitDualQuaternion::nlerp |  | `geometry/dual_quaternion.rs` |
+| method `rotation` | ported | UnitDualQuaternion::rotation |  | `geometry/dual_quaternion.rs` |
+| method `sclerp` | ported | UnitDualQuaternion::sclerp |  | `geometry/dual_quaternion.rs` |
+| method `to_homogeneous` | ported | UnitDualQuaternion::to_homogeneous |  | `geometry/dual_quaternion.rs` |
+| method `to_isometry` | ported | UnitDualQuaternion::to_isometry |  | `geometry/dual_quaternion.rs` |
+| method `transform_point` | ported | UnitDualQuaternion::transform_point |  | `geometry/dual_quaternion.rs` |
+| method `transform_vector` | ported | UnitDualQuaternion::transform_vector |  | `geometry/dual_quaternion.rs` |
+| method `translation` | ported | UnitDualQuaternion::translation |  | `geometry/dual_quaternion.rs` |
+| method `try_sclerp` | ported | UnitDualQuaternion::try_sclerp |  | `geometry/dual_quaternion.rs` |
+| type `UnitDualQuaternion` | ported | UnitDualQuaternion |  | `geometry/dual_quaternion.rs` |
 
 #### UnitQuaternion (geometry)
 
-Cairo: UnitQuaternion · ported 75, partial 0, missing 11, excluded 4.
+Cairo: UnitQuaternion · ported 78, partial 0, missing 8, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2870,7 +2863,7 @@ Cairo: UnitQuaternion · ported 75, partial 0, missing 11, excluded 4.
 | impl `Div<Rotation>` | ported | UnitQuaternion::div_rotation | renamed `div_rotation`: Cairo-imposed: heterogeneous operator | `geometry/quaternion_ops.rs` |
 | impl `Div<Similarity>` | ported | UnitQuaternion::div_similarity | renamed `div_similarity`: Cairo-imposed: heterogeneous operator | `geometry/similarity_ops.rs` |
 | impl `Div<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
-| impl `Div<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `Div<UnitDualQuaternion>` | ported | UnitQuaternion::div_unit_dual_quaternion | renamed `div_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
 | impl `Div<UnitQuaternion>` | ported | UnitQuaternion (impl `Div<UnitQuaternion>`) |  | `geometry/quaternion_ops.rs` |
 | impl `DivAssign<Rotation>` | missing |  | P03 | `geometry/quaternion_ops.rs` |
 | impl `DivAssign<UnitQuaternion>` | missing |  | P03 | `geometry/quaternion_ops.rs` |
@@ -2885,7 +2878,7 @@ Cairo: UnitQuaternion · ported 75, partial 0, missing 11, excluded 4.
 | impl `Mul<Transform>` | missing |  | P11a | `geometry/transform_ops.rs` |
 | impl `Mul<Translation>` | ported | UnitQuaternion::mul_translation | renamed `mul_translation`: Cairo-imposed: heterogeneous operator | `geometry/isometry_ops.rs` |
 | impl `Mul<Unit<Matrix>>` | ported | UnitQuaternion::transform_unit_vector | renamed `transform_unit_vector`: heterogeneous operators are named methods | `geometry/quaternion_ops.rs` |
-| impl `Mul<UnitDualQuaternion>` | missing |  | P12 | `geometry/dual_quaternion_ops.rs` |
+| impl `Mul<UnitDualQuaternion>` | ported | UnitQuaternion::mul_unit_dual_quaternion | renamed `mul_unit_dual_quaternion`: Cairo-imposed: heterogeneous operator | `geometry/dual_quaternion_ops.rs` |
 | impl `Mul<UnitQuaternion>` | ported | UnitQuaternion (impl `Mul<UnitQuaternion>`) |  | `geometry/quaternion_ops.rs` |
 | impl `MulAssign<Rotation>` | missing |  | P03 | `geometry/quaternion_ops.rs` |
 | impl `MulAssign<UnitQuaternion>` | missing |  | P03 | `geometry/quaternion_ops.rs` |
@@ -2897,7 +2890,7 @@ Cairo: UnitQuaternion · ported 75, partial 0, missing 11, excluded 4.
 | impl `SubsetOf<Rotation>` | ported | UnitQuaternion::to_rotation_matrix | renamed `to_rotation_matrix`: Cairo-imposed: `nalgebra::convert` into a rotation matrix is `to_rotation_matrix` | `geometry/quaternion_conversion.rs` |
 | impl `SubsetOf<Similarity>` | ported | Similarity3 (impl `From<UnitQuaternion>`) | renamed `From<UnitQuaternion>`: Cairo-imposed: `nalgebra::convert` is `Into` | `geometry/quaternion_conversion.rs` |
 | impl `SubsetOf<Transform>` | missing |  | P08 | `geometry/quaternion_conversion.rs` |
-| impl `SubsetOf<UnitDualQuaternion>` | missing |  | P08 | `geometry/quaternion_conversion.rs` |
+| impl `SubsetOf<UnitDualQuaternion>` | ported | UnitDualQuaternion (impl `From<UnitQuaternion>`) | renamed `From<UnitQuaternion>`: Cairo-imposed: `nalgebra::convert` is `Into` | `geometry/quaternion_conversion.rs` |
 | impl `SubsetOf<UnitQuaternion>` | ported | UnitQuaternion::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/quaternion_conversion.rs` |
 | impl `UlpsEq` | ported | UnitQuaternion::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/quaternion.rs` |
 | method `angle` | ported | UnitQuaternion::angle |  | `geometry/quaternion.rs` |

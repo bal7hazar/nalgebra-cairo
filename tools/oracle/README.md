@@ -131,6 +131,17 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   `quaternion_exp_real` / `_sinh_real` / `_cosh_real` pin upstream's identity / zero / identity
   for a real quaternion (tolerance 0), `rotation2_renormalize` is upstream's
   `from_matrix_eps(m, eps, 0, guess)` on a rotation plus a drift of at most 2^-10 per entry.
+- Suite `dual_quaternion` (WP 8.4-P12): dual quaternions are `(real (w, i, j, k), dual (w, i, j,
+  k))`. A unit dual quaternion input (`Gen::UnitDual`) is a quantised unit quaternion `r` and a
+  translation `t` of the case's magnitude class, then upstream's `from_parts(t, r)` in f64 with its
+  dual part quantised: both sides see the same raw eight components. The dual-quaternion product
+  and the products by a unit quaternion are exact-integer ops (tolerance 0). The chained products
+  (inverse, divisions, point transforms, the products with isometries) use a constant 8 ulp: the
+  sensitivity policy would count the derivatives with respect to the rotation (of the size of the
+  translation) as rounding errors, which these kernels never commit on their exact inputs.
+  `nlerp` and `sclerp` use `sensitivity + magnitude` with `k = 0` (`mag` 4 and 8): a rounded
+  unit-scale factor (the norm, the screw) multiplies the dual part. `unit_dual_quaternion_sclerp`
+  is upstream's `try_sclerp` with `epsilon = 2^-32` (the Cairo `default_epsilon`).
 - The scalar suite and every transcendental inside nalgebra go through the pure-Rust `libm`
   (`libm-force`), not the platform libm.
 
