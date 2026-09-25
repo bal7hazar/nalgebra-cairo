@@ -33,6 +33,7 @@ import re
 import textwrap
 
 import completion as C
+import functional as P03
 import library as L
 from model import ALL_SHAPES, Shape
 
@@ -186,10 +187,12 @@ def legacy_extra(s: Shape, docs: dict[str, str]) -> L.Extra:
     au, ai = aliases(s)
     pu, pi = products(s, docs)
     have = {f.name for f in L.surface((s.r, s.c))}
-    return L.Extra(uses=[u for u in L.dedup(au + pu + C.uses(s)) if u != use_of(s)], struct=ai,
-                   end=[L.section("products", 100)] + pi + C.items(s),
-                   methods=C.missing(s, have),
-                   angle=[f for f in C.angle_methods(s) if f.name not in have])
+    base = C.missing(s, have)
+    return L.Extra(uses=[u for u in L.dedup(au + pu + C.uses(s) + P03.uses(s)) if u != use_of(s)],
+                   struct=ai, end=[L.section("products", 100)] + pi + C.items(s) + P03.items(s),
+                   methods=base,
+                   angle=[f for f in C.angle_methods(s) if f.name not in have],
+                   functional=P03.missing(s, have | {f.name for f in base}))
 
 
 # --------------------------------------------------------------------------------------------
@@ -336,7 +339,7 @@ def render_new(s: Shape) -> str:
         uses.append("super::kernels::Fused")
     au, ai = aliases(s)
     pu, pi = products(s, {})
-    uses = [u for u in L.dedup(uses + au + pu + C.uses(s)) if u != use_of(s)]
+    uses = [u for u in L.dedup(uses + au + pu + C.uses(s) + P03.uses(s)) if u != use_of(s)]
     ops = "`+`, `-`, unary `-`" + (", `*` between matrices" if s.is_square else "")
     conv = f", conversions from / to `[T; {s.n}]`" if s.is_vector else ""
     module_doc = wrap(
@@ -358,13 +361,14 @@ def render_new(s: Shape) -> str:
                   f"pub struct {S}<T> {{\n" + "\n".join(f"pub {k}: T," for k in s.fields) + "\n}")
     base = new_methods(s)
     fns = base + C.missing(s, {m.name for m in base})
+    fns += P03.missing(s, {m.name for m in fns})
     methods = "\n\n".join(m.definition() for m in fns)
     impl = (f"/// Methods of `{S}<T>` for any `Real` scalar.\n#[generate_trait]\n"
             f"pub impl {S}Impl<\n{L.bounds(L.MATRIX_IMPL_BOUNDS)}\n> of {S}Trait<T> {{\n"
             f"{methods}\n}}")
     blocks = [module_doc, "\n".join(f"use {u};" for u in uses), struct] + ai + [impl]
     blocks.append(C.angle_impl(s, C.angle_methods(s)))
-    blocks += new_operators(s) + [L.section("products", 100)] + pi + C.items(s)
+    blocks += new_operators(s) + [L.section("products", 100)] + pi + C.items(s) + P03.items(s)
     return HEADER + "\n\n".join(blocks) + "\n"
 
 
@@ -398,6 +402,12 @@ pub trait MatrixMul<Lhs, Rhs> {
     type Output;
     /// `self * rhs`.
     fn mul_mat(self: Lhs, rhs: Rhs) -> Self::Output;
+    /// Writes `self * rhs` into `out` (`out = self.mul_mat(rhs)`, bit-identical). Upstream:
+    /// `mul_to` (`&mut` output of any storage; here the product's own shape).
+    #[inline(always)]
+    fn mul_to<+Drop<Self::Output>>(self: Lhs, rhs: Rhs, ref out: Self::Output) {
+        out = Self::mul_mat(self, rhs);
+    }
 }
 """
 
@@ -423,6 +433,17 @@ pub trait MatrixTrMul<Lhs, Rhs> {
     #[inline(always)]
     fn ad_mul(self: Lhs, rhs: Rhs) -> Self::Output {
         Self::tr_mul(self, rhs)
+    }
+    /// Writes `selfᵀ * rhs` into `out` (`out = self.tr_mul(rhs)`, bit-identical). Upstream:
+    /// `tr_mul_to`.
+    #[inline(always)]
+    fn tr_mul_to<+Drop<Self::Output>>(self: Lhs, rhs: Rhs, ref out: Self::Output) {
+        out = Self::tr_mul(self, rhs);
+    }
+    /// Writes `selfᴴ * rhs` into `out`: `tr_mul_to` for a real scalar. Upstream: `ad_mul_to`.
+    #[inline(always)]
+    fn ad_mul_to<+Drop<Self::Output>>(self: Lhs, rhs: Rhs, ref out: Self::Output) {
+        out = Self::tr_mul(self, rhs);
     }
 }
 """
@@ -521,9 +542,19 @@ def render_norm() -> str:
     return HEADER + """//! The norm markers of upstream `base/norm.rs`: `EuclideanNorm`, `LpNorm`, `OneNorm`,
 //! `UniformNorm`.
 //!
-//! Upstream passes them to `Matrix::apply_norm` / `apply_metric_distance` (API_PARITY P03), a
-//! generic `Norm<T>` trait standing for the four; each shape carries the corresponding methods
-//! directly: `norm` (Euclidean), `lp_norm(p)`, `one_norm` and `amax` (uniform norm).
+//! Upstream passes them to `Matrix::apply_norm` / `apply_metric_distance` through its `Norm<T>`
+//! trait, generic over the matrix. Cairo has no common matrix type, so `Norm<N, M, T>` is generic
+//! over the marker `N` AND the shape `M`: each shape's module implements it for the four markers
+//! (`<Shape><Marker>`, static dispatch), delegating to the shape's own methods: `norm` /
+//! `metric_distance` (Euclidean), `lp_norm(p)`, `one_norm` and `amax` (uniform norm).
+
+/// A norm `N` on the shape `M` with values in `T`. Upstream: `Norm<T>` (`base/norm.rs`).
+pub trait Norm<N, M, T> {
+    /// The norm of `m`.
+    fn norm(self: @N, m: M) -> T;
+    /// The distance between `m1` and `m2` in this norm.
+    fn metric_distance(self: @N, m1: M, m2: M) -> T;
+}
 
 /// The Euclidean (Frobenius) norm, `m.norm()`. Upstream: `EuclideanNorm`.
 #[derive(Copy, Drop, Debug)]
@@ -563,7 +594,7 @@ def exported(s: Shape) -> list[str]:
 # Shared modules: (module, visibility, re-exported names).
 SHARED_EXPORTS = {"matrix_mul": ["MatrixMul"], "matrix_tr_mul": ["MatrixTrMul"],
                   "matrix_index": ["MatrixIndex"],
-                  "norm": ["EuclideanNorm", "LpNorm", "OneNorm", "UniformNorm"]}
+                  "norm": ["EuclideanNorm", "LpNorm", "Norm", "OneNorm", "UniformNorm"]}
 PRIVATE_MODULES = {"kernels"}
 
 

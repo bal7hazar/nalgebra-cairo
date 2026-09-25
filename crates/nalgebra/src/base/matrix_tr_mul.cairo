@@ -21,4 +21,19 @@ pub trait MatrixTrMul<Lhs, Rhs> {
     fn ad_mul(self: Lhs, rhs: Rhs) -> Self::Output {
         Self::tr_mul(self, rhs)
     }
+    /// Writes `selfᵀ * rhs` into `out` (`out = self.tr_mul(rhs)`, bit-identical). Upstream:
+    /// `tr_mul_to`.
+    #[inline(always)]
+    fn tr_mul_to<+Drop<Self::Output>>(
+        self: Lhs, rhs: Rhs, ref out: Self::Output,
+    ) {
+        out = Self::tr_mul(self, rhs);
+    }
+    /// Writes `selfᴴ * rhs` into `out`: `tr_mul_to` for a real scalar. Upstream: `ad_mul_to`.
+    #[inline(always)]
+    fn ad_mul_to<+Drop<Self::Output>>(
+        self: Lhs, rhs: Rhs, ref out: Self::Output,
+    ) {
+        out = Self::tr_mul(self, rhs);
+    }
 }

@@ -23,7 +23,9 @@ use super::matrix3::Matrix3;
 use super::matrix_index::MatrixIndex;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::point2::Point2;
+use super::row_vector2::RowVector2;
 use super::sym_matrix2::SymMatrix2;
 use super::vector2::Vector2;
 
@@ -710,6 +712,559 @@ pub impl Matrix2Impl<
             && ApproxEqTrait::ulps_eq(self.m21, other.m21, epsilon, max_ulps)
             && ApproxEqTrait::ulps_eq(self.m12, other.m12, epsilon, max_ulps)
             && ApproxEqTrait::ulps_eq(self.m22, other.m22, epsilon, max_ulps)
+    }
+
+    // --- functional and in-place variants (WP 8.2b) --------------------------------------------
+
+    /// The 2x2 matrix of `f(x)` for every component `x` (called in column-major order). `f` is any
+    /// closure or `Fn` value; Cairo closures take their arguments by value and cannot mutate their
+    /// captures. Upstream: `map`.
+    fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
+        self: Matrix2<T>, f: F,
+    ) -> Matrix2<Func::Output> {
+        Matrix2 { m11: f(self.m11), m21: f(self.m21), m12: f(self.m12), m22: f(self.m22) }
+    }
+
+    /// The 2x2 matrix of `f(i, j, x)` for every component `x` at row `i`, column `j` (0-based,
+    /// column-major order). `f` is any closure or `Fn` value; Cairo closures take their arguments
+    /// by value and cannot mutate their captures. Upstream: `map_with_location`.
+    fn map_with_location<
+        F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
+    >(
+        self: Matrix2<T>, f: F,
+    ) -> Matrix2<Func::Output> {
+        Matrix2 {
+            m11: f(0, 0, self.m11),
+            m21: f(1, 0, self.m21),
+            m12: f(0, 1, self.m12),
+            m22: f(1, 1, self.m22),
+        }
+    }
+
+    /// The 2x2 matrix of `f(a, b)` for the components `a` of `self` and `b` of `rhs` at the same
+    /// position. `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
+    /// cannot mutate their captures. Upstream: `zip_map`.
+    fn zip_map<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2)>,
+        +Drop<Func::Output>,
+    >(
+        self: Matrix2<T>, rhs: Matrix2<T2>, f: F,
+    ) -> Matrix2<Func::Output> {
+        Matrix2 {
+            m11: f(self.m11, rhs.m11),
+            m21: f(self.m21, rhs.m21),
+            m12: f(self.m12, rhs.m12),
+            m22: f(self.m22, rhs.m22),
+        }
+    }
+
+    /// The 2x2 matrix of `f(a, b, c)` for the components of `self`, `b` and `c` at the same
+    /// position. `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
+    /// cannot mutate their captures. Upstream: `zip_zip_map`.
+    fn zip_zip_map<
+        T2,
+        T3,
+        +Copy<T2>,
+        +Drop<T2>,
+        +Copy<T3>,
+        +Drop<T3>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2, T3)>,
+        +Drop<Func::Output>,
+    >(
+        self: Matrix2<T>, b: Matrix2<T2>, c: Matrix2<T3>, f: F,
+    ) -> Matrix2<Func::Output> {
+        Matrix2 {
+            m11: f(self.m11, b.m11, c.m11),
+            m21: f(self.m21, b.m21, c.m21),
+            m12: f(self.m12, b.m12, c.m12),
+            m22: f(self.m22, b.m22, c.m22),
+        }
+    }
+
+    /// `f(.. f(f(init, x0), x1) .., x3)` over the components in column-major order. The closure's
+    /// output converts `Into<Acc>` (the identity included): Cairo cannot state `Output = Acc`
+    /// without the `associated_item_constraints` experimental feature. `f` is any closure or `Fn`
+    /// value; Cairo closures take their arguments by value and cannot mutate their captures.
+    /// Upstream: `fold`.
+    fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
+        self: Matrix2<T>, init: Acc, f: F,
+    ) -> Acc {
+        let acc: Acc = f(init, self.m11).into();
+        let acc: Acc = f(acc, self.m21).into();
+        let acc: Acc = f(acc, self.m12).into();
+        f(acc, self.m22).into()
+    }
+
+    /// `init_f(Some(x0))`, then `f(acc, x)` over the other components in column-major order:
+    /// upstream's `fold_with` (`init_f` receives the first component, `None` only for an empty
+    /// matrix, which a static shape never is). The accumulator has the type of `init_f`'s output;
+    /// `f`'s output converts `Into` it. The closures receive values instead of upstream's `&T`.
+    /// Upstream: `fold_with`.
+    fn fold_with<
+        G,
+        +Drop<G>,
+        impl Init: core::ops::Fn<G, (Option<T>,)>,
+        +Drop<Init::Output>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (Init::Output, T)>,
+        +Into<Func::Output, Init::Output>,
+    >(
+        self: Matrix2<T>, init_f: G, f: F,
+    ) -> Init::Output {
+        let acc: Init::Output = init_f(Option::Some(self.m11));
+        let acc: Init::Output = f(acc, self.m21).into();
+        let acc: Init::Output = f(acc, self.m12).into();
+        f(acc, self.m22).into()
+    }
+
+    /// `fold` over the pairs of components of `self` and `rhs` at the same position: `f(acc, a,
+    /// b)`, column-major. `f` is any closure or `Fn` value; Cairo closures take their arguments by
+    /// value and cannot mutate their captures. Upstream: `zip_fold`.
+    fn zip_fold<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        Acc,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (Acc, T, T2)>,
+        +Into<Func::Output, Acc>,
+    >(
+        self: Matrix2<T>, rhs: Matrix2<T2>, init: Acc, f: F,
+    ) -> Acc {
+        let acc: Acc = f(init, self.m11, rhs.m11).into();
+        let acc: Acc = f(acc, self.m21, rhs.m21).into();
+        let acc: Acc = f(acc, self.m12, rhs.m12).into();
+        f(acc, self.m22, rhs.m22).into()
+    }
+
+    /// Replaces every component `x` by `f(x)` (column-major order). Upstream's closure is
+    /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
+    /// new component (its output converts `Into<T>`). Upstream: `apply`.
+    fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        ref self: Matrix2<T>, f: F,
+    ) {
+        self =
+            Matrix2 {
+                m11: f(self.m11).into(),
+                m21: f(self.m21).into(),
+                m12: f(self.m12).into(),
+                m22: f(self.m22).into(),
+            };
+    }
+
+    /// `self` with every component `x` replaced by `f(x)`: `apply` by value. Upstream's closure is
+    /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
+    /// new component (its output converts `Into<T>`). Upstream: `apply_into`.
+    fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        self: Matrix2<T>, f: F,
+    ) -> Matrix2<T> {
+        Matrix2 {
+            m11: f(self.m11).into(),
+            m21: f(self.m21).into(),
+            m12: f(self.m12).into(),
+            m22: f(self.m22).into(),
+        }
+    }
+
+    /// Replaces every component `a` by `f(a, b)`, `b` the component of `rhs` at the same position.
+    /// Upstream's closure is `FnMut(&mut T)`, writing through the reference; a Cairo closure
+    /// cannot, so it RETURNS the new component (its output converts `Into<T>`). Upstream:
+    /// `zip_apply`.
+    fn zip_apply<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2)>,
+        +Into<Func::Output, T>,
+    >(
+        ref self: Matrix2<T>, rhs: Matrix2<T2>, f: F,
+    ) {
+        self =
+            Matrix2 {
+                m11: f(self.m11, rhs.m11).into(),
+                m21: f(self.m21, rhs.m21).into(),
+                m12: f(self.m12, rhs.m12).into(),
+                m22: f(self.m22, rhs.m22).into(),
+            };
+    }
+
+    /// Replaces every component `a` by `f(a, b, c)`, `b` and `c` the components of `b` and `c` at
+    /// the same position. Upstream's closure is `FnMut(&mut T)`, writing through the reference; a
+    /// Cairo closure cannot, so it RETURNS the new component (its output converts `Into<T>`).
+    /// Upstream: `zip_zip_apply`.
+    fn zip_zip_apply<
+        T2,
+        T3,
+        +Copy<T2>,
+        +Drop<T2>,
+        +Copy<T3>,
+        +Drop<T3>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2, T3)>,
+        +Into<Func::Output, T>,
+    >(
+        ref self: Matrix2<T>, b: Matrix2<T2>, c: Matrix2<T3>, f: F,
+    ) {
+        self =
+            Matrix2 {
+                m11: f(self.m11, b.m11, c.m11).into(),
+                m21: f(self.m21, b.m21, c.m21).into(),
+                m12: f(self.m12, b.m12, c.m12).into(),
+                m22: f(self.m22, b.m22, c.m22).into(),
+            };
+    }
+
+    /// Sets every component to `f()` (one call per component, column-major). The closure's output
+    /// converts `Into<T>`. Upstream: `fill_with` (`impl Fn() -> T`).
+    fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
+        ref self: Matrix2<T>, f: F,
+    ) {
+        self = Matrix2 { m11: f().into(), m21: f().into(), m12: f().into(), m22: f().into() };
+    }
+
+    /// The `Vector2` of `f(d)` for every diagonal component `d` (top to bottom):
+    /// `self.diagonal().map(f)`. `f` is any closure or `Fn` value; Cairo closures take their
+    /// arguments by value and cannot mutate their captures. Upstream: `map_diagonal`.
+    fn map_diagonal<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
+        self: Matrix2<T>, f: F,
+    ) -> Vector2<Func::Output> {
+        Vector2 { x: f(self.m11), y: f(self.m22) }
+    }
+
+    /// Sets every component to `val`. Upstream: `fill`.
+    #[inline(always)]
+    fn fill(ref self: Matrix2<T>, val: T) {
+        self = Matrix2 { m11: val, m21: val, m12: val, m22: val };
+    }
+
+    /// Sets the 2 diagonal components to `val`, the others unchanged. Upstream: `fill_diagonal`.
+    #[inline(always)]
+    fn fill_diagonal(ref self: Matrix2<T>, val: T) {
+        self = Matrix2 { m11: val, m21: self.m21, m12: self.m12, m22: val };
+    }
+
+    /// Sets `self` to the identity: ones on the diagonal, zeros elsewhere (`fill(0)` then
+    /// `fill_diagonal(1)`). Upstream: `fill_with_identity`.
+    #[inline(always)]
+    fn fill_with_identity(ref self: Matrix2<T>) {
+        self = Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() };
+    }
+
+    /// Sets the 2 components of row `i` to `val`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 2`. Upstream: `fill_row`.
+    #[inline(always)]
+    fn fill_row(ref self: Matrix2<T>, i: usize, val: T) {
+        self = match i {
+            0 => Matrix2 { m11: val, m21: self.m21, m12: val, m22: self.m22 },
+            1 => Matrix2 { m11: self.m11, m21: val, m12: self.m12, m22: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    /// Sets the 2 components of column `j` to `val`. Panics with `nalgebra: index out of bounds`
+    /// for `j >= 2`. Upstream: `fill_column`.
+    #[inline(always)]
+    fn fill_column(ref self: Matrix2<T>, j: usize, val: T) {
+        self = match j {
+            0 => Matrix2 { m11: val, m21: val, m12: self.m12, m22: self.m22 },
+            1 => Matrix2 { m11: self.m11, m21: self.m21, m12: val, m22: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    /// Sets every component `(i, j)` with `i >= j + shift` to `val`: the lower triangle with the
+    /// diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` subdiagonals as
+    /// well above; nothing changes for `shift >= 2`. ONE `match` on `shift` selects the literal.
+    /// Upstream: `fill_lower_triangle`.
+    #[inline(always)]
+    fn fill_lower_triangle(ref self: Matrix2<T>, val: T, shift: usize) {
+        self = match shift {
+            0 => Matrix2 { m11: val, m21: val, m12: self.m12, m22: val },
+            1 => Matrix2 { m11: self.m11, m21: val, m12: self.m12, m22: self.m22 },
+            _ => self,
+        };
+    }
+
+    /// Sets every component `(i, j)` with `j >= i + shift` to `val`: the upper triangle with the
+    /// diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` superdiagonals as
+    /// well below; nothing changes for `shift >= 2`. ONE `match` on `shift` selects the literal.
+    /// Upstream: `fill_upper_triangle`.
+    #[inline(always)]
+    fn fill_upper_triangle(ref self: Matrix2<T>, val: T, shift: usize) {
+        self = match shift {
+            0 => Matrix2 { m11: val, m21: self.m21, m12: val, m22: val },
+            1 => Matrix2 { m11: self.m11, m21: self.m21, m12: val, m22: self.m22 },
+            _ => self,
+        };
+    }
+
+    /// Copies the strict upper triangle onto the strict lower one (`m[(i, j)] = m[(j, i)]` for `i >
+    /// j`), making `self` symmetric. Exact. Upstream: `fill_lower_triangle_with_upper_triangle`.
+    #[inline(always)]
+    fn fill_lower_triangle_with_upper_triangle(ref self: Matrix2<T>) {
+        self = Matrix2 { m11: self.m11, m21: self.m12, m12: self.m12, m22: self.m22 };
+    }
+
+    /// Copies the strict lower triangle onto the strict upper one (`m[(i, j)] = m[(j, i)]` for `i <
+    /// j`), making `self` symmetric. Exact. Upstream: `fill_upper_triangle_with_lower_triangle`.
+    #[inline(always)]
+    fn fill_upper_triangle_with_lower_triangle(ref self: Matrix2<T>) {
+        self = Matrix2 { m11: self.m11, m21: self.m21, m12: self.m21, m22: self.m22 };
+    }
+
+    /// Replaces row `i` by `row`, a `RowVector2`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 2`. Upstream: `set_row`.
+    #[inline(always)]
+    fn set_row(ref self: Matrix2<T>, i: usize, row: RowVector2<T>) {
+        self = match i {
+            0 => Matrix2 { m11: row.x, m21: self.m21, m12: row.y, m22: self.m22 },
+            1 => Matrix2 { m11: self.m11, m21: row.x, m12: self.m12, m22: row.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    /// Replaces column `j` by `column`, a `Vector2`. Panics with `nalgebra: index out of bounds`
+    /// for `j >= 2`. Upstream: `set_column`.
+    #[inline(always)]
+    fn set_column(ref self: Matrix2<T>, j: usize, column: Vector2<T>) {
+        self = match j {
+            0 => Matrix2 { m11: column.x, m21: column.y, m12: self.m12, m22: self.m22 },
+            1 => Matrix2 { m11: self.m11, m21: self.m21, m12: column.x, m22: column.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    /// Replaces the diagonal by `diag`, a `Vector2` (upstream requires the length `min(R, C)` = 2).
+    /// Upstream: `set_diagonal`.
+    #[inline(always)]
+    fn set_diagonal(ref self: Matrix2<T>, diag: Vector2<T>) {
+        self = Matrix2 { m11: diag.x, m21: self.m21, m12: self.m12, m22: diag.y };
+    }
+
+    /// Replaces the first `min(diag.len(), 2)` diagonal components by the values of `diag` (the
+    /// extra values are ignored, like upstream's `take`), the others unchanged. Upstream:
+    /// `set_partial_diagonal` (an iterator; a `Span` here).
+    #[inline(always)]
+    fn set_partial_diagonal(ref self: Matrix2<T>, diag: Span<T>) {
+        let len = diag.len();
+        self =
+            Matrix2 {
+                m11: if len > 0 {
+                    *diag[0]
+                } else {
+                    self.m11
+                },
+                m21: self.m21,
+                m12: self.m12,
+                m22: if len > 1 {
+                    *diag[1]
+                } else {
+                    self.m22
+                },
+            };
+    }
+
+    /// Sets `self` to `other` (a `Matrix2`: upstream requires the same shape). Upstream:
+    /// `copy_from`.
+    #[inline(always)]
+    fn copy_from(ref self: Matrix2<T>, other: Matrix2<T>) {
+        self = other;
+    }
+
+    /// Sets `self` to the 4 values of `slice` in column-major order (`from_column_slice`). Panics
+    /// with `nalgebra: wrong slice length` unless `slice.len() == 4`. Upstream: `copy_from_slice`
+    /// (`&[T]`).
+    #[inline(always)]
+    fn copy_from_slice(ref self: Matrix2<T>, slice: Span<T>) {
+        self = Self::from_column_slice(slice);
+    }
+
+    /// Sets `self` to the transpose of `other`, a `Matrix2`. Exact. Upstream: `tr_copy_from`.
+    #[inline(always)]
+    fn tr_copy_from(ref self: Matrix2<T>, other: Matrix2<T>) {
+        self = Matrix2 { m11: other.m11, m21: other.m12, m12: other.m21, m22: other.m22 };
+    }
+
+    /// Exchanges the components at `row_cols1` and `row_cols2` (`(row, column)`). Panics with
+    /// `nalgebra: index out of bounds` when either is out of the shape. Upstream: `swap`.
+    fn swap(ref self: Matrix2<T>, row_cols1: (usize, usize), row_cols2: (usize, usize)) {
+        let a = MatrixIndex::index(self, row_cols1);
+        let b = MatrixIndex::index(self, row_cols2);
+        self =
+            Matrix2EditTrait::replace(Matrix2EditTrait::replace(self, row_cols1, b), row_cols2, a);
+    }
+
+    /// Exchanges rows `irow1` and `irow2`. Panics with `nalgebra: index out of bounds` when either
+    /// is `>= 2`. Upstream: `swap_rows`.
+    fn swap_rows(ref self: Matrix2<T>, irow1: usize, irow2: usize) {
+        let a = Matrix2EditTrait::row_at(self, irow1);
+        let b = Matrix2EditTrait::row_at(self, irow2);
+        Self::set_row(ref self, irow1, b);
+        Self::set_row(ref self, irow2, a);
+    }
+
+    /// Exchanges columns `icol1` and `icol2`. Panics with `nalgebra: index out of bounds` when
+    /// either is `>= 2`. Upstream: `swap_columns`.
+    fn swap_columns(ref self: Matrix2<T>, icol1: usize, icol2: usize) {
+        let a = Matrix2EditTrait::column_at(self, icol1);
+        let b = Matrix2EditTrait::column_at(self, icol2);
+        Self::set_column(ref self, icol1, b);
+        Self::set_column(ref self, icol2, a);
+    }
+
+    /// `self = -self`. Exact; panics on overflow (`-MIN`). Upstream: `neg_mut`.
+    #[inline(always)]
+    fn neg_mut(ref self: Matrix2<T>) {
+        self = -self;
+    }
+
+    /// `self = self.scale(k)`, each component floored once. Panics on overflow. Upstream:
+    /// `scale_mut`.
+    #[inline(always)]
+    fn scale_mut(ref self: Matrix2<T>, k: T) {
+        self = Self::scale(self, k);
+    }
+
+    /// `self = self.unscale(k)`, each component correctly rounded. Panics on a zero `k` and on
+    /// overflow. Upstream: `unscale_mut`.
+    #[inline(always)]
+    fn unscale_mut(ref self: Matrix2<T>, k: T) {
+        self = Self::unscale(self, k);
+    }
+
+    /// Normalizes `self` in place (`self = self.normalize()`, bit-identical) and returns the norm
+    /// it had. Panics with a division by zero when the norm is zero. Upstream: `normalize_mut`.
+    #[inline(always)]
+    fn normalize_mut(ref self: Matrix2<T>) -> T {
+        let n = Self::norm(self);
+        self = Self::unscale(self, n);
+        n
+    }
+
+    /// Normalizes `self` in place and returns `Some` of the norm it had, or leaves it unchanged and
+    /// returns `None` when that norm is `<= min_norm`. Upstream: `try_normalize_mut`.
+    #[inline(always)]
+    fn try_normalize_mut(ref self: Matrix2<T>, min_norm: T) -> Option<T> {
+        let n = Self::norm(self);
+        if n <= min_norm {
+            return None;
+        }
+        self = Self::unscale(self, n);
+        Some(n)
+    }
+
+    /// Scales `self` to the norm `magnitude`: `self.scale(magnitude / norm)`, the ratio rounded to
+    /// nearest (like `try_set_magnitude`). Panics with a division by zero when the norm is zero
+    /// (upstream's floats give NaN). Upstream: `set_magnitude`.
+    #[inline(always)]
+    fn set_magnitude(ref self: Matrix2<T>, magnitude: T) {
+        let n = Self::norm(self);
+        self = Self::scale(self, R::div(magnitude, n));
+    }
+
+    /// `self = self.add_scalar(k)`. Exact; panics on overflow. Upstream: `add_scalar_mut`.
+    #[inline(always)]
+    fn add_scalar_mut(ref self: Matrix2<T>, k: T) {
+        self = Self::add_scalar(self, k);
+    }
+
+    /// Alias of `component_mul_assign` (deprecated upstream). Upstream: `component_mul_mut`.
+    #[inline(always)]
+    fn component_mul_mut(ref self: Matrix2<T>, rhs: Matrix2<T>) {
+        Self::component_mul_assign(ref self, rhs);
+    }
+
+    /// Alias of `component_div_assign` (deprecated upstream). Upstream: `component_div_mut`.
+    #[inline(always)]
+    fn component_div_mut(ref self: Matrix2<T>, rhs: Matrix2<T>) {
+        Self::component_div_assign(ref self, rhs);
+    }
+
+    /// Conjugates every component in place: nothing changes for a real scalar. Upstream:
+    /// `conjugate_mut`.
+    #[inline(always)]
+    fn conjugate_mut(ref self: Matrix2<T>) {
+        self = Self::conjugate(self);
+    }
+
+    /// `self = self.transpose()`. Exact. Upstream: `transpose_mut`.
+    #[inline(always)]
+    fn transpose_mut(ref self: Matrix2<T>) {
+        self = Self::transpose(self);
+    }
+
+    /// `self = self.adjoint()`: the transpose for a real scalar. Exact. Upstream: `adjoint_mut`.
+    #[inline(always)]
+    fn adjoint_mut(ref self: Matrix2<T>) {
+        self = Self::transpose(self);
+    }
+
+    /// `adjoint_mut` (upstream's alias, kept for complex matrices). Exact. Upstream:
+    /// `conjugate_transform_mut`.
+    #[inline(always)]
+    fn conjugate_transform_mut(ref self: Matrix2<T>) {
+        self = Self::transpose(self);
+    }
+
+    /// Writes the transpose of `self` into `out`, a `Matrix2`. Exact. Upstream: `transpose_to`.
+    #[inline(always)]
+    fn transpose_to(self: Matrix2<T>, ref out: Matrix2<T>) {
+        out = Self::transpose(self);
+    }
+
+    /// Writes the adjoint of `self` (its transpose for a real scalar) into `out`, a `Matrix2`.
+    /// Exact. Upstream: `adjoint_to`.
+    #[inline(always)]
+    fn adjoint_to(self: Matrix2<T>, ref out: Matrix2<T>) {
+        out = Self::transpose(self);
+    }
+
+    /// Writes the adjoint of `self` (deprecated upstream alias of `adjoint_to`) into `out`, a
+    /// `Matrix2`. Exact. Upstream: `conjugate_transpose_to`.
+    #[inline(always)]
+    fn conjugate_transpose_to(self: Matrix2<T>, ref out: Matrix2<T>) {
+        out = Self::transpose(self);
+    }
+
+    /// Writes the sum `self + rhs` into `out`. Exact; panics on overflow. Upstream: `add_to`.
+    #[inline(always)]
+    fn add_to(self: Matrix2<T>, rhs: Matrix2<T>, ref out: Matrix2<T>) {
+        out = self + rhs;
+    }
+
+    /// Writes the difference `self - rhs` into `out`. Exact; panics on overflow. Upstream:
+    /// `sub_to`.
+    #[inline(always)]
+    fn sub_to(self: Matrix2<T>, rhs: Matrix2<T>, ref out: Matrix2<T>) {
+        out = self - rhs;
+    }
+
+    /// The norm `norm` of `self`: `EuclideanNorm {}` (`norm`), `LpNorm { p }` (`lp_norm(p)`),
+    /// `OneNorm {}` (`one_norm`) or `UniformNorm {}` (`amax`), through their `Norm` impls (static
+    /// dispatch). Upstream: `apply_norm` (`&impl Norm<T>`; the markers are `Copy` values here).
+    fn apply_norm<N, +Drop<N>, impl Nm: Norm<N, Matrix2<T>, T>>(self: Matrix2<T>, norm: N) -> T {
+        Nm::norm(@norm, self)
+    }
+
+    /// The distance between `self` and `rhs` in the norm `norm` (see `apply_norm`; the Euclidean
+    /// one is the fused `metric_distance`, the others the norm of the exact difference). Upstream:
+    /// `apply_metric_distance`.
+    fn apply_metric_distance<N, +Drop<N>, impl Nm: Norm<N, Matrix2<T>, T>>(
+        self: Matrix2<T>, rhs: Matrix2<T>, norm: N,
+    ) -> T {
+        Nm::metric_distance(@norm, self, rhs)
     }
 }
 
@@ -1420,5 +1975,149 @@ pub impl Matrix2MulPoint<
             x: R::sum_prod2(self.m11, rhs.x, self.m12, rhs.y),
             y: R::sum_prod2(self.m21, rhs.x, self.m22, rhs.y),
         }
+    }
+}
+
+// --- functional and in-place variants ------------------------------------------------------------
+
+/// Private helpers of the `swap*` methods (runtime positions: one `match` each).
+#[generate_trait]
+impl Matrix2EditImpl<T, +Copy<T>, +Drop<T>> of Matrix2EditTrait<T> {
+    /// `self` with the component at `index` (`(row, column)`) replaced by `v`; panics out of
+    /// bounds.
+    fn replace(self: Matrix2<T>, index: (usize, usize), v: T) -> Matrix2<T> {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => Matrix2 { m11: v, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m11, m21: v, m12: self.m12, m22: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match i {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: v, m22: self.m22 },
+                1 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: v },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// Row `i`, a `RowVector2`; panics out of bounds.
+    fn row_at(self: Matrix2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.m11, y: self.m12 },
+            1 => RowVector2 { x: self.m21, y: self.m22 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// Column `j`, a `Vector2`; panics out of bounds.
+    fn column_at(self: Matrix2<T>, j: usize) -> Vector2<T> {
+        match j {
+            0 => Vector2 { x: self.m11, y: self.m21 },
+            1 => Vector2 { x: self.m12, y: self.m22 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `EuclideanNorm` on `Matrix2`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Matrix2EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix2<T>) -> T {
+        Matrix2Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix2`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix2LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix2<T>) -> T {
+        Matrix2AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix2`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix2OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix2<T>) -> T {
+        Matrix2Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix2`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix2UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix2<T>) -> T {
+        Matrix2Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2Trait::amax(m1 - m2)
     }
 }
