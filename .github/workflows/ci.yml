@@ -42,6 +42,9 @@ jobs:
           - { name: "shapes componentwise", package: nalgebra_shapes_tests_componentwise, filters: "nalgebra_shapes_tests_componentwise" }
           - { name: "shapes construction", package: nalgebra_shapes_tests_construction, filters: "nalgebra_shapes_tests_construction" }
           - { name: "shapes structure", package: nalgebra_shapes_tests_structure, filters: "nalgebra_shapes_tests_structure" }
+          - { name: "shapes functional", package: nalgebra_shapes_tests_functional, filters: "nalgebra_shapes_tests_functional" }
+          - { name: "shapes edition", package: nalgebra_shapes_tests_edition, filters: "nalgebra_shapes_tests_edition" }
+          - { name: "shapes inplace", package: nalgebra_shapes_tests_inplace, filters: "nalgebra_shapes_tests_inplace" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2

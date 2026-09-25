@@ -981,6 +981,12 @@ def cairo_files() -> list[Path]:
     return paths
 
 
+# Generic traits implemented in other files than their own: `Norm<N, M, T>` (`base/norm.cairo`),
+# implemented in each shape's module for the four norm markers (`Matrix3EuclideanNorm`), so its
+# `norm` / `metric_distance` are the shapes' methods of the same names (WP 8.2b).
+CROSS_FILE_TRAITS = {"Norm"}
+
+
 def parse_cairo() -> list[Item]:
     files = [(p, mask_comments(p.read_text())) for p in cairo_files()]
     types = sorted({m.group(1) for _, text in files
@@ -1011,9 +1017,11 @@ def parse_cairo() -> list[Item]:
             fns = re.findall(r"\bfn\s+([A-Za-z_]\w*)", body)
             consts = re.findall(r"\bconst\s+([A-Z][A-Z0-9_]*)\s*:", body)
             if not owner:
-                # Generic trait (`Normalizable<V, T>`): its methods belong to each implementor.
+                # Generic trait (`Normalizable<V, T>`): its methods belong to each implementor,
+                # found in the trait's file, or in every file for `CROSS_FILE_TRAITS`.
+                scope = "\n".join(t for _, t in files) if name in CROSS_FILE_TRAITS else text
                 impls = re.findall(rf"\bpub\s+impl\s+([A-Za-z_]\w*)\s*(?:<[^{{]*?>)?\s*of\s+"
-                                   rf"{name}\b", mask_comments(text))
+                                   rf"{name}\b", mask_comments(scope))
                 owners = sorted({cairo_owner(i, types, "") for i in impls} - {""}) or [
                     {"PermTrait": "Perm"}.get(name, name)]
             else:
@@ -1265,6 +1273,12 @@ RENAMES = (
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"ad_mul",
          r"MatrixTrMul::ad_mul", "method of the generic `MatrixTrMul` (`tr_mul` for a real "
          "scalar)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"mul_to",
+         r"MatrixMul::mul_to", "default method of the generic `MatrixMul` (`out = "
+         "self.mul_mat(rhs)`, the output of the product's own shape)"),
+    rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d",
+         r"(tr_mul_to|ad_mul_to)", r"MatrixTrMul::\1", "default method of the generic "
+         "`MatrixTrMul` (`out = self.tr_mul(rhs)`)"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d",
          r"(get|index)", r"MatrixIndex::\1", "method of the generic `MatrixIndex` (one impl per "
          "shape and index type: `usize`, `(usize, usize)`)"),
@@ -1502,7 +1516,8 @@ EXCLUDE = (
             r"columns_range_pair\w*|rows_range_pair\w*|view_range\w*|slice_range\w*|"
             r"fixed_view\w*_mut|fixed_rows_mut|fixed_columns_mut|rows_mut|columns_mut|"
             r"row_mut|column_mut|row_part_mut|column_part_mut|view_mut|slice_mut|"
-            r"fixed_slice_mut|\w+_range_mut|\w*_mut_with_step\w*)", "generic-dim"),
+            r"fixed_slice_mut|\w+_range_mut|\w*_mut_with_step\w*|\w+_with_steps?_mut)",
+            "generic-dim"),
     exclude(r".*", r"impl:(?:IntoIterator|FromIterator|Extend|Deref)", "generic-dim"),
     exclude(r".*", r"(?:iter|column_iter|row_iter|into_iter)", "generic-dim"),
     exclude(r"CsVecStorage|CsStorage|CsStorageMut|CsStorageIter|CsStorageIterMut|"
