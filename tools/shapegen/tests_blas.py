@@ -39,6 +39,13 @@ def scaled(alpha: int, pairs, beta: int, c: int) -> int:
     return ((sum(a * b for a, b in pairs) * alpha) >> 64) + floor_scale(beta * c)
 
 
+def rank_one(alpha: int, xi: int, yj: int, beta: int, m: int) -> int:
+    """`ger`'s entry on raws (`blas.RANK_ONE`)."""
+    if blas.RANK_ONE == "scaled":
+        return scaled(alpha, [(xi, yj)], beta, m)
+    return floor_scale(floor_scale(alpha * yj) * xi + beta * m)
+
+
 def at(s: Shape, a: dict, i: int, j: int) -> int:
     return a[s.f(i, j)]
 
@@ -92,13 +99,13 @@ def per_shape(f: P06File, s: Shape):
              f"assert!(a.dotc(b) == a.dot(b));",
              f"assert!(a.tr_dot(t) == "
              f"{fx(floor_scale(sum(at(s, a, i, j) * at(Tr, t, j, i) for i in range(s.r) for j in range(s.c))))});"]
-    ger = grid(s, lambda i, j: scaled(alpha, [(at(X, x, i, 0), at(Y, y, j, 0))], beta, at(s, a, i, j)))
+    ger = grid(s, lambda i, j: rank_one(alpha, at(X, x, i, 0), at(Y, y, j, 0), beta, at(s, a, i, j)))
     for name in ("ger", "gerc"):
         lines += ["let mut m = a;", f"m.{name}(alpha, x, y, beta);", f"assert_raws(m, {col(s, ger)});"]
     traits = [f"{S}BlasTrait", f"{S}Trait"]
     if s.is_square:
-        syger = grid(s, lambda i, j: scaled(alpha, [(at(X, x, i, 0), at(X, x, j, 0))], beta,
-                                            at(s, a, i, j)) if i >= j else at(s, a, i, j))
+        syger = grid(s, lambda i, j: rank_one(alpha, at(X, x, i, 0), at(X, x, j, 0), beta,
+                                              at(s, a, i, j)) if i >= j else at(s, a, i, j))
         for name in ("syger", "hegerc", "ger_symm"):
             lines += ["let mut m = a;", f"m.{name}(alpha, x, x, beta);",
                       f"assert_raws(m, {col(s, syger)});"]
@@ -106,7 +113,8 @@ def per_shape(f: P06File, s: Shape):
         n = s.r
         k1, k2, k3 = rand_raw(rng, 34), rand_raw(rng, 34), rand_raw(rng, 34)
         axpy = grid(s, lambda i, j: floor_scale(k1 * at(s, b, i, 0) + k2 * at(s, a, i, 0)))
-        axcpy = grid(s, lambda i, j: scaled(k3, [(k1, at(s, b, i, 0))], k2, at(s, a, i, 0)))
+        axcpy = grid(s, lambda i, j: floor_scale(floor_scale(k1 * at(s, b, i, 0)) * k3
+                                                 + k2 * at(s, a, i, 0)))
         M = Shape(n, n)
         mm = raws(rng, M, BITS)
         sy = grid(s, lambda i, j: scaled(alpha, [(at(M, mm, max(i, q), min(i, q)), at(s, b, q, 0))
@@ -313,10 +321,22 @@ def alt_kernel(name: str, S: Shape, A: Shape, B: Shape, tr: bool) -> str:
             fields.append(f"{S.f(i, j)}: {val}")
     what = (f"the `{other}` kernel of `alpha * sum + beta * c` (`blas.py` `SCALED_DOT`)"
             if name.startswith("alt_upstream") else "the transposed fields read directly (no "
-            "`BlasTranspose`)")
+            "`BlasTranspose`)" if tr else "every entry written in place (`blas.py` `GEMM_FORM = "
+            "\"direct\"`) instead of the one-column impl per column")
     return (f"/// `{S.name}::{'gemm_tr' if tr else 'gemm'}` with {what}.\n"
             f"fn {name}(alpha: Fixed, a: {A.name}<Fixed>, b: {B.name}<Fixed>, beta: Fixed, "
             f"c: {S.name}<Fixed>) -> {S.name}<Fixed> {{\n{S.name} {{ {', '.join(fields)} }}\n}}")
+
+
+def alt_ger(S: Shape, form: str) -> str:
+    """`ger` of `S` with the other kernel of `blas.RANK_ONE`, rendered from the library's template
+    as a free function (`R::` / `BlasKernels::` spelled for `Fixed`)."""
+    X, Y = vec(S.r), vec(S.c)
+    body = blas.rank_one(S, lambda i, j: True, form, prefix="m").replace("R::", "Real::<Fixed>::")
+    body = re.sub(r"BlasKernels::scaled_dot1\(", "alt_scaled_dot1(", body)
+    return (f"/// `{S.name}::ger` with the `{form}` kernel (`blas.py` `RANK_ONE`).\n"
+            f"fn alt_{form}_ger_{S.module}(alpha: Fixed, x: {X.name}<Fixed>, y: {Y.name}<Fixed>, "
+            f"beta: Fixed, m: {S.name}<Fixed>) -> {S.name}<Fixed> {{\nlet mut m = m;\n{body}\nm\n}}")
 
 
 def alt_scaled_dot(k: int) -> str:
@@ -329,7 +349,7 @@ def alt_scaled_dot(k: int) -> str:
 def render_benches() -> str:
     fns, helpers, need = [], [], set()
     rng = random.Random("tests_blas/benches")
-    helpers += [alt_scaled_dot(3), alt_scaled_dot(4)]
+    helpers += [alt_scaled_dot(1), alt_scaled_dot(3), alt_scaled_dot(4)]
 
     def pre_of(items) -> list[str]:
         return [bb(sh, n, v) if sh else f"let {n}: Fixed = black_box({fx(v)});"
@@ -347,7 +367,15 @@ def render_benches() -> str:
         variants = []
         if S == Shape(3, 3):
             helpers.append(alt_kernel("alt_upstream_gemm_matrix3", S, A, B, False))
-            variants = [("alt_upstream", "alt_upstream_gemm_matrix3(alpha, a, b, beta, c)")]
+            up = grid(S, lambda i, j: floor_scale(
+                alpha * floor_scale(sum(at(A, a, i, q) * at(B, b, q, j) for q in range(k)))
+                + beta * at(S, c, i, j)))
+            variants = [("alt_upstream", "alt_upstream_gemm_matrix3(alpha, a, b, beta, c)",
+                         f"load({col(S, up)})")]
+        if S == Shape(6, 6):
+            helpers.append(alt_kernel("alt_direct_gemm_matrix6", S, A, B, False))
+            helpers.append(alt_scaled_dot(6))
+            variants = [("alt_direct", "alt_direct_gemm_matrix6(alpha, a, b, beta, c)")]
         bench_group(fns, f"{S.module}_gemm", pre_of(base),
                     "{\nlet mut m = c;\nm.gemm(alpha, a, b, beta);\nm\n}", f"{S.name}<Fixed>",
                     f"load({col(S, e)})", variants)
@@ -376,13 +404,21 @@ def render_benches() -> str:
         bench_group(fns, f"{Y.module}_sygemv", pre_of(base),
                     "{\nlet mut v = y;\nv.sygemv(alpha, a, x, beta);\nv\n}", f"{Y.name}<Fixed>",
                     f"load({col(Y, e)})")
-        e = grid(A, lambda i, j: scaled(alpha, [(at(Y, x, i, 0), at(Y, y, j, 0))], beta,
-                                        at(A, a, i, j)))
+        e = grid(A, lambda i, j: rank_one(alpha, at(Y, x, i, 0), at(Y, y, j, 0), beta,
+                                          at(A, a, i, j)))
+        other = "scaled" if blas.RANK_ONE == "upstream" else "upstream"
+        helpers.append(alt_ger(A, other))
+        alt = grid(A, lambda i, j: (
+            scaled(alpha, [(at(Y, x, i, 0), at(Y, y, j, 0))], beta, at(A, a, i, j))
+            if other == "scaled" else
+            floor_scale(floor_scale(alpha * at(Y, y, j, 0)) * at(Y, x, i, 0) + beta * at(A, a, i, j))))
         bench_group(fns, f"{A.module}_ger", pre_of(base),
                     "{\nlet mut m = a;\nm.ger(alpha, x, y, beta);\nm\n}", f"{A.name}<Fixed>",
-                    f"load({col(A, e)})")
+                    f"load({col(A, e)})",
+                    [(f"alt_{other}", f"alt_{other}_ger_{A.module}(alpha, x, y, beta, a)",
+                      f"load({col(A, alt)})")])
         e = grid(Y, lambda i, j: floor_scale(alpha * at(Y, x, i, 0) + beta * at(Y, y, i, 0)))
-        bench_group(fns, f"{Y.module}_axpy", pre_of(base),
+        bench_group(fns, f"{Y.module}_axpy", pre_of(base[:1] + base[2:]),
                     "{\nlet mut v = y;\nv.axpy(alpha, x, beta);\nv\n}", f"{Y.name}<Fixed>",
                     f"load({col(Y, e)})")
         e = floor_scale(sum(at(A, a, i, j) * at(A, a, j, i) for i in range(n) for j in range(n)))

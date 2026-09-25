@@ -15,6 +15,19 @@ use simba::scalar::Real;
 use crate::helpers::{fx, load};
 
 #[inline(always)]
+fn alt_scaled_dot1(alpha: Fixed, a0: Fixed, b0: Fixed, beta: Fixed, c: Fixed) -> Fixed {
+    Real::<
+        Fixed,
+    >::mul_add(
+        beta,
+        c,
+        Real::<
+            Fixed,
+        >::wide_mul_scalar(Real::<Fixed>::wide_add_prod(Real::<Fixed>::wide_zero(), a0, b0), alpha),
+    )
+}
+
+#[inline(always)]
 fn alt_scaled_dot3(
     alpha: Fixed,
     a0: Fixed,
@@ -335,6 +348,689 @@ fn alt_direct_gemm_tr_matrix3(
     }
 }
 
+/// `Matrix6::gemm` with every entry written in place (`blas.py` `GEMM_FORM = "direct"`) instead of
+/// the one-column impl per column.
+fn alt_direct_gemm_matrix6(
+    alpha: Fixed, a: Matrix6<Fixed>, b: Matrix6<Fixed>, beta: Fixed, c: Matrix6<Fixed>,
+) -> Matrix6<Fixed> {
+    Matrix6 {
+        m11: alt_scaled_dot6(
+            alpha,
+            a.m11,
+            b.m11,
+            a.m12,
+            b.m21,
+            a.m13,
+            b.m31,
+            a.m14,
+            b.m41,
+            a.m15,
+            b.m51,
+            a.m16,
+            b.m61,
+            beta,
+            c.m11,
+        ),
+        m21: alt_scaled_dot6(
+            alpha,
+            a.m21,
+            b.m11,
+            a.m22,
+            b.m21,
+            a.m23,
+            b.m31,
+            a.m24,
+            b.m41,
+            a.m25,
+            b.m51,
+            a.m26,
+            b.m61,
+            beta,
+            c.m21,
+        ),
+        m31: alt_scaled_dot6(
+            alpha,
+            a.m31,
+            b.m11,
+            a.m32,
+            b.m21,
+            a.m33,
+            b.m31,
+            a.m34,
+            b.m41,
+            a.m35,
+            b.m51,
+            a.m36,
+            b.m61,
+            beta,
+            c.m31,
+        ),
+        m41: alt_scaled_dot6(
+            alpha,
+            a.m41,
+            b.m11,
+            a.m42,
+            b.m21,
+            a.m43,
+            b.m31,
+            a.m44,
+            b.m41,
+            a.m45,
+            b.m51,
+            a.m46,
+            b.m61,
+            beta,
+            c.m41,
+        ),
+        m51: alt_scaled_dot6(
+            alpha,
+            a.m51,
+            b.m11,
+            a.m52,
+            b.m21,
+            a.m53,
+            b.m31,
+            a.m54,
+            b.m41,
+            a.m55,
+            b.m51,
+            a.m56,
+            b.m61,
+            beta,
+            c.m51,
+        ),
+        m61: alt_scaled_dot6(
+            alpha,
+            a.m61,
+            b.m11,
+            a.m62,
+            b.m21,
+            a.m63,
+            b.m31,
+            a.m64,
+            b.m41,
+            a.m65,
+            b.m51,
+            a.m66,
+            b.m61,
+            beta,
+            c.m61,
+        ),
+        m12: alt_scaled_dot6(
+            alpha,
+            a.m11,
+            b.m12,
+            a.m12,
+            b.m22,
+            a.m13,
+            b.m32,
+            a.m14,
+            b.m42,
+            a.m15,
+            b.m52,
+            a.m16,
+            b.m62,
+            beta,
+            c.m12,
+        ),
+        m22: alt_scaled_dot6(
+            alpha,
+            a.m21,
+            b.m12,
+            a.m22,
+            b.m22,
+            a.m23,
+            b.m32,
+            a.m24,
+            b.m42,
+            a.m25,
+            b.m52,
+            a.m26,
+            b.m62,
+            beta,
+            c.m22,
+        ),
+        m32: alt_scaled_dot6(
+            alpha,
+            a.m31,
+            b.m12,
+            a.m32,
+            b.m22,
+            a.m33,
+            b.m32,
+            a.m34,
+            b.m42,
+            a.m35,
+            b.m52,
+            a.m36,
+            b.m62,
+            beta,
+            c.m32,
+        ),
+        m42: alt_scaled_dot6(
+            alpha,
+            a.m41,
+            b.m12,
+            a.m42,
+            b.m22,
+            a.m43,
+            b.m32,
+            a.m44,
+            b.m42,
+            a.m45,
+            b.m52,
+            a.m46,
+            b.m62,
+            beta,
+            c.m42,
+        ),
+        m52: alt_scaled_dot6(
+            alpha,
+            a.m51,
+            b.m12,
+            a.m52,
+            b.m22,
+            a.m53,
+            b.m32,
+            a.m54,
+            b.m42,
+            a.m55,
+            b.m52,
+            a.m56,
+            b.m62,
+            beta,
+            c.m52,
+        ),
+        m62: alt_scaled_dot6(
+            alpha,
+            a.m61,
+            b.m12,
+            a.m62,
+            b.m22,
+            a.m63,
+            b.m32,
+            a.m64,
+            b.m42,
+            a.m65,
+            b.m52,
+            a.m66,
+            b.m62,
+            beta,
+            c.m62,
+        ),
+        m13: alt_scaled_dot6(
+            alpha,
+            a.m11,
+            b.m13,
+            a.m12,
+            b.m23,
+            a.m13,
+            b.m33,
+            a.m14,
+            b.m43,
+            a.m15,
+            b.m53,
+            a.m16,
+            b.m63,
+            beta,
+            c.m13,
+        ),
+        m23: alt_scaled_dot6(
+            alpha,
+            a.m21,
+            b.m13,
+            a.m22,
+            b.m23,
+            a.m23,
+            b.m33,
+            a.m24,
+            b.m43,
+            a.m25,
+            b.m53,
+            a.m26,
+            b.m63,
+            beta,
+            c.m23,
+        ),
+        m33: alt_scaled_dot6(
+            alpha,
+            a.m31,
+            b.m13,
+            a.m32,
+            b.m23,
+            a.m33,
+            b.m33,
+            a.m34,
+            b.m43,
+            a.m35,
+            b.m53,
+            a.m36,
+            b.m63,
+            beta,
+            c.m33,
+        ),
+        m43: alt_scaled_dot6(
+            alpha,
+            a.m41,
+            b.m13,
+            a.m42,
+            b.m23,
+            a.m43,
+            b.m33,
+            a.m44,
+            b.m43,
+            a.m45,
+            b.m53,
+            a.m46,
+            b.m63,
+            beta,
+            c.m43,
+        ),
+        m53: alt_scaled_dot6(
+            alpha,
+            a.m51,
+            b.m13,
+            a.m52,
+            b.m23,
+            a.m53,
+            b.m33,
+            a.m54,
+            b.m43,
+            a.m55,
+            b.m53,
+            a.m56,
+            b.m63,
+            beta,
+            c.m53,
+        ),
+        m63: alt_scaled_dot6(
+            alpha,
+            a.m61,
+            b.m13,
+            a.m62,
+            b.m23,
+            a.m63,
+            b.m33,
+            a.m64,
+            b.m43,
+            a.m65,
+            b.m53,
+            a.m66,
+            b.m63,
+            beta,
+            c.m63,
+        ),
+        m14: alt_scaled_dot6(
+            alpha,
+            a.m11,
+            b.m14,
+            a.m12,
+            b.m24,
+            a.m13,
+            b.m34,
+            a.m14,
+            b.m44,
+            a.m15,
+            b.m54,
+            a.m16,
+            b.m64,
+            beta,
+            c.m14,
+        ),
+        m24: alt_scaled_dot6(
+            alpha,
+            a.m21,
+            b.m14,
+            a.m22,
+            b.m24,
+            a.m23,
+            b.m34,
+            a.m24,
+            b.m44,
+            a.m25,
+            b.m54,
+            a.m26,
+            b.m64,
+            beta,
+            c.m24,
+        ),
+        m34: alt_scaled_dot6(
+            alpha,
+            a.m31,
+            b.m14,
+            a.m32,
+            b.m24,
+            a.m33,
+            b.m34,
+            a.m34,
+            b.m44,
+            a.m35,
+            b.m54,
+            a.m36,
+            b.m64,
+            beta,
+            c.m34,
+        ),
+        m44: alt_scaled_dot6(
+            alpha,
+            a.m41,
+            b.m14,
+            a.m42,
+            b.m24,
+            a.m43,
+            b.m34,
+            a.m44,
+            b.m44,
+            a.m45,
+            b.m54,
+            a.m46,
+            b.m64,
+            beta,
+            c.m44,
+        ),
+        m54: alt_scaled_dot6(
+            alpha,
+            a.m51,
+            b.m14,
+            a.m52,
+            b.m24,
+            a.m53,
+            b.m34,
+            a.m54,
+            b.m44,
+            a.m55,
+            b.m54,
+            a.m56,
+            b.m64,
+            beta,
+            c.m54,
+        ),
+        m64: alt_scaled_dot6(
+            alpha,
+            a.m61,
+            b.m14,
+            a.m62,
+            b.m24,
+            a.m63,
+            b.m34,
+            a.m64,
+            b.m44,
+            a.m65,
+            b.m54,
+            a.m66,
+            b.m64,
+            beta,
+            c.m64,
+        ),
+        m15: alt_scaled_dot6(
+            alpha,
+            a.m11,
+            b.m15,
+            a.m12,
+            b.m25,
+            a.m13,
+            b.m35,
+            a.m14,
+            b.m45,
+            a.m15,
+            b.m55,
+            a.m16,
+            b.m65,
+            beta,
+            c.m15,
+        ),
+        m25: alt_scaled_dot6(
+            alpha,
+            a.m21,
+            b.m15,
+            a.m22,
+            b.m25,
+            a.m23,
+            b.m35,
+            a.m24,
+            b.m45,
+            a.m25,
+            b.m55,
+            a.m26,
+            b.m65,
+            beta,
+            c.m25,
+        ),
+        m35: alt_scaled_dot6(
+            alpha,
+            a.m31,
+            b.m15,
+            a.m32,
+            b.m25,
+            a.m33,
+            b.m35,
+            a.m34,
+            b.m45,
+            a.m35,
+            b.m55,
+            a.m36,
+            b.m65,
+            beta,
+            c.m35,
+        ),
+        m45: alt_scaled_dot6(
+            alpha,
+            a.m41,
+            b.m15,
+            a.m42,
+            b.m25,
+            a.m43,
+            b.m35,
+            a.m44,
+            b.m45,
+            a.m45,
+            b.m55,
+            a.m46,
+            b.m65,
+            beta,
+            c.m45,
+        ),
+        m55: alt_scaled_dot6(
+            alpha,
+            a.m51,
+            b.m15,
+            a.m52,
+            b.m25,
+            a.m53,
+            b.m35,
+            a.m54,
+            b.m45,
+            a.m55,
+            b.m55,
+            a.m56,
+            b.m65,
+            beta,
+            c.m55,
+        ),
+        m65: alt_scaled_dot6(
+            alpha,
+            a.m61,
+            b.m15,
+            a.m62,
+            b.m25,
+            a.m63,
+            b.m35,
+            a.m64,
+            b.m45,
+            a.m65,
+            b.m55,
+            a.m66,
+            b.m65,
+            beta,
+            c.m65,
+        ),
+        m16: alt_scaled_dot6(
+            alpha,
+            a.m11,
+            b.m16,
+            a.m12,
+            b.m26,
+            a.m13,
+            b.m36,
+            a.m14,
+            b.m46,
+            a.m15,
+            b.m56,
+            a.m16,
+            b.m66,
+            beta,
+            c.m16,
+        ),
+        m26: alt_scaled_dot6(
+            alpha,
+            a.m21,
+            b.m16,
+            a.m22,
+            b.m26,
+            a.m23,
+            b.m36,
+            a.m24,
+            b.m46,
+            a.m25,
+            b.m56,
+            a.m26,
+            b.m66,
+            beta,
+            c.m26,
+        ),
+        m36: alt_scaled_dot6(
+            alpha,
+            a.m31,
+            b.m16,
+            a.m32,
+            b.m26,
+            a.m33,
+            b.m36,
+            a.m34,
+            b.m46,
+            a.m35,
+            b.m56,
+            a.m36,
+            b.m66,
+            beta,
+            c.m36,
+        ),
+        m46: alt_scaled_dot6(
+            alpha,
+            a.m41,
+            b.m16,
+            a.m42,
+            b.m26,
+            a.m43,
+            b.m36,
+            a.m44,
+            b.m46,
+            a.m45,
+            b.m56,
+            a.m46,
+            b.m66,
+            beta,
+            c.m46,
+        ),
+        m56: alt_scaled_dot6(
+            alpha,
+            a.m51,
+            b.m16,
+            a.m52,
+            b.m26,
+            a.m53,
+            b.m36,
+            a.m54,
+            b.m46,
+            a.m55,
+            b.m56,
+            a.m56,
+            b.m66,
+            beta,
+            c.m56,
+        ),
+        m66: alt_scaled_dot6(
+            alpha,
+            a.m61,
+            b.m16,
+            a.m62,
+            b.m26,
+            a.m63,
+            b.m36,
+            a.m64,
+            b.m46,
+            a.m65,
+            b.m56,
+            a.m66,
+            b.m66,
+            beta,
+            c.m66,
+        ),
+    }
+}
+
+#[inline(always)]
+fn alt_scaled_dot6(
+    alpha: Fixed,
+    a0: Fixed,
+    b0: Fixed,
+    a1: Fixed,
+    b1: Fixed,
+    a2: Fixed,
+    b2: Fixed,
+    a3: Fixed,
+    b3: Fixed,
+    a4: Fixed,
+    b4: Fixed,
+    a5: Fixed,
+    b5: Fixed,
+    beta: Fixed,
+    c: Fixed,
+) -> Fixed {
+    Real::<
+        Fixed,
+    >::mul_add(
+        beta,
+        c,
+        Real::<
+            Fixed,
+        >::wide_mul_scalar(
+            Real::<
+                Fixed,
+            >::wide_add_prod(
+                Real::<
+                    Fixed,
+                >::wide_add_prod(
+                    Real::<
+                        Fixed,
+                    >::wide_add_prod(
+                        Real::<
+                            Fixed,
+                        >::wide_add_prod(
+                            Real::<
+                                Fixed,
+                            >::wide_add_prod(
+                                Real::<Fixed>::wide_add_prod(Real::<Fixed>::wide_zero(), a0, b0),
+                                a1,
+                                b1,
+                            ),
+                            a2,
+                            b2,
+                        ),
+                        a3,
+                        b3,
+                    ),
+                    a4,
+                    b4,
+                ),
+                a5,
+                b5,
+            ),
+            alpha,
+        ),
+    )
+}
+
 /// `Matrix2x3::gemm_tr` with the transposed fields read directly (no `BlasTranspose`).
 fn alt_direct_gemm_tr_matrix2x3(
     alpha: Fixed, a: Matrix4x2<Fixed>, b: Matrix4x3<Fixed>, beta: Fixed, c: Matrix2x3<Fixed>,
@@ -359,6 +1055,73 @@ fn alt_direct_gemm_tr_matrix2x3(
             alpha, a.m12, b.m13, a.m22, b.m23, a.m32, b.m33, a.m42, b.m43, beta, c.m23,
         ),
     }
+}
+
+/// `Matrix3::ger` with the `scaled` kernel (`blas.py` `RANK_ONE`).
+fn alt_scaled_ger_matrix3(
+    alpha: Fixed, x: Vector3<Fixed>, y: Vector3<Fixed>, beta: Fixed, m: Matrix3<Fixed>,
+) -> Matrix3<Fixed> {
+    let mut m = m;
+    m =
+        Matrix3 {
+            m11: alt_scaled_dot1(alpha, x.x, y.x, beta, m.m11),
+            m21: alt_scaled_dot1(alpha, x.y, y.x, beta, m.m21),
+            m31: alt_scaled_dot1(alpha, x.z, y.x, beta, m.m31),
+            m12: alt_scaled_dot1(alpha, x.x, y.y, beta, m.m12),
+            m22: alt_scaled_dot1(alpha, x.y, y.y, beta, m.m22),
+            m32: alt_scaled_dot1(alpha, x.z, y.y, beta, m.m32),
+            m13: alt_scaled_dot1(alpha, x.x, y.z, beta, m.m13),
+            m23: alt_scaled_dot1(alpha, x.y, y.z, beta, m.m23),
+            m33: alt_scaled_dot1(alpha, x.z, y.z, beta, m.m33),
+        };
+    m
+}
+
+/// `Matrix6::ger` with the `scaled` kernel (`blas.py` `RANK_ONE`).
+fn alt_scaled_ger_matrix6(
+    alpha: Fixed, x: Vector6<Fixed>, y: Vector6<Fixed>, beta: Fixed, m: Matrix6<Fixed>,
+) -> Matrix6<Fixed> {
+    let mut m = m;
+    m =
+        Matrix6 {
+            m11: alt_scaled_dot1(alpha, x.x, y.x, beta, m.m11),
+            m21: alt_scaled_dot1(alpha, x.y, y.x, beta, m.m21),
+            m31: alt_scaled_dot1(alpha, x.z, y.x, beta, m.m31),
+            m41: alt_scaled_dot1(alpha, x.w, y.x, beta, m.m41),
+            m51: alt_scaled_dot1(alpha, x.a, y.x, beta, m.m51),
+            m61: alt_scaled_dot1(alpha, x.b, y.x, beta, m.m61),
+            m12: alt_scaled_dot1(alpha, x.x, y.y, beta, m.m12),
+            m22: alt_scaled_dot1(alpha, x.y, y.y, beta, m.m22),
+            m32: alt_scaled_dot1(alpha, x.z, y.y, beta, m.m32),
+            m42: alt_scaled_dot1(alpha, x.w, y.y, beta, m.m42),
+            m52: alt_scaled_dot1(alpha, x.a, y.y, beta, m.m52),
+            m62: alt_scaled_dot1(alpha, x.b, y.y, beta, m.m62),
+            m13: alt_scaled_dot1(alpha, x.x, y.z, beta, m.m13),
+            m23: alt_scaled_dot1(alpha, x.y, y.z, beta, m.m23),
+            m33: alt_scaled_dot1(alpha, x.z, y.z, beta, m.m33),
+            m43: alt_scaled_dot1(alpha, x.w, y.z, beta, m.m43),
+            m53: alt_scaled_dot1(alpha, x.a, y.z, beta, m.m53),
+            m63: alt_scaled_dot1(alpha, x.b, y.z, beta, m.m63),
+            m14: alt_scaled_dot1(alpha, x.x, y.w, beta, m.m14),
+            m24: alt_scaled_dot1(alpha, x.y, y.w, beta, m.m24),
+            m34: alt_scaled_dot1(alpha, x.z, y.w, beta, m.m34),
+            m44: alt_scaled_dot1(alpha, x.w, y.w, beta, m.m44),
+            m54: alt_scaled_dot1(alpha, x.a, y.w, beta, m.m54),
+            m64: alt_scaled_dot1(alpha, x.b, y.w, beta, m.m64),
+            m15: alt_scaled_dot1(alpha, x.x, y.a, beta, m.m15),
+            m25: alt_scaled_dot1(alpha, x.y, y.a, beta, m.m25),
+            m35: alt_scaled_dot1(alpha, x.z, y.a, beta, m.m35),
+            m45: alt_scaled_dot1(alpha, x.w, y.a, beta, m.m45),
+            m55: alt_scaled_dot1(alpha, x.a, y.a, beta, m.m55),
+            m65: alt_scaled_dot1(alpha, x.b, y.a, beta, m.m65),
+            m16: alt_scaled_dot1(alpha, x.x, y.b, beta, m.m16),
+            m26: alt_scaled_dot1(alpha, x.y, y.b, beta, m.m26),
+            m36: alt_scaled_dot1(alpha, x.z, y.b, beta, m.m36),
+            m46: alt_scaled_dot1(alpha, x.w, y.b, beta, m.m46),
+            m56: alt_scaled_dot1(alpha, x.a, y.b, beta, m.m56),
+            m66: alt_scaled_dot1(alpha, x.b, y.b, beta, m.m66),
+        };
+    m
 }
 
 #[test]
@@ -489,8 +1252,8 @@ fn bench_matrix3_gemm__alt_upstream() {
     let e: Matrix3<Fixed> = black_box(
         load(
             array![
-                182850174358, 666697407085, -105275482145, 425829859246, -1205063691036,
-                470998024278, 225149168101, -725870499947, -119040070893,
+                182850174359, 666697407086, -105275482141, 425829859249, -1205063691034,
+                470998024280, 225149168104, -725870499942, -119040070893,
             ]
                 .span(),
         ),
@@ -862,6 +1625,68 @@ fn bench_matrix6_gemm__library() {
         m.gemm(alpha, a, b, beta);
         m
     };
+    assert!(r == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix6_gemm__alt_direct() {
+    let alpha: Fixed = black_box(fx(-4991280799));
+    let a: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                -25012406230, 24045419754, 34248539687, 11077928802, 10483348680, -1196833313,
+                7775927104, -8079597628, -9973750012, -20395848339, -21531315419, -9723482655,
+                -18199889464, 3357344553, 32598363035, 831506274, -30276747599, -29942216872,
+                12306550244, 18243686545, -8204142771, -10269097476, -9889386381, -337796428,
+                -14901794460, 25595468678, -251068196, -17620524727, 9912266065, -18789519700,
+                -10365049050, 32335000060, -6337440519, 11132588712, -17422447583, -3818467628,
+            ]
+                .span(),
+        ),
+    );
+    let b: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                7276245914, -16313421054, -34030225059, 34046634635, -10118537186, -380674756,
+                16603259520, 26262208939, 26282071884, 26453739916, 16680322340, 17509073085,
+                20792859526, 26086492745, -10372309152, -23782746072, -18318200613, 19622795912,
+                29361709195, 3866981648, -18041927000, 31158939677, 13669263963, -18274941568,
+                9118159918, -780697310, 31909634690, 843081849, -20173161409, -6761737557,
+                28661517787, -14869714854, -13152791122, -28251547536, -16702623550, -2645701313,
+            ]
+                .span(),
+        ),
+    );
+    let beta: Fixed = black_box(fx(-15859183838));
+    let c: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                8475679579, 20008578626, 15396155986, -6080588289, -20062216018, 15647277447,
+                7317138063, 5652718560, -30777769633, 31214163287, 8559685053, 9634939112,
+                -29664054764, 9131235312, -32093935095, -13619730434, 10599385068, 13057237929,
+                -17279166920, -9941590745, -6248977416, -31487657179, 13565994910, -24412686738,
+                24990725992, 33064885087, -20218309244, -16085779691, -2959810334, -30839297980,
+                16181928523, 21132399869, -18008306864, -6320831336, -29470783438, -16945768101,
+            ]
+                .span(),
+        ),
+    );
+    let e: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                -270548103156, -220630582220, 206095413018, -34223532486, -203935625336,
+                -422768356768, 187793242652, -494652519875, -111277948057, 74283368226,
+                398195505739, 357135350859, 204658630965, -29965957478, 67318390337, -78265290015,
+                46881997430, -131911131959, 65641534485, -218067550589, -40685168915, 260455629280,
+                -298088882919, 17117225875, 25101604437, -17402381586, -304497061078, -52891585881,
+                266412786286, 263825329043, 120046405037, -6785199155, -191609217343, -291836842158,
+                -210131114192, -164059963916,
+            ]
+                .span(),
+        ),
+    );
+    let r: Matrix6<Fixed> = alt_direct_gemm_matrix6(alpha, a, b, beta, c);
     assert!(r == e);
 }
 
@@ -1242,8 +2067,8 @@ fn bench_matrix3_ger__baseline() {
     let e: Matrix3<Fixed> = black_box(
         load(
             array![
-                -431407257686, 437443326425, 43733927550, 318771247996, -362872147499, -88149529162,
-                -171880051568, 149084109705, -21570209201,
+                -431407257690, 437443326431, 43733927551, 318771247992, -362872147494, -88149529160,
+                -171880051569, 149084109707, -21570209200,
             ]
                 .span(),
         ),
@@ -1270,8 +2095,8 @@ fn bench_matrix3_ger__library() {
     let e: Matrix3<Fixed> = black_box(
         load(
             array![
-                -431407257686, 437443326425, 43733927550, 318771247996, -362872147499, -88149529162,
-                -171880051568, 149084109705, -21570209201,
+                -431407257690, 437443326431, 43733927551, 318771247992, -362872147494, -88149529160,
+                -171880051569, 149084109707, -21570209200,
             ]
                 .span(),
         ),
@@ -1286,9 +2111,9 @@ fn bench_matrix3_ger__library() {
 
 #[test]
 #[inline(never)]
-fn bench_vector3_axpy__baseline() {
-    let _alpha: Fixed = black_box(fx(-8891890831));
-    let _a: Matrix3<Fixed> = black_box(
+fn bench_matrix3_ger__alt_scaled() {
+    let alpha: Fixed = black_box(fx(-8891890831));
+    let a: Matrix3<Fixed> = black_box(
         load(
             array![
                 29014785402, 3614332882, 22211525440, -1347552325, -7005522938, 6466541113,
@@ -1297,6 +2122,26 @@ fn bench_vector3_axpy__baseline() {
                 .span(),
         ),
     );
+    let x: Vector3<Fixed> = black_box(load(array![27645408950, -32978267963, -6568479989].span()));
+    let beta: Fixed = black_box(fx(-8672073708));
+    let y: Vector3<Fixed> = black_box(load(array![27977250923, -23716952712, 11227784407].span()));
+    let e: Matrix3<Fixed> = black_box(
+        load(
+            array![
+                -431407257686, 437443326425, 43733927550, 318771247996, -362872147499, -88149529162,
+                -171880051568, 149084109705, -21570209201,
+            ]
+                .span(),
+        ),
+    );
+    let r: Matrix3<Fixed> = alt_scaled_ger_matrix3(alpha, x, y, beta, a);
+    assert!(r == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_vector3_axpy__baseline() {
+    let _alpha: Fixed = black_box(fx(-8891890831));
     let _x: Vector3<Fixed> = black_box(load(array![27645408950, -32978267963, -6568479989].span()));
     let _beta: Fixed = black_box(fx(-8672073708));
     let _y: Vector3<Fixed> = black_box(load(array![27977250923, -23716952712, 11227784407].span()));
@@ -1310,15 +2155,6 @@ fn bench_vector3_axpy__baseline() {
 #[inline(never)]
 fn bench_vector3_axpy__library() {
     let alpha: Fixed = black_box(fx(-8891890831));
-    let a: Matrix3<Fixed> = black_box(
-        load(
-            array![
-                29014785402, 3614332882, 22211525440, -1347552325, -7005522938, 6466541113,
-                11024293024, 14560104709, 28289338636,
-            ]
-                .span(),
-        ),
-    );
     let x: Vector3<Fixed> = black_box(load(array![27645408950, -32978267963, -6568479989].span()));
     let beta: Fixed = black_box(fx(-8672073708));
     let y: Vector3<Fixed> = black_box(load(array![27977250923, -23716952712, 11227784407].span()));
@@ -1652,12 +2488,12 @@ fn bench_matrix6_ger__baseline() {
     let e: Matrix6<Fixed> = black_box(
         load(
             array![
-                4581521152, -28535136094, 4907020692, -7330006537, 62728883067, 37090347823,
-                -6242322290, 35854681868, -41452307967, -76662261320, 25223979882, -10988003505,
-                -112843562762, 55276277931, 8439816964, 30339150064, 100338673412, -19187599556,
-                9197611875, 59222409913, 92441117393, -95650060204, 8241642474, 113218610772,
-                -79898501760, -94436626884, -24716256985, 28316903014, 3453539292, 3772553072,
-                -48467790698, 960122261, -3296723230, 12149460289, 81863678432, -104958509621,
+                4581521152, -28535136094, 4907020692, -7330006536, 62728883067, 37090347823,
+                -6242322292, 35854681867, -41452307967, -76662261318, 25223979884, -10988003507,
+                -112843562764, 55276277928, 8439816964, 30339150067, 100338673413, -19187599559,
+                9197611875, 59222409913, 92441117393, -95650060203, 8241642475, 113218610773,
+                -79898501762, -94436626887, -24716256985, 28316903017, 3453539293, 3772553070,
+                -48467790701, 960122258, -3296723230, 12149460292, 81863678433, -104958509625,
             ]
                 .span(),
         ),
@@ -1698,12 +2534,12 @@ fn bench_matrix6_ger__library() {
     let e: Matrix6<Fixed> = black_box(
         load(
             array![
-                4581521152, -28535136094, 4907020692, -7330006537, 62728883067, 37090347823,
-                -6242322290, 35854681868, -41452307967, -76662261320, 25223979882, -10988003505,
-                -112843562762, 55276277931, 8439816964, 30339150064, 100338673412, -19187599556,
-                9197611875, 59222409913, 92441117393, -95650060204, 8241642474, 113218610772,
-                -79898501760, -94436626884, -24716256985, 28316903014, 3453539292, 3772553072,
-                -48467790698, 960122261, -3296723230, 12149460289, 81863678432, -104958509621,
+                4581521152, -28535136094, 4907020692, -7330006536, 62728883067, 37090347823,
+                -6242322292, 35854681867, -41452307967, -76662261318, 25223979884, -10988003507,
+                -112843562764, 55276277928, 8439816964, 30339150067, 100338673413, -19187599559,
+                9197611875, 59222409913, 92441117393, -95650060203, 8241642475, 113218610773,
+                -79898501762, -94436626887, -24716256985, 28316903017, 3453539293, 3772553070,
+                -48467790701, 960122258, -3296723230, 12149460292, 81863678433, -104958509625,
             ]
                 .span(),
         ),
@@ -1718,9 +2554,9 @@ fn bench_matrix6_ger__library() {
 
 #[test]
 #[inline(never)]
-fn bench_vector6_axpy__baseline() {
-    let _alpha: Fixed = black_box(fx(953015963));
-    let _a: Matrix6<Fixed> = black_box(
+fn bench_matrix6_ger__alt_scaled() {
+    let alpha: Fixed = black_box(fx(953015963));
+    let a: Matrix6<Fixed> = black_box(
         load(
             array![
                 5474720463, -5610793715, 2225472848, -5636750326, 21767082243, 18136455730,
@@ -1733,6 +2569,40 @@ fn bench_vector6_axpy__baseline() {
                 .span(),
         ),
     );
+    let x: Vector6<Fixed> = black_box(
+        load(
+            array![17070931949, 20985367631, 2024877468, -13358601521, -3977447252, 21181636357]
+                .span(),
+        ),
+    );
+    let beta: Fixed = black_box(fx(11891126532));
+    let y: Vector6<Fixed> = black_box(
+        load(
+            array![-11991660462, -8456769719, -33051188770, 31797609490, -10060338613, -17926069090]
+                .span(),
+        ),
+    );
+    let e: Matrix6<Fixed> = black_box(
+        load(
+            array![
+                4581521152, -28535136094, 4907020692, -7330006537, 62728883067, 37090347823,
+                -6242322290, 35854681868, -41452307967, -76662261320, 25223979882, -10988003505,
+                -112843562762, 55276277931, 8439816964, 30339150064, 100338673412, -19187599556,
+                9197611875, 59222409913, 92441117393, -95650060204, 8241642474, 113218610772,
+                -79898501760, -94436626884, -24716256985, 28316903014, 3453539292, 3772553072,
+                -48467790698, 960122261, -3296723230, 12149460289, 81863678432, -104958509621,
+            ]
+                .span(),
+        ),
+    );
+    let r: Matrix6<Fixed> = alt_scaled_ger_matrix6(alpha, x, y, beta, a);
+    assert!(r == e);
+}
+
+#[test]
+#[inline(never)]
+fn bench_vector6_axpy__baseline() {
+    let _alpha: Fixed = black_box(fx(953015963));
     let _x: Vector6<Fixed> = black_box(
         load(
             array![17070931949, 20985367631, 2024877468, -13358601521, -3977447252, 21181636357]
@@ -1761,19 +2631,6 @@ fn bench_vector6_axpy__baseline() {
 #[inline(never)]
 fn bench_vector6_axpy__library() {
     let alpha: Fixed = black_box(fx(953015963));
-    let a: Matrix6<Fixed> = black_box(
-        load(
-            array![
-                5474720463, -5610793715, 2225472848, -5636750326, 21767082243, 18136455730,
-                439214661, 16261990640, -14652661952, -29797774294, 8483010679, -626191158,
-                -30229691822, 32907875001, 4297215003, 2719399267, 33788357128, 6133243715,
-                -6806962844, 8938906619, 32187431703, -26621594661, 5336829562, 28325389464,
-                -25653917554, -30170106153, -8547161407, 7720020614, 500707446, 5339006123,
-                -11795818386, 7366494084, -513415325, -80241479, 28237944559, -30824704419,
-            ]
-                .span(),
-        ),
-    );
     let x: Vector6<Fixed> = black_box(
         load(
             array![17070931949, 20985367631, 2024877468, -13358601521, -3977447252, 21181636357]

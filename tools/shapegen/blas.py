@@ -28,6 +28,9 @@ in `Real::Wide`, multiplied by `alpha` and floored ONCE (`Real::wide_mul_scalar`
 Upstream (f64) rounds every product and every sum; its `beta == 0` branch ("the previous content
 is ignored") is the same result here: `0 * c` is exactly 0 (fixed point has no NaN), so no branch
 is needed. `axpy` (`a * x + b * y`) is ONE fused `Real::sum_prod2` per component (one rounding).
+The rank-one updates (`ger`, `syger`) and `axcpy` keep upstream's formula (`alpha * y[j]` /
+`a * x[i]` rounded first, then one fused `sum_prod2` per entry: `RANK_ONE`), within the oracle
+tolerance and cheaper than the scaled dot.
 `quadform*` compute the intermediate product (`lhs * mid` / `mid * rhs`) with one fused sum of
 products per entry (upstream's `gemv` into the workspace), then the `scaled_dot` of each output.
 """
@@ -97,6 +100,36 @@ def lit(s: Shape, g) -> str:
     return L.lit(s.name, [(s.f(i, j), g(i, j)) for j in range(s.c) for i in range(s.r)])
 
 
+# The kernel of the rank-one updates (`ger`, `syger`) and `axcpy`: "upstream" = upstream's
+# formula (`alpha * y[j]`, `a * x[i]` floored first, then one fused `sum_prod2` per entry: up to
+# `|x[i]|` / `|c|` ulp), "scaled" = `BlasKernels::scaled_dot1` (the triple product floored once
+# plus `beta * c` floored once: below 2 ulp, 1.4-1.5 times the gas). Tie-break of the brief:
+# both stay within the oracle tolerance, upstream's formula wins (and is the cheaper one;
+# `bench_matrix{3,6}_ger__alt_scaled`).
+RANK_ONE = "upstream"
+
+
+def rank_one(s: Shape, updated, form: str = RANK_ONE, prefix: str = "self") -> str:
+    """The body of `ger` (`updated` = every entry) / `syger` (the lower triangle)."""
+    X, Y = vec(s.r), vec(s.c)
+    if form == "scaled":
+        return f"{prefix} = " + lit(s, lambda i, j: scaled_dot(
+            "alpha", [(f"x.{X.f(i, 0)}", f"y.{Y.f(j, 0)}")], "beta", f"{prefix}.{s.f(i, j)}")
+            if updated(i, j) else f"{prefix}.{s.f(i, j)}") + ";"
+    lines = [f"let ay{j} = alpha * y.{Y.f(j, 0)};" for j in range(s.c)]
+    return "\n".join(lines) + f"\n{prefix} = " + lit(s, lambda i, j: (
+        f"R::sum_prod2(ay{j}, x.{X.f(i, 0)}, beta, {prefix}.{s.f(i, j)})" if updated(i, j)
+        else f"{prefix}.{s.f(i, j)}")) + ";"
+
+
+def axcpy_body(s: Shape, form: str = RANK_ONE) -> str:
+    if form == "scaled":
+        return "self = " + lit(s, lambda i, j: scaled_dot(
+            "c", [("a", f"x.{s.f(i, 0)}")], "b", f"self.{s.f(i, 0)}")) + ";"
+    return "self = " + lit(s, lambda i, j: f"R::sum_prod2(a * x.{s.f(i, 0)}, c, b, "
+                                           f"self.{s.f(i, 0)})") + ";"
+
+
 def methods(s: Shape) -> list[L.Fn]:
     R_, C_, S, T = s.r, s.c, s.name, f"{s.name}<T>"
     Tr = s.transposed()
@@ -115,26 +148,23 @@ def methods(s: Shape) -> list[L.Fn]:
                   f"fn tr_dot(self: {T}, rhs: {Tr.name}<T>) -> T",
                   L.wide_chain(tpairs, "wide_rescale") if len(tpairs) > 4 else fused_dot(tpairs),
                   inline=s.n <= 4))
-    ger_body = "self = " + lit(s, lambda i, j: scaled_dot(
-        "alpha", [(f"x.{X.f(i, 0)}", f"y.{Y.f(j, 0)}")], "beta", f"self.{s.f(i, j)}")) + ";"
-    out.append(fn("ger", "The rank-one update `self = alpha * x * yᵀ + beta * self`: "
-                  "each entry `alpha * x[i] * y[j]` floored once plus `beta * self[i, j]` floored "
-                  "once (`beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics "
-                  "on overflow. Upstream: `ger`.",
+    out.append(fn("ger", "The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's "
+                  "formula: `alpha * y[j]` floored once per column, then each entry ONE fused "
+                  "`Real::sum_prod2(alpha * y[j], x[i], beta, self[i, j])` (floored once; the "
+                  "rounding of `alpha * y[j]` costs up to `|x[i]|` ulp; `beta == 0` ignores the "
+                  "previous content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.",
                   f"fn ger(ref self: {T}, alpha: T, x: {X.name}<T>, y: {Y.name}<T>, beta: T)",
-                  ger_body, inline=s.n <= 4))
+                  rank_one(s, lambda i, j: True), inline=s.n <= 4))
     out.append(fn("gerc", "`ger` with `y` conjugated: `ger` for a real scalar (bit-identical). "
                   "Upstream: `gerc`.",
                   f"fn gerc(ref self: {T}, alpha: T, x: {X.name}<T>, y: {Y.name}<T>, beta: T)",
                   "Self::ger(ref self, alpha, x, y, beta);"))
     if s.is_square:
-        body = "self = " + lit(s, lambda i, j: scaled_dot(
-            "alpha", [(f"x.{X.f(i, 0)}", f"y.{X.f(j, 0)}")], "beta", f"self.{s.f(i, j)}")
-            if i >= j else f"self.{s.f(i, j)}") + ";"
+        body = rank_one(s, lambda i, j: i >= j)
         sig = f"(ref self: {T}, alpha: T, x: {X.name}<T>, y: {X.name}<T>, beta: T)"
         out.append(fn("syger", "The symmetric rank-one update of the LOWER triangle, like "
                       "upstream: `self[i, j] = alpha * x[i] * y[j] + beta * self[i, j]` for `i >= "
-                      "j` (see `ger`), the strict upper triangle untouched. Panics on overflow. "
+                      "j` (`ger`'s kernel), the strict upper triangle untouched. Panics on overflow. "
                       "Upstream: `syger`.", f"fn syger{sig}", body, inline=s.n <= 4))
         out.append(fn("hegerc", "The hermitian rank-one update of the lower triangle: `syger` for "
                       "a real scalar (bit-identical). Upstream: `hegerc`.", f"fn hegerc{sig}",
@@ -144,12 +174,11 @@ def methods(s: Shape) -> list[L.Fn]:
                       "Self::syger(ref self, alpha, x, y, beta);"))
     if s.is_column:
         n = R_
-        out.append(fn("axcpy", "`self = a * x * c + b * self`: each `a * x[i] * c` floored once "
-                      "plus `b * self[i]` floored once (`b == 0` ignores the previous content). "
-                      "Panics on overflow. Upstream: `axcpy`.",
-                      f"fn axcpy(ref self: {T}, a: T, x: {T}, c: T, b: T)",
-                      "self = " + lit(s, lambda i, j: scaled_dot(
-                          "c", [("a", f"x.{s.f(i, 0)}")], "b", f"self.{s.f(i, 0)}")) + ";",
+        out.append(fn("axcpy", "`self = a * x * c + b * self`, upstream's order: `a * x[i]` "
+                      "floored once, then ONE fused `Real::sum_prod2(a * x[i], c, b, self[i])` "
+                      "(floored once; the first rounding costs up to `|c|` ulp; `b == 0` ignores "
+                      "the previous content). Panics on overflow. Upstream: `axcpy`.",
+                      f"fn axcpy(ref self: {T}, a: T, x: {T}, c: T, b: T)", axcpy_body(s),
                       inline=n <= 4))
         out.append(fn("axpy", "`self = a * x + b * self`: ONE fused `Real::sum_prod2` per "
                       "component (floored once; `b == 0` ignores the previous content). Panics on "
@@ -313,7 +342,8 @@ def gemm_impls(form: str = GEMM_FORM) -> list[str]:
                     gemm_columns(S, A, B)
                 out.append(impl_head(f"{S.name}Gemm{A.name}", "MatrixGemm", [S.name, A.name, B.name])
                            + method(f"fn gemm(ref self: {S.name}<T>, alpha: T, a: {A.name}<T>, "
-                                    f"b: {B.name}<T>, beta: T)", body, small(S)) + "\n}")
+                                    f"b: {B.name}<T>, beta: T)", body,
+                                    small(S) or (c == 1 and form == "columns")) + "\n}")
     return out
 
 

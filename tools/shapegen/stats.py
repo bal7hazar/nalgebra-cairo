@@ -13,8 +13,9 @@ shape, `{S}StatisticsTrait` (any `Real` scalar):
 
 Numerics (upstream's results, the project's rounding):
 
-* sums are exact (`fixed` addition), left to right in upstream's order (an intermediate overflow
-  panics, like the final one);
+* sums are exact: checked `+` left to right in upstream's order up to 4 terms, ONE `Real::Wide`
+  accumulator from 5 (`WIDE_SUM`, measured cheaper; only the total can overflow there, like
+  upstream's f64 partial sums);
 * products: one floored product per step, left to right (upstream's fold from `1`, whose first
   step `1 * x` is exact);
 * `mean`: the exact sum divided by the count, correctly rounded (`Real::div`; the per-column /
@@ -51,6 +52,23 @@ def infix(op: str, xs: list[str]) -> str:
     return f" {op} ".join(xs)
 
 
+# From this many terms a sum is ONE `Real::Wide` accumulator (`wide_add` per term, one range check
+# at the end) instead of checked `+`: measured 740 gas per checked addition against about 1,500 +
+# 200 per term (`bench_*_sum__alt_wide` in `crates/shapes_tests_stats`: 2 terms 740 against 1,880,
+# 4 terms 2,220 against 2,280, 9 terms 5,920 against 3,280, 36 terms 25,900 against 13,910).
+WIDE_SUM = 5
+
+
+def total(xs: list[str]) -> str:
+    """The exact sum of `xs` (upstream's left-to-right order for checked `+`)."""
+    if len(xs) < WIDE_SUM:
+        return infix("+", xs)
+    acc = "R::wide_zero()"
+    for x in xs:
+        acc = f"R::wide_add({acc}, {x})"
+    return f"R::wide_rescale({acc})"
+
+
 def sum_of_squares(ds: list[str]) -> str:
     """`sum(d^2)` of the (bound, exact) differences `ds`, floored once."""
     k = len(ds)
@@ -81,7 +99,7 @@ def divide(names: list[str], xs: list[str], d: str) -> list[str]:
 def means(groups: list[list[str]], prefix: str) -> list[str]:
     """`let` statements binding `{prefix}{g}` to the mean of each group (same count)."""
     n = len(groups[0])
-    sums = [infix("+", g) for g in groups]
+    sums = [total(g) for g in groups]
     names = [f"{prefix}{g}" for g in range(len(groups))]
     if n == 1:
         return [f"let {nm} = {s};" for nm, s in zip(names, sums)]
@@ -138,10 +156,13 @@ def methods(s: Shape) -> list[L.Fn]:
         return L.lit(shape.name, list(zip(fields, values)))
 
     if s not in HAS_SUM:
-        out.append(fn("sum", "The sum of all the components, left to right in column-major order "
-                      "(upstream's iteration order), exact. Panics on overflow (of any partial "
-                      "sum). Upstream: `sum`.",
-                      f"fn sum(self: {T}) -> T", infix("+", xs)))
+        out.append(fn("sum", "The sum of all the components in column-major order (upstream's "
+                      "iteration order), exact: "
+                      + ("checked `+` left to right (a partial sum that overflows panics)"
+                         if s.n < WIDE_SUM else "ONE `Real::Wide` accumulator (only the total "
+                         "can overflow, like upstream's f64 partial sums)")
+                      + ". Panics on overflow. Upstream: `sum`.",
+                      f"fn sum(self: {T}) -> T", total(xs)))
     out.append(fn("product", "The product of all the components, left to right in column-major "
                   "order (upstream's fold), each product floored. Panics on overflow. Upstream: "
                   "`product`.", f"fn product(self: {T}) -> T", infix("*", xs), inline=s.n <= 16))
@@ -165,8 +186,10 @@ def methods(s: Shape) -> list[L.Fn]:
                   kind: str) -> L.Fn:
         g = len(groups)
         if kind == "sum":
-            body = lit(shape, [infix("+", x) for x in groups])
-            doc = (f"The sum of each {what}, exact, left to right. Panics on overflow. Upstream: "
+            body = lit(shape, [total(x) for x in groups])
+            doc = (f"The sum of each {what}, exact ("
+                   + ("checked `+` left to right" if count < WIDE_SUM else
+                      "ONE `Real::Wide` accumulator each") + f"). Panics on overflow. Upstream: "
                    f"`{name}`.")
         elif kind == "product":
             body = lit(shape, [infix("*", x) for x in groups])

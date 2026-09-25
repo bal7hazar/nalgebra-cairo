@@ -313,13 +313,15 @@ pub impl Matrix1BlasImpl<
         self.x * rhs.x
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: Matrix1<T>, alpha: T, x: Matrix1<T>, y: Matrix1<T>, beta: T) {
-        self = Matrix1 { x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x) };
+        let ay0 = alpha * y.x;
+        self = Matrix1 { x: R::sum_prod2(ay0, x.x, beta, self.x) };
     }
 
     /// `ger` with `y` conjugated: `ger` for a real scalar (bit-identical). Upstream: `gerc`.
@@ -329,11 +331,12 @@ pub impl Matrix1BlasImpl<
     }
 
     /// The symmetric rank-one update of the LOWER triangle, like upstream: `self[i, j] = alpha *
-    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (see `ger`), the strict upper triangle
+    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (`ger`'s kernel), the strict upper triangle
     /// untouched. Panics on overflow. Upstream: `syger`.
     #[inline(always)]
     fn syger(ref self: Matrix1<T>, alpha: T, x: Matrix1<T>, y: Matrix1<T>, beta: T) {
-        self = Matrix1 { x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x) };
+        let ay0 = alpha * y.x;
+        self = Matrix1 { x: R::sum_prod2(ay0, x.x, beta, self.x) };
     }
 
     /// The hermitian rank-one update of the lower triangle: `syger` for a real scalar
@@ -349,11 +352,12 @@ pub impl Matrix1BlasImpl<
         Self::syger(ref self, alpha, x, y, beta);
     }
 
-    /// `self = a * x * c + b * self`: each `a * x[i] * c` floored once plus `b * self[i]` floored
-    /// once (`b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
+    /// `self = a * x * c + b * self`, upstream's order: `a * x[i]` floored once, then ONE fused
+    /// `Real::sum_prod2(a * x[i], c, b, self[i])` (floored once; the first rounding costs up to
+    /// `|c|` ulp; `b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
     #[inline(always)]
     fn axcpy(ref self: Matrix1<T>, a: T, x: Matrix1<T>, c: T, b: T) {
-        self = Matrix1 { x: BlasKernels::scaled_dot1(c, a, x.x, b, self.x) };
+        self = Matrix1 { x: R::sum_prod2(a * x.x, c, b, self.x) };
     }
 
     /// `self = a * x + b * self`: ONE fused `Real::sum_prod2` per component (floored once; `b == 0`
@@ -401,16 +405,18 @@ pub impl RowVector2BlasImpl<
         R::sum_prod2(self.x, rhs.x, self.y, rhs.y)
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: RowVector2<T>, alpha: T, x: Matrix1<T>, y: Vector2<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
         self =
             RowVector2 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.y),
+                x: R::sum_prod2(ay0, x.x, beta, self.x), y: R::sum_prod2(ay1, x.x, beta, self.y),
             };
     }
 
@@ -442,17 +448,21 @@ pub impl RowVector3BlasImpl<
         R::sum_prod3(self.x, rhs.x, self.y, rhs.y, self.z, rhs.z)
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: RowVector3<T>, alpha: T, x: Matrix1<T>, y: Vector3<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
         self =
             RowVector3 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.z),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay1, x.x, beta, self.y),
+                z: R::sum_prod2(ay2, x.x, beta, self.z),
             };
     }
 
@@ -484,18 +494,23 @@ pub impl RowVector4BlasImpl<
         R::sum_prod4(self.x, rhs.x, self.y, rhs.y, self.z, rhs.z, self.w, rhs.w)
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: RowVector4<T>, alpha: T, x: Matrix1<T>, y: Vector4<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
         self =
             RowVector4 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.w),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay1, x.x, beta, self.y),
+                z: R::sum_prod2(ay2, x.x, beta, self.z),
+                w: R::sum_prod2(ay3, x.x, beta, self.w),
             };
     }
 
@@ -533,18 +548,24 @@ pub impl RowVector5BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.a, rhs.a))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: RowVector5<T>, alpha: T, x: Matrix1<T>, y: Vector5<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
         self =
             RowVector5 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.w),
-                a: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.a),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay1, x.x, beta, self.y),
+                z: R::sum_prod2(ay2, x.x, beta, self.z),
+                w: R::sum_prod2(ay3, x.x, beta, self.w),
+                a: R::sum_prod2(ay4, x.x, beta, self.a),
             };
     }
 
@@ -584,19 +605,26 @@ pub impl RowVector6BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.b, rhs.b))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: RowVector6<T>, alpha: T, x: Matrix1<T>, y: Vector6<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
+        let ay5 = alpha * y.b;
         self =
             RowVector6 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.w),
-                a: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.a),
-                b: BlasKernels::scaled_dot1(alpha, x.x, y.b, beta, self.b),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay1, x.x, beta, self.y),
+                z: R::sum_prod2(ay2, x.x, beta, self.z),
+                w: R::sum_prod2(ay3, x.x, beta, self.w),
+                a: R::sum_prod2(ay4, x.x, beta, self.a),
+                b: R::sum_prod2(ay5, x.x, beta, self.b),
             };
     }
 
@@ -628,16 +656,17 @@ pub impl Vector2BlasImpl<
         R::sum_prod2(self.x, rhs.x, self.y, rhs.y)
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: Vector2<T>, alpha: T, x: Vector2<T>, y: Matrix1<T>, beta: T) {
+        let ay0 = alpha * y.x;
         self =
             Vector2 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.y),
+                x: R::sum_prod2(ay0, x.x, beta, self.x), y: R::sum_prod2(ay0, x.y, beta, self.y),
             };
     }
 
@@ -647,14 +676,14 @@ pub impl Vector2BlasImpl<
         Self::ger(ref self, alpha, x, y, beta);
     }
 
-    /// `self = a * x * c + b * self`: each `a * x[i] * c` floored once plus `b * self[i]` floored
-    /// once (`b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
+    /// `self = a * x * c + b * self`, upstream's order: `a * x[i]` floored once, then ONE fused
+    /// `Real::sum_prod2(a * x[i], c, b, self[i])` (floored once; the first rounding costs up to
+    /// `|c|` ulp; `b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
     #[inline(always)]
     fn axcpy(ref self: Vector2<T>, a: T, x: Vector2<T>, c: T, b: T) {
         self =
             Vector2 {
-                x: BlasKernels::scaled_dot1(c, a, x.x, b, self.x),
-                y: BlasKernels::scaled_dot1(c, a, x.y, b, self.y),
+                x: R::sum_prod2(a * x.x, c, b, self.x), y: R::sum_prod2(a * x.y, c, b, self.y),
             };
     }
 
@@ -707,18 +736,21 @@ pub impl Matrix2BlasImpl<
         R::sum_prod4(self.m11, rhs.m11, self.m21, rhs.m12, self.m12, rhs.m21, self.m22, rhs.m22)
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: Matrix2<T>, alpha: T, x: Vector2<T>, y: Vector2<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
         self =
             Matrix2 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
             };
     }
 
@@ -729,16 +761,18 @@ pub impl Matrix2BlasImpl<
     }
 
     /// The symmetric rank-one update of the LOWER triangle, like upstream: `self[i, j] = alpha *
-    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (see `ger`), the strict upper triangle
+    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (`ger`'s kernel), the strict upper triangle
     /// untouched. Panics on overflow. Upstream: `syger`.
     #[inline(always)]
     fn syger(ref self: Matrix2<T>, alpha: T, x: Vector2<T>, y: Vector2<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
         self =
             Matrix2 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
                 m12: self.m12,
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
             };
     }
 
@@ -785,19 +819,23 @@ pub impl Matrix2x3BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m23, rhs.m32))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix2x3<T>, alpha: T, x: Vector2<T>, y: Vector3<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
         self =
             Matrix2x3 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
             };
     }
 
@@ -841,21 +879,26 @@ pub impl Matrix2x4BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m24, rhs.m42))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix2x4<T>, alpha: T, x: Vector2<T>, y: Vector4<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
         self =
             Matrix2x4 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
             };
     }
 
@@ -903,23 +946,29 @@ pub impl Matrix2x5BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m25, rhs.m52))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix2x5<T>, alpha: T, x: Vector2<T>, y: Vector5<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
         self =
             Matrix2x5 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
             };
     }
 
@@ -971,25 +1020,32 @@ pub impl Matrix2x6BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m26, rhs.m62))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix2x6<T>, alpha: T, x: Vector2<T>, y: Vector6<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
+        let ay5 = alpha * y.b;
         self =
             Matrix2x6 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m16: BlasKernels::scaled_dot1(alpha, x.x, y.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, x.y, y.b, beta, self.m26),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m16: R::sum_prod2(ay5, x.x, beta, self.m16),
+                m26: R::sum_prod2(ay5, x.y, beta, self.m26),
             };
     }
 
@@ -1021,17 +1077,19 @@ pub impl Vector3BlasImpl<
         R::sum_prod3(self.x, rhs.x, self.y, rhs.y, self.z, rhs.z)
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: Vector3<T>, alpha: T, x: Vector3<T>, y: Matrix1<T>, beta: T) {
+        let ay0 = alpha * y.x;
         self =
             Vector3 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.z),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay0, x.y, beta, self.y),
+                z: R::sum_prod2(ay0, x.z, beta, self.z),
             };
     }
 
@@ -1041,15 +1099,16 @@ pub impl Vector3BlasImpl<
         Self::ger(ref self, alpha, x, y, beta);
     }
 
-    /// `self = a * x * c + b * self`: each `a * x[i] * c` floored once plus `b * self[i]` floored
-    /// once (`b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
+    /// `self = a * x * c + b * self`, upstream's order: `a * x[i]` floored once, then ONE fused
+    /// `Real::sum_prod2(a * x[i], c, b, self[i])` (floored once; the first rounding costs up to
+    /// `|c|` ulp; `b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
     #[inline(always)]
     fn axcpy(ref self: Vector3<T>, a: T, x: Vector3<T>, c: T, b: T) {
         self =
             Vector3 {
-                x: BlasKernels::scaled_dot1(c, a, x.x, b, self.x),
-                y: BlasKernels::scaled_dot1(c, a, x.y, b, self.y),
-                z: BlasKernels::scaled_dot1(c, a, x.z, b, self.z),
+                x: R::sum_prod2(a * x.x, c, b, self.x),
+                y: R::sum_prod2(a * x.y, c, b, self.y),
+                z: R::sum_prod2(a * x.z, c, b, self.z),
             };
     }
 
@@ -1122,19 +1181,22 @@ pub impl Matrix3x2BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m32, rhs.m23))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix3x2<T>, alpha: T, x: Vector3<T>, y: Vector2<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
         self =
             Matrix3x2 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
             };
     }
 
@@ -1180,22 +1242,26 @@ pub impl Matrix3BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m33, rhs.m33))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix3<T>, alpha: T, x: Vector3<T>, y: Vector3<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
             };
     }
 
@@ -1206,20 +1272,23 @@ pub impl Matrix3BlasImpl<
     }
 
     /// The symmetric rank-one update of the LOWER triangle, like upstream: `self[i, j] = alpha *
-    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (see `ger`), the strict upper triangle
+    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (`ger`'s kernel), the strict upper triangle
     /// untouched. Panics on overflow. Upstream: `syger`.
     fn syger(ref self: Matrix3<T>, alpha: T, x: Vector3<T>, y: Vector3<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
                 m12: self.m12,
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
                 m13: self.m13,
                 m23: self.m23,
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
             };
     }
 
@@ -1278,25 +1347,30 @@ pub impl Matrix3x4BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m34, rhs.m43))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix3x4<T>, alpha: T, x: Vector3<T>, y: Vector4<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
         self =
             Matrix3x4 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
             };
     }
 
@@ -1354,28 +1428,34 @@ pub impl Matrix3x5BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m35, rhs.m53))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix3x5<T>, alpha: T, x: Vector3<T>, y: Vector5<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
         self =
             Matrix3x5 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
             };
     }
 
@@ -1439,31 +1519,38 @@ pub impl Matrix3x6BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m36, rhs.m63))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix3x6<T>, alpha: T, x: Vector3<T>, y: Vector6<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
+        let ay5 = alpha * y.b;
         self =
             Matrix3x6 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
-                m16: BlasKernels::scaled_dot1(alpha, x.x, y.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, x.y, y.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, x.z, y.b, beta, self.m36),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
+                m16: R::sum_prod2(ay5, x.x, beta, self.m16),
+                m26: R::sum_prod2(ay5, x.y, beta, self.m26),
+                m36: R::sum_prod2(ay5, x.z, beta, self.m36),
             };
     }
 
@@ -1495,18 +1582,20 @@ pub impl Vector4BlasImpl<
         R::sum_prod4(self.x, rhs.x, self.y, rhs.y, self.z, rhs.z, self.w, rhs.w)
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     #[inline(always)]
     fn ger(ref self: Vector4<T>, alpha: T, x: Vector4<T>, y: Matrix1<T>, beta: T) {
+        let ay0 = alpha * y.x;
         self =
             Vector4 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.w),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay0, x.y, beta, self.y),
+                z: R::sum_prod2(ay0, x.z, beta, self.z),
+                w: R::sum_prod2(ay0, x.w, beta, self.w),
             };
     }
 
@@ -1516,16 +1605,17 @@ pub impl Vector4BlasImpl<
         Self::ger(ref self, alpha, x, y, beta);
     }
 
-    /// `self = a * x * c + b * self`: each `a * x[i] * c` floored once plus `b * self[i]` floored
-    /// once (`b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
+    /// `self = a * x * c + b * self`, upstream's order: `a * x[i]` floored once, then ONE fused
+    /// `Real::sum_prod2(a * x[i], c, b, self[i])` (floored once; the first rounding costs up to
+    /// `|c|` ulp; `b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
     #[inline(always)]
     fn axcpy(ref self: Vector4<T>, a: T, x: Vector4<T>, c: T, b: T) {
         self =
             Vector4 {
-                x: BlasKernels::scaled_dot1(c, a, x.x, b, self.x),
-                y: BlasKernels::scaled_dot1(c, a, x.y, b, self.y),
-                z: BlasKernels::scaled_dot1(c, a, x.z, b, self.z),
-                w: BlasKernels::scaled_dot1(c, a, x.w, b, self.w),
+                x: R::sum_prod2(a * x.x, c, b, self.x),
+                y: R::sum_prod2(a * x.y, c, b, self.y),
+                z: R::sum_prod2(a * x.z, c, b, self.z),
+                w: R::sum_prod2(a * x.w, c, b, self.w),
             };
     }
 
@@ -1606,21 +1696,24 @@ pub impl Matrix4x2BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m42, rhs.m24))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix4x2<T>, alpha: T, x: Vector4<T>, y: Vector2<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
         self =
             Matrix4x2 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
             };
     }
 
@@ -1672,25 +1765,29 @@ pub impl Matrix4x3BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m43, rhs.m34))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix4x3<T>, alpha: T, x: Vector4<T>, y: Vector3<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
         self =
             Matrix4x3 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
             };
     }
 
@@ -1750,29 +1847,34 @@ pub impl Matrix4BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m44, rhs.m44))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix4<T>, alpha: T, x: Vector4<T>, y: Vector4<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
             };
     }
 
@@ -1783,27 +1885,31 @@ pub impl Matrix4BlasImpl<
     }
 
     /// The symmetric rank-one update of the LOWER triangle, like upstream: `self[i, j] = alpha *
-    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (see `ger`), the strict upper triangle
+    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (`ger`'s kernel), the strict upper triangle
     /// untouched. Panics on overflow. Upstream: `syger`.
     fn syger(ref self: Matrix4<T>, alpha: T, x: Vector4<T>, y: Vector4<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
                 m12: self.m12,
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
                 m13: self.m13,
                 m23: self.m23,
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
                 m14: self.m14,
                 m24: self.m24,
                 m34: self.m34,
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
             };
     }
 
@@ -1878,33 +1984,39 @@ pub impl Matrix4x5BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m45, rhs.m54))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix4x5<T>, alpha: T, x: Vector4<T>, y: Vector5<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
         self =
             Matrix4x5 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, x.w, y.a, beta, self.m45),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
+                m45: R::sum_prod2(ay4, x.w, beta, self.m45),
             };
     }
 
@@ -1980,37 +2092,44 @@ pub impl Matrix4x6BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m46, rhs.m64))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix4x6<T>, alpha: T, x: Vector4<T>, y: Vector6<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
+        let ay5 = alpha * y.b;
         self =
             Matrix4x6 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, x.w, y.a, beta, self.m45),
-                m16: BlasKernels::scaled_dot1(alpha, x.x, y.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, x.y, y.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, x.z, y.b, beta, self.m36),
-                m46: BlasKernels::scaled_dot1(alpha, x.w, y.b, beta, self.m46),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
+                m45: R::sum_prod2(ay4, x.w, beta, self.m45),
+                m16: R::sum_prod2(ay5, x.x, beta, self.m16),
+                m26: R::sum_prod2(ay5, x.y, beta, self.m26),
+                m36: R::sum_prod2(ay5, x.z, beta, self.m36),
+                m46: R::sum_prod2(ay5, x.w, beta, self.m46),
             };
     }
 
@@ -2048,18 +2167,20 @@ pub impl Vector5BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.a, rhs.a))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Vector5<T>, alpha: T, x: Vector5<T>, y: Matrix1<T>, beta: T) {
+        let ay0 = alpha * y.x;
         self =
             Vector5 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.w),
-                a: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.a),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay0, x.y, beta, self.y),
+                z: R::sum_prod2(ay0, x.z, beta, self.z),
+                w: R::sum_prod2(ay0, x.w, beta, self.w),
+                a: R::sum_prod2(ay0, x.a, beta, self.a),
             };
     }
 
@@ -2069,16 +2190,17 @@ pub impl Vector5BlasImpl<
         Self::ger(ref self, alpha, x, y, beta);
     }
 
-    /// `self = a * x * c + b * self`: each `a * x[i] * c` floored once plus `b * self[i]` floored
-    /// once (`b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
+    /// `self = a * x * c + b * self`, upstream's order: `a * x[i]` floored once, then ONE fused
+    /// `Real::sum_prod2(a * x[i], c, b, self[i])` (floored once; the first rounding costs up to
+    /// `|c|` ulp; `b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
     fn axcpy(ref self: Vector5<T>, a: T, x: Vector5<T>, c: T, b: T) {
         self =
             Vector5 {
-                x: BlasKernels::scaled_dot1(c, a, x.x, b, self.x),
-                y: BlasKernels::scaled_dot1(c, a, x.y, b, self.y),
-                z: BlasKernels::scaled_dot1(c, a, x.z, b, self.z),
-                w: BlasKernels::scaled_dot1(c, a, x.w, b, self.w),
-                a: BlasKernels::scaled_dot1(c, a, x.a, b, self.a),
+                x: R::sum_prod2(a * x.x, c, b, self.x),
+                y: R::sum_prod2(a * x.y, c, b, self.y),
+                z: R::sum_prod2(a * x.z, c, b, self.z),
+                w: R::sum_prod2(a * x.w, c, b, self.w),
+                a: R::sum_prod2(a * x.a, c, b, self.a),
             };
     }
 
@@ -2165,23 +2287,26 @@ pub impl Matrix5x2BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m52, rhs.m25))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix5x2<T>, alpha: T, x: Vector5<T>, y: Vector2<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
         self =
             Matrix5x2 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
             };
     }
 
@@ -2239,28 +2364,32 @@ pub impl Matrix5x3BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m53, rhs.m35))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix5x3<T>, alpha: T, x: Vector5<T>, y: Vector3<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
         self =
             Matrix5x3 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
             };
     }
 
@@ -2328,33 +2457,38 @@ pub impl Matrix5x4BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m54, rhs.m45))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix5x4<T>, alpha: T, x: Vector5<T>, y: Vector4<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
         self =
             Matrix5x4 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
             };
     }
 
@@ -2432,38 +2566,44 @@ pub impl Matrix5BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m55, rhs.m55))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix5<T>, alpha: T, x: Vector5<T>, y: Vector5<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, x.w, y.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, x.a, y.a, beta, self.m55),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
+                m45: R::sum_prod2(ay4, x.w, beta, self.m45),
+                m55: R::sum_prod2(ay4, x.a, beta, self.m55),
             };
     }
 
@@ -2474,36 +2614,41 @@ pub impl Matrix5BlasImpl<
     }
 
     /// The symmetric rank-one update of the LOWER triangle, like upstream: `self[i, j] = alpha *
-    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (see `ger`), the strict upper triangle
+    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (`ger`'s kernel), the strict upper triangle
     /// untouched. Panics on overflow. Upstream: `syger`.
     fn syger(ref self: Matrix5<T>, alpha: T, x: Vector5<T>, y: Vector5<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
                 m12: self.m12,
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
                 m13: self.m13,
                 m23: self.m23,
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
                 m14: self.m14,
                 m24: self.m24,
                 m34: self.m34,
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
                 m15: self.m15,
                 m25: self.m25,
                 m35: self.m35,
                 m45: self.m45,
-                m55: BlasKernels::scaled_dot1(alpha, x.a, y.a, beta, self.m55),
+                m55: R::sum_prod2(ay4, x.a, beta, self.m55),
             };
     }
 
@@ -2598,43 +2743,50 @@ pub impl Matrix5x6BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m56, rhs.m65))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix5x6<T>, alpha: T, x: Vector5<T>, y: Vector6<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
+        let ay5 = alpha * y.b;
         self =
             Matrix5x6 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, x.w, y.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, x.a, y.a, beta, self.m55),
-                m16: BlasKernels::scaled_dot1(alpha, x.x, y.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, x.y, y.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, x.z, y.b, beta, self.m36),
-                m46: BlasKernels::scaled_dot1(alpha, x.w, y.b, beta, self.m46),
-                m56: BlasKernels::scaled_dot1(alpha, x.a, y.b, beta, self.m56),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
+                m45: R::sum_prod2(ay4, x.w, beta, self.m45),
+                m55: R::sum_prod2(ay4, x.a, beta, self.m55),
+                m16: R::sum_prod2(ay5, x.x, beta, self.m16),
+                m26: R::sum_prod2(ay5, x.y, beta, self.m26),
+                m36: R::sum_prod2(ay5, x.z, beta, self.m36),
+                m46: R::sum_prod2(ay5, x.w, beta, self.m46),
+                m56: R::sum_prod2(ay5, x.a, beta, self.m56),
             };
     }
 
@@ -2674,19 +2826,21 @@ pub impl Vector6BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.b, rhs.b))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Vector6<T>, alpha: T, x: Vector6<T>, y: Matrix1<T>, beta: T) {
+        let ay0 = alpha * y.x;
         self =
             Vector6 {
-                x: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.w),
-                a: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.a),
-                b: BlasKernels::scaled_dot1(alpha, x.b, y.x, beta, self.b),
+                x: R::sum_prod2(ay0, x.x, beta, self.x),
+                y: R::sum_prod2(ay0, x.y, beta, self.y),
+                z: R::sum_prod2(ay0, x.z, beta, self.z),
+                w: R::sum_prod2(ay0, x.w, beta, self.w),
+                a: R::sum_prod2(ay0, x.a, beta, self.a),
+                b: R::sum_prod2(ay0, x.b, beta, self.b),
             };
     }
 
@@ -2696,17 +2850,18 @@ pub impl Vector6BlasImpl<
         Self::ger(ref self, alpha, x, y, beta);
     }
 
-    /// `self = a * x * c + b * self`: each `a * x[i] * c` floored once plus `b * self[i]` floored
-    /// once (`b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
+    /// `self = a * x * c + b * self`, upstream's order: `a * x[i]` floored once, then ONE fused
+    /// `Real::sum_prod2(a * x[i], c, b, self[i])` (floored once; the first rounding costs up to
+    /// `|c|` ulp; `b == 0` ignores the previous content). Panics on overflow. Upstream: `axcpy`.
     fn axcpy(ref self: Vector6<T>, a: T, x: Vector6<T>, c: T, b: T) {
         self =
             Vector6 {
-                x: BlasKernels::scaled_dot1(c, a, x.x, b, self.x),
-                y: BlasKernels::scaled_dot1(c, a, x.y, b, self.y),
-                z: BlasKernels::scaled_dot1(c, a, x.z, b, self.z),
-                w: BlasKernels::scaled_dot1(c, a, x.w, b, self.w),
-                a: BlasKernels::scaled_dot1(c, a, x.a, b, self.a),
-                b: BlasKernels::scaled_dot1(c, a, x.b, b, self.b),
+                x: R::sum_prod2(a * x.x, c, b, self.x),
+                y: R::sum_prod2(a * x.y, c, b, self.y),
+                z: R::sum_prod2(a * x.z, c, b, self.z),
+                w: R::sum_prod2(a * x.w, c, b, self.w),
+                a: R::sum_prod2(a * x.a, c, b, self.a),
+                b: R::sum_prod2(a * x.b, c, b, self.b),
             };
     }
 
@@ -2885,25 +3040,28 @@ pub impl Matrix6x2BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m62, rhs.m26))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix6x2<T>, alpha: T, x: Vector6<T>, y: Vector2<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
         self =
             Matrix6x2 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, x.b, y.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, x.b, y.y, beta, self.m62),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m61: R::sum_prod2(ay0, x.b, beta, self.m61),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m62: R::sum_prod2(ay1, x.b, beta, self.m62),
             };
     }
 
@@ -2967,31 +3125,35 @@ pub impl Matrix6x3BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m63, rhs.m36))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix6x3<T>, alpha: T, x: Vector6<T>, y: Vector3<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
         self =
             Matrix6x3 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, x.b, y.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, x.b, y.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, x.b, y.z, beta, self.m63),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m61: R::sum_prod2(ay0, x.b, beta, self.m61),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m62: R::sum_prod2(ay1, x.b, beta, self.m62),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m63: R::sum_prod2(ay2, x.b, beta, self.m63),
             };
     }
 
@@ -3067,37 +3229,42 @@ pub impl Matrix6x4BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m64, rhs.m46))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix6x4<T>, alpha: T, x: Vector6<T>, y: Vector4<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
         self =
             Matrix6x4 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, x.b, y.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, x.b, y.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, x.b, y.z, beta, self.m63),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
-                m64: BlasKernels::scaled_dot1(alpha, x.b, y.w, beta, self.m64),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m61: R::sum_prod2(ay0, x.b, beta, self.m61),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m62: R::sum_prod2(ay1, x.b, beta, self.m62),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m63: R::sum_prod2(ay2, x.b, beta, self.m63),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
+                m64: R::sum_prod2(ay3, x.b, beta, self.m64),
             };
     }
 
@@ -3185,43 +3352,49 @@ pub impl Matrix6x5BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m65, rhs.m56))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix6x5<T>, alpha: T, x: Vector6<T>, y: Vector5<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
         self =
             Matrix6x5 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, x.b, y.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, x.b, y.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, x.b, y.z, beta, self.m63),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
-                m64: BlasKernels::scaled_dot1(alpha, x.b, y.w, beta, self.m64),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, x.w, y.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, x.a, y.a, beta, self.m55),
-                m65: BlasKernels::scaled_dot1(alpha, x.b, y.a, beta, self.m65),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m61: R::sum_prod2(ay0, x.b, beta, self.m61),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m62: R::sum_prod2(ay1, x.b, beta, self.m62),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m63: R::sum_prod2(ay2, x.b, beta, self.m63),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
+                m64: R::sum_prod2(ay3, x.b, beta, self.m64),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
+                m45: R::sum_prod2(ay4, x.w, beta, self.m45),
+                m55: R::sum_prod2(ay4, x.a, beta, self.m55),
+                m65: R::sum_prod2(ay4, x.b, beta, self.m65),
             };
     }
 
@@ -3321,49 +3494,56 @@ pub impl Matrix6BlasImpl<
         R::wide_rescale(R::wide_add_prod(w, self.m66, rhs.m66))
     }
 
-    /// The rank-one update `self = alpha * x * yᵀ + beta * self`: each entry `alpha * x[i] *
-    /// y[j]`
-    /// floored once plus `beta * self[i, j]` floored once (`beta == 0` ignores the previous
-    /// content: `0 * c` is exactly 0). Panics on overflow. Upstream: `ger`.
+    /// The rank-one update `self = alpha * x * yᵀ + beta * self`, upstream's formula: `alpha *
+    /// y[j]` floored once per column, then each entry ONE fused `Real::sum_prod2(alpha * y[j],
+    /// x[i], beta, self[i, j])` (floored once; the rounding of `alpha * y[j]` costs up to `|x[i]|`
+    /// ulp; `beta == 0` ignores the previous content: `0 * c` is exactly 0). Panics on overflow.
+    /// Upstream: `ger`.
     fn ger(ref self: Matrix6<T>, alpha: T, x: Vector6<T>, y: Vector6<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
+        let ay5 = alpha * y.b;
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, x.b, y.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, x.x, y.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, x.b, y.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, x.x, y.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, x.y, y.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, x.b, y.z, beta, self.m63),
-                m14: BlasKernels::scaled_dot1(alpha, x.x, y.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, x.y, y.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, x.z, y.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
-                m64: BlasKernels::scaled_dot1(alpha, x.b, y.w, beta, self.m64),
-                m15: BlasKernels::scaled_dot1(alpha, x.x, y.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, x.y, y.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, x.z, y.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, x.w, y.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, x.a, y.a, beta, self.m55),
-                m65: BlasKernels::scaled_dot1(alpha, x.b, y.a, beta, self.m65),
-                m16: BlasKernels::scaled_dot1(alpha, x.x, y.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, x.y, y.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, x.z, y.b, beta, self.m36),
-                m46: BlasKernels::scaled_dot1(alpha, x.w, y.b, beta, self.m46),
-                m56: BlasKernels::scaled_dot1(alpha, x.a, y.b, beta, self.m56),
-                m66: BlasKernels::scaled_dot1(alpha, x.b, y.b, beta, self.m66),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m61: R::sum_prod2(ay0, x.b, beta, self.m61),
+                m12: R::sum_prod2(ay1, x.x, beta, self.m12),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m62: R::sum_prod2(ay1, x.b, beta, self.m62),
+                m13: R::sum_prod2(ay2, x.x, beta, self.m13),
+                m23: R::sum_prod2(ay2, x.y, beta, self.m23),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m63: R::sum_prod2(ay2, x.b, beta, self.m63),
+                m14: R::sum_prod2(ay3, x.x, beta, self.m14),
+                m24: R::sum_prod2(ay3, x.y, beta, self.m24),
+                m34: R::sum_prod2(ay3, x.z, beta, self.m34),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
+                m64: R::sum_prod2(ay3, x.b, beta, self.m64),
+                m15: R::sum_prod2(ay4, x.x, beta, self.m15),
+                m25: R::sum_prod2(ay4, x.y, beta, self.m25),
+                m35: R::sum_prod2(ay4, x.z, beta, self.m35),
+                m45: R::sum_prod2(ay4, x.w, beta, self.m45),
+                m55: R::sum_prod2(ay4, x.a, beta, self.m55),
+                m65: R::sum_prod2(ay4, x.b, beta, self.m65),
+                m16: R::sum_prod2(ay5, x.x, beta, self.m16),
+                m26: R::sum_prod2(ay5, x.y, beta, self.m26),
+                m36: R::sum_prod2(ay5, x.z, beta, self.m36),
+                m46: R::sum_prod2(ay5, x.w, beta, self.m46),
+                m56: R::sum_prod2(ay5, x.a, beta, self.m56),
+                m66: R::sum_prod2(ay5, x.b, beta, self.m66),
             };
     }
 
@@ -3374,47 +3554,53 @@ pub impl Matrix6BlasImpl<
     }
 
     /// The symmetric rank-one update of the LOWER triangle, like upstream: `self[i, j] = alpha *
-    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (see `ger`), the strict upper triangle
+    /// x[i] * y[j] + beta * self[i, j]` for `i >= j` (`ger`'s kernel), the strict upper triangle
     /// untouched. Panics on overflow. Upstream: `syger`.
     fn syger(ref self: Matrix6<T>, alpha: T, x: Vector6<T>, y: Vector6<T>, beta: T) {
+        let ay0 = alpha * y.x;
+        let ay1 = alpha * y.y;
+        let ay2 = alpha * y.z;
+        let ay3 = alpha * y.w;
+        let ay4 = alpha * y.a;
+        let ay5 = alpha * y.b;
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot1(alpha, x.x, y.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, x.y, y.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, x.z, y.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, x.w, y.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, x.a, y.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, x.b, y.x, beta, self.m61),
+                m11: R::sum_prod2(ay0, x.x, beta, self.m11),
+                m21: R::sum_prod2(ay0, x.y, beta, self.m21),
+                m31: R::sum_prod2(ay0, x.z, beta, self.m31),
+                m41: R::sum_prod2(ay0, x.w, beta, self.m41),
+                m51: R::sum_prod2(ay0, x.a, beta, self.m51),
+                m61: R::sum_prod2(ay0, x.b, beta, self.m61),
                 m12: self.m12,
-                m22: BlasKernels::scaled_dot1(alpha, x.y, y.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, x.z, y.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, x.w, y.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, x.a, y.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, x.b, y.y, beta, self.m62),
+                m22: R::sum_prod2(ay1, x.y, beta, self.m22),
+                m32: R::sum_prod2(ay1, x.z, beta, self.m32),
+                m42: R::sum_prod2(ay1, x.w, beta, self.m42),
+                m52: R::sum_prod2(ay1, x.a, beta, self.m52),
+                m62: R::sum_prod2(ay1, x.b, beta, self.m62),
                 m13: self.m13,
                 m23: self.m23,
-                m33: BlasKernels::scaled_dot1(alpha, x.z, y.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, x.w, y.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, x.a, y.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, x.b, y.z, beta, self.m63),
+                m33: R::sum_prod2(ay2, x.z, beta, self.m33),
+                m43: R::sum_prod2(ay2, x.w, beta, self.m43),
+                m53: R::sum_prod2(ay2, x.a, beta, self.m53),
+                m63: R::sum_prod2(ay2, x.b, beta, self.m63),
                 m14: self.m14,
                 m24: self.m24,
                 m34: self.m34,
-                m44: BlasKernels::scaled_dot1(alpha, x.w, y.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, x.a, y.w, beta, self.m54),
-                m64: BlasKernels::scaled_dot1(alpha, x.b, y.w, beta, self.m64),
+                m44: R::sum_prod2(ay3, x.w, beta, self.m44),
+                m54: R::sum_prod2(ay3, x.a, beta, self.m54),
+                m64: R::sum_prod2(ay3, x.b, beta, self.m64),
                 m15: self.m15,
                 m25: self.m25,
                 m35: self.m35,
                 m45: self.m45,
-                m55: BlasKernels::scaled_dot1(alpha, x.a, y.a, beta, self.m55),
-                m65: BlasKernels::scaled_dot1(alpha, x.b, y.a, beta, self.m65),
+                m55: R::sum_prod2(ay4, x.a, beta, self.m55),
+                m65: R::sum_prod2(ay4, x.b, beta, self.m65),
                 m16: self.m16,
                 m26: self.m26,
                 m36: self.m36,
                 m46: self.m46,
                 m56: self.m56,
-                m66: BlasKernels::scaled_dot1(alpha, x.b, y.b, beta, self.m66),
+                m66: R::sum_prod2(ay5, x.b, beta, self.m66),
             };
     }
 
@@ -8077,6 +8263,7 @@ pub impl Matrix4x6GemmMatrix4x6<
 pub impl Vector5GemmVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector5<T>, Vector5<T>, Matrix1<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector5<T>, alpha: T, a: Vector5<T>, b: Matrix1<T>, beta: T) {
         self =
             Vector5 {
@@ -8092,6 +8279,7 @@ pub impl Vector5GemmVector5<
 pub impl Vector5GemmMatrix5x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector5<T>, Matrix5x2<T>, Vector2<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector5<T>, alpha: T, a: Matrix5x2<T>, b: Vector2<T>, beta: T) {
         self =
             Vector5 {
@@ -8107,6 +8295,7 @@ pub impl Vector5GemmMatrix5x2<
 pub impl Vector5GemmMatrix5x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector5<T>, Matrix5x3<T>, Vector3<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector5<T>, alpha: T, a: Matrix5x3<T>, b: Vector3<T>, beta: T) {
         self =
             Vector5 {
@@ -8132,6 +8321,7 @@ pub impl Vector5GemmMatrix5x3<
 pub impl Vector5GemmMatrix5x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector5<T>, Matrix5x4<T>, Vector4<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector5<T>, alpha: T, a: Matrix5x4<T>, b: Vector4<T>, beta: T) {
         self =
             Vector5 {
@@ -8157,6 +8347,7 @@ pub impl Vector5GemmMatrix5x4<
 pub impl Vector5GemmMatrix5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector5<T>, Matrix5<T>, Vector5<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector5<T>, alpha: T, a: Matrix5<T>, b: Vector5<T>, beta: T) {
         self =
             Vector5 {
@@ -8182,6 +8373,7 @@ pub impl Vector5GemmMatrix5<
 pub impl Vector5GemmMatrix5x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector5<T>, Matrix5x6<T>, Vector6<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector5<T>, alpha: T, a: Matrix5x6<T>, b: Vector6<T>, beta: T) {
         self =
             Vector5 {
@@ -9657,6 +9849,7 @@ pub impl Matrix5x6GemmMatrix5x6<
 pub impl Vector6GemmVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector6<T>, Vector6<T>, Matrix1<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector6<T>, alpha: T, a: Vector6<T>, b: Matrix1<T>, beta: T) {
         self =
             Vector6 {
@@ -9673,6 +9866,7 @@ pub impl Vector6GemmVector6<
 pub impl Vector6GemmMatrix6x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector6<T>, Matrix6x2<T>, Vector2<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector6<T>, alpha: T, a: Matrix6x2<T>, b: Vector2<T>, beta: T) {
         self =
             Vector6 {
@@ -9689,6 +9883,7 @@ pub impl Vector6GemmMatrix6x2<
 pub impl Vector6GemmMatrix6x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector6<T>, Matrix6x3<T>, Vector3<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector6<T>, alpha: T, a: Matrix6x3<T>, b: Vector3<T>, beta: T) {
         self =
             Vector6 {
@@ -9717,6 +9912,7 @@ pub impl Vector6GemmMatrix6x3<
 pub impl Vector6GemmMatrix6x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector6<T>, Matrix6x4<T>, Vector4<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector6<T>, alpha: T, a: Matrix6x4<T>, b: Vector4<T>, beta: T) {
         self =
             Vector6 {
@@ -9745,6 +9941,7 @@ pub impl Vector6GemmMatrix6x4<
 pub impl Vector6GemmMatrix6x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector6<T>, Matrix6x5<T>, Vector5<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector6<T>, alpha: T, a: Matrix6x5<T>, b: Vector5<T>, beta: T) {
         self =
             Vector6 {
@@ -9773,6 +9970,7 @@ pub impl Vector6GemmMatrix6x5<
 pub impl Vector6GemmMatrix6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Vector6<T>, Matrix6<T>, Vector6<T>> {
+    #[inline(always)]
     fn gemm(ref self: Vector6<T>, alpha: T, a: Matrix6<T>, b: Vector6<T>, beta: T) {
         self =
             Vector6 {

@@ -264,8 +264,11 @@ def bench_group(fns: list[str], name: str, pre: list[str], expr: str, ety: str, 
             else line for line in pre]
     fns.append(bench(name, "baseline", base + ["assert!(e == e);"]))
     fns.append(bench(name, "library", pre + [f"let r: {ety} = {expr};", "assert!(r == e);"]))
-    for v, alt in variants:
-        fns.append(bench(name, v, pre + [f"let r: {ety} = {alt};", "assert!(r == e);"]))
+    for v, alt, *own in variants:
+        # A variant with other bits (a less accurate kernel) asserts its own modelled value.
+        lines = [f"let e: {ety} = black_box({own[0]});" if own and line.startswith("let e:")
+                 else line for line in pre]
+        fns.append(bench(name, v, lines + [f"let r: {ety} = {alt};", "assert!(r == e);"]))
 
 
 def bb(s: Shape, var: str, a: dict) -> str:
@@ -284,7 +287,25 @@ fn alt_div_each_row_mean_matrix3(m: Matrix3<Fixed>) -> RowVector3<Fixed> {
 }"""
 
 
+def alt_sum(s: Shape, form: str) -> str:
+    """`sum` with the other kernel of `stats.WIDE_SUM`: ONE `Real::Wide` accumulator (`wide`) or
+    checked `+` left to right (`checked`)."""
+    if form == "checked":
+        body = " + ".join(f"m.{f}" for f in s.fields)
+        what = "checked additions left to right"
+    else:
+        body = "Real::<Fixed>::wide_zero()"
+        for f in s.fields:
+            body = f"Real::<Fixed>::wide_add({body}, m.{f})"
+        body = f"Real::<Fixed>::wide_rescale({body})"
+        what = "ONE `Real::Wide` accumulator"
+    return (f"/// `{s.name}::sum` with {what} (`stats.py` `WIDE_SUM`; the same bits when no "
+            f"partial sum\n/// overflows).\nfn alt_{form}_sum_{s.module}(m: {s.name}<Fixed>) -> "
+            f"Fixed {{\n{body}\n}}")
+
+
 def render_benches() -> str:
+    helpers: list[str] = []
     fns: list[str] = []
     need: set[str] = set()
     rng = random.Random("tests_stats/benches")
@@ -292,7 +313,8 @@ def render_benches() -> str:
                                      "column_variance")),
                       (Shape(6, 1), ("mean", "variance")),
                       (Shape(2, 3), ("row_variance_tr",)),
-                      (Shape(6, 6), ("sum", "mean", "variance"))):
+                      (Shape(6, 6), ("sum", "mean", "variance")),
+                      (Shape(1, 2), ("sum",)), (Shape(1, 3), ("sum",)), (Shape(1, 4), ("sum",))):
         need.update({s.name, *traits_of(s, "sum" in groups)})
         a = raws(rng, s, 36)
         p = {k: near_one(rng) for k in s.fields}
@@ -316,15 +338,20 @@ def render_benches() -> str:
                 expected = f"load({span(model(x) for x in groups_)})"
                 if g == "row_mean" and s == Shape(3, 3):
                     variants = [("alt_div_each", "alt_div_each_row_mean_matrix3(a)")]
+            if g == "sum":
+                form = "checked" if s.n >= stats.WIDE_SUM else "wide"
+                variants = [(f"alt_{form}", f"alt_{form}_sum_{s.module}(a)")]
+                helpers.append(alt_sum(s, form))
             bench_group(fns, f"{s.module}_{g}", [bb(s, "a", src)], f"a.{g}()", ety, expected,
                         variants)
     names = sorted(need | {"RowVector3", "Matrix3"})
     uses = ["use fixed::Fixed;", "use simba::scalar::Real;", "use nalgebra_testing::black_box;",
             "use nalgebra::{" + ", ".join(names) + "};", "use crate::helpers::{fx, load};"]
     return (f"{HEADER}//! Gas of the statistics (`bench_<group>__<variant>`, net of the "
-            f"`baseline`), and the\n//! measured alternative of the prepared divisor "
-            f"(`alt_div_each`: one `Real::div` per quotient).\n\n" + "\n".join(uses) + "\n\n"
-            + ALT_ROW_MEAN + "\n\n" + "\n\n".join(fns) + "\n")
+            f"`baseline`), and the\n//! measured alternatives: the prepared divisor "
+            f"(`alt_div_each`: one `Real::div` per quotient), the\n//! kernel of the sums "
+            f"(`alt_checked` / `alt_wide`, `stats.py` `WIDE_SUM`).\n\n" + "\n".join(uses) + "\n\n"
+            + "\n\n".join([ALT_ROW_MEAN] + helpers) + "\n\n" + "\n\n".join(fns) + "\n")
 
 
 # --------------------------------------------------------------------------------------------

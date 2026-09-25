@@ -55,8 +55,9 @@ use super::vector6::Vector6;
 pub impl Matrix1StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix1StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact:
+    /// checked `+` left to right (a partial sum that overflows panics). Panics on overflow.
+    /// Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix1<T>) -> T {
         self.x
@@ -87,7 +88,8 @@ pub impl Matrix1StatisticsImpl<
         R::zero()
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: Matrix1<T>) -> Matrix1<T> {
         Matrix1 { x: self.x }
@@ -99,7 +101,8 @@ pub impl Matrix1StatisticsImpl<
         Self::row_sum(self)
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: Matrix1<T>) -> Matrix1<T> {
         Matrix1 { x: self.x }
@@ -182,8 +185,9 @@ pub impl Matrix1StatisticsImpl<
 pub impl RowVector2StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of RowVector2StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact:
+    /// checked `+` left to right (a partial sum that overflows panics). Panics on overflow.
+    /// Upstream: `sum`.
     #[inline(always)]
     fn sum(self: RowVector2<T>) -> T {
         self.x + self.y
@@ -220,7 +224,8 @@ pub impl RowVector2StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: RowVector2<T>) -> RowVector2<T> {
         RowVector2 { x: self.x, y: self.y }
@@ -233,7 +238,8 @@ pub impl RowVector2StatisticsImpl<
         Vector2 { x: r.x, y: r.y }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: RowVector2<T>) -> Matrix1<T> {
         Matrix1 { x: self.x + self.y }
@@ -327,8 +333,9 @@ pub impl RowVector2StatisticsImpl<
 pub impl RowVector3StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of RowVector3StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact:
+    /// checked `+` left to right (a partial sum that overflows panics). Panics on overflow.
+    /// Upstream: `sum`.
     #[inline(always)]
     fn sum(self: RowVector3<T>) -> T {
         self.x + self.y + self.z
@@ -366,7 +373,8 @@ pub impl RowVector3StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: RowVector3<T>) -> RowVector3<T> {
         RowVector3 { x: self.x, y: self.y, z: self.z }
@@ -379,7 +387,8 @@ pub impl RowVector3StatisticsImpl<
         Vector3 { x: r.x, y: r.y, z: r.z }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: RowVector3<T>) -> Matrix1<T> {
         Matrix1 { x: self.x + self.y + self.z }
@@ -476,8 +485,9 @@ pub impl RowVector3StatisticsImpl<
 pub impl RowVector4StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of RowVector4StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact:
+    /// checked `+` left to right (a partial sum that overflows panics). Panics on overflow.
+    /// Upstream: `sum`.
     #[inline(always)]
     fn sum(self: RowVector4<T>) -> T {
         self.x + self.y + self.z + self.w
@@ -516,7 +526,8 @@ pub impl RowVector4StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: RowVector4<T>) -> RowVector4<T> {
         RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }
@@ -529,7 +540,8 @@ pub impl RowVector4StatisticsImpl<
         Vector4 { x: r.x, y: r.y, z: r.z, w: r.w }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: RowVector4<T>) -> Matrix1<T> {
         Matrix1 { x: self.x + self.y + self.z + self.w }
@@ -629,11 +641,20 @@ pub impl RowVector4StatisticsImpl<
 pub impl RowVector5StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of RowVector5StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: RowVector5<T>) -> T {
-        self.x + self.y + self.z + self.w + self.a
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z),
+                    self.w,
+                ),
+                self.a,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -647,7 +668,20 @@ pub impl RowVector5StatisticsImpl<
     /// ties to even, like `f64 /`). Panics if the sum overflows. Upstream: `mean`.
     fn mean(self: RowVector5<T>) -> T {
         let n = R::from_int(5);
-        R::div(self.x + self.y + self.z + self.w + self.a, n)
+        R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        )
     }
 
     /// The population variance of all the components, upstream's two-pass formula `sum((x -
@@ -656,7 +690,20 @@ pub impl RowVector5StatisticsImpl<
     /// `variance`.
     fn variance(self: RowVector5<T>) -> T {
         let n = R::from_int(5);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -682,7 +729,8 @@ pub impl RowVector5StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: RowVector5<T>) -> RowVector5<T> {
         RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
     }
@@ -694,9 +742,22 @@ pub impl RowVector5StatisticsImpl<
         Vector5 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: RowVector5<T>) -> Matrix1<T> {
-        Matrix1 { x: self.x + self.y + self.z + self.w + self.a }
+        Matrix1 {
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+        }
     }
 
     /// The product of each column, left to right, each product floored. Panics on overflow.
@@ -742,7 +803,20 @@ pub impl RowVector5StatisticsImpl<
     /// without the rounded reciprocal).
     fn column_mean(self: RowVector5<T>) -> Matrix1<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        );
         Matrix1 { x: m0 }
     }
 
@@ -773,7 +847,20 @@ pub impl RowVector5StatisticsImpl<
     /// point).
     fn column_variance(self: RowVector5<T>) -> Matrix1<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -808,11 +895,25 @@ pub impl RowVector5StatisticsImpl<
 pub impl RowVector6StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of RowVector6StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: RowVector6<T>) -> T {
-        self.x + self.y + self.z + self.w + self.a + self.b
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+                self.b,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -826,7 +927,23 @@ pub impl RowVector6StatisticsImpl<
     /// ties to even, like `f64 /`). Panics if the sum overflows. Upstream: `mean`.
     fn mean(self: RowVector6<T>) -> T {
         let n = R::from_int(6);
-        R::div(self.x + self.y + self.z + self.w + self.a + self.b, n)
+        R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        )
     }
 
     /// The population variance of all the components, upstream's two-pass formula `sum((x -
@@ -835,7 +952,23 @@ pub impl RowVector6StatisticsImpl<
     /// `variance`.
     fn variance(self: RowVector6<T>) -> T {
         let n = R::from_int(6);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a + self.b, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -866,7 +999,8 @@ pub impl RowVector6StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: RowVector6<T>) -> RowVector6<T> {
         RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
     }
@@ -878,9 +1012,25 @@ pub impl RowVector6StatisticsImpl<
         Vector6 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a, b: r.b }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: RowVector6<T>) -> Matrix1<T> {
-        Matrix1 { x: self.x + self.y + self.z + self.w + self.a + self.b }
+        Matrix1 {
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+        }
     }
 
     /// The product of each column, left to right, each product floored. Panics on overflow.
@@ -927,7 +1077,23 @@ pub impl RowVector6StatisticsImpl<
     /// without the rounded reciprocal).
     fn column_mean(self: RowVector6<T>) -> Matrix1<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a + self.b, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        );
         Matrix1 { x: m0 }
     }
 
@@ -959,7 +1125,23 @@ pub impl RowVector6StatisticsImpl<
     /// point).
     fn column_variance(self: RowVector6<T>) -> Matrix1<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a + self.b, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -1030,7 +1212,8 @@ pub impl Vector2StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: Vector2<T>) -> Matrix1<T> {
         Matrix1 { x: self.x + self.y }
@@ -1042,7 +1225,8 @@ pub impl Vector2StatisticsImpl<
         Self::row_sum(self)
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: Vector2<T>) -> Vector2<T> {
         Vector2 { x: self.x, y: self.y }
@@ -1133,8 +1317,9 @@ pub impl Vector2StatisticsImpl<
 pub impl Matrix2StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix2StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact:
+    /// checked `+` left to right (a partial sum that overflows panics). Panics on overflow.
+    /// Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix2<T>) -> T {
         self.m11 + self.m21 + self.m12 + self.m22
@@ -1173,7 +1358,8 @@ pub impl Matrix2StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: Matrix2<T>) -> RowVector2<T> {
         RowVector2 { x: self.m11 + self.m21, y: self.m12 + self.m22 }
@@ -1186,7 +1372,8 @@ pub impl Matrix2StatisticsImpl<
         Vector2 { x: r.x, y: r.y }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: Matrix2<T>) -> Vector2<T> {
         Vector2 { x: self.m11 + self.m12, y: self.m21 + self.m22 }
@@ -1302,11 +1489,25 @@ pub impl Matrix2StatisticsImpl<
 pub impl Matrix2x3StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix2x3StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix2x3<T>) -> T {
-        self.m11 + self.m21 + self.m12 + self.m22 + self.m13 + self.m23
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m12,
+                        ),
+                        self.m22,
+                    ),
+                    self.m13,
+                ),
+                self.m23,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -1320,7 +1521,24 @@ pub impl Matrix2x3StatisticsImpl<
     /// ties to even, like `f64 /`). Panics if the sum overflows. Upstream: `mean`.
     fn mean(self: Matrix2x3<T>) -> T {
         let n = R::from_int(6);
-        R::div(self.m11 + self.m21 + self.m12 + self.m22 + self.m13 + self.m23, n)
+        R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m12,
+                            ),
+                            self.m22,
+                        ),
+                        self.m13,
+                    ),
+                    self.m23,
+                ),
+            ),
+            n,
+        )
     }
 
     /// The population variance of all the components, upstream's two-pass formula `sum((x -
@@ -1329,7 +1547,24 @@ pub impl Matrix2x3StatisticsImpl<
     /// `variance`.
     fn variance(self: Matrix2x3<T>) -> T {
         let n = R::from_int(6);
-        let m0 = R::div(self.m11 + self.m21 + self.m12 + self.m22 + self.m13 + self.m23, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m12,
+                            ),
+                            self.m22,
+                        ),
+                        self.m13,
+                    ),
+                    self.m23,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.m11 - m0;
             let d1 = self.m21 - m0;
@@ -1360,7 +1595,8 @@ pub impl Matrix2x3StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix2x3<T>) -> RowVector3<T> {
         RowVector3 { x: self.m11 + self.m21, y: self.m12 + self.m22, z: self.m13 + self.m23 }
     }
@@ -1372,7 +1608,8 @@ pub impl Matrix2x3StatisticsImpl<
         Vector3 { x: r.x, y: r.y, z: r.z }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix2x3<T>) -> Vector2<T> {
         Vector2 { x: self.m11 + self.m12 + self.m13, y: self.m21 + self.m22 + self.m23 }
     }
@@ -1494,11 +1731,32 @@ pub impl Matrix2x3StatisticsImpl<
 pub impl Matrix2x4StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix2x4StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix2x4<T>) -> T {
-        self.m11 + self.m21 + self.m12 + self.m22 + self.m13 + self.m23 + self.m14 + self.m24
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                    self.m12,
+                                ),
+                                self.m22,
+                            ),
+                            self.m13,
+                        ),
+                        self.m23,
+                    ),
+                    self.m14,
+                ),
+                self.m24,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -1513,7 +1771,29 @@ pub impl Matrix2x4StatisticsImpl<
     fn mean(self: Matrix2x4<T>) -> T {
         let n = R::from_int(8);
         R::div(
-            self.m11 + self.m21 + self.m12 + self.m22 + self.m13 + self.m23 + self.m14 + self.m24,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                        ),
+                                        self.m12,
+                                    ),
+                                    self.m22,
+                                ),
+                                self.m13,
+                            ),
+                            self.m23,
+                        ),
+                        self.m14,
+                    ),
+                    self.m24,
+                ),
+            ),
             n,
         )
     }
@@ -1525,7 +1805,29 @@ pub impl Matrix2x4StatisticsImpl<
     fn variance(self: Matrix2x4<T>) -> T {
         let n = R::from_int(8);
         let m0 = R::div(
-            self.m11 + self.m21 + self.m12 + self.m22 + self.m13 + self.m23 + self.m14 + self.m24,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                        ),
+                                        self.m12,
+                                    ),
+                                    self.m22,
+                                ),
+                                self.m13,
+                            ),
+                            self.m23,
+                        ),
+                        self.m14,
+                    ),
+                    self.m24,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -1570,7 +1872,8 @@ pub impl Matrix2x4StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix2x4<T>) -> RowVector4<T> {
         RowVector4 {
             x: self.m11 + self.m21,
@@ -1587,7 +1890,8 @@ pub impl Matrix2x4StatisticsImpl<
         Vector4 { x: r.x, y: r.y, z: r.z, w: r.w }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix2x4<T>) -> Vector2<T> {
         Vector2 {
             x: self.m11 + self.m12 + self.m13 + self.m14,
@@ -1727,20 +2031,40 @@ pub impl Matrix2x4StatisticsImpl<
 pub impl Matrix2x5StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix2x5StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix2x5<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m12
-            + self.m22
-            + self.m13
-            + self.m23
-            + self.m14
-            + self.m24
-            + self.m15
-            + self.m25
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                            ),
+                                            self.m12,
+                                        ),
+                                        self.m22,
+                                    ),
+                                    self.m13,
+                                ),
+                                self.m23,
+                            ),
+                            self.m14,
+                        ),
+                        self.m24,
+                    ),
+                    self.m15,
+                ),
+                self.m25,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -1764,16 +2088,35 @@ pub impl Matrix2x5StatisticsImpl<
     fn mean(self: Matrix2x5<T>) -> T {
         let n = R::from_int(10);
         R::div(
-            self.m11
-                + self.m21
-                + self.m12
-                + self.m22
-                + self.m13
-                + self.m23
-                + self.m14
-                + self.m24
-                + self.m15
-                + self.m25,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                                ),
+                                                self.m12,
+                                            ),
+                                            self.m22,
+                                        ),
+                                        self.m13,
+                                    ),
+                                    self.m23,
+                                ),
+                                self.m14,
+                            ),
+                            self.m24,
+                        ),
+                        self.m15,
+                    ),
+                    self.m25,
+                ),
+            ),
             n,
         )
     }
@@ -1785,16 +2128,35 @@ pub impl Matrix2x5StatisticsImpl<
     fn variance(self: Matrix2x5<T>) -> T {
         let n = R::from_int(10);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m12
-                + self.m22
-                + self.m13
-                + self.m23
-                + self.m14
-                + self.m24
-                + self.m15
-                + self.m25,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                                ),
+                                                self.m12,
+                                            ),
+                                            self.m22,
+                                        ),
+                                        self.m13,
+                                    ),
+                                    self.m23,
+                                ),
+                                self.m14,
+                            ),
+                            self.m24,
+                        ),
+                        self.m15,
+                    ),
+                    self.m25,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -1851,7 +2213,8 @@ pub impl Matrix2x5StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix2x5<T>) -> RowVector5<T> {
         RowVector5 {
             x: self.m11 + self.m21,
@@ -1869,11 +2232,32 @@ pub impl Matrix2x5StatisticsImpl<
         Vector5 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix2x5<T>) -> Vector2<T> {
         Vector2 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
         }
     }
 
@@ -1934,8 +2318,34 @@ pub impl Matrix2x5StatisticsImpl<
     /// without the rounded reciprocal).
     fn column_mean(self: Matrix2x5<T>) -> Vector2<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.m11 + self.m12 + self.m13 + self.m14 + self.m15, n);
-        let m1 = R::div(self.m21 + self.m22 + self.m23 + self.m24 + self.m25, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            n,
+        );
         Vector2 { x: m0, y: m1 }
     }
 
@@ -1996,8 +2406,34 @@ pub impl Matrix2x5StatisticsImpl<
     /// point).
     fn column_variance(self: Matrix2x5<T>) -> Vector2<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.m11 + self.m12 + self.m13 + self.m14 + self.m15, n);
-        let m1 = R::div(self.m21 + self.m22 + self.m23 + self.m24 + self.m25, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.m11 - m0;
             let d1 = self.m12 - m0;
@@ -2055,22 +2491,47 @@ pub impl Matrix2x5StatisticsImpl<
 pub impl Matrix2x6StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix2x6StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix2x6<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m12
-            + self.m22
-            + self.m13
-            + self.m23
-            + self.m14
-            + self.m24
-            + self.m15
-            + self.m25
-            + self.m16
-            + self.m26
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(R::wide_zero(), self.m11),
+                                                        self.m21,
+                                                    ),
+                                                    self.m12,
+                                                ),
+                                                self.m22,
+                                            ),
+                                            self.m13,
+                                        ),
+                                        self.m23,
+                                    ),
+                                    self.m14,
+                                ),
+                                self.m24,
+                            ),
+                            self.m15,
+                        ),
+                        self.m25,
+                    ),
+                    self.m16,
+                ),
+                self.m26,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -2096,18 +2557,42 @@ pub impl Matrix2x6StatisticsImpl<
     fn mean(self: Matrix2x6<T>) -> T {
         let n = R::from_int(12);
         R::div(
-            self.m11
-                + self.m21
-                + self.m12
-                + self.m22
-                + self.m13
-                + self.m23
-                + self.m14
-                + self.m24
-                + self.m15
-                + self.m25
-                + self.m16
-                + self.m26,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m12,
+                                                    ),
+                                                    self.m22,
+                                                ),
+                                                self.m13,
+                                            ),
+                                            self.m23,
+                                        ),
+                                        self.m14,
+                                    ),
+                                    self.m24,
+                                ),
+                                self.m15,
+                            ),
+                            self.m25,
+                        ),
+                        self.m16,
+                    ),
+                    self.m26,
+                ),
+            ),
             n,
         )
     }
@@ -2119,18 +2604,42 @@ pub impl Matrix2x6StatisticsImpl<
     fn variance(self: Matrix2x6<T>) -> T {
         let n = R::from_int(12);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m12
-                + self.m22
-                + self.m13
-                + self.m23
-                + self.m14
-                + self.m24
-                + self.m15
-                + self.m25
-                + self.m16
-                + self.m26,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m12,
+                                                    ),
+                                                    self.m22,
+                                                ),
+                                                self.m13,
+                                            ),
+                                            self.m23,
+                                        ),
+                                        self.m14,
+                                    ),
+                                    self.m24,
+                                ),
+                                self.m15,
+                            ),
+                            self.m25,
+                        ),
+                        self.m16,
+                    ),
+                    self.m26,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -2199,7 +2708,8 @@ pub impl Matrix2x6StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix2x6<T>) -> RowVector6<T> {
         RowVector6 {
             x: self.m11 + self.m21,
@@ -2218,11 +2728,40 @@ pub impl Matrix2x6StatisticsImpl<
         Vector6 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a, b: r.b }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix2x6<T>) -> Vector2<T> {
         Vector2 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
         }
     }
 
@@ -2285,8 +2824,42 @@ pub impl Matrix2x6StatisticsImpl<
     /// without the rounded reciprocal).
     fn column_mean(self: Matrix2x6<T>) -> Vector2<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16, n);
-        let m1 = R::div(self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            n,
+        );
         Vector2 { x: m0, y: m1 }
     }
 
@@ -2353,8 +2926,42 @@ pub impl Matrix2x6StatisticsImpl<
     /// point).
     fn column_variance(self: Matrix2x6<T>) -> Vector2<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16, n);
-        let m1 = R::div(self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.m11 - m0;
             let d1 = self.m12 - m0;
@@ -2454,7 +3061,8 @@ pub impl Vector3StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: Vector3<T>) -> Matrix1<T> {
         Matrix1 { x: self.x + self.y + self.z }
@@ -2466,7 +3074,8 @@ pub impl Vector3StatisticsImpl<
         Self::row_sum(self)
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: Vector3<T>) -> Vector3<T> {
         Vector3 { x: self.x, y: self.y, z: self.z }
@@ -2560,11 +3169,25 @@ pub impl Vector3StatisticsImpl<
 pub impl Matrix3x2StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix3x2StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix3x2<T>) -> T {
-        self.m11 + self.m21 + self.m31 + self.m12 + self.m22 + self.m32
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m12,
+                    ),
+                    self.m22,
+                ),
+                self.m32,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -2578,7 +3201,24 @@ pub impl Matrix3x2StatisticsImpl<
     /// ties to even, like `f64 /`). Panics if the sum overflows. Upstream: `mean`.
     fn mean(self: Matrix3x2<T>) -> T {
         let n = R::from_int(6);
-        R::div(self.m11 + self.m21 + self.m31 + self.m12 + self.m22 + self.m32, n)
+        R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m12,
+                        ),
+                        self.m22,
+                    ),
+                    self.m32,
+                ),
+            ),
+            n,
+        )
     }
 
     /// The population variance of all the components, upstream's two-pass formula `sum((x -
@@ -2587,7 +3227,24 @@ pub impl Matrix3x2StatisticsImpl<
     /// `variance`.
     fn variance(self: Matrix3x2<T>) -> T {
         let n = R::from_int(6);
-        let m0 = R::div(self.m11 + self.m21 + self.m31 + self.m12 + self.m22 + self.m32, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m12,
+                        ),
+                        self.m22,
+                    ),
+                    self.m32,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.m11 - m0;
             let d1 = self.m21 - m0;
@@ -2618,7 +3275,8 @@ pub impl Matrix3x2StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix3x2<T>) -> RowVector2<T> {
         RowVector2 { x: self.m11 + self.m21 + self.m31, y: self.m12 + self.m22 + self.m32 }
     }
@@ -2630,7 +3288,8 @@ pub impl Matrix3x2StatisticsImpl<
         Vector2 { x: r.x, y: r.y }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix3x2<T>) -> Vector3<T> {
         Vector3 { x: self.m11 + self.m12, y: self.m21 + self.m22, z: self.m31 + self.m32 }
     }
@@ -2752,19 +3411,37 @@ pub impl Matrix3x2StatisticsImpl<
 pub impl Matrix3StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix3StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix3<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m13
-            + self.m23
-            + self.m33
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                        ),
+                                        self.m31,
+                                    ),
+                                    self.m12,
+                                ),
+                                self.m22,
+                            ),
+                            self.m32,
+                        ),
+                        self.m13,
+                    ),
+                    self.m23,
+                ),
+                self.m33,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -2787,15 +3464,32 @@ pub impl Matrix3StatisticsImpl<
     fn mean(self: Matrix3<T>) -> T {
         let n = R::from_int(9);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                            ),
+                                            self.m31,
+                                        ),
+                                        self.m12,
+                                    ),
+                                    self.m22,
+                                ),
+                                self.m32,
+                            ),
+                            self.m13,
+                        ),
+                        self.m23,
+                    ),
+                    self.m33,
+                ),
+            ),
             n,
         )
     }
@@ -2807,15 +3501,32 @@ pub impl Matrix3StatisticsImpl<
     fn variance(self: Matrix3<T>) -> T {
         let n = R::from_int(9);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                            ),
+                                            self.m31,
+                                        ),
+                                        self.m12,
+                                    ),
+                                    self.m22,
+                                ),
+                                self.m32,
+                            ),
+                            self.m13,
+                        ),
+                        self.m23,
+                    ),
+                    self.m33,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -2865,7 +3576,8 @@ pub impl Matrix3StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix3<T>) -> RowVector3<T> {
         RowVector3 {
             x: self.m11 + self.m21 + self.m31,
@@ -2881,7 +3593,8 @@ pub impl Matrix3StatisticsImpl<
         Vector3 { x: r.x, y: r.y, z: r.z }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix3<T>) -> Vector3<T> {
         Vector3 {
             x: self.m11 + self.m12 + self.m13,
@@ -3038,22 +3751,47 @@ pub impl Matrix3StatisticsImpl<
 pub impl Matrix3x4StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix3x4StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix3x4<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m14
-            + self.m24
-            + self.m34
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(R::wide_zero(), self.m11),
+                                                        self.m21,
+                                                    ),
+                                                    self.m31,
+                                                ),
+                                                self.m12,
+                                            ),
+                                            self.m22,
+                                        ),
+                                        self.m32,
+                                    ),
+                                    self.m13,
+                                ),
+                                self.m23,
+                            ),
+                            self.m33,
+                        ),
+                        self.m14,
+                    ),
+                    self.m24,
+                ),
+                self.m34,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -3079,18 +3817,42 @@ pub impl Matrix3x4StatisticsImpl<
     fn mean(self: Matrix3x4<T>) -> T {
         let n = R::from_int(12);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m14
-                + self.m24
-                + self.m34,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m31,
+                                                    ),
+                                                    self.m12,
+                                                ),
+                                                self.m22,
+                                            ),
+                                            self.m32,
+                                        ),
+                                        self.m13,
+                                    ),
+                                    self.m23,
+                                ),
+                                self.m33,
+                            ),
+                            self.m14,
+                        ),
+                        self.m24,
+                    ),
+                    self.m34,
+                ),
+            ),
             n,
         )
     }
@@ -3102,18 +3864,42 @@ pub impl Matrix3x4StatisticsImpl<
     fn variance(self: Matrix3x4<T>) -> T {
         let n = R::from_int(12);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m14
-                + self.m24
-                + self.m34,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m31,
+                                                    ),
+                                                    self.m12,
+                                                ),
+                                                self.m22,
+                                            ),
+                                            self.m32,
+                                        ),
+                                        self.m13,
+                                    ),
+                                    self.m23,
+                                ),
+                                self.m33,
+                            ),
+                            self.m14,
+                        ),
+                        self.m24,
+                    ),
+                    self.m34,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -3182,7 +3968,8 @@ pub impl Matrix3x4StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix3x4<T>) -> RowVector4<T> {
         RowVector4 {
             x: self.m11 + self.m21 + self.m31,
@@ -3199,7 +3986,8 @@ pub impl Matrix3x4StatisticsImpl<
         Vector4 { x: r.x, y: r.y, z: r.z, w: r.w }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix3x4<T>) -> Vector3<T> {
         Vector3 {
             x: self.m11 + self.m12 + self.m13 + self.m14,
@@ -3368,25 +4156,58 @@ pub impl Matrix3x4StatisticsImpl<
 pub impl Matrix3x5StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix3x5StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix3x5<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m15
-            + self.m25
-            + self.m35
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_zero(), self.m11,
+                                                                    ),
+                                                                    self.m21,
+                                                                ),
+                                                                self.m31,
+                                                            ),
+                                                            self.m12,
+                                                        ),
+                                                        self.m22,
+                                                    ),
+                                                    self.m32,
+                                                ),
+                                                self.m13,
+                                            ),
+                                            self.m23,
+                                        ),
+                                        self.m33,
+                                    ),
+                                    self.m14,
+                                ),
+                                self.m24,
+                            ),
+                            self.m34,
+                        ),
+                        self.m15,
+                    ),
+                    self.m25,
+                ),
+                self.m35,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -3415,21 +4236,54 @@ pub impl Matrix3x5StatisticsImpl<
     fn mean(self: Matrix3x5<T>) -> T {
         let n = R::from_int(15);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m15
-                + self.m25
-                + self.m35,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_zero(),
+                                                                            self.m11,
+                                                                        ),
+                                                                        self.m21,
+                                                                    ),
+                                                                    self.m31,
+                                                                ),
+                                                                self.m12,
+                                                            ),
+                                                            self.m22,
+                                                        ),
+                                                        self.m32,
+                                                    ),
+                                                    self.m13,
+                                                ),
+                                                self.m23,
+                                            ),
+                                            self.m33,
+                                        ),
+                                        self.m14,
+                                    ),
+                                    self.m24,
+                                ),
+                                self.m34,
+                            ),
+                            self.m15,
+                        ),
+                        self.m25,
+                    ),
+                    self.m35,
+                ),
+            ),
             n,
         )
     }
@@ -3441,21 +4295,54 @@ pub impl Matrix3x5StatisticsImpl<
     fn variance(self: Matrix3x5<T>) -> T {
         let n = R::from_int(15);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m15
-                + self.m25
-                + self.m35,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_zero(),
+                                                                            self.m11,
+                                                                        ),
+                                                                        self.m21,
+                                                                    ),
+                                                                    self.m31,
+                                                                ),
+                                                                self.m12,
+                                                            ),
+                                                            self.m22,
+                                                        ),
+                                                        self.m32,
+                                                    ),
+                                                    self.m13,
+                                                ),
+                                                self.m23,
+                                            ),
+                                            self.m33,
+                                        ),
+                                        self.m14,
+                                    ),
+                                    self.m24,
+                                ),
+                                self.m34,
+                            ),
+                            self.m15,
+                        ),
+                        self.m25,
+                    ),
+                    self.m35,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -3539,7 +4426,8 @@ pub impl Matrix3x5StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix3x5<T>) -> RowVector5<T> {
         RowVector5 {
             x: self.m11 + self.m21 + self.m31,
@@ -3557,12 +4445,43 @@ pub impl Matrix3x5StatisticsImpl<
         Vector5 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix3x5<T>) -> Vector3<T> {
         Vector3 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
         }
     }
 
@@ -3626,9 +4545,39 @@ pub impl Matrix3x5StatisticsImpl<
     fn column_mean(self: Matrix3x5<T>) -> Vector3<T> {
         let n = R::from_int(5);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
             n,
         );
         Vector3 { x: m0, y: m1, z: m2 }
@@ -3697,9 +4646,39 @@ pub impl Matrix3x5StatisticsImpl<
     fn column_variance(self: Matrix3x5<T>) -> Vector3<T> {
         let n = R::from_int(5);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -3780,28 +4759,68 @@ pub impl Matrix3x5StatisticsImpl<
 pub impl Matrix3x6StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix3x6StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix3x6<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m15
-            + self.m25
-            + self.m35
-            + self.m16
-            + self.m26
-            + self.m36
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_zero(),
+                                                                                    self.m11,
+                                                                                ),
+                                                                                self.m21,
+                                                                            ),
+                                                                            self.m31,
+                                                                        ),
+                                                                        self.m12,
+                                                                    ),
+                                                                    self.m22,
+                                                                ),
+                                                                self.m32,
+                                                            ),
+                                                            self.m13,
+                                                        ),
+                                                        self.m23,
+                                                    ),
+                                                    self.m33,
+                                                ),
+                                                self.m14,
+                                            ),
+                                            self.m24,
+                                        ),
+                                        self.m34,
+                                    ),
+                                    self.m15,
+                                ),
+                                self.m25,
+                            ),
+                            self.m35,
+                        ),
+                        self.m16,
+                    ),
+                    self.m26,
+                ),
+                self.m36,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -3832,24 +4851,63 @@ pub impl Matrix3x6StatisticsImpl<
     fn mean(self: Matrix3x6<T>) -> T {
         let n = R::from_int(18);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m16
-                + self.m26
-                + self.m36,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_zero(),
+                                                                                        self.m11,
+                                                                                    ),
+                                                                                    self.m21,
+                                                                                ),
+                                                                                self.m31,
+                                                                            ),
+                                                                            self.m12,
+                                                                        ),
+                                                                        self.m22,
+                                                                    ),
+                                                                    self.m32,
+                                                                ),
+                                                                self.m13,
+                                                            ),
+                                                            self.m23,
+                                                        ),
+                                                        self.m33,
+                                                    ),
+                                                    self.m14,
+                                                ),
+                                                self.m24,
+                                            ),
+                                            self.m34,
+                                        ),
+                                        self.m15,
+                                    ),
+                                    self.m25,
+                                ),
+                                self.m35,
+                            ),
+                            self.m16,
+                        ),
+                        self.m26,
+                    ),
+                    self.m36,
+                ),
+            ),
             n,
         )
     }
@@ -3861,24 +4919,63 @@ pub impl Matrix3x6StatisticsImpl<
     fn variance(self: Matrix3x6<T>) -> T {
         let n = R::from_int(18);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m16
-                + self.m26
-                + self.m36,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_zero(),
+                                                                                        self.m11,
+                                                                                    ),
+                                                                                    self.m21,
+                                                                                ),
+                                                                                self.m31,
+                                                                            ),
+                                                                            self.m12,
+                                                                        ),
+                                                                        self.m22,
+                                                                    ),
+                                                                    self.m32,
+                                                                ),
+                                                                self.m13,
+                                                            ),
+                                                            self.m23,
+                                                        ),
+                                                        self.m33,
+                                                    ),
+                                                    self.m14,
+                                                ),
+                                                self.m24,
+                                            ),
+                                            self.m34,
+                                        ),
+                                        self.m15,
+                                    ),
+                                    self.m25,
+                                ),
+                                self.m35,
+                            ),
+                            self.m16,
+                        ),
+                        self.m26,
+                    ),
+                    self.m36,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -3979,7 +5076,8 @@ pub impl Matrix3x6StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix3x6<T>) -> RowVector6<T> {
         RowVector6 {
             x: self.m11 + self.m21 + self.m31,
@@ -3998,12 +5096,55 @@ pub impl Matrix3x6StatisticsImpl<
         Vector6 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a, b: r.b }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix3x6<T>) -> Vector3<T> {
         Vector3 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
         }
     }
 
@@ -4069,9 +5210,51 @@ pub impl Matrix3x6StatisticsImpl<
     fn column_mean(self: Matrix3x6<T>) -> Vector3<T> {
         let n = R::from_int(6);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
             n,
         );
         Vector3 { x: m0, y: m1, z: m2 }
@@ -4147,9 +5330,51 @@ pub impl Matrix3x6StatisticsImpl<
     fn column_variance(self: Matrix3x6<T>) -> Vector3<T> {
         let n = R::from_int(6);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -4278,7 +5503,8 @@ pub impl Vector4StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     #[inline(always)]
     fn row_sum(self: Vector4<T>) -> Matrix1<T> {
         Matrix1 { x: self.x + self.y + self.z + self.w }
@@ -4290,7 +5516,8 @@ pub impl Vector4StatisticsImpl<
         Self::row_sum(self)
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     #[inline(always)]
     fn column_sum(self: Vector4<T>) -> Vector4<T> {
         Vector4 { x: self.x, y: self.y, z: self.z, w: self.w }
@@ -4387,11 +5614,32 @@ pub impl Vector4StatisticsImpl<
 pub impl Matrix4x2StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix4x2StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix4x2<T>) -> T {
-        self.m11 + self.m21 + self.m31 + self.m41 + self.m12 + self.m22 + self.m32 + self.m42
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                    self.m31,
+                                ),
+                                self.m41,
+                            ),
+                            self.m12,
+                        ),
+                        self.m22,
+                    ),
+                    self.m32,
+                ),
+                self.m42,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -4406,7 +5654,29 @@ pub impl Matrix4x2StatisticsImpl<
     fn mean(self: Matrix4x2<T>) -> T {
         let n = R::from_int(8);
         R::div(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m12 + self.m22 + self.m32 + self.m42,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                        ),
+                                        self.m31,
+                                    ),
+                                    self.m41,
+                                ),
+                                self.m12,
+                            ),
+                            self.m22,
+                        ),
+                        self.m32,
+                    ),
+                    self.m42,
+                ),
+            ),
             n,
         )
     }
@@ -4418,7 +5688,29 @@ pub impl Matrix4x2StatisticsImpl<
     fn variance(self: Matrix4x2<T>) -> T {
         let n = R::from_int(8);
         let m0 = R::div(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m12 + self.m22 + self.m32 + self.m42,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                        ),
+                                        self.m31,
+                                    ),
+                                    self.m41,
+                                ),
+                                self.m12,
+                            ),
+                            self.m22,
+                        ),
+                        self.m32,
+                    ),
+                    self.m42,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -4463,7 +5755,8 @@ pub impl Matrix4x2StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix4x2<T>) -> RowVector2<T> {
         RowVector2 {
             x: self.m11 + self.m21 + self.m31 + self.m41,
@@ -4478,7 +5771,8 @@ pub impl Matrix4x2StatisticsImpl<
         Vector2 { x: r.x, y: r.y }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix4x2<T>) -> Vector4<T> {
         Vector4 {
             x: self.m11 + self.m12,
@@ -4620,22 +5914,47 @@ pub impl Matrix4x2StatisticsImpl<
 pub impl Matrix4x3StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix4x3StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix4x3<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(R::wide_zero(), self.m11),
+                                                        self.m21,
+                                                    ),
+                                                    self.m31,
+                                                ),
+                                                self.m41,
+                                            ),
+                                            self.m12,
+                                        ),
+                                        self.m22,
+                                    ),
+                                    self.m32,
+                                ),
+                                self.m42,
+                            ),
+                            self.m13,
+                        ),
+                        self.m23,
+                    ),
+                    self.m33,
+                ),
+                self.m43,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -4661,18 +5980,42 @@ pub impl Matrix4x3StatisticsImpl<
     fn mean(self: Matrix4x3<T>) -> T {
         let n = R::from_int(12);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m31,
+                                                    ),
+                                                    self.m41,
+                                                ),
+                                                self.m12,
+                                            ),
+                                            self.m22,
+                                        ),
+                                        self.m32,
+                                    ),
+                                    self.m42,
+                                ),
+                                self.m13,
+                            ),
+                            self.m23,
+                        ),
+                        self.m33,
+                    ),
+                    self.m43,
+                ),
+            ),
             n,
         )
     }
@@ -4684,18 +6027,42 @@ pub impl Matrix4x3StatisticsImpl<
     fn variance(self: Matrix4x3<T>) -> T {
         let n = R::from_int(12);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m31,
+                                                    ),
+                                                    self.m41,
+                                                ),
+                                                self.m12,
+                                            ),
+                                            self.m22,
+                                        ),
+                                        self.m32,
+                                    ),
+                                    self.m42,
+                                ),
+                                self.m13,
+                            ),
+                            self.m23,
+                        ),
+                        self.m33,
+                    ),
+                    self.m43,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -4764,7 +6131,8 @@ pub impl Matrix4x3StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix4x3<T>) -> RowVector3<T> {
         RowVector3 {
             x: self.m11 + self.m21 + self.m31 + self.m41,
@@ -4780,7 +6148,8 @@ pub impl Matrix4x3StatisticsImpl<
         Vector3 { x: r.x, y: r.y, z: r.z }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix4x3<T>) -> Vector4<T> {
         Vector4 {
             x: self.m11 + self.m12 + self.m13,
@@ -4950,26 +6319,62 @@ pub impl Matrix4x3StatisticsImpl<
 pub impl Matrix4StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix4StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix4<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_zero(),
+                                                                            self.m11,
+                                                                        ),
+                                                                        self.m21,
+                                                                    ),
+                                                                    self.m31,
+                                                                ),
+                                                                self.m41,
+                                                            ),
+                                                            self.m12,
+                                                        ),
+                                                        self.m22,
+                                                    ),
+                                                    self.m32,
+                                                ),
+                                                self.m42,
+                                            ),
+                                            self.m13,
+                                        ),
+                                        self.m23,
+                                    ),
+                                    self.m33,
+                                ),
+                                self.m43,
+                            ),
+                            self.m14,
+                        ),
+                        self.m24,
+                    ),
+                    self.m34,
+                ),
+                self.m44,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -4999,22 +6404,57 @@ pub impl Matrix4StatisticsImpl<
     fn mean(self: Matrix4<T>) -> T {
         let n = R::from_int(16);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_zero(),
+                                                                                self.m11,
+                                                                            ),
+                                                                            self.m21,
+                                                                        ),
+                                                                        self.m31,
+                                                                    ),
+                                                                    self.m41,
+                                                                ),
+                                                                self.m12,
+                                                            ),
+                                                            self.m22,
+                                                        ),
+                                                        self.m32,
+                                                    ),
+                                                    self.m42,
+                                                ),
+                                                self.m13,
+                                            ),
+                                            self.m23,
+                                        ),
+                                        self.m33,
+                                    ),
+                                    self.m43,
+                                ),
+                                self.m14,
+                            ),
+                            self.m24,
+                        ),
+                        self.m34,
+                    ),
+                    self.m44,
+                ),
+            ),
             n,
         )
     }
@@ -5026,22 +6466,57 @@ pub impl Matrix4StatisticsImpl<
     fn variance(self: Matrix4<T>) -> T {
         let n = R::from_int(16);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_zero(),
+                                                                                self.m11,
+                                                                            ),
+                                                                            self.m21,
+                                                                        ),
+                                                                        self.m31,
+                                                                    ),
+                                                                    self.m41,
+                                                                ),
+                                                                self.m12,
+                                                            ),
+                                                            self.m22,
+                                                        ),
+                                                        self.m32,
+                                                    ),
+                                                    self.m42,
+                                                ),
+                                                self.m13,
+                                            ),
+                                            self.m23,
+                                        ),
+                                        self.m33,
+                                    ),
+                                    self.m43,
+                                ),
+                                self.m14,
+                            ),
+                            self.m24,
+                        ),
+                        self.m34,
+                    ),
+                    self.m44,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -5132,7 +6607,8 @@ pub impl Matrix4StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix4<T>) -> RowVector4<T> {
         RowVector4 {
             x: self.m11 + self.m21 + self.m31 + self.m41,
@@ -5149,7 +6625,8 @@ pub impl Matrix4StatisticsImpl<
         Vector4 { x: r.x, y: r.y, z: r.z, w: r.w }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix4<T>) -> Vector4<T> {
         Vector4 {
             x: self.m11 + self.m12 + self.m13 + self.m14,
@@ -5333,30 +6810,75 @@ pub impl Matrix4StatisticsImpl<
 pub impl Matrix4x5StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix4x5StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix4x5<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m15
-            + self.m25
-            + self.m35
-            + self.m45
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_zero(),
+                                                                                            self
+                                                                                                .m11,
+                                                                                        ),
+                                                                                        self.m21,
+                                                                                    ),
+                                                                                    self.m31,
+                                                                                ),
+                                                                                self.m41,
+                                                                            ),
+                                                                            self.m12,
+                                                                        ),
+                                                                        self.m22,
+                                                                    ),
+                                                                    self.m32,
+                                                                ),
+                                                                self.m42,
+                                                            ),
+                                                            self.m13,
+                                                        ),
+                                                        self.m23,
+                                                    ),
+                                                    self.m33,
+                                                ),
+                                                self.m43,
+                                            ),
+                                            self.m14,
+                                        ),
+                                        self.m24,
+                                    ),
+                                    self.m34,
+                                ),
+                                self.m44,
+                            ),
+                            self.m15,
+                        ),
+                        self.m25,
+                    ),
+                    self.m35,
+                ),
+                self.m45,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -5389,26 +6911,71 @@ pub impl Matrix4x5StatisticsImpl<
     fn mean(self: Matrix4x5<T>) -> T {
         let n = R::from_int(20);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_zero(),
+                                                                                                self
+                                                                                                    .m11,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m21,
+                                                                                        ),
+                                                                                        self.m31,
+                                                                                    ),
+                                                                                    self.m41,
+                                                                                ),
+                                                                                self.m12,
+                                                                            ),
+                                                                            self.m22,
+                                                                        ),
+                                                                        self.m32,
+                                                                    ),
+                                                                    self.m42,
+                                                                ),
+                                                                self.m13,
+                                                            ),
+                                                            self.m23,
+                                                        ),
+                                                        self.m33,
+                                                    ),
+                                                    self.m43,
+                                                ),
+                                                self.m14,
+                                            ),
+                                            self.m24,
+                                        ),
+                                        self.m34,
+                                    ),
+                                    self.m44,
+                                ),
+                                self.m15,
+                            ),
+                            self.m25,
+                        ),
+                        self.m35,
+                    ),
+                    self.m45,
+                ),
+            ),
             n,
         )
     }
@@ -5420,26 +6987,71 @@ pub impl Matrix4x5StatisticsImpl<
     fn variance(self: Matrix4x5<T>) -> T {
         let n = R::from_int(20);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_zero(),
+                                                                                                self
+                                                                                                    .m11,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m21,
+                                                                                        ),
+                                                                                        self.m31,
+                                                                                    ),
+                                                                                    self.m41,
+                                                                                ),
+                                                                                self.m12,
+                                                                            ),
+                                                                            self.m22,
+                                                                        ),
+                                                                        self.m32,
+                                                                    ),
+                                                                    self.m42,
+                                                                ),
+                                                                self.m13,
+                                                            ),
+                                                            self.m23,
+                                                        ),
+                                                        self.m33,
+                                                    ),
+                                                    self.m43,
+                                                ),
+                                                self.m14,
+                                            ),
+                                            self.m24,
+                                        ),
+                                        self.m34,
+                                    ),
+                                    self.m44,
+                                ),
+                                self.m15,
+                            ),
+                            self.m25,
+                        ),
+                        self.m35,
+                    ),
+                    self.m45,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -5550,7 +7162,8 @@ pub impl Matrix4x5StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix4x5<T>) -> RowVector5<T> {
         RowVector5 {
             x: self.m11 + self.m21 + self.m31 + self.m41,
@@ -5568,13 +7181,54 @@ pub impl Matrix4x5StatisticsImpl<
         Vector5 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix4x5<T>) -> Vector4<T> {
         Vector4 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            w: self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
         }
     }
 
@@ -5639,10 +7293,50 @@ pub impl Matrix4x5StatisticsImpl<
     fn column_mean(self: Matrix4x5<T>) -> Vector4<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
             n,
         );
         Vector4 { x: m0, y: m1, z: m2, w: m3 }
@@ -5716,10 +7410,50 @@ pub impl Matrix4x5StatisticsImpl<
     fn column_variance(self: Matrix4x5<T>) -> Vector4<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -5822,34 +7556,91 @@ pub impl Matrix4x5StatisticsImpl<
 pub impl Matrix4x6StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix4x6StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix4x6<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m15
-            + self.m25
-            + self.m35
-            + self.m45
-            + self.m16
-            + self.m26
-            + self.m36
-            + self.m46
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_zero(),
+                                                                                                            self
+                                                                                                                .m11,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m21,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m31,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m41,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m12,
+                                                                                        ),
+                                                                                        self.m22,
+                                                                                    ),
+                                                                                    self.m32,
+                                                                                ),
+                                                                                self.m42,
+                                                                            ),
+                                                                            self.m13,
+                                                                        ),
+                                                                        self.m23,
+                                                                    ),
+                                                                    self.m33,
+                                                                ),
+                                                                self.m43,
+                                                            ),
+                                                            self.m14,
+                                                        ),
+                                                        self.m24,
+                                                    ),
+                                                    self.m34,
+                                                ),
+                                                self.m44,
+                                            ),
+                                            self.m15,
+                                        ),
+                                        self.m25,
+                                    ),
+                                    self.m35,
+                                ),
+                                self.m45,
+                            ),
+                            self.m16,
+                        ),
+                        self.m26,
+                    ),
+                    self.m36,
+                ),
+                self.m46,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -5886,30 +7677,87 @@ pub impl Matrix4x6StatisticsImpl<
     fn mean(self: Matrix4x6<T>) -> T {
         let n = R::from_int(24);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m16
-                + self.m26
-                + self.m36
-                + self.m46,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_zero(),
+                                                                                                                self
+                                                                                                                    .m11,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m21,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m31,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m41,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m12,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m22,
+                                                                                        ),
+                                                                                        self.m32,
+                                                                                    ),
+                                                                                    self.m42,
+                                                                                ),
+                                                                                self.m13,
+                                                                            ),
+                                                                            self.m23,
+                                                                        ),
+                                                                        self.m33,
+                                                                    ),
+                                                                    self.m43,
+                                                                ),
+                                                                self.m14,
+                                                            ),
+                                                            self.m24,
+                                                        ),
+                                                        self.m34,
+                                                    ),
+                                                    self.m44,
+                                                ),
+                                                self.m15,
+                                            ),
+                                            self.m25,
+                                        ),
+                                        self.m35,
+                                    ),
+                                    self.m45,
+                                ),
+                                self.m16,
+                            ),
+                            self.m26,
+                        ),
+                        self.m36,
+                    ),
+                    self.m46,
+                ),
+            ),
             n,
         )
     }
@@ -5921,30 +7769,87 @@ pub impl Matrix4x6StatisticsImpl<
     fn variance(self: Matrix4x6<T>) -> T {
         let n = R::from_int(24);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m16
-                + self.m26
-                + self.m36
-                + self.m46,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_zero(),
+                                                                                                                self
+                                                                                                                    .m11,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m21,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m31,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m41,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m12,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m22,
+                                                                                        ),
+                                                                                        self.m32,
+                                                                                    ),
+                                                                                    self.m42,
+                                                                                ),
+                                                                                self.m13,
+                                                                            ),
+                                                                            self.m23,
+                                                                        ),
+                                                                        self.m33,
+                                                                    ),
+                                                                    self.m43,
+                                                                ),
+                                                                self.m14,
+                                                            ),
+                                                            self.m24,
+                                                        ),
+                                                        self.m34,
+                                                    ),
+                                                    self.m44,
+                                                ),
+                                                self.m15,
+                                            ),
+                                            self.m25,
+                                        ),
+                                        self.m35,
+                                    ),
+                                    self.m45,
+                                ),
+                                self.m16,
+                            ),
+                            self.m26,
+                        ),
+                        self.m36,
+                    ),
+                    self.m46,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -6075,7 +7980,8 @@ pub impl Matrix4x6StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `row_sum`.
     fn row_sum(self: Matrix4x6<T>) -> RowVector6<T> {
         RowVector6 {
             x: self.m11 + self.m21 + self.m31 + self.m41,
@@ -6094,13 +8000,70 @@ pub impl Matrix4x6StatisticsImpl<
         Vector6 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a, b: r.b }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix4x6<T>) -> Vector4<T> {
         Vector4 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            w: self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
         }
     }
 
@@ -6167,10 +8130,66 @@ pub impl Matrix4x6StatisticsImpl<
     fn column_mean(self: Matrix4x6<T>) -> Vector4<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
             n,
         );
         Vector4 { x: m0, y: m1, z: m2, w: m3 }
@@ -6252,10 +8271,66 @@ pub impl Matrix4x6StatisticsImpl<
     fn column_variance(self: Matrix4x6<T>) -> Vector4<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -6378,11 +8453,20 @@ pub impl Matrix4x6StatisticsImpl<
 pub impl Vector5StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Vector5StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Vector5<T>) -> T {
-        self.x + self.y + self.z + self.w + self.a
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z),
+                    self.w,
+                ),
+                self.a,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -6396,7 +8480,20 @@ pub impl Vector5StatisticsImpl<
     /// ties to even, like `f64 /`). Panics if the sum overflows. Upstream: `mean`.
     fn mean(self: Vector5<T>) -> T {
         let n = R::from_int(5);
-        R::div(self.x + self.y + self.z + self.w + self.a, n)
+        R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        )
     }
 
     /// The population variance of all the components, upstream's two-pass formula `sum((x -
@@ -6405,7 +8502,20 @@ pub impl Vector5StatisticsImpl<
     /// `variance`.
     fn variance(self: Vector5<T>) -> T {
         let n = R::from_int(5);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -6431,9 +8541,22 @@ pub impl Vector5StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Vector5<T>) -> Matrix1<T> {
-        Matrix1 { x: self.x + self.y + self.z + self.w + self.a }
+        Matrix1 {
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+        }
     }
 
     /// `row_sum` as a column vector (the same values, bit-identical). Upstream: `row_sum_tr`.
@@ -6442,7 +8565,8 @@ pub impl Vector5StatisticsImpl<
         Self::row_sum(self)
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Vector5<T>) -> Vector5<T> {
         Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
     }
@@ -6470,7 +8594,20 @@ pub impl Vector5StatisticsImpl<
     /// overflows. Upstream: `row_mean`.
     fn row_mean(self: Vector5<T>) -> Matrix1<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        );
         Matrix1 { x: m0 }
     }
 
@@ -6497,7 +8634,20 @@ pub impl Vector5StatisticsImpl<
     /// once). Panics on overflow. Upstream: `row_variance`.
     fn row_variance(self: Vector5<T>) -> Matrix1<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                        ),
+                        self.w,
+                    ),
+                    self.a,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -6553,20 +8703,40 @@ pub impl Vector5StatisticsImpl<
 pub impl Matrix5x2StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix5x2StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix5x2<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                            ),
+                                            self.m31,
+                                        ),
+                                        self.m41,
+                                    ),
+                                    self.m51,
+                                ),
+                                self.m12,
+                            ),
+                            self.m22,
+                        ),
+                        self.m32,
+                    ),
+                    self.m42,
+                ),
+                self.m52,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -6590,16 +8760,35 @@ pub impl Matrix5x2StatisticsImpl<
     fn mean(self: Matrix5x2<T>) -> T {
         let n = R::from_int(10);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                                ),
+                                                self.m31,
+                                            ),
+                                            self.m41,
+                                        ),
+                                        self.m51,
+                                    ),
+                                    self.m12,
+                                ),
+                                self.m22,
+                            ),
+                            self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
             n,
         )
     }
@@ -6611,16 +8800,35 @@ pub impl Matrix5x2StatisticsImpl<
     fn variance(self: Matrix5x2<T>) -> T {
         let n = R::from_int(10);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(R::wide_zero(), self.m11), self.m21,
+                                                ),
+                                                self.m31,
+                                            ),
+                                            self.m41,
+                                        ),
+                                        self.m51,
+                                    ),
+                                    self.m12,
+                                ),
+                                self.m22,
+                            ),
+                            self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -6677,11 +8885,32 @@ pub impl Matrix5x2StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix5x2<T>) -> RowVector2<T> {
         RowVector2 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
         }
     }
 
@@ -6692,7 +8921,8 @@ pub impl Matrix5x2StatisticsImpl<
         Vector2 { x: r.x, y: r.y }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix5x2<T>) -> Vector5<T> {
         Vector5 {
             x: self.m11 + self.m12,
@@ -6736,8 +8966,34 @@ pub impl Matrix5x2StatisticsImpl<
     /// overflows. Upstream: `row_mean`.
     fn row_mean(self: Matrix5x2<T>) -> RowVector2<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.m11 + self.m21 + self.m31 + self.m41 + self.m51, n);
-        let m1 = R::div(self.m12 + self.m22 + self.m32 + self.m42 + self.m52, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            n,
+        );
         RowVector2 { x: m0, y: m1 }
     }
 
@@ -6770,8 +9026,34 @@ pub impl Matrix5x2StatisticsImpl<
     /// once). Panics on overflow. Upstream: `row_variance`.
     fn row_variance(self: Matrix5x2<T>) -> RowVector2<T> {
         let n = R::from_int(5);
-        let m0 = R::div(self.m11 + self.m21 + self.m31 + self.m41 + self.m51, n);
-        let m1 = R::div(self.m12 + self.m22 + self.m32 + self.m42 + self.m52, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.m11 - m0;
             let d1 = self.m21 - m0;
@@ -6881,25 +9163,58 @@ pub impl Matrix5x2StatisticsImpl<
 pub impl Matrix5x3StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix5x3StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix5x3<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_zero(), self.m11,
+                                                                    ),
+                                                                    self.m21,
+                                                                ),
+                                                                self.m31,
+                                                            ),
+                                                            self.m41,
+                                                        ),
+                                                        self.m51,
+                                                    ),
+                                                    self.m12,
+                                                ),
+                                                self.m22,
+                                            ),
+                                            self.m32,
+                                        ),
+                                        self.m42,
+                                    ),
+                                    self.m52,
+                                ),
+                                self.m13,
+                            ),
+                            self.m23,
+                        ),
+                        self.m33,
+                    ),
+                    self.m43,
+                ),
+                self.m53,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -6928,21 +9243,54 @@ pub impl Matrix5x3StatisticsImpl<
     fn mean(self: Matrix5x3<T>) -> T {
         let n = R::from_int(15);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_zero(),
+                                                                            self.m11,
+                                                                        ),
+                                                                        self.m21,
+                                                                    ),
+                                                                    self.m31,
+                                                                ),
+                                                                self.m41,
+                                                            ),
+                                                            self.m51,
+                                                        ),
+                                                        self.m12,
+                                                    ),
+                                                    self.m22,
+                                                ),
+                                                self.m32,
+                                            ),
+                                            self.m42,
+                                        ),
+                                        self.m52,
+                                    ),
+                                    self.m13,
+                                ),
+                                self.m23,
+                            ),
+                            self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
             n,
         )
     }
@@ -6954,21 +9302,54 @@ pub impl Matrix5x3StatisticsImpl<
     fn variance(self: Matrix5x3<T>) -> T {
         let n = R::from_int(15);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_zero(),
+                                                                            self.m11,
+                                                                        ),
+                                                                        self.m21,
+                                                                    ),
+                                                                    self.m31,
+                                                                ),
+                                                                self.m41,
+                                                            ),
+                                                            self.m51,
+                                                        ),
+                                                        self.m12,
+                                                    ),
+                                                    self.m22,
+                                                ),
+                                                self.m32,
+                                            ),
+                                            self.m42,
+                                        ),
+                                        self.m52,
+                                    ),
+                                    self.m13,
+                                ),
+                                self.m23,
+                            ),
+                            self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -7052,12 +9433,43 @@ pub impl Matrix5x3StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix5x3<T>) -> RowVector3<T> {
         RowVector3 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
         }
     }
 
@@ -7068,7 +9480,8 @@ pub impl Matrix5x3StatisticsImpl<
         Vector3 { x: r.x, y: r.y, z: r.z }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix5x3<T>) -> Vector5<T> {
         Vector5 {
             x: self.m11 + self.m12 + self.m13,
@@ -7115,9 +9528,39 @@ pub impl Matrix5x3StatisticsImpl<
     fn row_mean(self: Matrix5x3<T>) -> RowVector3<T> {
         let n = R::from_int(5);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
             n,
         );
         RowVector3 { x: m0, y: m1, z: m2 }
@@ -7153,9 +9596,39 @@ pub impl Matrix5x3StatisticsImpl<
     fn row_variance(self: Matrix5x3<T>) -> RowVector3<T> {
         let n = R::from_int(5);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -7293,30 +9766,75 @@ pub impl Matrix5x3StatisticsImpl<
 pub impl Matrix5x4StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix5x4StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix5x4<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m54
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_zero(),
+                                                                                            self
+                                                                                                .m11,
+                                                                                        ),
+                                                                                        self.m21,
+                                                                                    ),
+                                                                                    self.m31,
+                                                                                ),
+                                                                                self.m41,
+                                                                            ),
+                                                                            self.m51,
+                                                                        ),
+                                                                        self.m12,
+                                                                    ),
+                                                                    self.m22,
+                                                                ),
+                                                                self.m32,
+                                                            ),
+                                                            self.m42,
+                                                        ),
+                                                        self.m52,
+                                                    ),
+                                                    self.m13,
+                                                ),
+                                                self.m23,
+                                            ),
+                                            self.m33,
+                                        ),
+                                        self.m43,
+                                    ),
+                                    self.m53,
+                                ),
+                                self.m14,
+                            ),
+                            self.m24,
+                        ),
+                        self.m34,
+                    ),
+                    self.m44,
+                ),
+                self.m54,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -7349,26 +9867,71 @@ pub impl Matrix5x4StatisticsImpl<
     fn mean(self: Matrix5x4<T>) -> T {
         let n = R::from_int(20);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_zero(),
+                                                                                                self
+                                                                                                    .m11,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m21,
+                                                                                        ),
+                                                                                        self.m31,
+                                                                                    ),
+                                                                                    self.m41,
+                                                                                ),
+                                                                                self.m51,
+                                                                            ),
+                                                                            self.m12,
+                                                                        ),
+                                                                        self.m22,
+                                                                    ),
+                                                                    self.m32,
+                                                                ),
+                                                                self.m42,
+                                                            ),
+                                                            self.m52,
+                                                        ),
+                                                        self.m13,
+                                                    ),
+                                                    self.m23,
+                                                ),
+                                                self.m33,
+                                            ),
+                                            self.m43,
+                                        ),
+                                        self.m53,
+                                    ),
+                                    self.m14,
+                                ),
+                                self.m24,
+                            ),
+                            self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
             n,
         )
     }
@@ -7380,26 +9943,71 @@ pub impl Matrix5x4StatisticsImpl<
     fn variance(self: Matrix5x4<T>) -> T {
         let n = R::from_int(20);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_zero(),
+                                                                                                self
+                                                                                                    .m11,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m21,
+                                                                                        ),
+                                                                                        self.m31,
+                                                                                    ),
+                                                                                    self.m41,
+                                                                                ),
+                                                                                self.m51,
+                                                                            ),
+                                                                            self.m12,
+                                                                        ),
+                                                                        self.m22,
+                                                                    ),
+                                                                    self.m32,
+                                                                ),
+                                                                self.m42,
+                                                            ),
+                                                            self.m52,
+                                                        ),
+                                                        self.m13,
+                                                    ),
+                                                    self.m23,
+                                                ),
+                                                self.m33,
+                                            ),
+                                            self.m43,
+                                        ),
+                                        self.m53,
+                                    ),
+                                    self.m14,
+                                ),
+                                self.m24,
+                            ),
+                            self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -7510,13 +10118,54 @@ pub impl Matrix5x4StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix5x4<T>) -> RowVector4<T> {
         RowVector4 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            w: self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
         }
     }
 
@@ -7527,7 +10176,8 @@ pub impl Matrix5x4StatisticsImpl<
         Vector4 { x: r.x, y: r.y, z: r.z, w: r.w }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix5x4<T>) -> Vector5<T> {
         Vector5 {
             x: self.m11 + self.m12 + self.m13 + self.m14,
@@ -7575,10 +10225,50 @@ pub impl Matrix5x4StatisticsImpl<
     fn row_mean(self: Matrix5x4<T>) -> RowVector4<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
             n,
         );
         RowVector4 { x: m0, y: m1, z: m2, w: m3 }
@@ -7614,10 +10304,50 @@ pub impl Matrix5x4StatisticsImpl<
     fn row_variance(self: Matrix5x4<T>) -> RowVector4<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -7782,35 +10512,95 @@ pub impl Matrix5x4StatisticsImpl<
 pub impl Matrix5StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix5StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix5<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m54
-            + self.m15
-            + self.m25
-            + self.m35
-            + self.m45
-            + self.m55
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_zero(),
+                                                                                                                self
+                                                                                                                    .m11,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m21,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m31,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m41,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m51,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m12,
+                                                                                        ),
+                                                                                        self.m22,
+                                                                                    ),
+                                                                                    self.m32,
+                                                                                ),
+                                                                                self.m42,
+                                                                            ),
+                                                                            self.m52,
+                                                                        ),
+                                                                        self.m13,
+                                                                    ),
+                                                                    self.m23,
+                                                                ),
+                                                                self.m33,
+                                                            ),
+                                                            self.m43,
+                                                        ),
+                                                        self.m53,
+                                                    ),
+                                                    self.m14,
+                                                ),
+                                                self.m24,
+                                            ),
+                                            self.m34,
+                                        ),
+                                        self.m44,
+                                    ),
+                                    self.m54,
+                                ),
+                                self.m15,
+                            ),
+                            self.m25,
+                        ),
+                        self.m35,
+                    ),
+                    self.m45,
+                ),
+                self.m55,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -7848,31 +10638,91 @@ pub impl Matrix5StatisticsImpl<
     fn mean(self: Matrix5<T>) -> T {
         let n = R::from_int(25);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_zero(),
+                                                                                                                    self
+                                                                                                                        .m11,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m21,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m31,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m41,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m51,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m12,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m22,
+                                                                                        ),
+                                                                                        self.m32,
+                                                                                    ),
+                                                                                    self.m42,
+                                                                                ),
+                                                                                self.m52,
+                                                                            ),
+                                                                            self.m13,
+                                                                        ),
+                                                                        self.m23,
+                                                                    ),
+                                                                    self.m33,
+                                                                ),
+                                                                self.m43,
+                                                            ),
+                                                            self.m53,
+                                                        ),
+                                                        self.m14,
+                                                    ),
+                                                    self.m24,
+                                                ),
+                                                self.m34,
+                                            ),
+                                            self.m44,
+                                        ),
+                                        self.m54,
+                                    ),
+                                    self.m15,
+                                ),
+                                self.m25,
+                            ),
+                            self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
             n,
         )
     }
@@ -7884,31 +10734,91 @@ pub impl Matrix5StatisticsImpl<
     fn variance(self: Matrix5<T>) -> T {
         let n = R::from_int(25);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_zero(),
+                                                                                                                    self
+                                                                                                                        .m11,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m21,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m31,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m41,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m51,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m12,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m22,
+                                                                                        ),
+                                                                                        self.m32,
+                                                                                    ),
+                                                                                    self.m42,
+                                                                                ),
+                                                                                self.m52,
+                                                                            ),
+                                                                            self.m13,
+                                                                        ),
+                                                                        self.m23,
+                                                                    ),
+                                                                    self.m33,
+                                                                ),
+                                                                self.m43,
+                                                            ),
+                                                            self.m53,
+                                                        ),
+                                                        self.m14,
+                                                    ),
+                                                    self.m24,
+                                                ),
+                                                self.m34,
+                                            ),
+                                            self.m44,
+                                        ),
+                                        self.m54,
+                                    ),
+                                    self.m15,
+                                ),
+                                self.m25,
+                            ),
+                            self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -8044,14 +10954,65 @@ pub impl Matrix5StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix5<T>) -> RowVector5<T> {
         RowVector5 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            w: self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
-            a: self.m15 + self.m25 + self.m35 + self.m45 + self.m55,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25), self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
         }
     }
 
@@ -8062,14 +11023,65 @@ pub impl Matrix5StatisticsImpl<
         Vector5 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix5<T>) -> Vector5<T> {
         Vector5 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            w: self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
-            a: self.m51 + self.m52 + self.m53 + self.m54 + self.m55,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52), self.m53,
+                        ),
+                        self.m54,
+                    ),
+                    self.m55,
+                ),
+            ),
         }
     }
 
@@ -8111,11 +11123,61 @@ pub impl Matrix5StatisticsImpl<
     fn row_mean(self: Matrix5<T>) -> RowVector5<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25), self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
             n,
         );
         RowVector5 { x: m0, y: m1, z: m2, w: m3, a: m4 }
@@ -8135,11 +11197,61 @@ pub impl Matrix5StatisticsImpl<
     fn column_mean(self: Matrix5<T>) -> Vector5<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52), self.m53,
+                        ),
+                        self.m54,
+                    ),
+                    self.m55,
+                ),
+            ),
             n,
         );
         Vector5 { x: m0, y: m1, z: m2, w: m3, a: m4 }
@@ -8151,11 +11263,61 @@ pub impl Matrix5StatisticsImpl<
     fn row_variance(self: Matrix5<T>) -> RowVector5<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25), self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -8288,11 +11450,61 @@ pub impl Matrix5StatisticsImpl<
     fn column_variance(self: Matrix5<T>) -> Vector5<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52), self.m53,
+                        ),
+                        self.m54,
+                    ),
+                    self.m55,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -8417,40 +11629,115 @@ pub impl Matrix5StatisticsImpl<
 pub impl Matrix5x6StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix5x6StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix5x6<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m54
-            + self.m15
-            + self.m25
-            + self.m35
-            + self.m45
-            + self.m55
-            + self.m16
-            + self.m26
-            + self.m36
-            + self.m46
-            + self.m56
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_zero(),
+                                                                                                                                    self
+                                                                                                                                        .m11,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m21,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m31,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m41,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m51,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m12,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m22,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m32,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m42,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m52,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m13,
+                                                                                        ),
+                                                                                        self.m23,
+                                                                                    ),
+                                                                                    self.m33,
+                                                                                ),
+                                                                                self.m43,
+                                                                            ),
+                                                                            self.m53,
+                                                                        ),
+                                                                        self.m14,
+                                                                    ),
+                                                                    self.m24,
+                                                                ),
+                                                                self.m34,
+                                                            ),
+                                                            self.m44,
+                                                        ),
+                                                        self.m54,
+                                                    ),
+                                                    self.m15,
+                                                ),
+                                                self.m25,
+                                            ),
+                                            self.m35,
+                                        ),
+                                        self.m45,
+                                    ),
+                                    self.m55,
+                                ),
+                                self.m16,
+                            ),
+                            self.m26,
+                        ),
+                        self.m36,
+                    ),
+                    self.m46,
+                ),
+                self.m56,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -8493,36 +11780,111 @@ pub impl Matrix5x6StatisticsImpl<
     fn mean(self: Matrix5x6<T>) -> T {
         let n = R::from_int(30);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55
-                + self.m16
-                + self.m26
-                + self.m36
-                + self.m46
-                + self.m56,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_add(
+                                                                                                                                        R::wide_zero(),
+                                                                                                                                        self
+                                                                                                                                            .m11,
+                                                                                                                                    ),
+                                                                                                                                    self
+                                                                                                                                        .m21,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m31,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m41,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m51,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m12,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m22,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m32,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m42,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m52,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m13,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m23,
+                                                                                        ),
+                                                                                        self.m33,
+                                                                                    ),
+                                                                                    self.m43,
+                                                                                ),
+                                                                                self.m53,
+                                                                            ),
+                                                                            self.m14,
+                                                                        ),
+                                                                        self.m24,
+                                                                    ),
+                                                                    self.m34,
+                                                                ),
+                                                                self.m44,
+                                                            ),
+                                                            self.m54,
+                                                        ),
+                                                        self.m15,
+                                                    ),
+                                                    self.m25,
+                                                ),
+                                                self.m35,
+                                            ),
+                                            self.m45,
+                                        ),
+                                        self.m55,
+                                    ),
+                                    self.m16,
+                                ),
+                                self.m26,
+                            ),
+                            self.m36,
+                        ),
+                        self.m46,
+                    ),
+                    self.m56,
+                ),
+            ),
             n,
         )
     }
@@ -8534,36 +11896,111 @@ pub impl Matrix5x6StatisticsImpl<
     fn variance(self: Matrix5x6<T>) -> T {
         let n = R::from_int(30);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55
-                + self.m16
-                + self.m26
-                + self.m36
-                + self.m46
-                + self.m56,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_add(
+                                                                                                                                        R::wide_zero(),
+                                                                                                                                        self
+                                                                                                                                            .m11,
+                                                                                                                                    ),
+                                                                                                                                    self
+                                                                                                                                        .m21,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m31,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m41,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m51,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m12,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m22,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m32,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m42,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m52,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m13,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m23,
+                                                                                        ),
+                                                                                        self.m33,
+                                                                                    ),
+                                                                                    self.m43,
+                                                                                ),
+                                                                                self.m53,
+                                                                            ),
+                                                                            self.m14,
+                                                                        ),
+                                                                        self.m24,
+                                                                    ),
+                                                                    self.m34,
+                                                                ),
+                                                                self.m44,
+                                                            ),
+                                                            self.m54,
+                                                        ),
+                                                        self.m15,
+                                                    ),
+                                                    self.m25,
+                                                ),
+                                                self.m35,
+                                            ),
+                                            self.m45,
+                                        ),
+                                        self.m55,
+                                    ),
+                                    self.m16,
+                                ),
+                                self.m26,
+                            ),
+                            self.m36,
+                        ),
+                        self.m46,
+                    ),
+                    self.m56,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -8724,15 +12161,76 @@ pub impl Matrix5x6StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix5x6<T>) -> RowVector6<T> {
         RowVector6 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            w: self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
-            a: self.m15 + self.m25 + self.m35 + self.m45 + self.m55,
-            b: self.m16 + self.m26 + self.m36 + self.m46 + self.m56,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25), self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m16), self.m26), self.m36,
+                        ),
+                        self.m46,
+                    ),
+                    self.m56,
+                ),
+            ),
         }
     }
 
@@ -8743,14 +12241,85 @@ pub impl Matrix5x6StatisticsImpl<
         Vector6 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a, b: r.b }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix5x6<T>) -> Vector5<T> {
         Vector5 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            w: self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
-            a: self.m51 + self.m52 + self.m53 + self.m54 + self.m55 + self.m56,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52),
+                                self.m53,
+                            ),
+                            self.m54,
+                        ),
+                        self.m55,
+                    ),
+                    self.m56,
+                ),
+            ),
         }
     }
 
@@ -8793,12 +12362,72 @@ pub impl Matrix5x6StatisticsImpl<
     fn row_mean(self: Matrix5x6<T>) -> RowVector6<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55,
-            self.m16 + self.m26 + self.m36 + self.m46 + self.m56,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25), self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m16), self.m26), self.m36,
+                        ),
+                        self.m46,
+                    ),
+                    self.m56,
+                ),
+            ),
             n,
         );
         RowVector6 { x: m0, y: m1, z: m2, w: m3, a: m4, b: m5 }
@@ -8818,11 +12447,81 @@ pub impl Matrix5x6StatisticsImpl<
     fn column_mean(self: Matrix5x6<T>) -> Vector5<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55 + self.m56,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52),
+                                self.m53,
+                            ),
+                            self.m54,
+                        ),
+                        self.m55,
+                    ),
+                    self.m56,
+                ),
+            ),
             n,
         );
         Vector5 { x: m0, y: m1, z: m2, w: m3, a: m4 }
@@ -8834,12 +12533,72 @@ pub impl Matrix5x6StatisticsImpl<
     fn row_variance(self: Matrix5x6<T>) -> RowVector6<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55,
-            self.m16 + self.m26 + self.m36 + self.m46 + self.m56,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21), self.m31,
+                        ),
+                        self.m41,
+                    ),
+                    self.m51,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22), self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23), self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24), self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25), self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m16), self.m26), self.m36,
+                        ),
+                        self.m46,
+                    ),
+                    self.m56,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -8994,11 +12753,81 @@ pub impl Matrix5x6StatisticsImpl<
     fn column_variance(self: Matrix5x6<T>) -> Vector5<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55 + self.m56,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52),
+                                self.m53,
+                            ),
+                            self.m54,
+                        ),
+                        self.m55,
+                    ),
+                    self.m56,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -9159,7 +12988,23 @@ pub impl Vector6StatisticsImpl<
     /// ties to even, like `f64 /`). Panics if the sum overflows. Upstream: `mean`.
     fn mean(self: Vector6<T>) -> T {
         let n = R::from_int(6);
-        R::div(self.x + self.y + self.z + self.w + self.a + self.b, n)
+        R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        )
     }
 
     /// The population variance of all the components, upstream's two-pass formula `sum((x -
@@ -9168,7 +13013,23 @@ pub impl Vector6StatisticsImpl<
     /// `variance`.
     fn variance(self: Vector6<T>) -> T {
         let n = R::from_int(6);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a + self.b, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -9199,9 +13060,25 @@ pub impl Vector6StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Vector6<T>) -> Matrix1<T> {
-        Matrix1 { x: self.x + self.y + self.z + self.w + self.a + self.b }
+        Matrix1 {
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+        }
     }
 
     /// `row_sum` as a column vector (the same values, bit-identical). Upstream: `row_sum_tr`.
@@ -9210,7 +13087,8 @@ pub impl Vector6StatisticsImpl<
         Self::row_sum(self)
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Vector6<T>) -> Vector6<T> {
         Vector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
     }
@@ -9238,7 +13116,23 @@ pub impl Vector6StatisticsImpl<
     /// overflows. Upstream: `row_mean`.
     fn row_mean(self: Vector6<T>) -> Matrix1<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a + self.b, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        );
         Matrix1 { x: m0 }
     }
 
@@ -9266,7 +13160,23 @@ pub impl Vector6StatisticsImpl<
     /// once). Panics on overflow. Upstream: `row_variance`.
     fn row_variance(self: Vector6<T>) -> Matrix1<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.x + self.y + self.z + self.w + self.a + self.b, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.x), self.y), self.z,
+                            ),
+                            self.w,
+                        ),
+                        self.a,
+                    ),
+                    self.b,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.x - m0;
             let d1 = self.y - m0;
@@ -9328,22 +13238,47 @@ pub impl Vector6StatisticsImpl<
 pub impl Matrix6x2StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix6x2StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix6x2<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m61
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m62
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(R::wide_zero(), self.m11),
+                                                        self.m21,
+                                                    ),
+                                                    self.m31,
+                                                ),
+                                                self.m41,
+                                            ),
+                                            self.m51,
+                                        ),
+                                        self.m61,
+                                    ),
+                                    self.m12,
+                                ),
+                                self.m22,
+                            ),
+                            self.m32,
+                        ),
+                        self.m42,
+                    ),
+                    self.m52,
+                ),
+                self.m62,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -9369,18 +13304,42 @@ pub impl Matrix6x2StatisticsImpl<
     fn mean(self: Matrix6x2<T>) -> T {
         let n = R::from_int(12);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m31,
+                                                    ),
+                                                    self.m41,
+                                                ),
+                                                self.m51,
+                                            ),
+                                            self.m61,
+                                        ),
+                                        self.m12,
+                                    ),
+                                    self.m22,
+                                ),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
             n,
         )
     }
@@ -9392,18 +13351,42 @@ pub impl Matrix6x2StatisticsImpl<
     fn variance(self: Matrix6x2<T>) -> T {
         let n = R::from_int(12);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(R::wide_zero(), self.m11),
+                                                            self.m21,
+                                                        ),
+                                                        self.m31,
+                                                    ),
+                                                    self.m41,
+                                                ),
+                                                self.m51,
+                                            ),
+                                            self.m61,
+                                        ),
+                                        self.m12,
+                                    ),
+                                    self.m22,
+                                ),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -9472,11 +13455,40 @@ pub impl Matrix6x2StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix6x2<T>) -> RowVector2<T> {
         RowVector2 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
         }
     }
 
@@ -9487,7 +13499,8 @@ pub impl Matrix6x2StatisticsImpl<
         Vector2 { x: r.x, y: r.y }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix6x2<T>) -> Vector6<T> {
         Vector6 {
             x: self.m11 + self.m12,
@@ -9533,8 +13546,42 @@ pub impl Matrix6x2StatisticsImpl<
     /// overflows. Upstream: `row_mean`.
     fn row_mean(self: Matrix6x2<T>) -> RowVector2<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61, n);
-        let m1 = R::div(self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            n,
+        );
         RowVector2 { x: m0, y: m1 }
     }
 
@@ -9568,8 +13615,42 @@ pub impl Matrix6x2StatisticsImpl<
     /// once). Panics on overflow. Upstream: `row_variance`.
     fn row_variance(self: Matrix6x2<T>) -> RowVector2<T> {
         let n = R::from_int(6);
-        let m0 = R::div(self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61, n);
-        let m1 = R::div(self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62, n);
+        let m0 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            n,
+        );
+        let m1 = R::div(
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            n,
+        );
         let s0 = {
             let d0 = self.m11 - m0;
             let d1 = self.m21 - m0;
@@ -9695,28 +13776,68 @@ pub impl Matrix6x2StatisticsImpl<
 pub impl Matrix6x3StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix6x3StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix6x3<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m61
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m62
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
-            + self.m63
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_zero(),
+                                                                                    self.m11,
+                                                                                ),
+                                                                                self.m21,
+                                                                            ),
+                                                                            self.m31,
+                                                                        ),
+                                                                        self.m41,
+                                                                    ),
+                                                                    self.m51,
+                                                                ),
+                                                                self.m61,
+                                                            ),
+                                                            self.m12,
+                                                        ),
+                                                        self.m22,
+                                                    ),
+                                                    self.m32,
+                                                ),
+                                                self.m42,
+                                            ),
+                                            self.m52,
+                                        ),
+                                        self.m62,
+                                    ),
+                                    self.m13,
+                                ),
+                                self.m23,
+                            ),
+                            self.m33,
+                        ),
+                        self.m43,
+                    ),
+                    self.m53,
+                ),
+                self.m63,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -9747,24 +13868,63 @@ pub impl Matrix6x3StatisticsImpl<
     fn mean(self: Matrix6x3<T>) -> T {
         let n = R::from_int(18);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_zero(),
+                                                                                        self.m11,
+                                                                                    ),
+                                                                                    self.m21,
+                                                                                ),
+                                                                                self.m31,
+                                                                            ),
+                                                                            self.m41,
+                                                                        ),
+                                                                        self.m51,
+                                                                    ),
+                                                                    self.m61,
+                                                                ),
+                                                                self.m12,
+                                                            ),
+                                                            self.m22,
+                                                        ),
+                                                        self.m32,
+                                                    ),
+                                                    self.m42,
+                                                ),
+                                                self.m52,
+                                            ),
+                                            self.m62,
+                                        ),
+                                        self.m13,
+                                    ),
+                                    self.m23,
+                                ),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
             n,
         )
     }
@@ -9776,24 +13936,63 @@ pub impl Matrix6x3StatisticsImpl<
     fn variance(self: Matrix6x3<T>) -> T {
         let n = R::from_int(18);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_zero(),
+                                                                                        self.m11,
+                                                                                    ),
+                                                                                    self.m21,
+                                                                                ),
+                                                                                self.m31,
+                                                                            ),
+                                                                            self.m41,
+                                                                        ),
+                                                                        self.m51,
+                                                                    ),
+                                                                    self.m61,
+                                                                ),
+                                                                self.m12,
+                                                            ),
+                                                            self.m22,
+                                                        ),
+                                                        self.m32,
+                                                    ),
+                                                    self.m42,
+                                                ),
+                                                self.m52,
+                                            ),
+                                            self.m62,
+                                        ),
+                                        self.m13,
+                                    ),
+                                    self.m23,
+                                ),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -9894,12 +14093,55 @@ pub impl Matrix6x3StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix6x3<T>) -> RowVector3<T> {
         RowVector3 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
         }
     }
 
@@ -9910,7 +14152,8 @@ pub impl Matrix6x3StatisticsImpl<
         Vector3 { x: r.x, y: r.y, z: r.z }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix6x3<T>) -> Vector6<T> {
         Vector6 {
             x: self.m11 + self.m12 + self.m13,
@@ -9959,9 +14202,51 @@ pub impl Matrix6x3StatisticsImpl<
     fn row_mean(self: Matrix6x3<T>) -> RowVector3<T> {
         let n = R::from_int(6);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
             n,
         );
         RowVector3 { x: m0, y: m1, z: m2 }
@@ -9998,9 +14283,51 @@ pub impl Matrix6x3StatisticsImpl<
     fn row_variance(self: Matrix6x3<T>) -> RowVector3<T> {
         let n = R::from_int(6);
         let (m0, m1, m2) = R::div3(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -10160,34 +14487,91 @@ pub impl Matrix6x3StatisticsImpl<
 pub impl Matrix6x4StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix6x4StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix6x4<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m61
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m62
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
-            + self.m63
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m54
-            + self.m64
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_zero(),
+                                                                                                            self
+                                                                                                                .m11,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m21,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m31,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m41,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m51,
+                                                                                        ),
+                                                                                        self.m61,
+                                                                                    ),
+                                                                                    self.m12,
+                                                                                ),
+                                                                                self.m22,
+                                                                            ),
+                                                                            self.m32,
+                                                                        ),
+                                                                        self.m42,
+                                                                    ),
+                                                                    self.m52,
+                                                                ),
+                                                                self.m62,
+                                                            ),
+                                                            self.m13,
+                                                        ),
+                                                        self.m23,
+                                                    ),
+                                                    self.m33,
+                                                ),
+                                                self.m43,
+                                            ),
+                                            self.m53,
+                                        ),
+                                        self.m63,
+                                    ),
+                                    self.m14,
+                                ),
+                                self.m24,
+                            ),
+                            self.m34,
+                        ),
+                        self.m44,
+                    ),
+                    self.m54,
+                ),
+                self.m64,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -10224,30 +14608,87 @@ pub impl Matrix6x4StatisticsImpl<
     fn mean(self: Matrix6x4<T>) -> T {
         let n = R::from_int(24);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m64,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_zero(),
+                                                                                                                self
+                                                                                                                    .m11,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m21,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m31,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m41,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m51,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m61,
+                                                                                        ),
+                                                                                        self.m12,
+                                                                                    ),
+                                                                                    self.m22,
+                                                                                ),
+                                                                                self.m32,
+                                                                            ),
+                                                                            self.m42,
+                                                                        ),
+                                                                        self.m52,
+                                                                    ),
+                                                                    self.m62,
+                                                                ),
+                                                                self.m13,
+                                                            ),
+                                                            self.m23,
+                                                        ),
+                                                        self.m33,
+                                                    ),
+                                                    self.m43,
+                                                ),
+                                                self.m53,
+                                            ),
+                                            self.m63,
+                                        ),
+                                        self.m14,
+                                    ),
+                                    self.m24,
+                                ),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
             n,
         )
     }
@@ -10259,30 +14700,87 @@ pub impl Matrix6x4StatisticsImpl<
     fn variance(self: Matrix6x4<T>) -> T {
         let n = R::from_int(24);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m64,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_zero(),
+                                                                                                                self
+                                                                                                                    .m11,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m21,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m31,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m41,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m51,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m61,
+                                                                                        ),
+                                                                                        self.m12,
+                                                                                    ),
+                                                                                    self.m22,
+                                                                                ),
+                                                                                self.m32,
+                                                                            ),
+                                                                            self.m42,
+                                                                        ),
+                                                                        self.m52,
+                                                                    ),
+                                                                    self.m62,
+                                                                ),
+                                                                self.m13,
+                                                            ),
+                                                            self.m23,
+                                                        ),
+                                                        self.m33,
+                                                    ),
+                                                    self.m43,
+                                                ),
+                                                self.m53,
+                                            ),
+                                            self.m63,
+                                        ),
+                                        self.m14,
+                                    ),
+                                    self.m24,
+                                ),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -10413,13 +14911,70 @@ pub impl Matrix6x4StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix6x4<T>) -> RowVector4<T> {
         RowVector4 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            w: self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
         }
     }
 
@@ -10430,7 +14985,8 @@ pub impl Matrix6x4StatisticsImpl<
         Vector4 { x: r.x, y: r.y, z: r.z, w: r.w }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (checked `+` left to right). Panics on overflow. Upstream:
+    /// `column_sum`.
     fn column_sum(self: Matrix6x4<T>) -> Vector6<T> {
         Vector6 {
             x: self.m11 + self.m12 + self.m13 + self.m14,
@@ -10480,10 +15036,66 @@ pub impl Matrix6x4StatisticsImpl<
     fn row_mean(self: Matrix6x4<T>) -> RowVector4<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
             n,
         );
         RowVector4 { x: m0, y: m1, z: m2, w: m3 }
@@ -10520,10 +15132,66 @@ pub impl Matrix6x4StatisticsImpl<
     fn row_variance(self: Matrix6x4<T>) -> RowVector4<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3) = R::div4(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -10716,40 +15384,115 @@ pub impl Matrix6x4StatisticsImpl<
 pub impl Matrix6x5StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix6x5StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix6x5<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m61
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m62
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
-            + self.m63
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m54
-            + self.m64
-            + self.m15
-            + self.m25
-            + self.m35
-            + self.m45
-            + self.m55
-            + self.m65
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_zero(),
+                                                                                                                                    self
+                                                                                                                                        .m11,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m21,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m31,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m41,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m51,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m61,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m12,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m22,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m32,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m42,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m52,
+                                                                                        ),
+                                                                                        self.m62,
+                                                                                    ),
+                                                                                    self.m13,
+                                                                                ),
+                                                                                self.m23,
+                                                                            ),
+                                                                            self.m33,
+                                                                        ),
+                                                                        self.m43,
+                                                                    ),
+                                                                    self.m53,
+                                                                ),
+                                                                self.m63,
+                                                            ),
+                                                            self.m14,
+                                                        ),
+                                                        self.m24,
+                                                    ),
+                                                    self.m34,
+                                                ),
+                                                self.m44,
+                                            ),
+                                            self.m54,
+                                        ),
+                                        self.m64,
+                                    ),
+                                    self.m15,
+                                ),
+                                self.m25,
+                            ),
+                            self.m35,
+                        ),
+                        self.m45,
+                    ),
+                    self.m55,
+                ),
+                self.m65,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -10792,36 +15535,111 @@ pub impl Matrix6x5StatisticsImpl<
     fn mean(self: Matrix6x5<T>) -> T {
         let n = R::from_int(30);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m64
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55
-                + self.m65,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_add(
+                                                                                                                                        R::wide_zero(),
+                                                                                                                                        self
+                                                                                                                                            .m11,
+                                                                                                                                    ),
+                                                                                                                                    self
+                                                                                                                                        .m21,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m31,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m41,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m51,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m61,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m12,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m22,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m32,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m42,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m52,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m62,
+                                                                                        ),
+                                                                                        self.m13,
+                                                                                    ),
+                                                                                    self.m23,
+                                                                                ),
+                                                                                self.m33,
+                                                                            ),
+                                                                            self.m43,
+                                                                        ),
+                                                                        self.m53,
+                                                                    ),
+                                                                    self.m63,
+                                                                ),
+                                                                self.m14,
+                                                            ),
+                                                            self.m24,
+                                                        ),
+                                                        self.m34,
+                                                    ),
+                                                    self.m44,
+                                                ),
+                                                self.m54,
+                                            ),
+                                            self.m64,
+                                        ),
+                                        self.m15,
+                                    ),
+                                    self.m25,
+                                ),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
             n,
         )
     }
@@ -10833,36 +15651,111 @@ pub impl Matrix6x5StatisticsImpl<
     fn variance(self: Matrix6x5<T>) -> T {
         let n = R::from_int(30);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m64
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55
-                + self.m65,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_add(
+                                                                                                                                        R::wide_zero(),
+                                                                                                                                        self
+                                                                                                                                            .m11,
+                                                                                                                                    ),
+                                                                                                                                    self
+                                                                                                                                        .m21,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m31,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m41,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m51,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m61,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m12,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m22,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m32,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m42,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m52,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m62,
+                                                                                        ),
+                                                                                        self.m13,
+                                                                                    ),
+                                                                                    self.m23,
+                                                                                ),
+                                                                                self.m33,
+                                                                            ),
+                                                                            self.m43,
+                                                                        ),
+                                                                        self.m53,
+                                                                    ),
+                                                                    self.m63,
+                                                                ),
+                                                                self.m14,
+                                                            ),
+                                                            self.m24,
+                                                        ),
+                                                        self.m34,
+                                                    ),
+                                                    self.m44,
+                                                ),
+                                                self.m54,
+                                            ),
+                                            self.m64,
+                                        ),
+                                        self.m15,
+                                    ),
+                                    self.m25,
+                                ),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -11023,14 +15916,85 @@ pub impl Matrix6x5StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix6x5<T>) -> RowVector5<T> {
         RowVector5 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            w: self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
-            a: self.m15 + self.m25 + self.m35 + self.m45 + self.m55 + self.m65,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
         }
     }
 
@@ -11041,15 +16005,76 @@ pub impl Matrix6x5StatisticsImpl<
         Vector5 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix6x5<T>) -> Vector6<T> {
         Vector6 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            w: self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
-            a: self.m51 + self.m52 + self.m53 + self.m54 + self.m55,
-            b: self.m61 + self.m62 + self.m63 + self.m64 + self.m65,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52), self.m53,
+                        ),
+                        self.m54,
+                    ),
+                    self.m55,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m61), self.m62), self.m63,
+                        ),
+                        self.m64,
+                    ),
+                    self.m65,
+                ),
+            ),
         }
     }
 
@@ -11092,11 +16117,81 @@ pub impl Matrix6x5StatisticsImpl<
     fn row_mean(self: Matrix6x5<T>) -> RowVector5<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55 + self.m65,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
             n,
         );
         RowVector5 { x: m0, y: m1, z: m2, w: m3, a: m4 }
@@ -11116,12 +16211,72 @@ pub impl Matrix6x5StatisticsImpl<
     fn column_mean(self: Matrix6x5<T>) -> Vector6<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55,
-            self.m61 + self.m62 + self.m63 + self.m64 + self.m65,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52), self.m53,
+                        ),
+                        self.m54,
+                    ),
+                    self.m55,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m61), self.m62), self.m63,
+                        ),
+                        self.m64,
+                    ),
+                    self.m65,
+                ),
+            ),
             n,
         );
         Vector6 { x: m0, y: m1, z: m2, w: m3, a: m4, b: m5 }
@@ -11133,11 +16288,81 @@ pub impl Matrix6x5StatisticsImpl<
     fn row_variance(self: Matrix6x5<T>) -> RowVector5<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4) = R::div5(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55 + self.m65,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -11295,12 +16520,72 @@ pub impl Matrix6x5StatisticsImpl<
     fn column_variance(self: Matrix6x5<T>) -> Vector6<T> {
         let n = R::from_int(5);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55,
-            self.m61 + self.m62 + self.m63 + self.m64 + self.m65,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12), self.m13,
+                        ),
+                        self.m14,
+                    ),
+                    self.m15,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22), self.m23,
+                        ),
+                        self.m24,
+                    ),
+                    self.m25,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32), self.m33,
+                        ),
+                        self.m34,
+                    ),
+                    self.m35,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42), self.m43,
+                        ),
+                        self.m44,
+                    ),
+                    self.m45,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52), self.m53,
+                        ),
+                        self.m54,
+                    ),
+                    self.m55,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(R::wide_add(R::wide_zero(), self.m61), self.m62), self.m63,
+                        ),
+                        self.m64,
+                    ),
+                    self.m65,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -11447,46 +16732,139 @@ pub impl Matrix6x5StatisticsImpl<
 pub impl Matrix6StatisticsImpl<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of Matrix6StatisticsTrait<T> {
-    /// The sum of all the components, left to right in column-major order (upstream's iteration
-    /// order), exact. Panics on overflow (of any partial sum). Upstream: `sum`.
+    /// The sum of all the components in column-major order (upstream's iteration order), exact: ONE
+    /// `Real::Wide` accumulator (only the total can overflow, like upstream's f64 partial sums).
+    /// Panics on overflow. Upstream: `sum`.
     #[inline(always)]
     fn sum(self: Matrix6<T>) -> T {
-        self.m11
-            + self.m21
-            + self.m31
-            + self.m41
-            + self.m51
-            + self.m61
-            + self.m12
-            + self.m22
-            + self.m32
-            + self.m42
-            + self.m52
-            + self.m62
-            + self.m13
-            + self.m23
-            + self.m33
-            + self.m43
-            + self.m53
-            + self.m63
-            + self.m14
-            + self.m24
-            + self.m34
-            + self.m44
-            + self.m54
-            + self.m64
-            + self.m15
-            + self.m25
-            + self.m35
-            + self.m45
-            + self.m55
-            + self.m65
-            + self.m16
-            + self.m26
-            + self.m36
-            + self.m46
-            + self.m56
-            + self.m66
+        R::wide_rescale(
+            R::wide_add(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_add(
+                                                                                                                                        R::wide_add(
+                                                                                                                                            R::wide_add(
+                                                                                                                                                R::wide_add(
+                                                                                                                                                    R::wide_add(
+                                                                                                                                                        R::wide_add(
+                                                                                                                                                            R::wide_zero(),
+                                                                                                                                                            self
+                                                                                                                                                                .m11,
+                                                                                                                                                        ),
+                                                                                                                                                        self
+                                                                                                                                                            .m21,
+                                                                                                                                                    ),
+                                                                                                                                                    self
+                                                                                                                                                        .m31,
+                                                                                                                                                ),
+                                                                                                                                                self
+                                                                                                                                                    .m41,
+                                                                                                                                            ),
+                                                                                                                                            self
+                                                                                                                                                .m51,
+                                                                                                                                        ),
+                                                                                                                                        self
+                                                                                                                                            .m61,
+                                                                                                                                    ),
+                                                                                                                                    self
+                                                                                                                                        .m12,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m22,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m32,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m42,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m52,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m62,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m13,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m23,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m33,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m43,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m53,
+                                                                                        ),
+                                                                                        self.m63,
+                                                                                    ),
+                                                                                    self.m14,
+                                                                                ),
+                                                                                self.m24,
+                                                                            ),
+                                                                            self.m34,
+                                                                        ),
+                                                                        self.m44,
+                                                                    ),
+                                                                    self.m54,
+                                                                ),
+                                                                self.m64,
+                                                            ),
+                                                            self.m15,
+                                                        ),
+                                                        self.m25,
+                                                    ),
+                                                    self.m35,
+                                                ),
+                                                self.m45,
+                                            ),
+                                            self.m55,
+                                        ),
+                                        self.m65,
+                                    ),
+                                    self.m16,
+                                ),
+                                self.m26,
+                            ),
+                            self.m36,
+                        ),
+                        self.m46,
+                    ),
+                    self.m56,
+                ),
+                self.m66,
+            ),
+        )
     }
 
     /// The product of all the components, left to right in column-major order (upstream's fold),
@@ -11535,42 +16913,135 @@ pub impl Matrix6StatisticsImpl<
     fn mean(self: Matrix6<T>) -> T {
         let n = R::from_int(36);
         R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m64
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55
-                + self.m65
-                + self.m16
-                + self.m26
-                + self.m36
-                + self.m46
-                + self.m56
-                + self.m66,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_add(
+                                                                                                                                        R::wide_add(
+                                                                                                                                            R::wide_add(
+                                                                                                                                                R::wide_add(
+                                                                                                                                                    R::wide_add(
+                                                                                                                                                        R::wide_add(
+                                                                                                                                                            R::wide_add(
+                                                                                                                                                                R::wide_zero(),
+                                                                                                                                                                self
+                                                                                                                                                                    .m11,
+                                                                                                                                                            ),
+                                                                                                                                                            self
+                                                                                                                                                                .m21,
+                                                                                                                                                        ),
+                                                                                                                                                        self
+                                                                                                                                                            .m31,
+                                                                                                                                                    ),
+                                                                                                                                                    self
+                                                                                                                                                        .m41,
+                                                                                                                                                ),
+                                                                                                                                                self
+                                                                                                                                                    .m51,
+                                                                                                                                            ),
+                                                                                                                                            self
+                                                                                                                                                .m61,
+                                                                                                                                        ),
+                                                                                                                                        self
+                                                                                                                                            .m12,
+                                                                                                                                    ),
+                                                                                                                                    self
+                                                                                                                                        .m22,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m32,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m42,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m52,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m62,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m13,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m23,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m33,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m43,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m53,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m63,
+                                                                                        ),
+                                                                                        self.m14,
+                                                                                    ),
+                                                                                    self.m24,
+                                                                                ),
+                                                                                self.m34,
+                                                                            ),
+                                                                            self.m44,
+                                                                        ),
+                                                                        self.m54,
+                                                                    ),
+                                                                    self.m64,
+                                                                ),
+                                                                self.m15,
+                                                            ),
+                                                            self.m25,
+                                                        ),
+                                                        self.m35,
+                                                    ),
+                                                    self.m45,
+                                                ),
+                                                self.m55,
+                                            ),
+                                            self.m65,
+                                        ),
+                                        self.m16,
+                                    ),
+                                    self.m26,
+                                ),
+                                self.m36,
+                            ),
+                            self.m46,
+                        ),
+                        self.m56,
+                    ),
+                    self.m66,
+                ),
+            ),
             n,
         )
     }
@@ -11582,42 +17053,135 @@ pub impl Matrix6StatisticsImpl<
     fn variance(self: Matrix6<T>) -> T {
         let n = R::from_int(36);
         let m0 = R::div(
-            self.m11
-                + self.m21
-                + self.m31
-                + self.m41
-                + self.m51
-                + self.m61
-                + self.m12
-                + self.m22
-                + self.m32
-                + self.m42
-                + self.m52
-                + self.m62
-                + self.m13
-                + self.m23
-                + self.m33
-                + self.m43
-                + self.m53
-                + self.m63
-                + self.m14
-                + self.m24
-                + self.m34
-                + self.m44
-                + self.m54
-                + self.m64
-                + self.m15
-                + self.m25
-                + self.m35
-                + self.m45
-                + self.m55
-                + self.m65
-                + self.m16
-                + self.m26
-                + self.m36
-                + self.m46
-                + self.m56
-                + self.m66,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(
+                                    R::wide_add(
+                                        R::wide_add(
+                                            R::wide_add(
+                                                R::wide_add(
+                                                    R::wide_add(
+                                                        R::wide_add(
+                                                            R::wide_add(
+                                                                R::wide_add(
+                                                                    R::wide_add(
+                                                                        R::wide_add(
+                                                                            R::wide_add(
+                                                                                R::wide_add(
+                                                                                    R::wide_add(
+                                                                                        R::wide_add(
+                                                                                            R::wide_add(
+                                                                                                R::wide_add(
+                                                                                                    R::wide_add(
+                                                                                                        R::wide_add(
+                                                                                                            R::wide_add(
+                                                                                                                R::wide_add(
+                                                                                                                    R::wide_add(
+                                                                                                                        R::wide_add(
+                                                                                                                            R::wide_add(
+                                                                                                                                R::wide_add(
+                                                                                                                                    R::wide_add(
+                                                                                                                                        R::wide_add(
+                                                                                                                                            R::wide_add(
+                                                                                                                                                R::wide_add(
+                                                                                                                                                    R::wide_add(
+                                                                                                                                                        R::wide_add(
+                                                                                                                                                            R::wide_add(
+                                                                                                                                                                R::wide_zero(),
+                                                                                                                                                                self
+                                                                                                                                                                    .m11,
+                                                                                                                                                            ),
+                                                                                                                                                            self
+                                                                                                                                                                .m21,
+                                                                                                                                                        ),
+                                                                                                                                                        self
+                                                                                                                                                            .m31,
+                                                                                                                                                    ),
+                                                                                                                                                    self
+                                                                                                                                                        .m41,
+                                                                                                                                                ),
+                                                                                                                                                self
+                                                                                                                                                    .m51,
+                                                                                                                                            ),
+                                                                                                                                            self
+                                                                                                                                                .m61,
+                                                                                                                                        ),
+                                                                                                                                        self
+                                                                                                                                            .m12,
+                                                                                                                                    ),
+                                                                                                                                    self
+                                                                                                                                        .m22,
+                                                                                                                                ),
+                                                                                                                                self
+                                                                                                                                    .m32,
+                                                                                                                            ),
+                                                                                                                            self
+                                                                                                                                .m42,
+                                                                                                                        ),
+                                                                                                                        self
+                                                                                                                            .m52,
+                                                                                                                    ),
+                                                                                                                    self
+                                                                                                                        .m62,
+                                                                                                                ),
+                                                                                                                self
+                                                                                                                    .m13,
+                                                                                                            ),
+                                                                                                            self
+                                                                                                                .m23,
+                                                                                                        ),
+                                                                                                        self
+                                                                                                            .m33,
+                                                                                                    ),
+                                                                                                    self
+                                                                                                        .m43,
+                                                                                                ),
+                                                                                                self
+                                                                                                    .m53,
+                                                                                            ),
+                                                                                            self
+                                                                                                .m63,
+                                                                                        ),
+                                                                                        self.m14,
+                                                                                    ),
+                                                                                    self.m24,
+                                                                                ),
+                                                                                self.m34,
+                                                                            ),
+                                                                            self.m44,
+                                                                        ),
+                                                                        self.m54,
+                                                                    ),
+                                                                    self.m64,
+                                                                ),
+                                                                self.m15,
+                                                            ),
+                                                            self.m25,
+                                                        ),
+                                                        self.m35,
+                                                    ),
+                                                    self.m45,
+                                                ),
+                                                self.m55,
+                                            ),
+                                            self.m65,
+                                        ),
+                                        self.m16,
+                                    ),
+                                    self.m26,
+                                ),
+                                self.m36,
+                            ),
+                            self.m46,
+                        ),
+                        self.m56,
+                    ),
+                    self.m66,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -11808,15 +17372,100 @@ pub impl Matrix6StatisticsImpl<
         R::div(s0, n)
     }
 
-    /// The sum of each column, exact, left to right. Panics on overflow. Upstream: `row_sum`.
+    /// The sum of each column, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `row_sum`.
     fn row_sum(self: Matrix6<T>) -> RowVector6<T> {
         RowVector6 {
-            x: self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            y: self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            z: self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            w: self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
-            a: self.m15 + self.m25 + self.m35 + self.m45 + self.m55 + self.m65,
-            b: self.m16 + self.m26 + self.m36 + self.m46 + self.m56 + self.m66,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m16), self.m26),
+                                self.m36,
+                            ),
+                            self.m46,
+                        ),
+                        self.m56,
+                    ),
+                    self.m66,
+                ),
+            ),
         }
     }
 
@@ -11827,15 +17476,100 @@ pub impl Matrix6StatisticsImpl<
         Vector6 { x: r.x, y: r.y, z: r.z, w: r.w, a: r.a, b: r.b }
     }
 
-    /// The sum of each row, exact, left to right. Panics on overflow. Upstream: `column_sum`.
+    /// The sum of each row, exact (ONE `Real::Wide` accumulator each). Panics on overflow.
+    /// Upstream: `column_sum`.
     fn column_sum(self: Matrix6<T>) -> Vector6<T> {
         Vector6 {
-            x: self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            y: self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            z: self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            w: self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
-            a: self.m51 + self.m52 + self.m53 + self.m54 + self.m55 + self.m56,
-            b: self.m61 + self.m62 + self.m63 + self.m64 + self.m65 + self.m66,
+            x: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52),
+                                self.m53,
+                            ),
+                            self.m54,
+                        ),
+                        self.m55,
+                    ),
+                    self.m56,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m61), self.m62),
+                                self.m63,
+                            ),
+                            self.m64,
+                        ),
+                        self.m65,
+                    ),
+                    self.m66,
+                ),
+            ),
         }
     }
 
@@ -11879,12 +17613,96 @@ pub impl Matrix6StatisticsImpl<
     fn row_mean(self: Matrix6<T>) -> RowVector6<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55 + self.m65,
-            self.m16 + self.m26 + self.m36 + self.m46 + self.m56 + self.m66,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m16), self.m26),
+                                self.m36,
+                            ),
+                            self.m46,
+                        ),
+                        self.m56,
+                    ),
+                    self.m66,
+                ),
+            ),
             n,
         );
         RowVector6 { x: m0, y: m1, z: m2, w: m3, a: m4, b: m5 }
@@ -11904,12 +17722,96 @@ pub impl Matrix6StatisticsImpl<
     fn column_mean(self: Matrix6<T>) -> Vector6<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55 + self.m56,
-            self.m61 + self.m62 + self.m63 + self.m64 + self.m65 + self.m66,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52),
+                                self.m53,
+                            ),
+                            self.m54,
+                        ),
+                        self.m55,
+                    ),
+                    self.m56,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m61), self.m62),
+                                self.m63,
+                            ),
+                            self.m64,
+                        ),
+                        self.m65,
+                    ),
+                    self.m66,
+                ),
+            ),
             n,
         );
         Vector6 { x: m0, y: m1, z: m2, w: m3, a: m4, b: m5 }
@@ -11921,12 +17823,96 @@ pub impl Matrix6StatisticsImpl<
     fn row_variance(self: Matrix6<T>) -> RowVector6<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m21 + self.m31 + self.m41 + self.m51 + self.m61,
-            self.m12 + self.m22 + self.m32 + self.m42 + self.m52 + self.m62,
-            self.m13 + self.m23 + self.m33 + self.m43 + self.m53 + self.m63,
-            self.m14 + self.m24 + self.m34 + self.m44 + self.m54 + self.m64,
-            self.m15 + self.m25 + self.m35 + self.m45 + self.m55 + self.m65,
-            self.m16 + self.m26 + self.m36 + self.m46 + self.m56 + self.m66,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m21),
+                                self.m31,
+                            ),
+                            self.m41,
+                        ),
+                        self.m51,
+                    ),
+                    self.m61,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m12), self.m22),
+                                self.m32,
+                            ),
+                            self.m42,
+                        ),
+                        self.m52,
+                    ),
+                    self.m62,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m13), self.m23),
+                                self.m33,
+                            ),
+                            self.m43,
+                        ),
+                        self.m53,
+                    ),
+                    self.m63,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m14), self.m24),
+                                self.m34,
+                            ),
+                            self.m44,
+                        ),
+                        self.m54,
+                    ),
+                    self.m64,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m15), self.m25),
+                                self.m35,
+                            ),
+                            self.m45,
+                        ),
+                        self.m55,
+                    ),
+                    self.m65,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m16), self.m26),
+                                self.m36,
+                            ),
+                            self.m46,
+                        ),
+                        self.m56,
+                    ),
+                    self.m66,
+                ),
+            ),
             n,
         );
         let s0 = {
@@ -12111,12 +18097,96 @@ pub impl Matrix6StatisticsImpl<
     fn column_variance(self: Matrix6<T>) -> Vector6<T> {
         let n = R::from_int(6);
         let (m0, m1, m2, m3, m4, m5) = R::div6(
-            self.m11 + self.m12 + self.m13 + self.m14 + self.m15 + self.m16,
-            self.m21 + self.m22 + self.m23 + self.m24 + self.m25 + self.m26,
-            self.m31 + self.m32 + self.m33 + self.m34 + self.m35 + self.m36,
-            self.m41 + self.m42 + self.m43 + self.m44 + self.m45 + self.m46,
-            self.m51 + self.m52 + self.m53 + self.m54 + self.m55 + self.m56,
-            self.m61 + self.m62 + self.m63 + self.m64 + self.m65 + self.m66,
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m11), self.m12),
+                                self.m13,
+                            ),
+                            self.m14,
+                        ),
+                        self.m15,
+                    ),
+                    self.m16,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m21), self.m22),
+                                self.m23,
+                            ),
+                            self.m24,
+                        ),
+                        self.m25,
+                    ),
+                    self.m26,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m31), self.m32),
+                                self.m33,
+                            ),
+                            self.m34,
+                        ),
+                        self.m35,
+                    ),
+                    self.m36,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m41), self.m42),
+                                self.m43,
+                            ),
+                            self.m44,
+                        ),
+                        self.m45,
+                    ),
+                    self.m46,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m51), self.m52),
+                                self.m53,
+                            ),
+                            self.m54,
+                        ),
+                        self.m55,
+                    ),
+                    self.m56,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_add(
+                    R::wide_add(
+                        R::wide_add(
+                            R::wide_add(
+                                R::wide_add(R::wide_add(R::wide_zero(), self.m61), self.m62),
+                                self.m63,
+                            ),
+                            self.m64,
+                        ),
+                        self.m65,
+                    ),
+                    self.m66,
+                ),
+            ),
             n,
         );
         let s0 = {
