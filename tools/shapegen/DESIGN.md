@@ -418,6 +418,37 @@ generated test package about +1.1 GB (`shapes_tests_edition` 5.53 → 6.71 GB,
 tests, 7.1 / 6.5 GB; one package measured 7.5 GB) and the benches of
 `gas/nalgebra_shapes_tests_views`.
 
+### 2.9 WP 8.3-P07 outcome: the homogeneous / computer-graphics helpers (API_PARITY P07)
+
+`cg.py` writes upstream's `base/cg.rs` into ONE shared module, `base/cg.cairo` (upstream's
+file, no growth of the 36 shape files): `Matrix1..6CgTrait` (any `Real` scalar) and
+`Matrix3/4CgAngleTrait` (`Transcendental`: the rotation constructors). Decisions:
+
+- **Dimensions.** The helpers whose argument or result is a `D - 1` vector exist on
+  `Matrix2..6` (`Vector1` is `Matrix1`); `Matrix1` has the uniform `new_scaling` (the identity,
+  like upstream's) and `append_scaling` / `prepend_scaling` (which scale no row / column and
+  return `self`). `api_parity.py` `DIM_ONLY` lists the others without `Matrix1`.
+- **Delegation.** The rotation, observer and view constructors are upstream's one-liners:
+  `Rotation2/3::...(..).to_homogeneous()`, `IsometryMatrix3::{face_towards, look_at_rh, look_at_lh,
+  rotation_wrt_point}(..).to_homogeneous()` (same bits as the geometry types, checked by the
+  generated tests; their numerics by the oracle suite `cg` in `crates/tests_base`).
+  `Matrix4::new_perspective` / `new_orthographic` come with `Perspective3` / `Orthographic3`.
+- **Kernels.** Scalings: one floored product per scaled component. Every sum of products with an
+  exact addend (`append_translation`, `prepend_translation`, `transform_point`) is ONE
+  `Real::Wide` chain closed by `wide_add` (`R::mul_add` for one product): bit-identical to the
+  sum rounded then added, and measured cheaper than `sum_prodK(..) + c`
+  (`bench_matrix4_prepend_translation`: 12,320 against 19,810 net; `append_translation` 24,960
+  against 37,570; `transform_point` 27,630 against 29,790; the loser is rendered from the same
+  template, `cg.CG_ADDEND`, as `alt_plain_*` in `crates/shapes_tests_cg/src/benches.cairo`).
+  `transform_vector` / `transform_point` divide by the normaliser with `R::div` / `R::div3/4/5`
+  (bit-identical to `/`) in upstream's order (the vector before the product, the point after),
+  and take upstream's other branch (no division) when it is zero.
+  `new_nonuniform_scaling_wrt_point` is `R::mul_add(-pt, scaling, pt)`: one rounding of the
+  exact value.
+- **Tests.** `tests_cg.py` writes `crates/shapes_tests_cg`: every `Matrix{N}CgTrait` operation is
+  modelled EXACTLY on integer raws (71 tests with the delegation checks and the benches; peak
+  `scarb build --test` 6.6 GB).
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is

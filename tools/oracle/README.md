@@ -131,6 +131,11 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   `quaternion_exp_real` / `_sinh_real` / `_cosh_real` pin upstream's identity / zero / identity
   for a real quaternion (tolerance 0), `rotation2_renormalize` is upstream's
   `from_matrix_eps(m, eps, 0, guess)` on a rotation plus a drift of at most 2^-10 per entry.
+- Suite `cg` (WP 8.3-P07): upstream `base/cg.rs` on `Matrix3` / `Matrix4` (rotation constructors,
+  `face_towards`, `look_at_rh` / `_lh` with the `SensMag` look-at policy, `transform_point` /
+  `transform_vector`). The transforms keep the normaliser away from zero (`|n| >= 1/4`).
+  `transform_vector` divides BEFORE the product (upstream's `m * (v / n)`): its `SensMag` policy
+  (`mag = 2`) covers the half-ulp quotient rounding multiplied by the entries of `m`.
 - Suite `dual_quaternion` (WP 8.4-P12): dual quaternions are `(real (w, i, j, k), dual (w, i, j,
   k))`. A unit dual quaternion input (`Gen::UnitDual`) is a quantised unit quaternion `r` and a
   translation `t` of the case's magnitude class, then upstream's `from_parts(t, r)` in f64 with its
