@@ -1,4 +1,6 @@
 #[cfg(test)]
+mod inplace;
+#[cfg(test)]
 mod isometry2;
 #[cfg(test)]
 mod isometry3;

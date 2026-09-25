@@ -6,6 +6,18 @@
       "trait": 62580
     }
   },
+  "nalgebra_tests_geometry_ext::inplace::benches": {
+    "point3_apply": {
+      "alt_map": 16640,
+      "apply": 16640,
+      "baseline": 15940
+    },
+    "rotation2_mul_assign_unit_complex": {
+      "alt_by_value": 68880,
+      "baseline": 58730,
+      "mul_assign": 68780
+    }
+  },
   "nalgebra_tests_geometry_ext::point::benches": {
     "point3_from_slice": {
       "baseline": 17840,

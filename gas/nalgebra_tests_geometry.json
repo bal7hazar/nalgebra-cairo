@@ -1,4 +1,26 @@
 {
+  "nalgebra_tests_geometry::inplace::benches": {
+    "quaternion_div_assign": {
+      "alt_by_value": 28200,
+      "baseline": 17140,
+      "div_assign": 28200
+    },
+    "quaternion_mul_assign": {
+      "alt_by_value": 28990,
+      "baseline": 17140,
+      "mul_assign": 28990
+    },
+    "quaternion_normalize_mut": {
+      "alt_by_value": 30320,
+      "baseline": 17140,
+      "normalize_mut": 30320
+    },
+    "quaternion_try_inverse_mut": {
+      "alt_by_value": 31550,
+      "baseline": 17140,
+      "try_inverse_mut": 30450
+    }
+  },
   "nalgebra_tests_geometry::isometry2::benches": {
     "isometry2_abs_diff_eq": {
       "baseline": 17550,

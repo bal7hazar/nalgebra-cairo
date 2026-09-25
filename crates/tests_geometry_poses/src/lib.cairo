@@ -19,6 +19,8 @@
 #[cfg(test)]
 mod common;
 #[cfg(test)]
+mod inplace;
+#[cfg(test)]
 mod isometry_matrix;
 #[cfg(test)]
 mod oracle;

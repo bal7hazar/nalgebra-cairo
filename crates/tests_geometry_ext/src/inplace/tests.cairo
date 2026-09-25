@@ -4,12 +4,11 @@
 //! addition or negation, so the expected values are exact.
 
 use fixed::Fixed;
+use nalgebra::geometry::point::{Point2ExtTrait, Point3ExtTrait};
 use nalgebra::geometry::point1::{Point1, Point1Trait};
 use nalgebra::geometry::point4::{Point4, Point4Trait};
 use nalgebra::geometry::point5::{Point5, Point5Trait};
 use nalgebra::geometry::point6::{Point6, Point6Trait};
-use nalgebra::geometry::point::Point2ExtTrait;
-use nalgebra::geometry::point::Point3ExtTrait;
 use nalgebra::geometry::rotation2::{Rotation2, Rotation2Trait};
 use nalgebra::geometry::rotation3::Rotation3Trait;
 use nalgebra::geometry::translation1::Translation1Trait;
@@ -193,9 +192,7 @@ fn test_rotation_transpose_mut_matches_transpose() {
     assert!(m.matrix.m12 == r.matrix.m21 && m.matrix.m21 == r.matrix.m12);
 
     let r = r3(
-        [
-            [0x100000000, 0x1234, 0x5678], [0x9ABC, 0x100000000, 0xDEF0], [0x1111, 0x2222, 0x3333],
-        ],
+        [[0x100000000, 0x1234, 0x5678], [0x9ABC, 0x100000000, 0xDEF0], [0x1111, 0x2222, 0x3333]],
     );
     let mut m = r;
     m.transpose_mut();

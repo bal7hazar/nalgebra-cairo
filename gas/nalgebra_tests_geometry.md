@@ -2,6 +2,36 @@
 
 Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
+## nalgebra_tests_geometry::inplace::benches
+
+### quaternion_div_assign
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_by_value` | 28200 | 11060 | x1.00 |
+| `div_assign` | 28200 | 11060 | x1.00 |
+
+### quaternion_mul_assign
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_by_value` | 28990 | 11850 | x1.00 |
+| `mul_assign` | 28990 | 11850 | x1.00 |
+
+### quaternion_normalize_mut
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `alt_by_value` | 30320 | 13180 | x1.00 |
+| `normalize_mut` | 30320 | 13180 | x1.00 |
+
+### quaternion_try_inverse_mut
+
+| variant | raw | net | vs best |
+|---|---:|---:|---:|
+| `try_inverse_mut` | 30450 | 13310 | x1.00 |
+| `alt_by_value` | 31550 | 14410 | x1.08 |
+
 ## nalgebra_tests_geometry::isometry2::benches
 
 ### isometry2_abs_diff_eq
