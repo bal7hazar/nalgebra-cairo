@@ -13,11 +13,14 @@ large directly.
   research.
 - Every sub-task runs in its own git worktree + branch (`feat/<module>`), launched in the
   background with its output redirected to a log file.
-- Two interchangeable CLIs, on two accounts distinct from the session; alternate according to
-  the remaining quota of each:
-  - `claude -p "$(cat brief.md)" --model <sonnet|claude-opus-5-5> --dangerously-skip-permissions --name <task>`;
-    resume with context: `claude --continue -p "<follow-up>"` in the same worktree.
-  - `codex exec -C <worktree> -m <model> -c model_reasoning_effort=<low|medium|high|xhigh> --dangerously-bypass-approvals-and-sandbox -o REPORT.md "$(cat brief.md)"`.
+- Implementation work packages run on the **claude CLI only** (account distinct from the session),
+  Opus 5.5 or Sonnet 5 by difficulty, never Fable:
+  `claude -p "$(cat brief.md)" --model <sonnet|claude-opus-5-5> --dangerously-skip-permissions --name <task>`;
+  resume with context: `claude --continue -p "<follow-up>"` in the same worktree.
+- The codex CLI is used sparingly and **only for audits and second opinions** (a review of a PR, a
+  numerics cross-check), never for an implementation lot (owner rule, restated 2026-09-25, recorded
+  in the programme's `pm/decisions/2026-09-25-codex-audits-only.md`):
+  `codex exec -C <worktree> -m <model> -c model_reasoning_effort=<low|medium|high|xhigh> --dangerously-bypass-approvals-and-sandbox -o REPORT.md "$(cat brief.md)"`.
 - The agent writes a `REPORT.md` (not committed) at the root of its worktree: the orchestrator
   reads that file and the log, not the transcript.
 - On a shared machine, launch each agent as a systemd user unit so that it survives desktop-session
@@ -31,9 +34,9 @@ large directly.
 
 ## Model choice by difficulty
 
-| difficulty | claude CLI | codex CLI | examples |
+| difficulty | claude CLI (implementation) | codex CLI (audits only) | examples |
 |---|---|---|---|
-| mechanical, well framed | Sonnet | `gpt-5.5` or `gpt-5.6-*` (effort `medium`) | template-generated code, test compaction, spec alignment, benching variants already identified |
+| mechanical, well framed | Sonnet 5 | `gpt-5.5` or `gpt-5.6-*` (effort `medium`) | template-generated code, test compaction, spec alignment, benching variants already identified |
 | standard port with numerics | Opus 5.5 | `gpt-5.6-*` (effort `high`) | a new module: kernels, tests, golden vectors, benches |
 | genuinely complex | Opus 5.5 (Fable is not used for sub-agents) | `gpt-6-astra` (effort `xhigh`) | novel numerics, hard debugging, cross-module design, API arbitration |
 
