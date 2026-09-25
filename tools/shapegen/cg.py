@@ -103,7 +103,9 @@ def point(d: int) -> str:
 # --------------------------------------------------------------------------------------------
 
 
-def methods(s: Shape) -> list[L.Fn]:
+def methods(s: Shape, form: str = CG_ADDEND) -> list[L.Fn]:
+    """`form`: the kernel of the sums with an exact addend (`dot_plus`); the benches of
+    `tests_cg.py` render the other form as the measured alternative."""
     N, K, S, T = s.r, s.r - 1, s.name, f"{s.name}<T>"
     V = vec(K) if K else None
     f = s.f
@@ -192,7 +194,7 @@ def methods(s: Shape) -> list[L.Fn]:
             "`append_translation`.",
             f"fn append_translation(self: {T}, shift: {V.name}<T>) -> {T}",
             mat(lambda i, j: (dot_plus([(f"shift.{COORDS[i]}", f"self.{f(K, j)}")],
-                                       f"self.{f(i, j)}") if i < K else keep(i, j))),
+                                       f"self.{f(i, j)}", form) if i < K else keep(i, j))),
             inline=N <= 4))
         out.append(fn(
             "prepend_translation",
@@ -202,7 +204,7 @@ def methods(s: Shape) -> list[L.Fn]:
             "untouched. Upstream: `prepend_translation`.",
             f"fn prepend_translation(self: {T}, shift: {V.name}<T>) -> {T}",
             mat(lambda i, j: (dot_plus([(f"self.{f(i, k)}", f"shift.{COORDS[k]}")
-                                        for k in range(K)], f"self.{f(i, K)}")
+                                        for k in range(K)], f"self.{f(i, K)}", form)
                               if j == K else keep(i, j))),
             inline=N <= 4))
     # In-place forms.
@@ -237,9 +239,9 @@ def methods(s: Shape) -> list[L.Fn]:
     if N in (3, 4):
         P = point(K)
         q = [f"q{COORDS[i]}" for i in range(K)]
-        body = (f"let n = {dot_plus([(f'self.{f(K, k)}', f'pt.{COORDS[k]}') for k in range(K)], f'self.{f(K, K)}')};\n"
+        body = (f"let n = {dot_plus([(f'self.{f(K, k)}', f'pt.{COORDS[k]}') for k in range(K)], f'self.{f(K, K)}', form)};\n"
                 + "".join(f"let {q[i]} = "
-                          f"{dot_plus([(f'self.{f(i, k)}', f'pt.{COORDS[k]}') for k in range(K)], f'self.{f(i, K)}')};\n"
+                          f"{dot_plus([(f'self.{f(i, k)}', f'pt.{COORDS[k]}') for k in range(K)], f'self.{f(i, K)}', form)};\n"
                           for i in range(K))
                 + "if n != R::zero() {\n"
                 + divide(q, "n", list(COORDS[:K]))

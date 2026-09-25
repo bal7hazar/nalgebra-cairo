@@ -41,6 +41,7 @@ from pathlib import Path
 import compare
 import library
 import shapes
+import tests_cg
 import tests_core
 import tests_functional
 import tests_views
@@ -1221,13 +1222,15 @@ def main() -> int:
     tmp_tests, tmp_ops = TOOL / ".tmp-tests", TOOL / ".tmp-tests-ops"
     tmp_fun = TOOL / ".tmp-tests-functional"
     tmp_views = TOOL / ".tmp-tests-views"
-    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun, tmp_views)
+    tmp_cg = TOOL / ".tmp-tests-cg"
+    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun, tmp_views, tmp_cg)
     try:
         for tmp in tmps:
             shutil.rmtree(tmp, ignore_errors=True)
         outputs = (proto_outputs(tmp_proto) | library_outputs(tmp_lib)
                    | tests_core.outputs(tmp_tests) | tests_ops.outputs(tmp_ops)
-                   | tests_functional.outputs(tmp_fun) | tests_views.outputs(tmp_views))
+                   | tests_functional.outputs(tmp_fun) | tests_views.outputs(tmp_views)
+                   | tests_cg.outputs(tmp_cg))
         committed = (set((PROTO / "src").rglob("*.cairo"))
                      | set((tests_core.PACKAGE / "src").rglob("*.cairo"))
                      | {p for pkg in tests_ops.PACKAGES
@@ -1235,7 +1238,8 @@ def main() -> int:
                      | {p for pkg in tests_functional.PACKAGES
                         for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")}
                      | {p for pkg in tests_views.PACKAGES
-                        for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")})
+                        for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")}
+                     | set((ROOT / "crates" / tests_cg.PACKAGE / "src").rglob("*.cairo")))
         removed = sorted(committed - set(outputs))
         stale = sorted(dst for dst, gen in outputs.items()
                        if not dst.is_file() or not filecmp.cmp(gen, dst, shallow=False))
