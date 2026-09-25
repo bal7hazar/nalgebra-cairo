@@ -147,6 +147,12 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   `nlerp` and `sclerp` use `sensitivity + magnitude` with `k = 0` (`mag` 4 and 8): a rounded
   unit-scale factor (the norm, the screw) multiplies the dual part. `unit_dual_quaternion_sclerp`
   is upstream's `try_sclerp` with `epsilon = 2^-32` (the Cairo `default_epsilon`).
+- Suite `transform` (WP 8.4-P11a): an `Affine2/3` input is `(linear, translation)`, the ROW-major
+  linear block then the translation, the last row `(0, .., 0, 1)` implicit; `Projective2/3`
+  inputs are whole ROW-major matrices. The inverted linear blocks are well-conditioned. The ops
+  that apply a rounded inverse to large data (`inverse_transform_*`, `affine3_div_projective3`)
+  use `sensitivity + magnitude` (`mag = 4`): the one-ulp roundings of the inverse's entries are
+  multiplied by the coordinates of the point / the entries of the dividend.
 - The scalar suite and every transcendental inside nalgebra go through the pure-Rust `libm`
   (`libm-force`), not the platform libm.
 

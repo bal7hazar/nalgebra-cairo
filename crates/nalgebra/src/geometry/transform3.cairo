@@ -17,7 +17,7 @@
 //! output scalar), every quotient correctly rounded; overflow panics.
 
 use core::num::traits::One;
-use core::ops::Index;
+use core::ops::IndexView;
 use simba::scalar::Real;
 use crate::base::cg::Matrix4CgTrait;
 use crate::base::matrix4::{Matrix4, Matrix4Trait};
@@ -307,12 +307,12 @@ pub impl Transform3One<
 /// `t[(i, j)]`: the entry of row `i` and column `j` of the homogeneous matrix. Panics with
 /// `nalgebra: index out of bounds` for `i > 3` or `j > 3`. Upstream: `Index<(usize, usize)>
 /// for Transform`.
-pub impl Transform3Index<T, +Copy<T>, +Drop<T>> of Index<Transform3<T>, (usize, usize)> {
+pub impl Transform3Index<T, +Copy<T>, +Drop<T>> of IndexView<Transform3<T>, (usize, usize)> {
     type Target = T;
 
     #[inline(always)]
-    fn index(ref self: Transform3<T>, index: (usize, usize)) -> T {
-        let m = self.matrix;
+    fn index(self: @Transform3<T>, index: (usize, usize)) -> T {
+        let m = *self.matrix;
         m[index]
     }
 }

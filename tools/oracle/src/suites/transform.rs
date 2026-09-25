@@ -44,6 +44,14 @@ const INVERSE_TRANSFORM: Tol = Tol::SensMag {
     mag: 4.0,
 };
 
+/// A product by an inverse (upstream's `a * b.inverse()`): the roundings of the inverse are
+/// multiplied by the entries of `a` (the `INVERSE_TRANSFORM` reasoning).
+const QUOTIENT: Tol = Tol::SensMag {
+    k: 8.0,
+    base: 4.0,
+    mag: 4.0,
+};
+
 // Inputs ------------------------------------------------------------------------------------------
 
 /// A well-conditioned linear block (invertible).
@@ -372,7 +380,7 @@ fn product_ops() -> Vec<Op> {
         .input(iwell("m", 4))
         .out(fm("quotient", 4, 4))
         .dists(&Dist::NO_LARGE)
-        .tol(INVERSE4)
+        .tol(QUOTIENT)
         .eval(|x| {
             let m: Matrix4<f64> = sm(&x[12..]);
             Some(flat(

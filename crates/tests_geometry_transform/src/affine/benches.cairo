@@ -1,15 +1,17 @@
 //! Gas benchmarks of `Affine2` / `Affine3` (WP 8.4-P11a) (`bench_<group>__<variant>`, net = raw -
 //! `baseline` of the group), and the alternative implementations (`alt_*`, AGENTS.md rule 8).
 //!
-//! Expected values are the results of the library kernels themselves, all of which are checked
-//! against upstream nalgebra in `tests.cairo`; each alternative is checked against the library
-//! (bit for bit where it claims to be, against the oracle otherwise).
+//! Expected values are the results of the library kernels themselves (computed in the baseline
+//! and in every variant alike, so `net` is the cost of ONE call of the measured variant), all of
+//! which are checked against upstream nalgebra in `tests.cairo`; each alternative is checked
+//! against the library (bit for bit where it claims to be, against the oracle otherwise).
 
 use fixed::Fixed;
 use nalgebra::base::cg::Matrix4CgTrait;
 use nalgebra::base::matrix2::Matrix2Trait;
 use nalgebra::base::matrix3::{Matrix3, Matrix3Trait};
 use nalgebra::base::matrix4::{Matrix4, Matrix4Trait};
+use nalgebra::base::point2::Point2;
 use nalgebra::base::point3::Point3;
 use nalgebra::geometry::affine2::{Affine2, Affine2Trait};
 use nalgebra::geometry::affine3::{Affine3, Affine3Trait};
@@ -218,29 +220,36 @@ fn bench_affine3_try_inverse__alt_block() {
 #[test]
 #[inline(never)]
 fn bench_affine2_try_inverse__baseline() {
-    let _t: Affine2<Fixed> = black_box(
-        aff2t([[5368709120, -2147483648], [1610612736, 8589934592]], (15032385536, -52613349376)),
-    );
+    let _t: Affine2<Fixed> = black_box(a2());
     let e: Fixed = black_box(Real::one());
     assert!(e == e);
 }
 
+/// The refined block formula (winner).
 #[test]
 #[inline(never)]
-fn bench_affine2_try_inverse__full_matrix() {
-    let t: Affine2<Fixed> = black_box(
-        aff2t([[5368709120, -2147483648], [1610612736, 8589934592]], (15032385536, -52613349376)),
-    );
+fn bench_affine2_try_inverse__refined_block() {
+    let t: Affine2<Fixed> = black_box(a2());
     let e: Fixed = black_box(Real::one());
     assert!(t.try_inverse().unwrap().into_inner().m33 == e);
 }
 
+/// Upstream's whole-matrix inverse (loser: outside the oracle tolerance on `small` inputs in 3D,
+/// and dearer).
+#[test]
+#[inline(never)]
+fn bench_affine2_try_inverse__alt_full_matrix() {
+    let t: Affine2<Fixed> = black_box(a2());
+    let e: Fixed = black_box(Real::one());
+    assert!(alt_affine2_inverse_full(t).unwrap().m33 == e);
+}
+
+/// The block formula without refinement (loser: outside the oracle tolerance on `medium`
+/// inputs).
 #[test]
 #[inline(never)]
 fn bench_affine2_try_inverse__alt_block() {
-    let t: Affine2<Fixed> = black_box(
-        aff2t([[5368709120, -2147483648], [1610612736, 8589934592]], (15032385536, -52613349376)),
-    );
+    let t: Affine2<Fixed> = black_box(a2());
     let e: Fixed = black_box(Real::one());
     assert!(alt_affine2_inverse_block(t).unwrap().m33 == e);
 }
@@ -283,22 +292,20 @@ fn bench_affine3_transform_point__alt_homogeneous() {
 #[test]
 #[inline(never)]
 fn bench_affine2_transform_point__baseline() {
-    let _t: Affine2<Fixed> = black_box(
-        aff2t([[5368709120, -2147483648], [1610612736, 8589934592]], (15032385536, -52613349376)),
-    );
-    let _p = black_box(p2t((ONE_RAW / 2, -3 * ONE_RAW)));
-    assert!(_p == _p);
+    let _t: Affine2<Fixed> = black_box(a2());
+    let _p: Point2<Fixed> = black_box(p2t((ONE_RAW / 2, -3 * ONE_RAW)));
+    let e: Point2<Fixed> = black_box(a2().transform_point(p2t((ONE_RAW / 2, -3 * ONE_RAW))));
+    assert!(e == e);
 }
 
+/// No normalizer (upstream's `TAffine`).
 #[test]
 #[inline(never)]
 fn bench_affine2_transform_point__affine() {
-    let t: Affine2<Fixed> = black_box(
-        aff2t([[5368709120, -2147483648], [1610612736, 8589934592]], (15032385536, -52613349376)),
-    );
-    let p = black_box(p2t((ONE_RAW / 2, -3 * ONE_RAW)));
-    let q = t.transform_point(p);
-    assert!(q == q);
+    let t: Affine2<Fixed> = black_box(a2());
+    let p: Point2<Fixed> = black_box(p2t((ONE_RAW / 2, -3 * ONE_RAW)));
+    let e: Point2<Fixed> = black_box(a2().transform_point(p2t((ONE_RAW / 2, -3 * ONE_RAW))));
+    assert!(t.transform_point(p) == e);
 }
 
 #[test]
