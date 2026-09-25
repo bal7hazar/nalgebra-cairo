@@ -276,7 +276,32 @@ def small(out: Shape) -> bool:
     return out.is_vector and out.n <= 4
 
 
-def gemm_impls() -> list[str]:
+# The form of the `gemm` impls with several columns: "columns" = the one-column impl of each
+# column of `self` (bit-identical, a sixth of the code), "direct" = every entry written in place.
+# Measured by `crates/shapes_tests_blas` (`bench_matrix6_gemm__alt_direct`).
+GEMM_FORM = "columns"
+
+
+def gemm_entries(S: Shape, A: Shape, B: Shape) -> str:
+    k = A.c
+    return "self = " + lit(S, lambda i, j: scaled_dot(
+        "alpha", [(f"a.{A.f(i, q)}", f"b.{B.f(q, j)}") for q in range(k)], "beta",
+        f"self.{S.f(i, j)}")) + ";"
+
+
+def gemm_columns(S: Shape, A: Shape, B: Shape) -> str:
+    """`self`'s columns updated by the one-column impl (`gemv`'s), then reassembled."""
+    Y, X = vec(S.r), vec(A.c)
+    lines = []
+    for j in range(S.c):
+        lines.append(f"let mut c{j} = " + lit(Y, lambda i, _j: f"self.{S.f(i, j)}") + ";")
+        lines.append(f"{Y.name}Gemm{A.name}::gemm(ref c{j}, alpha, a, "
+                     + lit(X, lambda q, _j: f"b.{B.f(q, j)}") + ", beta);")
+    lines.append("self = " + lit(S, lambda i, j: f"c{j}.{Y.f(i, 0)}") + ";")
+    return "\n".join(lines)
+
+
+def gemm_impls(form: str = GEMM_FORM) -> list[str]:
     """`MatrixGemm`: one impl per shape of `self` and inner dimension (216)."""
     out = []
     for r in DIMS:
@@ -284,9 +309,8 @@ def gemm_impls() -> list[str]:
             S = Shape(r, c)
             for k in DIMS:
                 A, B = Shape(r, k), Shape(k, c)
-                body = "self = " + lit(S, lambda i, j: scaled_dot(
-                    "alpha", [(f"a.{A.f(i, q)}", f"b.{B.f(q, j)}") for q in range(k)], "beta",
-                    f"self.{S.f(i, j)}")) + ";"
+                body = gemm_entries(S, A, B) if c == 1 or form == "direct" else \
+                    gemm_columns(S, A, B)
                 out.append(impl_head(f"{S.name}Gemm{A.name}", "MatrixGemm", [S.name, A.name, B.name])
                            + method(f"fn gemm(ref self: {S.name}<T>, alpha: T, a: {A.name}<T>, "
                                     f"b: {B.name}<T>, beta: T)", body, small(S)) + "\n}")

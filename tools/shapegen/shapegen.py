@@ -41,11 +41,13 @@ from pathlib import Path
 import compare
 import library
 import shapes
+import tests_blas
 import tests_cg
 import tests_core
 import tests_functional
 import tests_views
 import tests_ops
+import tests_stats
 from model import ALL_SHAPES, COORDS, Shape
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -1223,14 +1225,16 @@ def main() -> int:
     tmp_fun = TOOL / ".tmp-tests-functional"
     tmp_views = TOOL / ".tmp-tests-views"
     tmp_cg = TOOL / ".tmp-tests-cg"
-    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun, tmp_views, tmp_cg)
+    tmp_p06 = TOOL / ".tmp-tests-p06"
+    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun, tmp_views, tmp_cg, tmp_p06)
     try:
         for tmp in tmps:
             shutil.rmtree(tmp, ignore_errors=True)
         outputs = (proto_outputs(tmp_proto) | library_outputs(tmp_lib)
                    | tests_core.outputs(tmp_tests) | tests_ops.outputs(tmp_ops)
                    | tests_functional.outputs(tmp_fun) | tests_views.outputs(tmp_views)
-                   | tests_cg.outputs(tmp_cg))
+                   | tests_cg.outputs(tmp_cg) | tests_stats.outputs(tmp_p06)
+                   | tests_blas.outputs(tmp_p06))
         committed = (set((PROTO / "src").rglob("*.cairo"))
                      | set((tests_core.PACKAGE / "src").rglob("*.cairo"))
                      | {p for pkg in tests_ops.PACKAGES
@@ -1239,7 +1243,9 @@ def main() -> int:
                         for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")}
                      | {p for pkg in tests_views.PACKAGES
                         for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")}
-                     | set((ROOT / "crates" / tests_cg.PACKAGE / "src").rglob("*.cairo")))
+                     | set((ROOT / "crates" / tests_cg.PACKAGE / "src").rglob("*.cairo"))
+                     | {p for pkg in (tests_stats.PACKAGE, tests_blas.PACKAGE)
+                        for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")})
         removed = sorted(committed - set(outputs))
         stale = sorted(dst for dst, gen in outputs.items()
                        if not dst.is_file() or not filecmp.cmp(gen, dst, shallow=False))

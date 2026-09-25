@@ -1237,6 +1237,9 @@ DIM_ONLY: dict[str, set[str]] = {
     **{name: set(M) for name in (
         "determinant", "try_inverse", "lu", "qr", "svd", "pseudo_inverse", "singular_values",
         "is_invertible", "is_special_orthogonal")},
+    # WP 8.3-P06: upstream's symmetric / hermitian rank-one updates assert a square `self` at
+    # run time (`xxgerx`): generated on the six squares.
+    **{name: set(SQUARES) for name in ("syger", "hegerc", "ger_symm")},
     # One row / column more or less (WP 8.2c): the neighbouring static shape, when it exists
     # (upstream's aliases, hence the Cairo shapes, stop at 6; no 0-row shape).
     "insert_row": {shape_name(r, c) for r in range(1, 6) for c in DIMS},
@@ -1344,6 +1347,22 @@ RENAMES = (
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d", r"tr_mul",
          r"MatrixTrMul::tr_mul", "method of the generic `MatrixTrMul` (one impl per pair of "
          "shapes with the same number of rows)"),
+    # WP 8.3-P06 (`base/blas.rs`): the forms built on `gemm` / `mul_mat` are blanket impls of
+    # generic traits (`tools/shapegen/blas.py`), so their methods belong to the trait.
+    rule(r"Vector", r"gemv", r"MatrixGemv::gemv", "method of the generic `MatrixGemv` (`gemm` "
+         "with a one-column `self`, any matrix `a` with as many rows)"),
+    rule(r"Vector", r"(gemv_tr|gemv_ad)", r"MatrixGemvTr::\1", "method of the generic "
+         "`MatrixGemvTr` (`gemv` of the transpose of `a`; `gemv_ad` is `gemv_tr` for a real "
+         "scalar)"),
+    rule(r"Matrix", r"(gemm_tr|gemm_ad)", r"MatrixGemmTr::\1", "method of the generic "
+         "`MatrixGemmTr` (`gemm` of the transpose of `a`; `gemm_ad` is `gemm_tr` for a real "
+         "scalar)"),
+    rule(r"SquareMatrix", r"(quadform|quadform_with_workspace)", r"MatrixQuadform::\1",
+         "method of the generic `MatrixQuadform` (`mid.mul_mat(rhs)` then `gemm_tr`; the "
+         "workspace is a `ref` argument)"),
+    rule(r"SquareMatrix", r"(quadform_tr|quadform_tr_with_workspace)", r"MatrixQuadformTr::\1",
+         "method of the generic `MatrixQuadformTr` (`lhs.mul_mat(mid)` then `gemm`; the "
+         "workspace is a `ref` argument)"),
     rule(r"Matrix|Vector|SquareMatrix|Point|Quaternion|Scale", r"impl:Mul<T>", "scale",
          "heterogeneous operators are named methods (DESIGN D4)"),
     rule(r"Matrix|Vector|SquareMatrix|Point|Quaternion", r"impl:Div<T>", "unscale",

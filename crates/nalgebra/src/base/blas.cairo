@@ -3643,11 +3643,11 @@ pub impl RowVector2GemmMatrix1<
 > of MatrixGemm<T, RowVector2<T>, Matrix1<T>, RowVector2<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector2<T>, alpha: T, a: Matrix1<T>, b: RowVector2<T>, beta: T) {
-        self =
-            RowVector2 {
-                x: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.y),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmMatrix1::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmMatrix1::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        self = RowVector2 { x: c0.x, y: c1.x };
     }
 }
 
@@ -3656,11 +3656,11 @@ pub impl RowVector2GemmRowVector2<
 > of MatrixGemm<T, RowVector2<T>, RowVector2<T>, Matrix2<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector2<T>, alpha: T, a: RowVector2<T>, b: Matrix2<T>, beta: T) {
-        self =
-            RowVector2 {
-                x: BlasKernels::scaled_dot2(alpha, a.x, b.m11, a.y, b.m21, beta, self.x),
-                y: BlasKernels::scaled_dot2(alpha, a.x, b.m12, a.y, b.m22, beta, self.y),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        self = RowVector2 { x: c0.x, y: c1.x };
     }
 }
 
@@ -3669,15 +3669,15 @@ pub impl RowVector2GemmRowVector3<
 > of MatrixGemm<T, RowVector2<T>, RowVector3<T>, Matrix3x2<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector2<T>, alpha: T, a: RowVector3<T>, b: Matrix3x2<T>, beta: T) {
-        self =
-            RowVector2 {
-                x: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, beta, self.y,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        self = RowVector2 { x: c0.x, y: c1.x };
     }
 }
 
@@ -3686,15 +3686,15 @@ pub impl RowVector2GemmRowVector4<
 > of MatrixGemm<T, RowVector2<T>, RowVector4<T>, Matrix4x2<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector2<T>, alpha: T, a: RowVector4<T>, b: Matrix4x2<T>, beta: T) {
-        self =
-            RowVector2 {
-                x: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, beta, self.y,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        self = RowVector2 { x: c0.x, y: c1.x };
     }
 }
 
@@ -3703,15 +3703,15 @@ pub impl RowVector2GemmRowVector5<
 > of MatrixGemm<T, RowVector2<T>, RowVector5<T>, Matrix5x2<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector2<T>, alpha: T, a: RowVector5<T>, b: Matrix5x2<T>, beta: T) {
-        self =
-            RowVector2 {
-                x: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, a.a, b.m51, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, a.a, b.m52, beta, self.y,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        self = RowVector2 { x: c0.x, y: c1.x };
     }
 }
 
@@ -3720,43 +3720,23 @@ pub impl RowVector2GemmRowVector6<
 > of MatrixGemm<T, RowVector2<T>, RowVector6<T>, Matrix6x2<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector2<T>, alpha: T, a: RowVector6<T>, b: Matrix6x2<T>, beta: T) {
-        self =
-            RowVector2 {
-                x: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m11,
-                    a.y,
-                    b.m21,
-                    a.z,
-                    b.m31,
-                    a.w,
-                    b.m41,
-                    a.a,
-                    b.m51,
-                    a.b,
-                    b.m61,
-                    beta,
-                    self.x,
-                ),
-                y: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m12,
-                    a.y,
-                    b.m22,
-                    a.z,
-                    b.m32,
-                    a.w,
-                    b.m42,
-                    a.a,
-                    b.m52,
-                    a.b,
-                    b.m62,
-                    beta,
-                    self.y,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        self = RowVector2 { x: c0.x, y: c1.x };
     }
 }
 
@@ -3765,12 +3745,13 @@ pub impl RowVector3GemmMatrix1<
 > of MatrixGemm<T, RowVector3<T>, Matrix1<T>, RowVector3<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector3<T>, alpha: T, a: Matrix1<T>, b: RowVector3<T>, beta: T) {
-        self =
-            RowVector3 {
-                x: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.z),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmMatrix1::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmMatrix1::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmMatrix1::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        self = RowVector3 { x: c0.x, y: c1.x, z: c2.x };
     }
 }
 
@@ -3779,12 +3760,13 @@ pub impl RowVector3GemmRowVector2<
 > of MatrixGemm<T, RowVector3<T>, RowVector2<T>, Matrix2x3<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector3<T>, alpha: T, a: RowVector2<T>, b: Matrix2x3<T>, beta: T) {
-        self =
-            RowVector3 {
-                x: BlasKernels::scaled_dot2(alpha, a.x, b.m11, a.y, b.m21, beta, self.x),
-                y: BlasKernels::scaled_dot2(alpha, a.x, b.m12, a.y, b.m22, beta, self.y),
-                z: BlasKernels::scaled_dot2(alpha, a.x, b.m13, a.y, b.m23, beta, self.z),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        self = RowVector3 { x: c0.x, y: c1.x, z: c2.x };
     }
 }
 
@@ -3793,18 +3775,19 @@ pub impl RowVector3GemmRowVector3<
 > of MatrixGemm<T, RowVector3<T>, RowVector3<T>, Matrix3<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector3<T>, alpha: T, a: RowVector3<T>, b: Matrix3<T>, beta: T) {
-        self =
-            RowVector3 {
-                x: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, beta, self.z,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        self = RowVector3 { x: c0.x, y: c1.x, z: c2.x };
     }
 }
 
@@ -3813,18 +3796,19 @@ pub impl RowVector3GemmRowVector4<
 > of MatrixGemm<T, RowVector3<T>, RowVector4<T>, Matrix4x3<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector3<T>, alpha: T, a: RowVector4<T>, b: Matrix4x3<T>, beta: T) {
-        self =
-            RowVector3 {
-                x: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, beta, self.z,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        self = RowVector3 { x: c0.x, y: c1.x, z: c2.x };
     }
 }
 
@@ -3833,18 +3817,19 @@ pub impl RowVector3GemmRowVector5<
 > of MatrixGemm<T, RowVector3<T>, RowVector5<T>, Matrix5x3<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector3<T>, alpha: T, a: RowVector5<T>, b: Matrix5x3<T>, beta: T) {
-        self =
-            RowVector3 {
-                x: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, a.a, b.m51, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, a.a, b.m52, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, a.a, b.m53, beta, self.z,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        self = RowVector3 { x: c0.x, y: c1.x, z: c2.x };
     }
 }
 
@@ -3853,60 +3838,31 @@ pub impl RowVector3GemmRowVector6<
 > of MatrixGemm<T, RowVector3<T>, RowVector6<T>, Matrix6x3<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector3<T>, alpha: T, a: RowVector6<T>, b: Matrix6x3<T>, beta: T) {
-        self =
-            RowVector3 {
-                x: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m11,
-                    a.y,
-                    b.m21,
-                    a.z,
-                    b.m31,
-                    a.w,
-                    b.m41,
-                    a.a,
-                    b.m51,
-                    a.b,
-                    b.m61,
-                    beta,
-                    self.x,
-                ),
-                y: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m12,
-                    a.y,
-                    b.m22,
-                    a.z,
-                    b.m32,
-                    a.w,
-                    b.m42,
-                    a.a,
-                    b.m52,
-                    a.b,
-                    b.m62,
-                    beta,
-                    self.y,
-                ),
-                z: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m13,
-                    a.y,
-                    b.m23,
-                    a.z,
-                    b.m33,
-                    a.w,
-                    b.m43,
-                    a.a,
-                    b.m53,
-                    a.b,
-                    b.m63,
-                    beta,
-                    self.z,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        self = RowVector3 { x: c0.x, y: c1.x, z: c2.x };
     }
 }
 
@@ -3915,13 +3871,15 @@ pub impl RowVector4GemmMatrix1<
 > of MatrixGemm<T, RowVector4<T>, Matrix1<T>, RowVector4<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector4<T>, alpha: T, a: Matrix1<T>, b: RowVector4<T>, beta: T) {
-        self =
-            RowVector4 {
-                x: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.w),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmMatrix1::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmMatrix1::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmMatrix1::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmMatrix1::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        self = RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x };
     }
 }
 
@@ -3930,13 +3888,15 @@ pub impl RowVector4GemmRowVector2<
 > of MatrixGemm<T, RowVector4<T>, RowVector2<T>, Matrix2x4<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector4<T>, alpha: T, a: RowVector2<T>, b: Matrix2x4<T>, beta: T) {
-        self =
-            RowVector4 {
-                x: BlasKernels::scaled_dot2(alpha, a.x, b.m11, a.y, b.m21, beta, self.x),
-                y: BlasKernels::scaled_dot2(alpha, a.x, b.m12, a.y, b.m22, beta, self.y),
-                z: BlasKernels::scaled_dot2(alpha, a.x, b.m13, a.y, b.m23, beta, self.z),
-                w: BlasKernels::scaled_dot2(alpha, a.x, b.m14, a.y, b.m24, beta, self.w),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        self = RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x };
     }
 }
 
@@ -3945,21 +3905,23 @@ pub impl RowVector4GemmRowVector3<
 > of MatrixGemm<T, RowVector4<T>, RowVector3<T>, Matrix3x4<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector4<T>, alpha: T, a: RowVector3<T>, b: Matrix3x4<T>, beta: T) {
-        self =
-            RowVector4 {
-                x: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, beta, self.w,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        self = RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x };
     }
 }
 
@@ -3968,21 +3930,23 @@ pub impl RowVector4GemmRowVector4<
 > of MatrixGemm<T, RowVector4<T>, RowVector4<T>, Matrix4<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector4<T>, alpha: T, a: RowVector4<T>, b: Matrix4<T>, beta: T) {
-        self =
-            RowVector4 {
-                x: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, a.w, b.m44, beta, self.w,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        self = RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x };
     }
 }
 
@@ -3991,21 +3955,23 @@ pub impl RowVector4GemmRowVector5<
 > of MatrixGemm<T, RowVector4<T>, RowVector5<T>, Matrix5x4<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector4<T>, alpha: T, a: RowVector5<T>, b: Matrix5x4<T>, beta: T) {
-        self =
-            RowVector4 {
-                x: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, a.a, b.m51, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, a.a, b.m52, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, a.a, b.m53, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, a.w, b.m44, a.a, b.m54, beta, self.w,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        self = RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x };
     }
 }
 
@@ -4014,77 +3980,39 @@ pub impl RowVector4GemmRowVector6<
 > of MatrixGemm<T, RowVector4<T>, RowVector6<T>, Matrix6x4<T>> {
     #[inline(always)]
     fn gemm(ref self: RowVector4<T>, alpha: T, a: RowVector6<T>, b: Matrix6x4<T>, beta: T) {
-        self =
-            RowVector4 {
-                x: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m11,
-                    a.y,
-                    b.m21,
-                    a.z,
-                    b.m31,
-                    a.w,
-                    b.m41,
-                    a.a,
-                    b.m51,
-                    a.b,
-                    b.m61,
-                    beta,
-                    self.x,
-                ),
-                y: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m12,
-                    a.y,
-                    b.m22,
-                    a.z,
-                    b.m32,
-                    a.w,
-                    b.m42,
-                    a.a,
-                    b.m52,
-                    a.b,
-                    b.m62,
-                    beta,
-                    self.y,
-                ),
-                z: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m13,
-                    a.y,
-                    b.m23,
-                    a.z,
-                    b.m33,
-                    a.w,
-                    b.m43,
-                    a.a,
-                    b.m53,
-                    a.b,
-                    b.m63,
-                    beta,
-                    self.z,
-                ),
-                w: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m14,
-                    a.y,
-                    b.m24,
-                    a.z,
-                    b.m34,
-                    a.w,
-                    b.m44,
-                    a.a,
-                    b.m54,
-                    a.b,
-                    b.m64,
-                    beta,
-                    self.w,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        self = RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x };
     }
 }
 
@@ -4092,14 +4020,17 @@ pub impl RowVector5GemmMatrix1<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector5<T>, Matrix1<T>, RowVector5<T>> {
     fn gemm(ref self: RowVector5<T>, alpha: T, a: Matrix1<T>, b: RowVector5<T>, beta: T) {
-        self =
-            RowVector5 {
-                x: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.w),
-                a: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.a),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmMatrix1::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmMatrix1::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmMatrix1::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmMatrix1::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmMatrix1::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
+        self = RowVector5 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x };
     }
 }
 
@@ -4107,14 +4038,17 @@ pub impl RowVector5GemmRowVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector5<T>, RowVector2<T>, Matrix2x5<T>> {
     fn gemm(ref self: RowVector5<T>, alpha: T, a: RowVector2<T>, b: Matrix2x5<T>, beta: T) {
-        self =
-            RowVector5 {
-                x: BlasKernels::scaled_dot2(alpha, a.x, b.m11, a.y, b.m21, beta, self.x),
-                y: BlasKernels::scaled_dot2(alpha, a.x, b.m12, a.y, b.m22, beta, self.y),
-                z: BlasKernels::scaled_dot2(alpha, a.x, b.m13, a.y, b.m23, beta, self.z),
-                w: BlasKernels::scaled_dot2(alpha, a.x, b.m14, a.y, b.m24, beta, self.w),
-                a: BlasKernels::scaled_dot2(alpha, a.x, b.m15, a.y, b.m25, beta, self.a),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
+        self = RowVector5 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x };
     }
 }
 
@@ -4122,24 +4056,27 @@ pub impl RowVector5GemmRowVector3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector5<T>, RowVector3<T>, Matrix3x5<T>> {
     fn gemm(ref self: RowVector5<T>, alpha: T, a: RowVector3<T>, b: Matrix3x5<T>, beta: T) {
-        self =
-            RowVector5 {
-                x: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, beta, self.w,
-                ),
-                a: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m15, a.y, b.m25, a.z, b.m35, beta, self.a,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
+        self = RowVector5 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x };
     }
 }
 
@@ -4147,24 +4084,27 @@ pub impl RowVector5GemmRowVector4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector5<T>, RowVector4<T>, Matrix4x5<T>> {
     fn gemm(ref self: RowVector5<T>, alpha: T, a: RowVector4<T>, b: Matrix4x5<T>, beta: T) {
-        self =
-            RowVector5 {
-                x: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, a.w, b.m44, beta, self.w,
-                ),
-                a: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m15, a.y, b.m25, a.z, b.m35, a.w, b.m45, beta, self.a,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
+        self = RowVector5 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x };
     }
 }
 
@@ -4172,24 +4112,27 @@ pub impl RowVector5GemmRowVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector5<T>, RowVector5<T>, Matrix5<T>> {
     fn gemm(ref self: RowVector5<T>, alpha: T, a: RowVector5<T>, b: Matrix5<T>, beta: T) {
-        self =
-            RowVector5 {
-                x: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, a.a, b.m51, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, a.a, b.m52, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, a.a, b.m53, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, a.w, b.m44, a.a, b.m54, beta, self.w,
-                ),
-                a: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m15, a.y, b.m25, a.z, b.m35, a.w, b.m45, a.a, b.m55, beta, self.a,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
+        self = RowVector5 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x };
     }
 }
 
@@ -4197,94 +4140,47 @@ pub impl RowVector5GemmRowVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector5<T>, RowVector6<T>, Matrix6x5<T>> {
     fn gemm(ref self: RowVector5<T>, alpha: T, a: RowVector6<T>, b: Matrix6x5<T>, beta: T) {
-        self =
-            RowVector5 {
-                x: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m11,
-                    a.y,
-                    b.m21,
-                    a.z,
-                    b.m31,
-                    a.w,
-                    b.m41,
-                    a.a,
-                    b.m51,
-                    a.b,
-                    b.m61,
-                    beta,
-                    self.x,
-                ),
-                y: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m12,
-                    a.y,
-                    b.m22,
-                    a.z,
-                    b.m32,
-                    a.w,
-                    b.m42,
-                    a.a,
-                    b.m52,
-                    a.b,
-                    b.m62,
-                    beta,
-                    self.y,
-                ),
-                z: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m13,
-                    a.y,
-                    b.m23,
-                    a.z,
-                    b.m33,
-                    a.w,
-                    b.m43,
-                    a.a,
-                    b.m53,
-                    a.b,
-                    b.m63,
-                    beta,
-                    self.z,
-                ),
-                w: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m14,
-                    a.y,
-                    b.m24,
-                    a.z,
-                    b.m34,
-                    a.w,
-                    b.m44,
-                    a.a,
-                    b.m54,
-                    a.b,
-                    b.m64,
-                    beta,
-                    self.w,
-                ),
-                a: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m15,
-                    a.y,
-                    b.m25,
-                    a.z,
-                    b.m35,
-                    a.w,
-                    b.m45,
-                    a.a,
-                    b.m55,
-                    a.b,
-                    b.m65,
-                    beta,
-                    self.a,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
+        self = RowVector5 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x };
     }
 }
 
@@ -4292,15 +4188,19 @@ pub impl RowVector6GemmMatrix1<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector6<T>, Matrix1<T>, RowVector6<T>> {
     fn gemm(ref self: RowVector6<T>, alpha: T, a: Matrix1<T>, b: RowVector6<T>, beta: T) {
-        self =
-            RowVector6 {
-                x: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.x),
-                y: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.y),
-                z: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.z),
-                w: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.w),
-                a: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.a),
-                b: BlasKernels::scaled_dot1(alpha, a.x, b.b, beta, self.b),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmMatrix1::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmMatrix1::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmMatrix1::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmMatrix1::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmMatrix1::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
+        let mut c5 = Matrix1 { x: self.b };
+        Matrix1GemmMatrix1::gemm(ref c5, alpha, a, Matrix1 { x: b.b }, beta);
+        self = RowVector6 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x, b: c5.x };
     }
 }
 
@@ -4308,15 +4208,19 @@ pub impl RowVector6GemmRowVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector6<T>, RowVector2<T>, Matrix2x6<T>> {
     fn gemm(ref self: RowVector6<T>, alpha: T, a: RowVector2<T>, b: Matrix2x6<T>, beta: T) {
-        self =
-            RowVector6 {
-                x: BlasKernels::scaled_dot2(alpha, a.x, b.m11, a.y, b.m21, beta, self.x),
-                y: BlasKernels::scaled_dot2(alpha, a.x, b.m12, a.y, b.m22, beta, self.y),
-                z: BlasKernels::scaled_dot2(alpha, a.x, b.m13, a.y, b.m23, beta, self.z),
-                w: BlasKernels::scaled_dot2(alpha, a.x, b.m14, a.y, b.m24, beta, self.w),
-                a: BlasKernels::scaled_dot2(alpha, a.x, b.m15, a.y, b.m25, beta, self.a),
-                b: BlasKernels::scaled_dot2(alpha, a.x, b.m16, a.y, b.m26, beta, self.b),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
+        let mut c5 = Matrix1 { x: self.b };
+        Matrix1GemmRowVector2::gemm(ref c5, alpha, a, Vector2 { x: b.m16, y: b.m26 }, beta);
+        self = RowVector6 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x, b: c5.x };
     }
 }
 
@@ -4324,27 +4228,31 @@ pub impl RowVector6GemmRowVector3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector6<T>, RowVector3<T>, Matrix3x6<T>> {
     fn gemm(ref self: RowVector6<T>, alpha: T, a: RowVector3<T>, b: Matrix3x6<T>, beta: T) {
-        self =
-            RowVector6 {
-                x: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, beta, self.w,
-                ),
-                a: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m15, a.y, b.m25, a.z, b.m35, beta, self.a,
-                ),
-                b: BlasKernels::scaled_dot3(
-                    alpha, a.x, b.m16, a.y, b.m26, a.z, b.m36, beta, self.b,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
+        let mut c5 = Matrix1 { x: self.b };
+        Matrix1GemmRowVector3::gemm(
+            ref c5, alpha, a, Vector3 { x: b.m16, y: b.m26, z: b.m36 }, beta,
+        );
+        self = RowVector6 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x, b: c5.x };
     }
 }
 
@@ -4352,27 +4260,31 @@ pub impl RowVector6GemmRowVector4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector6<T>, RowVector4<T>, Matrix4x6<T>> {
     fn gemm(ref self: RowVector6<T>, alpha: T, a: RowVector4<T>, b: Matrix4x6<T>, beta: T) {
-        self =
-            RowVector6 {
-                x: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, a.w, b.m44, beta, self.w,
-                ),
-                a: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m15, a.y, b.m25, a.z, b.m35, a.w, b.m45, beta, self.a,
-                ),
-                b: BlasKernels::scaled_dot4(
-                    alpha, a.x, b.m16, a.y, b.m26, a.z, b.m36, a.w, b.m46, beta, self.b,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
+        let mut c5 = Matrix1 { x: self.b };
+        Matrix1GemmRowVector4::gemm(
+            ref c5, alpha, a, Vector4 { x: b.m16, y: b.m26, z: b.m36, w: b.m46 }, beta,
+        );
+        self = RowVector6 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x, b: c5.x };
     }
 }
 
@@ -4380,27 +4292,31 @@ pub impl RowVector6GemmRowVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector6<T>, RowVector5<T>, Matrix5x6<T>> {
     fn gemm(ref self: RowVector6<T>, alpha: T, a: RowVector5<T>, b: Matrix5x6<T>, beta: T) {
-        self =
-            RowVector6 {
-                x: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m11, a.y, b.m21, a.z, b.m31, a.w, b.m41, a.a, b.m51, beta, self.x,
-                ),
-                y: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m12, a.y, b.m22, a.z, b.m32, a.w, b.m42, a.a, b.m52, beta, self.y,
-                ),
-                z: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m13, a.y, b.m23, a.z, b.m33, a.w, b.m43, a.a, b.m53, beta, self.z,
-                ),
-                w: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m14, a.y, b.m24, a.z, b.m34, a.w, b.m44, a.a, b.m54, beta, self.w,
-                ),
-                a: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m15, a.y, b.m25, a.z, b.m35, a.w, b.m45, a.a, b.m55, beta, self.a,
-                ),
-                b: BlasKernels::scaled_dot5(
-                    alpha, a.x, b.m16, a.y, b.m26, a.z, b.m36, a.w, b.m46, a.a, b.m56, beta, self.b,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
+        let mut c5 = Matrix1 { x: self.b };
+        Matrix1GemmRowVector5::gemm(
+            ref c5, alpha, a, Vector5 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56 }, beta,
+        );
+        self = RowVector6 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x, b: c5.x };
     }
 }
 
@@ -4408,111 +4324,55 @@ pub impl RowVector6GemmRowVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, RowVector6<T>, RowVector6<T>, Matrix6<T>> {
     fn gemm(ref self: RowVector6<T>, alpha: T, a: RowVector6<T>, b: Matrix6<T>, beta: T) {
-        self =
-            RowVector6 {
-                x: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m11,
-                    a.y,
-                    b.m21,
-                    a.z,
-                    b.m31,
-                    a.w,
-                    b.m41,
-                    a.a,
-                    b.m51,
-                    a.b,
-                    b.m61,
-                    beta,
-                    self.x,
-                ),
-                y: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m12,
-                    a.y,
-                    b.m22,
-                    a.z,
-                    b.m32,
-                    a.w,
-                    b.m42,
-                    a.a,
-                    b.m52,
-                    a.b,
-                    b.m62,
-                    beta,
-                    self.y,
-                ),
-                z: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m13,
-                    a.y,
-                    b.m23,
-                    a.z,
-                    b.m33,
-                    a.w,
-                    b.m43,
-                    a.a,
-                    b.m53,
-                    a.b,
-                    b.m63,
-                    beta,
-                    self.z,
-                ),
-                w: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m14,
-                    a.y,
-                    b.m24,
-                    a.z,
-                    b.m34,
-                    a.w,
-                    b.m44,
-                    a.a,
-                    b.m54,
-                    a.b,
-                    b.m64,
-                    beta,
-                    self.w,
-                ),
-                a: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m15,
-                    a.y,
-                    b.m25,
-                    a.z,
-                    b.m35,
-                    a.w,
-                    b.m45,
-                    a.a,
-                    b.m55,
-                    a.b,
-                    b.m65,
-                    beta,
-                    self.a,
-                ),
-                b: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.x,
-                    b.m16,
-                    a.y,
-                    b.m26,
-                    a.z,
-                    b.m36,
-                    a.w,
-                    b.m46,
-                    a.a,
-                    b.m56,
-                    a.b,
-                    b.m66,
-                    beta,
-                    self.b,
-                ),
-            };
+        let mut c0 = Matrix1 { x: self.x };
+        Matrix1GemmRowVector6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Matrix1 { x: self.y };
+        Matrix1GemmRowVector6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Matrix1 { x: self.z };
+        Matrix1GemmRowVector6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Matrix1 { x: self.w };
+        Matrix1GemmRowVector6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Matrix1 { x: self.a };
+        Matrix1GemmRowVector6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
+        let mut c5 = Matrix1 { x: self.b };
+        Matrix1GemmRowVector6::gemm(
+            ref c5,
+            alpha,
+            a,
+            Vector6 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56, b: b.m66 },
+            beta,
+        );
+        self = RowVector6 { x: c0.x, y: c1.x, z: c2.x, w: c3.x, a: c4.x, b: c5.x };
     }
 }
 
@@ -4642,13 +4502,11 @@ pub impl Matrix2GemmVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2<T>, Vector2<T>, RowVector2<T>> {
     fn gemm(ref self: Matrix2<T>, alpha: T, a: Vector2<T>, b: RowVector2<T>, beta: T) {
-        self =
-            Matrix2 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmVector2::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmVector2::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        self = Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y };
     }
 }
 
@@ -4656,13 +4514,11 @@ pub impl Matrix2GemmMatrix2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2<T>, Matrix2<T>, Matrix2<T>> {
     fn gemm(ref self: Matrix2<T>, alpha: T, a: Matrix2<T>, b: Matrix2<T>, beta: T) {
-        self =
-            Matrix2 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        self = Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y };
     }
 }
 
@@ -4670,21 +4526,15 @@ pub impl Matrix2GemmMatrix2x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2<T>, Matrix2x3<T>, Matrix3x2<T>> {
     fn gemm(ref self: Matrix2<T>, alpha: T, a: Matrix2x3<T>, b: Matrix3x2<T>, beta: T) {
-        self =
-            Matrix2 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        self = Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y };
     }
 }
 
@@ -4692,21 +4542,15 @@ pub impl Matrix2GemmMatrix2x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2<T>, Matrix2x4<T>, Matrix4x2<T>> {
     fn gemm(ref self: Matrix2<T>, alpha: T, a: Matrix2x4<T>, b: Matrix4x2<T>, beta: T) {
-        self =
-            Matrix2 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        self = Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y };
     }
 }
 
@@ -4714,69 +4558,15 @@ pub impl Matrix2GemmMatrix2x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2<T>, Matrix2x5<T>, Matrix5x2<T>> {
     fn gemm(ref self: Matrix2<T>, alpha: T, a: Matrix2x5<T>, b: Matrix5x2<T>, beta: T) {
-        self =
-            Matrix2 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        self = Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y };
     }
 }
 
@@ -4784,77 +4574,23 @@ pub impl Matrix2GemmMatrix2x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2<T>, Matrix2x6<T>, Matrix6x2<T>> {
     fn gemm(ref self: Matrix2<T>, alpha: T, a: Matrix2x6<T>, b: Matrix6x2<T>, beta: T) {
-        self =
-            Matrix2 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        self = Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y };
     }
 }
 
@@ -4862,15 +4598,13 @@ pub impl Matrix2x3GemmVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x3<T>, Vector2<T>, RowVector3<T>> {
     fn gemm(ref self: Matrix2x3<T>, alpha: T, a: Vector2<T>, b: RowVector3<T>, beta: T) {
-        self =
-            Matrix2x3 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmVector2::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmVector2::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmVector2::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        self = Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y };
     }
 }
 
@@ -4878,15 +4612,13 @@ pub impl Matrix2x3GemmMatrix2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x3<T>, Matrix2<T>, Matrix2x3<T>> {
     fn gemm(ref self: Matrix2x3<T>, alpha: T, a: Matrix2<T>, b: Matrix2x3<T>, beta: T) {
-        self =
-            Matrix2x3 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        self = Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y };
     }
 }
 
@@ -4894,27 +4626,19 @@ pub impl Matrix2x3GemmMatrix2x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x3<T>, Matrix2x3<T>, Matrix3<T>> {
     fn gemm(ref self: Matrix2x3<T>, alpha: T, a: Matrix2x3<T>, b: Matrix3<T>, beta: T) {
-        self =
-            Matrix2x3 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        self = Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y };
     }
 }
 
@@ -4922,27 +4646,19 @@ pub impl Matrix2x3GemmMatrix2x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x3<T>, Matrix2x4<T>, Matrix4x3<T>> {
     fn gemm(ref self: Matrix2x3<T>, alpha: T, a: Matrix2x4<T>, b: Matrix4x3<T>, beta: T) {
-        self =
-            Matrix2x3 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        self = Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y };
     }
 }
 
@@ -4950,99 +4666,19 @@ pub impl Matrix2x3GemmMatrix2x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x3<T>, Matrix2x5<T>, Matrix5x3<T>> {
     fn gemm(ref self: Matrix2x3<T>, alpha: T, a: Matrix2x5<T>, b: Matrix5x3<T>, beta: T) {
-        self =
-            Matrix2x3 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        self = Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y };
     }
 }
 
@@ -5050,111 +4686,31 @@ pub impl Matrix2x3GemmMatrix2x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x3<T>, Matrix2x6<T>, Matrix6x3<T>> {
     fn gemm(ref self: Matrix2x3<T>, alpha: T, a: Matrix2x6<T>, b: Matrix6x3<T>, beta: T) {
-        self =
-            Matrix2x3 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-            };
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        self = Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y };
     }
 }
 
@@ -5162,16 +4718,24 @@ pub impl Matrix2x4GemmVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x4<T>, Vector2<T>, RowVector4<T>> {
     fn gemm(ref self: Matrix2x4<T>, alpha: T, a: Vector2<T>, b: RowVector4<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmVector2::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmVector2::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmVector2::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmVector2::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
         self =
             Matrix2x4 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
             };
     }
 }
@@ -5180,16 +4744,24 @@ pub impl Matrix2x4GemmMatrix2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x4<T>, Matrix2<T>, Matrix2x4<T>> {
     fn gemm(ref self: Matrix2x4<T>, alpha: T, a: Matrix2<T>, b: Matrix2x4<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
         self =
             Matrix2x4 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
             };
     }
 }
@@ -5198,32 +4770,32 @@ pub impl Matrix2x4GemmMatrix2x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x4<T>, Matrix2x3<T>, Matrix3x4<T>> {
     fn gemm(ref self: Matrix2x4<T>, alpha: T, a: Matrix2x3<T>, b: Matrix3x4<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
         self =
             Matrix2x4 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
             };
     }
 }
@@ -5232,32 +4804,32 @@ pub impl Matrix2x4GemmMatrix2x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x4<T>, Matrix2x4<T>, Matrix4<T>> {
     fn gemm(ref self: Matrix2x4<T>, alpha: T, a: Matrix2x4<T>, b: Matrix4<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
         self =
             Matrix2x4 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
             };
     }
 }
@@ -5266,128 +4838,32 @@ pub impl Matrix2x4GemmMatrix2x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x4<T>, Matrix2x5<T>, Matrix5x4<T>> {
     fn gemm(ref self: Matrix2x4<T>, alpha: T, a: Matrix2x5<T>, b: Matrix5x4<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
         self =
             Matrix2x4 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
             };
     }
 }
@@ -5396,144 +4872,48 @@ pub impl Matrix2x4GemmMatrix2x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x4<T>, Matrix2x6<T>, Matrix6x4<T>> {
     fn gemm(ref self: Matrix2x4<T>, alpha: T, a: Matrix2x6<T>, b: Matrix6x4<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
         self =
             Matrix2x4 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
             };
     }
 }
@@ -5542,18 +4922,28 @@ pub impl Matrix2x5GemmVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x5<T>, Vector2<T>, RowVector5<T>> {
     fn gemm(ref self: Matrix2x5<T>, alpha: T, a: Vector2<T>, b: RowVector5<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmVector2::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmVector2::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmVector2::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmVector2::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmVector2::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
         self =
             Matrix2x5 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
             };
     }
 }
@@ -5562,18 +4952,28 @@ pub impl Matrix2x5GemmMatrix2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x5<T>, Matrix2<T>, Matrix2x5<T>> {
     fn gemm(ref self: Matrix2x5<T>, alpha: T, a: Matrix2<T>, b: Matrix2x5<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
         self =
             Matrix2x5 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
             };
     }
 }
@@ -5582,38 +4982,38 @@ pub impl Matrix2x5GemmMatrix2x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x5<T>, Matrix2x3<T>, Matrix3x5<T>> {
     fn gemm(ref self: Matrix2x5<T>, alpha: T, a: Matrix2x3<T>, b: Matrix3x5<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
         self =
             Matrix2x5 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
             };
     }
 }
@@ -5622,38 +5022,38 @@ pub impl Matrix2x5GemmMatrix2x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x5<T>, Matrix2x4<T>, Matrix4x5<T>> {
     fn gemm(ref self: Matrix2x5<T>, alpha: T, a: Matrix2x4<T>, b: Matrix4x5<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
         self =
             Matrix2x5 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
             };
     }
 }
@@ -5662,158 +5062,38 @@ pub impl Matrix2x5GemmMatrix2x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x5<T>, Matrix2x5<T>, Matrix5<T>> {
     fn gemm(ref self: Matrix2x5<T>, alpha: T, a: Matrix2x5<T>, b: Matrix5<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
         self =
             Matrix2x5 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
             };
     }
 }
@@ -5822,178 +5102,58 @@ pub impl Matrix2x5GemmMatrix2x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x5<T>, Matrix2x6<T>, Matrix6x5<T>> {
     fn gemm(ref self: Matrix2x5<T>, alpha: T, a: Matrix2x6<T>, b: Matrix6x5<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
         self =
             Matrix2x5 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
             };
     }
 }
@@ -6002,20 +5162,32 @@ pub impl Matrix2x6GemmVector2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x6<T>, Vector2<T>, RowVector6<T>> {
     fn gemm(ref self: Matrix2x6<T>, alpha: T, a: Vector2<T>, b: RowVector6<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmVector2::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmVector2::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmVector2::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmVector2::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmVector2::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
+        let mut c5 = Vector2 { x: self.m16, y: self.m26 };
+        Vector2GemmVector2::gemm(ref c5, alpha, a, Matrix1 { x: b.b }, beta);
         self =
             Matrix2x6 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m16: BlasKernels::scaled_dot1(alpha, a.x, b.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, a.y, b.b, beta, self.m26),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
+                m16: c5.x,
+                m26: c5.y,
             };
     }
 }
@@ -6024,20 +5196,32 @@ pub impl Matrix2x6GemmMatrix2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x6<T>, Matrix2<T>, Matrix2x6<T>> {
     fn gemm(ref self: Matrix2x6<T>, alpha: T, a: Matrix2<T>, b: Matrix2x6<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
+        let mut c5 = Vector2 { x: self.m16, y: self.m26 };
+        Vector2GemmMatrix2::gemm(ref c5, alpha, a, Vector2 { x: b.m16, y: b.m26 }, beta);
         self =
             Matrix2x6 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m16: BlasKernels::scaled_dot2(alpha, a.m11, b.m16, a.m12, b.m26, beta, self.m16),
-                m26: BlasKernels::scaled_dot2(alpha, a.m21, b.m16, a.m22, b.m26, beta, self.m26),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
+                m16: c5.x,
+                m26: c5.y,
             };
     }
 }
@@ -6046,44 +5230,44 @@ pub impl Matrix2x6GemmMatrix2x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x6<T>, Matrix2x3<T>, Matrix3x6<T>> {
     fn gemm(ref self: Matrix2x6<T>, alpha: T, a: Matrix2x3<T>, b: Matrix3x6<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
+        let mut c5 = Vector2 { x: self.m16, y: self.m26 };
+        Vector2GemmMatrix2x3::gemm(
+            ref c5, alpha, a, Vector3 { x: b.m16, y: b.m26, z: b.m36 }, beta,
+        );
         self =
             Matrix2x6 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m16: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, beta, self.m26,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
+                m16: c5.x,
+                m26: c5.y,
             };
     }
 }
@@ -6092,44 +5276,44 @@ pub impl Matrix2x6GemmMatrix2x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x6<T>, Matrix2x4<T>, Matrix4x6<T>> {
     fn gemm(ref self: Matrix2x6<T>, alpha: T, a: Matrix2x4<T>, b: Matrix4x6<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
+        let mut c5 = Vector2 { x: self.m16, y: self.m26 };
+        Vector2GemmMatrix2x4::gemm(
+            ref c5, alpha, a, Vector4 { x: b.m16, y: b.m26, z: b.m36, w: b.m46 }, beta,
+        );
         self =
             Matrix2x6 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m16: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, a.m14, b.m46, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, a.m24, b.m46, beta, self.m26,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
+                m16: c5.x,
+                m26: c5.y,
             };
     }
 }
@@ -6138,188 +5322,44 @@ pub impl Matrix2x6GemmMatrix2x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x6<T>, Matrix2x5<T>, Matrix5x6<T>> {
     fn gemm(ref self: Matrix2x6<T>, alpha: T, a: Matrix2x5<T>, b: Matrix5x6<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
+        let mut c5 = Vector2 { x: self.m16, y: self.m26 };
+        Vector2GemmMatrix2x5::gemm(
+            ref c5, alpha, a, Vector5 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56 }, beta,
+        );
         self =
             Matrix2x6 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m16: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    beta,
-                    self.m26,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
+                m16: c5.x,
+                m26: c5.y,
             };
     }
 }
@@ -6328,212 +5368,68 @@ pub impl Matrix2x6GemmMatrix2x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix2x6<T>, Matrix2x6<T>, Matrix6<T>> {
     fn gemm(ref self: Matrix2x6<T>, alpha: T, a: Matrix2x6<T>, b: Matrix6<T>, beta: T) {
+        let mut c0 = Vector2 { x: self.m11, y: self.m21 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector2 { x: self.m12, y: self.m22 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector2 { x: self.m13, y: self.m23 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector2 { x: self.m14, y: self.m24 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector2 { x: self.m15, y: self.m25 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
+        let mut c5 = Vector2 { x: self.m16, y: self.m26 };
+        Vector2GemmMatrix2x6::gemm(
+            ref c5,
+            alpha,
+            a,
+            Vector6 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56, b: b.m66 },
+            beta,
+        );
         self =
             Matrix2x6 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m16: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    a.m16,
-                    b.m66,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    a.m26,
-                    b.m66,
-                    beta,
-                    self.m26,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m12: c1.x,
+                m22: c1.y,
+                m13: c2.x,
+                m23: c2.y,
+                m14: c3.x,
+                m24: c3.y,
+                m15: c4.x,
+                m25: c4.y,
+                m16: c5.x,
+                m26: c5.y,
             };
     }
 }
@@ -6692,15 +5588,11 @@ pub impl Matrix3x2GemmVector3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x2<T>, Vector3<T>, RowVector2<T>> {
     fn gemm(ref self: Matrix3x2<T>, alpha: T, a: Vector3<T>, b: RowVector2<T>, beta: T) {
-        self =
-            Matrix3x2 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-            };
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmVector3::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmVector3::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        self = Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z };
     }
 }
 
@@ -6708,15 +5600,11 @@ pub impl Matrix3x2GemmMatrix3x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x2<T>, Matrix3x2<T>, Matrix2<T>> {
     fn gemm(ref self: Matrix3x2<T>, alpha: T, a: Matrix3x2<T>, b: Matrix2<T>, beta: T) {
-        self =
-            Matrix3x2 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-            };
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        self = Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z };
     }
 }
 
@@ -6724,27 +5612,11 @@ pub impl Matrix3x2GemmMatrix3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x2<T>, Matrix3<T>, Matrix3x2<T>> {
     fn gemm(ref self: Matrix3x2<T>, alpha: T, a: Matrix3<T>, b: Matrix3x2<T>, beta: T) {
-        self =
-            Matrix3x2 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-            };
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3::gemm(ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3::gemm(ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta);
+        self = Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z };
     }
 }
 
@@ -6752,27 +5624,15 @@ pub impl Matrix3x2GemmMatrix3x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x2<T>, Matrix3x4<T>, Matrix4x2<T>> {
     fn gemm(ref self: Matrix3x2<T>, alpha: T, a: Matrix3x4<T>, b: Matrix4x2<T>, beta: T) {
-        self =
-            Matrix3x2 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-            };
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        self = Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z };
     }
 }
 
@@ -6780,99 +5640,15 @@ pub impl Matrix3x2GemmMatrix3x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x2<T>, Matrix3x5<T>, Matrix5x2<T>> {
     fn gemm(ref self: Matrix3x2<T>, alpha: T, a: Matrix3x5<T>, b: Matrix5x2<T>, beta: T) {
-        self =
-            Matrix3x2 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-            };
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        self = Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z };
     }
 }
 
@@ -6880,111 +5656,23 @@ pub impl Matrix3x2GemmMatrix3x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x2<T>, Matrix3x6<T>, Matrix6x2<T>> {
     fn gemm(ref self: Matrix3x2<T>, alpha: T, a: Matrix3x6<T>, b: Matrix6x2<T>, beta: T) {
-        self =
-            Matrix3x2 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-            };
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        self = Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z };
     }
 }
 
@@ -6992,17 +5680,23 @@ pub impl Matrix3GemmVector3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3<T>, Vector3<T>, RowVector3<T>> {
     fn gemm(ref self: Matrix3<T>, alpha: T, a: Vector3<T>, b: RowVector3<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmVector3::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmVector3::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmVector3::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
             };
     }
 }
@@ -7011,17 +5705,23 @@ pub impl Matrix3GemmMatrix3x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3<T>, Matrix3x2<T>, Matrix2x3<T>> {
     fn gemm(ref self: Matrix3<T>, alpha: T, a: Matrix3x2<T>, b: Matrix2x3<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
             };
     }
 }
@@ -7030,35 +5730,23 @@ pub impl Matrix3GemmMatrix3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3<T>, Matrix3<T>, Matrix3<T>> {
     fn gemm(ref self: Matrix3<T>, alpha: T, a: Matrix3<T>, b: Matrix3<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3::gemm(ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3::gemm(ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3::gemm(ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta);
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
             };
     }
 }
@@ -7067,35 +5755,29 @@ pub impl Matrix3GemmMatrix3x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3<T>, Matrix3x4<T>, Matrix4x3<T>> {
     fn gemm(ref self: Matrix3<T>, alpha: T, a: Matrix3x4<T>, b: Matrix4x3<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
             };
     }
 }
@@ -7104,143 +5786,29 @@ pub impl Matrix3GemmMatrix3x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3<T>, Matrix3x5<T>, Matrix5x3<T>> {
     fn gemm(ref self: Matrix3<T>, alpha: T, a: Matrix3x5<T>, b: Matrix5x3<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
             };
     }
 }
@@ -7249,161 +5817,41 @@ pub impl Matrix3GemmMatrix3x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3<T>, Matrix3x6<T>, Matrix6x3<T>> {
     fn gemm(ref self: Matrix3<T>, alpha: T, a: Matrix3x6<T>, b: Matrix6x3<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
         self =
             Matrix3 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
             };
     }
 }
@@ -7412,20 +5860,28 @@ pub impl Matrix3x4GemmVector3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x4<T>, Vector3<T>, RowVector4<T>> {
     fn gemm(ref self: Matrix3x4<T>, alpha: T, a: Vector3<T>, b: RowVector4<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmVector3::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmVector3::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmVector3::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmVector3::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
         self =
             Matrix3x4 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
             };
     }
 }
@@ -7434,20 +5890,28 @@ pub impl Matrix3x4GemmMatrix3x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x4<T>, Matrix3x2<T>, Matrix2x4<T>> {
     fn gemm(ref self: Matrix3x4<T>, alpha: T, a: Matrix3x2<T>, b: Matrix2x4<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
         self =
             Matrix3x4 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
             };
     }
 }
@@ -7456,44 +5920,28 @@ pub impl Matrix3x4GemmMatrix3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x4<T>, Matrix3<T>, Matrix3x4<T>> {
     fn gemm(ref self: Matrix3x4<T>, alpha: T, a: Matrix3<T>, b: Matrix3x4<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3::gemm(ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3::gemm(ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3::gemm(ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3::gemm(ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta);
         self =
             Matrix3x4 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
             };
     }
 }
@@ -7502,44 +5950,36 @@ pub impl Matrix3x4GemmMatrix3x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x4<T>, Matrix3x4<T>, Matrix4<T>> {
     fn gemm(ref self: Matrix3x4<T>, alpha: T, a: Matrix3x4<T>, b: Matrix4<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
         self =
             Matrix3x4 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
             };
     }
 }
@@ -7548,188 +5988,36 @@ pub impl Matrix3x4GemmMatrix3x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x4<T>, Matrix3x5<T>, Matrix5x4<T>> {
     fn gemm(ref self: Matrix3x4<T>, alpha: T, a: Matrix3x5<T>, b: Matrix5x4<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
         self =
             Matrix3x4 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
             };
     }
 }
@@ -7738,212 +6026,52 @@ pub impl Matrix3x4GemmMatrix3x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x4<T>, Matrix3x6<T>, Matrix6x4<T>> {
     fn gemm(ref self: Matrix3x4<T>, alpha: T, a: Matrix3x6<T>, b: Matrix6x4<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
         self =
             Matrix3x4 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
             };
     }
 }
@@ -7952,23 +6080,33 @@ pub impl Matrix3x5GemmVector3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x5<T>, Vector3<T>, RowVector5<T>> {
     fn gemm(ref self: Matrix3x5<T>, alpha: T, a: Vector3<T>, b: RowVector5<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmVector3::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmVector3::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmVector3::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmVector3::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmVector3::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
         self =
             Matrix3x5 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
             };
     }
 }
@@ -7977,23 +6115,33 @@ pub impl Matrix3x5GemmMatrix3x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x5<T>, Matrix3x2<T>, Matrix2x5<T>> {
     fn gemm(ref self: Matrix3x5<T>, alpha: T, a: Matrix3x2<T>, b: Matrix2x5<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
         self =
             Matrix3x5 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
             };
     }
 }
@@ -8002,53 +6150,33 @@ pub impl Matrix3x5GemmMatrix3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x5<T>, Matrix3<T>, Matrix3x5<T>> {
     fn gemm(ref self: Matrix3x5<T>, alpha: T, a: Matrix3<T>, b: Matrix3x5<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3::gemm(ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3::gemm(ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3::gemm(ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3::gemm(ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta);
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3::gemm(ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta);
         self =
             Matrix3x5 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
             };
     }
 }
@@ -8057,53 +6185,43 @@ pub impl Matrix3x5GemmMatrix3x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x5<T>, Matrix3x4<T>, Matrix4x5<T>> {
     fn gemm(ref self: Matrix3x5<T>, alpha: T, a: Matrix3x4<T>, b: Matrix4x5<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
         self =
             Matrix3x5 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
             };
     }
 }
@@ -8112,233 +6230,43 @@ pub impl Matrix3x5GemmMatrix3x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x5<T>, Matrix3x5<T>, Matrix5<T>> {
     fn gemm(ref self: Matrix3x5<T>, alpha: T, a: Matrix3x5<T>, b: Matrix5<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
         self =
             Matrix3x5 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
             };
     }
 }
@@ -8347,263 +6275,63 @@ pub impl Matrix3x5GemmMatrix3x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x5<T>, Matrix3x6<T>, Matrix6x5<T>> {
     fn gemm(ref self: Matrix3x5<T>, alpha: T, a: Matrix3x6<T>, b: Matrix6x5<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
         self =
             Matrix3x5 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
             };
     }
 }
@@ -8612,26 +6340,38 @@ pub impl Matrix3x6GemmVector3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x6<T>, Vector3<T>, RowVector6<T>> {
     fn gemm(ref self: Matrix3x6<T>, alpha: T, a: Vector3<T>, b: RowVector6<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmVector3::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmVector3::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmVector3::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmVector3::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmVector3::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
+        let mut c5 = Vector3 { x: self.m16, y: self.m26, z: self.m36 };
+        Vector3GemmVector3::gemm(ref c5, alpha, a, Matrix1 { x: b.b }, beta);
         self =
             Matrix3x6 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
-                m16: BlasKernels::scaled_dot1(alpha, a.x, b.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, a.y, b.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, a.z, b.b, beta, self.m36),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
             };
     }
 }
@@ -8640,26 +6380,38 @@ pub impl Matrix3x6GemmMatrix3x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x6<T>, Matrix3x2<T>, Matrix2x6<T>> {
     fn gemm(ref self: Matrix3x6<T>, alpha: T, a: Matrix3x2<T>, b: Matrix2x6<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
+        let mut c5 = Vector3 { x: self.m16, y: self.m26, z: self.m36 };
+        Vector3GemmMatrix3x2::gemm(ref c5, alpha, a, Vector2 { x: b.m16, y: b.m26 }, beta);
         self =
             Matrix3x6 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
-                m16: BlasKernels::scaled_dot2(alpha, a.m11, b.m16, a.m12, b.m26, beta, self.m16),
-                m26: BlasKernels::scaled_dot2(alpha, a.m21, b.m16, a.m22, b.m26, beta, self.m26),
-                m36: BlasKernels::scaled_dot2(alpha, a.m31, b.m16, a.m32, b.m26, beta, self.m36),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
             };
     }
 }
@@ -8668,62 +6420,38 @@ pub impl Matrix3x6GemmMatrix3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x6<T>, Matrix3<T>, Matrix3x6<T>> {
     fn gemm(ref self: Matrix3x6<T>, alpha: T, a: Matrix3<T>, b: Matrix3x6<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3::gemm(ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta);
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3::gemm(ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta);
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3::gemm(ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta);
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3::gemm(ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta);
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3::gemm(ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta);
+        let mut c5 = Vector3 { x: self.m16, y: self.m26, z: self.m36 };
+        Vector3GemmMatrix3::gemm(ref c5, alpha, a, Vector3 { x: b.m16, y: b.m26, z: b.m36 }, beta);
         self =
             Matrix3x6 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
-                m16: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, beta, self.m36,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
             };
     }
 }
@@ -8732,62 +6460,50 @@ pub impl Matrix3x6GemmMatrix3x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x6<T>, Matrix3x4<T>, Matrix4x6<T>> {
     fn gemm(ref self: Matrix3x6<T>, alpha: T, a: Matrix3x4<T>, b: Matrix4x6<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
+        let mut c5 = Vector3 { x: self.m16, y: self.m26, z: self.m36 };
+        Vector3GemmMatrix3x4::gemm(
+            ref c5, alpha, a, Vector4 { x: b.m16, y: b.m26, z: b.m36, w: b.m46 }, beta,
+        );
         self =
             Matrix3x6 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
-                m16: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, a.m14, b.m46, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, a.m24, b.m46, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, a.m34, b.m46, beta, self.m36,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
             };
     }
 }
@@ -8796,278 +6512,50 @@ pub impl Matrix3x6GemmMatrix3x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x6<T>, Matrix3x5<T>, Matrix5x6<T>> {
     fn gemm(ref self: Matrix3x6<T>, alpha: T, a: Matrix3x5<T>, b: Matrix5x6<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
+        let mut c5 = Vector3 { x: self.m16, y: self.m26, z: self.m36 };
+        Vector3GemmMatrix3x5::gemm(
+            ref c5, alpha, a, Vector5 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56 }, beta,
+        );
         self =
             Matrix3x6 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
-                m16: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    beta,
-                    self.m36,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
             };
     }
 }
@@ -9076,314 +6564,74 @@ pub impl Matrix3x6GemmMatrix3x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix3x6<T>, Matrix3x6<T>, Matrix6<T>> {
     fn gemm(ref self: Matrix3x6<T>, alpha: T, a: Matrix3x6<T>, b: Matrix6<T>, beta: T) {
+        let mut c0 = Vector3 { x: self.m11, y: self.m21, z: self.m31 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector3 { x: self.m12, y: self.m22, z: self.m32 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector3 { x: self.m13, y: self.m23, z: self.m33 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector3 { x: self.m14, y: self.m24, z: self.m34 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector3 { x: self.m15, y: self.m25, z: self.m35 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
+        let mut c5 = Vector3 { x: self.m16, y: self.m26, z: self.m36 };
+        Vector3GemmMatrix3x6::gemm(
+            ref c5,
+            alpha,
+            a,
+            Vector6 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56, b: b.m66 },
+            beta,
+        );
         self =
             Matrix3x6 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
-                m16: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    a.m16,
-                    b.m66,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    a.m26,
-                    b.m66,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    a.m36,
-                    b.m66,
-                    beta,
-                    self.m36,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
             };
     }
 }
@@ -9570,16 +6818,20 @@ pub impl Matrix4x2GemmVector4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x2<T>, Vector4<T>, RowVector2<T>> {
     fn gemm(ref self: Matrix4x2<T>, alpha: T, a: Vector4<T>, b: RowVector2<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmVector4::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmVector4::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
         self =
             Matrix4x2 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
             };
     }
 }
@@ -9588,16 +6840,20 @@ pub impl Matrix4x2GemmMatrix4x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x2<T>, Matrix4x2<T>, Matrix2<T>> {
     fn gemm(ref self: Matrix4x2<T>, alpha: T, a: Matrix4x2<T>, b: Matrix2<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
         self =
             Matrix4x2 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
             };
     }
 }
@@ -9606,32 +6862,24 @@ pub impl Matrix4x2GemmMatrix4x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x2<T>, Matrix4x3<T>, Matrix3x2<T>> {
     fn gemm(ref self: Matrix4x2<T>, alpha: T, a: Matrix4x3<T>, b: Matrix3x2<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
         self =
             Matrix4x2 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
             };
     }
 }
@@ -9640,32 +6888,24 @@ pub impl Matrix4x2GemmMatrix4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x2<T>, Matrix4<T>, Matrix4x2<T>> {
     fn gemm(ref self: Matrix4x2<T>, alpha: T, a: Matrix4<T>, b: Matrix4x2<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
         self =
             Matrix4x2 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
             };
     }
 }
@@ -9674,128 +6914,24 @@ pub impl Matrix4x2GemmMatrix4x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x2<T>, Matrix4x5<T>, Matrix5x2<T>> {
     fn gemm(ref self: Matrix4x2<T>, alpha: T, a: Matrix4x5<T>, b: Matrix5x2<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
         self =
             Matrix4x2 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
             };
     }
 }
@@ -9804,144 +6940,32 @@ pub impl Matrix4x2GemmMatrix4x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x2<T>, Matrix4x6<T>, Matrix6x2<T>> {
     fn gemm(ref self: Matrix4x2<T>, alpha: T, a: Matrix4x6<T>, b: Matrix6x2<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
         self =
             Matrix4x2 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
             };
     }
 }
@@ -9950,20 +6974,26 @@ pub impl Matrix4x3GemmVector4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x3<T>, Vector4<T>, RowVector3<T>> {
     fn gemm(ref self: Matrix4x3<T>, alpha: T, a: Vector4<T>, b: RowVector3<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmVector4::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmVector4::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmVector4::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
         self =
             Matrix4x3 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
             };
     }
 }
@@ -9972,20 +7002,26 @@ pub impl Matrix4x3GemmMatrix4x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x3<T>, Matrix4x2<T>, Matrix2x3<T>> {
     fn gemm(ref self: Matrix4x3<T>, alpha: T, a: Matrix4x2<T>, b: Matrix2x3<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
         self =
             Matrix4x3 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
             };
     }
 }
@@ -9994,44 +7030,32 @@ pub impl Matrix4x3GemmMatrix4x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x3<T>, Matrix4x3<T>, Matrix3<T>> {
     fn gemm(ref self: Matrix4x3<T>, alpha: T, a: Matrix4x3<T>, b: Matrix3<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
         self =
             Matrix4x3 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
             };
     }
 }
@@ -10040,44 +7064,32 @@ pub impl Matrix4x3GemmMatrix4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x3<T>, Matrix4<T>, Matrix4x3<T>> {
     fn gemm(ref self: Matrix4x3<T>, alpha: T, a: Matrix4<T>, b: Matrix4x3<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
         self =
             Matrix4x3 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
             };
     }
 }
@@ -10086,188 +7098,32 @@ pub impl Matrix4x3GemmMatrix4x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x3<T>, Matrix4x5<T>, Matrix5x3<T>> {
     fn gemm(ref self: Matrix4x3<T>, alpha: T, a: Matrix4x5<T>, b: Matrix5x3<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
         self =
             Matrix4x3 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
             };
     }
 }
@@ -10276,212 +7132,44 @@ pub impl Matrix4x3GemmMatrix4x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x3<T>, Matrix4x6<T>, Matrix6x3<T>> {
     fn gemm(ref self: Matrix4x3<T>, alpha: T, a: Matrix4x6<T>, b: Matrix6x3<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
         self =
             Matrix4x3 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
             };
     }
 }
@@ -10490,24 +7178,32 @@ pub impl Matrix4GemmVector4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4<T>, Vector4<T>, RowVector4<T>> {
     fn gemm(ref self: Matrix4<T>, alpha: T, a: Vector4<T>, b: RowVector4<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmVector4::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmVector4::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmVector4::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmVector4::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
             };
     }
 }
@@ -10516,24 +7212,32 @@ pub impl Matrix4GemmMatrix4x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4<T>, Matrix4x2<T>, Matrix2x4<T>> {
     fn gemm(ref self: Matrix4<T>, alpha: T, a: Matrix4x2<T>, b: Matrix2x4<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
             };
     }
 }
@@ -10542,56 +7246,40 @@ pub impl Matrix4GemmMatrix4x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4<T>, Matrix4x3<T>, Matrix3x4<T>> {
     fn gemm(ref self: Matrix4<T>, alpha: T, a: Matrix4x3<T>, b: Matrix3x4<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
             };
     }
 }
@@ -10600,56 +7288,40 @@ pub impl Matrix4GemmMatrix4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4<T>, Matrix4<T>, Matrix4<T>> {
     fn gemm(ref self: Matrix4<T>, alpha: T, a: Matrix4<T>, b: Matrix4<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
             };
     }
 }
@@ -10658,248 +7330,40 @@ pub impl Matrix4GemmMatrix4x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4<T>, Matrix4x5<T>, Matrix5x4<T>> {
     fn gemm(ref self: Matrix4<T>, alpha: T, a: Matrix4x5<T>, b: Matrix5x4<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
             };
     }
 }
@@ -10908,280 +7372,56 @@ pub impl Matrix4GemmMatrix4x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4<T>, Matrix4x6<T>, Matrix6x4<T>> {
     fn gemm(ref self: Matrix4<T>, alpha: T, a: Matrix4x6<T>, b: Matrix6x4<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
         self =
             Matrix4 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
             };
     }
 }
@@ -11190,28 +7430,38 @@ pub impl Matrix4x5GemmVector4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x5<T>, Vector4<T>, RowVector5<T>> {
     fn gemm(ref self: Matrix4x5<T>, alpha: T, a: Vector4<T>, b: RowVector5<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmVector4::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmVector4::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmVector4::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmVector4::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmVector4::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
         self =
             Matrix4x5 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, a.w, b.a, beta, self.m45),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
             };
     }
 }
@@ -11220,28 +7470,38 @@ pub impl Matrix4x5GemmMatrix4x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x5<T>, Matrix4x2<T>, Matrix2x5<T>> {
     fn gemm(ref self: Matrix4x5<T>, alpha: T, a: Matrix4x2<T>, b: Matrix2x5<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
         self =
             Matrix4x5 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
-                m45: BlasKernels::scaled_dot2(alpha, a.m41, b.m15, a.m42, b.m25, beta, self.m45),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
             };
     }
 }
@@ -11250,68 +7510,48 @@ pub impl Matrix4x5GemmMatrix4x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x5<T>, Matrix4x3<T>, Matrix3x5<T>> {
     fn gemm(ref self: Matrix4x5<T>, alpha: T, a: Matrix4x3<T>, b: Matrix3x5<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
         self =
             Matrix4x5 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, beta, self.m45,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
             };
     }
 }
@@ -11320,68 +7560,48 @@ pub impl Matrix4x5GemmMatrix4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x5<T>, Matrix4<T>, Matrix4x5<T>> {
     fn gemm(ref self: Matrix4x5<T>, alpha: T, a: Matrix4<T>, b: Matrix4x5<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
         self =
             Matrix4x5 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, a.m44, b.m45, beta, self.m45,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
             };
     }
 }
@@ -11390,308 +7610,48 @@ pub impl Matrix4x5GemmMatrix4x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x5<T>, Matrix4x5<T>, Matrix5<T>> {
     fn gemm(ref self: Matrix4x5<T>, alpha: T, a: Matrix4x5<T>, b: Matrix5<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
         self =
             Matrix4x5 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    beta,
-                    self.m45,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
             };
     }
 }
@@ -11700,348 +7660,68 @@ pub impl Matrix4x5GemmMatrix4x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x5<T>, Matrix4x6<T>, Matrix6x5<T>> {
     fn gemm(ref self: Matrix4x5<T>, alpha: T, a: Matrix4x6<T>, b: Matrix6x5<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
         self =
             Matrix4x5 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    a.m46,
-                    b.m65,
-                    beta,
-                    self.m45,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
             };
     }
 }
@@ -12050,32 +7730,44 @@ pub impl Matrix4x6GemmVector4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x6<T>, Vector4<T>, RowVector6<T>> {
     fn gemm(ref self: Matrix4x6<T>, alpha: T, a: Vector4<T>, b: RowVector6<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmVector4::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmVector4::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmVector4::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmVector4::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmVector4::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
+        let mut c5 = Vector4 { x: self.m16, y: self.m26, z: self.m36, w: self.m46 };
+        Vector4GemmVector4::gemm(ref c5, alpha, a, Matrix1 { x: b.b }, beta);
         self =
             Matrix4x6 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, a.w, b.a, beta, self.m45),
-                m16: BlasKernels::scaled_dot1(alpha, a.x, b.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, a.y, b.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, a.z, b.b, beta, self.m36),
-                m46: BlasKernels::scaled_dot1(alpha, a.w, b.b, beta, self.m46),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
             };
     }
 }
@@ -12084,32 +7776,44 @@ pub impl Matrix4x6GemmMatrix4x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x6<T>, Matrix4x2<T>, Matrix2x6<T>> {
     fn gemm(ref self: Matrix4x6<T>, alpha: T, a: Matrix4x2<T>, b: Matrix2x6<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
+        let mut c5 = Vector4 { x: self.m16, y: self.m26, z: self.m36, w: self.m46 };
+        Vector4GemmMatrix4x2::gemm(ref c5, alpha, a, Vector2 { x: b.m16, y: b.m26 }, beta);
         self =
             Matrix4x6 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
-                m45: BlasKernels::scaled_dot2(alpha, a.m41, b.m15, a.m42, b.m25, beta, self.m45),
-                m16: BlasKernels::scaled_dot2(alpha, a.m11, b.m16, a.m12, b.m26, beta, self.m16),
-                m26: BlasKernels::scaled_dot2(alpha, a.m21, b.m16, a.m22, b.m26, beta, self.m26),
-                m36: BlasKernels::scaled_dot2(alpha, a.m31, b.m16, a.m32, b.m26, beta, self.m36),
-                m46: BlasKernels::scaled_dot2(alpha, a.m41, b.m16, a.m42, b.m26, beta, self.m46),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
             };
     }
 }
@@ -12118,80 +7822,56 @@ pub impl Matrix4x6GemmMatrix4x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x6<T>, Matrix4x3<T>, Matrix3x6<T>> {
     fn gemm(ref self: Matrix4x6<T>, alpha: T, a: Matrix4x3<T>, b: Matrix3x6<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
+        let mut c5 = Vector4 { x: self.m16, y: self.m26, z: self.m36, w: self.m46 };
+        Vector4GemmMatrix4x3::gemm(
+            ref c5, alpha, a, Vector3 { x: b.m16, y: b.m26, z: b.m36 }, beta,
+        );
         self =
             Matrix4x6 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, beta, self.m45,
-                ),
-                m16: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, beta, self.m36,
-                ),
-                m46: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m16, a.m42, b.m26, a.m43, b.m36, beta, self.m46,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
             };
     }
 }
@@ -12200,80 +7880,56 @@ pub impl Matrix4x6GemmMatrix4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x6<T>, Matrix4<T>, Matrix4x6<T>> {
     fn gemm(ref self: Matrix4x6<T>, alpha: T, a: Matrix4<T>, b: Matrix4x6<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
+        let mut c5 = Vector4 { x: self.m16, y: self.m26, z: self.m36, w: self.m46 };
+        Vector4GemmMatrix4::gemm(
+            ref c5, alpha, a, Vector4 { x: b.m16, y: b.m26, z: b.m36, w: b.m46 }, beta,
+        );
         self =
             Matrix4x6 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, a.m44, b.m45, beta, self.m45,
-                ),
-                m16: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, a.m14, b.m46, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, a.m24, b.m46, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, a.m34, b.m46, beta, self.m36,
-                ),
-                m46: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m16, a.m42, b.m26, a.m43, b.m36, a.m44, b.m46, beta, self.m46,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
             };
     }
 }
@@ -12282,368 +7938,56 @@ pub impl Matrix4x6GemmMatrix4x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x6<T>, Matrix4x5<T>, Matrix5x6<T>> {
     fn gemm(ref self: Matrix4x6<T>, alpha: T, a: Matrix4x5<T>, b: Matrix5x6<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
+        let mut c5 = Vector4 { x: self.m16, y: self.m26, z: self.m36, w: self.m46 };
+        Vector4GemmMatrix4x5::gemm(
+            ref c5, alpha, a, Vector5 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56 }, beta,
+        );
         self =
             Matrix4x6 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    beta,
-                    self.m45,
-                ),
-                m16: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    beta,
-                    self.m36,
-                ),
-                m46: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m16,
-                    a.m42,
-                    b.m26,
-                    a.m43,
-                    b.m36,
-                    a.m44,
-                    b.m46,
-                    a.m45,
-                    b.m56,
-                    beta,
-                    self.m46,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
             };
     }
 }
@@ -12652,416 +7996,80 @@ pub impl Matrix4x6GemmMatrix4x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix4x6<T>, Matrix4x6<T>, Matrix6<T>> {
     fn gemm(ref self: Matrix4x6<T>, alpha: T, a: Matrix4x6<T>, b: Matrix6<T>, beta: T) {
+        let mut c0 = Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
+        let mut c5 = Vector4 { x: self.m16, y: self.m26, z: self.m36, w: self.m46 };
+        Vector4GemmMatrix4x6::gemm(
+            ref c5,
+            alpha,
+            a,
+            Vector6 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56, b: b.m66 },
+            beta,
+        );
         self =
             Matrix4x6 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    a.m46,
-                    b.m65,
-                    beta,
-                    self.m45,
-                ),
-                m16: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    a.m16,
-                    b.m66,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    a.m26,
-                    b.m66,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    a.m36,
-                    b.m66,
-                    beta,
-                    self.m36,
-                ),
-                m46: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m16,
-                    a.m42,
-                    b.m26,
-                    a.m43,
-                    b.m36,
-                    a.m44,
-                    b.m46,
-                    a.m45,
-                    b.m56,
-                    a.m46,
-                    b.m66,
-                    beta,
-                    self.m46,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
             };
     }
 }
@@ -13270,18 +8278,22 @@ pub impl Matrix5x2GemmVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x2<T>, Vector5<T>, RowVector2<T>> {
     fn gemm(ref self: Matrix5x2<T>, alpha: T, a: Vector5<T>, b: RowVector2<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmVector5::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmVector5::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
         self =
             Matrix5x2 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
             };
     }
 }
@@ -13290,18 +8302,22 @@ pub impl Matrix5x2GemmMatrix5x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x2<T>, Matrix5x2<T>, Matrix2<T>> {
     fn gemm(ref self: Matrix5x2<T>, alpha: T, a: Matrix5x2<T>, b: Matrix2<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
         self =
             Matrix5x2 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
             };
     }
 }
@@ -13310,38 +8326,26 @@ pub impl Matrix5x2GemmMatrix5x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x2<T>, Matrix5x3<T>, Matrix3x2<T>> {
     fn gemm(ref self: Matrix5x2<T>, alpha: T, a: Matrix5x3<T>, b: Matrix3x2<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
         self =
             Matrix5x2 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
             };
     }
 }
@@ -13350,38 +8354,26 @@ pub impl Matrix5x2GemmMatrix5x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x2<T>, Matrix5x4<T>, Matrix4x2<T>> {
     fn gemm(ref self: Matrix5x2<T>, alpha: T, a: Matrix5x4<T>, b: Matrix4x2<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
         self =
             Matrix5x2 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
             };
     }
 }
@@ -13390,158 +8382,26 @@ pub impl Matrix5x2GemmMatrix5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x2<T>, Matrix5<T>, Matrix5x2<T>> {
     fn gemm(ref self: Matrix5x2<T>, alpha: T, a: Matrix5<T>, b: Matrix5x2<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
         self =
             Matrix5x2 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
             };
     }
 }
@@ -13550,178 +8410,34 @@ pub impl Matrix5x2GemmMatrix5x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x2<T>, Matrix5x6<T>, Matrix6x2<T>> {
     fn gemm(ref self: Matrix5x2<T>, alpha: T, a: Matrix5x6<T>, b: Matrix6x2<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
         self =
             Matrix5x2 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
             };
     }
 }
@@ -13730,23 +8446,29 @@ pub impl Matrix5x3GemmVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x3<T>, Vector5<T>, RowVector3<T>> {
     fn gemm(ref self: Matrix5x3<T>, alpha: T, a: Vector5<T>, b: RowVector3<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmVector5::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmVector5::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmVector5::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
         self =
             Matrix5x3 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
             };
     }
 }
@@ -13755,23 +8477,29 @@ pub impl Matrix5x3GemmMatrix5x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x3<T>, Matrix5x2<T>, Matrix2x3<T>> {
     fn gemm(ref self: Matrix5x3<T>, alpha: T, a: Matrix5x2<T>, b: Matrix2x3<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
         self =
             Matrix5x3 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
             };
     }
 }
@@ -13780,53 +8508,35 @@ pub impl Matrix5x3GemmMatrix5x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x3<T>, Matrix5x3<T>, Matrix3<T>> {
     fn gemm(ref self: Matrix5x3<T>, alpha: T, a: Matrix5x3<T>, b: Matrix3<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
         self =
             Matrix5x3 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
             };
     }
 }
@@ -13835,53 +8545,35 @@ pub impl Matrix5x3GemmMatrix5x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x3<T>, Matrix5x4<T>, Matrix4x3<T>> {
     fn gemm(ref self: Matrix5x3<T>, alpha: T, a: Matrix5x4<T>, b: Matrix4x3<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
         self =
             Matrix5x3 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
             };
     }
 }
@@ -13890,233 +8582,35 @@ pub impl Matrix5x3GemmMatrix5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x3<T>, Matrix5<T>, Matrix5x3<T>> {
     fn gemm(ref self: Matrix5x3<T>, alpha: T, a: Matrix5<T>, b: Matrix5x3<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
         self =
             Matrix5x3 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
             };
     }
 }
@@ -14125,263 +8619,47 @@ pub impl Matrix5x3GemmMatrix5x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x3<T>, Matrix5x6<T>, Matrix6x3<T>> {
     fn gemm(ref self: Matrix5x3<T>, alpha: T, a: Matrix5x6<T>, b: Matrix6x3<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
         self =
             Matrix5x3 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
             };
     }
 }
@@ -14390,28 +8668,36 @@ pub impl Matrix5x4GemmVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x4<T>, Vector5<T>, RowVector4<T>> {
     fn gemm(ref self: Matrix5x4<T>, alpha: T, a: Vector5<T>, b: RowVector4<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmVector5::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmVector5::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmVector5::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmVector5::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
         self =
             Matrix5x4 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, a.a, b.w, beta, self.m54),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
             };
     }
 }
@@ -14420,28 +8706,36 @@ pub impl Matrix5x4GemmMatrix5x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x4<T>, Matrix5x2<T>, Matrix2x4<T>> {
     fn gemm(ref self: Matrix5x4<T>, alpha: T, a: Matrix5x2<T>, b: Matrix2x4<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
         self =
             Matrix5x4 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m54: BlasKernels::scaled_dot2(alpha, a.m51, b.m14, a.m52, b.m24, beta, self.m54),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
             };
     }
 }
@@ -14450,68 +8744,44 @@ pub impl Matrix5x4GemmMatrix5x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x4<T>, Matrix5x3<T>, Matrix3x4<T>> {
     fn gemm(ref self: Matrix5x4<T>, alpha: T, a: Matrix5x3<T>, b: Matrix3x4<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
         self =
             Matrix5x4 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, beta, self.m54,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
             };
     }
 }
@@ -14520,68 +8790,44 @@ pub impl Matrix5x4GemmMatrix5x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x4<T>, Matrix5x4<T>, Matrix4<T>> {
     fn gemm(ref self: Matrix5x4<T>, alpha: T, a: Matrix5x4<T>, b: Matrix4<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
         self =
             Matrix5x4 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, a.m54, b.m44, beta, self.m54,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
             };
     }
 }
@@ -14590,308 +8836,44 @@ pub impl Matrix5x4GemmMatrix5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x4<T>, Matrix5<T>, Matrix5x4<T>> {
     fn gemm(ref self: Matrix5x4<T>, alpha: T, a: Matrix5<T>, b: Matrix5x4<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
         self =
             Matrix5x4 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    beta,
-                    self.m54,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
             };
     }
 }
@@ -14900,348 +8882,60 @@ pub impl Matrix5x4GemmMatrix5x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x4<T>, Matrix5x6<T>, Matrix6x4<T>> {
     fn gemm(ref self: Matrix5x4<T>, alpha: T, a: Matrix5x6<T>, b: Matrix6x4<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
         self =
             Matrix5x4 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    a.m56,
-                    b.m64,
-                    beta,
-                    self.m54,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
             };
     }
 }
@@ -15250,33 +8944,43 @@ pub impl Matrix5GemmVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5<T>, Vector5<T>, RowVector5<T>> {
     fn gemm(ref self: Matrix5<T>, alpha: T, a: Vector5<T>, b: RowVector5<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmVector5::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmVector5::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmVector5::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmVector5::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmVector5::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, a.a, b.w, beta, self.m54),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, a.w, b.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, a.a, b.a, beta, self.m55),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
             };
     }
 }
@@ -15285,33 +8989,43 @@ pub impl Matrix5GemmMatrix5x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5<T>, Matrix5x2<T>, Matrix2x5<T>> {
     fn gemm(ref self: Matrix5<T>, alpha: T, a: Matrix5x2<T>, b: Matrix2x5<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m54: BlasKernels::scaled_dot2(alpha, a.m51, b.m14, a.m52, b.m24, beta, self.m54),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
-                m45: BlasKernels::scaled_dot2(alpha, a.m41, b.m15, a.m42, b.m25, beta, self.m45),
-                m55: BlasKernels::scaled_dot2(alpha, a.m51, b.m15, a.m52, b.m25, beta, self.m55),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
             };
     }
 }
@@ -15320,83 +9034,53 @@ pub impl Matrix5GemmMatrix5x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5<T>, Matrix5x3<T>, Matrix3x5<T>> {
     fn gemm(ref self: Matrix5<T>, alpha: T, a: Matrix5x3<T>, b: Matrix3x5<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, beta, self.m54,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, beta, self.m55,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
             };
     }
 }
@@ -15405,83 +9089,53 @@ pub impl Matrix5GemmMatrix5x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5<T>, Matrix5x4<T>, Matrix4x5<T>> {
     fn gemm(ref self: Matrix5<T>, alpha: T, a: Matrix5x4<T>, b: Matrix4x5<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, a.m54, b.m44, beta, self.m54,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, a.m44, b.m45, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, a.m54, b.m45, beta, self.m55,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
             };
     }
 }
@@ -15490,383 +9144,53 @@ pub impl Matrix5GemmMatrix5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5<T>, Matrix5<T>, Matrix5<T>> {
     fn gemm(ref self: Matrix5<T>, alpha: T, a: Matrix5<T>, b: Matrix5<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    beta,
-                    self.m54,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    beta,
-                    self.m55,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
             };
     }
 }
@@ -15875,433 +9199,73 @@ pub impl Matrix5GemmMatrix5x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5<T>, Matrix5x6<T>, Matrix6x5<T>> {
     fn gemm(ref self: Matrix5<T>, alpha: T, a: Matrix5x6<T>, b: Matrix6x5<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
         self =
             Matrix5 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    a.m56,
-                    b.m64,
-                    beta,
-                    self.m54,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    a.m46,
-                    b.m65,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    a.m56,
-                    b.m65,
-                    beta,
-                    self.m55,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
             };
     }
 }
@@ -16310,38 +9274,50 @@ pub impl Matrix5x6GemmVector5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x6<T>, Vector5<T>, RowVector6<T>> {
     fn gemm(ref self: Matrix5x6<T>, alpha: T, a: Vector5<T>, b: RowVector6<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmVector5::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmVector5::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmVector5::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmVector5::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmVector5::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
+        let mut c5 = Vector5 { x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56 };
+        Vector5GemmVector5::gemm(ref c5, alpha, a, Matrix1 { x: b.b }, beta);
         self =
             Matrix5x6 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, a.a, b.w, beta, self.m54),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, a.w, b.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, a.a, b.a, beta, self.m55),
-                m16: BlasKernels::scaled_dot1(alpha, a.x, b.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, a.y, b.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, a.z, b.b, beta, self.m36),
-                m46: BlasKernels::scaled_dot1(alpha, a.w, b.b, beta, self.m46),
-                m56: BlasKernels::scaled_dot1(alpha, a.a, b.b, beta, self.m56),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
             };
     }
 }
@@ -16350,38 +9326,50 @@ pub impl Matrix5x6GemmMatrix5x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x6<T>, Matrix5x2<T>, Matrix2x6<T>> {
     fn gemm(ref self: Matrix5x6<T>, alpha: T, a: Matrix5x2<T>, b: Matrix2x6<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
+        let mut c5 = Vector5 { x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56 };
+        Vector5GemmMatrix5x2::gemm(ref c5, alpha, a, Vector2 { x: b.m16, y: b.m26 }, beta);
         self =
             Matrix5x6 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m54: BlasKernels::scaled_dot2(alpha, a.m51, b.m14, a.m52, b.m24, beta, self.m54),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
-                m45: BlasKernels::scaled_dot2(alpha, a.m41, b.m15, a.m42, b.m25, beta, self.m45),
-                m55: BlasKernels::scaled_dot2(alpha, a.m51, b.m15, a.m52, b.m25, beta, self.m55),
-                m16: BlasKernels::scaled_dot2(alpha, a.m11, b.m16, a.m12, b.m26, beta, self.m16),
-                m26: BlasKernels::scaled_dot2(alpha, a.m21, b.m16, a.m22, b.m26, beta, self.m26),
-                m36: BlasKernels::scaled_dot2(alpha, a.m31, b.m16, a.m32, b.m26, beta, self.m36),
-                m46: BlasKernels::scaled_dot2(alpha, a.m41, b.m16, a.m42, b.m26, beta, self.m46),
-                m56: BlasKernels::scaled_dot2(alpha, a.m51, b.m16, a.m52, b.m26, beta, self.m56),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
             };
     }
 }
@@ -16390,98 +9378,62 @@ pub impl Matrix5x6GemmMatrix5x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x6<T>, Matrix5x3<T>, Matrix3x6<T>> {
     fn gemm(ref self: Matrix5x6<T>, alpha: T, a: Matrix5x3<T>, b: Matrix3x6<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
+        let mut c5 = Vector5 { x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56 };
+        Vector5GemmMatrix5x3::gemm(
+            ref c5, alpha, a, Vector3 { x: b.m16, y: b.m26, z: b.m36 }, beta,
+        );
         self =
             Matrix5x6 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, beta, self.m54,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, beta, self.m55,
-                ),
-                m16: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, beta, self.m36,
-                ),
-                m46: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m16, a.m42, b.m26, a.m43, b.m36, beta, self.m46,
-                ),
-                m56: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m16, a.m52, b.m26, a.m53, b.m36, beta, self.m56,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
             };
     }
 }
@@ -16490,98 +9442,62 @@ pub impl Matrix5x6GemmMatrix5x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x6<T>, Matrix5x4<T>, Matrix4x6<T>> {
     fn gemm(ref self: Matrix5x6<T>, alpha: T, a: Matrix5x4<T>, b: Matrix4x6<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
+        let mut c5 = Vector5 { x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56 };
+        Vector5GemmMatrix5x4::gemm(
+            ref c5, alpha, a, Vector4 { x: b.m16, y: b.m26, z: b.m36, w: b.m46 }, beta,
+        );
         self =
             Matrix5x6 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, a.m54, b.m44, beta, self.m54,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, a.m44, b.m45, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, a.m54, b.m45, beta, self.m55,
-                ),
-                m16: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, a.m14, b.m46, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, a.m24, b.m46, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, a.m34, b.m46, beta, self.m36,
-                ),
-                m46: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m16, a.m42, b.m26, a.m43, b.m36, a.m44, b.m46, beta, self.m46,
-                ),
-                m56: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m16, a.m52, b.m26, a.m53, b.m36, a.m54, b.m46, beta, self.m56,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
             };
     }
 }
@@ -16590,458 +9506,62 @@ pub impl Matrix5x6GemmMatrix5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x6<T>, Matrix5<T>, Matrix5x6<T>> {
     fn gemm(ref self: Matrix5x6<T>, alpha: T, a: Matrix5<T>, b: Matrix5x6<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
+        let mut c5 = Vector5 { x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56 };
+        Vector5GemmMatrix5::gemm(
+            ref c5, alpha, a, Vector5 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56 }, beta,
+        );
         self =
             Matrix5x6 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    beta,
-                    self.m54,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    beta,
-                    self.m55,
-                ),
-                m16: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    beta,
-                    self.m36,
-                ),
-                m46: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m16,
-                    a.m42,
-                    b.m26,
-                    a.m43,
-                    b.m36,
-                    a.m44,
-                    b.m46,
-                    a.m45,
-                    b.m56,
-                    beta,
-                    self.m46,
-                ),
-                m56: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m16,
-                    a.m52,
-                    b.m26,
-                    a.m53,
-                    b.m36,
-                    a.m54,
-                    b.m46,
-                    a.m55,
-                    b.m56,
-                    beta,
-                    self.m56,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
             };
     }
 }
@@ -17050,518 +9570,86 @@ pub impl Matrix5x6GemmMatrix5x6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix5x6<T>, Matrix5x6<T>, Matrix6<T>> {
     fn gemm(ref self: Matrix5x6<T>, alpha: T, a: Matrix5x6<T>, b: Matrix6<T>, beta: T) {
+        let mut c0 = Vector5 { x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector5 { x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector5 { x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
+        let mut c5 = Vector5 { x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56 };
+        Vector5GemmMatrix5x6::gemm(
+            ref c5,
+            alpha,
+            a,
+            Vector6 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56, b: b.m66 },
+            beta,
+        );
         self =
             Matrix5x6 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    a.m56,
-                    b.m64,
-                    beta,
-                    self.m54,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    a.m46,
-                    b.m65,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    a.m56,
-                    b.m65,
-                    beta,
-                    self.m55,
-                ),
-                m16: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    a.m16,
-                    b.m66,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    a.m26,
-                    b.m66,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    a.m36,
-                    b.m66,
-                    beta,
-                    self.m36,
-                ),
-                m46: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m16,
-                    a.m42,
-                    b.m26,
-                    a.m43,
-                    b.m36,
-                    a.m44,
-                    b.m46,
-                    a.m45,
-                    b.m56,
-                    a.m46,
-                    b.m66,
-                    beta,
-                    self.m46,
-                ),
-                m56: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m16,
-                    a.m52,
-                    b.m26,
-                    a.m53,
-                    b.m36,
-                    a.m54,
-                    b.m46,
-                    a.m55,
-                    b.m56,
-                    a.m56,
-                    b.m66,
-                    beta,
-                    self.m56,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
             };
     }
 }
@@ -17798,20 +9886,28 @@ pub impl Matrix6x2GemmVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x2<T>, Vector6<T>, RowVector2<T>> {
     fn gemm(ref self: Matrix6x2<T>, alpha: T, a: Vector6<T>, b: RowVector2<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmVector6::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmVector6::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
         self =
             Matrix6x2 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, a.b, b.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, a.b, b.y, beta, self.m62),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
             };
     }
 }
@@ -17820,20 +9916,28 @@ pub impl Matrix6x2GemmMatrix6x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x2<T>, Matrix6x2<T>, Matrix2<T>> {
     fn gemm(ref self: Matrix6x2<T>, alpha: T, a: Matrix6x2<T>, b: Matrix2<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
         self =
             Matrix6x2 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m61: BlasKernels::scaled_dot2(alpha, a.m61, b.m11, a.m62, b.m21, beta, self.m61),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m62: BlasKernels::scaled_dot2(alpha, a.m61, b.m12, a.m62, b.m22, beta, self.m62),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
             };
     }
 }
@@ -17842,44 +9946,32 @@ pub impl Matrix6x2GemmMatrix6x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x2<T>, Matrix6x3<T>, Matrix3x2<T>> {
     fn gemm(ref self: Matrix6x2<T>, alpha: T, a: Matrix6x3<T>, b: Matrix3x2<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
         self =
             Matrix6x2 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, beta, self.m62,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
             };
     }
 }
@@ -17888,44 +9980,32 @@ pub impl Matrix6x2GemmMatrix6x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x2<T>, Matrix6x4<T>, Matrix4x2<T>> {
     fn gemm(ref self: Matrix6x2<T>, alpha: T, a: Matrix6x4<T>, b: Matrix4x2<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
         self =
             Matrix6x2 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, a.m64, b.m41, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, a.m64, b.m42, beta, self.m62,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
             };
     }
 }
@@ -17934,188 +10014,32 @@ pub impl Matrix6x2GemmMatrix6x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x2<T>, Matrix6x5<T>, Matrix5x2<T>> {
     fn gemm(ref self: Matrix6x2<T>, alpha: T, a: Matrix6x5<T>, b: Matrix5x2<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
         self =
             Matrix6x2 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    beta,
-                    self.m62,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
             };
     }
 }
@@ -18124,212 +10048,40 @@ pub impl Matrix6x2GemmMatrix6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x2<T>, Matrix6<T>, Matrix6x2<T>> {
     fn gemm(ref self: Matrix6x2<T>, alpha: T, a: Matrix6<T>, b: Matrix6x2<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
         self =
             Matrix6x2 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    a.m66,
-                    b.m61,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    a.m66,
-                    b.m62,
-                    beta,
-                    self.m62,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
             };
     }
 }
@@ -18338,26 +10090,38 @@ pub impl Matrix6x3GemmVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x3<T>, Vector6<T>, RowVector3<T>> {
     fn gemm(ref self: Matrix6x3<T>, alpha: T, a: Vector6<T>, b: RowVector3<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmVector6::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmVector6::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmVector6::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
         self =
             Matrix6x3 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, a.b, b.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, a.b, b.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, a.b, b.z, beta, self.m63),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
             };
     }
 }
@@ -18366,26 +10130,38 @@ pub impl Matrix6x3GemmMatrix6x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x3<T>, Matrix6x2<T>, Matrix2x3<T>> {
     fn gemm(ref self: Matrix6x3<T>, alpha: T, a: Matrix6x2<T>, b: Matrix2x3<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
         self =
             Matrix6x3 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m61: BlasKernels::scaled_dot2(alpha, a.m61, b.m11, a.m62, b.m21, beta, self.m61),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m62: BlasKernels::scaled_dot2(alpha, a.m61, b.m12, a.m62, b.m22, beta, self.m62),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
-                m63: BlasKernels::scaled_dot2(alpha, a.m61, b.m13, a.m62, b.m23, beta, self.m63),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
             };
     }
 }
@@ -18394,62 +10170,44 @@ pub impl Matrix6x3GemmMatrix6x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x3<T>, Matrix6x3<T>, Matrix3<T>> {
     fn gemm(ref self: Matrix6x3<T>, alpha: T, a: Matrix6x3<T>, b: Matrix3<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
         self =
             Matrix6x3 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, beta, self.m63,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
             };
     }
 }
@@ -18458,62 +10216,44 @@ pub impl Matrix6x3GemmMatrix6x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x3<T>, Matrix6x4<T>, Matrix4x3<T>> {
     fn gemm(ref self: Matrix6x3<T>, alpha: T, a: Matrix6x4<T>, b: Matrix4x3<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
         self =
             Matrix6x3 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, a.m64, b.m41, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, a.m64, b.m42, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, a.m64, b.m43, beta, self.m63,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
             };
     }
 }
@@ -18522,278 +10262,44 @@ pub impl Matrix6x3GemmMatrix6x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x3<T>, Matrix6x5<T>, Matrix5x3<T>> {
     fn gemm(ref self: Matrix6x3<T>, alpha: T, a: Matrix6x5<T>, b: Matrix5x3<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
         self =
             Matrix6x3 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    beta,
-                    self.m63,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
             };
     }
 }
@@ -18802,314 +10308,56 @@ pub impl Matrix6x3GemmMatrix6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x3<T>, Matrix6<T>, Matrix6x3<T>> {
     fn gemm(ref self: Matrix6x3<T>, alpha: T, a: Matrix6<T>, b: Matrix6x3<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
         self =
             Matrix6x3 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    a.m66,
-                    b.m61,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    a.m66,
-                    b.m62,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    a.m66,
-                    b.m63,
-                    beta,
-                    self.m63,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
             };
     }
 }
@@ -19118,32 +10366,48 @@ pub impl Matrix6x4GemmVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x4<T>, Vector6<T>, RowVector4<T>> {
     fn gemm(ref self: Matrix6x4<T>, alpha: T, a: Vector6<T>, b: RowVector4<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmVector6::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmVector6::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmVector6::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmVector6::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
         self =
             Matrix6x4 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, a.b, b.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, a.b, b.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, a.b, b.z, beta, self.m63),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, a.a, b.w, beta, self.m54),
-                m64: BlasKernels::scaled_dot1(alpha, a.b, b.w, beta, self.m64),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
             };
     }
 }
@@ -19152,32 +10416,48 @@ pub impl Matrix6x4GemmMatrix6x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x4<T>, Matrix6x2<T>, Matrix2x4<T>> {
     fn gemm(ref self: Matrix6x4<T>, alpha: T, a: Matrix6x2<T>, b: Matrix2x4<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
         self =
             Matrix6x4 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m61: BlasKernels::scaled_dot2(alpha, a.m61, b.m11, a.m62, b.m21, beta, self.m61),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m62: BlasKernels::scaled_dot2(alpha, a.m61, b.m12, a.m62, b.m22, beta, self.m62),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
-                m63: BlasKernels::scaled_dot2(alpha, a.m61, b.m13, a.m62, b.m23, beta, self.m63),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m54: BlasKernels::scaled_dot2(alpha, a.m51, b.m14, a.m52, b.m24, beta, self.m54),
-                m64: BlasKernels::scaled_dot2(alpha, a.m61, b.m14, a.m62, b.m24, beta, self.m64),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
             };
     }
 }
@@ -19186,80 +10466,56 @@ pub impl Matrix6x4GemmMatrix6x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x4<T>, Matrix6x3<T>, Matrix3x4<T>> {
     fn gemm(ref self: Matrix6x4<T>, alpha: T, a: Matrix6x3<T>, b: Matrix3x4<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
         self =
             Matrix6x4 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, beta, self.m63,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, beta, self.m54,
-                ),
-                m64: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m14, a.m62, b.m24, a.m63, b.m34, beta, self.m64,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
             };
     }
 }
@@ -19268,80 +10524,56 @@ pub impl Matrix6x4GemmMatrix6x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x4<T>, Matrix6x4<T>, Matrix4<T>> {
     fn gemm(ref self: Matrix6x4<T>, alpha: T, a: Matrix6x4<T>, b: Matrix4<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
         self =
             Matrix6x4 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, a.m64, b.m41, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, a.m64, b.m42, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, a.m64, b.m43, beta, self.m63,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, a.m54, b.m44, beta, self.m54,
-                ),
-                m64: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m14, a.m62, b.m24, a.m63, b.m34, a.m64, b.m44, beta, self.m64,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
             };
     }
 }
@@ -19350,368 +10582,56 @@ pub impl Matrix6x4GemmMatrix6x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x4<T>, Matrix6x5<T>, Matrix5x4<T>> {
     fn gemm(ref self: Matrix6x4<T>, alpha: T, a: Matrix6x5<T>, b: Matrix5x4<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
         self =
             Matrix6x4 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    beta,
-                    self.m63,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    beta,
-                    self.m54,
-                ),
-                m64: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m14,
-                    a.m62,
-                    b.m24,
-                    a.m63,
-                    b.m34,
-                    a.m64,
-                    b.m44,
-                    a.m65,
-                    b.m54,
-                    beta,
-                    self.m64,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
             };
     }
 }
@@ -19720,416 +10640,72 @@ pub impl Matrix6x4GemmMatrix6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x4<T>, Matrix6<T>, Matrix6x4<T>> {
     fn gemm(ref self: Matrix6x4<T>, alpha: T, a: Matrix6<T>, b: Matrix6x4<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
         self =
             Matrix6x4 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    a.m66,
-                    b.m61,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    a.m66,
-                    b.m62,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    a.m66,
-                    b.m63,
-                    beta,
-                    self.m63,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    a.m56,
-                    b.m64,
-                    beta,
-                    self.m54,
-                ),
-                m64: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m14,
-                    a.m62,
-                    b.m24,
-                    a.m63,
-                    b.m34,
-                    a.m64,
-                    b.m44,
-                    a.m65,
-                    b.m54,
-                    a.m66,
-                    b.m64,
-                    beta,
-                    self.m64,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
             };
     }
 }
@@ -20138,38 +10714,58 @@ pub impl Matrix6x5GemmVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x5<T>, Vector6<T>, RowVector5<T>> {
     fn gemm(ref self: Matrix6x5<T>, alpha: T, a: Vector6<T>, b: RowVector5<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmVector6::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmVector6::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmVector6::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmVector6::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmVector6::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
         self =
             Matrix6x5 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, a.b, b.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, a.b, b.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, a.b, b.z, beta, self.m63),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, a.a, b.w, beta, self.m54),
-                m64: BlasKernels::scaled_dot1(alpha, a.b, b.w, beta, self.m64),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, a.w, b.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, a.a, b.a, beta, self.m55),
-                m65: BlasKernels::scaled_dot1(alpha, a.b, b.a, beta, self.m65),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
             };
     }
 }
@@ -20178,38 +10774,58 @@ pub impl Matrix6x5GemmMatrix6x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x5<T>, Matrix6x2<T>, Matrix2x5<T>> {
     fn gemm(ref self: Matrix6x5<T>, alpha: T, a: Matrix6x2<T>, b: Matrix2x5<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
         self =
             Matrix6x5 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m61: BlasKernels::scaled_dot2(alpha, a.m61, b.m11, a.m62, b.m21, beta, self.m61),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m62: BlasKernels::scaled_dot2(alpha, a.m61, b.m12, a.m62, b.m22, beta, self.m62),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
-                m63: BlasKernels::scaled_dot2(alpha, a.m61, b.m13, a.m62, b.m23, beta, self.m63),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m54: BlasKernels::scaled_dot2(alpha, a.m51, b.m14, a.m52, b.m24, beta, self.m54),
-                m64: BlasKernels::scaled_dot2(alpha, a.m61, b.m14, a.m62, b.m24, beta, self.m64),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
-                m45: BlasKernels::scaled_dot2(alpha, a.m41, b.m15, a.m42, b.m25, beta, self.m45),
-                m55: BlasKernels::scaled_dot2(alpha, a.m51, b.m15, a.m52, b.m25, beta, self.m55),
-                m65: BlasKernels::scaled_dot2(alpha, a.m61, b.m15, a.m62, b.m25, beta, self.m65),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
             };
     }
 }
@@ -20218,98 +10834,68 @@ pub impl Matrix6x5GemmMatrix6x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x5<T>, Matrix6x3<T>, Matrix3x5<T>> {
     fn gemm(ref self: Matrix6x5<T>, alpha: T, a: Matrix6x3<T>, b: Matrix3x5<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
         self =
             Matrix6x5 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, beta, self.m63,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, beta, self.m54,
-                ),
-                m64: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m14, a.m62, b.m24, a.m63, b.m34, beta, self.m64,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, beta, self.m55,
-                ),
-                m65: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m15, a.m62, b.m25, a.m63, b.m35, beta, self.m65,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
             };
     }
 }
@@ -20318,98 +10904,68 @@ pub impl Matrix6x5GemmMatrix6x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x5<T>, Matrix6x4<T>, Matrix4x5<T>> {
     fn gemm(ref self: Matrix6x5<T>, alpha: T, a: Matrix6x4<T>, b: Matrix4x5<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
         self =
             Matrix6x5 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, a.m64, b.m41, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, a.m64, b.m42, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, a.m64, b.m43, beta, self.m63,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, a.m54, b.m44, beta, self.m54,
-                ),
-                m64: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m14, a.m62, b.m24, a.m63, b.m34, a.m64, b.m44, beta, self.m64,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, a.m44, b.m45, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, a.m54, b.m45, beta, self.m55,
-                ),
-                m65: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m15, a.m62, b.m25, a.m63, b.m35, a.m64, b.m45, beta, self.m65,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
             };
     }
 }
@@ -20418,458 +10974,68 @@ pub impl Matrix6x5GemmMatrix6x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x5<T>, Matrix6x5<T>, Matrix5<T>> {
     fn gemm(ref self: Matrix6x5<T>, alpha: T, a: Matrix6x5<T>, b: Matrix5<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
         self =
             Matrix6x5 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    beta,
-                    self.m63,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    beta,
-                    self.m54,
-                ),
-                m64: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m14,
-                    a.m62,
-                    b.m24,
-                    a.m63,
-                    b.m34,
-                    a.m64,
-                    b.m44,
-                    a.m65,
-                    b.m54,
-                    beta,
-                    self.m64,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    beta,
-                    self.m55,
-                ),
-                m65: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m15,
-                    a.m62,
-                    b.m25,
-                    a.m63,
-                    b.m35,
-                    a.m64,
-                    b.m45,
-                    a.m65,
-                    b.m55,
-                    beta,
-                    self.m65,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
             };
     }
 }
@@ -20878,518 +11044,88 @@ pub impl Matrix6x5GemmMatrix6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6x5<T>, Matrix6<T>, Matrix6x5<T>> {
     fn gemm(ref self: Matrix6x5<T>, alpha: T, a: Matrix6<T>, b: Matrix6x5<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
         self =
             Matrix6x5 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    a.m66,
-                    b.m61,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    a.m66,
-                    b.m62,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    a.m66,
-                    b.m63,
-                    beta,
-                    self.m63,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    a.m56,
-                    b.m64,
-                    beta,
-                    self.m54,
-                ),
-                m64: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m14,
-                    a.m62,
-                    b.m24,
-                    a.m63,
-                    b.m34,
-                    a.m64,
-                    b.m44,
-                    a.m65,
-                    b.m54,
-                    a.m66,
-                    b.m64,
-                    beta,
-                    self.m64,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    a.m46,
-                    b.m65,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    a.m56,
-                    b.m65,
-                    beta,
-                    self.m55,
-                ),
-                m65: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m15,
-                    a.m62,
-                    b.m25,
-                    a.m63,
-                    b.m35,
-                    a.m64,
-                    b.m45,
-                    a.m65,
-                    b.m55,
-                    a.m66,
-                    b.m65,
-                    beta,
-                    self.m65,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
             };
     }
 }
@@ -21398,44 +11134,68 @@ pub impl Matrix6GemmVector6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6<T>, Vector6<T>, RowVector6<T>> {
     fn gemm(ref self: Matrix6<T>, alpha: T, a: Vector6<T>, b: RowVector6<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmVector6::gemm(ref c0, alpha, a, Matrix1 { x: b.x }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmVector6::gemm(ref c1, alpha, a, Matrix1 { x: b.y }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmVector6::gemm(ref c2, alpha, a, Matrix1 { x: b.z }, beta);
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmVector6::gemm(ref c3, alpha, a, Matrix1 { x: b.w }, beta);
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmVector6::gemm(ref c4, alpha, a, Matrix1 { x: b.a }, beta);
+        let mut c5 = Vector6 {
+            x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+        };
+        Vector6GemmVector6::gemm(ref c5, alpha, a, Matrix1 { x: b.b }, beta);
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot1(alpha, a.x, b.x, beta, self.m11),
-                m21: BlasKernels::scaled_dot1(alpha, a.y, b.x, beta, self.m21),
-                m31: BlasKernels::scaled_dot1(alpha, a.z, b.x, beta, self.m31),
-                m41: BlasKernels::scaled_dot1(alpha, a.w, b.x, beta, self.m41),
-                m51: BlasKernels::scaled_dot1(alpha, a.a, b.x, beta, self.m51),
-                m61: BlasKernels::scaled_dot1(alpha, a.b, b.x, beta, self.m61),
-                m12: BlasKernels::scaled_dot1(alpha, a.x, b.y, beta, self.m12),
-                m22: BlasKernels::scaled_dot1(alpha, a.y, b.y, beta, self.m22),
-                m32: BlasKernels::scaled_dot1(alpha, a.z, b.y, beta, self.m32),
-                m42: BlasKernels::scaled_dot1(alpha, a.w, b.y, beta, self.m42),
-                m52: BlasKernels::scaled_dot1(alpha, a.a, b.y, beta, self.m52),
-                m62: BlasKernels::scaled_dot1(alpha, a.b, b.y, beta, self.m62),
-                m13: BlasKernels::scaled_dot1(alpha, a.x, b.z, beta, self.m13),
-                m23: BlasKernels::scaled_dot1(alpha, a.y, b.z, beta, self.m23),
-                m33: BlasKernels::scaled_dot1(alpha, a.z, b.z, beta, self.m33),
-                m43: BlasKernels::scaled_dot1(alpha, a.w, b.z, beta, self.m43),
-                m53: BlasKernels::scaled_dot1(alpha, a.a, b.z, beta, self.m53),
-                m63: BlasKernels::scaled_dot1(alpha, a.b, b.z, beta, self.m63),
-                m14: BlasKernels::scaled_dot1(alpha, a.x, b.w, beta, self.m14),
-                m24: BlasKernels::scaled_dot1(alpha, a.y, b.w, beta, self.m24),
-                m34: BlasKernels::scaled_dot1(alpha, a.z, b.w, beta, self.m34),
-                m44: BlasKernels::scaled_dot1(alpha, a.w, b.w, beta, self.m44),
-                m54: BlasKernels::scaled_dot1(alpha, a.a, b.w, beta, self.m54),
-                m64: BlasKernels::scaled_dot1(alpha, a.b, b.w, beta, self.m64),
-                m15: BlasKernels::scaled_dot1(alpha, a.x, b.a, beta, self.m15),
-                m25: BlasKernels::scaled_dot1(alpha, a.y, b.a, beta, self.m25),
-                m35: BlasKernels::scaled_dot1(alpha, a.z, b.a, beta, self.m35),
-                m45: BlasKernels::scaled_dot1(alpha, a.w, b.a, beta, self.m45),
-                m55: BlasKernels::scaled_dot1(alpha, a.a, b.a, beta, self.m55),
-                m65: BlasKernels::scaled_dot1(alpha, a.b, b.a, beta, self.m65),
-                m16: BlasKernels::scaled_dot1(alpha, a.x, b.b, beta, self.m16),
-                m26: BlasKernels::scaled_dot1(alpha, a.y, b.b, beta, self.m26),
-                m36: BlasKernels::scaled_dot1(alpha, a.z, b.b, beta, self.m36),
-                m46: BlasKernels::scaled_dot1(alpha, a.w, b.b, beta, self.m46),
-                m56: BlasKernels::scaled_dot1(alpha, a.a, b.b, beta, self.m56),
-                m66: BlasKernels::scaled_dot1(alpha, a.b, b.b, beta, self.m66),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
+                m66: c5.b,
             };
     }
 }
@@ -21444,44 +11204,68 @@ pub impl Matrix6GemmMatrix6x2<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6<T>, Matrix6x2<T>, Matrix2x6<T>> {
     fn gemm(ref self: Matrix6<T>, alpha: T, a: Matrix6x2<T>, b: Matrix2x6<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c0, alpha, a, Vector2 { x: b.m11, y: b.m21 }, beta);
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c1, alpha, a, Vector2 { x: b.m12, y: b.m22 }, beta);
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c2, alpha, a, Vector2 { x: b.m13, y: b.m23 }, beta);
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c3, alpha, a, Vector2 { x: b.m14, y: b.m24 }, beta);
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c4, alpha, a, Vector2 { x: b.m15, y: b.m25 }, beta);
+        let mut c5 = Vector6 {
+            x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+        };
+        Vector6GemmMatrix6x2::gemm(ref c5, alpha, a, Vector2 { x: b.m16, y: b.m26 }, beta);
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot2(alpha, a.m11, b.m11, a.m12, b.m21, beta, self.m11),
-                m21: BlasKernels::scaled_dot2(alpha, a.m21, b.m11, a.m22, b.m21, beta, self.m21),
-                m31: BlasKernels::scaled_dot2(alpha, a.m31, b.m11, a.m32, b.m21, beta, self.m31),
-                m41: BlasKernels::scaled_dot2(alpha, a.m41, b.m11, a.m42, b.m21, beta, self.m41),
-                m51: BlasKernels::scaled_dot2(alpha, a.m51, b.m11, a.m52, b.m21, beta, self.m51),
-                m61: BlasKernels::scaled_dot2(alpha, a.m61, b.m11, a.m62, b.m21, beta, self.m61),
-                m12: BlasKernels::scaled_dot2(alpha, a.m11, b.m12, a.m12, b.m22, beta, self.m12),
-                m22: BlasKernels::scaled_dot2(alpha, a.m21, b.m12, a.m22, b.m22, beta, self.m22),
-                m32: BlasKernels::scaled_dot2(alpha, a.m31, b.m12, a.m32, b.m22, beta, self.m32),
-                m42: BlasKernels::scaled_dot2(alpha, a.m41, b.m12, a.m42, b.m22, beta, self.m42),
-                m52: BlasKernels::scaled_dot2(alpha, a.m51, b.m12, a.m52, b.m22, beta, self.m52),
-                m62: BlasKernels::scaled_dot2(alpha, a.m61, b.m12, a.m62, b.m22, beta, self.m62),
-                m13: BlasKernels::scaled_dot2(alpha, a.m11, b.m13, a.m12, b.m23, beta, self.m13),
-                m23: BlasKernels::scaled_dot2(alpha, a.m21, b.m13, a.m22, b.m23, beta, self.m23),
-                m33: BlasKernels::scaled_dot2(alpha, a.m31, b.m13, a.m32, b.m23, beta, self.m33),
-                m43: BlasKernels::scaled_dot2(alpha, a.m41, b.m13, a.m42, b.m23, beta, self.m43),
-                m53: BlasKernels::scaled_dot2(alpha, a.m51, b.m13, a.m52, b.m23, beta, self.m53),
-                m63: BlasKernels::scaled_dot2(alpha, a.m61, b.m13, a.m62, b.m23, beta, self.m63),
-                m14: BlasKernels::scaled_dot2(alpha, a.m11, b.m14, a.m12, b.m24, beta, self.m14),
-                m24: BlasKernels::scaled_dot2(alpha, a.m21, b.m14, a.m22, b.m24, beta, self.m24),
-                m34: BlasKernels::scaled_dot2(alpha, a.m31, b.m14, a.m32, b.m24, beta, self.m34),
-                m44: BlasKernels::scaled_dot2(alpha, a.m41, b.m14, a.m42, b.m24, beta, self.m44),
-                m54: BlasKernels::scaled_dot2(alpha, a.m51, b.m14, a.m52, b.m24, beta, self.m54),
-                m64: BlasKernels::scaled_dot2(alpha, a.m61, b.m14, a.m62, b.m24, beta, self.m64),
-                m15: BlasKernels::scaled_dot2(alpha, a.m11, b.m15, a.m12, b.m25, beta, self.m15),
-                m25: BlasKernels::scaled_dot2(alpha, a.m21, b.m15, a.m22, b.m25, beta, self.m25),
-                m35: BlasKernels::scaled_dot2(alpha, a.m31, b.m15, a.m32, b.m25, beta, self.m35),
-                m45: BlasKernels::scaled_dot2(alpha, a.m41, b.m15, a.m42, b.m25, beta, self.m45),
-                m55: BlasKernels::scaled_dot2(alpha, a.m51, b.m15, a.m52, b.m25, beta, self.m55),
-                m65: BlasKernels::scaled_dot2(alpha, a.m61, b.m15, a.m62, b.m25, beta, self.m65),
-                m16: BlasKernels::scaled_dot2(alpha, a.m11, b.m16, a.m12, b.m26, beta, self.m16),
-                m26: BlasKernels::scaled_dot2(alpha, a.m21, b.m16, a.m22, b.m26, beta, self.m26),
-                m36: BlasKernels::scaled_dot2(alpha, a.m31, b.m16, a.m32, b.m26, beta, self.m36),
-                m46: BlasKernels::scaled_dot2(alpha, a.m41, b.m16, a.m42, b.m26, beta, self.m46),
-                m56: BlasKernels::scaled_dot2(alpha, a.m51, b.m16, a.m52, b.m26, beta, self.m56),
-                m66: BlasKernels::scaled_dot2(alpha, a.m61, b.m16, a.m62, b.m26, beta, self.m66),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
+                m66: c5.b,
             };
     }
 }
@@ -21490,116 +11274,80 @@ pub impl Matrix6GemmMatrix6x3<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6<T>, Matrix6x3<T>, Matrix3x6<T>> {
     fn gemm(ref self: Matrix6<T>, alpha: T, a: Matrix6x3<T>, b: Matrix3x6<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c0, alpha, a, Vector3 { x: b.m11, y: b.m21, z: b.m31 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c1, alpha, a, Vector3 { x: b.m12, y: b.m22, z: b.m32 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c2, alpha, a, Vector3 { x: b.m13, y: b.m23, z: b.m33 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c3, alpha, a, Vector3 { x: b.m14, y: b.m24, z: b.m34 }, beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c4, alpha, a, Vector3 { x: b.m15, y: b.m25, z: b.m35 }, beta,
+        );
+        let mut c5 = Vector6 {
+            x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+        };
+        Vector6GemmMatrix6x3::gemm(
+            ref c5, alpha, a, Vector3 { x: b.m16, y: b.m26, z: b.m36 }, beta,
+        );
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, beta, self.m63,
-                ),
-                m14: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, beta, self.m54,
-                ),
-                m64: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m14, a.m62, b.m24, a.m63, b.m34, beta, self.m64,
-                ),
-                m15: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, beta, self.m55,
-                ),
-                m65: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m15, a.m62, b.m25, a.m63, b.m35, beta, self.m65,
-                ),
-                m16: BlasKernels::scaled_dot3(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot3(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot3(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, beta, self.m36,
-                ),
-                m46: BlasKernels::scaled_dot3(
-                    alpha, a.m41, b.m16, a.m42, b.m26, a.m43, b.m36, beta, self.m46,
-                ),
-                m56: BlasKernels::scaled_dot3(
-                    alpha, a.m51, b.m16, a.m52, b.m26, a.m53, b.m36, beta, self.m56,
-                ),
-                m66: BlasKernels::scaled_dot3(
-                    alpha, a.m61, b.m16, a.m62, b.m26, a.m63, b.m36, beta, self.m66,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
+                m66: c5.b,
             };
     }
 }
@@ -21608,116 +11356,80 @@ pub impl Matrix6GemmMatrix6x4<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6<T>, Matrix6x4<T>, Matrix4x6<T>> {
     fn gemm(ref self: Matrix6<T>, alpha: T, a: Matrix6x4<T>, b: Matrix4x6<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c0, alpha, a, Vector4 { x: b.m11, y: b.m21, z: b.m31, w: b.m41 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c1, alpha, a, Vector4 { x: b.m12, y: b.m22, z: b.m32, w: b.m42 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c2, alpha, a, Vector4 { x: b.m13, y: b.m23, z: b.m33, w: b.m43 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c3, alpha, a, Vector4 { x: b.m14, y: b.m24, z: b.m34, w: b.m44 }, beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c4, alpha, a, Vector4 { x: b.m15, y: b.m25, z: b.m35, w: b.m45 }, beta,
+        );
+        let mut c5 = Vector6 {
+            x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+        };
+        Vector6GemmMatrix6x4::gemm(
+            ref c5, alpha, a, Vector4 { x: b.m16, y: b.m26, z: b.m36, w: b.m46 }, beta,
+        );
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m11, a.m12, b.m21, a.m13, b.m31, a.m14, b.m41, beta, self.m11,
-                ),
-                m21: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m11, a.m22, b.m21, a.m23, b.m31, a.m24, b.m41, beta, self.m21,
-                ),
-                m31: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m11, a.m32, b.m21, a.m33, b.m31, a.m34, b.m41, beta, self.m31,
-                ),
-                m41: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m11, a.m42, b.m21, a.m43, b.m31, a.m44, b.m41, beta, self.m41,
-                ),
-                m51: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m11, a.m52, b.m21, a.m53, b.m31, a.m54, b.m41, beta, self.m51,
-                ),
-                m61: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m11, a.m62, b.m21, a.m63, b.m31, a.m64, b.m41, beta, self.m61,
-                ),
-                m12: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m12, a.m12, b.m22, a.m13, b.m32, a.m14, b.m42, beta, self.m12,
-                ),
-                m22: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m12, a.m22, b.m22, a.m23, b.m32, a.m24, b.m42, beta, self.m22,
-                ),
-                m32: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m12, a.m32, b.m22, a.m33, b.m32, a.m34, b.m42, beta, self.m32,
-                ),
-                m42: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m12, a.m42, b.m22, a.m43, b.m32, a.m44, b.m42, beta, self.m42,
-                ),
-                m52: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m12, a.m52, b.m22, a.m53, b.m32, a.m54, b.m42, beta, self.m52,
-                ),
-                m62: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m12, a.m62, b.m22, a.m63, b.m32, a.m64, b.m42, beta, self.m62,
-                ),
-                m13: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m13, a.m12, b.m23, a.m13, b.m33, a.m14, b.m43, beta, self.m13,
-                ),
-                m23: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m13, a.m22, b.m23, a.m23, b.m33, a.m24, b.m43, beta, self.m23,
-                ),
-                m33: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m13, a.m32, b.m23, a.m33, b.m33, a.m34, b.m43, beta, self.m33,
-                ),
-                m43: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m13, a.m42, b.m23, a.m43, b.m33, a.m44, b.m43, beta, self.m43,
-                ),
-                m53: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m13, a.m52, b.m23, a.m53, b.m33, a.m54, b.m43, beta, self.m53,
-                ),
-                m63: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m13, a.m62, b.m23, a.m63, b.m33, a.m64, b.m43, beta, self.m63,
-                ),
-                m14: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m14, a.m12, b.m24, a.m13, b.m34, a.m14, b.m44, beta, self.m14,
-                ),
-                m24: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m14, a.m22, b.m24, a.m23, b.m34, a.m24, b.m44, beta, self.m24,
-                ),
-                m34: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m14, a.m32, b.m24, a.m33, b.m34, a.m34, b.m44, beta, self.m34,
-                ),
-                m44: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m14, a.m42, b.m24, a.m43, b.m34, a.m44, b.m44, beta, self.m44,
-                ),
-                m54: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m14, a.m52, b.m24, a.m53, b.m34, a.m54, b.m44, beta, self.m54,
-                ),
-                m64: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m14, a.m62, b.m24, a.m63, b.m34, a.m64, b.m44, beta, self.m64,
-                ),
-                m15: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m15, a.m12, b.m25, a.m13, b.m35, a.m14, b.m45, beta, self.m15,
-                ),
-                m25: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m15, a.m22, b.m25, a.m23, b.m35, a.m24, b.m45, beta, self.m25,
-                ),
-                m35: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m15, a.m32, b.m25, a.m33, b.m35, a.m34, b.m45, beta, self.m35,
-                ),
-                m45: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m15, a.m42, b.m25, a.m43, b.m35, a.m44, b.m45, beta, self.m45,
-                ),
-                m55: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m15, a.m52, b.m25, a.m53, b.m35, a.m54, b.m45, beta, self.m55,
-                ),
-                m65: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m15, a.m62, b.m25, a.m63, b.m35, a.m64, b.m45, beta, self.m65,
-                ),
-                m16: BlasKernels::scaled_dot4(
-                    alpha, a.m11, b.m16, a.m12, b.m26, a.m13, b.m36, a.m14, b.m46, beta, self.m16,
-                ),
-                m26: BlasKernels::scaled_dot4(
-                    alpha, a.m21, b.m16, a.m22, b.m26, a.m23, b.m36, a.m24, b.m46, beta, self.m26,
-                ),
-                m36: BlasKernels::scaled_dot4(
-                    alpha, a.m31, b.m16, a.m32, b.m26, a.m33, b.m36, a.m34, b.m46, beta, self.m36,
-                ),
-                m46: BlasKernels::scaled_dot4(
-                    alpha, a.m41, b.m16, a.m42, b.m26, a.m43, b.m36, a.m44, b.m46, beta, self.m46,
-                ),
-                m56: BlasKernels::scaled_dot4(
-                    alpha, a.m51, b.m16, a.m52, b.m26, a.m53, b.m36, a.m54, b.m46, beta, self.m56,
-                ),
-                m66: BlasKernels::scaled_dot4(
-                    alpha, a.m61, b.m16, a.m62, b.m26, a.m63, b.m36, a.m64, b.m46, beta, self.m66,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
+                m66: c5.b,
             };
     }
 }
@@ -21726,548 +11438,80 @@ pub impl Matrix6GemmMatrix6x5<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6<T>, Matrix6x5<T>, Matrix5x6<T>> {
     fn gemm(ref self: Matrix6<T>, alpha: T, a: Matrix6x5<T>, b: Matrix5x6<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c0, alpha, a, Vector5 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51 }, beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c1, alpha, a, Vector5 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52 }, beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c2, alpha, a, Vector5 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53 }, beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c3, alpha, a, Vector5 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54 }, beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c4, alpha, a, Vector5 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55 }, beta,
+        );
+        let mut c5 = Vector6 {
+            x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+        };
+        Vector6GemmMatrix6x5::gemm(
+            ref c5, alpha, a, Vector5 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56 }, beta,
+        );
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    beta,
-                    self.m63,
-                ),
-                m14: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    beta,
-                    self.m54,
-                ),
-                m64: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m14,
-                    a.m62,
-                    b.m24,
-                    a.m63,
-                    b.m34,
-                    a.m64,
-                    b.m44,
-                    a.m65,
-                    b.m54,
-                    beta,
-                    self.m64,
-                ),
-                m15: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    beta,
-                    self.m55,
-                ),
-                m65: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m15,
-                    a.m62,
-                    b.m25,
-                    a.m63,
-                    b.m35,
-                    a.m64,
-                    b.m45,
-                    a.m65,
-                    b.m55,
-                    beta,
-                    self.m65,
-                ),
-                m16: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    beta,
-                    self.m36,
-                ),
-                m46: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m41,
-                    b.m16,
-                    a.m42,
-                    b.m26,
-                    a.m43,
-                    b.m36,
-                    a.m44,
-                    b.m46,
-                    a.m45,
-                    b.m56,
-                    beta,
-                    self.m46,
-                ),
-                m56: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m51,
-                    b.m16,
-                    a.m52,
-                    b.m26,
-                    a.m53,
-                    b.m36,
-                    a.m54,
-                    b.m46,
-                    a.m55,
-                    b.m56,
-                    beta,
-                    self.m56,
-                ),
-                m66: BlasKernels::scaled_dot5(
-                    alpha,
-                    a.m61,
-                    b.m16,
-                    a.m62,
-                    b.m26,
-                    a.m63,
-                    b.m36,
-                    a.m64,
-                    b.m46,
-                    a.m65,
-                    b.m56,
-                    beta,
-                    self.m66,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
+                m66: c5.b,
             };
     }
 }
@@ -22276,620 +11520,104 @@ pub impl Matrix6GemmMatrix6<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>,
 > of MatrixGemm<T, Matrix6<T>, Matrix6<T>, Matrix6<T>> {
     fn gemm(ref self: Matrix6<T>, alpha: T, a: Matrix6<T>, b: Matrix6<T>, beta: T) {
+        let mut c0 = Vector6 {
+            x: self.m11, y: self.m21, z: self.m31, w: self.m41, a: self.m51, b: self.m61,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c0,
+            alpha,
+            a,
+            Vector6 { x: b.m11, y: b.m21, z: b.m31, w: b.m41, a: b.m51, b: b.m61 },
+            beta,
+        );
+        let mut c1 = Vector6 {
+            x: self.m12, y: self.m22, z: self.m32, w: self.m42, a: self.m52, b: self.m62,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c1,
+            alpha,
+            a,
+            Vector6 { x: b.m12, y: b.m22, z: b.m32, w: b.m42, a: b.m52, b: b.m62 },
+            beta,
+        );
+        let mut c2 = Vector6 {
+            x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c2,
+            alpha,
+            a,
+            Vector6 { x: b.m13, y: b.m23, z: b.m33, w: b.m43, a: b.m53, b: b.m63 },
+            beta,
+        );
+        let mut c3 = Vector6 {
+            x: self.m14, y: self.m24, z: self.m34, w: self.m44, a: self.m54, b: self.m64,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c3,
+            alpha,
+            a,
+            Vector6 { x: b.m14, y: b.m24, z: b.m34, w: b.m44, a: b.m54, b: b.m64 },
+            beta,
+        );
+        let mut c4 = Vector6 {
+            x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c4,
+            alpha,
+            a,
+            Vector6 { x: b.m15, y: b.m25, z: b.m35, w: b.m45, a: b.m55, b: b.m65 },
+            beta,
+        );
+        let mut c5 = Vector6 {
+            x: self.m16, y: self.m26, z: self.m36, w: self.m46, a: self.m56, b: self.m66,
+        };
+        Vector6GemmMatrix6::gemm(
+            ref c5,
+            alpha,
+            a,
+            Vector6 { x: b.m16, y: b.m26, z: b.m36, w: b.m46, a: b.m56, b: b.m66 },
+            beta,
+        );
         self =
             Matrix6 {
-                m11: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m11,
-                    a.m12,
-                    b.m21,
-                    a.m13,
-                    b.m31,
-                    a.m14,
-                    b.m41,
-                    a.m15,
-                    b.m51,
-                    a.m16,
-                    b.m61,
-                    beta,
-                    self.m11,
-                ),
-                m21: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m11,
-                    a.m22,
-                    b.m21,
-                    a.m23,
-                    b.m31,
-                    a.m24,
-                    b.m41,
-                    a.m25,
-                    b.m51,
-                    a.m26,
-                    b.m61,
-                    beta,
-                    self.m21,
-                ),
-                m31: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m11,
-                    a.m32,
-                    b.m21,
-                    a.m33,
-                    b.m31,
-                    a.m34,
-                    b.m41,
-                    a.m35,
-                    b.m51,
-                    a.m36,
-                    b.m61,
-                    beta,
-                    self.m31,
-                ),
-                m41: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m11,
-                    a.m42,
-                    b.m21,
-                    a.m43,
-                    b.m31,
-                    a.m44,
-                    b.m41,
-                    a.m45,
-                    b.m51,
-                    a.m46,
-                    b.m61,
-                    beta,
-                    self.m41,
-                ),
-                m51: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m11,
-                    a.m52,
-                    b.m21,
-                    a.m53,
-                    b.m31,
-                    a.m54,
-                    b.m41,
-                    a.m55,
-                    b.m51,
-                    a.m56,
-                    b.m61,
-                    beta,
-                    self.m51,
-                ),
-                m61: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m11,
-                    a.m62,
-                    b.m21,
-                    a.m63,
-                    b.m31,
-                    a.m64,
-                    b.m41,
-                    a.m65,
-                    b.m51,
-                    a.m66,
-                    b.m61,
-                    beta,
-                    self.m61,
-                ),
-                m12: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m12,
-                    a.m12,
-                    b.m22,
-                    a.m13,
-                    b.m32,
-                    a.m14,
-                    b.m42,
-                    a.m15,
-                    b.m52,
-                    a.m16,
-                    b.m62,
-                    beta,
-                    self.m12,
-                ),
-                m22: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m12,
-                    a.m22,
-                    b.m22,
-                    a.m23,
-                    b.m32,
-                    a.m24,
-                    b.m42,
-                    a.m25,
-                    b.m52,
-                    a.m26,
-                    b.m62,
-                    beta,
-                    self.m22,
-                ),
-                m32: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m12,
-                    a.m32,
-                    b.m22,
-                    a.m33,
-                    b.m32,
-                    a.m34,
-                    b.m42,
-                    a.m35,
-                    b.m52,
-                    a.m36,
-                    b.m62,
-                    beta,
-                    self.m32,
-                ),
-                m42: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m12,
-                    a.m42,
-                    b.m22,
-                    a.m43,
-                    b.m32,
-                    a.m44,
-                    b.m42,
-                    a.m45,
-                    b.m52,
-                    a.m46,
-                    b.m62,
-                    beta,
-                    self.m42,
-                ),
-                m52: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m12,
-                    a.m52,
-                    b.m22,
-                    a.m53,
-                    b.m32,
-                    a.m54,
-                    b.m42,
-                    a.m55,
-                    b.m52,
-                    a.m56,
-                    b.m62,
-                    beta,
-                    self.m52,
-                ),
-                m62: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m12,
-                    a.m62,
-                    b.m22,
-                    a.m63,
-                    b.m32,
-                    a.m64,
-                    b.m42,
-                    a.m65,
-                    b.m52,
-                    a.m66,
-                    b.m62,
-                    beta,
-                    self.m62,
-                ),
-                m13: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m13,
-                    a.m12,
-                    b.m23,
-                    a.m13,
-                    b.m33,
-                    a.m14,
-                    b.m43,
-                    a.m15,
-                    b.m53,
-                    a.m16,
-                    b.m63,
-                    beta,
-                    self.m13,
-                ),
-                m23: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m13,
-                    a.m22,
-                    b.m23,
-                    a.m23,
-                    b.m33,
-                    a.m24,
-                    b.m43,
-                    a.m25,
-                    b.m53,
-                    a.m26,
-                    b.m63,
-                    beta,
-                    self.m23,
-                ),
-                m33: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m13,
-                    a.m32,
-                    b.m23,
-                    a.m33,
-                    b.m33,
-                    a.m34,
-                    b.m43,
-                    a.m35,
-                    b.m53,
-                    a.m36,
-                    b.m63,
-                    beta,
-                    self.m33,
-                ),
-                m43: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m13,
-                    a.m42,
-                    b.m23,
-                    a.m43,
-                    b.m33,
-                    a.m44,
-                    b.m43,
-                    a.m45,
-                    b.m53,
-                    a.m46,
-                    b.m63,
-                    beta,
-                    self.m43,
-                ),
-                m53: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m13,
-                    a.m52,
-                    b.m23,
-                    a.m53,
-                    b.m33,
-                    a.m54,
-                    b.m43,
-                    a.m55,
-                    b.m53,
-                    a.m56,
-                    b.m63,
-                    beta,
-                    self.m53,
-                ),
-                m63: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m13,
-                    a.m62,
-                    b.m23,
-                    a.m63,
-                    b.m33,
-                    a.m64,
-                    b.m43,
-                    a.m65,
-                    b.m53,
-                    a.m66,
-                    b.m63,
-                    beta,
-                    self.m63,
-                ),
-                m14: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m14,
-                    a.m12,
-                    b.m24,
-                    a.m13,
-                    b.m34,
-                    a.m14,
-                    b.m44,
-                    a.m15,
-                    b.m54,
-                    a.m16,
-                    b.m64,
-                    beta,
-                    self.m14,
-                ),
-                m24: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m14,
-                    a.m22,
-                    b.m24,
-                    a.m23,
-                    b.m34,
-                    a.m24,
-                    b.m44,
-                    a.m25,
-                    b.m54,
-                    a.m26,
-                    b.m64,
-                    beta,
-                    self.m24,
-                ),
-                m34: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m14,
-                    a.m32,
-                    b.m24,
-                    a.m33,
-                    b.m34,
-                    a.m34,
-                    b.m44,
-                    a.m35,
-                    b.m54,
-                    a.m36,
-                    b.m64,
-                    beta,
-                    self.m34,
-                ),
-                m44: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m14,
-                    a.m42,
-                    b.m24,
-                    a.m43,
-                    b.m34,
-                    a.m44,
-                    b.m44,
-                    a.m45,
-                    b.m54,
-                    a.m46,
-                    b.m64,
-                    beta,
-                    self.m44,
-                ),
-                m54: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m14,
-                    a.m52,
-                    b.m24,
-                    a.m53,
-                    b.m34,
-                    a.m54,
-                    b.m44,
-                    a.m55,
-                    b.m54,
-                    a.m56,
-                    b.m64,
-                    beta,
-                    self.m54,
-                ),
-                m64: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m14,
-                    a.m62,
-                    b.m24,
-                    a.m63,
-                    b.m34,
-                    a.m64,
-                    b.m44,
-                    a.m65,
-                    b.m54,
-                    a.m66,
-                    b.m64,
-                    beta,
-                    self.m64,
-                ),
-                m15: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m15,
-                    a.m12,
-                    b.m25,
-                    a.m13,
-                    b.m35,
-                    a.m14,
-                    b.m45,
-                    a.m15,
-                    b.m55,
-                    a.m16,
-                    b.m65,
-                    beta,
-                    self.m15,
-                ),
-                m25: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m15,
-                    a.m22,
-                    b.m25,
-                    a.m23,
-                    b.m35,
-                    a.m24,
-                    b.m45,
-                    a.m25,
-                    b.m55,
-                    a.m26,
-                    b.m65,
-                    beta,
-                    self.m25,
-                ),
-                m35: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m15,
-                    a.m32,
-                    b.m25,
-                    a.m33,
-                    b.m35,
-                    a.m34,
-                    b.m45,
-                    a.m35,
-                    b.m55,
-                    a.m36,
-                    b.m65,
-                    beta,
-                    self.m35,
-                ),
-                m45: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m15,
-                    a.m42,
-                    b.m25,
-                    a.m43,
-                    b.m35,
-                    a.m44,
-                    b.m45,
-                    a.m45,
-                    b.m55,
-                    a.m46,
-                    b.m65,
-                    beta,
-                    self.m45,
-                ),
-                m55: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m15,
-                    a.m52,
-                    b.m25,
-                    a.m53,
-                    b.m35,
-                    a.m54,
-                    b.m45,
-                    a.m55,
-                    b.m55,
-                    a.m56,
-                    b.m65,
-                    beta,
-                    self.m55,
-                ),
-                m65: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m15,
-                    a.m62,
-                    b.m25,
-                    a.m63,
-                    b.m35,
-                    a.m64,
-                    b.m45,
-                    a.m65,
-                    b.m55,
-                    a.m66,
-                    b.m65,
-                    beta,
-                    self.m65,
-                ),
-                m16: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m11,
-                    b.m16,
-                    a.m12,
-                    b.m26,
-                    a.m13,
-                    b.m36,
-                    a.m14,
-                    b.m46,
-                    a.m15,
-                    b.m56,
-                    a.m16,
-                    b.m66,
-                    beta,
-                    self.m16,
-                ),
-                m26: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m21,
-                    b.m16,
-                    a.m22,
-                    b.m26,
-                    a.m23,
-                    b.m36,
-                    a.m24,
-                    b.m46,
-                    a.m25,
-                    b.m56,
-                    a.m26,
-                    b.m66,
-                    beta,
-                    self.m26,
-                ),
-                m36: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m31,
-                    b.m16,
-                    a.m32,
-                    b.m26,
-                    a.m33,
-                    b.m36,
-                    a.m34,
-                    b.m46,
-                    a.m35,
-                    b.m56,
-                    a.m36,
-                    b.m66,
-                    beta,
-                    self.m36,
-                ),
-                m46: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m41,
-                    b.m16,
-                    a.m42,
-                    b.m26,
-                    a.m43,
-                    b.m36,
-                    a.m44,
-                    b.m46,
-                    a.m45,
-                    b.m56,
-                    a.m46,
-                    b.m66,
-                    beta,
-                    self.m46,
-                ),
-                m56: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m51,
-                    b.m16,
-                    a.m52,
-                    b.m26,
-                    a.m53,
-                    b.m36,
-                    a.m54,
-                    b.m46,
-                    a.m55,
-                    b.m56,
-                    a.m56,
-                    b.m66,
-                    beta,
-                    self.m56,
-                ),
-                m66: BlasKernels::scaled_dot6(
-                    alpha,
-                    a.m61,
-                    b.m16,
-                    a.m62,
-                    b.m26,
-                    a.m63,
-                    b.m36,
-                    a.m64,
-                    b.m46,
-                    a.m65,
-                    b.m56,
-                    a.m66,
-                    b.m66,
-                    beta,
-                    self.m66,
-                ),
+                m11: c0.x,
+                m21: c0.y,
+                m31: c0.z,
+                m41: c0.w,
+                m51: c0.a,
+                m61: c0.b,
+                m12: c1.x,
+                m22: c1.y,
+                m32: c1.z,
+                m42: c1.w,
+                m52: c1.a,
+                m62: c1.b,
+                m13: c2.x,
+                m23: c2.y,
+                m33: c2.z,
+                m43: c2.w,
+                m53: c2.a,
+                m63: c2.b,
+                m14: c3.x,
+                m24: c3.y,
+                m34: c3.z,
+                m44: c3.w,
+                m54: c3.a,
+                m64: c3.b,
+                m15: c4.x,
+                m25: c4.y,
+                m35: c4.z,
+                m45: c4.w,
+                m55: c4.a,
+                m65: c4.b,
+                m16: c5.x,
+                m26: c5.y,
+                m36: c5.z,
+                m46: c5.w,
+                m56: c5.a,
+                m66: c5.b,
             };
     }
 }
