@@ -1,0 +1,71 @@
+{
+  "nalgebra_tests_geometry_transform::affine::benches": {
+    "affine2_transform_point": {
+      "affine": 25460,
+      "baseline": 21300
+    },
+    "affine2_try_inverse": {
+      "alt_block": 60000,
+      "alt_full_matrix": 105900,
+      "baseline": 17540,
+      "refined_block": 68720
+    },
+    "affine3_mul": {
+      "baseline": 306170,
+      "full_product": 349180
+    },
+    "affine3_mul_isometry": {
+      "alt_full_product": 149480,
+      "baseline": 84000,
+      "structured": 147080
+    },
+    "affine3_mul_rotation": {
+      "alt_full_product": 133040,
+      "baseline": 90030,
+      "structured": 121220
+    },
+    "affine3_mul_translation": {
+      "alt_full_product": 77670,
+      "baseline": 34660,
+      "structured": 44980
+    },
+    "affine3_transform_point": {
+      "affine": 41580,
+      "alt_homogeneous": 56740,
+      "baseline": 31110
+    },
+    "affine3_try_inverse": {
+      "alt_block": 121070,
+      "alt_full_matrix": 214160,
+      "baseline": 18940,
+      "refined_block": 135350
+    },
+    "isometry3_mul_affine3": {
+      "alt_full_product": 143160,
+      "baseline": 77680,
+      "structured": 134440
+    }
+  },
+  "nalgebra_tests_geometry_transform::projective::benches": {
+    "affine3_div_projective3": {
+      "baseline": 268470,
+      "inverse_then_product": 506800
+    },
+    "projective3_inverse_transform_point": {
+      "baseline": 241590,
+      "inverse_then_transform": 462540
+    },
+    "projective3_mul_affine3": {
+      "baseline": 73150,
+      "full_product": 116160
+    },
+    "projective3_transform_point": {
+      "baseline": 46270,
+      "homogeneous": 71900
+    },
+    "projective3_try_inverse": {
+      "baseline": 223660,
+      "matrix4": 420580
+    }
+  }
+}

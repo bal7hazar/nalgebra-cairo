@@ -18,6 +18,7 @@ mod projections;
 mod rotation_completion;
 mod scalar;
 mod scale_reflection;
+mod transform;
 
 /// Every suite, in a stable order.
 pub fn all() -> Vec<Suite> {
@@ -31,6 +32,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(projections::suites());
     suites.extend(linalg::suites());
     suites.extend(cg::suites());
+    suites.extend(transform::suites());
     suites
 }
 
