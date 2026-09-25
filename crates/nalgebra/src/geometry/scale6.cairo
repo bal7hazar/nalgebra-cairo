@@ -13,7 +13,8 @@
 //! upstream's sense (no zero test): a zero factor panics with `Fixed: division by zero`.
 //!
 //! There is no `to_homogeneous` (nor `From<Scale6> for Matrix7`): the homogeneous matrix of a 6D
-//! scale is 7x7, and the static shapes stop at 6 (DESIGN D4), like `Translation6`.
+//! scale is 7x7, and the static shapes stop at 6 (DESIGN D4), like `Translation6`. Out of scope
+//! for 0.1.0 by owner ruling (issue #41).
 
 use core::num::traits::One;
 use core::ops::MulAssign;

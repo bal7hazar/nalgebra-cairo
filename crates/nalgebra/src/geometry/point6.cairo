@@ -6,7 +6,8 @@
 //! (`x, y, z, w, a, b`), which is what `coords()` returns; see `crate::base::point3` for the table
 //! of the heterogeneous operators (`sub_point`, `add_vector`, `scale`...).
 //! There is no `to_homogeneous` / `from_homogeneous`: the homogeneous coordinates of a 6D point
-//! form a 7-vector, and the static shapes stop at 6 (DESIGN D4).
+//! form a 7-vector, and the static shapes stop at 6 (DESIGN D4). Out of scope for 0.1.0 by owner
+//! ruling (issue #41).
 //!
 //! Numeric contract (AGENTS.md): every operation is exact except the divisions (`unscale`,
 //! `from_homogeneous`: correctly rounded) and `lerp` (one fused kernel per coordinate); nothing

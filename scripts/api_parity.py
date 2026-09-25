@@ -1203,7 +1203,7 @@ DIM_ONLY: dict[str, set[str]] = {
        for k in (2, 3) for idx in itertools.product(range(3), repeat=k)
        for name in ["".join("xyz"[i] for i in idx)]},
     # One dimension more (`push`, homogeneous coordinates): upstream's aliases, hence the Cairo
-    # shapes, stop at 6, so `Vector6` / `Matrix6` have none. `Matrix1` is both `Vector1` and a
+    # shapes, stop at 6, so `Vector6` / `Matrix6` have none (owner ruling, issue #41). `Matrix1` is both `Vector1` and a
     # 1x1 square: upstream's two `to_homogeneous` (`Vector1 -> Vector2`, `Matrix1 -> Matrix2`)
     # are ambiguous on it (a Rust call does not compile), so it has neither.
     "push": set(COLUMNS[:5]), "from_homogeneous": set(COLUMNS[:5]),
