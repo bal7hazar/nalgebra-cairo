@@ -1,11 +1,11 @@
 #[cfg(test)]
-mod inplace;
-#[cfg(test)]
 mod isometry2;
 #[cfg(test)]
 mod isometry3;
 #[cfg(test)]
 mod quaternion;
+#[cfg(test)]
+mod quaternion_inplace;
 #[cfg(test)]
 mod rotation2;
 #[cfg(test)]

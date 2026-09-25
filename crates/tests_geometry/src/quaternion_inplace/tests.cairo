@@ -4,6 +4,9 @@
 //! the `Unit` constructors of `UnitQuaternion`, `UnitComplex` and `Unit<Vector>` that complete
 //! upstream's `Unit` (`new_and_get`, `try_new_and_get`, `try_new`, `unwrap`, ...) with their
 //! `None` and panic cases.
+//!
+//! The module is named `quaternion_*` on purpose: the `tests_geometry quaternions` CI shard
+//! selects tests by module prefix and would not run a module named otherwise.
 
 use fixed::Fixed;
 use nalgebra::base::matrix1::Matrix1;
