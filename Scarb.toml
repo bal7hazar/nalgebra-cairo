@@ -11,6 +11,8 @@ members = [
     "crates/shapes_tests_functional",
     "crates/shapes_tests_edition",
     "crates/shapes_tests_inplace",
+    "crates/shapes_tests_views",
+    "crates/shapes_tests_blocks",
     "crates/tests_utils",
     "crates/tests_base",
     "crates/tests_geometry",

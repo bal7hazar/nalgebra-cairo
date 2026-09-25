@@ -43,6 +43,7 @@ import library
 import shapes
 import tests_core
 import tests_functional
+import tests_views
 import tests_ops
 from model import ALL_SHAPES, COORDS, Shape
 
@@ -1219,18 +1220,21 @@ def main() -> int:
     tmp_proto, tmp_lib = TOOL / ".tmp-proto", TOOL / ".tmp-library"
     tmp_tests, tmp_ops = TOOL / ".tmp-tests", TOOL / ".tmp-tests-ops"
     tmp_fun = TOOL / ".tmp-tests-functional"
-    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun)
+    tmp_views = TOOL / ".tmp-tests-views"
+    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun, tmp_views)
     try:
         for tmp in tmps:
             shutil.rmtree(tmp, ignore_errors=True)
         outputs = (proto_outputs(tmp_proto) | library_outputs(tmp_lib)
                    | tests_core.outputs(tmp_tests) | tests_ops.outputs(tmp_ops)
-                   | tests_functional.outputs(tmp_fun))
+                   | tests_functional.outputs(tmp_fun) | tests_views.outputs(tmp_views))
         committed = (set((PROTO / "src").rglob("*.cairo"))
                      | set((tests_core.PACKAGE / "src").rglob("*.cairo"))
                      | {p for pkg in tests_ops.PACKAGES
                         for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")}
                      | {p for pkg in tests_functional.PACKAGES
+                        for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")}
+                     | {p for pkg in tests_views.PACKAGES
                         for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")})
         removed = sorted(committed - set(outputs))
         stale = sorted(dst for dst, gen in outputs.items()

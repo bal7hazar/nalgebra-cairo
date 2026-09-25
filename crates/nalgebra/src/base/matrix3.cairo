@@ -44,6 +44,8 @@ use super::vector2::Vector2;
 use super::vector3::Vector3;
 
 #[cfg(test)]
+mod benches_views;
+#[cfg(test)]
 mod tests;
 
 /// A 3x3 matrix. `mRC` is the component at row `R`, column `C`.
