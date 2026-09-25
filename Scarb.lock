@@ -51,6 +51,39 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_shapes_tests_edition"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_shapes_tests_functional"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_shapes_tests_inplace"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_shapes_tests_norms"
 version = "0.1.0"
 dependencies = [
