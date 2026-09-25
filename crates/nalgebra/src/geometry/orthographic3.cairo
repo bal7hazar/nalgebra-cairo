@@ -13,7 +13,6 @@
 //! - `Matrix4OrthographicTrait`: upstream's `Matrix4::new_orthographic` (`base/cg.rs`), which is
 //!   `Orthographic3::new(..).into_inner()`;
 //! - `Into<Orthographic3, Matrix4>`: upstream's `From<Orthographic3> for Matrix4`.
-//! Upstream's `as_projective` / `to_projective` need `Projective3` (WP 8.4-P11a).
 //!
 //! Numeric contract (AGENTS.md): every division is ONE correctly rounded `Real::div` (to nearest,
 //! ties to even, like `f64 /`), every product one floored fixed-point product, every product-sum
@@ -25,6 +24,7 @@ use simba::scalar::{Real, Transcendental};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
+use super::projective3::Projective3;
 use super::quaternion::ApproxEqTrait;
 
 /// Panic messages of `Orthographic3` (upstream's assertion messages do not fit a `felt252`: each
@@ -141,6 +141,19 @@ pub impl Orthographic3Impl<
     #[inline(always)]
     fn to_homogeneous(self: Orthographic3<T>) -> Matrix4<T> {
         self.matrix
+    }
+
+    /// This projection seen as a `Projective3` (the same matrix; upstream reinterprets a
+    /// reference, Cairo copies the value). Exact. Upstream: `as_projective`.
+    #[inline(always)]
+    fn as_projective(self: Orthographic3<T>) -> Projective3<T> {
+        Projective3 { matrix: self.matrix }
+    }
+
+    /// This projection as a `Projective3` (the same matrix). Exact. Upstream: `to_projective`.
+    #[inline(always)]
+    fn to_projective(self: Orthographic3<T>) -> Projective3<T> {
+        Projective3 { matrix: self.matrix }
     }
 
     /// The inverse of the projection matrix, in closed form: `m11 = 1 / m11`, `m22 = 1 / m22`,

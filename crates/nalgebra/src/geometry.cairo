@@ -1,6 +1,8 @@
 //! Rotations, translations and rigid-body transformations (upstream `nalgebra::geometry`).
 
 pub mod abstract_rotation;
+pub mod affine2;
+pub mod affine3;
 pub mod dual_quaternion;
 pub mod isometry2;
 pub mod isometry3;
@@ -13,6 +15,8 @@ pub mod point1;
 pub mod point4;
 pub mod point5;
 pub mod point6;
+pub mod projective2;
+pub mod projective3;
 pub mod quaternion;
 pub mod reflection1;
 pub mod reflection2;
@@ -32,6 +36,9 @@ pub mod similarity2;
 pub mod similarity3;
 pub mod similarity_matrix2;
 pub mod similarity_matrix3;
+pub mod transform;
+pub mod transform2;
+pub mod transform3;
 pub mod translation1;
 pub mod translation2;
 pub mod translation3;
@@ -42,6 +49,8 @@ pub mod unit_complex;
 pub mod unit_dual_quaternion;
 pub mod unit_quaternion;
 pub use abstract_rotation::AbstractRotation;
+pub use affine2::{Affine2, Affine2Trait};
+pub use affine3::{Affine3, Affine3Trait};
 pub use dual_quaternion::{DualQuaternion, DualQuaternionTrait};
 
 pub use isometry2::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
@@ -61,6 +70,8 @@ pub use point1::{Point1, Point1Trait};
 pub use point4::{Point4, Point4Trait};
 pub use point5::{Point5, Point5Trait};
 pub use point6::{Point6, Point6Trait};
+pub use projective2::{Projective2, Projective2Trait};
+pub use projective3::{Projective3, Projective3Trait};
 pub use quaternion::{Quaternion, QuaternionTrait, QuaternionTranscendentalTrait};
 pub use reflection1::{Reflection1, Reflection1Columns, Reflection1Rows, Reflection1Trait};
 pub use reflection2::{Reflection2, Reflection2Columns, Reflection2Rows, Reflection2Trait};
@@ -84,6 +95,9 @@ pub use similarity_matrix2::{
 pub use similarity_matrix3::{
     SimilarityMatrix3, SimilarityMatrix3AngleTrait, SimilarityMatrix3Trait,
 };
+pub use transform::{TransformDiv, TransformMul, TransformSetCategory};
+pub use transform2::{Transform2, Transform2Trait};
+pub use transform3::{Transform3, Transform3Trait};
 pub use translation1::{Translation1, Translation1Trait};
 pub use translation2::{Translation2, Translation2Trait};
 pub use translation3::{Translation3, Translation3Trait};

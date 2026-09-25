@@ -1125,6 +1125,9 @@ SHAPE_ALIASES = {"Vector1": "Matrix1", "RowVector1": "Matrix1",
 V = ["Vector2", "Vector3", "Vector4", "Vector6"]
 M = ["Matrix2", "Matrix3", "Matrix4", "Matrix6"]
 
+# The six aliases of upstream's `Transform<T, C, D>` (WP 8.4-P11a), one Cairo struct each.
+TRANSFORMS = ["Transform2", "Transform3", "Projective2", "Projective3", "Affine2", "Affine3"]
+
 # Upstream owner -> the Cairo types that stand for it.  Owners absent from this table have no
 # Cairo counterpart yet (their items are missing unless excluded).
 OWNER_CANDIDATES: dict[str, list[str]] = {
@@ -1177,6 +1180,8 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     # WP 8.4-P11b: camera projections (a `Matrix4` wrapper each).
     "Perspective3": ["Perspective3"],
     "Orthographic3": ["Orthographic3"],
+    # WP 8.4-P11a: upstream's `Transform<T, C, D>` is one Cairo struct per alias (category x dim).
+    "Transform": TRANSFORMS,
     "Cholesky": ["Cholesky2", "Cholesky3", "Cholesky4", "Cholesky6"],
     "UDU": ["Udu2", "Udu3", "Udu4", "Udu6"],
     "LU": ["Lu2", "Lu3", "Lu4", "Lu6"],
@@ -1266,7 +1271,25 @@ DIM_ONLY: dict[str, set[str]] = {
     **{name: {"Translation3", "UnitQuaternion", "Isometry3", "DualQuaternion",
               "UnitDualQuaternion"}
        for name in ("Mul<UnitDualQuaternion>", "Div<UnitDualQuaternion>")},
+    # WP 8.4-P11a: upstream's `inverse` family needs `C: SubTCategoryOf<TProjective>` (no
+    # `Transform2/3`); the transforms by a unit complex are 2D, by a unit quaternion 3D; the
+    # products and quotients by a transform exist for the 2D / 3D types (upstream's aliases).
+    **{name: {t for ts in OWNER_CANDIDATES.values() for t in ts} - {"Transform2", "Transform3"}
+       for name in ("inverse", "inverse_mut", "inverse_transform_point",
+                    "inverse_transform_vector")},
+    "Mul<UnitComplex>": {t for ts in OWNER_CANDIDATES.values() for t in ts}
+    - {"Affine3", "Projective3", "Transform3"},
+    **{name: {t for ts in OWNER_CANDIDATES.values() for t in ts}
+       - {"Affine2", "Projective2", "Transform2"}
+       for name in ("Mul<UnitQuaternion>", "Div<UnitQuaternion>")},
+    **{name: {t for ts in OWNER_CANDIDATES.values() for t in ts}
+       - {"Translation1", "Translation4", "Translation5", "Translation6"}
+       for name in ("Mul<Transform>", "Div<Transform>")},
 }
+# WP 8.4-P11a: the transforms have the square-matrix and pose items named above too.
+for _name in ("identity", "try_inverse", "to_homogeneous", "Mul<Rotation>", "Div<Rotation>",
+              "Mul<Isometry>", "Mul<Similarity>"):
+    DIM_ONLY[_name] = DIM_ONLY[_name] | set(TRANSFORMS)
 
 EXCLUSIONS = {
     "simd": "SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar "
@@ -1551,6 +1574,52 @@ RENAMES = (
     rule(r"UnitQuaternion", r"impl:SubsetOf<UnitDualQuaternion>",
          "UnitDualQuaternion::impl:From<UnitQuaternion>",
          "Cairo-imposed: `nalgebra::convert` is `Into`"),
+    # WP 8.4-P11a: Transform, Affine, Projective. The products whose category depends on both
+    # operands are the generic `TransformMul::mul_transform` / `TransformDiv::div_transform`.
+    rule(r"Transform", r"impl:Mul<Point>", "transform_point",
+         "heterogeneous operators are named methods"),
+    rule(r"Transform", r"impl:Mul<Matrix>", "transform_vector",
+         "heterogeneous operators are named methods"),
+    rule(r"Transform|Isometry|Similarity|Rotation|Translation|UnitComplex|UnitQuaternion",
+         r"impl:Mul<Transform>", "mul_transform",
+         "Cairo-imposed: the output category depends on both operands (`TCategoryMul`), a method "
+         "of the generic `TransformMul` (`*` stays on the same-category pairs)"),
+    rule(r"Transform|Rotation|Translation|UnitQuaternion", r"impl:Div<Transform>",
+         "div_transform",
+         "Cairo-imposed: the output category depends on both operands, a method of the generic "
+         "`TransformDiv` (`/` stays on the same-category pairs)"),
+    rule(r"Transform", r"impl:Mul<Rotation>", "mul_rotation", "Cairo-imposed: heterogeneous operator"),
+    rule(r"Transform", r"impl:Div<Rotation>", "div_rotation", "Cairo-imposed: heterogeneous operator"),
+    rule(r"Transform", r"impl:Mul<UnitComplex>", "mul_unit_complex",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Transform", r"impl:Mul<UnitQuaternion>", "mul_unit_quaternion",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Transform", r"impl:Div<UnitQuaternion>", "div_unit_quaternion",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Transform", r"impl:Mul<Translation>", "mul_translation",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Transform", r"impl:Div<Translation>", "div_translation",
+         "Cairo-imposed: heterogeneous operator"),
+    rule(r"Transform", r"impl:Mul<Isometry>", "mul_isometry",
+         "Cairo-imposed: heterogeneous operator (`Isometry2/3`; the rotation-matrix isometries "
+         "through `Affine2/3::from`)"),
+    rule(r"Transform", r"impl:Mul<Similarity>", "mul_similarity",
+         "Cairo-imposed: heterogeneous operator (`Similarity2/3`; the rotation-matrix similarities "
+         "through `Affine2/3::from`)"),
+    rule(r"Transform", r"impl:SubsetOf<Matrix>", "to_homogeneous",
+         "Cairo-imposed: `nalgebra::convert` into a matrix is `to_homogeneous` (`try_convert` "
+         "from a matrix is `TryInto`)"),
+    rule(r"Transform", r"impl:SubsetOf<Transform>", "Projective3::impl:From<Affine3>",
+         "Cairo-imposed: `nalgebra::convert` is `Into` (every widening pair; `try_convert` is "
+         "`TryInto`)"),
+    rule(r"SquareMatrix", r"impl:From<Transform>", "Matrix4::impl:From<Affine3>",
+         "`Into` on the six transform types (`Matrix3` / `Matrix4`)"),
+    *(rule(owner, r"impl:SubsetOf<Transform>", f"{target}::impl:From<{owner}>",
+           "Cairo-imposed: `nalgebra::convert` is `Into` (into the three categories)")
+      for owner, target in (("Rotation", "Affine3"), ("UnitComplex", "Affine2"),
+                            ("UnitQuaternion", "Affine3"), ("Translation", "Affine3"),
+                            ("Isometry", "Affine3"), ("Similarity", "Affine3"),
+                            ("Scale", "Affine3"), ("UnitDualQuaternion", "Affine3"))),
 )
 
 # Cairo-imposed forms (WP 8.0, owner's rule of 2026-09-24): public Cairo items that spell an
@@ -1581,6 +1650,26 @@ CAIRO_FORMS = (
     (r"Similarity2|SimilarityMatrix[23]", r"impl:From<Isometry>", "`convert(iso)`",
      "the other instances of upstream's generic `SubsetOf<Similarity> for Isometry` (`RENAMES` "
      "points at `Similarity3`)"),
+    # WP 8.4-P11a.
+    (r"(?:Affine|Projective|Transform)[23]",
+     r"impl:(?:Mul|Div)<(?:Affine|Projective|Transform)[23]>", "`a * b`, `a / b`",
+     "the same-category instances of upstream's `Mul<Transform>` / `Div<Transform>` (`RENAMES` "
+     "maps the items to `mul_transform` / `div_transform`, every pair of categories)"),
+    (r"(?:Projective|Transform)[23]", r"impl:From<(?:Affine|Projective)[23]>", "`convert(t)`",
+     "the widening instances of upstream's `SubsetOf<Transform> for Transform` (`RENAMES` points "
+     "at `Projective3`); also `set_category`"),
+    (r"(?:Affine|Projective|Transform)[23]",
+     r"impl:TryFrom<(?:Matrix|Projective[23]|Transform[23])>", "`try_convert(m)`",
+     "the checked side of upstream's `SubsetOf<Matrix>` / `SubsetOf<Transform>` (`is_in_subset`, "
+     "`check_homogeneous_invariants`)"),
+    (r"(?:Affine|Projective|Transform)[23]",
+     r"impl:From<(?:Rotation|UnitComplex|UnitQuaternion|Translation|Isometry|Similarity|Scale|"
+     r"UnitDualQuaternion)>", "`convert(g)`",
+     "the instances of upstream's `SubsetOf<Transform>` for the geometry types, into every "
+     "category (`RENAMES` points at `Affine2/3`)"),
+    (r"Matrix[34]", r"impl:From<(?:Affine|Projective|Transform)[23]>", "`t.into()`",
+     "the instances of upstream's `From<Transform> for OMatrix` (`RENAMES` points at "
+     "`Matrix4::From<Affine3>`)"),
 )
 
 
