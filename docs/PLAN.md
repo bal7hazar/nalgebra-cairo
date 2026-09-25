@@ -131,8 +131,15 @@ accept `−q` like upstream's `approx` impls; an upstream result that would be `
 negative real quaternion) panics instead of returning a Cairo-only convention, like `fixed`'s
 `sqrt` of a negative. Applied in P09a, P09b and P10.
 
-Execution: at most two agents at a time (shared machine), one whenever rapier-cairo or the
-programme tasks (`pm-*` units) need it: nalgebra-cairo is not on the critical path of the
+Steps criterion (owner guideline, restated 2026-09-25 for every repository): be as close as possible
+to the Rust API when it does not cost Cairo steps; where a faithful formulation costs steps, the
+cheaper form wins and the deviation is documented (doc comment + report). Variant ranking: oracle
+tolerance first (a variant outside the reference tolerance never ships), then steps / gas, then
+closeness to upstream's formula. A parity item that can only be ported with a costlier formulation
+is reported to the orchestrator rather than ported as is. The strict-parity target of 0.1.0 stands.
+
+Execution: at most two agents at a time (machine budget: six agents across the programme), one
+whenever rapier-cairo or the programme tasks (`pm-*` units) need it: nalgebra-cairo is not on the critical path of the
 programme's first game (programme management, 2026-09-25; machine rules in
 `/home/claude/projects/pm/OPERATIONS.md` §3). Opus 5.5 for numerics and generator design, Sonnet
 for mechanical template work; one PR per WP; parity figures reported per PR.
