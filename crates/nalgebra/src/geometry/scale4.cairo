@@ -1,16 +1,16 @@
 //! `Scale4`: a 4-dimensional non-uniform scale (upstream `nalgebra::Scale4`, i.e. `Scale<T, 4>`),
 //! WP 8.4-P10.
 //!
-//! A scale is the vector of the factors multiplied to the coordinates of a point, one per axis
-//! (the diagonal of its homogeneous matrix). Written from one template for the sizes 1 to 6; the
-//! vector is the matching shape `Vector4`. A scale acts on POINTS (`transform_point`) and on
-//! vectors (`mul_vector`) alike; its product with another scale, the product with a scalar
-//! (`scale`) and the inverse are component-wise.
+//! A scale is the vector of the factors multiplied to the coordinates of a point, one per axis (the
+//! diagonal of its homogeneous matrix). Written from one template for the sizes 1 to 6; the vector
+//! is the matching shape `Vector4`. A scale acts on POINTS (`transform_point`) and on vectors
+//! (`mul_vector`) alike; its product with another scale, the product with a scalar (`scale`) and
+//! the inverse are component-wise.
 //!
 //! Numeric contract (AGENTS.md): every product is one floored fixed-point multiplication per
 //! component, every inverse one correctly rounded reciprocal (`Real::recip`, to nearest, ties to
-//! even, like `f64 /`); overflow panics, nothing wraps. `inverse_unchecked` is unchecked only
-//! in upstream's sense (no zero test): a zero factor panics with `Fixed: division by zero`.
+//! even, like `f64 /`); overflow panics, nothing wraps. `inverse_unchecked` is unchecked only in
+//! upstream's sense (no zero test): a zero factor panics with `Fixed: division by zero`.
 
 use core::num::traits::One;
 use core::ops::MulAssign;
@@ -20,8 +20,8 @@ use crate::base::vector4::Vector4;
 use super::point4::Point4;
 use super::quaternion::ApproxEqTrait;
 
-/// A non-uniform scale by `vector`, one factor per axis. The field name is upstream's
-/// (`Scale { vector }`).
+/// A non-uniform scale by `vector`, one factor per axis. The field name is upstream's (`Scale {
+/// vector }`).
 #[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
 pub struct Scale4<T> {
     pub vector: Vector4<T>,
@@ -45,8 +45,7 @@ pub impl Scale4Impl<
     }
 
     /// The inverse scale, factor by factor (`1 / f`, one correctly rounded reciprocal each), or
-    /// `None`
-    /// when a factor is zero. Upstream: `try_inverse`.
+    /// `None` when a factor is zero. Upstream: `try_inverse`.
     #[inline(always)]
     fn try_inverse(self: Scale4<T>) -> Option<Scale4<T>> {
         let v = self.vector;
@@ -233,8 +232,8 @@ pub impl Scale4Impl<
     }
 }
 
-/// `a * b`: the composition of two scales, the component-wise product of their factors (one
-/// floored product each; scales commute). Panics on overflow. Upstream: `Mul<Scale> for Scale`.
+/// `a * b`: the composition of two scales, the component-wise product of their factors (one floored
+/// product each; scales commute). Panics on overflow. Upstream: `Mul<Scale> for Scale`.
 pub impl Scale4Mul<T, +Mul<T>, +Copy<T>, +Drop<T>> of Mul<Scale4<T>> {
     #[inline(always)]
     fn mul(lhs: Scale4<T>, rhs: Scale4<T>) -> Scale4<T> {
@@ -264,8 +263,8 @@ pub impl Scale4MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Scal
     }
 }
 
-/// `One::one()`: the identity scale; `is_one` tests for all factors equal to one exactly.
-/// Upstream: `num::One for Scale`.
+/// `One::one()`: the identity scale; `is_one` tests for all factors equal to one exactly. Upstream:
+/// `num::One for Scale`.
 pub impl Scale4One<T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>> of One<Scale4<T>> {
     #[inline(always)]
     fn one() -> Scale4<T> {

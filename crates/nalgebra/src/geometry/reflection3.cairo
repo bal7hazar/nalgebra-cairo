@@ -8,15 +8,15 @@
 //! place (`&mut Matrix<T, R2, C2, S2>`); the Cairo counterparts are the generic traits
 //! `Reflection3Columns<M, T>` (`reflect`, `reflect_with_sign`: `M` is any of the six shapes with 3
 //! rows, `Vector3` to `Matrix3x6`) and `Reflection3Rows<L, W, T>` (`reflect_rows`,
-//! `reflect_rows_with_sign`: `L` is any of the six shapes with 3 columns and `W` the scratch
-//! vector of its row count), both taking the matrix by `ref` like Rust's `&mut`. The scratch
-//! vector `work` of `reflect_rows` holds `lhs * axis - bias` on return, as upstream's does.
+//! `reflect_rows_with_sign`: `L` is any of the six shapes with 3 columns and `W` the scratch vector
+//! of its row count), both taking the matrix by `ref` like Rust's `&mut`. The scratch vector `work`
+//! of `reflect_rows` holds `lhs * axis - bias` on return, as upstream's does.
 //!
 //! Numeric contract (AGENTS.md): every dot product is accumulated exactly and rounded ONCE, the
-//! factor `-2 (axis . x - bias)` is rounded once (`wide_mul_scalar`), and every updated entry
-//! is one fused `mul_add` / `sum_prod2` (one floor rounding and one overflow check). Overflow
-//! panics; nothing wraps silently. Unlike upstream, the bias is subtracted unconditionally
-//! (upstream skips it when zero: subtracting zero is exact, so the results are identical).
+//! factor `-2 (axis . x - bias)` is rounded once (`wide_mul_scalar`), and every updated entry is
+//! one fused `mul_add` / `sum_prod2` (one floor rounding and one overflow check). Overflow panics;
+//! nothing wraps silently. Unlike upstream, the bias is subtracted unconditionally (upstream skips
+//! it when zero: subtracting zero is exact, so the results are identical).
 
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
@@ -62,8 +62,8 @@ pub impl Reflection3Impl<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Reflection3T
         Reflection3 { axis: axis.value, bias }
     }
 
-    /// The reflection with respect to the hyperplane orthogonal to `axis` that contains `pt`:
-    /// `bias = axis . pt`, accumulated exactly and floored once. Panics on overflow. Upstream:
+    /// The reflection with respect to the hyperplane orthogonal to `axis` that contains `pt`: `bias
+    /// = axis . pt`, accumulated exactly and floored once. Panics on overflow. Upstream:
     /// `Reflection::new_containing_point`.
     #[inline(always)]
     fn new_containing_point(axis: Unit<Vector3<T>>, pt: Point3<T>) -> Reflection3<T> {
@@ -81,8 +81,7 @@ pub impl Reflection3Impl<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Reflection3T
         self.axis
     }
 
-    /// The reflection bias: the position of the plane along the axis. Upstream:
-    /// `Reflection::bias`.
+    /// The reflection bias: the position of the plane along the axis. Upstream: `Reflection::bias`.
     #[inline(always)]
     fn bias(self: Reflection3<T>) -> T {
         self.bias
@@ -94,8 +93,8 @@ pub trait Reflection3Columns<M, T> {
     /// Applies the reflection to the columns of `rhs`: every column `x` becomes `x - 2 (axis . x -
     /// bias) axis`. Panics on overflow. Upstream: `Reflection::reflect`.
     fn reflect(self: Reflection3<T>, ref rhs: M);
-    /// Applies the reflection to the columns of `rhs` with a sign: every column `x` becomes
-    /// `sign x - 2 sign (axis . x - bias) axis`. Panics on overflow. Upstream:
+    /// Applies the reflection to the columns of `rhs` with a sign: every column `x` becomes `sign x
+    /// - 2 sign (axis . x - bias) axis`. Panics on overflow. Upstream:
     /// `Reflection::reflect_with_sign`.
     fn reflect_with_sign(self: Reflection3<T>, ref rhs: M, sign: T);
 }

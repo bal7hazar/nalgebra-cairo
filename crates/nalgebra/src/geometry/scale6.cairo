@@ -1,16 +1,16 @@
 //! `Scale6`: a 6-dimensional non-uniform scale (upstream `nalgebra::Scale6`, i.e. `Scale<T, 6>`),
 //! WP 8.4-P10.
 //!
-//! A scale is the vector of the factors multiplied to the coordinates of a point, one per axis
-//! (the diagonal of its homogeneous matrix). Written from one template for the sizes 1 to 6; the
-//! vector is the matching shape `Vector6`. A scale acts on POINTS (`transform_point`) and on
-//! vectors (`mul_vector`) alike; its product with another scale, the product with a scalar
-//! (`scale`) and the inverse are component-wise.
+//! A scale is the vector of the factors multiplied to the coordinates of a point, one per axis (the
+//! diagonal of its homogeneous matrix). Written from one template for the sizes 1 to 6; the vector
+//! is the matching shape `Vector6`. A scale acts on POINTS (`transform_point`) and on vectors
+//! (`mul_vector`) alike; its product with another scale, the product with a scalar (`scale`) and
+//! the inverse are component-wise.
 //!
 //! Numeric contract (AGENTS.md): every product is one floored fixed-point multiplication per
 //! component, every inverse one correctly rounded reciprocal (`Real::recip`, to nearest, ties to
-//! even, like `f64 /`); overflow panics, nothing wraps. `inverse_unchecked` is unchecked only
-//! in upstream's sense (no zero test): a zero factor panics with `Fixed: division by zero`.
+//! even, like `f64 /`); overflow panics, nothing wraps. `inverse_unchecked` is unchecked only in
+//! upstream's sense (no zero test): a zero factor panics with `Fixed: division by zero`.
 //!
 //! There is no `to_homogeneous` (nor `From<Scale6> for Matrix7`): the homogeneous matrix of a 6D
 //! scale is 7x7, and the static shapes stop at 6 (DESIGN D4), like `Translation6`.
@@ -22,8 +22,8 @@ use crate::base::vector6::Vector6;
 use super::point6::Point6;
 use super::quaternion::ApproxEqTrait;
 
-/// A non-uniform scale by `vector`, one factor per axis. The field name is upstream's
-/// (`Scale { vector }`).
+/// A non-uniform scale by `vector`, one factor per axis. The field name is upstream's (`Scale {
+/// vector }`).
 #[derive(Copy, Drop, PartialEq, Serde, Debug, Hash)]
 pub struct Scale6<T> {
     pub vector: Vector6<T>,
@@ -51,8 +51,7 @@ pub impl Scale6Impl<
     }
 
     /// The inverse scale, factor by factor (`1 / f`, one correctly rounded reciprocal each), or
-    /// `None`
-    /// when a factor is zero. Upstream: `try_inverse`.
+    /// `None` when a factor is zero. Upstream: `try_inverse`.
     #[inline(always)]
     fn try_inverse(self: Scale6<T>) -> Option<Scale6<T>> {
         let v = self.vector;
@@ -263,8 +262,8 @@ pub impl Scale6Impl<
     }
 }
 
-/// `a * b`: the composition of two scales, the component-wise product of their factors (one
-/// floored product each; scales commute). Panics on overflow. Upstream: `Mul<Scale> for Scale`.
+/// `a * b`: the composition of two scales, the component-wise product of their factors (one floored
+/// product each; scales commute). Panics on overflow. Upstream: `Mul<Scale> for Scale`.
 pub impl Scale6Mul<T, +Mul<T>, +Copy<T>, +Drop<T>> of Mul<Scale6<T>> {
     #[inline(always)]
     fn mul(lhs: Scale6<T>, rhs: Scale6<T>) -> Scale6<T> {
@@ -316,8 +315,8 @@ pub impl Scale6MulAssignScalar<T, +Mul<T>, +Copy<T>, +Drop<T>> of MulAssign<Scal
     }
 }
 
-/// `One::one()`: the identity scale; `is_one` tests for all factors equal to one exactly.
-/// Upstream: `num::One for Scale`.
+/// `One::one()`: the identity scale; `is_one` tests for all factors equal to one exactly. Upstream:
+/// `num::One for Scale`.
 pub impl Scale6One<T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>> of One<Scale6<T>> {
     #[inline(always)]
     fn one() -> Scale6<T> {
