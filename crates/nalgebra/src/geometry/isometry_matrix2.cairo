@@ -15,11 +15,14 @@
 //!   `lerp_slerp`, which additionally need `simba::scalar::Transcendental`;
 //! - the operator / conversion impls (`*`, `/`, `*=`, `/=`, `Default`, `One`, `From`).
 //!
-//! **Prefer `Isometry2` in hot code**: composing two rotation matrices costs four fused kernels
-//! where the unit complex form costs two (`rotation2` module documentation); the transforms cost
-//! exactly the same. Every "rotate then translate" goes through the fused `rotate_translate`
-//! kernel (one rounding per component), bit for bit what rotating then adding gives, since
-//! `floor(x + t) = floor(x) + t` for an integral `t` in raw units.
+//! **Prefer `Isometry2` in hot code**: a composition costs 17 440 gas here against 10 350 for
+//! `Isometry2` (four fused kernels for the rotation instead of two), and the transforms cost
+//! exactly the same, bit for bit (`transform_point` 4 060 either way;
+//! `nalgebra_tests_geometry_poses`
+//! benches). Every "rotate then translate" goes through the fused `rotate_translate` kernel (one
+//! rounding per component), bit for bit what rotating then adding gives, since
+//! `floor(x + t) = floor(x) + t` for an integral `t` in raw units, for 24 % less gas
+//! (`bench_isometry_matrix2_transform_point__alt_rotate_then_add`).
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
