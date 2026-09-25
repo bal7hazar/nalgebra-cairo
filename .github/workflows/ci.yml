@@ -31,7 +31,7 @@ jobs:
           # public-API tests live in the test-only packages `nalgebra_tests_*` (WP 8.1c).
           - { name: nalgebra, package: nalgebra, filters: "nalgebra" }
           - { name: "tests_base vectors", package: nalgebra_tests_base, filters: "nalgebra_tests_base::vector" }
-          - { name: "tests_base matrices", package: nalgebra_tests_base, filters: "nalgebra_tests_base::matrix nalgebra_tests_base::point nalgebra_tests_base::unit" }
+          - { name: "tests_base matrices", package: nalgebra_tests_base, filters: "nalgebra_tests_base::matrix nalgebra_tests_base::point nalgebra_tests_base::unit nalgebra_tests_base::cg" }
           - { name: "tests_geometry quaternions", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::quaternion nalgebra_tests_geometry::unit_quaternion" }
           - { name: "tests_geometry poses", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::isometry nalgebra_tests_geometry::rotation nalgebra_tests_geometry::similarity nalgebra_tests_geometry::translation nalgebra_tests_geometry::unit_complex" }
           - { name: tests_geometry_ext, package: nalgebra_tests_geometry_ext, filters: "nalgebra_tests_geometry_ext" }
@@ -75,11 +75,14 @@ jobs:
           done
           python3 scripts/gas_report.py --check gas/ --partial < snforge.out
           grep -E "^\[PASS\].*::bench_" snforge.out > bench.out || true
+          grep -E "^Tests: " snforge.out | sed "s/^/${{ matrix.package }} /" > coverage.out
           echo "artifact=bench-${{ strategy.job-index }}" >> "$GITHUB_ENV"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ env.artifact }}
-          path: bench.out
+          path: |
+            bench.out
+            coverage.out
           if-no-files-found: error
           retention-days: 1
 
@@ -95,6 +98,8 @@ jobs:
           path: bench
       - name: Every benchmark of every shard against the full snapshot (catches removed benchmarks)
         run: cat bench/*/bench.out | python3 scripts/gas_report.py --check gas/
+      - name: Every test of every package runs in exactly one shard (catches modules no filter selects)
+        run: cat bench/*/coverage.out | python3 scripts/shard_coverage.py
 
   benchmarks:
     name: Design benchmarks
