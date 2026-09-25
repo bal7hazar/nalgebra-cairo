@@ -17,8 +17,8 @@ How to read it:
 
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
-| base | 354 | 7 | 127 | 316 | 804 | 72.5% |
-| geometry | 768 | 3 | 161 | 116 | 1048 | 82.4% |
+| base | 356 | 7 | 125 | 316 | 804 | 73.0% |
+| geometry | 829 | 3 | 102 | 114 | 1048 | 88.8% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
 | io | 0 | 0 | 2 | 0 | 2 | 0.0% |
@@ -26,7 +26,7 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1198** | **16** | **658** | **564** | **2436** | **64.0%** |
+| **total** | **1261** | **16** | **597** | **562** | **2436** | **67.3%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -42,13 +42,13 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P04](#p04-swizzles) | Swizzles | 0 | mechanical | P01 (Vector2/3 results) |  |
 | [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 0 | mechanical | P01 |  |
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 37 | standard numerics | P01, P05 | `base/blas.rs` (21), `base/statistics.rs` (16) |
-| [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 32 | standard numerics | P01 | `base/cg.rs` (32) |
+| [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 30 | standard numerics | P01 | `base/cg.rs` (30) |
 | [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 2 | standard numerics | — | `geometry/quaternion_conversion.rs` (1), `geometry/unit_complex_conversion.rs` (1) |
 | [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 4 | mechanical | P08 | `geometry/translation_conversion.rs` (2), `geometry/point_conversion.rs` (1), `geometry/rotation_conversion.rs` (1) |
 | [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 2 | mechanical | P09a | `geometry/isometry_conversion.rs` (1), `geometry/similarity_conversion.rs` (1) |
 | [P10](#p10-scale-and-reflection) | Scale and Reflection | 2 | mechanical | P09a | `geometry/scale_conversion.rs` (2) |
 | [P11a](#p11a-transform-affine-projective) | Transform, Affine, Projective | 59 | standard numerics | P07, P09b | `geometry/transform.rs` (24), `geometry/transform_ops.rs` (23), `geometry/transform_alias.rs` (6), `geometry/transform_construction.rs` (3), `geometry/transform_conversion.rs` (3) |
-| [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 63 | standard numerics | P07 | `geometry/orthographic.rs` (35), `geometry/perspective.rs` (28) |
+| [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 4 | standard numerics | P07 | `geometry/orthographic.rs` (2), `geometry/perspective.rs` (2) |
 | [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 1 | standard numerics | P08, P09b | `geometry/dual_quaternion_conversion.rs` (1) |
 | [P13](#p13-dmatrix-dvector-core) | DMatrix / DVector core | 55 | standard numerics | P01-P05 (API to mirror) | `base/alias.rs` (15), `base/edition.rs` (15), `base/construction.rs` (12), `base/conversion.rs` (3), `base/ops.rs` (3) |
 | [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 100 | standard numerics | P01, P05 | `linalg/solve.rs` (26), `linalg/givens.rs` (14), `linalg/cholesky.rs` (11), `linalg/decomposition.rs` (11), `linalg/lu.rs` (8) |
@@ -108,10 +108,10 @@ the operations upstream has on every `Matrix` that nalgebra-cairo only has on so
 
 ### P07 Homogeneous / computer-graphics helpers
 
-`base/cg.rs`: `new_scaling`, `new_translation`, `new_rotation*`, `look_at_*`, `new_perspective`, `new_orthographic`, `append_*` / `prepend_*`, `transform_point` / `transform_vector` on `Matrix3` / `Matrix4`, `to_homogeneous` on square matrices. Tier: standard numerics. Depends on: P01. 32 items (`*` = partial):
+`base/cg.rs`: `new_scaling`, `new_translation`, `new_rotation*`, `look_at_*`, `new_perspective`, `new_orthographic`, `append_*` / `prepend_*`, `transform_point` / `transform_vector` on `Matrix3` / `Matrix4`, `to_homogeneous` on square matrices. Tier: standard numerics. Depends on: P01. 30 items (`*` = partial):
 
 - **Matrix3**: `new_nonuniform_scaling_wrt_point`, `new_rotation`, `transform_point`
-- **Matrix4**: `face_towards`, `from_axis_angle`, `from_euler_angles`, `from_scaled_axis`, `look_at_lh`, `look_at_rh`, `new_nonuniform_scaling_wrt_point`, `new_observer_frame`, `new_orthographic`, `new_perspective`, `new_rotation`, `new_rotation_wrt_point`, `transform_point`
+- **Matrix4**: `face_towards`, `from_axis_angle`, `from_euler_angles`, `from_scaled_axis`, `look_at_lh`, `look_at_rh`, `new_nonuniform_scaling_wrt_point`, `new_observer_frame`, `new_rotation`, `new_rotation_wrt_point`, `transform_point`
 - **SquareMatrix**: `append_nonuniform_scaling`, `append_nonuniform_scaling_mut`, `append_scaling`, `append_scaling_mut`, `append_translation`, `append_translation_mut`, `new_nonuniform_scaling`, `new_scaling`, `new_translation`, `prepend_nonuniform_scaling`, `prepend_nonuniform_scaling_mut`, `prepend_scaling`, `prepend_scaling_mut`, `prepend_translation`, `prepend_translation_mut`, `transform_vector`
 
 ### P08 Quaternion, UnitQuaternion, UnitComplex completion
@@ -157,11 +157,10 @@ cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`..
 
 ### P11b Perspective3, Orthographic3
 
-camera projections: construction, accessors / setters, `project_*` / `unproject_point`, conversions to `Matrix4` / `Projective3`. Tier: standard numerics. Depends on: P07. 63 items (`*` = partial):
+camera projections: construction, accessors / setters, `project_*` / `unproject_point`, conversions to `Matrix4` / `Projective3`. Tier: standard numerics. Depends on: P07. 4 items (`*` = partial):
 
-- **Matrix4**: `impl:From<Orthographic3>`, `impl:From<Perspective3>`
-- **Orthographic3**: `impl:Clone`, `impl:Copy`, `impl:Deserialize`, `impl:PartialEq`, `impl:Serialize`, `as_matrix`, `as_projective`, `bottom`, `from_fov`, `from_matrix_unchecked`, `into_inner`, `inverse`, `left`, `new`, `project_point`, `project_vector`, `right`, `set_bottom`, `set_bottom_and_top`, `set_left`, `set_left_and_right`, `set_right`, `set_top`, `set_zfar`, `set_znear`, `set_znear_and_zfar`, `to_homogeneous`, `to_projective`, `top`, `unproject_point`, `unwrap`, `zfar`, `znear`, `type:Orthographic3`
-- **Perspective3**: `impl:Clone`, `impl:Copy`, `impl:Deserialize`, `impl:PartialEq`, `impl:Serialize`, `as_matrix`, `as_projective`, `aspect`, `fovy`, `from_matrix_unchecked`, `into_inner`, `inverse`, `new`, `project_point`, `project_vector`, `set_aspect`, `set_fovy`, `set_zfar`, `set_znear`, `set_znear_and_zfar`, `to_homogeneous`, `to_projective`, `unproject_point`, `unwrap`, `zfar`, `znear`, `type:Perspective3`
+- **Orthographic3**: `as_projective`, `to_projective`
+- **Perspective3**: `as_projective`, `to_projective`
 
 ### P12 DualQuaternion, UnitDualQuaternion
 
@@ -299,7 +298,7 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | Rotation | **Rotation2**, **Rotation3**, **UnitComplex**, **UnitQuaternion** |
 | Isometry | **Isometry2**, **Isometry3**, **IsometryMatrix2**, **IsometryMatrix3** |
 | Similarity | **Similarity2**, **Similarity3**, **SimilarityMatrix2**, **SimilarityMatrix3** |
-| Transform | Affine2, Affine3, Projective2, Projective3, Transform2, Transform3, Perspective3, Orthographic3 |
+| Transform | Affine2, Affine3, Projective2, Projective3, Transform2, Transform3, **Perspective3**, **Orthographic3** |
 | Quaternion | **Quaternion**, **DualQuaternion**, **UnitDualQuaternion** |
 
 ## Exclusion reasons (closed list)
@@ -310,7 +309,7 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | `rayon` | 4 | `rayon` parallel iterators: a Cairo program is sequential. |
 | `unsafe` | 38 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
 | `borrow` | 44 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
-| `fmt` | 40 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
+| `fmt` | 38 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
 | `glue` | 44 | Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, `encase`, the `serde` visitor types). |
 | `random` | 65 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
 | `interop` | 68 | Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` scalar, and the `glam` types glam-cairo does not have: f64 `D*`, aligned `*A`, `i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam-cairo has are in scope. |
@@ -1093,7 +1092,7 @@ Cairo: Matrix3 · ported 0, partial 0, missing 3, excluded 2.
 
 #### Matrix4 (base)
 
-Cairo: Matrix4 · ported 0, partial 0, missing 13, excluded 2.
+Cairo: Matrix4 · ported 2, partial 0, missing 11, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -1107,8 +1106,8 @@ Cairo: Matrix4 · ported 0, partial 0, missing 13, excluded 2.
 | method `look_at_rh` | missing |  | P07 | `base/cg.rs` |
 | method `new_nonuniform_scaling_wrt_point` | missing |  | P07 | `base/cg.rs` |
 | method `new_observer_frame` | missing |  | deprecated upstream; P07; deprecated | `base/cg.rs` |
-| method `new_orthographic` | missing |  | P07 | `base/cg.rs` |
-| method `new_perspective` | missing |  | P07 | `base/cg.rs` |
+| method `new_orthographic` | ported | Matrix4::new_orthographic |  | `base/cg.rs` |
+| method `new_perspective` | ported | Matrix4::new_perspective |  | `base/cg.rs` |
 | method `new_rotation` | missing |  | P07 | `base/cg.rs` |
 | method `new_rotation_wrt_point` | missing |  | P07 | `base/cg.rs` |
 | method `transform_point` | missing |  | P07 | `base/cg.rs` |
@@ -1874,102 +1873,102 @@ Cairo: Matrix3 · ported 3, partial 0, missing 0, excluded 0.
 
 #### Matrix4 (geometry)
 
-Cairo: Matrix4 · ported 3, partial 0, missing 2, excluded 0.
+Cairo: Matrix4 · ported 5, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<Orthographic3>` | missing |  | P11b | `geometry/orthographic.rs` |
-| impl `From<Perspective3>` | missing |  | P11b | `geometry/perspective.rs` |
+| impl `From<Orthographic3>` | ported | Matrix4 (impl `From<Orthographic3>`) |  | `geometry/orthographic.rs` |
+| impl `From<Perspective3>` | ported | Matrix4 (impl `From<Perspective3>`) |  | `geometry/perspective.rs` |
 | impl `From<Rotation>` | ported | Matrix4 (impl `From<Rotation>`) |  | `geometry/rotation_conversion.rs` |
 | impl `From<UnitDualQuaternion>` | ported | Matrix4 (impl `From<UnitDualQuaternion>`) |  | `geometry/dual_quaternion_conversion.rs` |
 | impl `From<UnitQuaternion>` | ported | Matrix4 (impl `From<UnitQuaternion>`) |  | `geometry/quaternion_conversion.rs` |
 
 #### Orthographic3 (geometry)
 
-Cairo: none · ported 0, partial 0, missing 34, excluded 6.
+Cairo: Orthographic3 · ported 33, partial 0, missing 2, excluded 5.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Arbitrary` | excluded |  | random | `geometry/orthographic.rs` |
 | impl `Archive` | excluded |  | glue | `geometry/orthographic.rs` |
-| impl `Clone` | missing |  | P11b | `geometry/orthographic.rs` |
-| impl `Copy` | missing |  | P11b | `geometry/orthographic.rs` |
-| impl `Debug` | excluded |  | fmt | `geometry/orthographic.rs` |
-| impl `Deserialize` | missing |  | P11b | `geometry/orthographic.rs` |
+| impl `Clone` | ported | Orthographic3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/orthographic.rs` |
+| impl `Copy` | ported | Orthographic3 (impl `Copy`) |  | `geometry/orthographic.rs` |
+| impl `Debug` | ported | Orthographic3 (impl `Debug`) |  | `geometry/orthographic.rs` |
+| impl `Deserialize` | ported | Orthographic3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/orthographic.rs` |
 | impl `Distribution` | excluded |  | random | `geometry/orthographic.rs` |
-| impl `PartialEq` | missing |  | P11b | `geometry/orthographic.rs` |
+| impl `PartialEq` | ported | Orthographic3 (impl `PartialEq`) |  | `geometry/orthographic.rs` |
 | impl `Pod` | excluded |  | glue | `geometry/orthographic.rs` |
-| impl `Serialize` | missing |  | P11b | `geometry/orthographic.rs` |
+| impl `Serialize` | ported | Orthographic3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/orthographic.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/orthographic.rs` |
-| method `as_matrix` | missing |  | P11b | `geometry/orthographic.rs` |
+| method `as_matrix` | ported | Orthographic3::as_matrix |  | `geometry/orthographic.rs` |
 | method `as_projective` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `bottom` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `from_fov` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `from_matrix_unchecked` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `into_inner` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `inverse` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `left` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `new` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `project_point` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `project_vector` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `right` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_bottom` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_bottom_and_top` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_left` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_left_and_right` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_right` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_top` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_zfar` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_znear` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `set_znear_and_zfar` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `to_homogeneous` | missing |  | P11b | `geometry/orthographic.rs` |
+| method `bottom` | ported | Orthographic3::bottom |  | `geometry/orthographic.rs` |
+| method `from_fov` | ported | Orthographic3::from_fov |  | `geometry/orthographic.rs` |
+| method `from_matrix_unchecked` | ported | Orthographic3::from_matrix_unchecked |  | `geometry/orthographic.rs` |
+| method `into_inner` | ported | Orthographic3::into_inner |  | `geometry/orthographic.rs` |
+| method `inverse` | ported | Orthographic3::inverse |  | `geometry/orthographic.rs` |
+| method `left` | ported | Orthographic3::left |  | `geometry/orthographic.rs` |
+| method `new` | ported | Orthographic3::new |  | `geometry/orthographic.rs` |
+| method `project_point` | ported | Orthographic3::project_point |  | `geometry/orthographic.rs` |
+| method `project_vector` | ported | Orthographic3::project_vector |  | `geometry/orthographic.rs` |
+| method `right` | ported | Orthographic3::right |  | `geometry/orthographic.rs` |
+| method `set_bottom` | ported | Orthographic3::set_bottom |  | `geometry/orthographic.rs` |
+| method `set_bottom_and_top` | ported | Orthographic3::set_bottom_and_top |  | `geometry/orthographic.rs` |
+| method `set_left` | ported | Orthographic3::set_left |  | `geometry/orthographic.rs` |
+| method `set_left_and_right` | ported | Orthographic3::set_left_and_right |  | `geometry/orthographic.rs` |
+| method `set_right` | ported | Orthographic3::set_right |  | `geometry/orthographic.rs` |
+| method `set_top` | ported | Orthographic3::set_top |  | `geometry/orthographic.rs` |
+| method `set_zfar` | ported | Orthographic3::set_zfar |  | `geometry/orthographic.rs` |
+| method `set_znear` | ported | Orthographic3::set_znear |  | `geometry/orthographic.rs` |
+| method `set_znear_and_zfar` | ported | Orthographic3::set_znear_and_zfar |  | `geometry/orthographic.rs` |
+| method `to_homogeneous` | ported | Orthographic3::to_homogeneous |  | `geometry/orthographic.rs` |
 | method `to_projective` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `top` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `unproject_point` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `unwrap` | missing |  | deprecated upstream; P11b; deprecated | `geometry/orthographic.rs` |
-| method `zfar` | missing |  | P11b | `geometry/orthographic.rs` |
-| method `znear` | missing |  | P11b | `geometry/orthographic.rs` |
-| type `Orthographic3` | missing |  | P11b | `geometry/orthographic.rs` |
+| method `top` | ported | Orthographic3::top |  | `geometry/orthographic.rs` |
+| method `unproject_point` | ported | Orthographic3::unproject_point |  | `geometry/orthographic.rs` |
+| method `unwrap` | ported | Orthographic3::unwrap | deprecated | `geometry/orthographic.rs` |
+| method `zfar` | ported | Orthographic3::zfar |  | `geometry/orthographic.rs` |
+| method `znear` | ported | Orthographic3::znear |  | `geometry/orthographic.rs` |
+| type `Orthographic3` | ported | Orthographic3 |  | `geometry/orthographic.rs` |
 
 #### Perspective3 (geometry)
 
-Cairo: none · ported 0, partial 0, missing 27, excluded 6.
+Cairo: Perspective3 · ported 26, partial 0, missing 2, excluded 5.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Arbitrary` | excluded |  | random | `geometry/perspective.rs` |
 | impl `Archive` | excluded |  | glue | `geometry/perspective.rs` |
-| impl `Clone` | missing |  | P11b | `geometry/perspective.rs` |
-| impl `Copy` | missing |  | P11b | `geometry/perspective.rs` |
-| impl `Debug` | excluded |  | fmt | `geometry/perspective.rs` |
-| impl `Deserialize` | missing |  | P11b | `geometry/perspective.rs` |
+| impl `Clone` | ported | Perspective3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/perspective.rs` |
+| impl `Copy` | ported | Perspective3 (impl `Copy`) |  | `geometry/perspective.rs` |
+| impl `Debug` | ported | Perspective3 (impl `Debug`) |  | `geometry/perspective.rs` |
+| impl `Deserialize` | ported | Perspective3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/perspective.rs` |
 | impl `Distribution` | excluded |  | random | `geometry/perspective.rs` |
-| impl `PartialEq` | missing |  | P11b | `geometry/perspective.rs` |
+| impl `PartialEq` | ported | Perspective3 (impl `PartialEq`) |  | `geometry/perspective.rs` |
 | impl `Pod` | excluded |  | glue | `geometry/perspective.rs` |
-| impl `Serialize` | missing |  | P11b | `geometry/perspective.rs` |
+| impl `Serialize` | ported | Perspective3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/perspective.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/perspective.rs` |
-| method `as_matrix` | missing |  | P11b | `geometry/perspective.rs` |
+| method `as_matrix` | ported | Perspective3::as_matrix |  | `geometry/perspective.rs` |
 | method `as_projective` | missing |  | P11b | `geometry/perspective.rs` |
-| method `aspect` | missing |  | P11b | `geometry/perspective.rs` |
-| method `fovy` | missing |  | P11b | `geometry/perspective.rs` |
-| method `from_matrix_unchecked` | missing |  | P11b | `geometry/perspective.rs` |
-| method `into_inner` | missing |  | P11b | `geometry/perspective.rs` |
-| method `inverse` | missing |  | P11b | `geometry/perspective.rs` |
-| method `new` | missing |  | P11b | `geometry/perspective.rs` |
-| method `project_point` | missing |  | P11b | `geometry/perspective.rs` |
-| method `project_vector` | missing |  | P11b | `geometry/perspective.rs` |
-| method `set_aspect` | missing |  | P11b | `geometry/perspective.rs` |
-| method `set_fovy` | missing |  | P11b | `geometry/perspective.rs` |
-| method `set_zfar` | missing |  | P11b | `geometry/perspective.rs` |
-| method `set_znear` | missing |  | P11b | `geometry/perspective.rs` |
-| method `set_znear_and_zfar` | missing |  | P11b | `geometry/perspective.rs` |
-| method `to_homogeneous` | missing |  | P11b | `geometry/perspective.rs` |
+| method `aspect` | ported | Perspective3::aspect |  | `geometry/perspective.rs` |
+| method `fovy` | ported | Perspective3::fovy |  | `geometry/perspective.rs` |
+| method `from_matrix_unchecked` | ported | Perspective3::from_matrix_unchecked |  | `geometry/perspective.rs` |
+| method `into_inner` | ported | Perspective3::into_inner |  | `geometry/perspective.rs` |
+| method `inverse` | ported | Perspective3::inverse |  | `geometry/perspective.rs` |
+| method `new` | ported | Perspective3::new |  | `geometry/perspective.rs` |
+| method `project_point` | ported | Perspective3::project_point |  | `geometry/perspective.rs` |
+| method `project_vector` | ported | Perspective3::project_vector |  | `geometry/perspective.rs` |
+| method `set_aspect` | ported | Perspective3::set_aspect |  | `geometry/perspective.rs` |
+| method `set_fovy` | ported | Perspective3::set_fovy |  | `geometry/perspective.rs` |
+| method `set_zfar` | ported | Perspective3::set_zfar |  | `geometry/perspective.rs` |
+| method `set_znear` | ported | Perspective3::set_znear |  | `geometry/perspective.rs` |
+| method `set_znear_and_zfar` | ported | Perspective3::set_znear_and_zfar |  | `geometry/perspective.rs` |
+| method `to_homogeneous` | ported | Perspective3::to_homogeneous |  | `geometry/perspective.rs` |
 | method `to_projective` | missing |  | P11b | `geometry/perspective.rs` |
-| method `unproject_point` | missing |  | P11b | `geometry/perspective.rs` |
-| method `unwrap` | missing |  | deprecated upstream; P11b; deprecated | `geometry/perspective.rs` |
-| method `zfar` | missing |  | P11b | `geometry/perspective.rs` |
-| method `znear` | missing |  | P11b | `geometry/perspective.rs` |
-| type `Perspective3` | missing |  | P11b | `geometry/perspective.rs` |
+| method `unproject_point` | ported | Perspective3::unproject_point |  | `geometry/perspective.rs` |
+| method `unwrap` | ported | Perspective3::unwrap | deprecated | `geometry/perspective.rs` |
+| method `zfar` | ported | Perspective3::zfar |  | `geometry/perspective.rs` |
+| method `znear` | ported | Perspective3::znear |  | `geometry/perspective.rs` |
+| type `Perspective3` | ported | Perspective3 |  | `geometry/perspective.rs` |
 
 #### Point (geometry)
 

@@ -13,6 +13,7 @@ mod dual_quaternion;
 mod geometry;
 mod linalg;
 mod pose_completion;
+mod projections;
 mod rotation_completion;
 mod scalar;
 mod scale_reflection;
@@ -26,6 +27,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(pose_completion::suites());
     suites.extend(scale_reflection::suites());
     suites.extend(dual_quaternion::suites());
+    suites.extend(projections::suites());
     suites.extend(linalg::suites());
     suites
 }

@@ -28,6 +28,9 @@
 //!   `SymMatrixN` from its upper triangle. `s2r(rows)` / `s3r(rows)` and `s2ir` / `s3ir`: the
 //!   `SymMatrixN` view (upper triangle) of a full ROW-major matrix, the shape of the oracle's
 //!   symmetric inputs, which are exactly symmetric in raw units so that nothing is lost.
+//! - `pers4t((m11, m22, m33, m34))` / `ortho6t((m11, m14, m22, m24, m33, m34))` (WP 8.4-P11b):
+//!   a `Perspective3` / `Orthographic3` from the raw structural entries of its matrix (oracle
+//!   layout, `from_matrix_unchecked`).
 //! - `ulp_diff`, `max_ulp_diffN` (matrices), `max_ulp_diff_vN`, `max_ulp_diff_sN`,
 //!   `max_ulp_diff_q`, `max_ulp_diff_uc`: largest component-wise `|a - b|` in raw units.
 //!   `abs_raw`, `max_abs_*`, `amax_*`, `oracle_tol`, `excess`, `orthonormality_error_mN`: the
@@ -123,6 +126,8 @@ use nalgebra::geometry::isometry2::Isometry2;
 use nalgebra::geometry::isometry3::Isometry3;
 use nalgebra::geometry::isometry_matrix2::IsometryMatrix2;
 use nalgebra::geometry::isometry_matrix3::IsometryMatrix3;
+use nalgebra::geometry::orthographic3::{Orthographic3, Orthographic3Trait};
+use nalgebra::geometry::perspective3::{Perspective3, Perspective3Trait};
 use nalgebra::geometry::quaternion::Quaternion;
 use nalgebra::geometry::rotation2::Rotation2;
 use nalgebra::geometry::rotation3::Rotation3;
@@ -784,6 +789,24 @@ pub fn simm2t(t: (i64, i64), r: [[i64; 2]; 2], scaling: i64) -> SimilarityMatrix
 /// `SimilarityMatrix3` from the raw translation, ROW-major rotation rows and scaling.
 pub fn simm3t(t: (i64, i64, i64), r: [[i64; 3]; 3], scaling: i64) -> SimilarityMatrix3<Fixed> {
     SimilarityMatrix3 { isometry: isom3t(t, r), scaling: fx(scaling) }
+}
+
+/// `Perspective3` from the raw entries `(m11, m22, m33, m34)` of its matrix (oracle layout; the
+/// other entries are those of a perspective: `m43 = -1`, zeros elsewhere).
+pub fn pers4t(t: (i64, i64, i64, i64)) -> Perspective3<Fixed> {
+    let (m11, m22, m33, m34) = t;
+    Perspective3Trait::from_matrix_unchecked(
+        m4([[m11, 0, 0, 0], [0, m22, 0, 0], [0, 0, m33, m34], [0, 0, -ONE_RAW, 0]]),
+    )
+}
+
+/// `Orthographic3` from the raw entries `(m11, m14, m22, m24, m33, m34)` of its matrix (oracle
+/// layout; `m44 = 1`, zeros elsewhere).
+pub fn ortho6t(t: (i64, i64, i64, i64, i64, i64)) -> Orthographic3<Fixed> {
+    let (m11, m14, m22, m24, m33, m34) = t;
+    Orthographic3Trait::from_matrix_unchecked(
+        m4([[m11, 0, 0, m14], [0, m22, 0, m24], [0, 0, m33, m34], [0, 0, 0, ONE_RAW]]),
+    )
 }
 
 // --- comparisons in raw units -------------------------------------------------------------------
