@@ -14,6 +14,7 @@ mod linalg;
 mod pose_completion;
 mod rotation_completion;
 mod scalar;
+mod scale_reflection;
 
 /// Every suite, in a stable order.
 pub fn all() -> Vec<Suite> {
@@ -22,6 +23,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(geometry::suites());
     suites.extend(rotation_completion::suites());
     suites.extend(pose_completion::suites());
+    suites.extend(scale_reflection::suites());
     suites.extend(linalg::suites());
     suites
 }

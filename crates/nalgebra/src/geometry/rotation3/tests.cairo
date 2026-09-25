@@ -76,19 +76,22 @@ fn test_renormalize_fixes_a_drifted_matrix() {
     assert!(fixed.abs_diff_eq(r, 64));
 }
 
-/// A matrix scaled by 1 + 1e-3 is brought back to orthonormal in one pass (Gram-Schmidt is not a
-/// Newton step: it renormalizes exactly, whatever the scale).
+/// A matrix scaled by 1 + 1e-3 is brought back to orthonormal in one pass (the closed-form polar
+/// factor ignores the scale).
 #[test]
 fn test_renormalize_handles_a_scaled_matrix() {
     let s = fx(ONE_RAW + 4294967);
     let scaled = Rotation3 { matrix: third().matrix.scale(s) };
     let fixed = scaled.renormalized();
-    assert!((fixed.matrix * fixed.matrix.transpose()).is_identity(4));
-    assert!(fixed.abs_diff_eq(third(), 4));
+    assert!((fixed.matrix * fixed.matrix.transpose()).is_identity(8));
+    assert!(fixed.abs_diff_eq(third(), 8));
 }
 
+/// WP 8.4-P10 (upstream's formula, `from_matrix_eps(m, eps, 0, guess)`): the singular zero matrix
+/// no longer panics (Gram-Schmidt divided by zero); the closed-form limit of the polar factor is
+/// the identity.
 #[test]
-#[should_panic(expected: 'Fixed: division by zero')]
-fn test_renormalize_of_a_singular_matrix_panics() {
-    let _ = black_box(Rotation3 { matrix: Matrix3Trait::<Fixed>::zeros() }).renormalized();
+fn test_renormalize_of_the_zero_matrix_is_the_identity() {
+    let zero = Rotation3 { matrix: Matrix3Trait::<Fixed>::zeros() };
+    assert!(black_box(zero).renormalized() == Rotation3Trait::identity());
 }
