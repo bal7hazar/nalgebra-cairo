@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Compile-memory ablations of `crates/nalgebra` (WP 8.1d; results: `tools/shapegen/BUDGET.md`).
+"""Compile-memory ablations of `crates/nalgebra` (WP 8.1d; `DESIGN.md` §2.11, raw results:
+`budget-results.jsonl`).
 
 Copies the library, `crates/testing` and one test package into a throw-away workspace
 (`/tmp/nalgebra-budget/<variant>`), applies ONE variant (a module removed, a family duplicated,
@@ -322,6 +323,8 @@ VARIANTS = {
                    lambda ws: split_module(ws, "blas")),
     "-debug-hash": ("no derived `Debug` / `Hash` in the library",
                     lambda ws: strip_derives(ws, {"Debug", "Hash"})),
+    "empty-lib": ("an empty library (the fixed cost: corelib, simba, the plugins)",
+                  lambda ws: (ws / SRC / "lib.cairo").write_text("pub fn f() {}\n")),
     "empty-tests": ("the test package reduced to one trivial test", empty_tests),
     "-inline": ("no `#[inline(always)]` in the generated base modules",
                 lambda ws: strip_inline(ws, generated_files(ws))),
@@ -386,7 +389,9 @@ def library_lines(ws: Path) -> int:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("variant", help=", ".join(VARIANTS))
-    p.add_argument("--target", choices=["lib", "test"], default="lib")
+    p.add_argument("--target", choices=["lib", "test", "selftest"], default="lib",
+                   help="lib: `scarb build -p nalgebra`; test: `scarb build --test` of --package; "
+                        "selftest: `scarb build --test -p nalgebra` (the library's own tests)")
     p.add_argument("--package", default="shapes_tests_core",
                    help="the test package (directory under crates/) of --target test")
     p.add_argument("--features", default=None,
@@ -407,6 +412,8 @@ def main() -> int:
         set_features(ws, package, args.features)
     if args.target == "lib":
         cmd = ["scarb", "build", "-p", "nalgebra"]
+    elif args.target == "selftest":
+        cmd = ["scarb", "build", "--test", "-p", "nalgebra"]
     else:
         name = re.search(r'name = "([^"]+)"',
                          (ws / "crates" / package / "Scarb.toml").read_text()).group(1)
