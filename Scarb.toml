@@ -16,6 +16,7 @@ members = [
     "crates/tests_geometry",
     "crates/tests_geometry_ext",
     "crates/tests_geometry_poses",
+    "crates/tests_geometry_scale",
     "crates/tests_linalg",
 ]
 

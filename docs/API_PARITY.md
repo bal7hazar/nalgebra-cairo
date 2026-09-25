@@ -18,7 +18,7 @@ How to read it:
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
 | base | 283 | 11 | 194 | 316 | 804 | 58.0% |
-| geometry | 577 | 2 | 349 | 120 | 1048 | 62.2% |
+| geometry | 633 | 3 | 295 | 117 | 1048 | 68.0% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
 | io | 0 | 0 | 2 | 0 | 2 | 0.0% |
@@ -26,7 +26,7 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **936** | **19** | **913** | **568** | **2436** | **50.1%** |
+| **total** | **992** | **20** | **859** | **565** | **2436** | **53.0%** |
 
 nalgebra.cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebracairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -37,7 +37,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | WP | Title | Items | Tier | Depends on | Main upstream files |
 |---|---|---:|---|---|---|
 | [P01](#p01-rectangular-and-remaining-static-shapes) | Rectangular and remaining static shapes | 1 | mechanical | — | `base/matrix.rs` (1) |
-| [P02](#p02-static-base-completion-vector-matrix-2-6) | Static base completion (Vector / Matrix 2-6) | 12 | mechanical | — | `base/unit.rs` (8), `base/ops.rs` (3), `geometry/scale_conversion.rs` (1) |
+| [P02](#p02-static-base-completion-vector-matrix-2-6) | Static base completion (Vector / Matrix 2-6) | 11 | mechanical | — | `base/unit.rs` (8), `base/ops.rs` (3) |
 | [P03](#p03-functional-and-in-place-variants) | Functional and in-place variants | 31 | mechanical | — | `geometry/quaternion_ops.rs` (9), `geometry/unit_complex_ops.rs` (6), `geometry/quaternion.rs` (5), `geometry/similarity.rs` (3), `geometry/point.rs` (2) |
 | [P04](#p04-swizzles) | Swizzles | 71 | mechanical | P01 (Vector2/3 results) | `base/swizzle.rs` (36), `geometry/swizzle.rs` (35) |
 | [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 28 | mechanical | P01 | `base/matrix_view.rs` (14), `base/matrix.rs` (4), `base/properties.rs` (4), `base/edition.rs` (3), `base/construction.rs` (2) |
@@ -46,7 +46,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 3 | standard numerics | — | `geometry/quaternion_conversion.rs` (2), `geometry/unit_complex_conversion.rs` (1) |
 | [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 6 | mechanical | P08 | `geometry/translation_conversion.rs` (3), `geometry/rotation_conversion.rs` (2), `geometry/point_conversion.rs` (1) |
 | [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 3 | mechanical | P09a | `geometry/isometry_conversion.rs` (2), `geometry/similarity_conversion.rs` (1) |
-| [P10](#p10-scale-and-reflection) | Scale and Reflection | 54 | mechanical | P09a | `geometry/scale.rs` (16), `geometry/reflection.rs` (8), `geometry/scale_conversion.rs` (8), `geometry/reflection_alias.rs` (6), `geometry/scale_alias.rs` (6) |
+| [P10](#p10-scale-and-reflection) | Scale and Reflection | 2 | mechanical | P09a | `geometry/scale_conversion.rs` (2) |
 | [P11a](#p11a-transform-affine-projective) | Transform, Affine, Projective | 59 | standard numerics | P07, P09b | `geometry/transform.rs` (24), `geometry/transform_ops.rs` (23), `geometry/transform_alias.rs` (6), `geometry/transform_construction.rs` (3), `geometry/transform_conversion.rs` (3) |
 | [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 63 | standard numerics | P07 | `geometry/orthographic.rs` (35), `geometry/perspective.rs` (28) |
 | [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 96 | standard numerics | P08, P09b | `geometry/dual_quaternion.rs` (44), `geometry/dual_quaternion_ops.rs` (31), `geometry/dual_quaternion_construction.rs` (12), `geometry/dual_quaternion_conversion.rs` (9) |
@@ -68,10 +68,10 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 
 ### P02 Static base completion (Vector / Matrix 2-6)
 
-the operations upstream has on every `Matrix` that nalgebra.cairo only has on some types (`norm`, `normalize`, `component_*`, `inf` / `sup`, `amax`..., `scale`, `dot` on matrices, `Vector6` gaps), construction (`from_fn`, `from_row_slice`, arrays, `from_partial_diagonal`), conversions, `Index`, `RelativeEq` / `UlpsEq`, `PartialOrd`, `Sum`, scalar-on-the-left `*`, `Unit` gaps, `cast`. Tier: mechanical. Depends on: —. 12 items (`*` = partial):
+the operations upstream has on every `Matrix` that nalgebra.cairo only has on some types (`norm`, `normalize`, `component_*`, `inf` / `sup`, `amax`..., `scale`, `dot` on matrices, `Vector6` gaps), construction (`from_fn`, `from_row_slice`, arrays, `from_partial_diagonal`), conversions, `Index`, `RelativeEq` / `UlpsEq`, `PartialOrd`, `Sum`, scalar-on-the-left `*`, `Unit` gaps, `cast`. Tier: mechanical. Depends on: —. 11 items (`*` = partial):
 
 - **Matrix**: `impl:Sum<Matrix>`
-- **SquareMatrix**: `impl:From<Scale>`, `impl:Product`, `impl:Product<Matrix>`
+- **SquareMatrix**: `impl:Product`, `impl:Product<Matrix>`
 - **Unit**: `from_ref_unchecked`, `into_inner`*, `new_and_get`*, `new_normalize`*, `new_unchecked`*, `try_new`*, `try_new_and_get`*, `unwrap`
 
 ### P03 Functional and in-place variants
@@ -144,10 +144,9 @@ cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`..
 
 ### P10 Scale and Reflection
 
-`Scale1..6` (non-uniform scaling, inverse, homogeneous form, operators) and `Reflection1..6` (`reflect`, `reflect_rows`...). Tier: mechanical. Depends on: P09a. 54 items (`*` = partial):
+`Scale1..6` (non-uniform scaling, inverse, homogeneous form, operators) and `Reflection1..6` (`reflect`, `reflect_rows`...). Tier: mechanical. Depends on: P09a. 2 items (`*` = partial):
 
-- **Reflection**: `axis`, `bias`, `new`, `new_containing_point`, `reflect`, `reflect_rows`, `reflect_rows_with_sign`, `reflect_with_sign`, `type:Reflection1`, `type:Reflection2`, `type:Reflection3`, `type:Reflection4`, `type:Reflection5`, `type:Reflection6`
-- **Scale**: `impl:AbsDiffEq`, `impl:Clone`, `impl:Copy`, `impl:Deserialize`, `impl:Eq`, `impl:From<Matrix>`, `impl:From<Point>`, `impl:From<[Scale; N]>`, `impl:From<[T; N]>`, `impl:Hash`, `impl:Into<[T; N]>`, `impl:Mul<Matrix>`, `impl:Mul<Point>`, `impl:Mul<Scale>`, `impl:Mul<T>`, `impl:MulAssign<Scale>`, `impl:MulAssign<T>`, `impl:One`, `impl:PartialEq`, `impl:RelativeEq`, `impl:Serialize`, `impl:SubsetOf<Matrix>`, `impl:SubsetOf<Scale>`, `impl:SubsetOf<Transform>`, `impl:UlpsEq`, `cast`, `identity`, `new`, `pseudo_inverse`, `to_homogeneous`, `transform_point`, `try_inverse`, `try_inverse_mut`, `try_inverse_transform_point`, `type:Scale1`, `type:Scale2`, `type:Scale3`, `type:Scale4`, `type:Scale5`, `type:Scale6`
+- **Scale**: `impl:SubsetOf<Matrix>`*, `impl:SubsetOf<Transform>`
 
 ### P11a Transform, Affine, Projective
 
@@ -305,8 +304,8 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 |---|---|
 | Point | **Point1**, **Point2**, **Point3**, **Point4**, **Point5**, **Point6** |
 | Translation | **Translation1**, **Translation2**, **Translation3**, **Translation4**, **Translation5**, **Translation6** |
-| Scale | Scale1, Scale2, Scale3, Scale4, Scale5, Scale6 |
-| Reflection | Reflection1, Reflection2, Reflection3, Reflection4, Reflection5, Reflection6 |
+| Scale | **Scale1**, **Scale2**, **Scale3**, **Scale4**, **Scale5**, **Scale6** |
+| Reflection | **Reflection1**, **Reflection2**, **Reflection3**, **Reflection4**, **Reflection5**, **Reflection6** |
 | UnitVector | **UnitVector1**, **UnitVector2**, **UnitVector3**, **UnitVector4**, **UnitVector5**, **UnitVector6** |
 | Rotation | **Rotation2**, **Rotation3**, **UnitComplex**, **UnitQuaternion** |
 | Isometry | **Isometry2**, **Isometry3**, **IsometryMatrix2**, **IsometryMatrix3** |
@@ -318,15 +317,15 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 
 | Reason | Items | Justification |
 |---|---:|---|
-| `simd` | 14 | SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar path is the only path. |
+| `simd` | 15 | SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar path is the only path. |
 | `rayon` | 4 | `rayon` parallel iterators: a Cairo program is sequential. |
-| `unsafe` | 39 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
+| `unsafe` | 38 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
 | `borrow` | 44 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
-| `fmt` | 42 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
+| `fmt` | 41 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
 | `glue` | 44 | Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, `encase`, the `serde` visitor types). |
 | `random` | 65 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
 | `interop` | 68 | Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` scalar, and the `glam` types glam.cairo does not have: f64 `D*`, aligned `*A`, `i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam.cairo has are in scope. |
-| `generic-dim` | 248 | Generic-dimension machinery subsumed by concrete types: `Dim`, `DimName`, `Const`, `Dyn`, typenum `U*`, `Storage` / `RawStorage` / `ArrayStorage` / `VecStorage`, `Allocator`, `DefaultAllocator`, `ShapeConstraint`, views / slices / iterators as types, `*_generic` constructors, `into_owned` / `clone_owned` (identity on owned types). |
+| `generic-dim` | 246 | Generic-dimension machinery subsumed by concrete types: `Dim`, `DimName`, `Const`, `Dyn`, typenum `U*`, `Storage` / `RawStorage` / `ArrayStorage` / `VecStorage`, `Allocator`, `DefaultAllocator`, `ShapeConstraint`, views / slices / iterators as types, `*_generic` constructors, `into_owned` / `clone_owned` (identity on owned types). |
 
 `docs/PLAN.md` "Out of scope" also lists sparse, macros, complex numbers, Schur, Hessenberg, matrix exponential and convolution. They are NOT excluded here: they belong to nalgebra-rs's API, hence to the 0.1.0 target, until the owner decides otherwise (packages P16, P17, P18, P20, P21).
 
@@ -2211,25 +2210,25 @@ Cairo: Quaternion · ported 75, partial 0, missing 9, excluded 14.
 
 #### Reflection (geometry)
 
-Cairo: none · ported 0, partial 0, missing 14, excluded 1.
+Cairo: Reflection1/2/3/4/5/6 · ported 15, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `axis` | missing |  | P10 | `geometry/reflection.rs` |
-| method `bias` | missing |  | P10 | `geometry/reflection.rs` |
-| method `new` | missing |  | P10 | `geometry/reflection.rs` |
-| method `new_containing_point` | missing |  | P10 | `geometry/reflection.rs` |
-| method `reflect` | missing |  | P10 | `geometry/reflection.rs` |
-| method `reflect_rows` | missing |  | P10 | `geometry/reflection.rs` |
-| method `reflect_rows_with_sign` | missing |  | P10 | `geometry/reflection.rs` |
-| method `reflect_with_sign` | missing |  | P10 | `geometry/reflection.rs` |
-| type `Reflection` | excluded |  | generic-dim | `geometry/reflection.rs` |
-| type `Reflection1` | missing |  | P10 | `geometry/reflection_alias.rs` |
-| type `Reflection2` | missing |  | P10 | `geometry/reflection_alias.rs` |
-| type `Reflection3` | missing |  | P10 | `geometry/reflection_alias.rs` |
-| type `Reflection4` | missing |  | P10 | `geometry/reflection_alias.rs` |
-| type `Reflection5` | missing |  | P10 | `geometry/reflection_alias.rs` |
-| type `Reflection6` | missing |  | P10 | `geometry/reflection_alias.rs` |
+| method `axis` | ported | Reflection1/2/3/4/5/6::axis |  | `geometry/reflection.rs` |
+| method `bias` | ported | Reflection1/2/3/4/5/6::bias |  | `geometry/reflection.rs` |
+| method `new` | ported | Reflection1/2/3/4/5/6::new |  | `geometry/reflection.rs` |
+| method `new_containing_point` | ported | Reflection1/2/3/4/5/6::new_containing_point |  | `geometry/reflection.rs` |
+| method `reflect` | ported | Reflection1/2/3/4/5/6::reflect |  | `geometry/reflection.rs` |
+| method `reflect_rows` | ported | Reflection1/2/3/4/5/6::reflect_rows |  | `geometry/reflection.rs` |
+| method `reflect_rows_with_sign` | ported | Reflection1/2/3/4/5/6::reflect_rows_with_sign |  | `geometry/reflection.rs` |
+| method `reflect_with_sign` | ported | Reflection1/2/3/4/5/6::reflect_with_sign |  | `geometry/reflection.rs` |
+| type `Reflection` | ported | Reflection1/2/3/4/5/6 | generic upstream type, concrete Cairo types | `geometry/reflection.rs` |
+| type `Reflection1` | ported | Reflection1 |  | `geometry/reflection_alias.rs` |
+| type `Reflection2` | ported | Reflection2 |  | `geometry/reflection_alias.rs` |
+| type `Reflection3` | ported | Reflection3 |  | `geometry/reflection_alias.rs` |
+| type `Reflection4` | ported | Reflection4 |  | `geometry/reflection_alias.rs` |
+| type `Reflection5` | ported | Reflection5 |  | `geometry/reflection_alias.rs` |
+| type `Reflection6` | ported | Reflection6 |  | `geometry/reflection_alias.rs` |
 
 #### Rotation (geometry)
 
@@ -2366,61 +2365,61 @@ Cairo: Rotation3 · ported 30, partial 0, missing 1, excluded 2.
 
 #### Scale (geometry)
 
-Cairo: none · ported 0, partial 0, missing 40, excluded 11.
+Cairo: Scale1/2/3/4/5/6 · ported 40, partial 1, missing 1, excluded 9.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `AbsDiffEq` | missing |  | P10 | `geometry/scale.rs` |
+| impl `AbsDiffEq` | ported | Scale1/2/3/4/5/6::abs_diff_eq | renamed `abs_diff_eq`: tolerance in ulp (DESIGN D3) | `geometry/scale.rs` |
 | impl `Arbitrary` | excluded |  | random | `geometry/scale_construction.rs` |
 | impl `Archive` | excluded |  | glue | `geometry/scale.rs` |
-| impl `Clone` | missing |  | P10 | `geometry/scale.rs` |
-| impl `Copy` | missing |  | P10 | `geometry/scale.rs` |
-| impl `Debug` | excluded |  | fmt | `geometry/scale.rs` |
+| impl `Clone` | ported | Scale1/2/3/4/5/6 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `geometry/scale.rs` |
+| impl `Copy` | ported | Scale1/2/3/4/5/6 (impl `Copy`) |  | `geometry/scale.rs` |
+| impl `Debug` | ported | Scale1/2/3/4/5/6 (impl `Debug`) |  | `geometry/scale.rs` |
 | impl `Deref` | excluded |  | generic-dim | `geometry/scale_coordinates.rs` |
 | impl `DerefMut` | excluded |  | borrow | `geometry/scale_coordinates.rs` |
-| impl `Deserialize` | missing |  | P10 | `geometry/scale.rs` |
+| impl `Deserialize` | ported | Scale1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/scale.rs` |
 | impl `Display` | excluded |  | fmt | `geometry/scale.rs` |
 | impl `Distribution` | excluded |  | random | `geometry/scale_construction.rs` |
-| impl `Eq` | missing |  | P10 | `geometry/scale.rs` |
-| impl `From<Matrix>` | missing |  | P10 | `geometry/scale_conversion.rs` |
-| impl `From<Point>` | missing |  | P10 | `geometry/scale_conversion.rs` |
-| impl `From<[Scale; N]>` | missing |  | P10 | `geometry/scale_conversion.rs` |
-| impl `From<[T; N]>` | missing |  | P10 | `geometry/scale_conversion.rs` |
-| impl `Hash` | missing |  | P10 | `geometry/scale.rs` |
-| impl `Into<[T; N]>` | missing |  | P10 | `geometry/scale_conversion.rs` |
-| impl `Mul<Matrix>` | missing |  | P10 | `geometry/scale_ops.rs` |
-| impl `Mul<Point>` | missing |  | P10 | `geometry/scale_ops.rs` |
-| impl `Mul<Scale>` | missing |  | P10 | `geometry/scale_ops.rs` |
-| impl `Mul<T>` | missing |  | P10 | `geometry/scale_ops.rs` |
-| impl `MulAssign<Scale>` | missing |  | P10 | `geometry/scale_ops.rs` |
-| impl `MulAssign<T>` | missing |  | P10 | `geometry/scale_ops.rs` |
-| impl `One` | missing |  | P10 | `geometry/scale_construction.rs` |
-| impl `PartialEq` | missing |  | P10 | `geometry/scale.rs` |
+| impl `Eq` | ported | Scale1/2/3/4/5/6 (impl `PartialEq`) | renamed `PartialEq`: Cairo has no separate `Eq` | `geometry/scale.rs` |
+| impl `From<Matrix>` | ported | Scale1/2/3/4/5/6 (impl `From<Matrix>`) |  | `geometry/scale_conversion.rs` |
+| impl `From<Point>` | ported | Scale1/2/3/4/5/6 (impl `From<Point>`) |  | `geometry/scale_conversion.rs` |
+| impl `From<[Scale; N]>` | excluded |  | simd | `geometry/scale_conversion.rs` |
+| impl `From<[T; N]>` | ported | Scale1/2/3/4/5/6 (impl `From<[T; N]>`) |  | `geometry/scale_conversion.rs` |
+| impl `Hash` | ported | Scale1/2/3/4/5/6 (impl `Hash`) |  | `geometry/scale.rs` |
+| impl `Into<[T; N]>` | ported | Scale1/2/3/4/5/6 (impl `Into<[T; N]>`) |  | `geometry/scale_conversion.rs` |
+| impl `Mul<Matrix>` | ported | Scale1/2/3/4/5/6::mul_vector | renamed `mul_vector`: Cairo-imposed: heterogeneous operator (`s * v` on a column vector is `s.mul_vector(v)`) | `geometry/scale_ops.rs` |
+| impl `Mul<Point>` | ported | Scale1/2/3/4/5/6::transform_point | renamed `transform_point`: heterogeneous operators are named methods | `geometry/scale_ops.rs` |
+| impl `Mul<Scale>` | ported | Scale1/2/3/4/5/6 (impl `Mul<Scale>`) |  | `geometry/scale_ops.rs` |
+| impl `Mul<T>` | ported | Scale1/2/3/4/5/6::scale | renamed `scale`: heterogeneous operators are named methods (DESIGN D4) | `geometry/scale_ops.rs` |
+| impl `MulAssign<Scale>` | ported | Scale1/2/3/4/5/6 (impl `MulAssign<Scale>`) |  | `geometry/scale_ops.rs` |
+| impl `MulAssign<T>` | ported | Scale1/2/3/4/5/6 (impl `MulAssign<T>`) |  | `geometry/scale_ops.rs` |
+| impl `One` | ported | Scale1/2/3/4/5/6 (impl `One`) |  | `geometry/scale_construction.rs` |
+| impl `PartialEq` | ported | Scale1/2/3/4/5/6 (impl `PartialEq`) |  | `geometry/scale.rs` |
 | impl `Pod` | excluded |  | glue | `geometry/scale.rs` |
-| impl `RelativeEq` | missing |  | P10 | `geometry/scale.rs` |
-| impl `Serialize` | missing |  | P10 | `geometry/scale.rs` |
-| impl `SubsetOf<Matrix>` | missing |  | P10 | `geometry/scale_conversion.rs` |
-| impl `SubsetOf<Scale>` | missing |  | P10 | `geometry/scale_conversion.rs` |
+| impl `RelativeEq` | ported | Scale1/2/3/4/5/6::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/scale.rs` |
+| impl `Serialize` | ported | Scale1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/scale.rs` |
+| impl `SubsetOf<Matrix>` | partial | Scale1/2/3/4/5::to_homogeneous | not on Scale6; renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`; P10 | `geometry/scale_conversion.rs` |
+| impl `SubsetOf<Scale>` | ported | Scale1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/scale_conversion.rs` |
 | impl `SubsetOf<Transform>` | missing |  | P10 | `geometry/scale_conversion.rs` |
-| impl `UlpsEq` | missing |  | P10 | `geometry/scale.rs` |
+| impl `UlpsEq` | ported | Scale1/2/3/4/5/6::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/scale.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/scale.rs` |
-| method `cast` | missing |  | P10 | `geometry/scale_construction.rs` |
-| method `identity` | missing |  | P10 | `geometry/scale_construction.rs` |
-| method `new` | missing |  | P10 | `geometry/scale_construction.rs` |
-| method `pseudo_inverse` | missing |  | P10 | `geometry/scale.rs` |
-| method `to_homogeneous` | missing |  | P10 | `geometry/scale.rs` |
-| method `transform_point` | missing |  | P10 | `geometry/scale.rs` |
-| method `try_inverse` | missing |  | P10 | `geometry/scale.rs` |
-| method `try_inverse_mut` | missing |  | P10 | `geometry/scale.rs` |
-| method `try_inverse_transform_point` | missing |  | P10 | `geometry/scale.rs` |
-| type `Scale` | excluded |  | generic-dim | `geometry/scale.rs` |
-| type `Scale1` | missing |  | P10 | `geometry/scale_alias.rs` |
-| type `Scale2` | missing |  | P10 | `geometry/scale_alias.rs` |
-| type `Scale3` | missing |  | P10 | `geometry/scale_alias.rs` |
-| type `Scale4` | missing |  | P10 | `geometry/scale_alias.rs` |
-| type `Scale5` | missing |  | P10 | `geometry/scale_alias.rs` |
-| type `Scale6` | missing |  | P10 | `geometry/scale_alias.rs` |
-| unsafe-method `inverse_unchecked` | excluded |  | unsafe | `geometry/scale.rs` |
+| method `cast` | ported | Scale1/2/3/4/5/6::cast |  | `geometry/scale_construction.rs` |
+| method `identity` | ported | Scale1/2/3/4/5/6::identity |  | `geometry/scale_construction.rs` |
+| method `new` | ported | Scale1/2/3/4/5/6::new |  | `geometry/scale_construction.rs` |
+| method `pseudo_inverse` | ported | Scale1/2/3/4/5/6::pseudo_inverse |  | `geometry/scale.rs` |
+| method `to_homogeneous` | ported | Scale1/2/3/4/5::to_homogeneous |  | `geometry/scale.rs` |
+| method `transform_point` | ported | Scale1/2/3/4/5/6::transform_point |  | `geometry/scale.rs` |
+| method `try_inverse` | ported | Scale1/2/3/4/5/6::try_inverse |  | `geometry/scale.rs` |
+| method `try_inverse_mut` | ported | Scale1/2/3/4/5/6::try_inverse_mut |  | `geometry/scale.rs` |
+| method `try_inverse_transform_point` | ported | Scale1/2/3/4/5/6::try_inverse_transform_point |  | `geometry/scale.rs` |
+| type `Scale` | ported | Scale1/2/3/4/5/6 | generic upstream type, concrete Cairo types | `geometry/scale.rs` |
+| type `Scale1` | ported | Scale1 |  | `geometry/scale_alias.rs` |
+| type `Scale2` | ported | Scale2 |  | `geometry/scale_alias.rs` |
+| type `Scale3` | ported | Scale3 |  | `geometry/scale_alias.rs` |
+| type `Scale4` | ported | Scale4 |  | `geometry/scale_alias.rs` |
+| type `Scale5` | ported | Scale5 |  | `geometry/scale_alias.rs` |
+| type `Scale6` | ported | Scale6 |  | `geometry/scale_alias.rs` |
+| unsafe-method `inverse_unchecked` | ported | Scale1/2/3/4/5/6::inverse_unchecked |  | `geometry/scale.rs` |
 
 #### Similarity (geometry)
 
@@ -2544,12 +2543,12 @@ Cairo: SimilarityMatrix3 · ported 6, partial 0, missing 0, excluded 0.
 
 #### SquareMatrix (geometry)
 
-Cairo: Matrix1/2/3/4/5/6 · ported 3, partial 0, missing 2, excluded 0.
+Cairo: Matrix1/2/3/4/5/6 · ported 4, partial 0, missing 1, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<Isometry>` | ported | Matrix3/4 (impl `From<Isometry>`) |  | `geometry/isometry_conversion.rs` |
-| impl `From<Scale>` | missing |  | P02 | `geometry/scale_conversion.rs` |
+| impl `From<Scale>` | ported | Matrix2/3/4/5/6 (impl `From<Scale>`) |  | `geometry/scale_conversion.rs` |
 | impl `From<Similarity>` | ported | Matrix3/4 (impl `From<Similarity>`) |  | `geometry/similarity_conversion.rs` |
 | impl `From<Transform>` | missing |  | P11a | `geometry/transform_conversion.rs` |
 | impl `From<Translation>` | ported | Matrix2/3/4/5/6 (impl `From<Translation>`) |  | `geometry/translation_conversion.rs` |

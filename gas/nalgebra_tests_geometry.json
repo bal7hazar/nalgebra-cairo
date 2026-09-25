@@ -615,9 +615,10 @@
       "matrix_product": 45690
     },
     "rotation3_renormalize": {
+      "alt_gram_schmidt": 68390,
       "alt_newton": 101550,
       "baseline": 21540,
-      "gram_schmidt": 68390
+      "closed_form": 522300
     },
     "rotation3_rotation_between": {
       "algebraic_quaternion": 107880,
