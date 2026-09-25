@@ -15,6 +15,8 @@ members = [
     "crates/shapes_tests_cg",
     "crates/shapes_tests_stats",
     "crates/shapes_tests_blas",
+    "crates/shapes_tests_gemm",
+    "crates/shapes_tests_gemm_large",
     "crates/tests_utils",
     "crates/tests_base",
     "crates/tests_geometry",

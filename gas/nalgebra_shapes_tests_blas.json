@@ -1,0 +1,98 @@
+{
+  "nalgebra_shapes_tests_blas::benches": {
+    "matrix2_quadform_matrix3": {
+      "baseline": 113430,
+      "library": 150710
+    },
+    "matrix2_quadform_tr_matrix3": {
+      "baseline": 113430,
+      "library": 150710
+    },
+    "matrix2x3_gemm": {
+      "baseline": 143820,
+      "library": 176210
+    },
+    "matrix2x3_gemm_tr": {
+      "alt_direct": 176210,
+      "baseline": 143820,
+      "library": 176210
+    },
+    "matrix3_gemm": {
+      "alt_upstream": 201230,
+      "baseline": 157960,
+      "library": 201230
+    },
+    "matrix3_gemm_tr": {
+      "alt_direct": 201230,
+      "baseline": 157960,
+      "library": 201230
+    },
+    "matrix3_ger": {
+      "alt_scaled": 155510,
+      "baseline": 118240,
+      "library": 145430
+    },
+    "matrix3_quadform_matrix3": {
+      "baseline": 157960,
+      "library": 223480
+    },
+    "matrix3_quadform_tr_matrix3": {
+      "baseline": 157960,
+      "library": 223480
+    },
+    "matrix3_tr_dot": {
+      "baseline": 50370,
+      "library": 53650
+    },
+    "matrix4_gemm": {
+      "baseline": 254740,
+      "library": 334730
+    },
+    "matrix6_gemm": {
+      "alt_direct": 719130,
+      "baseline": 527540,
+      "library": 719130
+    },
+    "matrix6_ger": {
+      "alt_scaled": 472530,
+      "baseline": 328940,
+      "library": 422130
+    },
+    "matrix6_tr_dot": {
+      "baseline": 139740,
+      "library": 157250
+    },
+    "vector3_axpy": {
+      "baseline": 61650,
+      "library": 68190
+    },
+    "vector3_gemv": {
+      "baseline": 96580,
+      "library": 110260
+    },
+    "vector3_gemv_tr": {
+      "baseline": 96580,
+      "library": 110260
+    },
+    "vector3_sygemv": {
+      "baseline": 96580,
+      "library": 110260
+    },
+    "vector6_axpy": {
+      "baseline": 92340,
+      "library": 108250
+    },
+    "vector6_gemv": {
+      "baseline": 216640,
+      "library": 249100
+    },
+    "vector6_gemv_tr": {
+      "baseline": 216640,
+      "library": 249100
+    },
+    "vector6_sygemv": {
+      "baseline": 216640,
+      "library": 255830
+    }
+  }
+}

@@ -11,8 +11,10 @@ identities `gemm(1, a, b, 0) == a.mul_mat(b)` / `gemm_tr(1, a, b, 0) == a.tr_mul
 `beta == 0` ignoring the previous content; the overflow panic once. Tier B: the oracle suite
 `blas` of `tools/oracle` (`oracle_blas.cairo`).
 
-Files (`src/<file>.cairo`): `blas`, `gemv`, `gemm_r1_3` / `gemm_r4_6` (by rows of `self`),
-`quadform`, `oracle`, `benches` (`gas/nalgebra_shapes_tests_blas`).
+Files (`src/<file>.cairo`): `blas`, `gemv`, `oracle`, `benches`
+(`gas/nalgebra_shapes_tests_blas`); for the compile budget, `gemm_r1_3` and `quadform` in
+`crates/shapes_tests_gemm` (`GEMM_PACKAGE`), `gemm_r4_6` in `crates/shapes_tests_gemm_large`
+(`GEMM_LARGE_PACKAGE`).
 """
 
 import random
@@ -463,42 +465,71 @@ def render_benches() -> str:
 # --------------------------------------------------------------------------------------------
 
 
-def render() -> dict[str, str]:
-    files = {
-        "blas": P06File("blas", "Generated tests, `blas` family: `dotc`, `tr_dot`, `ger`, `gerc` on "
+GEMM_PACKAGE = "shapes_tests_gemm"
+GEMM_LARGE_PACKAGE = "shapes_tests_gemm_large"
+PACKAGES = (PACKAGE, GEMM_PACKAGE, GEMM_LARGE_PACKAGE)
+
+
+def render() -> dict[str, dict[str, str]]:
+    """{package: {file: text}}. Compile budget (cold peak `scarb build --test`, the library alone
+    about 6.3 GB): everything in one package peaked at 11.4 GB, so the 216 `gemm` triples and the
+    `quadform` family have their own packages: `blas` + `gemv` + oracle + benches, `gemm` of the
+    shapes with 1 to 3 rows + `quadform`, `gemm` of the shapes with 4 to 6 rows."""
+    def fam(name: str, what: str) -> P06File:
+        return P06File(name, what, HEADER)
+
+    gemm_what = ("Generated tests, `gemm` family (`self` with {} rows): `gemm` / `gemm_tr` with "
+                 "every inner dimension, `gemm_ad`, modelled exactly on integer raws.")
+    pkgs = {
+        PACKAGE: {
+            "blas": fam("blas", "Generated tests, `blas` family: `dotc`, `tr_dot`, `ger`, `gerc` on "
                         "the 36 shapes, `syger` / `hegerc` / `ger_symm` on the squares, `axpy` / "
                         "`axcpy` / `sygemv` / `hegemv` on the column vectors, modelled exactly on "
-                        "integer raws.", HEADER),
-        "gemv": P06File("gemv", "Generated tests, `gemv` family: `gemv`, `gemv_tr`, `gemv_ad` of "
+                        "integer raws."),
+            "gemv": fam("gemv", "Generated tests, `gemv` family: `gemv`, `gemv_tr`, `gemv_ad` of "
                         "every column vector with every matrix that fits, modelled exactly; the "
-                        "`gemm` identities and overflow panic.", HEADER),
-        "gemm_r1_3": P06File("gemm_r1_3", "Generated tests, `gemm` family (`self` with 1 to 3 "
-                             "rows): `gemm` / `gemm_tr` with every inner dimension, `gemm_ad`, "
-                             "modelled exactly on integer raws.", HEADER),
-        "gemm_r4_6": P06File("gemm_r4_6", "Generated tests, `gemm` family (`self` with 4 to 6 "
-                             "rows): `gemm` / `gemm_tr` with every inner dimension, `gemm_ad`, "
-                             "modelled exactly on integer raws.", HEADER),
-        "quadform": P06File("quadform", "Generated tests, `quadform` family: `quadform`, "
+                        "`gemm` identities and overflow panic."),
+        },
+        GEMM_PACKAGE: {
+            "gemm_r1_3": fam("gemm_r1_3", gemm_what.format("1 to 3")),
+            "quadform": fam("quadform", "Generated tests, `quadform` family: `quadform`, "
                             "`quadform_tr` and their `_with_workspace` forms on the six squares "
-                            "with every middle size, modelled exactly (workspace included).",
-                            HEADER),
+                            "with every middle size, modelled exactly (workspace included)."),
+        },
+        GEMM_LARGE_PACKAGE: {"gemm_r4_6": fam("gemm_r4_6", gemm_what.format("4 to 6"))},
     }
     for s in ALL_SHAPES:
-        per_shape(files["blas"], s)
-        gemm(files["gemm_r1_3" if s.r <= 3 else "gemm_r4_6"], s)
+        per_shape(pkgs[PACKAGE]["blas"], s)
+        if s.r <= 3:
+            gemm(pkgs[GEMM_PACKAGE]["gemm_r1_3"], s)
+        else:
+            gemm(pkgs[GEMM_LARGE_PACKAGE]["gemm_r4_6"], s)
     for n in DIMS:
-        gemv(files["gemv"], n)
-        quadform(files["quadform"], n)
-    identities(files["gemv"])
-    out = {f"{name}.cairo": f.render() for name, f in files.items()}
-    out["oracle.cairo"] = blas_oracle()
-    out["helpers.cairo"] = HEADER + HELPERS + EXTRA_HELPERS
-    out["benches.cairo"] = render_benches()
-    out["lib.cairo"] = lib_root("BLAS-like kernels (`blas.py`)",
-                                ["benches", "helpers", "oracle", "oracle_blas", *files]).replace(
-        "(tests_stats.py)", "(tests_blas.py)")
+        gemv(pkgs[PACKAGE]["gemv"], n)
+        quadform(pkgs[GEMM_PACKAGE]["quadform"], n)
+    identities(pkgs[PACKAGE]["gemv"])
+    out = {}
+    for package, files in pkgs.items():
+        texts = {f"{name}.cairo": f.render() for name, f in files.items()}
+        texts["helpers.cairo"] = HEADER + HELPERS + (EXTRA_HELPERS if package == PACKAGE else "")
+        mods = ["helpers", *files]
+        if package == PACKAGE:
+            texts["oracle.cairo"] = blas_oracle()
+            texts["benches.cairo"] = render_benches()
+            mods += ["benches", "oracle", "oracle_blas"]
+            what = "BLAS-like kernels (`blas.py`)"
+        else:
+            what = ("matrix products `gemm` / `gemm_tr` / `gemm_ad` and the quadratic forms "
+                    "(`blas.py`)" if package == GEMM_PACKAGE else
+                    "matrix products `gemm` / `gemm_tr` / `gemm_ad` of the shapes with 4 to 6 rows "
+                    "(`blas.py`)")
+        texts["lib.cairo"] = lib_root(what, mods).replace("(tests_stats.py)", "(tests_blas.py)")
+        out[package] = texts
     return out
 
 
 def outputs(tmp):
-    return write_package(tmp, PACKAGE, render())
+    out = {}
+    for package, files in render().items():
+        out |= write_package(tmp, package, files)
+    return out

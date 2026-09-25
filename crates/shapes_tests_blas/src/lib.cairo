@@ -9,10 +9,6 @@ mod benches;
 #[cfg(test)]
 mod blas;
 #[cfg(test)]
-mod gemm_r1_3;
-#[cfg(test)]
-mod gemm_r4_6;
-#[cfg(test)]
 mod gemv;
 #[cfg(test)]
 mod helpers;
@@ -20,5 +16,3 @@ mod helpers;
 mod oracle;
 #[cfg(test)]
 mod oracle_blas;
-#[cfg(test)]
-mod quadform;

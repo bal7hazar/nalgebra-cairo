@@ -54,6 +54,8 @@ jobs:
           - { name: "shapes cg", package: nalgebra_shapes_tests_cg, filters: "nalgebra_shapes_tests_cg" }
           - { name: "shapes stats", package: nalgebra_shapes_tests_stats, filters: "nalgebra_shapes_tests_stats" }
           - { name: "shapes blas", package: nalgebra_shapes_tests_blas, filters: "nalgebra_shapes_tests_blas" }
+          - { name: "shapes gemm", package: nalgebra_shapes_tests_gemm, filters: "nalgebra_shapes_tests_gemm" }
+          - { name: "shapes gemm large", package: nalgebra_shapes_tests_gemm_large, filters: "nalgebra_shapes_tests_gemm_large" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2

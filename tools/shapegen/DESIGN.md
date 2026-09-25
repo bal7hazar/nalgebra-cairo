@@ -449,6 +449,57 @@ file, no growth of the 36 shape files): `Matrix1..6CgTrait` (any `Real` scalar) 
   modelled EXACTLY on integer raws (71 tests with the delegation checks and the benches; peak
   `scarb build --test` 6.6 GB).
 
+### 2.10 WP 8.3-P06 outcome: statistics and BLAS-like kernels (API_PARITY P06)
+
+`stats.py` and `blas.py` write upstream's `base/statistics.rs` and `base/blas.rs` into two shared
+modules, `base/statistics.cairo` and `base/blas.cairo` (P07's approach: the 36 shape files do not
+grow). Decisions:
+
+- **Surface.** `{S}StatisticsTrait` (`sum`, `product`, `mean`, `variance`, their `row_*` /
+  `row_*_tr` / `column_*` forms; `Vector2/3/4/6` keep their former `sum`) and `{S}BlasTrait`
+  (`dotc`, `tr_dot`, `ger` / `gerc` everywhere, `syger` / `hegerc` / `ger_symm` on the squares,
+  `axpy` / `axcpy` / `sygemv` / `hegemv` on the column vectors). The operations whose operands
+  have several shapes are generic traits: `MatrixGemm` has one impl per (shape, inner dimension)
+  (216, owned by their shape for `api_parity.py`); `MatrixGemv` (`gemm` with one column),
+  `MatrixGemvTr` / `MatrixGemmTr` (`gemv` / `gemm` of the transpose, `_ad` as default methods),
+  `MatrixQuadform` / `MatrixQuadformTr` (`mul_mat`, then `gemm_tr` / `gemm`; the workspace is a
+  `ref` argument, left as upstream leaves it: the last column of the intermediate product) are
+  blanket impls over two crate-private helpers (`BlasTranspose`, `BlasLastColumn`: struct moves),
+  attributed through `api_parity.py` `RENAMES`. The conjugate / adjoint forms delegate (real
+  scalars). The syger family is square-only (`DIM_ONLY`, upstream asserts it at run time).
+- **Compile budget.** Every form written out (432 `gemm` / `gemm_tr` impls, 144 `gemv` /
+  `quadform` impls) was a 60k-line module, +1.3 GB on the library build; the blanket impls and
+  the `gemm` of several columns composed from the one-column impls (`GEMM_FORM = "columns"`,
+  `#[inline(always)]`: `bench_matrix6_gemm__alt_direct` 191,590 = 191,590 net gas) bring
+  `blas.cairo` to 12.6k lines. Cold library build (this machine): 5.64 GB / 76 s CPU at HEAD →
+  6.2-6.3 GB / 91 s CPU.
+- **Kernels.** `alpha * sum + beta * c` (`gemv`, `gemm`, `sygemv`, `quadform*`) is
+  `BlasKernels::scaled_dotK`: the exact sum in `Real::Wide`, times `alpha` floored once
+  (`wide_mul_scalar`), plus `beta * c` by one `mul_add` (exact addend) — below 2 ulp whatever
+  `alpha`; the "upstream" alternative (sum floored before the product by `alpha`, `|alpha| + 1`
+  ulp) measured the same gas (`bench_matrix3_gemm__alt_upstream`), so accuracy decides.
+  `beta == 0` needs no branch (`0 * c` is exactly 0). The rank-one updates (`ger`, `syger`) and
+  `axcpy` keep upstream's formula (`alpha * y[j]` / `a * x[i]` floored first, then one fused
+  `sum_prod2` per entry: `RANK_ONE`): within the oracle tolerance, so the brief's tie-break
+  (tolerance > upstream formula > gas) picks it, and it is 1.37-1.54 times cheaper than the
+  scaled dot (`bench_matrix{3,6}_ger__alt_scaled`). `axpy` is one `sum_prod2`.
+- **Statistics.** Sums are checked `+` up to 4 terms and ONE `Real::Wide` accumulator from 5
+  (`WIDE_SUM`: 740 gas per checked addition against about 1,500 + 200 per term; `Matrix6::sum`
+  25,900 → 8,680 net; only the total can overflow there, like upstream's f64 partial sums);
+  means divide the exact sum by the count correctly rounded (`divN` chunks for the per-row /
+  per-column forms: `bench_matrix3_row_mean__alt_div_each` 19,720 against 19,520); variances are
+  upstream's two-pass formula with the squares of the exact differences summed exactly and
+  floored once. `column_mean` / `column_variance` are the `mean` / `variance` of each row (upstream
+  computes `sum(x / n)` and `sum(x^2 / n) - mean^2`: the same values mathematically).
+- **Tests.** `tests_stats.py` / `tests_blas.py` model every operation exactly on integer raws
+  (all 36 shapes, the 216 `gemm` triples, the 72 `quadform` pairs, the workspaces) and run the
+  oracle suites `statistics` / `blas` of `tools/oracle` (`oracle_*.cairo`, emitted with
+  `--max-per-dist 2` and passed through by the generator). Packages and cold peak `scarb build
+  --test`: `shapes_tests_stats` 7.6 GB, `shapes_tests_blas` (blas, gemv, oracle, benches) 8.4 GB,
+  `shapes_tests_gemm` (`gemm` of 1-3 rows, `quadform`) 8.3 GB, `shapes_tests_gemm_large` (`gemm`
+  of 4-6 rows) 8.4 GB; one package for all the BLAS tests measured 11.4 GB. The library growth
+  moves every other test package by about +0.65 GB (`shapes_tests_cg` 6.61 → 7.26 GB).
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is

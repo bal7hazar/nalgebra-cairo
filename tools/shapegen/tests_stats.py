@@ -382,10 +382,11 @@ def render() -> dict[str, str]:
 
 
 def lib_root(what: str, mods: list[str]) -> str:
+    oracle = ("and the oracle\n//! vectors of `tools/oracle` (`oracle_*.cairo`, emitted by the "
+              "oracle). " if "oracle" in mods else "")
     return (HEADER + f"//! Generated tests of the {what}, WP 8.3-P06: Tier A of\n//! "
-            "`tools/shapegen/DESIGN.md` §3.3 (exact integer models on the 36 shapes) and the "
-            "oracle\n//! vectors of `tools/oracle` (`oracle_*.cairo`, emitted by the oracle). "
-            "Test-only package, not\n//! published.\n\n"
+            "`tools/shapegen/DESIGN.md` §3.3 (exact integer models on the 36 shapes) "
+            + oracle + "Test-only package, not\n//! published.\n\n"
             + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
 
 

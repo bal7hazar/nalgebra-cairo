@@ -106,6 +106,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_shapes_tests_gemm"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_shapes_tests_gemm_large"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_shapes_tests_inplace"
 version = "0.1.0"
 dependencies = [

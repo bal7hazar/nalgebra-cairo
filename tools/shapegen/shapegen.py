@@ -1244,7 +1244,7 @@ def main() -> int:
                      | {p for pkg in tests_views.PACKAGES
                         for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")}
                      | set((ROOT / "crates" / tests_cg.PACKAGE / "src").rglob("*.cairo"))
-                     | {p for pkg in (tests_stats.PACKAGE, tests_blas.PACKAGE)
+                     | {p for pkg in (tests_stats.PACKAGE, *tests_blas.PACKAGES)
                         for p in (ROOT / "crates" / pkg / "src").rglob("*.cairo")})
         removed = sorted(committed - set(outputs))
         stale = sorted(dst for dst, gen in outputs.items()
