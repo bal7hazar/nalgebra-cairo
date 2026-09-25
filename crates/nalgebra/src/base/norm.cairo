@@ -3,9 +3,19 @@
 //! The norm markers of upstream `base/norm.rs`: `EuclideanNorm`, `LpNorm`, `OneNorm`,
 //! `UniformNorm`.
 //!
-//! Upstream passes them to `Matrix::apply_norm` / `apply_metric_distance` (API_PARITY P03), a
-//! generic `Norm<T>` trait standing for the four; each shape carries the corresponding methods
-//! directly: `norm` (Euclidean), `lp_norm(p)`, `one_norm` and `amax` (uniform norm).
+//! Upstream passes them to `Matrix::apply_norm` / `apply_metric_distance` through its `Norm<T>`
+//! trait, generic over the matrix. Cairo has no common matrix type, so `Norm<N, M, T>` is generic
+//! over the marker `N` AND the shape `M`: each shape's module implements it for the four markers
+//! (`<Shape><Marker>`, static dispatch), delegating to the shape's own methods: `norm` /
+//! `metric_distance` (Euclidean), `lp_norm(p)`, `one_norm` and `amax` (uniform norm).
+
+/// A norm `N` on the shape `M` with values in `T`. Upstream: `Norm<T>` (`base/norm.rs`).
+pub trait Norm<N, M, T> {
+    /// The norm of `m`.
+    fn norm(self: @N, m: M) -> T;
+    /// The distance between `m1` and `m2` in this norm.
+    fn metric_distance(self: @N, m1: M, m2: M) -> T;
+}
 
 /// The Euclidean (Frobenius) norm, `m.norm()`. Upstream: `EuclideanNorm`.
 #[derive(Copy, Drop, Debug)]

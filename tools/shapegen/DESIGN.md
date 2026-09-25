@@ -328,6 +328,41 @@ extended to `isqrt` of the exact sum (norms) and the half-to-even quotient (`Fra
 division), Tier B float comparisons for `angle`, `lp_norm(3)`, `slerp`, `orthonormalize` and
 `orthonormal_subspace_basis`, and the benches of `gas/nalgebra_shapes_tests_norms`.
 
+### 2.7 WP 8.2b outcome: the functional and in-place variants (API_PARITY P03) on the 36 shapes
+
+`functional.py` holds the P03 templates, applied like `completion.py` (a shape keeps a method it
+already has; no existing kernel changes, `gas/` did not move): `shapes.py` appends them to the new
+shapes, `library.py` to `Vector2/3/4/6` and to a `functional and in-place variants (WP 8.2b)`
+section of `Matrix2/3/4/6`. Decisions:
+
+- **Closures**: `core::ops::Fn` bounds like `from_fn`. `map` / `zip_map` / `map_diagonal` return
+  `S<Func::Output>` (no conversion); `fold` / `zip_fold` / `apply*` / `fill_with` convert the
+  closure's output `Into` the accumulator / scalar (`Output = T` needs the experimental
+  `associated_item_constraints`); `fold_with`'s accumulator is `init_f`'s output. A Cairo closure
+  takes values and cannot mutate its captures, so upstream's `FnMut(&mut T)` (`apply`,
+  `zip_apply`, `zip_zip_apply`) returns the new component instead.
+- **`#[inline]` hint**: `#[inline(always)]` is refused on functions with impl generic parameters
+  (E2143); the hint removes the call: `apply_norm` = `norm()` (`bench_matrix3_apply_norm`), `map`
+  11 090 → 8 660, `fold` 5 090 → 2 960, `swap` 16 420 → 9 360 net gas.
+- **Runtime positions** (`fill_row` / `fill_column`, `set_row` / `set_column`, `fill_*_triangle`
+  shifts): ONE `match` selecting a whole literal, 2.1-2.7 times cheaper than one comparison per
+  component (`bench_matrix4_fill_{row,lower_triangle}__alt_per_component`). `swap_rows` /
+  `swap_columns`: two reads and two writes (`<S>EditTrait`, private); the nested `match` on both
+  indices is 940 gas cheaper on `Matrix3` but generates R² literals per shape (≈ 40 000 lines per
+  method over the 36 shapes): kept as `bench_matrix3_swap_rows__alt_pair_match`.
+- **In-place forms** delegate to the by-value kernels (`self = self.op()`), bit-identical;
+  `mul_to` / `tr_mul_to` / `ad_mul_to` are default methods of `MatrixMul` / `MatrixTrMul`
+  (`mul_to` = `mul_mat`, 12 550 = 12 550 net gas on `Matrix2x3 * Matrix3x2`).
+- **`Norm<N, M, T>`** (`base/norm.cairo`): upstream's `Norm<T>` is generic over the matrix; Cairo
+  has no common matrix type, so the trait is generic over the marker AND the shape, implemented in
+  each shape's module for the four markers (`Matrix3EuclideanNorm`...). `api_parity.py` attributes
+  its methods to those implementors (`CROSS_FILE_TRAITS`).
+
+Tests: `tests_functional.py` writes `crates/shapes_tests_{functional,edition,inplace}` (Tier A
+with the integer model of §3.3; `LpNorm` on the `TRANSCENDENTAL_SAMPLE` only, `lp_norm`'s
+`exp` / `ln` instantiation being heavy) and the benches of `gas/nalgebra_shapes_tests_functional`.
+Peak `scarb build --test`: 6.4 / 3.3 / 6.4 GB (one package for the last two measured 7.9 GB).
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is

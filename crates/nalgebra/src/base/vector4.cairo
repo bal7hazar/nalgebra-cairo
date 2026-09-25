@@ -33,6 +33,7 @@ use super::matrix4x6::Matrix4x6;
 use super::matrix_index::MatrixIndex;
 use super::matrix_mul::MatrixMul;
 use super::matrix_tr_mul::MatrixTrMul;
+use super::norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
 use super::row_vector4::RowVector4;
@@ -304,6 +305,254 @@ pub trait Vector4Trait<T> {
     /// `max_ulps` budget does not cross zero, like upstream's float `ulps_eq`). Cannot overflow.
     /// Upstream: `approx::UlpsEq::ulps_eq`.
     fn ulps_eq(self: Vector4<T>, other: Vector4<T>, epsilon: u64, max_ulps: u32) -> bool;
+    /// The 4-dimensional column vector of `f(x)` for every component `x` (called in column-major
+    /// order). `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
+    /// cannot mutate their captures. Upstream: `map`.
+    fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
+        self: Vector4<T>, f: F,
+    ) -> Vector4<Func::Output>;
+    /// The 4-dimensional column vector of `f(i, j, x)` for every component `x` at row `i`, column
+    /// `j` (0-based, column-major order). `f` is any closure or `Fn` value; Cairo closures take
+    /// their arguments by value and cannot mutate their captures. Upstream: `map_with_location`.
+    fn map_with_location<
+        F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
+    >(
+        self: Vector4<T>, f: F,
+    ) -> Vector4<Func::Output>;
+    /// The 4-dimensional column vector of `f(a, b)` for the components `a` of `self` and `b` of
+    /// `rhs` at the same position. `f` is any closure or `Fn` value; Cairo closures take their
+    /// arguments by value and cannot mutate their captures. Upstream: `zip_map`.
+    fn zip_map<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2)>,
+        +Drop<Func::Output>,
+    >(
+        self: Vector4<T>, rhs: Vector4<T2>, f: F,
+    ) -> Vector4<Func::Output>;
+    /// The 4-dimensional column vector of `f(a, b, c)` for the components of `self`, `b` and `c` at
+    /// the same position. `f` is any closure or `Fn` value; Cairo closures take their arguments by
+    /// value and cannot mutate their captures. Upstream: `zip_zip_map`.
+    fn zip_zip_map<
+        T2,
+        T3,
+        +Copy<T2>,
+        +Drop<T2>,
+        +Copy<T3>,
+        +Drop<T3>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2, T3)>,
+        +Drop<Func::Output>,
+    >(
+        self: Vector4<T>, b: Vector4<T2>, c: Vector4<T3>, f: F,
+    ) -> Vector4<Func::Output>;
+    /// `f(.. f(f(init, x0), x1) .., x3)` over the components in column-major order. The closure's
+    /// output converts `Into<Acc>` (the identity included): Cairo cannot state `Output = Acc`
+    /// without the `associated_item_constraints` experimental feature. `f` is any closure or `Fn`
+    /// value; Cairo closures take their arguments by value and cannot mutate their captures.
+    /// Upstream: `fold`.
+    fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
+        self: Vector4<T>, init: Acc, f: F,
+    ) -> Acc;
+    /// `init_f(Some(x0))`, then `f(acc, x)` over the other components in column-major order:
+    /// upstream's `fold_with` (`init_f` receives the first component, `None` only for an empty
+    /// matrix, which a static shape never is). The accumulator has the type of `init_f`'s output;
+    /// `f`'s output converts `Into` it. The closures receive values instead of upstream's `&T`.
+    /// Upstream: `fold_with`.
+    fn fold_with<
+        G,
+        +Drop<G>,
+        impl Init: core::ops::Fn<G, (Option<T>,)>,
+        +Drop<Init::Output>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (Init::Output, T)>,
+        +Into<Func::Output, Init::Output>,
+    >(
+        self: Vector4<T>, init_f: G, f: F,
+    ) -> Init::Output;
+    /// `fold` over the pairs of components of `self` and `rhs` at the same position: `f(acc, a,
+    /// b)`, column-major. `f` is any closure or `Fn` value; Cairo closures take their arguments by
+    /// value and cannot mutate their captures. Upstream: `zip_fold`.
+    fn zip_fold<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        Acc,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (Acc, T, T2)>,
+        +Into<Func::Output, Acc>,
+    >(
+        self: Vector4<T>, rhs: Vector4<T2>, init: Acc, f: F,
+    ) -> Acc;
+    /// Replaces every component `x` by `f(x)` (column-major order). Upstream's closure is
+    /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
+    /// new component (its output converts `Into<T>`). Upstream: `apply`.
+    fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        ref self: Vector4<T>, f: F,
+    );
+    /// `self` with every component `x` replaced by `f(x)`: `apply` by value. Upstream's closure is
+    /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
+    /// new component (its output converts `Into<T>`). Upstream: `apply_into`.
+    fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        self: Vector4<T>, f: F,
+    ) -> Vector4<T>;
+    /// Replaces every component `a` by `f(a, b)`, `b` the component of `rhs` at the same position.
+    /// Upstream's closure is `FnMut(&mut T)`, writing through the reference; a Cairo closure
+    /// cannot, so it RETURNS the new component (its output converts `Into<T>`). Upstream:
+    /// `zip_apply`.
+    fn zip_apply<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2)>,
+        +Into<Func::Output, T>,
+    >(
+        ref self: Vector4<T>, rhs: Vector4<T2>, f: F,
+    );
+    /// Replaces every component `a` by `f(a, b, c)`, `b` and `c` the components of `b` and `c` at
+    /// the same position. Upstream's closure is `FnMut(&mut T)`, writing through the reference; a
+    /// Cairo closure cannot, so it RETURNS the new component (its output converts `Into<T>`).
+    /// Upstream: `zip_zip_apply`.
+    fn zip_zip_apply<
+        T2,
+        T3,
+        +Copy<T2>,
+        +Drop<T2>,
+        +Copy<T3>,
+        +Drop<T3>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2, T3)>,
+        +Into<Func::Output, T>,
+    >(
+        ref self: Vector4<T>, b: Vector4<T2>, c: Vector4<T3>, f: F,
+    );
+    /// Sets every component to `f()` (one call per component, column-major). The closure's output
+    /// converts `Into<T>`. Upstream: `fill_with` (`impl Fn() -> T`).
+    fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
+        ref self: Vector4<T>, f: F,
+    );
+    /// Sets every component to `val`. Upstream: `fill`.
+    fn fill(ref self: Vector4<T>, val: T);
+    /// Sets the 1 diagonal components to `val`, the others unchanged. Upstream: `fill_diagonal`.
+    fn fill_diagonal(ref self: Vector4<T>, val: T);
+    /// Sets `self` to the identity: ones on the diagonal, zeros elsewhere (`fill(0)` then
+    /// `fill_diagonal(1)`). Upstream: `fill_with_identity`.
+    fn fill_with_identity(ref self: Vector4<T>);
+    /// Sets the 1 components of row `i` to `val`. Panics with `nalgebra: index out of bounds` for
+    /// `i >= 4`. Upstream: `fill_row`.
+    ///
+    /// ONE `match` on `i` selects the literal: measured 2.1 times cheaper than one comparison per
+    /// component (`bench_matrix4_fill_row__alt_per_component`).
+    fn fill_row(ref self: Vector4<T>, i: usize, val: T);
+    /// Sets the 4 components of column `j` to `val`. Panics with `nalgebra: index out of bounds`
+    /// for `j >= 1`. Upstream: `fill_column`.
+    fn fill_column(ref self: Vector4<T>, j: usize, val: T);
+    /// Sets every component `(i, j)` with `i >= j + shift` to `val`: the lower triangle with the
+    /// diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` subdiagonals as
+    /// well above; nothing changes for `shift >= 4`. ONE `match` on `shift` selects the literal:
+    /// measured 2.7 times cheaper than one threshold test per component
+    /// (`bench_matrix4_fill_lower_triangle__alt_per_component`). Upstream: `fill_lower_triangle`.
+    fn fill_lower_triangle(ref self: Vector4<T>, val: T, shift: usize);
+    /// Sets every component `(i, j)` with `j >= i + shift` to `val`: the upper triangle with the
+    /// diagonal for `shift = 0`, without it for `shift = 1`, leaving `shift - 1` superdiagonals as
+    /// well below; nothing changes for `shift >= 1`. ONE `match` on `shift` selects the literal.
+    /// Upstream: `fill_upper_triangle`.
+    fn fill_upper_triangle(ref self: Vector4<T>, val: T, shift: usize);
+    /// Replaces row `i` by `row`, a `Matrix1`. Panics with `nalgebra: index out of bounds` for `i
+    /// >= 4`. Upstream: `set_row`.
+    fn set_row(ref self: Vector4<T>, i: usize, row: Matrix1<T>);
+    /// Replaces column `j` by `column`, a `Vector4`. Panics with `nalgebra: index out of bounds`
+    /// for `j >= 1`. Upstream: `set_column`.
+    fn set_column(ref self: Vector4<T>, j: usize, column: Vector4<T>);
+    /// Replaces the diagonal by `diag`, a `Matrix1` (upstream requires the length `min(R, C)` = 1).
+    /// Upstream: `set_diagonal`.
+    fn set_diagonal(ref self: Vector4<T>, diag: Matrix1<T>);
+    /// Replaces the first `min(diag.len(), 1)` diagonal components by the values of `diag` (the
+    /// extra values are ignored, like upstream's `take`), the others unchanged. Upstream:
+    /// `set_partial_diagonal` (an iterator; a `Span` here).
+    fn set_partial_diagonal(ref self: Vector4<T>, diag: Span<T>);
+    /// Sets `self` to `other` (a `Vector4`: upstream requires the same shape). Upstream:
+    /// `copy_from`.
+    fn copy_from(ref self: Vector4<T>, other: Vector4<T>);
+    /// Sets `self` to the 4 values of `slice` in column-major order (`from_column_slice`). Panics
+    /// with `nalgebra: wrong slice length` unless `slice.len() == 4`. Upstream: `copy_from_slice`
+    /// (`&[T]`).
+    fn copy_from_slice(ref self: Vector4<T>, slice: Span<T>);
+    /// Sets `self` to the transpose of `other`, a `RowVector4`. Exact. Upstream: `tr_copy_from`.
+    fn tr_copy_from(ref self: Vector4<T>, other: RowVector4<T>);
+    /// Exchanges the components at `row_cols1` and `row_cols2` (`(row, column)`). Panics with
+    /// `nalgebra: index out of bounds` when either is out of the shape. Upstream: `swap`.
+    fn swap(ref self: Vector4<T>, row_cols1: (usize, usize), row_cols2: (usize, usize));
+    /// Exchanges rows `irow1` and `irow2`. Panics with `nalgebra: index out of bounds` when either
+    /// is `>= 4`. Upstream: `swap_rows`.
+    ///
+    /// Two reads and two writes of a row (one `match` each). ONE nested `match` on both rows is 940
+    /// gas (15%) cheaper on `Matrix3` (`bench_matrix3_swap_rows__alt_pair_match`) but generates R²
+    /// whole-shape literals (about 40 000 lines over the 36 shapes, per method): kept as a
+    /// benchmark.
+    fn swap_rows(ref self: Vector4<T>, irow1: usize, irow2: usize);
+    /// Exchanges columns `icol1` and `icol2`. Panics with `nalgebra: index out of bounds` when
+    /// either is `>= 1`. Upstream: `swap_columns`.
+    fn swap_columns(ref self: Vector4<T>, icol1: usize, icol2: usize);
+    /// `self = -self`. Exact; panics on overflow (`-MIN`). Upstream: `neg_mut`.
+    fn neg_mut(ref self: Vector4<T>);
+    /// `self = self.scale(k)`, each component floored once. Panics on overflow. Upstream:
+    /// `scale_mut`.
+    fn scale_mut(ref self: Vector4<T>, k: T);
+    /// `self = self.unscale(k)`, each component correctly rounded. Panics on a zero `k` and on
+    /// overflow. Upstream: `unscale_mut`.
+    fn unscale_mut(ref self: Vector4<T>, k: T);
+    /// Normalizes `self` in place (`self = self.normalize()`, bit-identical) and returns the norm
+    /// it had. Panics with a division by zero when the norm is zero. Upstream: `normalize_mut`.
+    fn normalize_mut(ref self: Vector4<T>) -> T;
+    /// Normalizes `self` in place and returns `Some` of the norm it had, or leaves it unchanged and
+    /// returns `None` when that norm is `<= min_norm`. Upstream: `try_normalize_mut`.
+    fn try_normalize_mut(ref self: Vector4<T>, min_norm: T) -> Option<T>;
+    /// Scales `self` to the norm `magnitude`: `self.scale(magnitude / norm)`, the ratio rounded to
+    /// nearest (like `try_set_magnitude`). Panics with a division by zero when the norm is zero
+    /// (upstream's floats give NaN). Upstream: `set_magnitude`.
+    fn set_magnitude(ref self: Vector4<T>, magnitude: T);
+    /// `self = self.add_scalar(k)`. Exact; panics on overflow. Upstream: `add_scalar_mut`.
+    fn add_scalar_mut(ref self: Vector4<T>, k: T);
+    /// Alias of `component_mul_assign` (deprecated upstream). Upstream: `component_mul_mut`.
+    fn component_mul_mut(ref self: Vector4<T>, rhs: Vector4<T>);
+    /// Alias of `component_div_assign` (deprecated upstream). Upstream: `component_div_mut`.
+    fn component_div_mut(ref self: Vector4<T>, rhs: Vector4<T>);
+    /// Conjugates every component in place: nothing changes for a real scalar. Upstream:
+    /// `conjugate_mut`.
+    fn conjugate_mut(ref self: Vector4<T>);
+    /// Writes the transpose of `self` into `out`, a `RowVector4`. Exact. Upstream: `transpose_to`.
+    fn transpose_to(self: Vector4<T>, ref out: RowVector4<T>);
+    /// Writes the adjoint of `self` (its transpose for a real scalar) into `out`, a `RowVector4`.
+    /// Exact. Upstream: `adjoint_to`.
+    fn adjoint_to(self: Vector4<T>, ref out: RowVector4<T>);
+    /// Writes the adjoint of `self` (deprecated upstream alias of `adjoint_to`) into `out`, a
+    /// `RowVector4`. Exact. Upstream: `conjugate_transpose_to`.
+    fn conjugate_transpose_to(self: Vector4<T>, ref out: RowVector4<T>);
+    /// Writes the sum `self + rhs` into `out`. Exact; panics on overflow. Upstream: `add_to`.
+    fn add_to(self: Vector4<T>, rhs: Vector4<T>, ref out: Vector4<T>);
+    /// Writes the difference `self - rhs` into `out`. Exact; panics on overflow. Upstream:
+    /// `sub_to`.
+    fn sub_to(self: Vector4<T>, rhs: Vector4<T>, ref out: Vector4<T>);
+    /// The norm `norm` of `self`: `EuclideanNorm {}` (`norm`), `LpNorm { p }` (`lp_norm(p)`),
+    /// `OneNorm {}` (`one_norm`) or `UniformNorm {}` (`amax`), through their `Norm` impls (static
+    /// dispatch). Upstream: `apply_norm` (`&impl Norm<T>`; the markers are `Copy` values here).
+    fn apply_norm<N, +Drop<N>, impl Nm: Norm<N, Vector4<T>, T>>(self: Vector4<T>, norm: N) -> T;
+    /// The distance between `self` and `rhs` in the norm `norm` (see `apply_norm`; the Euclidean
+    /// one is the fused `metric_distance`, the others the norm of the exact difference). Upstream:
+    /// `apply_metric_distance`.
+    fn apply_metric_distance<N, +Drop<N>, impl Nm: Norm<N, Vector4<T>, T>>(
+        self: Vector4<T>, rhs: Vector4<T>, norm: N,
+    ) -> T;
 }
 
 /// `angle` needs inverse trigonometry, hence its own trait: scalars may implement `Real` only.
@@ -905,6 +1154,403 @@ pub impl Vector4Impl<
             && ApproxEqTrait::ulps_eq(self.y, other.y, epsilon, max_ulps)
             && ApproxEqTrait::ulps_eq(self.z, other.z, epsilon, max_ulps)
             && ApproxEqTrait::ulps_eq(self.w, other.w, epsilon, max_ulps)
+    }
+
+    #[inline]
+    fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
+        self: Vector4<T>, f: F,
+    ) -> Vector4<Func::Output> {
+        Vector4 { x: f(self.x), y: f(self.y), z: f(self.z), w: f(self.w) }
+    }
+
+    #[inline]
+    fn map_with_location<
+        F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
+    >(
+        self: Vector4<T>, f: F,
+    ) -> Vector4<Func::Output> {
+        Vector4 { x: f(0, 0, self.x), y: f(1, 0, self.y), z: f(2, 0, self.z), w: f(3, 0, self.w) }
+    }
+
+    #[inline]
+    fn zip_map<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2)>,
+        +Drop<Func::Output>,
+    >(
+        self: Vector4<T>, rhs: Vector4<T2>, f: F,
+    ) -> Vector4<Func::Output> {
+        Vector4 {
+            x: f(self.x, rhs.x), y: f(self.y, rhs.y), z: f(self.z, rhs.z), w: f(self.w, rhs.w),
+        }
+    }
+
+    #[inline]
+    fn zip_zip_map<
+        T2,
+        T3,
+        +Copy<T2>,
+        +Drop<T2>,
+        +Copy<T3>,
+        +Drop<T3>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2, T3)>,
+        +Drop<Func::Output>,
+    >(
+        self: Vector4<T>, b: Vector4<T2>, c: Vector4<T3>, f: F,
+    ) -> Vector4<Func::Output> {
+        Vector4 {
+            x: f(self.x, b.x, c.x),
+            y: f(self.y, b.y, c.y),
+            z: f(self.z, b.z, c.z),
+            w: f(self.w, b.w, c.w),
+        }
+    }
+
+    #[inline]
+    fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
+        self: Vector4<T>, init: Acc, f: F,
+    ) -> Acc {
+        let acc: Acc = f(init, self.x).into();
+        let acc: Acc = f(acc, self.y).into();
+        let acc: Acc = f(acc, self.z).into();
+        f(acc, self.w).into()
+    }
+
+    #[inline]
+    fn fold_with<
+        G,
+        +Drop<G>,
+        impl Init: core::ops::Fn<G, (Option<T>,)>,
+        +Drop<Init::Output>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (Init::Output, T)>,
+        +Into<Func::Output, Init::Output>,
+    >(
+        self: Vector4<T>, init_f: G, f: F,
+    ) -> Init::Output {
+        let acc: Init::Output = init_f(Option::Some(self.x));
+        let acc: Init::Output = f(acc, self.y).into();
+        let acc: Init::Output = f(acc, self.z).into();
+        f(acc, self.w).into()
+    }
+
+    #[inline]
+    fn zip_fold<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        Acc,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (Acc, T, T2)>,
+        +Into<Func::Output, Acc>,
+    >(
+        self: Vector4<T>, rhs: Vector4<T2>, init: Acc, f: F,
+    ) -> Acc {
+        let acc: Acc = f(init, self.x, rhs.x).into();
+        let acc: Acc = f(acc, self.y, rhs.y).into();
+        let acc: Acc = f(acc, self.z, rhs.z).into();
+        f(acc, self.w, rhs.w).into()
+    }
+
+    #[inline]
+    fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        ref self: Vector4<T>, f: F,
+    ) {
+        self =
+            Vector4 {
+                x: f(self.x).into(), y: f(self.y).into(), z: f(self.z).into(), w: f(self.w).into(),
+            };
+    }
+
+    #[inline]
+    fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
+        self: Vector4<T>, f: F,
+    ) -> Vector4<T> {
+        Vector4 {
+            x: f(self.x).into(), y: f(self.y).into(), z: f(self.z).into(), w: f(self.w).into(),
+        }
+    }
+
+    #[inline]
+    fn zip_apply<
+        T2,
+        +Copy<T2>,
+        +Drop<T2>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2)>,
+        +Into<Func::Output, T>,
+    >(
+        ref self: Vector4<T>, rhs: Vector4<T2>, f: F,
+    ) {
+        self =
+            Vector4 {
+                x: f(self.x, rhs.x).into(),
+                y: f(self.y, rhs.y).into(),
+                z: f(self.z, rhs.z).into(),
+                w: f(self.w, rhs.w).into(),
+            };
+    }
+
+    #[inline]
+    fn zip_zip_apply<
+        T2,
+        T3,
+        +Copy<T2>,
+        +Drop<T2>,
+        +Copy<T3>,
+        +Drop<T3>,
+        F,
+        +Drop<F>,
+        impl Func: core::ops::Fn<F, (T, T2, T3)>,
+        +Into<Func::Output, T>,
+    >(
+        ref self: Vector4<T>, b: Vector4<T2>, c: Vector4<T3>, f: F,
+    ) {
+        self =
+            Vector4 {
+                x: f(self.x, b.x, c.x).into(),
+                y: f(self.y, b.y, c.y).into(),
+                z: f(self.z, b.z, c.z).into(),
+                w: f(self.w, b.w, c.w).into(),
+            };
+    }
+
+    #[inline]
+    fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
+        ref self: Vector4<T>, f: F,
+    ) {
+        self = Vector4 { x: f().into(), y: f().into(), z: f().into(), w: f().into() };
+    }
+
+    #[inline(always)]
+    fn fill(ref self: Vector4<T>, val: T) {
+        self = Vector4 { x: val, y: val, z: val, w: val };
+    }
+
+    #[inline(always)]
+    fn fill_diagonal(ref self: Vector4<T>, val: T) {
+        self = Vector4 { x: val, y: self.y, z: self.z, w: self.w };
+    }
+
+    #[inline(always)]
+    fn fill_with_identity(ref self: Vector4<T>) {
+        self = Vector4 { x: R::one(), y: R::zero(), z: R::zero(), w: R::zero() };
+    }
+
+    #[inline(always)]
+    fn fill_row(ref self: Vector4<T>, i: usize, val: T) {
+        self = match i {
+            0 => Vector4 { x: val, y: self.y, z: self.z, w: self.w },
+            1 => Vector4 { x: self.x, y: val, z: self.z, w: self.w },
+            2 => Vector4 { x: self.x, y: self.y, z: val, w: self.w },
+            3 => Vector4 { x: self.x, y: self.y, z: self.z, w: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    #[inline(always)]
+    fn fill_column(ref self: Vector4<T>, j: usize, val: T) {
+        self = match j {
+            0 => Vector4 { x: val, y: val, z: val, w: val },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    #[inline(always)]
+    fn fill_lower_triangle(ref self: Vector4<T>, val: T, shift: usize) {
+        self = match shift {
+            0 => Vector4 { x: val, y: val, z: val, w: val },
+            1 => Vector4 { x: self.x, y: val, z: val, w: val },
+            2 => Vector4 { x: self.x, y: self.y, z: val, w: val },
+            3 => Vector4 { x: self.x, y: self.y, z: self.z, w: val },
+            _ => self,
+        };
+    }
+
+    #[inline(always)]
+    fn fill_upper_triangle(ref self: Vector4<T>, val: T, shift: usize) {
+        self = match shift {
+            0 => Vector4 { x: val, y: self.y, z: self.z, w: self.w },
+            _ => self,
+        };
+    }
+
+    #[inline(always)]
+    fn set_row(ref self: Vector4<T>, i: usize, row: Matrix1<T>) {
+        self = match i {
+            0 => Vector4 { x: row.x, y: self.y, z: self.z, w: self.w },
+            1 => Vector4 { x: self.x, y: row.x, z: self.z, w: self.w },
+            2 => Vector4 { x: self.x, y: self.y, z: row.x, w: self.w },
+            3 => Vector4 { x: self.x, y: self.y, z: self.z, w: row.x },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    #[inline(always)]
+    fn set_column(ref self: Vector4<T>, j: usize, column: Vector4<T>) {
+        self = match j {
+            0 => Vector4 { x: column.x, y: column.y, z: column.z, w: column.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        };
+    }
+
+    #[inline(always)]
+    fn set_diagonal(ref self: Vector4<T>, diag: Matrix1<T>) {
+        self = Vector4 { x: diag.x, y: self.y, z: self.z, w: self.w };
+    }
+
+    #[inline(always)]
+    fn set_partial_diagonal(ref self: Vector4<T>, diag: Span<T>) {
+        let len = diag.len();
+        self =
+            Vector4 { x: if len > 0 {
+                *diag[0]
+            } else {
+                self.x
+            }, y: self.y, z: self.z, w: self.w };
+    }
+
+    #[inline(always)]
+    fn copy_from(ref self: Vector4<T>, other: Vector4<T>) {
+        self = other;
+    }
+
+    #[inline(always)]
+    fn copy_from_slice(ref self: Vector4<T>, slice: Span<T>) {
+        self = Self::from_column_slice(slice);
+    }
+
+    #[inline(always)]
+    fn tr_copy_from(ref self: Vector4<T>, other: RowVector4<T>) {
+        self = Vector4 { x: other.x, y: other.y, z: other.z, w: other.w };
+    }
+
+    #[inline]
+    fn swap(ref self: Vector4<T>, row_cols1: (usize, usize), row_cols2: (usize, usize)) {
+        let a = MatrixIndex::index(self, row_cols1);
+        let b = MatrixIndex::index(self, row_cols2);
+        self =
+            Vector4EditTrait::replace(Vector4EditTrait::replace(self, row_cols1, b), row_cols2, a);
+    }
+
+    #[inline]
+    fn swap_rows(ref self: Vector4<T>, irow1: usize, irow2: usize) {
+        let a = Vector4EditTrait::row_at(self, irow1);
+        let b = Vector4EditTrait::row_at(self, irow2);
+        Self::set_row(ref self, irow1, b);
+        Self::set_row(ref self, irow2, a);
+    }
+
+    #[inline]
+    fn swap_columns(ref self: Vector4<T>, icol1: usize, icol2: usize) {
+        let a = Vector4EditTrait::column_at(self, icol1);
+        let b = Vector4EditTrait::column_at(self, icol2);
+        Self::set_column(ref self, icol1, b);
+        Self::set_column(ref self, icol2, a);
+    }
+
+    #[inline(always)]
+    fn neg_mut(ref self: Vector4<T>) {
+        self = -self;
+    }
+
+    #[inline(always)]
+    fn scale_mut(ref self: Vector4<T>, k: T) {
+        self = Self::scale(self, k);
+    }
+
+    #[inline(always)]
+    fn unscale_mut(ref self: Vector4<T>, k: T) {
+        self = Self::unscale(self, k);
+    }
+
+    #[inline(always)]
+    fn normalize_mut(ref self: Vector4<T>) -> T {
+        let n = Self::norm(self);
+        self = Self::unscale(self, n);
+        n
+    }
+
+    #[inline(always)]
+    fn try_normalize_mut(ref self: Vector4<T>, min_norm: T) -> Option<T> {
+        let n = Self::norm(self);
+        if n <= min_norm {
+            return None;
+        }
+        self = Self::unscale(self, n);
+        Some(n)
+    }
+
+    #[inline(always)]
+    fn set_magnitude(ref self: Vector4<T>, magnitude: T) {
+        let n = Self::norm(self);
+        self = Self::scale(self, R::div(magnitude, n));
+    }
+
+    #[inline(always)]
+    fn add_scalar_mut(ref self: Vector4<T>, k: T) {
+        self = Self::add_scalar(self, k);
+    }
+
+    #[inline(always)]
+    fn component_mul_mut(ref self: Vector4<T>, rhs: Vector4<T>) {
+        Self::component_mul_assign(ref self, rhs);
+    }
+
+    #[inline(always)]
+    fn component_div_mut(ref self: Vector4<T>, rhs: Vector4<T>) {
+        Self::component_div_assign(ref self, rhs);
+    }
+
+    #[inline(always)]
+    fn conjugate_mut(ref self: Vector4<T>) {
+        self = Self::conjugate(self);
+    }
+
+    #[inline(always)]
+    fn transpose_to(self: Vector4<T>, ref out: RowVector4<T>) {
+        out = Self::transpose(self);
+    }
+
+    #[inline(always)]
+    fn adjoint_to(self: Vector4<T>, ref out: RowVector4<T>) {
+        out = Self::transpose(self);
+    }
+
+    #[inline(always)]
+    fn conjugate_transpose_to(self: Vector4<T>, ref out: RowVector4<T>) {
+        out = Self::transpose(self);
+    }
+
+    #[inline(always)]
+    fn add_to(self: Vector4<T>, rhs: Vector4<T>, ref out: Vector4<T>) {
+        out = self + rhs;
+    }
+
+    #[inline(always)]
+    fn sub_to(self: Vector4<T>, rhs: Vector4<T>, ref out: Vector4<T>) {
+        out = self - rhs;
+    }
+
+    #[inline]
+    fn apply_norm<N, +Drop<N>, impl Nm: Norm<N, Vector4<T>, T>>(self: Vector4<T>, norm: N) -> T {
+        Nm::norm(@norm, self)
+    }
+
+    #[inline]
+    fn apply_metric_distance<N, +Drop<N>, impl Nm: Norm<N, Vector4<T>, T>>(
+        self: Vector4<T>, rhs: Vector4<T>, norm: N,
+    ) -> T {
+        Nm::metric_distance(@norm, self, rhs)
     }
 }
 
@@ -1560,4 +2206,149 @@ fn slerp_unit<
             w: R::sum_prod2(a.w, ta, b.w, tb),
         },
     )
+}
+
+// --- functional and in-place variants ------------------------------------------------------------
+
+/// Private helpers of the `swap*` methods (runtime positions: one `match` each).
+#[generate_trait]
+impl Vector4EditImpl<T, +Copy<T>, +Drop<T>> of Vector4EditTrait<T> {
+    /// `self` with the component at `index` (`(row, column)`) replaced by `v`; panics out of
+    /// bounds.
+    #[inline(always)]
+    fn replace(self: Vector4<T>, index: (usize, usize), v: T) -> Vector4<T> {
+        let (i, j) = index;
+        match j {
+            0 => match i {
+                0 => Vector4 { x: v, y: self.y, z: self.z, w: self.w },
+                1 => Vector4 { x: self.x, y: v, z: self.z, w: self.w },
+                2 => Vector4 { x: self.x, y: self.y, z: v, w: self.w },
+                3 => Vector4 { x: self.x, y: self.y, z: self.z, w: v },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// Row `i`, a `Matrix1`; panics out of bounds.
+    #[inline(always)]
+    fn row_at(self: Vector4<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            3 => Matrix1 { x: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    /// Column `j`, a `Vector4`; panics out of bounds.
+    #[inline(always)]
+    fn column_at(self: Vector4<T>, j: usize) -> Vector4<T> {
+        match j {
+            0 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `EuclideanNorm` on `Vector4`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Vector4EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Vector4<T>) -> T {
+        Vector4Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Vector4`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Vector4LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Vector4<T>) -> T {
+        Vector4AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Vector4`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Vector4OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Vector4<T>) -> T {
+        Vector4Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Vector4`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Vector4UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Vector4<T>) -> T {
+        Vector4Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4Trait::amax(m1 - m2)
+    }
 }

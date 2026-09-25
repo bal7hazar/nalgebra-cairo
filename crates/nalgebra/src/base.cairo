@@ -103,7 +103,7 @@ pub use matrix6x5::{Matrix6x5, Matrix6x5AngleTrait, Matrix6x5Trait};
 pub use matrix_index::MatrixIndex;
 pub use matrix_mul::MatrixMul;
 pub use matrix_tr_mul::MatrixTrMul;
-pub use norm::{EuclideanNorm, LpNorm, OneNorm, UniformNorm};
+pub use norm::{EuclideanNorm, LpNorm, Norm, OneNorm, UniformNorm};
 pub use row_vector2::{Matrix1x2, RowVector2, RowVector2AngleTrait, RowVector2Trait};
 pub use row_vector3::{Matrix1x3, RowVector3, RowVector3AngleTrait, RowVector3Trait};
 pub use row_vector4::{Matrix1x4, RowVector4, RowVector4AngleTrait, RowVector4Trait};

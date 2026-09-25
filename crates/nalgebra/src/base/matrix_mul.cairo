@@ -16,4 +16,12 @@ pub trait MatrixMul<Lhs, Rhs> {
     type Output;
     /// `self * rhs`.
     fn mul_mat(self: Lhs, rhs: Rhs) -> Self::Output;
+    /// Writes `self * rhs` into `out` (`out = self.mul_mat(rhs)`, bit-identical). Upstream:
+    /// `mul_to` (`&mut` output of any storage; here the product's own shape).
+    #[inline(always)]
+    fn mul_to<+Drop<Self::Output>>(
+        self: Lhs, rhs: Rhs, ref out: Self::Output,
+    ) {
+        out = Self::mul_mat(self, rhs);
+    }
 }
