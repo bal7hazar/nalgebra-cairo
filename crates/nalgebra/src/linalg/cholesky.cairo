@@ -31,11 +31,13 @@
 //! When no square root is wanted, upstream's `UDU` (`crate::linalg::udu`, on the crate-internal
 //! `LDLᵀ` kernel of DESIGN D6) factorises without one, indefinite symmetric matrices included.
 
-use simba::scalar::Real;
+use simba::scalar::{Real, Transcendental};
+use crate::base::errors::NOT_POSITIVE_DEFINITE;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
 use crate::base::matrix6::Matrix6;
+use crate::base::solve::SolveKernel;
 use crate::base::sym_matrix2::SymMatrix2;
 use crate::base::sym_matrix3::SymMatrix3;
 use crate::base::vector2::Vector2;
@@ -357,6 +359,80 @@ pub impl Cholesky2Impl<
     fn determinant(self: Cholesky2<T>) -> T {
         R::sqr(self.l11 * self.l22)
     }
+
+    /// The factorisation computed WITHOUT the positivity test, like upstream's
+    /// `Cholesky::new_unchecked` — except that a pivot `<= 0` (upstream: the square root of a
+    /// negative number or a division by zero, NaN / infinities, which a fixed-point scalar does
+    /// not have) panics with `nalgebra: not positive definite`. Same kernel, same rounding and
+    /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
+    #[inline(always)]
+    fn new_unchecked(matrix: Matrix2<T>) -> Cholesky2<T> {
+        match Self::new(matrix) {
+            Option::Some(c) => c,
+            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
+        }
+    }
+
+    /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:
+    /// zero or negative, where the square root fails); `None` when such a pivot occurs and
+    /// `substitute` is itself `<= 0`. The same kernel as `new` otherwise (same rounding). Upstream:
+    /// `Cholesky::new_with_substitute`.
+    #[inline(always)]
+    fn new_with_substitute(a: Matrix2<T>, substitute: T) -> Option<Cholesky2<T>> {
+        Cholesky2InternalTrait::new_sym_with_substitute(
+            SymMatrix2 { m11: a.m11, m12: a.m21, m22: a.m22 }, substitute,
+        )
+    }
+
+    /// The factor `l` from the LOWER triangle of `matrix` (the strictly upper triangle is not
+    /// read, like upstream's "dirty" storage). Nothing is checked. Exact: moves. Upstream:
+    /// `Cholesky::pack_dirty`.
+    #[inline(always)]
+    fn pack_dirty(matrix: Matrix2<T>) -> Cholesky2<T> {
+        Cholesky2 { l11: matrix.m11, l21: matrix.m21, l22: matrix.m22 }
+    }
+
+    /// The lower triangular factor, consuming the factorisation: `l()`. Exact. Upstream:
+    /// `Cholesky::unpack`.
+    #[inline(always)]
+    fn unpack(self: Cholesky2<T>) -> Matrix2<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle: `l()` here, the compact storage keeps no upper
+    /// triangle (upstream returns the input's upper triangle there, unspecified by its docs).
+    /// Exact.
+    /// Upstream: `Cholesky::unpack_dirty`.
+    #[inline(always)]
+    fn unpack_dirty(self: Cholesky2<T>) -> Matrix2<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle, by value: `l()` (see `unpack_dirty`). Exact.
+    /// Upstream: `Cholesky::l_dirty` (a reference to the storage).
+    #[inline(always)]
+    fn l_dirty(self: Cholesky2<T>) -> Matrix2<T> {
+        Self::l(self)
+    }
+
+    /// Overwrites `b` (any shape with 2 rows: a vector or a matrix) with the solution of `a * x =
+    /// b`: `l y = b` by forward substitution then `lᵀ x = y` by back substitution, each component
+    /// ONE exact sum floored once then one correctly rounded division by the pivot (one prepared
+    /// divisor per row from 3 columns on). On a vector it is bit-identical to `solve`. Panics on
+    /// overflow. Upstream: `Cholesky::solve_mut`.
+    fn solve_mut<B, impl K: SolveKernel<Matrix2<T>, B>, +Drop<B>>(self: Cholesky2<T>, ref b: B) {
+        let lt = Matrix2 { m11: self.l11, m21: R::zero(), m12: self.l21, m22: self.l22 };
+        b = K::upper(lt, K::lower(Self::l(self), b));
+    }
+
+    /// `ln(det(a)) = Σ ln(l_jj²)`, computed as `2 Σ ln(l_jj)`: 2 natural logarithms, an exact
+    /// sum and an exact doubling. Upstream sums `ln(l_jj²)`; squaring first would floor `l_jj²`
+    /// (and send a pivot below 2^-16 to `ln(0)`), so the logarithm of the pivot itself is both
+    /// cheaper and more accurate. Needs `Transcendental`. Upstream: `Cholesky::ln_determinant`.
+    fn ln_determinant<+Transcendental<T>>(self: Cholesky2<T>) -> T {
+        let s = Transcendental::ln(self.l11) + Transcendental::ln(self.l22);
+        s + s
+    }
 }
 
 /// Crate-internal kernel of `Cholesky2<T>`: `new` on the 3 independent components of the
@@ -388,6 +464,35 @@ pub(crate) impl Cholesky2InternalImpl<
         let w = R::wide_add(R::wide_zero(), a.m22);
         let w = R::wide_sub_prod(w, l21, l21);
         let p2 = R::wide_rescale(w);
+        if p2 <= R::zero() {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        Some(Cholesky2 { l11, l21, l22 })
+    }
+
+    /// `new_sym` with `substitute` in place of every pivot that is `<= 0` after flooring (still
+    /// `None` if `substitute` itself is `<= 0`); see `Cholesky2Trait::new_with_substitute`.
+    fn new_sym_with_substitute(a: SymMatrix2<T>, substitute: T) -> Option<Cholesky2<T>> {
+        let p1 = a.m11;
+        let p1 = if p1 <= R::zero() {
+            substitute
+        } else {
+            p1
+        };
+        if p1 <= R::zero() {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let l21 = R::div(a.m12, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        let p2 = if p2 <= R::zero() {
+            substitute
+        } else {
+            p2
+        };
         if p2 <= R::zero() {
             return None;
         }
@@ -563,6 +668,100 @@ pub impl Cholesky3Impl<
     fn determinant(self: Cholesky3<T>) -> T {
         R::sqr(self.l11 * (self.l22 * self.l33))
     }
+
+    /// The factorisation computed WITHOUT the positivity test, like upstream's
+    /// `Cholesky::new_unchecked` — except that a pivot `<= 0` (upstream: the square root of a
+    /// negative number or a division by zero, NaN / infinities, which a fixed-point scalar does
+    /// not have) panics with `nalgebra: not positive definite`. Same kernel, same rounding and
+    /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
+    #[inline(always)]
+    fn new_unchecked(matrix: Matrix3<T>) -> Cholesky3<T> {
+        match Self::new(matrix) {
+            Option::Some(c) => c,
+            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
+        }
+    }
+
+    /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:
+    /// zero or negative, where the square root fails); `None` when such a pivot occurs and
+    /// `substitute` is itself `<= 0`. The same kernel as `new` otherwise (same rounding). Upstream:
+    /// `Cholesky::new_with_substitute`.
+    #[inline(always)]
+    fn new_with_substitute(a: Matrix3<T>, substitute: T) -> Option<Cholesky3<T>> {
+        Cholesky3InternalTrait::new_sym_with_substitute(
+            SymMatrix3 { m11: a.m11, m12: a.m21, m13: a.m31, m22: a.m22, m23: a.m32, m33: a.m33 },
+            substitute,
+        )
+    }
+
+    /// The factor `l` from the LOWER triangle of `matrix` (the strictly upper triangle is not
+    /// read, like upstream's "dirty" storage). Nothing is checked. Exact: moves. Upstream:
+    /// `Cholesky::pack_dirty`.
+    #[inline(always)]
+    fn pack_dirty(matrix: Matrix3<T>) -> Cholesky3<T> {
+        Cholesky3 {
+            l11: matrix.m11,
+            l21: matrix.m21,
+            l31: matrix.m31,
+            l22: matrix.m22,
+            l32: matrix.m32,
+            l33: matrix.m33,
+        }
+    }
+
+    /// The lower triangular factor, consuming the factorisation: `l()`. Exact. Upstream:
+    /// `Cholesky::unpack`.
+    #[inline(always)]
+    fn unpack(self: Cholesky3<T>) -> Matrix3<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle: `l()` here, the compact storage keeps no upper
+    /// triangle (upstream returns the input's upper triangle there, unspecified by its docs).
+    /// Exact.
+    /// Upstream: `Cholesky::unpack_dirty`.
+    #[inline(always)]
+    fn unpack_dirty(self: Cholesky3<T>) -> Matrix3<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle, by value: `l()` (see `unpack_dirty`). Exact.
+    /// Upstream: `Cholesky::l_dirty` (a reference to the storage).
+    #[inline(always)]
+    fn l_dirty(self: Cholesky3<T>) -> Matrix3<T> {
+        Self::l(self)
+    }
+
+    /// Overwrites `b` (any shape with 3 rows: a vector or a matrix) with the solution of `a * x =
+    /// b`: `l y = b` by forward substitution then `lᵀ x = y` by back substitution, each component
+    /// ONE exact sum floored once then one correctly rounded division by the pivot (one prepared
+    /// divisor per row from 3 columns on). On a vector it is bit-identical to `solve`. Panics on
+    /// overflow. Upstream: `Cholesky::solve_mut`.
+    fn solve_mut<B, impl K: SolveKernel<Matrix3<T>, B>, +Drop<B>>(self: Cholesky3<T>, ref b: B) {
+        let lt = Matrix3 {
+            m11: self.l11,
+            m21: R::zero(),
+            m31: R::zero(),
+            m12: self.l21,
+            m22: self.l22,
+            m32: R::zero(),
+            m13: self.l31,
+            m23: self.l32,
+            m33: self.l33,
+        };
+        b = K::upper(lt, K::lower(Self::l(self), b));
+    }
+
+    /// `ln(det(a)) = Σ ln(l_jj²)`, computed as `2 Σ ln(l_jj)`: 3 natural logarithms, an exact
+    /// sum and an exact doubling. Upstream sums `ln(l_jj²)`; squaring first would floor `l_jj²`
+    /// (and send a pivot below 2^-16 to `ln(0)`), so the logarithm of the pivot itself is both
+    /// cheaper and more accurate. Needs `Transcendental`. Upstream: `Cholesky::ln_determinant`.
+    fn ln_determinant<+Transcendental<T>>(self: Cholesky3<T>) -> T {
+        let s = Transcendental::ln(self.l11)
+            + Transcendental::ln(self.l22)
+            + Transcendental::ln(self.l33);
+        s + s
+    }
 }
 
 /// Crate-internal kernel of `Cholesky3<T>`: `new` on the 6 independent components of the
@@ -607,6 +806,53 @@ pub(crate) impl Cholesky3InternalImpl<
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
         let p3 = R::wide_rescale(w);
+        if p3 <= R::zero() {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        Some(Cholesky3 { l11, l21, l31, l22, l32, l33 })
+    }
+
+    /// `new_sym` with `substitute` in place of every pivot that is `<= 0` after flooring (still
+    /// `None` if `substitute` itself is `<= 0`); see `Cholesky3Trait::new_with_substitute`.
+    fn new_sym_with_substitute(a: SymMatrix3<T>, substitute: T) -> Option<Cholesky3<T>> {
+        let p1 = a.m11;
+        let p1 = if p1 <= R::zero() {
+            substitute
+        } else {
+            p1
+        };
+        if p1 <= R::zero() {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let l21 = R::div(a.m12, l11);
+        let l31 = R::div(a.m13, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        let p2 = if p2 <= R::zero() {
+            substitute
+        } else {
+            p2
+        };
+        if p2 <= R::zero() {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m23);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        let p3 = if p3 <= R::zero() {
+            substitute
+        } else {
+            p3
+        };
         if p3 <= R::zero() {
             return None;
         }
@@ -877,6 +1123,171 @@ pub impl Cholesky4Impl<
     #[inline(always)]
     fn determinant(self: Cholesky4<T>) -> T {
         R::sqr((self.l11 * self.l22) * (self.l33 * self.l44))
+    }
+
+    /// The factorisation computed WITHOUT the positivity test, like upstream's
+    /// `Cholesky::new_unchecked` — except that a pivot `<= 0` (upstream: the square root of a
+    /// negative number or a division by zero, NaN / infinities, which a fixed-point scalar does
+    /// not have) panics with `nalgebra: not positive definite`. Same kernel, same rounding and
+    /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
+    #[inline(always)]
+    fn new_unchecked(matrix: Matrix4<T>) -> Cholesky4<T> {
+        match Self::new(matrix) {
+            Option::Some(c) => c,
+            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
+        }
+    }
+
+    /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:
+    /// zero or negative, where the square root fails); `None` when such a pivot occurs and
+    /// `substitute` is itself `<= 0`. The same kernel as `new` otherwise (same rounding). Upstream:
+    /// `Cholesky::new_with_substitute`.
+    fn new_with_substitute(a: Matrix4<T>, substitute: T) -> Option<Cholesky4<T>> {
+        let p1 = a.m11;
+        let p1 = if p1 <= R::zero() {
+            substitute
+        } else {
+            p1
+        };
+        if p1 <= R::zero() {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let (l21, l31, l41) = R::div3(a.m21, a.m31, a.m41, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        let p2 = if p2 <= R::zero() {
+            substitute
+        } else {
+            p2
+        };
+        if p2 <= R::zero() {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m32);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m42);
+        let w = R::wide_sub_prod(w, l41, l21);
+        let n42 = R::wide_rescale(w);
+        let l42 = R::div(n42, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        let p3 = if p3 <= R::zero() {
+            substitute
+        } else {
+            p3
+        };
+        if p3 <= R::zero() {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        let w = R::wide_add(R::wide_zero(), a.m43);
+        let w = R::wide_sub_prod(w, l41, l31);
+        let w = R::wide_sub_prod(w, l42, l32);
+        let n43 = R::wide_rescale(w);
+        let l43 = R::div(n43, l33);
+        let w = R::wide_add(R::wide_zero(), a.m44);
+        let w = R::wide_sub_prod(w, l41, l41);
+        let w = R::wide_sub_prod(w, l42, l42);
+        let w = R::wide_sub_prod(w, l43, l43);
+        let p4 = R::wide_rescale(w);
+        let p4 = if p4 <= R::zero() {
+            substitute
+        } else {
+            p4
+        };
+        if p4 <= R::zero() {
+            return None;
+        }
+        let l44 = R::sqrt(p4);
+        Some(Cholesky4 { l11, l21, l31, l41, l22, l32, l42, l33, l43, l44 })
+    }
+
+    /// The factor `l` from the LOWER triangle of `matrix` (the strictly upper triangle is not
+    /// read, like upstream's "dirty" storage). Nothing is checked. Exact: moves. Upstream:
+    /// `Cholesky::pack_dirty`.
+    #[inline(always)]
+    fn pack_dirty(matrix: Matrix4<T>) -> Cholesky4<T> {
+        Cholesky4 {
+            l11: matrix.m11,
+            l21: matrix.m21,
+            l31: matrix.m31,
+            l41: matrix.m41,
+            l22: matrix.m22,
+            l32: matrix.m32,
+            l42: matrix.m42,
+            l33: matrix.m33,
+            l43: matrix.m43,
+            l44: matrix.m44,
+        }
+    }
+
+    /// The lower triangular factor, consuming the factorisation: `l()`. Exact. Upstream:
+    /// `Cholesky::unpack`.
+    #[inline(always)]
+    fn unpack(self: Cholesky4<T>) -> Matrix4<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle: `l()` here, the compact storage keeps no upper
+    /// triangle (upstream returns the input's upper triangle there, unspecified by its docs).
+    /// Exact.
+    /// Upstream: `Cholesky::unpack_dirty`.
+    #[inline(always)]
+    fn unpack_dirty(self: Cholesky4<T>) -> Matrix4<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle, by value: `l()` (see `unpack_dirty`). Exact.
+    /// Upstream: `Cholesky::l_dirty` (a reference to the storage).
+    #[inline(always)]
+    fn l_dirty(self: Cholesky4<T>) -> Matrix4<T> {
+        Self::l(self)
+    }
+
+    /// Overwrites `b` (any shape with 4 rows: a vector or a matrix) with the solution of `a * x =
+    /// b`: `l y = b` by forward substitution then `lᵀ x = y` by back substitution, each component
+    /// ONE exact sum floored once then one correctly rounded division by the pivot (one prepared
+    /// divisor per row from 3 columns on). On a vector it is bit-identical to `solve`. Panics on
+    /// overflow. Upstream: `Cholesky::solve_mut`.
+    fn solve_mut<B, impl K: SolveKernel<Matrix4<T>, B>, +Drop<B>>(self: Cholesky4<T>, ref b: B) {
+        let lt = Matrix4 {
+            m11: self.l11,
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m12: self.l21,
+            m22: self.l22,
+            m32: R::zero(),
+            m42: R::zero(),
+            m13: self.l31,
+            m23: self.l32,
+            m33: self.l33,
+            m43: R::zero(),
+            m14: self.l41,
+            m24: self.l42,
+            m34: self.l43,
+            m44: self.l44,
+        };
+        b = K::upper(lt, K::lower(Self::l(self), b));
+    }
+
+    /// `ln(det(a)) = Σ ln(l_jj²)`, computed as `2 Σ ln(l_jj)`: 4 natural logarithms, an exact
+    /// sum and an exact doubling. Upstream sums `ln(l_jj²)`; squaring first would floor `l_jj²`
+    /// (and send a pivot below 2^-16 to `ln(0)`), so the logarithm of the pivot itself is both
+    /// cheaper and more accurate. Needs `Transcendental`. Upstream: `Cholesky::ln_determinant`.
+    fn ln_determinant<+Transcendental<T>>(self: Cholesky4<T>) -> T {
+        let s = Transcendental::ln(self.l11)
+            + Transcendental::ln(self.l22)
+            + Transcendental::ln(self.l33)
+            + Transcendental::ln(self.l44);
+        s + s
     }
 }
 
@@ -1395,5 +1806,391 @@ pub impl Cholesky6Impl<
     #[inline(always)]
     fn determinant(self: Cholesky6<T>) -> T {
         R::sqr((self.l11 * (self.l22 * self.l33)) * (self.l44 * (self.l55 * self.l66)))
+    }
+
+    /// The factorisation computed WITHOUT the positivity test, like upstream's
+    /// `Cholesky::new_unchecked` — except that a pivot `<= 0` (upstream: the square root of a
+    /// negative number or a division by zero, NaN / infinities, which a fixed-point scalar does
+    /// not have) panics with `nalgebra: not positive definite`. Same kernel, same rounding and
+    /// same gas as `new`. Upstream: `Cholesky::new_unchecked`.
+    #[inline(always)]
+    fn new_unchecked(matrix: Matrix6<T>) -> Cholesky6<T> {
+        match Self::new(matrix) {
+            Option::Some(c) => c,
+            Option::None => core::panic_with_felt252(NOT_POSITIVE_DEFINITE),
+        }
+    }
+
+    /// `new` with `substitute` in place of every pivot that is `<= 0` after flooring (upstream:
+    /// zero or negative, where the square root fails); `None` when such a pivot occurs and
+    /// `substitute` is itself `<= 0`. The same kernel as `new` otherwise (same rounding). Upstream:
+    /// `Cholesky::new_with_substitute`.
+    fn new_with_substitute(a: Matrix6<T>, substitute: T) -> Option<Cholesky6<T>> {
+        let p1 = a.m11;
+        let p1 = if p1 <= R::zero() {
+            substitute
+        } else {
+            p1
+        };
+        if p1 <= R::zero() {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let (l21, l31, l41, l51, l61) = R::div5(a.m21, a.m31, a.m41, a.m51, a.m61, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        let p2 = if p2 <= R::zero() {
+            substitute
+        } else {
+            p2
+        };
+        if p2 <= R::zero() {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m32);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m42);
+        let w = R::wide_sub_prod(w, l41, l21);
+        let n42 = R::wide_rescale(w);
+        let l42 = R::div(n42, l22);
+        let w = R::wide_add(R::wide_zero(), a.m52);
+        let w = R::wide_sub_prod(w, l51, l21);
+        let n52 = R::wide_rescale(w);
+        let l52 = R::div(n52, l22);
+        let w = R::wide_add(R::wide_zero(), a.m62);
+        let w = R::wide_sub_prod(w, l61, l21);
+        let n62 = R::wide_rescale(w);
+        let l62 = R::div(n62, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        let p3 = if p3 <= R::zero() {
+            substitute
+        } else {
+            p3
+        };
+        if p3 <= R::zero() {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        let w = R::wide_add(R::wide_zero(), a.m43);
+        let w = R::wide_sub_prod(w, l41, l31);
+        let w = R::wide_sub_prod(w, l42, l32);
+        let n43 = R::wide_rescale(w);
+        let l43 = R::div(n43, l33);
+        let w = R::wide_add(R::wide_zero(), a.m53);
+        let w = R::wide_sub_prod(w, l51, l31);
+        let w = R::wide_sub_prod(w, l52, l32);
+        let n53 = R::wide_rescale(w);
+        let l53 = R::div(n53, l33);
+        let w = R::wide_add(R::wide_zero(), a.m63);
+        let w = R::wide_sub_prod(w, l61, l31);
+        let w = R::wide_sub_prod(w, l62, l32);
+        let n63 = R::wide_rescale(w);
+        let l63 = R::div(n63, l33);
+        let w = R::wide_add(R::wide_zero(), a.m44);
+        let w = R::wide_sub_prod(w, l41, l41);
+        let w = R::wide_sub_prod(w, l42, l42);
+        let w = R::wide_sub_prod(w, l43, l43);
+        let p4 = R::wide_rescale(w);
+        let p4 = if p4 <= R::zero() {
+            substitute
+        } else {
+            p4
+        };
+        if p4 <= R::zero() {
+            return None;
+        }
+        let l44 = R::sqrt(p4);
+        let w = R::wide_add(R::wide_zero(), a.m54);
+        let w = R::wide_sub_prod(w, l51, l41);
+        let w = R::wide_sub_prod(w, l52, l42);
+        let w = R::wide_sub_prod(w, l53, l43);
+        let n54 = R::wide_rescale(w);
+        let l54 = R::div(n54, l44);
+        let w = R::wide_add(R::wide_zero(), a.m64);
+        let w = R::wide_sub_prod(w, l61, l41);
+        let w = R::wide_sub_prod(w, l62, l42);
+        let w = R::wide_sub_prod(w, l63, l43);
+        let n64 = R::wide_rescale(w);
+        let l64 = R::div(n64, l44);
+        let w = R::wide_add(R::wide_zero(), a.m55);
+        let w = R::wide_sub_prod(w, l51, l51);
+        let w = R::wide_sub_prod(w, l52, l52);
+        let w = R::wide_sub_prod(w, l53, l53);
+        let w = R::wide_sub_prod(w, l54, l54);
+        let p5 = R::wide_rescale(w);
+        let p5 = if p5 <= R::zero() {
+            substitute
+        } else {
+            p5
+        };
+        if p5 <= R::zero() {
+            return None;
+        }
+        let l55 = R::sqrt(p5);
+        let w = R::wide_add(R::wide_zero(), a.m65);
+        let w = R::wide_sub_prod(w, l61, l51);
+        let w = R::wide_sub_prod(w, l62, l52);
+        let w = R::wide_sub_prod(w, l63, l53);
+        let w = R::wide_sub_prod(w, l64, l54);
+        let n65 = R::wide_rescale(w);
+        let l65 = R::div(n65, l55);
+        let w = R::wide_add(R::wide_zero(), a.m66);
+        let w = R::wide_sub_prod(w, l61, l61);
+        let w = R::wide_sub_prod(w, l62, l62);
+        let w = R::wide_sub_prod(w, l63, l63);
+        let w = R::wide_sub_prod(w, l64, l64);
+        let w = R::wide_sub_prod(w, l65, l65);
+        let p6 = R::wide_rescale(w);
+        let p6 = if p6 <= R::zero() {
+            substitute
+        } else {
+            p6
+        };
+        if p6 <= R::zero() {
+            return None;
+        }
+        let l66 = R::sqrt(p6);
+        Some(
+            Cholesky6 {
+                l11,
+                l21,
+                l31,
+                l41,
+                l51,
+                l61,
+                l22,
+                l32,
+                l42,
+                l52,
+                l62,
+                l33,
+                l43,
+                l53,
+                l63,
+                l44,
+                l54,
+                l64,
+                l55,
+                l65,
+                l66,
+            },
+        )
+    }
+
+    /// The factor `l` from the LOWER triangle of `matrix` (the strictly upper triangle is not
+    /// read, like upstream's "dirty" storage). Nothing is checked. Exact: moves. Upstream:
+    /// `Cholesky::pack_dirty`.
+    #[inline(always)]
+    fn pack_dirty(matrix: Matrix6<T>) -> Cholesky6<T> {
+        Cholesky6 {
+            l11: matrix.m11,
+            l21: matrix.m21,
+            l31: matrix.m31,
+            l41: matrix.m41,
+            l51: matrix.m51,
+            l61: matrix.m61,
+            l22: matrix.m22,
+            l32: matrix.m32,
+            l42: matrix.m42,
+            l52: matrix.m52,
+            l62: matrix.m62,
+            l33: matrix.m33,
+            l43: matrix.m43,
+            l53: matrix.m53,
+            l63: matrix.m63,
+            l44: matrix.m44,
+            l54: matrix.m54,
+            l64: matrix.m64,
+            l55: matrix.m55,
+            l65: matrix.m65,
+            l66: matrix.m66,
+        }
+    }
+
+    /// The lower triangular factor, consuming the factorisation: `l()`. Exact. Upstream:
+    /// `Cholesky::unpack`.
+    #[inline(always)]
+    fn unpack(self: Cholesky6<T>) -> Matrix6<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle: `l()` here, the compact storage keeps no upper
+    /// triangle (upstream returns the input's upper triangle there, unspecified by its docs).
+    /// Exact.
+    /// Upstream: `Cholesky::unpack_dirty`.
+    #[inline(always)]
+    fn unpack_dirty(self: Cholesky6<T>) -> Matrix6<T> {
+        Self::l(self)
+    }
+
+    /// The factor with its "dirty" upper triangle, by value: `l()` (see `unpack_dirty`). Exact.
+    /// Upstream: `Cholesky::l_dirty` (a reference to the storage).
+    #[inline(always)]
+    fn l_dirty(self: Cholesky6<T>) -> Matrix6<T> {
+        Self::l(self)
+    }
+
+    /// Overwrites `b` (any shape with 6 rows: a vector or a matrix) with the solution of `a * x =
+    /// b`: `l y = b` by forward substitution then `lᵀ x = y` by back substitution, each component
+    /// ONE exact sum floored once then one correctly rounded division by the pivot (one prepared
+    /// divisor per row from 3 columns on). On a vector it is bit-identical to `solve`. Panics on
+    /// overflow. Upstream: `Cholesky::solve_mut`.
+    fn solve_mut<B, impl K: SolveKernel<Matrix6<T>, B>, +Drop<B>>(self: Cholesky6<T>, ref b: B) {
+        let lt = Matrix6 {
+            m11: self.l11,
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m51: R::zero(),
+            m61: R::zero(),
+            m12: self.l21,
+            m22: self.l22,
+            m32: R::zero(),
+            m42: R::zero(),
+            m52: R::zero(),
+            m62: R::zero(),
+            m13: self.l31,
+            m23: self.l32,
+            m33: self.l33,
+            m43: R::zero(),
+            m53: R::zero(),
+            m63: R::zero(),
+            m14: self.l41,
+            m24: self.l42,
+            m34: self.l43,
+            m44: self.l44,
+            m54: R::zero(),
+            m64: R::zero(),
+            m15: self.l51,
+            m25: self.l52,
+            m35: self.l53,
+            m45: self.l54,
+            m55: self.l55,
+            m65: R::zero(),
+            m16: self.l61,
+            m26: self.l62,
+            m36: self.l63,
+            m46: self.l64,
+            m56: self.l65,
+            m66: self.l66,
+        };
+        b = K::upper(lt, K::lower(Self::l(self), b));
+    }
+
+    /// `ln(det(a)) = Σ ln(l_jj²)`, computed as `2 Σ ln(l_jj)`: 6 natural logarithms, an exact
+    /// sum and an exact doubling. Upstream sums `ln(l_jj²)`; squaring first would floor `l_jj²`
+    /// (and send a pivot below 2^-16 to `ln(0)`), so the logarithm of the pivot itself is both
+    /// cheaper and more accurate. Needs `Transcendental`. Upstream: `Cholesky::ln_determinant`.
+    fn ln_determinant<+Transcendental<T>>(self: Cholesky6<T>) -> T {
+        let s = Transcendental::ln(self.l11)
+            + Transcendental::ln(self.l22)
+            + Transcendental::ln(self.l33)
+            + Transcendental::ln(self.l44)
+            + Transcendental::ln(self.l55)
+            + Transcendental::ln(self.l66);
+        s + s
+    }
+}
+
+/// `SquareMatrix::cholesky` on `Matrix2<T>` (upstream `nalgebra::linalg` decomposition entry
+/// point).
+#[generate_trait]
+pub impl Matrix2CholeskyImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix2CholeskyTrait<T> {
+    /// The Cholesky factorisation of `self` (its lower triangle), or `None` when it is not
+    /// positive definite: `Cholesky2Trait::new(self)`. Upstream: `SquareMatrix::cholesky`.
+    #[inline(always)]
+    fn cholesky(self: Matrix2<T>) -> Option<Cholesky2<T>> {
+        Cholesky2Trait::new(self)
+    }
+}
+
+/// `SquareMatrix::cholesky` on `Matrix3<T>` (upstream `nalgebra::linalg` decomposition entry
+/// point).
+#[generate_trait]
+pub impl Matrix3CholeskyImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix3CholeskyTrait<T> {
+    /// The Cholesky factorisation of `self` (its lower triangle), or `None` when it is not
+    /// positive definite: `Cholesky3Trait::new(self)`. Upstream: `SquareMatrix::cholesky`.
+    #[inline(always)]
+    fn cholesky(self: Matrix3<T>) -> Option<Cholesky3<T>> {
+        Cholesky3Trait::new(self)
+    }
+}
+
+/// `SquareMatrix::cholesky` on `Matrix4<T>` (upstream `nalgebra::linalg` decomposition entry
+/// point).
+#[generate_trait]
+pub impl Matrix4CholeskyImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix4CholeskyTrait<T> {
+    /// The Cholesky factorisation of `self` (its lower triangle), or `None` when it is not
+    /// positive definite: `Cholesky4Trait::new(self)`. Upstream: `SquareMatrix::cholesky`.
+    #[inline(always)]
+    fn cholesky(self: Matrix4<T>) -> Option<Cholesky4<T>> {
+        Cholesky4Trait::new(self)
+    }
+}
+
+/// `SquareMatrix::cholesky` on `Matrix6<T>` (upstream `nalgebra::linalg` decomposition entry
+/// point).
+#[generate_trait]
+pub impl Matrix6CholeskyImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix6CholeskyTrait<T> {
+    /// The Cholesky factorisation of `self` (its lower triangle), or `None` when it is not
+    /// positive definite: `Cholesky6Trait::new(self)`. Upstream: `SquareMatrix::cholesky`.
+    #[inline(always)]
+    fn cholesky(self: Matrix6<T>) -> Option<Cholesky6<T>> {
+        Cholesky6Trait::new(self)
     }
 }

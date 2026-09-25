@@ -27,6 +27,7 @@ members = [
     "crates/tests_geometry_projections",
     "crates/tests_geometry_transform",
     "crates/tests_linalg",
+    "crates/tests_linalg_solve",
 ]
 
 [workspace.package]

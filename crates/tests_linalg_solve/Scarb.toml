@@ -1,0 +1,26 @@
+[package]
+name = "nalgebra_tests_linalg_solve"
+description = "Tests and gas benchmarks of the triangular solves, Givens rotations, permutation sequences and the LU / QR / Cholesky API completion (WP 8.5-P14a; not published)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+publish = false
+
+[dependencies]
+nalgebra = { path = "../nalgebra" }
+simba.workspace = true
+fixed.workspace = true
+
+[dev-dependencies]
+nalgebra_tests_utils = { path = "../tests_utils" }
+nalgebra_testing = { path = "../testing" }
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

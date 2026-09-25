@@ -71,6 +71,7 @@ pub mod row_vector3;
 pub mod row_vector4;
 pub mod row_vector5;
 pub mod row_vector6;
+pub mod solve;
 pub mod statistics;
 pub mod vector2;
 pub mod vector3;
@@ -137,6 +138,7 @@ pub use row_vector3::{Matrix1x3, RowVector3, RowVector3AngleTrait, RowVector3Tra
 pub use row_vector4::{Matrix1x4, RowVector4, RowVector4AngleTrait, RowVector4Trait};
 pub use row_vector5::{Matrix1x5, RowVector5, RowVector5AngleTrait, RowVector5Trait};
 pub use row_vector6::{Matrix1x6, RowVector6, RowVector6AngleTrait, RowVector6Trait};
+pub use solve::MatrixSolve;
 pub use statistics::{
     Matrix1StatisticsTrait, Matrix2StatisticsTrait, Matrix2x3StatisticsTrait,
     Matrix2x4StatisticsTrait, Matrix2x5StatisticsTrait, Matrix2x6StatisticsTrait,

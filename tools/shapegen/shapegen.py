@@ -1166,6 +1166,12 @@ def library_outputs(pkg: Path) -> dict[Path, Path]:
     for module, render in shapes.SHARED_MODULES.items():
         (src / f"{module}.cairo").write_text(render())
         out[library.BASE / f"{module}.cairo"] = src / f"{module}.cairo"
+    # WP 8.5-P14a: generated modules of `linalg` (their `mod` lines are hand-written in
+    # `linalg.cairo`); written in a sub-directory so that their names cannot clash with `base`'s.
+    (src / "linalg").mkdir()
+    for module, render in shapes.LINALG_MODULES.items():
+        (src / "linalg" / f"{module}.cairo").write_text(render())
+        out[library.BASE.parent / "linalg" / f"{module}.cairo"] = src / "linalg" / f"{module}.cairo"
     base_rs, lib_rs = library.BASE.parent / "base.cairo", library.BASE.parent / "lib.cairo"
     (src / "base.cairo").write_text(shapes.splice(base_rs.read_text(), shapes.base_block()))
     (src / "crate_root.cairo").write_text(shapes.splice(lib_rs.read_text(), shapes.lib_block()))

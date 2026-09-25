@@ -8,6 +8,7 @@
 use simba::scalar::Real;
 use crate::base::MatrixTrMul;
 use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
+use crate::base::solve::SolveKernel;
 use crate::base::vector4::Vector4;
 
 /// The QR factorisation of a `Matrix4<T>`: `A = Q * R`.
@@ -129,6 +130,44 @@ pub impl Qr4Impl<
     #[inline(always)]
     fn unpack(self: Qr4<T>) -> (Matrix4<T>, Matrix4<T>) {
         (self.q, self.r)
+    }
+
+    /// The upper triangular factor `R`, consuming the factorisation: `r()`. Exact. Upstream:
+    /// `QR::unpack_r`.
+    #[inline(always)]
+    fn unpack_r(self: Qr4<T>) -> Matrix4<T> {
+        self.r
+    }
+
+    /// The factors as the factorisation stores them, `(Q, R)`: modified Gram-Schmidt keeps both
+    /// in full, where upstream's Householder storage packs the reflectors and `R` into one matrix
+    /// (the representation is internal on both sides). Exact. Upstream: `QR::qr_internal`
+    /// (`#[doc(hidden)]`).
+    #[inline(always)]
+    fn qr_internal(self: Qr4<T>) -> (Matrix4<T>, Matrix4<T>) {
+        (self.q, self.r)
+    }
+
+    /// `rhs = Qᵀ * rhs` in place, for any `rhs` with 4 rows (a vector or a matrix): ONE fused sum
+    /// of products per entry (`MatrixTrMul::tr_mul`, floored once). Upstream: `QR::q_tr_mul`,
+    /// which applies the Householder reflections one after the other (a rounding each).
+    fn q_tr_mul<B, impl K: SolveKernel<Matrix4<T>, B>, +Drop<B>>(self: Qr4<T>, ref rhs: B) {
+        rhs = K::tr_mul_rhs(self.q, rhs);
+    }
+
+    /// Overwrites `b` (any shape with 4 rows: a vector or a matrix) with the solution of `A * x =
+    /// b` and returns `true`, or returns `false` and leaves `b` unchanged when a diagonal entry of
+    /// `R` is exactly zero (`is_invertible`; upstream returns `false` after overwriting `b` with
+    /// `Qᵀ b`). `x = R⁻¹ (Qᵀ b)`: one fused `tr_mul`, then back substitution (one floor and
+    /// one correctly rounded division per component, one prepared divisor per row from 3 columns
+    /// on); on a vector it is bit-identical to `solve`. Panics on overflow. Upstream:
+    /// `QR::solve_mut`.
+    fn solve_mut<B, impl K: SolveKernel<Matrix4<T>, B>, +Drop<B>>(self: Qr4<T>, ref b: B) -> bool {
+        if !Self::is_invertible(self) {
+            return false;
+        }
+        b = K::upper(self.r, K::tr_mul_rhs(self.q, b));
+        true
     }
 
     /// Whether the factorisation is invertible: all 4 diagonal entries of `R` are EXACTLY nonzero

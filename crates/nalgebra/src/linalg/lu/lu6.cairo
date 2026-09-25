@@ -21,8 +21,10 @@
 
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
+use crate::base::solve::SolveKernel;
 use crate::base::vector6::Vector6;
 use super::Perm6;
+use super::super::permutation_sequence::PermuteRows;
 
 #[cfg(test)]
 mod benches;
@@ -742,6 +744,65 @@ pub impl Lu6Impl<
             m46: self.lu.m46,
             m56: self.lu.m56,
             m66: self.lu.m66,
+        }
+    }
+
+    /// The packed factors as the factorisation stores them: `L` (strict lower triangle, unit
+    /// diagonal implicit) and `U` (upper triangle) in one matrix. Exact: a move. Upstream:
+    /// `LU::lu_internal` (`#[doc(hidden)]`).
+    #[inline(always)]
+    fn lu_internal(self: Lu6<T>) -> Matrix6<T> {
+        self.lu
+    }
+
+    /// The unit lower triangular factor `L`, consuming the factorisation: `l()` (exact, moves
+    /// only). Upstream: `LU::l_unpack`.
+    #[inline(always)]
+    fn l_unpack(self: Lu6<T>) -> Matrix6<T> {
+        Self::l(self)
+    }
+
+    /// The three factors `(P, L, U)` of `P * A = L * U`: `(p(), l(), u())`, exact. Upstream:
+    /// `LU::unpack`.
+    #[inline(always)]
+    fn unpack(self: Lu6<T>) -> (Perm6, Matrix6<T>, Matrix6<T>) {
+        (self.p, Self::l(self), Self::u(self))
+    }
+
+    /// Overwrites `b` (any shape with 6 rows: a vector or a matrix) with the solution `x` of `A *
+    /// x = b` and returns `true`, or returns `false` and leaves `b` unchanged when a pivot is
+    /// exactly zero (`is_invertible`; upstream returns `false` after overwriting `b` with an
+    /// unspecified partial result). Upstream: `LU::solve_mut`.
+    ///
+    /// Upstream's steps, on every column of `b` at once: `P b` (moves), `L y = P b` by forward
+    /// substitution on the implicit unit diagonal (one floor per component, no division: `L`'s
+    /// quotients by 1 are exact, bit-identical to upstream's `solve_lower_triangular_with_diag_mut
+    /// (b, 1)`), then `U x = y` by back substitution (one floor and one correctly rounded division
+    /// per component, one prepared divisor per row from 3 columns on). On a vector it is
+    /// bit-identical to `solve`. Panics on overflow.
+    fn solve_mut<B, impl P: PermuteRows<Perm6, B>, impl K: SolveKernel<Matrix6<T>, B>, +Drop<B>>(
+        self: Lu6<T>, ref b: B,
+    ) -> bool {
+        if !Self::is_invertible(self) {
+            return false;
+        }
+        P::permute_rows(self.p, ref b);
+        b = K::upper(self.lu, K::lower_unit(self.lu, b));
+        true
+    }
+
+    /// Overwrites `out` with the inverse and returns `true`, or returns `false` and leaves `out`
+    /// unchanged when a pivot is exactly zero (upstream fills `out` with the identity first and
+    /// leaves a partial result). The inverse is `try_inverse`'s, bit for bit (upstream's
+    /// `try_inverse` is `try_inverse_to` on the identity). Upstream: `LU::try_inverse_to`.
+    #[inline(always)]
+    fn try_inverse_to(self: Lu6<T>, ref out: Matrix6<T>) -> bool {
+        match Self::try_inverse(self) {
+            Option::Some(m) => {
+                out = m;
+                true
+            },
+            Option::None => false,
         }
     }
 
