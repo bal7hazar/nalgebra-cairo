@@ -1250,6 +1250,15 @@ DIM_ONLY: dict[str, set[str]] = {
               "Translation3", "IsometryMatrix2", "IsometryMatrix3", "SimilarityMatrix2",
               "SimilarityMatrix3", *(shape_name(r, c) for r in DIMS for c in (2, 3))}
        for name in ("Mul<Rotation>", "Div<Rotation>")},
+    # WP 8.3-P07 (`base/cg.rs`): the helpers whose argument or result is a `D - 1` vector exist
+    # on `Matrix2..6` (`Vector1` is `Matrix1`; `Matrix1` would need a 0-dimensional vector); the
+    # uniform `new_scaling` / `append_scaling` / `prepend_scaling` exist on `Matrix1` too. The
+    # names are shared with the geometry types, which keep their own checks.
+    **{name: {t for ts in OWNER_CANDIDATES.values() for t in ts} - {"Matrix1"} for name in (
+        "new_nonuniform_scaling", "new_translation", "append_nonuniform_scaling",
+        "append_nonuniform_scaling_mut", "prepend_nonuniform_scaling",
+        "prepend_nonuniform_scaling_mut", "append_translation", "append_translation_mut",
+        "prepend_translation", "prepend_translation_mut", "transform_vector")},
     # WP 8.4-P12: dual quaternions are 3D only (`Translation3 * UnitDualQuaternion`...).
     **{name: {"Translation3", "UnitQuaternion", "Isometry3", "DualQuaternion",
               "UnitDualQuaternion"}

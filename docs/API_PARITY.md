@@ -17,7 +17,7 @@ How to read it:
 
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
-| base | 354 | 7 | 127 | 316 | 804 | 72.5% |
+| base | 384 | 7 | 97 | 316 | 804 | 78.7% |
 | geometry | 768 | 3 | 161 | 116 | 1048 | 82.4% |
 | linalg | 76 | 6 | 212 | 10 | 304 | 25.9% |
 | sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
@@ -26,7 +26,7 @@ How to read it:
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1198** | **16** | **658** | **564** | **2436** | **64.0%** |
+| **total** | **1228** | **16** | **628** | **564** | **2436** | **65.6%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **33** ([list](#cairo-imposed-forms)); scalar layer: **36** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -42,7 +42,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P04](#p04-swizzles) | Swizzles | 0 | mechanical | P01 (Vector2/3 results) |  |
 | [P05](#p05-rows-columns-blocks-and-edition) | Rows, columns, blocks and edition | 0 | mechanical | P01 |  |
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 37 | standard numerics | P01, P05 | `base/blas.rs` (21), `base/statistics.rs` (16) |
-| [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 32 | standard numerics | P01 | `base/cg.rs` (32) |
+| [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 2 | standard numerics | P01 | `base/cg.rs` (2) |
 | [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 2 | standard numerics | — | `geometry/quaternion_conversion.rs` (1), `geometry/unit_complex_conversion.rs` (1) |
 | [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 4 | mechanical | P08 | `geometry/translation_conversion.rs` (2), `geometry/point_conversion.rs` (1), `geometry/rotation_conversion.rs` (1) |
 | [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 2 | mechanical | P09a | `geometry/isometry_conversion.rs` (1), `geometry/similarity_conversion.rs` (1) |
@@ -108,11 +108,9 @@ the operations upstream has on every `Matrix` that nalgebra-cairo only has on so
 
 ### P07 Homogeneous / computer-graphics helpers
 
-`base/cg.rs`: `new_scaling`, `new_translation`, `new_rotation*`, `look_at_*`, `new_perspective`, `new_orthographic`, `append_*` / `prepend_*`, `transform_point` / `transform_vector` on `Matrix3` / `Matrix4`, `to_homogeneous` on square matrices. Tier: standard numerics. Depends on: P01. 32 items (`*` = partial):
+`base/cg.rs`: `new_scaling`, `new_translation`, `new_rotation*`, `look_at_*`, `new_perspective`, `new_orthographic`, `append_*` / `prepend_*`, `transform_point` / `transform_vector` on `Matrix3` / `Matrix4`, `to_homogeneous` on square matrices. Tier: standard numerics. Depends on: P01. 2 items (`*` = partial):
 
-- **Matrix3**: `new_nonuniform_scaling_wrt_point`, `new_rotation`, `transform_point`
-- **Matrix4**: `face_towards`, `from_axis_angle`, `from_euler_angles`, `from_scaled_axis`, `look_at_lh`, `look_at_rh`, `new_nonuniform_scaling_wrt_point`, `new_observer_frame`, `new_orthographic`, `new_perspective`, `new_rotation`, `new_rotation_wrt_point`, `transform_point`
-- **SquareMatrix**: `append_nonuniform_scaling`, `append_nonuniform_scaling_mut`, `append_scaling`, `append_scaling_mut`, `append_translation`, `append_translation_mut`, `new_nonuniform_scaling`, `new_scaling`, `new_translation`, `prepend_nonuniform_scaling`, `prepend_nonuniform_scaling_mut`, `prepend_scaling`, `prepend_scaling_mut`, `prepend_translation`, `prepend_translation_mut`, `transform_vector`
+- **Matrix4**: `new_orthographic`, `new_perspective`
 
 ### P08 Quaternion, UnitQuaternion, UnitComplex completion
 
@@ -1081,37 +1079,37 @@ Cairo: Matrix2 · ported 0, partial 0, missing 0, excluded 2.
 
 #### Matrix3 (base)
 
-Cairo: Matrix3 · ported 0, partial 0, missing 3, excluded 2.
+Cairo: Matrix3 · ported 3, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Deref` | excluded |  | generic-dim | `base/coordinates.rs` |
 | impl `DerefMut` | excluded |  | borrow | `base/coordinates.rs` |
-| method `new_nonuniform_scaling_wrt_point` | missing |  | P07 | `base/cg.rs` |
-| method `new_rotation` | missing |  | P07 | `base/cg.rs` |
-| method `transform_point` | missing |  | P07 | `base/cg.rs` |
+| method `new_nonuniform_scaling_wrt_point` | ported | Matrix3::new_nonuniform_scaling_wrt_point |  | `base/cg.rs` |
+| method `new_rotation` | ported | Matrix3::new_rotation |  | `base/cg.rs` |
+| method `transform_point` | ported | Matrix3::transform_point |  | `base/cg.rs` |
 
 #### Matrix4 (base)
 
-Cairo: Matrix4 · ported 0, partial 0, missing 13, excluded 2.
+Cairo: Matrix4 · ported 11, partial 0, missing 2, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Deref` | excluded |  | generic-dim | `base/coordinates.rs` |
 | impl `DerefMut` | excluded |  | borrow | `base/coordinates.rs` |
-| method `face_towards` | missing |  | P07 | `base/cg.rs` |
-| method `from_axis_angle` | missing |  | P07 | `base/cg.rs` |
-| method `from_euler_angles` | missing |  | P07 | `base/cg.rs` |
-| method `from_scaled_axis` | missing |  | P07 | `base/cg.rs` |
-| method `look_at_lh` | missing |  | P07 | `base/cg.rs` |
-| method `look_at_rh` | missing |  | P07 | `base/cg.rs` |
-| method `new_nonuniform_scaling_wrt_point` | missing |  | P07 | `base/cg.rs` |
-| method `new_observer_frame` | missing |  | deprecated upstream; P07; deprecated | `base/cg.rs` |
+| method `face_towards` | ported | Matrix4::face_towards |  | `base/cg.rs` |
+| method `from_axis_angle` | ported | Matrix4::from_axis_angle |  | `base/cg.rs` |
+| method `from_euler_angles` | ported | Matrix4::from_euler_angles |  | `base/cg.rs` |
+| method `from_scaled_axis` | ported | Matrix4::from_scaled_axis |  | `base/cg.rs` |
+| method `look_at_lh` | ported | Matrix4::look_at_lh |  | `base/cg.rs` |
+| method `look_at_rh` | ported | Matrix4::look_at_rh |  | `base/cg.rs` |
+| method `new_nonuniform_scaling_wrt_point` | ported | Matrix4::new_nonuniform_scaling_wrt_point |  | `base/cg.rs` |
+| method `new_observer_frame` | ported | Matrix4::new_observer_frame | deprecated | `base/cg.rs` |
 | method `new_orthographic` | missing |  | P07 | `base/cg.rs` |
 | method `new_perspective` | missing |  | P07 | `base/cg.rs` |
-| method `new_rotation` | missing |  | P07 | `base/cg.rs` |
-| method `new_rotation_wrt_point` | missing |  | P07 | `base/cg.rs` |
-| method `transform_point` | missing |  | P07 | `base/cg.rs` |
+| method `new_rotation` | ported | Matrix4::new_rotation |  | `base/cg.rs` |
+| method `new_rotation_wrt_point` | ported | Matrix4::new_rotation_wrt_point |  | `base/cg.rs` |
+| method `transform_point` | ported | Matrix4::transform_point |  | `base/cg.rs` |
 
 #### MatrixIndex (base)
 
@@ -1332,7 +1330,7 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 1.
 
 #### SquareMatrix (base)
 
-Cairo: Matrix1/2/3/4/5/6 · ported 16, partial 0, missing 22, excluded 0.
+Cairo: Matrix1/2/3/4/5/6 · ported 32, partial 0, missing 6, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -1340,12 +1338,12 @@ Cairo: Matrix1/2/3/4/5/6 · ported 16, partial 0, missing 22, excluded 0.
 | impl `Product` | missing |  | P02 | `base/ops.rs` |
 | impl `Product<Matrix>` | missing |  | P02 | `base/ops.rs` |
 | method `adjoint_mut` | ported | Matrix1/2/3/4/5/6::adjoint_mut |  | `base/matrix.rs` |
-| method `append_nonuniform_scaling` | missing |  | P07 | `base/cg.rs` |
-| method `append_nonuniform_scaling_mut` | missing |  | P07 | `base/cg.rs` |
-| method `append_scaling` | missing |  | P07 | `base/cg.rs` |
-| method `append_scaling_mut` | missing |  | P07 | `base/cg.rs` |
-| method `append_translation` | missing |  | P07 | `base/cg.rs` |
-| method `append_translation_mut` | missing |  | P07 | `base/cg.rs` |
+| method `append_nonuniform_scaling` | ported | Matrix2/3/4/5/6::append_nonuniform_scaling |  | `base/cg.rs` |
+| method `append_nonuniform_scaling_mut` | ported | Matrix2/3/4/5/6::append_nonuniform_scaling_mut |  | `base/cg.rs` |
+| method `append_scaling` | ported | Matrix1/2/3/4/5/6::append_scaling |  | `base/cg.rs` |
+| method `append_scaling_mut` | ported | Matrix1/2/3/4/5/6::append_scaling_mut |  | `base/cg.rs` |
+| method `append_translation` | ported | Matrix2/3/4/5/6::append_translation |  | `base/cg.rs` |
+| method `append_translation_mut` | ported | Matrix2/3/4/5/6::append_translation_mut |  | `base/cg.rs` |
 | method `conjugate_transform_mut` | ported | Matrix1/2/3/4/5/6::conjugate_transform_mut | deprecated | `base/matrix.rs` |
 | method `diagonal` | ported | Matrix1/2/3/4/5/6::diagonal |  | `base/matrix.rs` |
 | method `fill_lower_triangle_with_upper_triangle` | ported | Matrix1/2/3/4/5/6::fill_lower_triangle_with_upper_triangle |  | `base/edition.rs` |
@@ -1355,15 +1353,15 @@ Cairo: Matrix1/2/3/4/5/6 · ported 16, partial 0, missing 22, excluded 0.
 | method `is_invertible` | ported | Matrix2/3/4/6::is_invertible |  | `base/properties.rs` |
 | method `is_special_orthogonal` | ported | Matrix2/3/4/6::is_special_orthogonal |  | `base/properties.rs` |
 | method `map_diagonal` | ported | Matrix1/2/3/4/5/6::map_diagonal |  | `base/matrix.rs` |
-| method `new_nonuniform_scaling` | missing |  | P07 | `base/cg.rs` |
-| method `new_scaling` | missing |  | P07 | `base/cg.rs` |
-| method `new_translation` | missing |  | P07 | `base/cg.rs` |
-| method `prepend_nonuniform_scaling` | missing |  | P07 | `base/cg.rs` |
-| method `prepend_nonuniform_scaling_mut` | missing |  | P07 | `base/cg.rs` |
-| method `prepend_scaling` | missing |  | P07 | `base/cg.rs` |
-| method `prepend_scaling_mut` | missing |  | P07 | `base/cg.rs` |
-| method `prepend_translation` | missing |  | P07 | `base/cg.rs` |
-| method `prepend_translation_mut` | missing |  | P07 | `base/cg.rs` |
+| method `new_nonuniform_scaling` | ported | Matrix2/3/4/5/6::new_nonuniform_scaling |  | `base/cg.rs` |
+| method `new_scaling` | ported | Matrix1/2/3/4/5/6::new_scaling |  | `base/cg.rs` |
+| method `new_translation` | ported | Matrix2/3/4/5/6::new_translation |  | `base/cg.rs` |
+| method `prepend_nonuniform_scaling` | ported | Matrix2/3/4/5/6::prepend_nonuniform_scaling |  | `base/cg.rs` |
+| method `prepend_nonuniform_scaling_mut` | ported | Matrix2/3/4/5/6::prepend_nonuniform_scaling_mut |  | `base/cg.rs` |
+| method `prepend_scaling` | ported | Matrix1/2/3/4/5/6::prepend_scaling |  | `base/cg.rs` |
+| method `prepend_scaling_mut` | ported | Matrix1/2/3/4/5/6::prepend_scaling_mut |  | `base/cg.rs` |
+| method `prepend_translation` | ported | Matrix2/3/4/5/6::prepend_translation |  | `base/cg.rs` |
+| method `prepend_translation_mut` | ported | Matrix2/3/4/5/6::prepend_translation_mut |  | `base/cg.rs` |
 | method `quadform` | missing |  | P06 | `base/blas.rs` |
 | method `quadform_tr` | missing |  | P06 | `base/blas.rs` |
 | method `quadform_tr_with_workspace` | missing |  | P06 | `base/blas.rs` |
@@ -1371,7 +1369,7 @@ Cairo: Matrix1/2/3/4/5/6 · ported 16, partial 0, missing 22, excluded 0.
 | method `symmetric_part` | ported | Matrix1/2/3/4/5/6::symmetric_part |  | `base/matrix.rs` |
 | method `to_homogeneous` | ported | Matrix2/3/4/5::to_homogeneous |  | `base/matrix.rs` |
 | method `trace` | ported | Matrix1/2/3/4/5/6::trace |  | `base/matrix.rs` |
-| method `transform_vector` | missing |  | P07 | `base/cg.rs` |
+| method `transform_vector` | ported | Matrix2/3/4/5/6::transform_vector |  | `base/cg.rs` |
 | method `transpose_mut` | ported | Matrix1/2/3/4/5/6::transpose_mut |  | `base/matrix.rs` |
 | type `SquareMatrix` | ported | Matrix1/2/3/4/5/6 | generic upstream type, concrete Cairo types | `base/matrix.rs` |
 
