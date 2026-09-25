@@ -166,7 +166,8 @@ pub impl Perspective3Impl<
     /// The near clipping plane, `m34 / (m33 - 1)`: ONE correctly rounded division. Upstream
     /// evaluates the same value as `m34 / (2 · ratio) - m34 / 2`, `ratio = (1 - m33) / (-m33 -
     /// 1)` (four roundings, harmless in `f64`); the single quotient is the fixed-point value
-    /// nearest to it. Panics on `m33 = 1` (upstream's `inf`). Upstream: `znear`.
+    /// nearest to it, and cheaper (4,130 gas against 13,850 for the literal form). Panics on
+    /// `m33 = 1` (upstream's `inf`). Upstream: `znear`.
     #[inline(always)]
     fn znear(self: Perspective3<T>) -> T {
         let m = self.matrix;
@@ -184,8 +185,9 @@ pub impl Perspective3Impl<
     /// Projects the point `p` into normalized device coordinates: `(m11 · x, m22 · y, m33 · z +
     /// m34) / -z`. The numerators are floored products (the third one fused, `Real::mul_add`) and
     /// the three quotients share ONE prepared divisor (`Real::div3`, each correctly rounded):
-    /// upstream multiplies by `inverse_denom = -1 / z` instead, which rounds twice (a variant
-    /// kept in the benchmarks). Panics on `z = 0` and on overflow. Upstream: `project_point`.
+    /// upstream multiplies by `inverse_denom = -1 / z` instead, which rounds twice (13,540 gas
+    /// against 15,050, kept as the loser for that extra rounding; three separate quotients cost
+    /// 15,400). Panics on `z = 0` and on overflow. Upstream: `project_point`.
     #[inline(always)]
     fn project_point(self: Perspective3<T>, p: Point3<T>) -> Point3<T> {
         let m = self.matrix;
@@ -205,8 +207,9 @@ pub impl Perspective3Impl<
     }
 
     /// Projects the vector `v`: `(m11 · x / -z, m22 · y / -z, m33)` (upstream's third component
-    /// is `m33` itself). One floored product and one correctly rounded quotient per component.
-    /// Panics on `z = 0` and on overflow. Upstream: `project_vector`.
+    /// is `m33` itself). One floored product and one correctly rounded quotient per component
+    /// (two plain quotients: 10,390 gas against 12,580 for a prepared divisor). Panics on `z = 0`
+    /// and on overflow. Upstream: `project_vector`.
     #[inline(always)]
     fn project_vector(self: Perspective3<T>, v: Vector3<T>) -> Vector3<T> {
         let m = self.matrix;
