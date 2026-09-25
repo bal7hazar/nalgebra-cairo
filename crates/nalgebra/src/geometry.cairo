@@ -3,6 +3,8 @@
 pub mod abstract_rotation;
 pub mod isometry2;
 pub mod isometry3;
+pub mod isometry_matrix2;
+pub mod isometry_matrix3;
 pub mod point;
 pub mod point1;
 pub mod point4;
@@ -13,6 +15,8 @@ pub mod rotation2;
 pub mod rotation3;
 pub mod similarity2;
 pub mod similarity3;
+pub mod similarity_matrix2;
+pub mod similarity_matrix3;
 pub mod translation1;
 pub mod translation2;
 pub mod translation3;
@@ -25,6 +29,8 @@ pub use abstract_rotation::AbstractRotation;
 
 pub use isometry2::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
 pub use isometry3::{Isometry3, Isometry3AngleTrait, Isometry3Trait};
+pub use isometry_matrix2::{IsometryMatrix2, IsometryMatrix2AngleTrait, IsometryMatrix2Trait};
+pub use isometry_matrix3::{IsometryMatrix3, IsometryMatrix3AngleTrait, IsometryMatrix3Trait};
 pub use point::{
     Point2ExtTrait, Point2Index, Point2PartialOrd, Point3ExtTrait, Point3Index, Point3PartialOrd,
 };
@@ -37,6 +43,12 @@ pub use rotation2::{Rotation2, Rotation2AngleTrait, Rotation2Trait};
 pub use rotation3::{Rotation3, Rotation3AngleTrait, Rotation3Trait};
 pub use similarity2::{Similarity2, Similarity2AngleTrait, Similarity2Trait};
 pub use similarity3::{Similarity3, Similarity3AngleTrait, Similarity3Trait};
+pub use similarity_matrix2::{
+    SimilarityMatrix2, SimilarityMatrix2AngleTrait, SimilarityMatrix2Trait,
+};
+pub use similarity_matrix3::{
+    SimilarityMatrix3, SimilarityMatrix3AngleTrait, SimilarityMatrix3Trait,
+};
 pub use translation1::{Translation1, Translation1Trait};
 pub use translation2::{Translation2, Translation2Trait};
 pub use translation3::{Translation3, Translation3Trait};

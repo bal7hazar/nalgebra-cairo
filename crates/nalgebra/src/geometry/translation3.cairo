@@ -21,7 +21,9 @@ use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::isometry3::Isometry3;
+use super::isometry_matrix3::IsometryMatrix3;
 use super::quaternion::{ApproxEqTrait, Quaternion};
+use super::rotation3::Rotation3;
 use super::similarity3::Similarity3;
 use super::unit_quaternion::UnitQuaternion;
 
@@ -162,6 +164,13 @@ pub impl Translation3Impl<
     #[inline(always)]
     fn mul_unit_quaternion(self: Translation3<T>, r: UnitQuaternion<T>) -> Isometry3<T> {
         Isometry3 { rotation: r, translation: self }
+    }
+
+    /// `self * r`: the isometry of rotation `r` and translation `self` (no arithmetic). Upstream:
+    /// `Mul<Rotation> for Translation` (output `IsometryMatrix3`).
+    #[inline(always)]
+    fn mul_rotation(self: Translation3<T>, r: Rotation3<T>) -> IsometryMatrix3<T> {
+        IsometryMatrix3 { rotation: r, translation: self }
     }
 }
 

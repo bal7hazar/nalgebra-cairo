@@ -15,8 +15,10 @@
 //! - `Isometry3AngleTrait` / `Isometry3AngleImpl`: the constructors that take a rotation VECTOR
 //!   (`new`, `rotation`) and the spherical interpolation (`lerp_slerp`, `try_lerp_slerp`), which
 //!   additionally need `simba::scalar::Transcendental`;
-//! - `a * b` (composition) and the conversion from a `Translation3`: their impls live in this
-//!   module, where the compiler finds them without any import.
+//! - `a * b` (composition), `a / b`, `*=` / `/=`, `Default`, `One` and the conversions from a
+//!   `Translation3`, a vector, a point or an array (and into a `Similarity3`): their impls live in
+//!   this module, where the compiler finds them without any import. The rotation-MATRIX instance
+//!   of upstream's generic `Isometry` is `IsometryMatrix3` (`.into()` converts between the two).
 //!
 //! **Representation of the rotation.** The quaternion form is the right one for a pose that is
 //! composed and renormalised every step: composition costs 11 860 gas against 23 310 for a
@@ -38,13 +40,17 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
+use core::num::traits::One;
+use core::ops::{DivAssign, MulAssign};
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
+use crate::base::unit::Unit;
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::geometry::unit_quaternion::UnitQuaternionInternalTrait;
 use super::quaternion::Quaternion;
 use super::rotation3::{Rotation3, Rotation3Trait};
+use super::similarity3::{Similarity3, Similarity3Trait};
 use super::translation3::{Translation3, Translation3Trait};
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
@@ -346,6 +352,101 @@ pub impl Isometry3Impl<
         self.translation.abs_diff_eq(other.translation, ulps)
             && self.rotation.abs_diff_eq(other.rotation, ulps)
     }
+
+    // --- P09b completion ---------------------------------------------------------------------
+
+    /// The rotation `r` about the point `p` (which stays fixed): translation `r · (-p) + p`
+    /// through one `rotate_translate` (upstream: `r.transform_vector(-p) + p`, the same bits).
+    /// Upstream: `Isometry::rotation_wrt_point`.
+    #[inline(always)]
+    fn rotation_wrt_point(r: UnitQuaternion<T>, p: Point3<T>) -> Isometry3<T> {
+        Isometry3 {
+            rotation: r,
+            translation: Translation3 {
+                vector: Isometry3InternalTrait::rotate_translate(
+                    r, Vector3 { x: -p.x, y: -p.y, z: -p.z }, Vector3 { x: p.x, y: p.y, z: p.z },
+                ),
+            },
+        }
+    }
+
+    /// Deprecated alias of `face_towards`. Upstream: `Isometry3::new_observer_frame`.
+    #[inline(always)]
+    fn new_observer_frame(eye: Point3<T>, target: Point3<T>, up: Vector3<T>) -> Isometry3<T> {
+        Self::face_towards(eye, target, up)
+    }
+
+    /// The view transform of a LEFT-handed look-at camera: rotation
+    /// `UnitQuaternion::look_at_lh(target - eye, up)` (`target - eye` is mapped onto the POSITIVE
+    /// `z` axis), translation `rotation · (-eye)`. `up` MUST not be parallel to `target - eye`.
+    /// Upstream: `Isometry3::look_at_lh`.
+    fn look_at_lh(eye: Point3<T>, target: Point3<T>, up: Vector3<T>) -> Isometry3<T> {
+        let dir = Vector3 { x: target.x - eye.x, y: target.y - eye.y, z: target.z - eye.z };
+        let q: UnitQuaternion<T> = UnitQuaternionTrait::look_at_lh(dir, up);
+        let neg = Vector3 { x: -eye.x, y: -eye.y, z: -eye.z };
+        Isometry3 { rotation: q, translation: Translation3 { vector: q.transform_vector(neg) } }
+    }
+
+    /// `rotation · v` for a unit vector, not renormalised. Upstream: `Mul<Unit<Vector3>> for
+    /// Isometry` (`iso * v`).
+    #[inline(always)]
+    fn transform_unit_vector(self: Isometry3<T>, v: Unit<Vector3<T>>) -> Unit<Vector3<T>> {
+        self.rotation.transform_unit_vector(v)
+    }
+
+    /// `rotation⁻¹ · v` for a unit vector, not renormalised. Upstream:
+    /// `inverse_transform_unit_vector`.
+    #[inline(always)]
+    fn inverse_transform_unit_vector(self: Isometry3<T>, v: Unit<Vector3<T>>) -> Unit<Vector3<T>> {
+        self.rotation.inverse_transform_unit_vector(v)
+    }
+
+    /// `self / r = self * r⁻¹`: rotation `rotation / r`, the translation unchanged. Upstream:
+    /// `Div<UnitQuaternion> for Isometry3` (a named method: Cairo's `Div` is homogeneous).
+    #[inline(always)]
+    fn div_unit_quaternion(self: Isometry3<T>, r: UnitQuaternion<T>) -> Isometry3<T> {
+        Isometry3 { rotation: self.rotation / r, translation: self.translation }
+    }
+
+    /// `self * sim`: the similarity `(self * sim.isometry, sim.scaling)`. Upstream:
+    /// `Mul<Similarity> for Isometry`.
+    #[inline(always)]
+    fn mul_similarity(self: Isometry3<T>, sim: Similarity3<T>) -> Similarity3<T> {
+        Similarity3 { isometry: self * sim.isometry, scaling: sim.scaling }
+    }
+
+    /// `self / sim = self * sim⁻¹` (upstream's formula). Upstream: `Div<Similarity> for
+    /// Isometry`.
+    #[inline(always)]
+    fn div_similarity(self: Isometry3<T>, sim: Similarity3<T>) -> Similarity3<T> {
+        Self::mul_similarity(self, sim.inverse())
+    }
+
+    /// Alias of `to_homogeneous`. Upstream: `Isometry::to_matrix`.
+    #[inline(always)]
+    fn to_matrix(self: Isometry3<T>) -> Matrix4<T> {
+        Self::to_homogeneous(self)
+    }
+
+    /// `relative_eq` of the translations and of the rotations (the rotations up to their sign,
+    /// like upstream). Upstream: `approx::RelativeEq::relative_eq` (DESIGN D3).
+    fn relative_eq(self: Isometry3<T>, other: Isometry3<T>, epsilon: u64, max_relative: T) -> bool {
+        self.translation.relative_eq(other.translation, epsilon, max_relative)
+            && self.rotation.relative_eq(other.rotation, epsilon, max_relative)
+    }
+
+    /// `ulps_eq` of the translations and of the rotations (the rotations up to their sign).
+    /// Upstream: `approx::UlpsEq::ulps_eq` (DESIGN D3).
+    fn ulps_eq(self: Isometry3<T>, other: Isometry3<T>, epsilon: u64, max_ulps: u32) -> bool {
+        self.translation.ulps_eq(other.translation, epsilon, max_ulps)
+            && self.rotation.ulps_eq(other.rotation, epsilon, max_ulps)
+    }
+
+    /// The same isometry with every scalar converted by `Into<T, U>` (the identity for the single
+    /// scalar `Fixed`). Upstream: `Isometry3::cast` (and `SubsetOf<Isometry>`).
+    fn cast<U, +Into<T, U>, +Drop<U>>(self: Isometry3<T>) -> Isometry3<U> {
+        Isometry3 { rotation: self.rotation.cast(), translation: self.translation.cast() }
+    }
 }
 
 /// Crate-internal kernels of `Isometry3<T>` (WP 8.0: the public API is strictly upstream's): the
@@ -586,5 +687,167 @@ pub impl Isometry3FromTranslation<
             },
             translation: self,
         }
+    }
+}
+
+/// `a / b = a * b⁻¹`, upstream's formula (the inverse is materialised, then composed).
+/// Upstream: `Div<Isometry> for Isometry`.
+pub impl Isometry3Div<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Div<Isometry3<T>> {
+    #[inline(always)]
+    fn div(lhs: Isometry3<T>, rhs: Isometry3<T>) -> Isometry3<T> {
+        lhs * rhs.inverse()
+    }
+}
+
+/// `iso *= t`: `iso = iso * t` (`mul_translation`). Upstream: `MulAssign<Translation> for
+/// Isometry`.
+pub impl Isometry3MulAssignTranslation3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of MulAssign<Isometry3<T>, Translation3<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Isometry3<T>, rhs: Translation3<T>) {
+        self = self.mul_translation(rhs);
+    }
+}
+
+/// `a *= b`: `a = a * b`. Upstream: `MulAssign<Isometry> for Isometry`.
+pub impl Isometry3MulAssign<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of MulAssign<Isometry3<T>, Isometry3<T>> {
+    #[inline(always)]
+    fn mul_assign(ref self: Isometry3<T>, rhs: Isometry3<T>) {
+        self = self * rhs;
+    }
+}
+
+/// `a /= b`: `a = a * b⁻¹`. Upstream: `DivAssign<Isometry> for Isometry`.
+pub impl Isometry3DivAssign<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of DivAssign<Isometry3<T>, Isometry3<T>> {
+    #[inline(always)]
+    fn div_assign(ref self: Isometry3<T>, rhs: Isometry3<T>) {
+        self = self * rhs.inverse();
+    }
+}
+
+/// `Default::default()`: the identity. Upstream: `Default for Isometry`.
+pub impl Isometry3Default<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Default<Isometry3<T>> {
+    #[inline(always)]
+    fn default() -> Isometry3<T> {
+        let o = R::zero();
+        Isometry3 {
+            rotation: UnitQuaternion { quaternion: Quaternion { i: o, j: o, k: o, w: R::one() } },
+            translation: Translation3 { vector: Vector3 { x: o, y: o, z: o } },
+        }
+    }
+}
+
+/// `One::one()`: the identity; `is_one` compares with it exactly (so `-identity`, the same
+/// rotation, is not `one`). Upstream: `num::One for Isometry`.
+pub impl Isometry3One<T, impl R: Real<T>, +PartialEq<T>, +Copy<T>, +Drop<T>> of One<Isometry3<T>> {
+    #[inline(always)]
+    fn one() -> Isometry3<T> {
+        Isometry3Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_one(self: @Isometry3<T>) -> bool {
+        *self == Isometry3Default::<T>::default()
+    }
+
+    #[inline(always)]
+    fn is_non_one(self: @Isometry3<T>) -> bool {
+        !Self::is_one(self)
+    }
+}
+
+/// `v.into()`: the pure translation by the vector `v`. Upstream: `From<SVector<T, 3>> for
+/// Isometry`.
+pub impl Isometry3FromVector3<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of Into<Vector3<T>, Isometry3<T>> {
+    #[inline(always)]
+    fn into(self: Vector3<T>) -> Isometry3<T> {
+        let mut iso = Isometry3Default::<T>::default();
+        iso.translation = Translation3 { vector: self };
+        iso
+    }
+}
+
+/// `p.into()`: the pure translation by the coordinates of `p`. Upstream: `From<Point<T, 3>> for
+/// Isometry`.
+pub impl Isometry3FromPoint3<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of Into<Point3<T>, Isometry3<T>> {
+    #[inline(always)]
+    fn into(self: Point3<T>) -> Isometry3<T> {
+        let mut iso = Isometry3Default::<T>::default();
+        iso.translation = Translation3 { vector: Vector3 { x: self.x, y: self.y, z: self.z } };
+        iso
+    }
+}
+
+/// `[x, y, z].into()`: the pure translation by `(x, y, z)`. Upstream: `From<[T; 3]> for
+/// Isometry`.
+pub impl Isometry3FromArray<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Into<[T; 3], Isometry3<T>> {
+    #[inline(always)]
+    fn into(self: [T; 3]) -> Isometry3<T> {
+        let [x, y, z] = self;
+        let mut iso = Isometry3Default::<T>::default();
+        iso.translation = Translation3 { vector: Vector3 { x, y, z } };
+        iso
+    }
+}
+
+/// `iso.into()`: the similarity of scaling 1. Upstream: `SubsetOf<Similarity> for Isometry`
+/// (`nalgebra::convert`).
+pub impl Similarity3FromIsometry3<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>,
+> of Into<Isometry3<T>, Similarity3<T>> {
+    #[inline(always)]
+    fn into(self: Isometry3<T>) -> Similarity3<T> {
+        Similarity3 { isometry: self, scaling: R::one() }
     }
 }

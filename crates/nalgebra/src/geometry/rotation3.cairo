@@ -31,8 +31,10 @@ use crate::base::unit::{Unit, UnitTrait};
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::base::{MatrixMul, MatrixTrMul};
 use super::isometry3::Isometry3;
+use super::isometry_matrix3::{IsometryMatrix3, IsometryMatrix3Trait};
 use super::quaternion::ApproxEqTrait;
 use super::similarity3::Similarity3;
+use super::similarity_matrix3::{SimilarityMatrix3, SimilarityMatrix3Trait};
 use super::translation3::Translation3;
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
@@ -376,6 +378,48 @@ pub impl Rotation3Impl<
                 m33: m.m33.into(),
             },
         }
+    }
+
+    // --- P09b completion: operators with the rotation-matrix isometries / similarities ----------
+
+    /// `self * t`: the isometry of rotation `self` and translation `self · t` (one
+    /// `Matrix3 * Vector3`). Upstream: `Mul<Translation> for Rotation` (output `IsometryMatrix3`).
+    #[inline(always)]
+    fn mul_translation(self: Rotation3<T>, t: Translation3<T>) -> IsometryMatrix3<T> {
+        IsometryMatrix3 {
+            rotation: self, translation: Translation3 { vector: self.matrix.mul_mat(t.vector) },
+        }
+    }
+
+    /// `self * iso`: translation `self · iso.translation`, rotation `self · iso.rotation`.
+    /// Upstream: `Mul<Isometry<T, Rotation3<T>, 3>> for Rotation3`.
+    #[inline(always)]
+    fn mul_isometry(self: Rotation3<T>, iso: IsometryMatrix3<T>) -> IsometryMatrix3<T> {
+        IsometryMatrix3 {
+            rotation: self * iso.rotation,
+            translation: Translation3 { vector: self.matrix.mul_mat(iso.translation.vector) },
+        }
+    }
+
+    /// `self / iso = self * iso⁻¹` (upstream's formula: the inverse is materialised). Upstream:
+    /// `Div<Isometry<T, Rotation3<T>, 3>> for Rotation3`.
+    #[inline(always)]
+    fn div_isometry(self: Rotation3<T>, iso: IsometryMatrix3<T>) -> IsometryMatrix3<T> {
+        Self::mul_isometry(self, IsometryMatrix3Trait::inverse(iso))
+    }
+
+    /// `self * sim`: the similarity `(self * sim.isometry, sim.scaling)`. Upstream:
+    /// `Mul<Similarity<T, Rotation3<T>, 3>> for Rotation3`.
+    #[inline(always)]
+    fn mul_similarity(self: Rotation3<T>, sim: SimilarityMatrix3<T>) -> SimilarityMatrix3<T> {
+        SimilarityMatrix3 { isometry: Self::mul_isometry(self, sim.isometry), scaling: sim.scaling }
+    }
+
+    /// `self / sim = self * sim⁻¹` (upstream's formula). Upstream:
+    /// `Div<Similarity<T, Rotation3<T>, 3>> for Rotation3`.
+    #[inline(always)]
+    fn div_similarity(self: Rotation3<T>, sim: SimilarityMatrix3<T>) -> SimilarityMatrix3<T> {
+        Self::mul_similarity(self, SimilarityMatrix3Trait::inverse(sim))
     }
 }
 
