@@ -37,7 +37,7 @@ use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use crate::base::vector3::{Vector3, Vector3InternalTrait, Vector3Trait};
 use crate::base::{MatrixMul, MatrixTrMul};
-use crate::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
+use crate::linalg::symmetric_eigen3::{SymmetricEigen3, SymmetricEigen3InternalTrait};
 
 /// The singular value decomposition `M = U · diag(singular_values) · v_t` of a `Matrix3<T>`.
 ///
@@ -124,104 +124,81 @@ pub impl Svd3Impl<
     /// count. Panics with the scalar's overflow error if a component of `MᵀM` does not fit (the
     /// squares of the entries must be representable, unlike `norm3`).
     fn new(matrix: Matrix3<T>) -> Svd3<T> {
-        let eigen = SymmetricEigen3InternalTrait::new_sym(Svd3InternalTrait::gram(matrix));
-        // RENORMALISE the eigenvectors. `SymmetricEigen3` divides each accumulated column by its
-        // own FLOORED norm, and on a `small` matrix those columns are tiny in raw units, so the
-        // floor costs `1 / |u|_raw` RELATIVE — up to 1.4e-7 on the oracle vectors. That bias
-        // lands directly on `σ = |M v|`, on the orthonormality of `V` and on `recompose`. Here the
-        // columns are of magnitude 2^32, so the same floor costs only 2.3e-10. Column 3 is the
-        // cross product of the first two, exactly as `SymmetricEigen3` builds it.
-        let ev = eigen.eigenvectors;
-        let (c1, c2) = (ev.column1(), ev.column2());
-        let n1 = R::norm3(c1.x, c1.y, c1.z);
-        let n2 = R::norm3(c2.x, c2.y, c2.z);
-        let v1 = {
-            let (x, y, z) = R::div3(c1.x, c1.y, c1.z, n1);
-            Vector3 { x, y, z }
-        };
-        let v2 = {
-            let (x, y, z) = R::div3(c2.x, c2.y, c2.z, n2);
-            Vector3 { x, y, z }
-        };
-        let v3 = v1.cross(v2);
-        let (w1, w2, w3) = (matrix.mul_mat(v1), matrix.mul_mat(v2), matrix.mul_mat(v3));
-        let s1 = R::norm3(w1.x, w1.y, w1.z);
-        let s2 = R::norm3(w2.x, w2.y, w2.z);
-        let s3 = R::norm3(w3.x, w3.y, w3.z);
-        // `SymmetricEigen3` sorts the eigenvalues ASCENDING and the singular values are DESCENDING,
-        // so the columns generally come out reversed — but reversing them unconditionally would
-        // also reorder EQUAL singular values, and the decomposition of the identity would not be
-        // the identity. The sorting network of 3 elements, run on the computed norms with a STRICT
-        // comparison, reverses exactly when the order asks for it and leaves ties alone. Branches
-        // and moves only.
-        let (mut s1, mut s2, mut s3) = (s1, s2, s3);
-        let (mut w1, mut w2, mut w3) = (w1, w2, w3);
-        let (mut v1, mut v2, mut v3) = (v1, v2, v3);
+        Svd3InternalTrait::from_eigen(
+            matrix, SymmetricEigen3InternalTrait::new_sym(Svd3InternalTrait::gram(matrix)),
+        )
+    }
+
+    /// `new`: its sorting network already orders the singular values, so the unordered form
+    /// costs the same (upstream's 3x3 path, `svd_ordered3`, is always ordered too). Upstream:
+    /// `SVD::new_unordered`.
+    #[inline(always)]
+    fn new_unordered(matrix: Matrix3<T>) -> Svd3<T> {
+        Self::new(matrix)
+    }
+
+    /// `new`, or `None` when the four Jacobi sweeps of `SymmetricEigen3` on `MᵀM` did not
+    /// reach upstream's convergence criterion (every off-diagonal entry within `eps * (|s_ii| +
+    /// |s_jj|)`, see `SymmetricEigen3Trait::try_new`). `max_niter` is accepted for signature
+    /// parity and ignored: the iteration budget is a constant of the type. Bit-identical to
+    /// `new` when `Some`. Upstream: `SVD::try_new(matrix, true, true, eps, max_niter)`.
+    fn try_new(matrix: Matrix3<T>, eps: T, max_niter: usize) -> Option<Svd3<T>> {
+        let _ = max_niter;
+        match SymmetricEigen3InternalTrait::try_new_sym(Svd3InternalTrait::gram(matrix), eps) {
+            Some(eigen) => Some(Svd3InternalTrait::from_eigen(matrix, eigen)),
+            None => None,
+        }
+    }
+
+    /// `try_new`, see `new_unordered`. Upstream: `SVD::try_new_unordered`.
+    #[inline(always)]
+    fn try_new_unordered(matrix: Matrix3<T>, eps: T, max_niter: usize) -> Option<Svd3<T>> {
+        Self::try_new(matrix, eps, max_niter)
+    }
+
+    /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
+    /// with them (three conditional swaps, strict comparison: equal values keep their order).
+    /// `new` already returns them sorted, so this only matters after the fields were edited.
+    /// Upstream: `SVD::sort_by_singular_values`.
+    fn sort_by_singular_values(ref self: Svd3<T>) {
+        let (mut s1, mut s2, mut s3) = (
+            self.singular_values.x, self.singular_values.y, self.singular_values.z,
+        );
+        let (mut u1, mut u2, mut u3) = (self.u.column1(), self.u.column2(), self.u.column3());
+        let (mut v1, mut v2, mut v3) = (self.v_t.row1(), self.v_t.row2(), self.v_t.row3());
         if s2 > s1 {
-            let (ts, tw, tv) = (s1, w1, v1);
+            let (ts, tu, tv) = (s1, u1, v1);
             s1 = s2;
-            w1 = w2;
+            u1 = u2;
             v1 = v2;
             s2 = ts;
-            w2 = tw;
+            u2 = tu;
             v2 = tv;
         }
-        if s3 > s1 {
-            let (ts, tw, tv) = (s1, w1, v1);
-            s1 = s3;
-            w1 = w3;
-            v1 = v3;
-            s3 = ts;
-            w3 = tw;
-            v3 = tv;
-        }
         if s3 > s2 {
-            let (ts, tw, tv) = (s2, w2, v2);
+            let (ts, tu, tv) = (s2, u2, v2);
             s2 = s3;
-            w2 = w3;
+            u2 = u3;
             v2 = v3;
             s3 = ts;
-            w3 = tw;
+            u3 = tu;
             v3 = tv;
         }
-        let u1 = if s1 == R::zero() {
-            Vector3 { x: R::one(), y: R::zero(), z: R::zero() }
-        } else {
-            {
-                let (x, y, z) = R::div3(w1.x, w1.y, w1.z, s1);
-                Vector3 { x, y, z }
-            }
-        };
-        // `w2` stripped of its `u1` component: one fused dot and one fused `mul_add` per
-        // component, so `u2` is orthogonal to `u1` to within the final normalisation alone.
-        let p = R::sum_prod3(u1.x, w2.x, u1.y, w2.y, u1.z, w2.z);
-        let g = Vector3 {
-            x: R::mul_add(-p, u1.x, w2.x),
-            y: R::mul_add(-p, u1.y, w2.y),
-            z: R::mul_add(-p, u1.z, w2.z),
-        };
-        let n = R::norm3(g.x, g.y, g.z);
-        let u2 = if n == R::zero() {
-            let (basis, _) = u1.orthonormal_basis();
-            basis
-        } else {
-            {
-                let (x, y, z) = R::div3(g.x, g.y, g.z, n);
-                Vector3 { x, y, z }
-            }
-        };
-        let c = u1.cross(u2);
-        let along = R::sum_prod3(c.x, w3.x, c.y, w3.y, c.z, w3.z);
-        let u3 = if along.is_sign_negative() {
-            Vector3 { x: -c.x, y: -c.y, z: -c.z }
-        } else {
-            c
-        };
-        Svd3 {
-            u: Matrix3Trait::from_columns(u1, u2, u3),
-            singular_values: Vector3 { x: s1, y: s2, z: s3 },
-            v_t: Matrix3Trait::from_rows(v1, v2, v3),
+        if s2 > s1 {
+            let (ts, tu, tv) = (s1, u1, v1);
+            s1 = s2;
+            u1 = u2;
+            v1 = v2;
+            s2 = ts;
+            u2 = tu;
+            v2 = tv;
         }
+        self =
+            Svd3 {
+                u: Matrix3Trait::from_columns(u1, u2, u3),
+                singular_values: Vector3 { x: s1, y: s2, z: s3 },
+                v_t: Matrix3Trait::from_rows(v1, v2, v3),
+            };
     }
 
     /// The number of singular values strictly greater than `eps`. Upstream: `SVD::rank`.
@@ -329,6 +306,111 @@ pub(crate) impl Svd3InternalImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd3InternalTrait<T> {
+    /// The body of `new` from the eigen decomposition of `MᵀM` (shared with `try_new`),
+    /// documented on `new`. `#[inline(always)]`: `new` compiles to the code it had before the
+    /// split (WP 8.5-P14b), so its gas is unchanged.
+    #[inline(always)]
+    fn from_eigen(matrix: Matrix3<T>, eigen: SymmetricEigen3<T>) -> Svd3<T> {
+        // RENORMALISE the eigenvectors. `SymmetricEigen3` divides each accumulated column by its
+        // own FLOORED norm, and on a `small` matrix those columns are tiny in raw units, so the
+        // floor costs `1 / |u|_raw` RELATIVE — up to 1.4e-7 on the oracle vectors. That bias
+        // lands directly on `σ = |M v|`, on the orthonormality of `V` and on `recompose`. Here the
+        // columns are of magnitude 2^32, so the same floor costs only 2.3e-10. Column 3 is the
+        // cross product of the first two, exactly as `SymmetricEigen3` builds it.
+        let ev = eigen.eigenvectors;
+        let (c1, c2) = (ev.column1(), ev.column2());
+        let n1 = R::norm3(c1.x, c1.y, c1.z);
+        let n2 = R::norm3(c2.x, c2.y, c2.z);
+        let v1 = {
+            let (x, y, z) = R::div3(c1.x, c1.y, c1.z, n1);
+            Vector3 { x, y, z }
+        };
+        let v2 = {
+            let (x, y, z) = R::div3(c2.x, c2.y, c2.z, n2);
+            Vector3 { x, y, z }
+        };
+        let v3 = v1.cross(v2);
+        let (w1, w2, w3) = (matrix.mul_mat(v1), matrix.mul_mat(v2), matrix.mul_mat(v3));
+        let s1 = R::norm3(w1.x, w1.y, w1.z);
+        let s2 = R::norm3(w2.x, w2.y, w2.z);
+        let s3 = R::norm3(w3.x, w3.y, w3.z);
+        // `SymmetricEigen3` sorts the eigenvalues ASCENDING and the singular values are DESCENDING,
+        // so the columns generally come out reversed — but reversing them unconditionally would
+        // also reorder EQUAL singular values, and the decomposition of the identity would not be
+        // the identity. The sorting network of 3 elements, run on the computed norms with a STRICT
+        // comparison, reverses exactly when the order asks for it and leaves ties alone. Branches
+        // and moves only.
+        let (mut s1, mut s2, mut s3) = (s1, s2, s3);
+        let (mut w1, mut w2, mut w3) = (w1, w2, w3);
+        let (mut v1, mut v2, mut v3) = (v1, v2, v3);
+        if s2 > s1 {
+            let (ts, tw, tv) = (s1, w1, v1);
+            s1 = s2;
+            w1 = w2;
+            v1 = v2;
+            s2 = ts;
+            w2 = tw;
+            v2 = tv;
+        }
+        if s3 > s1 {
+            let (ts, tw, tv) = (s1, w1, v1);
+            s1 = s3;
+            w1 = w3;
+            v1 = v3;
+            s3 = ts;
+            w3 = tw;
+            v3 = tv;
+        }
+        if s3 > s2 {
+            let (ts, tw, tv) = (s2, w2, v2);
+            s2 = s3;
+            w2 = w3;
+            v2 = v3;
+            s3 = ts;
+            w3 = tw;
+            v3 = tv;
+        }
+        let u1 = if s1 == R::zero() {
+            Vector3 { x: R::one(), y: R::zero(), z: R::zero() }
+        } else {
+            {
+                let (x, y, z) = R::div3(w1.x, w1.y, w1.z, s1);
+                Vector3 { x, y, z }
+            }
+        };
+        // `w2` stripped of its `u1` component: one fused dot and one fused `mul_add` per
+        // component, so `u2` is orthogonal to `u1` to within the final normalisation alone.
+        let p = R::sum_prod3(u1.x, w2.x, u1.y, w2.y, u1.z, w2.z);
+        let g = Vector3 {
+            x: R::mul_add(-p, u1.x, w2.x),
+            y: R::mul_add(-p, u1.y, w2.y),
+            z: R::mul_add(-p, u1.z, w2.z),
+        };
+        let n = R::norm3(g.x, g.y, g.z);
+        let u2 = if n == R::zero() {
+            let (basis, _) = u1.orthonormal_basis();
+            basis
+        } else {
+            {
+                let (x, y, z) = R::div3(g.x, g.y, g.z, n);
+                Vector3 { x, y, z }
+            }
+        };
+        let c = u1.cross(u2);
+        let along = R::sum_prod3(c.x, w3.x, c.y, w3.y, c.z, w3.z);
+        let u3 = if along.is_sign_negative() {
+            Vector3 { x: -c.x, y: -c.y, z: -c.z }
+        } else {
+            c
+        };
+        Svd3 {
+            u: Matrix3Trait::from_columns(u1, u2, u3),
+            singular_values: Vector3 { x: s1, y: s2, z: s3 },
+            v_t: Matrix3Trait::from_rows(v1, v2, v3),
+        }
+    }
+
+
     /// `MᵀM` as a symmetric matrix: 6 fused kernels instead of 27 products, bit-identical to the
     /// upper triangle of `m.transpose() * m` and to `m.transpose().mul_transpose()`. The latter
     /// would reuse `base` instead of repeating the kernel, and it is NOT free: the transpose
@@ -419,6 +501,88 @@ pub impl Matrix3SvdImpl<
     fn pseudo_inverse(self: Matrix3<T>, eps: T) -> Option<Matrix3<T>> {
         Svd3Trait::new(self).pseudo_inverse(eps)
     }
+
+    /// `svd`: the decomposition is always sorted (see `Svd3Trait::new_unordered`). Upstream:
+    /// `Matrix::svd_unordered`.
+    #[inline(always)]
+    fn svd_unordered(self: Matrix3<T>) -> Svd3<T> {
+        Svd3Trait::new(self)
+    }
+
+    /// See `Svd3Trait::try_new`. Upstream: `Matrix::try_svd(true, true, eps, max_niter)`.
+    #[inline(always)]
+    fn try_svd(self: Matrix3<T>, eps: T, max_niter: usize) -> Option<Svd3<T>> {
+        Svd3Trait::try_new(self, eps, max_niter)
+    }
+
+    /// See `Svd3Trait::try_new_unordered`. Upstream: `Matrix::try_svd_unordered`.
+    #[inline(always)]
+    fn try_svd_unordered(self: Matrix3<T>, eps: T, max_niter: usize) -> Option<Svd3<T>> {
+        Svd3Trait::try_new(self, eps, max_niter)
+    }
+
+    /// `singular_values` (always sorted). Upstream: `Matrix::singular_values_unordered`.
+    #[inline(always)]
+    fn singular_values_unordered(self: Matrix3<T>) -> Vector3<T> {
+        Svd3Trait::new(self).singular_values
+    }
+
+    /// The number of singular values strictly greater than `eps`. Upstream: `Matrix::rank`
+    /// (which asserts `eps >= 0`; a negative `eps` counts every value here, like `Svd3::rank`).
+    fn rank(self: Matrix3<T>, eps: T) -> usize {
+        let s = Svd3Trait::new(self).singular_values;
+        let mut n: usize = 0;
+        if s.x > eps {
+            n += 1;
+        }
+        if s.y > eps {
+            n += 1;
+        }
+        if s.z > eps {
+            n += 1;
+        }
+        n
+    }
+
+    /// The left polar decomposition `M = P · U`, see `Svd3Trait::to_polar`. Upstream:
+    /// `Matrix::polar`.
+    fn polar(self: Matrix3<T>) -> (Matrix3<T>, Matrix3<T>) {
+        Svd3Trait::new(self).to_polar().unwrap()
+    }
+
+    /// `polar`, or `None` when the decomposition did not converge within `eps`, see
+    /// `Svd3Trait::try_new`. Upstream: `Matrix::try_polar`.
+    fn try_polar(self: Matrix3<T>, eps: T, max_niter: usize) -> Option<(Matrix3<T>, Matrix3<T>)> {
+        match Svd3Trait::try_new(self, eps, max_niter) {
+            Some(d) => d.to_polar(),
+            None => None,
+        }
+    }
+}
+
+/// The ordered SVD of a `Matrix3`: `Svd3Trait::try_new(m, eps, niter)`, `None` when the Jacobi
+/// sweeps did not converge within `eps`. Upstream: `nalgebra::linalg::svd_ordered3` (McAdams et
+/// al.: the symmetric eigen decomposition of `MᵀM`, then a QR of `M V` — the route `Svd3` takes
+/// too). Both factors are always computed, so `compute_u` / `compute_v` are accepted for
+/// signature parity and ignored; so is `niter` (constant budget).
+pub fn svd_ordered3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+>(
+    m: Matrix3<T>, compute_u: bool, compute_v: bool, eps: T, niter: usize,
+) -> Option<Svd3<T>> {
+    let _ = compute_u;
+    let _ = compute_v;
+    Svd3Trait::try_new(m, eps, niter)
 }
 
 #[cfg(test)]
@@ -452,7 +616,7 @@ mod tests {
     };
     use crate::base::vector3::{Vector3, Vector3Trait};
     use crate::linalg::oracle_svd;
-    use crate::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
+    use crate::linalg::symmetric_eigen3::{SymmetricEigen3, SymmetricEigen3InternalTrait};
     use super::{Svd3, Svd3InternalTrait, Svd3Trait};
 
     /// An oracle `unit` 3x3 case: the benchmark input.

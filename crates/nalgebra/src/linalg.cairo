@@ -25,6 +25,7 @@
 //!   of `MᵀM` (DESIGN D6).
 
 pub mod cholesky;
+pub mod cholesky_update;
 pub mod givens;
 pub mod householder;
 pub mod inverse;
@@ -41,16 +42,23 @@ mod oracle_symmetric_eigen;
 mod oracle_udu;
 pub mod permutation_sequence;
 pub mod qr;
+pub mod svd;
 pub mod svd2;
 pub mod svd3;
 pub mod symmetric_eigen2;
 pub mod symmetric_eigen3;
+pub mod symmetric_eigen4;
+pub mod symmetric_eigen5;
+pub mod symmetric_eigen6;
 pub mod udu;
 
 pub use cholesky::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
     Cholesky6Trait, Matrix2CholeskyTrait, Matrix3CholeskyTrait, Matrix4CholeskyTrait,
     Matrix6CholeskyTrait,
+};
+pub use cholesky_update::{
+    Cholesky2UpdateTrait, Cholesky3UpdateTrait, Cholesky4UpdateTrait, Cholesky6UpdateTrait,
 };
 pub use givens::{GivensRotate, GivensRotateRows, GivensRotation, GivensRotationTrait};
 pub use householder::reflection_axis_mut;
@@ -67,10 +75,15 @@ pub use permutation_sequence::{PermuteColumns, PermuteRows};
 pub use qr::{
     Matrix2QrTrait, Matrix3QrTrait, Matrix4QrTrait, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait,
 };
-pub use svd2::{Matrix2SvdTrait, Svd2, Svd2Trait};
-pub use svd3::{Matrix3SvdTrait, Svd3, Svd3Trait};
-pub use symmetric_eigen2::{Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2Trait};
+pub use svd2::{Matrix2SvdTrait, Svd2, Svd2Trait, svd_ordered2};
+pub use svd3::{Matrix3SvdTrait, Svd3, Svd3Trait, svd_ordered3};
+pub use symmetric_eigen2::{
+    Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2Trait, wilkinson_shift,
+};
 pub use symmetric_eigen3::{Matrix3SymmetricEigenTrait, SymmetricEigen3, SymmetricEigen3Trait};
+pub use symmetric_eigen4::{Matrix4SymmetricEigenTrait, SymmetricEigen4, SymmetricEigen4Trait};
+pub use symmetric_eigen5::{Matrix5SymmetricEigenTrait, SymmetricEigen5, SymmetricEigen5Trait};
+pub use symmetric_eigen6::{Matrix6SymmetricEigenTrait, SymmetricEigen6, SymmetricEigen6Trait};
 pub use udu::{
     Matrix2UduTrait, Matrix3UduTrait, Matrix4UduTrait, Matrix6UduTrait, Udu2, Udu2Trait, Udu3,
     Udu3Trait, Udu4, Udu4Trait, Udu6, Udu6Trait,
