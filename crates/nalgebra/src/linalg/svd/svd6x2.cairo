@@ -17,8 +17,8 @@ use super::kernels::{SvdComplete6Impl, SvdRightImpl};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix6x2<T>`:
 /// `u` is 6x2 with orthonormal columns, `v_t` is 2x2 with orthonormal rows, the 2
-/// singular values are non-negative and sorted DESCENDING. Unlike upstream, where `u` and `v_t`
-/// are `Option`s selected by the `compute_u` / `compute_v` flags, both are always present.
+/// singular values are non-negative and sorted DESCENDING. `u` / `v_t` are `None` when the
+/// decomposition was built without them (`compute_u` / `compute_v`), like upstream.
 ///
 /// Sign and order convention: the rows of `v_t` are the eigenvectors of the Gram matrix
 /// `MᵀM` as the eigen decomposition returns them, reordered by descending singular
@@ -28,12 +28,12 @@ use super::kernels::{SvdComplete6Impl, SvdRightImpl};
 /// Upstream: `SVD { u: Option<OMatrix>, v_t: Option<OMatrix>, singular_values: OVector }`.
 #[derive(Copy, Drop, Serde, Debug)]
 pub struct Svd6x2<T> {
-    /// The left singular vectors, as columns (6x2).
-    pub u: Matrix6x2<T>,
+    /// The left singular vectors, as columns (6x2), when computed.
+    pub u: Option<Matrix6x2<T>>,
     /// The 2 singular values, descending, non-negative.
     pub singular_values: Vector2<T>,
-    /// The TRANSPOSE of the right singular vectors (2x2): `v_i` is row `i`.
-    pub v_t: Matrix2<T>,
+    /// The TRANSPOSE of the right singular vectors (2x2): `v_i` is row `i`, when computed.
+    pub v_t: Option<Matrix2<T>>,
 }
 
 /// Test-only field-wise equality (upstream `SVD` has no `PartialEq`).
@@ -59,9 +59,8 @@ pub impl Svd6x2Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd6x2Trait<T> {
-    /// The singular value decomposition of `matrix`. Upstream: `SVD::new(matrix, true, true)`
-    /// (both factors are always computed here: the `compute_u` / `compute_v` flags are dropped,
-    /// like `Svd2` / `Svd3`).
+    /// The singular value decomposition of `matrix`, with `u` when `compute_u` and `v_t` when
+    /// `compute_v` (`None` otherwise). Upstream: `SVD::new(matrix, compute_u, compute_v)`.
     ///
     /// ```text
     /// S   = MᵀM                    (3 fused sums)
@@ -76,21 +75,30 @@ pub impl Svd6x2Impl<
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
-    /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
-    fn new(matrix: Matrix6x2<T>) -> Svd6x2<T> {
-        Svd6x2InternalTrait::from_right(matrix, Svd6x2InternalTrait::right(matrix))
+    /// Cost: constant for given flags. Skipping `u` skips the Gram-Schmidt of the left vectors
+    /// (the last line above) in Cairo steps, the proof cost (measured on `Svd4`: 13 070 → 11 463
+    /// steps net, `bench_svd4_new__without_u` under `--tracked-resource cairo-steps`); the
+    /// Sierra gas of the snapshots charges a branch at its costliest path, so it shows no
+    /// saving. `v_t` is free (the right vectors are what the singular values are read off). The
+    /// Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it cannot overflow; `M V`
+    /// must fit (it does whenever `σ_1 = |M|₂` does).
+    fn new(matrix: Matrix6x2<T>, compute_u: bool, compute_v: bool) -> Svd6x2<T> {
+        Svd6x2InternalTrait::from_right(
+            matrix, Svd6x2InternalTrait::right(matrix), compute_u, compute_v,
+        )
     }
 
     /// `new`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`
     /// (every off-diagonal entry of the final Jacobi state within `eps * (|s_ii| + |s_jj|)`;
     /// always `Some` for the closed form of one or two columns). `max_niter` is accepted for
     /// signature parity and ignored: the iteration budget is a constant of the type. Upstream:
-    /// `SVD::try_new(matrix, true, true, eps, max_niter)`.
-    fn try_new(matrix: Matrix6x2<T>, eps: T, max_niter: usize) -> Option<Svd6x2<T>> {
+    /// `SVD::try_new(matrix, compute_u, compute_v, eps, max_niter)`.
+    fn try_new(
+        matrix: Matrix6x2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6x2<T>> {
         let _ = max_niter;
         match Svd6x2InternalTrait::try_right(matrix, eps) {
-            Some(v) => Some(Svd6x2InternalTrait::from_right(matrix, v)),
+            Some(v) => Some(Svd6x2InternalTrait::from_right(matrix, v, compute_u, compute_v)),
             None => None,
         }
     }
@@ -99,14 +107,16 @@ pub impl Svd6x2Impl<
     /// vectors needs it), so the unordered form costs the same and is sorted too — a valid
     /// "unordered" result. Upstream: `SVD::new_unordered`.
     #[inline(always)]
-    fn new_unordered(matrix: Matrix6x2<T>) -> Svd6x2<T> {
-        Self::new(matrix)
+    fn new_unordered(matrix: Matrix6x2<T>, compute_u: bool, compute_v: bool) -> Svd6x2<T> {
+        Self::new(matrix, compute_u, compute_v)
     }
 
     /// `try_new`, see `new_unordered`. Upstream: `SVD::try_new_unordered`.
     #[inline(always)]
-    fn try_new_unordered(matrix: Matrix6x2<T>, eps: T, max_niter: usize) -> Option<Svd6x2<T>> {
-        Self::try_new(matrix, eps, max_niter)
+    fn try_new_unordered(
+        matrix: Matrix6x2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6x2<T>> {
+        Self::try_new(matrix, compute_u, compute_v, eps, max_niter)
     }
 
     /// The number of singular values strictly greater than `eps`. Upstream: `SVD::rank`, which
@@ -122,80 +132,102 @@ pub impl Svd6x2Impl<
         n
     }
 
-    /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then `MatrixMul::mul_mat` (one fused sum of 2 products per entry). Panics on overflow.
-    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
-    /// here).
-    fn recompose(self: Svd6x2<T>) -> Matrix6x2<T> {
+    /// `U · diag(singular_values) · v_t`, or `None` when `u` or `v_t` was not computed: the
+    /// columns of `U` scaled (one floored product each), then `MatrixMul::mul_mat` (one fused sum
+    /// of 2 products per entry). Panics on overflow. Upstream: `SVD::recompose` (`Err` when a
+    /// factor is missing; `None` here).
+    fn recompose(self: Svd6x2<T>) -> Option<Matrix6x2<T>> {
         revoke_ap_tracking();
-        Matrix6x2 {
-            m11: self.u.m11 * self.singular_values.x,
-            m21: self.u.m21 * self.singular_values.x,
-            m31: self.u.m31 * self.singular_values.x,
-            m41: self.u.m41 * self.singular_values.x,
-            m51: self.u.m51 * self.singular_values.x,
-            m61: self.u.m61 * self.singular_values.x,
-            m12: self.u.m12 * self.singular_values.y,
-            m22: self.u.m22 * self.singular_values.y,
-            m32: self.u.m32 * self.singular_values.y,
-            m42: self.u.m42 * self.singular_values.y,
-            m52: self.u.m52 * self.singular_values.y,
-            m62: self.u.m62 * self.singular_values.y,
-        }
-            .mul_mat(self.v_t)
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
+        Some(
+            Matrix6x2 {
+                m11: u.m11 * self.singular_values.x,
+                m21: u.m21 * self.singular_values.x,
+                m31: u.m31 * self.singular_values.x,
+                m41: u.m41 * self.singular_values.x,
+                m51: u.m51 * self.singular_values.x,
+                m61: u.m61 * self.singular_values.x,
+                m12: u.m12 * self.singular_values.y,
+                m22: u.m22 * self.singular_values.y,
+                m32: u.m32 * self.singular_values.y,
+                m42: u.m42 * self.singular_values.y,
+                m52: u.m52 * self.singular_values.y,
+                m62: u.m62 * self.singular_values.y,
+            }
+                .mul_mat(v_t),
+        )
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (2x6), `σ⁺_i = 1 / σ_i` when
-    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative. Three roundings per entry
-    /// (the reciprocal, the scaling, the fused sum). `eps = 0` keeps a singular value of one raw
-    /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
-    /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
+    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative or when `u` or `v_t` was
+    /// not computed. Three roundings per entry (the reciprocal, the scaling, the fused sum). `eps
+    /// = 0` keeps a singular value of one raw unit, whose reciprocal overflows: pass an `eps`
+    /// matched to the problem. Panics on overflow. Upstream: `SVD::pseudo_inverse` (`Err` in
+    /// those cases).
     fn pseudo_inverse(self: Svd6x2<T>, eps: T) -> Option<Matrix2x6<T>> {
         revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
         Some(
-            Matrix2 {
-                m11: self.v_t.m11 * p0,
-                m21: self.v_t.m12 * p0,
-                m12: self.v_t.m21 * p1,
-                m22: self.v_t.m22 * p1,
-            }
+            Matrix2 { m11: v_t.m11 * p0, m21: v_t.m12 * p0, m12: v_t.m21 * p1, m22: v_t.m22 * p1 }
                 .mul_mat(
                     Matrix2x6 {
-                        m11: self.u.m11,
-                        m21: self.u.m12,
-                        m12: self.u.m21,
-                        m22: self.u.m22,
-                        m13: self.u.m31,
-                        m23: self.u.m32,
-                        m14: self.u.m41,
-                        m24: self.u.m42,
-                        m15: self.u.m51,
-                        m25: self.u.m52,
-                        m16: self.u.m61,
-                        m26: self.u.m62,
+                        m11: u.m11,
+                        m21: u.m12,
+                        m12: u.m21,
+                        m22: u.m22,
+                        m13: u.m31,
+                        m23: u.m32,
+                        m14: u.m41,
+                        m24: u.m42,
+                        m15: u.m51,
+                        m25: u.m52,
+                        m16: u.m61,
+                        m26: u.m62,
                     },
                 ),
         )
     }
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
-    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative. One fused sum, one
-    /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
-    /// right-hand side there; a vector here).
+    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative or when `u` or `v_t`
+    /// was not computed. One fused sum, one correctly rounded division and one fused sum per
+    /// component. Upstream: `SVD::solve` (`Err` in those cases; any right-hand side there, a
+    /// vector here).
     fn solve(self: Svd6x2<T>, b: Vector6<T>, eps: T) -> Option<Vector2<T>> {
         revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y = self.u.tr_mul(b);
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
+        let y = u.tr_mul(b);
         Some(
-            self
-                .v_t
+            v_t
                 .tr_mul(
                     Vector2 {
                         x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
@@ -205,46 +237,53 @@ pub impl Svd6x2Impl<
         )
     }
 
-    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ`
-    /// (6x6, symmetric positive semi-definite: its upper triangle is computed and mirrored)
-    /// and `U = u · v_t` (6x2). Two roundings per entry of `P`, one per entry of `U`. Always
-    /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
-    /// overflow. Upstream: `SVD::to_polar`.
+    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`, or `None` when `u` or `v_t`
+    /// was not computed: `P = u · diag(σ) · uᵀ` (6x6, symmetric positive semi-definite: its
+    /// upper triangle is computed and mirrored) and `U = u · v_t` (6x2). Two roundings per
+    /// entry of `P`, one per entry of `U`. Panics on overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd6x2<T>) -> Option<(Matrix6<T>, Matrix6x2<T>)> {
         revoke_ap_tracking();
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        let a2_0 = self.u.m31 * self.singular_values.x;
-        let a2_1 = self.u.m32 * self.singular_values.y;
-        let a3_0 = self.u.m41 * self.singular_values.x;
-        let a3_1 = self.u.m42 * self.singular_values.y;
-        let a4_0 = self.u.m51 * self.singular_values.x;
-        let a4_1 = self.u.m52 * self.singular_values.y;
-        let a5_0 = self.u.m61 * self.singular_values.x;
-        let a5_1 = self.u.m62 * self.singular_values.y;
-        let p0_0 = R::sum_prod2(a0_0, self.u.m11, a0_1, self.u.m12);
-        let p0_1 = R::sum_prod2(a0_0, self.u.m21, a0_1, self.u.m22);
-        let p0_2 = R::sum_prod2(a0_0, self.u.m31, a0_1, self.u.m32);
-        let p0_3 = R::sum_prod2(a0_0, self.u.m41, a0_1, self.u.m42);
-        let p0_4 = R::sum_prod2(a0_0, self.u.m51, a0_1, self.u.m52);
-        let p0_5 = R::sum_prod2(a0_0, self.u.m61, a0_1, self.u.m62);
-        let p1_1 = R::sum_prod2(a1_0, self.u.m21, a1_1, self.u.m22);
-        let p1_2 = R::sum_prod2(a1_0, self.u.m31, a1_1, self.u.m32);
-        let p1_3 = R::sum_prod2(a1_0, self.u.m41, a1_1, self.u.m42);
-        let p1_4 = R::sum_prod2(a1_0, self.u.m51, a1_1, self.u.m52);
-        let p1_5 = R::sum_prod2(a1_0, self.u.m61, a1_1, self.u.m62);
-        let p2_2 = R::sum_prod2(a2_0, self.u.m31, a2_1, self.u.m32);
-        let p2_3 = R::sum_prod2(a2_0, self.u.m41, a2_1, self.u.m42);
-        let p2_4 = R::sum_prod2(a2_0, self.u.m51, a2_1, self.u.m52);
-        let p2_5 = R::sum_prod2(a2_0, self.u.m61, a2_1, self.u.m62);
-        let p3_3 = R::sum_prod2(a3_0, self.u.m41, a3_1, self.u.m42);
-        let p3_4 = R::sum_prod2(a3_0, self.u.m51, a3_1, self.u.m52);
-        let p3_5 = R::sum_prod2(a3_0, self.u.m61, a3_1, self.u.m62);
-        let p4_4 = R::sum_prod2(a4_0, self.u.m51, a4_1, self.u.m52);
-        let p4_5 = R::sum_prod2(a4_0, self.u.m61, a4_1, self.u.m62);
-        let p5_5 = R::sum_prod2(a5_0, self.u.m61, a5_1, self.u.m62);
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
+        let a0_0 = u.m11 * self.singular_values.x;
+        let a0_1 = u.m12 * self.singular_values.y;
+        let a1_0 = u.m21 * self.singular_values.x;
+        let a1_1 = u.m22 * self.singular_values.y;
+        let a2_0 = u.m31 * self.singular_values.x;
+        let a2_1 = u.m32 * self.singular_values.y;
+        let a3_0 = u.m41 * self.singular_values.x;
+        let a3_1 = u.m42 * self.singular_values.y;
+        let a4_0 = u.m51 * self.singular_values.x;
+        let a4_1 = u.m52 * self.singular_values.y;
+        let a5_0 = u.m61 * self.singular_values.x;
+        let a5_1 = u.m62 * self.singular_values.y;
+        let p0_0 = R::sum_prod2(a0_0, u.m11, a0_1, u.m12);
+        let p0_1 = R::sum_prod2(a0_0, u.m21, a0_1, u.m22);
+        let p0_2 = R::sum_prod2(a0_0, u.m31, a0_1, u.m32);
+        let p0_3 = R::sum_prod2(a0_0, u.m41, a0_1, u.m42);
+        let p0_4 = R::sum_prod2(a0_0, u.m51, a0_1, u.m52);
+        let p0_5 = R::sum_prod2(a0_0, u.m61, a0_1, u.m62);
+        let p1_1 = R::sum_prod2(a1_0, u.m21, a1_1, u.m22);
+        let p1_2 = R::sum_prod2(a1_0, u.m31, a1_1, u.m32);
+        let p1_3 = R::sum_prod2(a1_0, u.m41, a1_1, u.m42);
+        let p1_4 = R::sum_prod2(a1_0, u.m51, a1_1, u.m52);
+        let p1_5 = R::sum_prod2(a1_0, u.m61, a1_1, u.m62);
+        let p2_2 = R::sum_prod2(a2_0, u.m31, a2_1, u.m32);
+        let p2_3 = R::sum_prod2(a2_0, u.m41, a2_1, u.m42);
+        let p2_4 = R::sum_prod2(a2_0, u.m51, a2_1, u.m52);
+        let p2_5 = R::sum_prod2(a2_0, u.m61, a2_1, u.m62);
+        let p3_3 = R::sum_prod2(a3_0, u.m41, a3_1, u.m42);
+        let p3_4 = R::sum_prod2(a3_0, u.m51, a3_1, u.m52);
+        let p3_5 = R::sum_prod2(a3_0, u.m61, a3_1, u.m62);
+        let p4_4 = R::sum_prod2(a4_0, u.m51, a4_1, u.m52);
+        let p4_5 = R::sum_prod2(a4_0, u.m61, a4_1, u.m62);
+        let p5_5 = R::sum_prod2(a5_0, u.m61, a5_1, u.m62);
         Some(
             (
                 Matrix6 {
@@ -285,37 +324,45 @@ pub impl Svd6x2Impl<
                     m56: p4_5,
                     m66: p5_5,
                 },
-                self.u.mul_mat(self.v_t),
+                u.mul_mat(v_t),
             ),
         )
     }
 
     /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
-    /// with them (stable odd-even transposition network, strict comparison: equal values keep
-    /// their order). `new` already returns them sorted, so this only matters after the fields
-    /// were edited. Upstream: `SVD::sort_by_singular_values`.
+    /// (those that were computed) with them (stable odd-even transposition network, strict
+    /// comparison: equal values keep their order). `new` already returns them sorted, so this
+    /// only matters after the fields were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd6x2<T>) {
         revoke_ap_tracking();
+        let (has_u, has_v) = (self.u.is_some(), self.v_t.is_some());
+        let u = match self.u {
+            Some(u) => u,
+            None => Matrix6x2 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m61: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m62: R::zero(),
+            },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => Matrix2 { m11: R::zero(), m21: R::zero(), m12: R::zero(), m22: R::zero() },
+        };
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
-        let mut uc0 = Vector6 {
-            x: self.u.m11,
-            y: self.u.m21,
-            z: self.u.m31,
-            w: self.u.m41,
-            a: self.u.m51,
-            b: self.u.m61,
-        };
-        let mut uc1 = Vector6 {
-            x: self.u.m12,
-            y: self.u.m22,
-            z: self.u.m32,
-            w: self.u.m42,
-            a: self.u.m52,
-            b: self.u.m62,
-        };
-        let mut vr0 = Vector2 { x: self.v_t.m11, y: self.v_t.m12 };
-        let mut vr1 = Vector2 { x: self.v_t.m21, y: self.v_t.m22 };
+        let mut uc0 = Vector6 { x: u.m11, y: u.m21, z: u.m31, w: u.m41, a: u.m51, b: u.m61 };
+        let mut uc1 = Vector6 { x: u.m12, y: u.m22, z: u.m32, w: u.m42, a: u.m52, b: u.m62 };
+        let mut vr0 = Vector2 { x: v_t.m11, y: v_t.m12 };
+        let mut vr1 = Vector2 { x: v_t.m21, y: v_t.m22 };
         if s1 > s0 {
             let tmp0 = s0;
             let tmp1 = uc0;
@@ -327,24 +374,34 @@ pub impl Svd6x2Impl<
             uc1 = tmp1;
             vr1 = tmp2;
         }
+        let u = Matrix6x2 {
+            m11: uc0.x,
+            m21: uc0.y,
+            m31: uc0.z,
+            m41: uc0.w,
+            m51: uc0.a,
+            m61: uc0.b,
+            m12: uc1.x,
+            m22: uc1.y,
+            m32: uc1.z,
+            m42: uc1.w,
+            m52: uc1.a,
+            m62: uc1.b,
+        };
+        let v_t = Matrix2 { m11: vr0.x, m21: vr1.x, m12: vr0.y, m22: vr1.y };
         self =
             Svd6x2 {
-                u: Matrix6x2 {
-                    m11: uc0.x,
-                    m21: uc0.y,
-                    m31: uc0.z,
-                    m41: uc0.w,
-                    m51: uc0.a,
-                    m61: uc0.b,
-                    m12: uc1.x,
-                    m22: uc1.y,
-                    m32: uc1.z,
-                    m42: uc1.w,
-                    m52: uc1.a,
-                    m62: uc1.b,
+                u: if has_u {
+                    Some(u)
+                } else {
+                    None
                 },
                 singular_values: Vector2 { x: s0, y: s1 },
-                v_t: Matrix2 { m11: vr0.x, m21: vr1.x, m12: vr0.y, m22: vr1.y },
+                v_t: if has_v {
+                    Some(v_t)
+                } else {
+                    None
+                },
             };
     }
 }
@@ -592,35 +649,53 @@ pub(crate) impl Svd6x2InternalImpl<
         SortedSvd6x2 { s0, s1, w0, w1, v0, v1 }
     }
 
-    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
-    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete6::gs*`):
-    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
-    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
-    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
-    /// = 0`) is completed by the axis least represented in the span of the previous ones.
-    fn from_right(m: Matrix6x2<T>, v: Matrix2<T>) -> Svd6x2<T> {
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then, when
+    /// `compute_u`, the left vectors by classical Gram-Schmidt run TWICE ("twice is enough",
+    /// `SvdComplete6::gs*`): the second pass costs about as much as the first and keeps `U`
+    /// orthonormal to the rounding of the residual even when `σ_k` is tiny (rank deficiency),
+    /// where one pass leaves `u_k` as far from the others as `rounding / σ_k`. A column that
+    /// vanishes EXACTLY (or `σ_1 = 0`) is completed by the axis least represented in the span of
+    /// the previous ones. `compute_v` only decides whether `v_t` is kept (the right vectors are
+    /// what the singular values are read off).
+    fn from_right(m: Matrix6x2<T>, v: Matrix2<T>, compute_u: bool, compute_v: bool) -> Svd6x2<T> {
         let t = Self::sorted(m, v);
-        let (s0, w0, v0) = (t.s0, t.w0, t.v0);
-        let (s1, w1, v1) = (t.s1, t.w1, t.v1);
+        let u = if compute_u {
+            Some(Self::left(t))
+        } else {
+            None
+        };
+        let v_t = if compute_v {
+            let v0 = t.v0;
+            let v1 = t.v1;
+            Some(Matrix2 { m11: v0.x, m21: v1.x, m12: v0.y, m22: v1.y })
+        } else {
+            None
+        };
+        Svd6x2 { u, singular_values: Vector2 { x: t.s0, y: t.s1 }, v_t }
+    }
+
+    /// The left singular vectors of `from_right`. Skipped (`compute_u = false`) they cost no
+    /// Cairo step; the Sierra gas of the snapshots charges a branch at its costliest path
+    /// whatever is executed (docs/BENCHMARK.md), a call boundary would only add its overhead.
+    #[inline(always)]
+    fn left(t: SortedSvd6x2<T>) -> Matrix6x2<T> {
+        let (s0, w0) = (t.s0, t.w0);
+        let w1 = t.w1;
         let u0 = SvdComplete6Impl::<T>::first(w0, s0);
         let u1 = SvdComplete6Impl::<T>::gs1(u0, w1);
-        Svd6x2 {
-            u: Matrix6x2 {
-                m11: u0.x,
-                m21: u0.y,
-                m31: u0.z,
-                m41: u0.w,
-                m51: u0.a,
-                m61: u0.b,
-                m12: u1.x,
-                m22: u1.y,
-                m32: u1.z,
-                m42: u1.w,
-                m52: u1.a,
-                m62: u1.b,
-            },
-            singular_values: Vector2 { x: s0, y: s1 },
-            v_t: Matrix2 { m11: v0.x, m21: v1.x, m12: v0.y, m22: v1.y },
+        Matrix6x2 {
+            m11: u0.x,
+            m21: u0.y,
+            m31: u0.z,
+            m41: u0.w,
+            m51: u0.a,
+            m61: u0.b,
+            m12: u1.x,
+            m22: u1.y,
+            m32: u1.z,
+            m42: u1.w,
+            m52: u1.a,
+            m62: u1.b,
         }
     }
 
@@ -647,33 +722,37 @@ pub impl Matrix6x2SvdImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Matrix6x2SvdTrait<T> {
-    /// The singular value decomposition, see `Svd6x2Trait::new`. Upstream: `Matrix::svd(true,
-    /// true)`.
+    /// The singular value decomposition, see `Svd6x2Trait::new`. Upstream: `Matrix::svd`.
     #[inline(always)]
-    fn svd(self: Matrix6x2<T>) -> Svd6x2<T> {
-        Svd6x2Trait::new(self)
+    fn svd(self: Matrix6x2<T>, compute_u: bool, compute_v: bool) -> Svd6x2<T> {
+        Svd6x2Trait::new(self, compute_u, compute_v)
     }
 
     /// `svd` (already sorted, see `Svd6x2Trait::new_unordered`). Upstream: `Matrix::svd_unordered`.
     #[inline(always)]
-    fn svd_unordered(self: Matrix6x2<T>) -> Svd6x2<T> {
-        Svd6x2Trait::new(self)
+    fn svd_unordered(self: Matrix6x2<T>, compute_u: bool, compute_v: bool) -> Svd6x2<T> {
+        Svd6x2Trait::new(self, compute_u, compute_v)
     }
 
-    /// See `Svd6x2Trait::try_new`. Upstream: `Matrix::try_svd(true, true, eps, max_niter)`.
+    /// See `Svd6x2Trait::try_new`. Upstream: `Matrix::try_svd`.
     #[inline(always)]
-    fn try_svd(self: Matrix6x2<T>, eps: T, max_niter: usize) -> Option<Svd6x2<T>> {
-        Svd6x2Trait::try_new(self, eps, max_niter)
+    fn try_svd(
+        self: Matrix6x2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6x2<T>> {
+        Svd6x2Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }
 
     /// See `Svd6x2Trait::try_new_unordered`. Upstream: `Matrix::try_svd_unordered`.
     #[inline(always)]
-    fn try_svd_unordered(self: Matrix6x2<T>, eps: T, max_niter: usize) -> Option<Svd6x2<T>> {
-        Svd6x2Trait::try_new(self, eps, max_niter)
+    fn try_svd_unordered(
+        self: Matrix6x2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6x2<T>> {
+        Svd6x2Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }
 
     /// The singular values alone, DESCENDING: the decomposition without the left vectors
-    /// (cheaper than `svd().singular_values`, bit-identical to it). Upstream:
+    /// (bit-identical to `svd(false, false).singular_values` and to the full decomposition's, and
+    /// no dearer than the former: `bench_svd6x2_singular_values__*`). Upstream:
     /// `Matrix::singular_values`.
     fn singular_values(self: Matrix6x2<T>) -> Vector2<T> {
         Svd6x2InternalTrait::values_from_right(self, Svd6x2InternalTrait::right(self))
@@ -705,13 +784,13 @@ pub impl Matrix6x2SvdImpl<
     /// `Matrix::pseudo_inverse` (`Err` on a negative `eps`; `None` here).
     #[inline(always)]
     fn pseudo_inverse(self: Matrix6x2<T>, eps: T) -> Option<Matrix2x6<T>> {
-        Svd6x2Trait::new(self).pseudo_inverse(eps)
+        Svd6x2Trait::new(self, true, true).pseudo_inverse(eps)
     }
 
     /// The left polar decomposition `M = P · U`, see `Svd6x2Trait::to_polar`. Upstream:
     /// `Matrix::polar`.
     fn polar(self: Matrix6x2<T>) -> (Matrix6<T>, Matrix6x2<T>) {
-        Svd6x2Trait::new(self).to_polar().unwrap()
+        Svd6x2Trait::new(self, true, true).to_polar().unwrap()
     }
 
     /// `polar`, or `None` when the decomposition did not converge within `eps`, see
@@ -719,7 +798,7 @@ pub impl Matrix6x2SvdImpl<
     fn try_polar(
         self: Matrix6x2<T>, eps: T, max_niter: usize,
     ) -> Option<(Matrix6<T>, Matrix6x2<T>)> {
-        match Svd6x2Trait::try_new(self, eps, max_niter) {
+        match Svd6x2Trait::try_new(self, true, true, eps, max_niter) {
             Some(d) => d.to_polar(),
             None => None,
         }

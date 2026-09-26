@@ -13,8 +13,8 @@ use super::kernels::{SvdComplete6Impl, SvdRightImpl};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix6<T>`:
 /// `u` is 6x6 with orthonormal columns, `v_t` is 6x6 with orthonormal rows, the 6
-/// singular values are non-negative and sorted DESCENDING. Unlike upstream, where `u` and `v_t`
-/// are `Option`s selected by the `compute_u` / `compute_v` flags, both are always present.
+/// singular values are non-negative and sorted DESCENDING. `u` / `v_t` are `None` when the
+/// decomposition was built without them (`compute_u` / `compute_v`), like upstream.
 ///
 /// Sign and order convention: the rows of `v_t` are the eigenvectors of the Gram matrix
 /// `MᵀM` as the eigen decomposition returns them, reordered by descending singular
@@ -24,12 +24,12 @@ use super::kernels::{SvdComplete6Impl, SvdRightImpl};
 /// Upstream: `SVD { u: Option<OMatrix>, v_t: Option<OMatrix>, singular_values: OVector }`.
 #[derive(Copy, Drop, Serde, Debug)]
 pub struct Svd6<T> {
-    /// The left singular vectors, as columns (6x6).
-    pub u: Matrix6<T>,
+    /// The left singular vectors, as columns (6x6), when computed.
+    pub u: Option<Matrix6<T>>,
     /// The 6 singular values, descending, non-negative.
     pub singular_values: Vector6<T>,
-    /// The TRANSPOSE of the right singular vectors (6x6): `v_i` is row `i`.
-    pub v_t: Matrix6<T>,
+    /// The TRANSPOSE of the right singular vectors (6x6): `v_i` is row `i`, when computed.
+    pub v_t: Option<Matrix6<T>>,
 }
 
 /// Test-only field-wise equality (upstream `SVD` has no `PartialEq`).
@@ -55,9 +55,8 @@ pub impl Svd6Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd6Trait<T> {
-    /// The singular value decomposition of `matrix`. Upstream: `SVD::new(matrix, true, true)`
-    /// (both factors are always computed here: the `compute_u` / `compute_v` flags are dropped,
-    /// like `Svd2` / `Svd3`).
+    /// The singular value decomposition of `matrix`, with `u` when `compute_u` and `v_t` when
+    /// `compute_v` (`None` otherwise). Upstream: `SVD::new(matrix, compute_u, compute_v)`.
     ///
     /// ```text
     /// S   = MᵀM                    (21 fused sums)
@@ -72,21 +71,30 @@ pub impl Svd6Impl<
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
-    /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
-    fn new(matrix: Matrix6<T>) -> Svd6<T> {
-        Svd6InternalTrait::from_right(matrix, Svd6InternalTrait::right(matrix))
+    /// Cost: constant for given flags. Skipping `u` skips the Gram-Schmidt of the left vectors
+    /// (the last line above) in Cairo steps, the proof cost (measured on `Svd4`: 13 070 → 11 463
+    /// steps net, `bench_svd4_new__without_u` under `--tracked-resource cairo-steps`); the
+    /// Sierra gas of the snapshots charges a branch at its costliest path, so it shows no
+    /// saving. `v_t` is free (the right vectors are what the singular values are read off). The
+    /// Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it cannot overflow; `M V`
+    /// must fit (it does whenever `σ_1 = |M|₂` does).
+    fn new(matrix: Matrix6<T>, compute_u: bool, compute_v: bool) -> Svd6<T> {
+        Svd6InternalTrait::from_right(
+            matrix, Svd6InternalTrait::right(matrix), compute_u, compute_v,
+        )
     }
 
     /// `new`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`
     /// (every off-diagonal entry of the final Jacobi state within `eps * (|s_ii| + |s_jj|)`;
     /// see `SymmetricEigen6Trait::try_new`). `max_niter` is accepted for
     /// signature parity and ignored: the iteration budget is a constant of the type. Upstream:
-    /// `SVD::try_new(matrix, true, true, eps, max_niter)`.
-    fn try_new(matrix: Matrix6<T>, eps: T, max_niter: usize) -> Option<Svd6<T>> {
+    /// `SVD::try_new(matrix, compute_u, compute_v, eps, max_niter)`.
+    fn try_new(
+        matrix: Matrix6<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6<T>> {
         let _ = max_niter;
         match Svd6InternalTrait::try_right(matrix, eps) {
-            Some(v) => Some(Svd6InternalTrait::from_right(matrix, v)),
+            Some(v) => Some(Svd6InternalTrait::from_right(matrix, v, compute_u, compute_v)),
             None => None,
         }
     }
@@ -95,14 +103,16 @@ pub impl Svd6Impl<
     /// vectors needs it), so the unordered form costs the same and is sorted too — a valid
     /// "unordered" result. Upstream: `SVD::new_unordered`.
     #[inline(always)]
-    fn new_unordered(matrix: Matrix6<T>) -> Svd6<T> {
-        Self::new(matrix)
+    fn new_unordered(matrix: Matrix6<T>, compute_u: bool, compute_v: bool) -> Svd6<T> {
+        Self::new(matrix, compute_u, compute_v)
     }
 
     /// `try_new`, see `new_unordered`. Upstream: `SVD::try_new_unordered`.
     #[inline(always)]
-    fn try_new_unordered(matrix: Matrix6<T>, eps: T, max_niter: usize) -> Option<Svd6<T>> {
-        Self::try_new(matrix, eps, max_niter)
+    fn try_new_unordered(
+        matrix: Matrix6<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6<T>> {
+        Self::try_new(matrix, compute_u, compute_v, eps, max_niter)
     }
 
     /// The number of singular values strictly greater than `eps`. Upstream: `SVD::rank`, which
@@ -130,63 +140,82 @@ pub impl Svd6Impl<
         n
     }
 
-    /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then `MatrixMul::mul_mat` (one fused sum of 6 products per entry). Panics on overflow.
-    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
-    /// here).
-    fn recompose(self: Svd6<T>) -> Matrix6<T> {
+    /// `U · diag(singular_values) · v_t`, or `None` when `u` or `v_t` was not computed: the
+    /// columns of `U` scaled (one floored product each), then `MatrixMul::mul_mat` (one fused sum
+    /// of 6 products per entry). Panics on overflow. Upstream: `SVD::recompose` (`Err` when a
+    /// factor is missing; `None` here).
+    fn recompose(self: Svd6<T>) -> Option<Matrix6<T>> {
         revoke_ap_tracking();
-        Matrix6 {
-            m11: self.u.m11 * self.singular_values.x,
-            m21: self.u.m21 * self.singular_values.x,
-            m31: self.u.m31 * self.singular_values.x,
-            m41: self.u.m41 * self.singular_values.x,
-            m51: self.u.m51 * self.singular_values.x,
-            m61: self.u.m61 * self.singular_values.x,
-            m12: self.u.m12 * self.singular_values.y,
-            m22: self.u.m22 * self.singular_values.y,
-            m32: self.u.m32 * self.singular_values.y,
-            m42: self.u.m42 * self.singular_values.y,
-            m52: self.u.m52 * self.singular_values.y,
-            m62: self.u.m62 * self.singular_values.y,
-            m13: self.u.m13 * self.singular_values.z,
-            m23: self.u.m23 * self.singular_values.z,
-            m33: self.u.m33 * self.singular_values.z,
-            m43: self.u.m43 * self.singular_values.z,
-            m53: self.u.m53 * self.singular_values.z,
-            m63: self.u.m63 * self.singular_values.z,
-            m14: self.u.m14 * self.singular_values.w,
-            m24: self.u.m24 * self.singular_values.w,
-            m34: self.u.m34 * self.singular_values.w,
-            m44: self.u.m44 * self.singular_values.w,
-            m54: self.u.m54 * self.singular_values.w,
-            m64: self.u.m64 * self.singular_values.w,
-            m15: self.u.m15 * self.singular_values.a,
-            m25: self.u.m25 * self.singular_values.a,
-            m35: self.u.m35 * self.singular_values.a,
-            m45: self.u.m45 * self.singular_values.a,
-            m55: self.u.m55 * self.singular_values.a,
-            m65: self.u.m65 * self.singular_values.a,
-            m16: self.u.m16 * self.singular_values.b,
-            m26: self.u.m26 * self.singular_values.b,
-            m36: self.u.m36 * self.singular_values.b,
-            m46: self.u.m46 * self.singular_values.b,
-            m56: self.u.m56 * self.singular_values.b,
-            m66: self.u.m66 * self.singular_values.b,
-        }
-            .mul_mat(self.v_t)
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
+        Some(
+            Matrix6 {
+                m11: u.m11 * self.singular_values.x,
+                m21: u.m21 * self.singular_values.x,
+                m31: u.m31 * self.singular_values.x,
+                m41: u.m41 * self.singular_values.x,
+                m51: u.m51 * self.singular_values.x,
+                m61: u.m61 * self.singular_values.x,
+                m12: u.m12 * self.singular_values.y,
+                m22: u.m22 * self.singular_values.y,
+                m32: u.m32 * self.singular_values.y,
+                m42: u.m42 * self.singular_values.y,
+                m52: u.m52 * self.singular_values.y,
+                m62: u.m62 * self.singular_values.y,
+                m13: u.m13 * self.singular_values.z,
+                m23: u.m23 * self.singular_values.z,
+                m33: u.m33 * self.singular_values.z,
+                m43: u.m43 * self.singular_values.z,
+                m53: u.m53 * self.singular_values.z,
+                m63: u.m63 * self.singular_values.z,
+                m14: u.m14 * self.singular_values.w,
+                m24: u.m24 * self.singular_values.w,
+                m34: u.m34 * self.singular_values.w,
+                m44: u.m44 * self.singular_values.w,
+                m54: u.m54 * self.singular_values.w,
+                m64: u.m64 * self.singular_values.w,
+                m15: u.m15 * self.singular_values.a,
+                m25: u.m25 * self.singular_values.a,
+                m35: u.m35 * self.singular_values.a,
+                m45: u.m45 * self.singular_values.a,
+                m55: u.m55 * self.singular_values.a,
+                m65: u.m65 * self.singular_values.a,
+                m16: u.m16 * self.singular_values.b,
+                m26: u.m26 * self.singular_values.b,
+                m36: u.m36 * self.singular_values.b,
+                m46: u.m46 * self.singular_values.b,
+                m56: u.m56 * self.singular_values.b,
+                m66: u.m66 * self.singular_values.b,
+            }
+                .mul_mat(v_t),
+        )
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (6x6), `σ⁺_i = 1 / σ_i` when
-    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative. Three roundings per entry
-    /// (the reciprocal, the scaling, the fused sum). `eps = 0` keeps a singular value of one raw
-    /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
-    /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
+    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative or when `u` or `v_t` was
+    /// not computed. Three roundings per entry (the reciprocal, the scaling, the fused sum). `eps
+    /// = 0` keeps a singular value of one raw unit, whose reciprocal overflows: pass an `eps`
+    /// matched to the problem. Panics on overflow. Upstream: `SVD::pseudo_inverse` (`Err` in
+    /// those cases).
     fn pseudo_inverse(self: Svd6<T>, eps: T) -> Option<Matrix6<T>> {
         revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
         let p2 = SvdRightImpl::<T>::inverted(self.singular_values.z, eps);
@@ -195,99 +224,107 @@ pub impl Svd6Impl<
         let p5 = SvdRightImpl::<T>::inverted(self.singular_values.b, eps);
         Some(
             Matrix6 {
-                m11: self.v_t.m11 * p0,
-                m21: self.v_t.m12 * p0,
-                m31: self.v_t.m13 * p0,
-                m41: self.v_t.m14 * p0,
-                m51: self.v_t.m15 * p0,
-                m61: self.v_t.m16 * p0,
-                m12: self.v_t.m21 * p1,
-                m22: self.v_t.m22 * p1,
-                m32: self.v_t.m23 * p1,
-                m42: self.v_t.m24 * p1,
-                m52: self.v_t.m25 * p1,
-                m62: self.v_t.m26 * p1,
-                m13: self.v_t.m31 * p2,
-                m23: self.v_t.m32 * p2,
-                m33: self.v_t.m33 * p2,
-                m43: self.v_t.m34 * p2,
-                m53: self.v_t.m35 * p2,
-                m63: self.v_t.m36 * p2,
-                m14: self.v_t.m41 * p3,
-                m24: self.v_t.m42 * p3,
-                m34: self.v_t.m43 * p3,
-                m44: self.v_t.m44 * p3,
-                m54: self.v_t.m45 * p3,
-                m64: self.v_t.m46 * p3,
-                m15: self.v_t.m51 * p4,
-                m25: self.v_t.m52 * p4,
-                m35: self.v_t.m53 * p4,
-                m45: self.v_t.m54 * p4,
-                m55: self.v_t.m55 * p4,
-                m65: self.v_t.m56 * p4,
-                m16: self.v_t.m61 * p5,
-                m26: self.v_t.m62 * p5,
-                m36: self.v_t.m63 * p5,
-                m46: self.v_t.m64 * p5,
-                m56: self.v_t.m65 * p5,
-                m66: self.v_t.m66 * p5,
+                m11: v_t.m11 * p0,
+                m21: v_t.m12 * p0,
+                m31: v_t.m13 * p0,
+                m41: v_t.m14 * p0,
+                m51: v_t.m15 * p0,
+                m61: v_t.m16 * p0,
+                m12: v_t.m21 * p1,
+                m22: v_t.m22 * p1,
+                m32: v_t.m23 * p1,
+                m42: v_t.m24 * p1,
+                m52: v_t.m25 * p1,
+                m62: v_t.m26 * p1,
+                m13: v_t.m31 * p2,
+                m23: v_t.m32 * p2,
+                m33: v_t.m33 * p2,
+                m43: v_t.m34 * p2,
+                m53: v_t.m35 * p2,
+                m63: v_t.m36 * p2,
+                m14: v_t.m41 * p3,
+                m24: v_t.m42 * p3,
+                m34: v_t.m43 * p3,
+                m44: v_t.m44 * p3,
+                m54: v_t.m45 * p3,
+                m64: v_t.m46 * p3,
+                m15: v_t.m51 * p4,
+                m25: v_t.m52 * p4,
+                m35: v_t.m53 * p4,
+                m45: v_t.m54 * p4,
+                m55: v_t.m55 * p4,
+                m65: v_t.m56 * p4,
+                m16: v_t.m61 * p5,
+                m26: v_t.m62 * p5,
+                m36: v_t.m63 * p5,
+                m46: v_t.m64 * p5,
+                m56: v_t.m65 * p5,
+                m66: v_t.m66 * p5,
             }
                 .mul_mat(
                     Matrix6 {
-                        m11: self.u.m11,
-                        m21: self.u.m12,
-                        m31: self.u.m13,
-                        m41: self.u.m14,
-                        m51: self.u.m15,
-                        m61: self.u.m16,
-                        m12: self.u.m21,
-                        m22: self.u.m22,
-                        m32: self.u.m23,
-                        m42: self.u.m24,
-                        m52: self.u.m25,
-                        m62: self.u.m26,
-                        m13: self.u.m31,
-                        m23: self.u.m32,
-                        m33: self.u.m33,
-                        m43: self.u.m34,
-                        m53: self.u.m35,
-                        m63: self.u.m36,
-                        m14: self.u.m41,
-                        m24: self.u.m42,
-                        m34: self.u.m43,
-                        m44: self.u.m44,
-                        m54: self.u.m45,
-                        m64: self.u.m46,
-                        m15: self.u.m51,
-                        m25: self.u.m52,
-                        m35: self.u.m53,
-                        m45: self.u.m54,
-                        m55: self.u.m55,
-                        m65: self.u.m56,
-                        m16: self.u.m61,
-                        m26: self.u.m62,
-                        m36: self.u.m63,
-                        m46: self.u.m64,
-                        m56: self.u.m65,
-                        m66: self.u.m66,
+                        m11: u.m11,
+                        m21: u.m12,
+                        m31: u.m13,
+                        m41: u.m14,
+                        m51: u.m15,
+                        m61: u.m16,
+                        m12: u.m21,
+                        m22: u.m22,
+                        m32: u.m23,
+                        m42: u.m24,
+                        m52: u.m25,
+                        m62: u.m26,
+                        m13: u.m31,
+                        m23: u.m32,
+                        m33: u.m33,
+                        m43: u.m34,
+                        m53: u.m35,
+                        m63: u.m36,
+                        m14: u.m41,
+                        m24: u.m42,
+                        m34: u.m43,
+                        m44: u.m44,
+                        m54: u.m45,
+                        m64: u.m46,
+                        m15: u.m51,
+                        m25: u.m52,
+                        m35: u.m53,
+                        m45: u.m54,
+                        m55: u.m55,
+                        m65: u.m56,
+                        m16: u.m61,
+                        m26: u.m62,
+                        m36: u.m63,
+                        m46: u.m64,
+                        m56: u.m65,
+                        m66: u.m66,
                     },
                 ),
         )
     }
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
-    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative. One fused sum, one
-    /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
-    /// right-hand side there; a vector here).
+    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative or when `u` or `v_t`
+    /// was not computed. One fused sum, one correctly rounded division and one fused sum per
+    /// component. Upstream: `SVD::solve` (`Err` in those cases; any right-hand side there, a
+    /// vector here).
     fn solve(self: Svd6<T>, b: Vector6<T>, eps: T) -> Option<Vector6<T>> {
         revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y = self.u.tr_mul(b);
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
+        let y = u.tr_mul(b);
         Some(
-            self
-                .v_t
+            v_t
                 .tr_mul(
                     Vector6 {
                         x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
@@ -301,70 +338,75 @@ pub impl Svd6Impl<
         )
     }
 
-    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ`
-    /// (6x6, symmetric positive semi-definite: its upper triangle is computed and mirrored)
-    /// and `U = u · v_t` (6x6). Two roundings per entry of `P`, one per entry of `U`. Always
-    /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
-    /// overflow. Upstream: `SVD::to_polar`.
+    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`, or `None` when `u` or `v_t`
+    /// was not computed: `P = u · diag(σ) · uᵀ` (6x6, symmetric positive semi-definite: its
+    /// upper triangle is computed and mirrored) and `U = u · v_t` (6x6). Two roundings per
+    /// entry of `P`, one per entry of `U`. Panics on overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd6<T>) -> Option<(Matrix6<T>, Matrix6<T>)> {
         revoke_ap_tracking();
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a0_2 = self.u.m13 * self.singular_values.z;
-        let a0_3 = self.u.m14 * self.singular_values.w;
-        let a0_4 = self.u.m15 * self.singular_values.a;
-        let a0_5 = self.u.m16 * self.singular_values.b;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        let a1_2 = self.u.m23 * self.singular_values.z;
-        let a1_3 = self.u.m24 * self.singular_values.w;
-        let a1_4 = self.u.m25 * self.singular_values.a;
-        let a1_5 = self.u.m26 * self.singular_values.b;
-        let a2_0 = self.u.m31 * self.singular_values.x;
-        let a2_1 = self.u.m32 * self.singular_values.y;
-        let a2_2 = self.u.m33 * self.singular_values.z;
-        let a2_3 = self.u.m34 * self.singular_values.w;
-        let a2_4 = self.u.m35 * self.singular_values.a;
-        let a2_5 = self.u.m36 * self.singular_values.b;
-        let a3_0 = self.u.m41 * self.singular_values.x;
-        let a3_1 = self.u.m42 * self.singular_values.y;
-        let a3_2 = self.u.m43 * self.singular_values.z;
-        let a3_3 = self.u.m44 * self.singular_values.w;
-        let a3_4 = self.u.m45 * self.singular_values.a;
-        let a3_5 = self.u.m46 * self.singular_values.b;
-        let a4_0 = self.u.m51 * self.singular_values.x;
-        let a4_1 = self.u.m52 * self.singular_values.y;
-        let a4_2 = self.u.m53 * self.singular_values.z;
-        let a4_3 = self.u.m54 * self.singular_values.w;
-        let a4_4 = self.u.m55 * self.singular_values.a;
-        let a4_5 = self.u.m56 * self.singular_values.b;
-        let a5_0 = self.u.m61 * self.singular_values.x;
-        let a5_1 = self.u.m62 * self.singular_values.y;
-        let a5_2 = self.u.m63 * self.singular_values.z;
-        let a5_3 = self.u.m64 * self.singular_values.w;
-        let a5_4 = self.u.m65 * self.singular_values.a;
-        let a5_5 = self.u.m66 * self.singular_values.b;
+        let u = match self.u {
+            Some(u) => u,
+            None => { return None; },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => { return None; },
+        };
+        let a0_0 = u.m11 * self.singular_values.x;
+        let a0_1 = u.m12 * self.singular_values.y;
+        let a0_2 = u.m13 * self.singular_values.z;
+        let a0_3 = u.m14 * self.singular_values.w;
+        let a0_4 = u.m15 * self.singular_values.a;
+        let a0_5 = u.m16 * self.singular_values.b;
+        let a1_0 = u.m21 * self.singular_values.x;
+        let a1_1 = u.m22 * self.singular_values.y;
+        let a1_2 = u.m23 * self.singular_values.z;
+        let a1_3 = u.m24 * self.singular_values.w;
+        let a1_4 = u.m25 * self.singular_values.a;
+        let a1_5 = u.m26 * self.singular_values.b;
+        let a2_0 = u.m31 * self.singular_values.x;
+        let a2_1 = u.m32 * self.singular_values.y;
+        let a2_2 = u.m33 * self.singular_values.z;
+        let a2_3 = u.m34 * self.singular_values.w;
+        let a2_4 = u.m35 * self.singular_values.a;
+        let a2_5 = u.m36 * self.singular_values.b;
+        let a3_0 = u.m41 * self.singular_values.x;
+        let a3_1 = u.m42 * self.singular_values.y;
+        let a3_2 = u.m43 * self.singular_values.z;
+        let a3_3 = u.m44 * self.singular_values.w;
+        let a3_4 = u.m45 * self.singular_values.a;
+        let a3_5 = u.m46 * self.singular_values.b;
+        let a4_0 = u.m51 * self.singular_values.x;
+        let a4_1 = u.m52 * self.singular_values.y;
+        let a4_2 = u.m53 * self.singular_values.z;
+        let a4_3 = u.m54 * self.singular_values.w;
+        let a4_4 = u.m55 * self.singular_values.a;
+        let a4_5 = u.m56 * self.singular_values.b;
+        let a5_0 = u.m61 * self.singular_values.x;
+        let a5_1 = u.m62 * self.singular_values.y;
+        let a5_2 = u.m63 * self.singular_values.z;
+        let a5_3 = u.m64 * self.singular_values.w;
+        let a5_4 = u.m65 * self.singular_values.a;
+        let a5_5 = u.m66 * self.singular_values.b;
         let p0_0 = R::wide_rescale(
             R::wide_add_prod(
                 R::wide_add_prod(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.u.m11),
-                                a0_1,
-                                self.u.m12,
+                                R::wide_add_prod(R::wide_zero(), a0_0, u.m11), a0_1, u.m12,
                             ),
                             a0_2,
-                            self.u.m13,
+                            u.m13,
                         ),
                         a0_3,
-                        self.u.m14,
+                        u.m14,
                     ),
                     a0_4,
-                    self.u.m15,
+                    u.m15,
                 ),
                 a0_5,
-                self.u.m16,
+                u.m16,
             ),
         );
         let p0_1 = R::wide_rescale(
@@ -373,21 +415,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.u.m21),
-                                a0_1,
-                                self.u.m22,
+                                R::wide_add_prod(R::wide_zero(), a0_0, u.m21), a0_1, u.m22,
                             ),
                             a0_2,
-                            self.u.m23,
+                            u.m23,
                         ),
                         a0_3,
-                        self.u.m24,
+                        u.m24,
                     ),
                     a0_4,
-                    self.u.m25,
+                    u.m25,
                 ),
                 a0_5,
-                self.u.m26,
+                u.m26,
             ),
         );
         let p0_2 = R::wide_rescale(
@@ -396,21 +436,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.u.m31),
-                                a0_1,
-                                self.u.m32,
+                                R::wide_add_prod(R::wide_zero(), a0_0, u.m31), a0_1, u.m32,
                             ),
                             a0_2,
-                            self.u.m33,
+                            u.m33,
                         ),
                         a0_3,
-                        self.u.m34,
+                        u.m34,
                     ),
                     a0_4,
-                    self.u.m35,
+                    u.m35,
                 ),
                 a0_5,
-                self.u.m36,
+                u.m36,
             ),
         );
         let p0_3 = R::wide_rescale(
@@ -419,21 +457,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.u.m41),
-                                a0_1,
-                                self.u.m42,
+                                R::wide_add_prod(R::wide_zero(), a0_0, u.m41), a0_1, u.m42,
                             ),
                             a0_2,
-                            self.u.m43,
+                            u.m43,
                         ),
                         a0_3,
-                        self.u.m44,
+                        u.m44,
                     ),
                     a0_4,
-                    self.u.m45,
+                    u.m45,
                 ),
                 a0_5,
-                self.u.m46,
+                u.m46,
             ),
         );
         let p0_4 = R::wide_rescale(
@@ -442,21 +478,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.u.m51),
-                                a0_1,
-                                self.u.m52,
+                                R::wide_add_prod(R::wide_zero(), a0_0, u.m51), a0_1, u.m52,
                             ),
                             a0_2,
-                            self.u.m53,
+                            u.m53,
                         ),
                         a0_3,
-                        self.u.m54,
+                        u.m54,
                     ),
                     a0_4,
-                    self.u.m55,
+                    u.m55,
                 ),
                 a0_5,
-                self.u.m56,
+                u.m56,
             ),
         );
         let p0_5 = R::wide_rescale(
@@ -465,21 +499,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.u.m61),
-                                a0_1,
-                                self.u.m62,
+                                R::wide_add_prod(R::wide_zero(), a0_0, u.m61), a0_1, u.m62,
                             ),
                             a0_2,
-                            self.u.m63,
+                            u.m63,
                         ),
                         a0_3,
-                        self.u.m64,
+                        u.m64,
                     ),
                     a0_4,
-                    self.u.m65,
+                    u.m65,
                 ),
                 a0_5,
-                self.u.m66,
+                u.m66,
             ),
         );
         let p1_1 = R::wide_rescale(
@@ -488,21 +520,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.u.m21),
-                                a1_1,
-                                self.u.m22,
+                                R::wide_add_prod(R::wide_zero(), a1_0, u.m21), a1_1, u.m22,
                             ),
                             a1_2,
-                            self.u.m23,
+                            u.m23,
                         ),
                         a1_3,
-                        self.u.m24,
+                        u.m24,
                     ),
                     a1_4,
-                    self.u.m25,
+                    u.m25,
                 ),
                 a1_5,
-                self.u.m26,
+                u.m26,
             ),
         );
         let p1_2 = R::wide_rescale(
@@ -511,21 +541,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.u.m31),
-                                a1_1,
-                                self.u.m32,
+                                R::wide_add_prod(R::wide_zero(), a1_0, u.m31), a1_1, u.m32,
                             ),
                             a1_2,
-                            self.u.m33,
+                            u.m33,
                         ),
                         a1_3,
-                        self.u.m34,
+                        u.m34,
                     ),
                     a1_4,
-                    self.u.m35,
+                    u.m35,
                 ),
                 a1_5,
-                self.u.m36,
+                u.m36,
             ),
         );
         let p1_3 = R::wide_rescale(
@@ -534,21 +562,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.u.m41),
-                                a1_1,
-                                self.u.m42,
+                                R::wide_add_prod(R::wide_zero(), a1_0, u.m41), a1_1, u.m42,
                             ),
                             a1_2,
-                            self.u.m43,
+                            u.m43,
                         ),
                         a1_3,
-                        self.u.m44,
+                        u.m44,
                     ),
                     a1_4,
-                    self.u.m45,
+                    u.m45,
                 ),
                 a1_5,
-                self.u.m46,
+                u.m46,
             ),
         );
         let p1_4 = R::wide_rescale(
@@ -557,21 +583,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.u.m51),
-                                a1_1,
-                                self.u.m52,
+                                R::wide_add_prod(R::wide_zero(), a1_0, u.m51), a1_1, u.m52,
                             ),
                             a1_2,
-                            self.u.m53,
+                            u.m53,
                         ),
                         a1_3,
-                        self.u.m54,
+                        u.m54,
                     ),
                     a1_4,
-                    self.u.m55,
+                    u.m55,
                 ),
                 a1_5,
-                self.u.m56,
+                u.m56,
             ),
         );
         let p1_5 = R::wide_rescale(
@@ -580,21 +604,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.u.m61),
-                                a1_1,
-                                self.u.m62,
+                                R::wide_add_prod(R::wide_zero(), a1_0, u.m61), a1_1, u.m62,
                             ),
                             a1_2,
-                            self.u.m63,
+                            u.m63,
                         ),
                         a1_3,
-                        self.u.m64,
+                        u.m64,
                     ),
                     a1_4,
-                    self.u.m65,
+                    u.m65,
                 ),
                 a1_5,
-                self.u.m66,
+                u.m66,
             ),
         );
         let p2_2 = R::wide_rescale(
@@ -603,21 +625,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.u.m31),
-                                a2_1,
-                                self.u.m32,
+                                R::wide_add_prod(R::wide_zero(), a2_0, u.m31), a2_1, u.m32,
                             ),
                             a2_2,
-                            self.u.m33,
+                            u.m33,
                         ),
                         a2_3,
-                        self.u.m34,
+                        u.m34,
                     ),
                     a2_4,
-                    self.u.m35,
+                    u.m35,
                 ),
                 a2_5,
-                self.u.m36,
+                u.m36,
             ),
         );
         let p2_3 = R::wide_rescale(
@@ -626,21 +646,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.u.m41),
-                                a2_1,
-                                self.u.m42,
+                                R::wide_add_prod(R::wide_zero(), a2_0, u.m41), a2_1, u.m42,
                             ),
                             a2_2,
-                            self.u.m43,
+                            u.m43,
                         ),
                         a2_3,
-                        self.u.m44,
+                        u.m44,
                     ),
                     a2_4,
-                    self.u.m45,
+                    u.m45,
                 ),
                 a2_5,
-                self.u.m46,
+                u.m46,
             ),
         );
         let p2_4 = R::wide_rescale(
@@ -649,21 +667,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.u.m51),
-                                a2_1,
-                                self.u.m52,
+                                R::wide_add_prod(R::wide_zero(), a2_0, u.m51), a2_1, u.m52,
                             ),
                             a2_2,
-                            self.u.m53,
+                            u.m53,
                         ),
                         a2_3,
-                        self.u.m54,
+                        u.m54,
                     ),
                     a2_4,
-                    self.u.m55,
+                    u.m55,
                 ),
                 a2_5,
-                self.u.m56,
+                u.m56,
             ),
         );
         let p2_5 = R::wide_rescale(
@@ -672,21 +688,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.u.m61),
-                                a2_1,
-                                self.u.m62,
+                                R::wide_add_prod(R::wide_zero(), a2_0, u.m61), a2_1, u.m62,
                             ),
                             a2_2,
-                            self.u.m63,
+                            u.m63,
                         ),
                         a2_3,
-                        self.u.m64,
+                        u.m64,
                     ),
                     a2_4,
-                    self.u.m65,
+                    u.m65,
                 ),
                 a2_5,
-                self.u.m66,
+                u.m66,
             ),
         );
         let p3_3 = R::wide_rescale(
@@ -695,21 +709,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.u.m41),
-                                a3_1,
-                                self.u.m42,
+                                R::wide_add_prod(R::wide_zero(), a3_0, u.m41), a3_1, u.m42,
                             ),
                             a3_2,
-                            self.u.m43,
+                            u.m43,
                         ),
                         a3_3,
-                        self.u.m44,
+                        u.m44,
                     ),
                     a3_4,
-                    self.u.m45,
+                    u.m45,
                 ),
                 a3_5,
-                self.u.m46,
+                u.m46,
             ),
         );
         let p3_4 = R::wide_rescale(
@@ -718,21 +730,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.u.m51),
-                                a3_1,
-                                self.u.m52,
+                                R::wide_add_prod(R::wide_zero(), a3_0, u.m51), a3_1, u.m52,
                             ),
                             a3_2,
-                            self.u.m53,
+                            u.m53,
                         ),
                         a3_3,
-                        self.u.m54,
+                        u.m54,
                     ),
                     a3_4,
-                    self.u.m55,
+                    u.m55,
                 ),
                 a3_5,
-                self.u.m56,
+                u.m56,
             ),
         );
         let p3_5 = R::wide_rescale(
@@ -741,21 +751,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.u.m61),
-                                a3_1,
-                                self.u.m62,
+                                R::wide_add_prod(R::wide_zero(), a3_0, u.m61), a3_1, u.m62,
                             ),
                             a3_2,
-                            self.u.m63,
+                            u.m63,
                         ),
                         a3_3,
-                        self.u.m64,
+                        u.m64,
                     ),
                     a3_4,
-                    self.u.m65,
+                    u.m65,
                 ),
                 a3_5,
-                self.u.m66,
+                u.m66,
             ),
         );
         let p4_4 = R::wide_rescale(
@@ -764,21 +772,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a4_0, self.u.m51),
-                                a4_1,
-                                self.u.m52,
+                                R::wide_add_prod(R::wide_zero(), a4_0, u.m51), a4_1, u.m52,
                             ),
                             a4_2,
-                            self.u.m53,
+                            u.m53,
                         ),
                         a4_3,
-                        self.u.m54,
+                        u.m54,
                     ),
                     a4_4,
-                    self.u.m55,
+                    u.m55,
                 ),
                 a4_5,
-                self.u.m56,
+                u.m56,
             ),
         );
         let p4_5 = R::wide_rescale(
@@ -787,21 +793,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a4_0, self.u.m61),
-                                a4_1,
-                                self.u.m62,
+                                R::wide_add_prod(R::wide_zero(), a4_0, u.m61), a4_1, u.m62,
                             ),
                             a4_2,
-                            self.u.m63,
+                            u.m63,
                         ),
                         a4_3,
-                        self.u.m64,
+                        u.m64,
                     ),
                     a4_4,
-                    self.u.m65,
+                    u.m65,
                 ),
                 a4_5,
-                self.u.m66,
+                u.m66,
             ),
         );
         let p5_5 = R::wide_rescale(
@@ -810,21 +814,19 @@ pub impl Svd6Impl<
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a5_0, self.u.m61),
-                                a5_1,
-                                self.u.m62,
+                                R::wide_add_prod(R::wide_zero(), a5_0, u.m61), a5_1, u.m62,
                             ),
                             a5_2,
-                            self.u.m63,
+                            u.m63,
                         ),
                         a5_3,
-                        self.u.m64,
+                        u.m64,
                     ),
                     a5_4,
-                    self.u.m65,
+                    u.m65,
                 ),
                 a5_5,
-                self.u.m66,
+                u.m66,
             ),
         );
         Some(
@@ -867,118 +869,129 @@ pub impl Svd6Impl<
                     m56: p4_5,
                     m66: p5_5,
                 },
-                self.u.mul_mat(self.v_t),
+                u.mul_mat(v_t),
             ),
         )
     }
 
     /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
-    /// with them (stable odd-even transposition network, strict comparison: equal values keep
-    /// their order). `new` already returns them sorted, so this only matters after the fields
-    /// were edited. Upstream: `SVD::sort_by_singular_values`.
+    /// (those that were computed) with them (stable odd-even transposition network, strict
+    /// comparison: equal values keep their order). `new` already returns them sorted, so this
+    /// only matters after the fields were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd6<T>) {
         revoke_ap_tracking();
+        let (has_u, has_v) = (self.u.is_some(), self.v_t.is_some());
+        let u = match self.u {
+            Some(u) => u,
+            None => Matrix6 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m61: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m62: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m43: R::zero(),
+                m53: R::zero(),
+                m63: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+                m44: R::zero(),
+                m54: R::zero(),
+                m64: R::zero(),
+                m15: R::zero(),
+                m25: R::zero(),
+                m35: R::zero(),
+                m45: R::zero(),
+                m55: R::zero(),
+                m65: R::zero(),
+                m16: R::zero(),
+                m26: R::zero(),
+                m36: R::zero(),
+                m46: R::zero(),
+                m56: R::zero(),
+                m66: R::zero(),
+            },
+        };
+        let v_t = match self.v_t {
+            Some(v_t) => v_t,
+            None => Matrix6 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m61: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m62: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m43: R::zero(),
+                m53: R::zero(),
+                m63: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+                m44: R::zero(),
+                m54: R::zero(),
+                m64: R::zero(),
+                m15: R::zero(),
+                m25: R::zero(),
+                m35: R::zero(),
+                m45: R::zero(),
+                m55: R::zero(),
+                m65: R::zero(),
+                m16: R::zero(),
+                m26: R::zero(),
+                m36: R::zero(),
+                m46: R::zero(),
+                m56: R::zero(),
+                m66: R::zero(),
+            },
+        };
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut s2 = self.singular_values.z;
         let mut s3 = self.singular_values.w;
         let mut s4 = self.singular_values.a;
         let mut s5 = self.singular_values.b;
-        let mut uc0 = Vector6 {
-            x: self.u.m11,
-            y: self.u.m21,
-            z: self.u.m31,
-            w: self.u.m41,
-            a: self.u.m51,
-            b: self.u.m61,
-        };
-        let mut uc1 = Vector6 {
-            x: self.u.m12,
-            y: self.u.m22,
-            z: self.u.m32,
-            w: self.u.m42,
-            a: self.u.m52,
-            b: self.u.m62,
-        };
-        let mut uc2 = Vector6 {
-            x: self.u.m13,
-            y: self.u.m23,
-            z: self.u.m33,
-            w: self.u.m43,
-            a: self.u.m53,
-            b: self.u.m63,
-        };
-        let mut uc3 = Vector6 {
-            x: self.u.m14,
-            y: self.u.m24,
-            z: self.u.m34,
-            w: self.u.m44,
-            a: self.u.m54,
-            b: self.u.m64,
-        };
-        let mut uc4 = Vector6 {
-            x: self.u.m15,
-            y: self.u.m25,
-            z: self.u.m35,
-            w: self.u.m45,
-            a: self.u.m55,
-            b: self.u.m65,
-        };
-        let mut uc5 = Vector6 {
-            x: self.u.m16,
-            y: self.u.m26,
-            z: self.u.m36,
-            w: self.u.m46,
-            a: self.u.m56,
-            b: self.u.m66,
-        };
+        let mut uc0 = Vector6 { x: u.m11, y: u.m21, z: u.m31, w: u.m41, a: u.m51, b: u.m61 };
+        let mut uc1 = Vector6 { x: u.m12, y: u.m22, z: u.m32, w: u.m42, a: u.m52, b: u.m62 };
+        let mut uc2 = Vector6 { x: u.m13, y: u.m23, z: u.m33, w: u.m43, a: u.m53, b: u.m63 };
+        let mut uc3 = Vector6 { x: u.m14, y: u.m24, z: u.m34, w: u.m44, a: u.m54, b: u.m64 };
+        let mut uc4 = Vector6 { x: u.m15, y: u.m25, z: u.m35, w: u.m45, a: u.m55, b: u.m65 };
+        let mut uc5 = Vector6 { x: u.m16, y: u.m26, z: u.m36, w: u.m46, a: u.m56, b: u.m66 };
         let mut vr0 = Vector6 {
-            x: self.v_t.m11,
-            y: self.v_t.m12,
-            z: self.v_t.m13,
-            w: self.v_t.m14,
-            a: self.v_t.m15,
-            b: self.v_t.m16,
+            x: v_t.m11, y: v_t.m12, z: v_t.m13, w: v_t.m14, a: v_t.m15, b: v_t.m16,
         };
         let mut vr1 = Vector6 {
-            x: self.v_t.m21,
-            y: self.v_t.m22,
-            z: self.v_t.m23,
-            w: self.v_t.m24,
-            a: self.v_t.m25,
-            b: self.v_t.m26,
+            x: v_t.m21, y: v_t.m22, z: v_t.m23, w: v_t.m24, a: v_t.m25, b: v_t.m26,
         };
         let mut vr2 = Vector6 {
-            x: self.v_t.m31,
-            y: self.v_t.m32,
-            z: self.v_t.m33,
-            w: self.v_t.m34,
-            a: self.v_t.m35,
-            b: self.v_t.m36,
+            x: v_t.m31, y: v_t.m32, z: v_t.m33, w: v_t.m34, a: v_t.m35, b: v_t.m36,
         };
         let mut vr3 = Vector6 {
-            x: self.v_t.m41,
-            y: self.v_t.m42,
-            z: self.v_t.m43,
-            w: self.v_t.m44,
-            a: self.v_t.m45,
-            b: self.v_t.m46,
+            x: v_t.m41, y: v_t.m42, z: v_t.m43, w: v_t.m44, a: v_t.m45, b: v_t.m46,
         };
         let mut vr4 = Vector6 {
-            x: self.v_t.m51,
-            y: self.v_t.m52,
-            z: self.v_t.m53,
-            w: self.v_t.m54,
-            a: self.v_t.m55,
-            b: self.v_t.m56,
+            x: v_t.m51, y: v_t.m52, z: v_t.m53, w: v_t.m54, a: v_t.m55, b: v_t.m56,
         };
         let mut vr5 = Vector6 {
-            x: self.v_t.m61,
-            y: self.v_t.m62,
-            z: self.v_t.m63,
-            w: self.v_t.m64,
-            a: self.v_t.m65,
-            b: self.v_t.m66,
+            x: v_t.m61, y: v_t.m62, z: v_t.m63, w: v_t.m64, a: v_t.m65, b: v_t.m66,
         };
         if s1 > s0 {
             let tmp0 = s0;
@@ -1145,84 +1158,94 @@ pub impl Svd6Impl<
             uc4 = tmp1;
             vr4 = tmp2;
         }
+        let u = Matrix6 {
+            m11: uc0.x,
+            m21: uc0.y,
+            m31: uc0.z,
+            m41: uc0.w,
+            m51: uc0.a,
+            m61: uc0.b,
+            m12: uc1.x,
+            m22: uc1.y,
+            m32: uc1.z,
+            m42: uc1.w,
+            m52: uc1.a,
+            m62: uc1.b,
+            m13: uc2.x,
+            m23: uc2.y,
+            m33: uc2.z,
+            m43: uc2.w,
+            m53: uc2.a,
+            m63: uc2.b,
+            m14: uc3.x,
+            m24: uc3.y,
+            m34: uc3.z,
+            m44: uc3.w,
+            m54: uc3.a,
+            m64: uc3.b,
+            m15: uc4.x,
+            m25: uc4.y,
+            m35: uc4.z,
+            m45: uc4.w,
+            m55: uc4.a,
+            m65: uc4.b,
+            m16: uc5.x,
+            m26: uc5.y,
+            m36: uc5.z,
+            m46: uc5.w,
+            m56: uc5.a,
+            m66: uc5.b,
+        };
+        let v_t = Matrix6 {
+            m11: vr0.x,
+            m21: vr1.x,
+            m31: vr2.x,
+            m41: vr3.x,
+            m51: vr4.x,
+            m61: vr5.x,
+            m12: vr0.y,
+            m22: vr1.y,
+            m32: vr2.y,
+            m42: vr3.y,
+            m52: vr4.y,
+            m62: vr5.y,
+            m13: vr0.z,
+            m23: vr1.z,
+            m33: vr2.z,
+            m43: vr3.z,
+            m53: vr4.z,
+            m63: vr5.z,
+            m14: vr0.w,
+            m24: vr1.w,
+            m34: vr2.w,
+            m44: vr3.w,
+            m54: vr4.w,
+            m64: vr5.w,
+            m15: vr0.a,
+            m25: vr1.a,
+            m35: vr2.a,
+            m45: vr3.a,
+            m55: vr4.a,
+            m65: vr5.a,
+            m16: vr0.b,
+            m26: vr1.b,
+            m36: vr2.b,
+            m46: vr3.b,
+            m56: vr4.b,
+            m66: vr5.b,
+        };
         self =
             Svd6 {
-                u: Matrix6 {
-                    m11: uc0.x,
-                    m21: uc0.y,
-                    m31: uc0.z,
-                    m41: uc0.w,
-                    m51: uc0.a,
-                    m61: uc0.b,
-                    m12: uc1.x,
-                    m22: uc1.y,
-                    m32: uc1.z,
-                    m42: uc1.w,
-                    m52: uc1.a,
-                    m62: uc1.b,
-                    m13: uc2.x,
-                    m23: uc2.y,
-                    m33: uc2.z,
-                    m43: uc2.w,
-                    m53: uc2.a,
-                    m63: uc2.b,
-                    m14: uc3.x,
-                    m24: uc3.y,
-                    m34: uc3.z,
-                    m44: uc3.w,
-                    m54: uc3.a,
-                    m64: uc3.b,
-                    m15: uc4.x,
-                    m25: uc4.y,
-                    m35: uc4.z,
-                    m45: uc4.w,
-                    m55: uc4.a,
-                    m65: uc4.b,
-                    m16: uc5.x,
-                    m26: uc5.y,
-                    m36: uc5.z,
-                    m46: uc5.w,
-                    m56: uc5.a,
-                    m66: uc5.b,
+                u: if has_u {
+                    Some(u)
+                } else {
+                    None
                 },
                 singular_values: Vector6 { x: s0, y: s1, z: s2, w: s3, a: s4, b: s5 },
-                v_t: Matrix6 {
-                    m11: vr0.x,
-                    m21: vr1.x,
-                    m31: vr2.x,
-                    m41: vr3.x,
-                    m51: vr4.x,
-                    m61: vr5.x,
-                    m12: vr0.y,
-                    m22: vr1.y,
-                    m32: vr2.y,
-                    m42: vr3.y,
-                    m52: vr4.y,
-                    m62: vr5.y,
-                    m13: vr0.z,
-                    m23: vr1.z,
-                    m33: vr2.z,
-                    m43: vr3.z,
-                    m53: vr4.z,
-                    m63: vr5.z,
-                    m14: vr0.w,
-                    m24: vr1.w,
-                    m34: vr2.w,
-                    m44: vr3.w,
-                    m54: vr4.w,
-                    m64: vr5.w,
-                    m15: vr0.a,
-                    m25: vr1.a,
-                    m35: vr2.a,
-                    m45: vr3.a,
-                    m55: vr4.a,
-                    m65: vr5.a,
-                    m16: vr0.b,
-                    m26: vr1.b,
-                    m36: vr2.b,
-                    m46: vr3.b,
-                    m56: vr4.b,
-                    m66: vr5.b,
+                v_t: if has_v {
+                    Some(v_t)
+                } else {
+                    None
                 },
             };
     }
@@ -2210,104 +2233,132 @@ pub(crate) impl Svd6InternalImpl<
         SortedSvd6 { s0, s1, s2, s3, s4, s5, w0, w1, w2, w3, w4, w5, v0, v1, v2, v3, v4, v5 }
     }
 
-    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
-    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete6::gs*`):
-    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
-    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
-    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
-    /// = 0`) is completed by the axis least represented in the span of the previous ones.
-    fn from_right(m: Matrix6<T>, v: Matrix6<T>) -> Svd6<T> {
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then, when
+    /// `compute_u`, the left vectors by classical Gram-Schmidt run TWICE ("twice is enough",
+    /// `SvdComplete6::gs*`): the second pass costs about as much as the first and keeps `U`
+    /// orthonormal to the rounding of the residual even when `σ_k` is tiny (rank deficiency),
+    /// where one pass leaves `u_k` as far from the others as `rounding / σ_k`. A column that
+    /// vanishes EXACTLY (or `σ_1 = 0`) is completed by the axis least represented in the span of
+    /// the previous ones. `compute_v` only decides whether `v_t` is kept (the right vectors are
+    /// what the singular values are read off).
+    fn from_right(m: Matrix6<T>, v: Matrix6<T>, compute_u: bool, compute_v: bool) -> Svd6<T> {
         let t = Self::sorted(m, v);
-        let (s0, w0, v0) = (t.s0, t.w0, t.v0);
-        let (s1, w1, v1) = (t.s1, t.w1, t.v1);
-        let (s2, w2, v2) = (t.s2, t.w2, t.v2);
-        let (s3, w3, v3) = (t.s3, t.w3, t.v3);
-        let (s4, w4, v4) = (t.s4, t.w4, t.v4);
-        let (s5, w5, v5) = (t.s5, t.w5, t.v5);
+        let u = if compute_u {
+            Some(Self::left(t))
+        } else {
+            None
+        };
+        let v_t = if compute_v {
+            let v0 = t.v0;
+            let v1 = t.v1;
+            let v2 = t.v2;
+            let v3 = t.v3;
+            let v4 = t.v4;
+            let v5 = t.v5;
+            Some(
+                Matrix6 {
+                    m11: v0.x,
+                    m21: v1.x,
+                    m31: v2.x,
+                    m41: v3.x,
+                    m51: v4.x,
+                    m61: v5.x,
+                    m12: v0.y,
+                    m22: v1.y,
+                    m32: v2.y,
+                    m42: v3.y,
+                    m52: v4.y,
+                    m62: v5.y,
+                    m13: v0.z,
+                    m23: v1.z,
+                    m33: v2.z,
+                    m43: v3.z,
+                    m53: v4.z,
+                    m63: v5.z,
+                    m14: v0.w,
+                    m24: v1.w,
+                    m34: v2.w,
+                    m44: v3.w,
+                    m54: v4.w,
+                    m64: v5.w,
+                    m15: v0.a,
+                    m25: v1.a,
+                    m35: v2.a,
+                    m45: v3.a,
+                    m55: v4.a,
+                    m65: v5.a,
+                    m16: v0.b,
+                    m26: v1.b,
+                    m36: v2.b,
+                    m46: v3.b,
+                    m56: v4.b,
+                    m66: v5.b,
+                },
+            )
+        } else {
+            None
+        };
+        Svd6 {
+            u,
+            singular_values: Vector6 { x: t.s0, y: t.s1, z: t.s2, w: t.s3, a: t.s4, b: t.s5 },
+            v_t,
+        }
+    }
+
+    /// The left singular vectors of `from_right`. Skipped (`compute_u = false`) they cost no
+    /// Cairo step; the Sierra gas of the snapshots charges a branch at its costliest path
+    /// whatever is executed (docs/BENCHMARK.md), a call boundary would only add its overhead.
+    #[inline(always)]
+    fn left(t: SortedSvd6<T>) -> Matrix6<T> {
+        let (s0, w0) = (t.s0, t.w0);
+        let w1 = t.w1;
+        let w2 = t.w2;
+        let w3 = t.w3;
+        let w4 = t.w4;
+        let w5 = t.w5;
         let u0 = SvdComplete6Impl::<T>::first(w0, s0);
         let u1 = SvdComplete6Impl::<T>::gs1(u0, w1);
         let u2 = SvdComplete6Impl::<T>::gs2(u0, u1, w2);
         let u3 = SvdComplete6Impl::<T>::gs3(u0, u1, u2, w3);
         let u4 = SvdComplete6Impl::<T>::gs4(u0, u1, u2, u3, w4);
         let u5 = SvdComplete6Impl::<T>::gs5(u0, u1, u2, u3, u4, w5);
-        Svd6 {
-            u: Matrix6 {
-                m11: u0.x,
-                m21: u0.y,
-                m31: u0.z,
-                m41: u0.w,
-                m51: u0.a,
-                m61: u0.b,
-                m12: u1.x,
-                m22: u1.y,
-                m32: u1.z,
-                m42: u1.w,
-                m52: u1.a,
-                m62: u1.b,
-                m13: u2.x,
-                m23: u2.y,
-                m33: u2.z,
-                m43: u2.w,
-                m53: u2.a,
-                m63: u2.b,
-                m14: u3.x,
-                m24: u3.y,
-                m34: u3.z,
-                m44: u3.w,
-                m54: u3.a,
-                m64: u3.b,
-                m15: u4.x,
-                m25: u4.y,
-                m35: u4.z,
-                m45: u4.w,
-                m55: u4.a,
-                m65: u4.b,
-                m16: u5.x,
-                m26: u5.y,
-                m36: u5.z,
-                m46: u5.w,
-                m56: u5.a,
-                m66: u5.b,
-            },
-            singular_values: Vector6 { x: s0, y: s1, z: s2, w: s3, a: s4, b: s5 },
-            v_t: Matrix6 {
-                m11: v0.x,
-                m21: v1.x,
-                m31: v2.x,
-                m41: v3.x,
-                m51: v4.x,
-                m61: v5.x,
-                m12: v0.y,
-                m22: v1.y,
-                m32: v2.y,
-                m42: v3.y,
-                m52: v4.y,
-                m62: v5.y,
-                m13: v0.z,
-                m23: v1.z,
-                m33: v2.z,
-                m43: v3.z,
-                m53: v4.z,
-                m63: v5.z,
-                m14: v0.w,
-                m24: v1.w,
-                m34: v2.w,
-                m44: v3.w,
-                m54: v4.w,
-                m64: v5.w,
-                m15: v0.a,
-                m25: v1.a,
-                m35: v2.a,
-                m45: v3.a,
-                m55: v4.a,
-                m65: v5.a,
-                m16: v0.b,
-                m26: v1.b,
-                m36: v2.b,
-                m46: v3.b,
-                m56: v4.b,
-                m66: v5.b,
-            },
+        Matrix6 {
+            m11: u0.x,
+            m21: u0.y,
+            m31: u0.z,
+            m41: u0.w,
+            m51: u0.a,
+            m61: u0.b,
+            m12: u1.x,
+            m22: u1.y,
+            m32: u1.z,
+            m42: u1.w,
+            m52: u1.a,
+            m62: u1.b,
+            m13: u2.x,
+            m23: u2.y,
+            m33: u2.z,
+            m43: u2.w,
+            m53: u2.a,
+            m63: u2.b,
+            m14: u3.x,
+            m24: u3.y,
+            m34: u3.z,
+            m44: u3.w,
+            m54: u3.a,
+            m64: u3.b,
+            m15: u4.x,
+            m25: u4.y,
+            m35: u4.z,
+            m45: u4.w,
+            m55: u4.a,
+            m65: u4.b,
+            m16: u5.x,
+            m26: u5.y,
+            m36: u5.z,
+            m46: u5.w,
+            m56: u5.a,
+            m66: u5.b,
         }
     }
 
@@ -2334,32 +2385,37 @@ pub impl Matrix6SvdImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Matrix6SvdTrait<T> {
-    /// The singular value decomposition, see `Svd6Trait::new`. Upstream: `Matrix::svd(true, true)`.
+    /// The singular value decomposition, see `Svd6Trait::new`. Upstream: `Matrix::svd`.
     #[inline(always)]
-    fn svd(self: Matrix6<T>) -> Svd6<T> {
-        Svd6Trait::new(self)
+    fn svd(self: Matrix6<T>, compute_u: bool, compute_v: bool) -> Svd6<T> {
+        Svd6Trait::new(self, compute_u, compute_v)
     }
 
     /// `svd` (already sorted, see `Svd6Trait::new_unordered`). Upstream: `Matrix::svd_unordered`.
     #[inline(always)]
-    fn svd_unordered(self: Matrix6<T>) -> Svd6<T> {
-        Svd6Trait::new(self)
+    fn svd_unordered(self: Matrix6<T>, compute_u: bool, compute_v: bool) -> Svd6<T> {
+        Svd6Trait::new(self, compute_u, compute_v)
     }
 
-    /// See `Svd6Trait::try_new`. Upstream: `Matrix::try_svd(true, true, eps, max_niter)`.
+    /// See `Svd6Trait::try_new`. Upstream: `Matrix::try_svd`.
     #[inline(always)]
-    fn try_svd(self: Matrix6<T>, eps: T, max_niter: usize) -> Option<Svd6<T>> {
-        Svd6Trait::try_new(self, eps, max_niter)
+    fn try_svd(
+        self: Matrix6<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6<T>> {
+        Svd6Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }
 
     /// See `Svd6Trait::try_new_unordered`. Upstream: `Matrix::try_svd_unordered`.
     #[inline(always)]
-    fn try_svd_unordered(self: Matrix6<T>, eps: T, max_niter: usize) -> Option<Svd6<T>> {
-        Svd6Trait::try_new(self, eps, max_niter)
+    fn try_svd_unordered(
+        self: Matrix6<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd6<T>> {
+        Svd6Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }
 
     /// The singular values alone, DESCENDING: the decomposition without the left vectors
-    /// (cheaper than `svd().singular_values`, bit-identical to it). Upstream:
+    /// (bit-identical to `svd(false, false).singular_values` and to the full decomposition's, and
+    /// no dearer than the former: `bench_svd6_singular_values__*`). Upstream:
     /// `Matrix::singular_values`.
     fn singular_values(self: Matrix6<T>) -> Vector6<T> {
         Svd6InternalTrait::values_from_right(self, Svd6InternalTrait::right(self))
@@ -2403,19 +2459,19 @@ pub impl Matrix6SvdImpl<
     /// `Matrix::pseudo_inverse` (`Err` on a negative `eps`; `None` here).
     #[inline(always)]
     fn pseudo_inverse(self: Matrix6<T>, eps: T) -> Option<Matrix6<T>> {
-        Svd6Trait::new(self).pseudo_inverse(eps)
+        Svd6Trait::new(self, true, true).pseudo_inverse(eps)
     }
 
     /// The left polar decomposition `M = P · U`, see `Svd6Trait::to_polar`. Upstream:
     /// `Matrix::polar`.
     fn polar(self: Matrix6<T>) -> (Matrix6<T>, Matrix6<T>) {
-        Svd6Trait::new(self).to_polar().unwrap()
+        Svd6Trait::new(self, true, true).to_polar().unwrap()
     }
 
     /// `polar`, or `None` when the decomposition did not converge within `eps`, see
     /// `Svd6Trait::try_new`. Upstream: `Matrix::try_polar`.
     fn try_polar(self: Matrix6<T>, eps: T, max_niter: usize) -> Option<(Matrix6<T>, Matrix6<T>)> {
-        match Svd6Trait::try_new(self, eps, max_niter) {
+        match Svd6Trait::try_new(self, true, true, eps, max_niter) {
             Some(d) => d.to_polar(),
             None => None,
         }

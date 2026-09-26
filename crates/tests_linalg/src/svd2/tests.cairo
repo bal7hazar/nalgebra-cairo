@@ -32,7 +32,7 @@ fn a_bench() -> Matrix2<Fixed> {
 
 /// `a_bench()` already decomposed.
 fn f_bench() -> Svd2<Fixed> {
-    Svd2Trait::new(a_bench())
+    Svd2Trait::new(a_bench(), true, true)
 }
 
 /// A rank-1 matrix whose decomposition is exact: `2 e_1 (3 e_1 + 4 e_2)ᵀ / 5` is not
@@ -46,28 +46,32 @@ fn a_rank1() -> Matrix2<Fixed> {
 
 #[test]
 fn test_new_identity_is_exact() {
-    let f = Svd2Trait::new(Matrix2Trait::<Fixed>::identity());
+    let f = Svd2Trait::new(Matrix2Trait::<Fixed>::identity(), true, true);
     assert!(f.singular_values == Vector2 { x: int(1), y: int(1) });
-    assert!(f.u == Matrix2Trait::identity());
-    assert!(f.v_t == Matrix2Trait::identity());
-    assert!(f.recompose() == Matrix2Trait::identity());
+    assert!(f.u.unwrap() == Matrix2Trait::identity());
+    assert!(f.v_t.unwrap() == Matrix2Trait::identity());
+    assert!(f.recompose().unwrap() == Matrix2Trait::identity());
     assert!(f.rank(Real::zero()) == 2);
 }
 
 #[test]
 fn test_new_permutation_is_exact() {
     let p = Matrix2Trait::new(int(0), int(1), int(1), int(0));
-    let f = Svd2Trait::new(p);
+    let f = Svd2Trait::new(p, true, true);
     assert!(f.singular_values == Vector2 { x: int(1), y: int(1) });
-    assert!(f.recompose() == p);
+    assert!(f.recompose().unwrap() == p);
 }
 
 #[test]
 fn test_accessors() {
     let f = f_bench();
     assert!(f.singular_values == f.singular_values);
-    let g = a_bench().svd();
-    assert!(g.u == f.u && g.singular_values == f.singular_values && g.v_t == f.v_t);
+    let g = a_bench().svd(true, true);
+    assert!(
+        g.u.unwrap() == f.u.unwrap()
+            && g.singular_values == f.singular_values
+            && g.v_t.unwrap() == f.v_t.unwrap(),
+    );
     assert!(a_bench().singular_values() == f.singular_values);
 }
 
@@ -79,7 +83,7 @@ fn test_new_singular_values_oracle() {
     let (mut worst, mut worst_ex) = (0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, expected, tol) = *case;
-        let got = Svd2Trait::new(m2(a)).singular_values;
+        let got = Svd2Trait::new(m2(a), true, true).singular_values;
         let e = v2t(expected);
         let err = max_ulp_diff_v2(got, e);
         worst_ex = core::cmp::max(worst_ex, excess(err, oracle_tol(max_abs_v2(e), tol)));
@@ -97,7 +101,7 @@ fn test_solve_matches_the_inverse_oracle() {
     let b = v2t((-5886581674, -6536196560));
     while let Some(case) = cases.pop_front() {
         let (a, _, _) = *case;
-        let x = Svd2Trait::new(m2(a)).solve(b, Real::default_epsilon()).unwrap();
+        let x = Svd2Trait::new(m2(a), true, true).solve(b, Real::default_epsilon()).unwrap();
         let e = m2(a).try_inverse().unwrap().mul_mat(b);
         worst = core::cmp::max(worst, max_ulp_diff_v2(x, e));
     }
@@ -111,7 +115,7 @@ fn test_pseudo_inverse_oracle() {
     let mut worst = 0;
     while let Some(case) = cases.pop_front() {
         let (a, _, _) = *case;
-        let p = Svd2Trait::new(m2(a)).pseudo_inverse(Real::default_epsilon()).unwrap();
+        let p = Svd2Trait::new(m2(a), true, true).pseudo_inverse(Real::default_epsilon()).unwrap();
         let e = m2(a).try_inverse().unwrap();
         worst = core::cmp::max(worst, max_ulp_diff2(p, e));
     }
@@ -121,11 +125,13 @@ fn test_pseudo_inverse_oracle() {
 #[test]
 fn test_pseudo_inverse_of_a_rank_one_matrix() {
     // The pseudo-inverse drops the null direction: `A A⁺ A = A`.
-    let p = Svd2Trait::new(a_rank1()).pseudo_inverse(Real::default_epsilon()).unwrap();
+    let p = Svd2Trait::new(a_rank1(), true, true).pseudo_inverse(Real::default_epsilon()).unwrap();
     assert!(max_ulp_diff2(a_rank1() * p * a_rank1(), a_rank1()) <= 64);
-    assert!(Svd2Trait::new(a_rank1()).pseudo_inverse(Real::NEG_ONE).is_none());
+    assert!(Svd2Trait::new(a_rank1(), true, true).pseudo_inverse(Real::NEG_ONE).is_none());
     assert!(
-        Svd2Trait::new(a_rank1()).solve(Vector2 { x: int(1), y: int(1) }, Real::NEG_ONE).is_none(),
+        Svd2Trait::new(a_rank1(), true, true)
+            .solve(Vector2 { x: int(1), y: int(1) }, Real::NEG_ONE)
+            .is_none(),
     );
 }
 
@@ -133,7 +139,7 @@ fn test_pseudo_inverse_of_a_rank_one_matrix() {
 fn test_to_polar_of_a_rotation_is_the_rotation() {
     // `M = R` exactly: the stretch is the identity.
     let r = Matrix2Trait::new(int(0), int(-1), int(1), int(0));
-    let (p, q) = r.svd().to_polar().unwrap();
+    let (p, q) = r.svd(true, true).to_polar().unwrap();
     assert!(max_ulp_diff2(q, r) <= 2);
     assert!(max_ulp_diff2(p, Matrix2Trait::identity()) <= 2);
 }
@@ -143,7 +149,7 @@ fn test_to_polar_of_a_rotation_is_the_rotation() {
 fn test_new_overflow_panics() {
     // `MᵀM` does not fit: the squares of the entries must be representable.
     let m = black_box(Matrix2Trait::from_diagonal_element(Real::<Fixed>::max_value().unwrap()));
-    Svd2Trait::new(m);
+    Svd2Trait::new(m, true, true);
 }
 
 // --- gas benchmarks --------------------------------------------------------
@@ -161,7 +167,7 @@ fn bench_svd2_new__baseline() {
 fn bench_svd2_new__eigen_of_gram() {
     let a = black_box(a_bench());
     let e = black_box(true);
-    let f = Svd2Trait::new(a);
+    let f = Svd2Trait::new(a, true, true);
     assert!((f.singular_values.x >= f.singular_values.y) == e);
 }
 
@@ -179,7 +185,7 @@ fn bench_svd2_singular_values__baseline() {
 fn bench_svd2_singular_values__from_left_vectors() {
     let a = black_box(a_bench());
     let e = black_box(true);
-    let s = Svd2Trait::new(a).singular_values;
+    let s = Svd2Trait::new(a, true, true).singular_values;
     assert!((s.x >= s.y) == e);
 }
 
@@ -196,7 +202,7 @@ fn bench_svd2_recompose__baseline() {
 fn bench_svd2_recompose__scaled_product() {
     let f = black_box(f_bench());
     let e = black_box(true);
-    assert!((f.recompose().m11 != Real::zero()) == e);
+    assert!((f.recompose().unwrap().m11 != Real::zero()) == e);
 }
 
 #[test]

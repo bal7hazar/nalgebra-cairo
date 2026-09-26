@@ -21,7 +21,7 @@ const EPS: i64 = 429497;
 /// `max(1, max |a_ij|)`, orthonormality error of `U` and `V`)` of one case, in raw units; also
 /// checks that `singular_values` is bit-identical to the decomposition's.
 fn measure(a: Matrix4x3<Fixed>, expected: Vector3<Fixed>, tol: u64) -> (u128, u128, u128) {
-    let d = a.svd();
+    let d = a.svd(true, true);
     assert!(a.singular_values() == d.singular_values, "singular values differ from svd");
     let mut ex = 0;
     ex =
@@ -39,7 +39,11 @@ fn measure(a: Matrix4x3<Fixed>, expected: Vector3<Fixed>, tol: u64) -> (u128, u1
             ex,
             excess(ulp_diff(d.singular_values.z, expected.z), oracle_tol(abs_raw(expected.z), tol)),
         );
-    (ex, max_ulp_4x3(d.recompose(), a) / amax_4x3(a), max(orth_4x3(d.u), orth_3x3(d.v_t)))
+    (
+        ex,
+        max_ulp_4x3(d.recompose().unwrap(), a) / amax_4x3(a),
+        max(orth_4x3(d.u.unwrap()), orth_3x3(d.v_t.unwrap())),
+    )
 }
 
 /// The worst `measure` over `cases`.
@@ -91,7 +95,7 @@ fn test_oracle_svd4x3_rank_deficient() {
         let a = black_box(mat4x3(a));
         let rank: i64 = a.rank(fx(EPS)).into();
         assert!(rank * 0x100000000 == expected, "rank {}", rank);
-        let rank2: i64 = a.svd().rank(fx(EPS)).into();
+        let rank2: i64 = a.svd(true, true).rank(fx(EPS)).into();
         assert!(rank2 == rank);
     }
 }
@@ -168,29 +172,29 @@ fn test_svd4x3_diagonal_and_zero_are_exact() {
     let a = black_box(
         mat4x3([[12884901888, 0, 0], [0, 30064771072, 0], [0, 0, 21474836480], [0, 0, 0]]),
     );
-    let d = a.svd();
+    let d = a.svd(true, true);
     assert!(d.singular_values == Vector3 { x: fx(7 * ONE), y: fx(5 * ONE), z: fx(3 * ONE) });
-    assert!(d.recompose() == a);
-    assert!(orth_4x3(d.u) == 0 && orth_3x3(d.v_t) == 0);
+    assert!(d.recompose().unwrap() == a);
+    assert!(orth_4x3(d.u.unwrap()) == 0 && orth_3x3(d.v_t.unwrap()) == 0);
     // The zero matrix: nothing divides by zero, `U` is completed to an orthonormal basis.
     let z = black_box(mat4x3([[0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]]));
-    let d = z.svd();
+    let d = z.svd(true, true);
     assert!(d.rank(fx(0)) == 0);
-    assert!(d.recompose() == z);
-    assert!(orth_4x3(d.u) == 0 && orth_3x3(d.v_t) == 0);
+    assert!(d.recompose().unwrap() == z);
+    assert!(orth_4x3(d.u.unwrap()) == 0 && orth_3x3(d.v_t.unwrap()) == 0);
 }
 
 #[test]
 fn test_svd4x3_api() {
     let (a, _, _) = *oracle::svd4x3_singular_values_cases().at(0);
     let a = black_box(mat4x3(a));
-    let d = Svd4x3Trait::new(a);
+    let d = Svd4x3Trait::new(a, true, true);
     // The unordered and `try` forms, `sort_by_singular_values` on a sorted decomposition.
-    assert!(Svd4x3Trait::new_unordered(a) == d);
-    assert!(a.svd_unordered() == d);
-    assert!(Svd4x3Trait::try_new(a, fx(ONE), 0).unwrap() == d);
-    assert!(a.try_svd(fx(ONE), 100).unwrap() == d);
-    assert!(a.try_svd_unordered(fx(ONE), 100).unwrap() == d);
+    assert!(Svd4x3Trait::new_unordered(a, true, true) == d);
+    assert!(a.svd_unordered(true, true) == d);
+    assert!(Svd4x3Trait::try_new(a, true, true, fx(ONE), 0).unwrap() == d);
+    assert!(a.try_svd(true, true, fx(ONE), 100).unwrap() == d);
+    assert!(a.try_svd_unordered(true, true, fx(ONE), 100).unwrap() == d);
     assert!(a.singular_values_unordered() == d.singular_values);
     let mut e = d;
     e.sort_by_singular_values();
@@ -203,6 +207,27 @@ fn test_svd4x3_api() {
     assert!(d.pseudo_inverse(fx(-1)).is_none());
     assert!(d.solve(Vector4 { x: fx(ONE), y: fx(ONE), z: fx(ONE), w: fx(ONE) }, fx(-1)).is_none());
     assert!(d.solve(Vector4 { x: fx(ONE), y: fx(ONE), z: fx(ONE), w: fx(ONE) }, fx(EPS)).is_some());
+    // Upstream's `compute_u` / `compute_v`: a factor not asked for is `None`, the singular values
+    // are bit-identical, and what needs both factors reports `None` (upstream's `Err` / `None`).
+    let n = a.svd(black_box(false), black_box(false));
+    assert!(n.u.is_none() && n.v_t.is_none() && n.singular_values == d.singular_values);
+    assert!(n.recompose().is_none() && n.pseudo_inverse(fx(EPS)).is_none());
+    assert!(
+        n.to_polar().is_none()
+            && n
+                .solve(Vector4 { x: fx(ONE), y: fx(ONE), z: fx(ONE), w: fx(ONE) }, fx(EPS))
+                .is_none(),
+    );
+    let uo = a.svd(black_box(true), black_box(false));
+    assert!(uo.u == d.u && uo.v_t.is_none() && uo.singular_values == d.singular_values);
+    assert!(uo.recompose().is_none() && uo.to_polar().is_none());
+    let vo = a.svd(black_box(false), black_box(true));
+    assert!(vo.u.is_none() && vo.v_t == d.v_t && vo.singular_values == d.singular_values);
+    assert!(vo.pseudo_inverse(fx(EPS)).is_none());
+    let mut e = vo;
+    e.sort_by_singular_values();
+    assert!(e == vo);
+    assert!(a.try_svd(black_box(false), black_box(false), fx(ONE), 0).unwrap() == n);
 }
 /// A `unit` oracle case: the benchmark input.
 fn a_bench() -> Matrix4x3<Fixed> {
@@ -224,7 +249,7 @@ fn bench_svd4x3_new__baseline() {
 fn bench_svd4x3_new__eigen_of_gram() {
     let a = black_box(a_bench());
     let e = black_box(true);
-    let d = a.svd();
+    let d = a.svd(true, true);
     assert!((d.singular_values.x >= d.singular_values.z) == e);
 }
 
@@ -246,10 +271,40 @@ fn bench_svd4x3_singular_values__eigen_of_gram() {
     assert!((s.x >= s.z) == e);
 }
 
+/// `svd(false, false).singular_values`: upstream's route to the singular values alone.
+#[test]
+#[inline(never)]
+fn bench_svd4x3_singular_values__svd_without_factors() {
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let s = a.svd(black_box(false), black_box(false)).singular_values;
+    assert!((s.x >= s.z) == e);
+}
+
+/// `svd(false, true)`: without the left vectors.
+#[test]
+#[inline(never)]
+fn bench_svd4x3_new__without_u() {
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let d = a.svd(black_box(false), black_box(true));
+    assert!((d.singular_values.x >= d.singular_values.z) == e);
+}
+
+/// `svd(true, false)`: without the right vectors.
+#[test]
+#[inline(never)]
+fn bench_svd4x3_new__without_v() {
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let d = a.svd(black_box(true), black_box(false));
+    assert!((d.singular_values.x >= d.singular_values.z) == e);
+}
+
 #[test]
 #[inline(never)]
 fn bench_svd4x3_pseudo_inverse__baseline() {
-    let _d = black_box(a_bench().svd());
+    let _d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     assert!(e == e);
 }
@@ -258,7 +313,7 @@ fn bench_svd4x3_pseudo_inverse__baseline() {
 #[test]
 #[inline(never)]
 fn bench_svd4x3_pseudo_inverse__scaled_product() {
-    let d = black_box(a_bench().svd());
+    let d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     let p = d.pseudo_inverse(fx(EPS)).unwrap();
     assert!((p.m11 == p.m11) == e);
@@ -267,7 +322,7 @@ fn bench_svd4x3_pseudo_inverse__scaled_product() {
 #[test]
 #[inline(never)]
 fn bench_svd4x3_to_polar__baseline() {
-    let _d = black_box(a_bench().svd());
+    let _d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     assert!(e == e);
 }
@@ -276,7 +331,7 @@ fn bench_svd4x3_to_polar__baseline() {
 #[test]
 #[inline(never)]
 fn bench_svd4x3_to_polar__products() {
-    let d = black_box(a_bench().svd());
+    let d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     let (p, _u) = d.to_polar().unwrap();
     assert!((p.m11 == p.m11) == e);

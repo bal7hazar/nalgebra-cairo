@@ -2,109 +2,127 @@
   "nalgebra_tests_linalg_svd_wide::svd1x2": {
     "svd1x2_new": {
       "baseline": 17520,
-      "eigen_of_gram": 37340
+      "eigen_of_gram": 38440,
+      "without_u": 39240,
+      "without_v": 39240
     },
     "svd1x2_pseudo_inverse": {
-      "baseline": 36770,
-      "scaled_product": 51320
+      "baseline": 38870,
+      "scaled_product": 53820
     },
     "svd1x2_singular_values": {
       "baseline": 17520,
-      "eigen_of_gram": 26470
+      "eigen_of_gram": 26470,
+      "svd_without_factors": 39140
     },
     "svd1x2_to_polar": {
-      "baseline": 36770,
-      "products": 46520
+      "baseline": 38870,
+      "products": 49020
     }
   },
   "nalgebra_tests_linalg_svd_wide::svd1x3": {
     "svd1x3_new": {
       "baseline": 17720,
-      "eigen_of_gram": 43640
+      "eigen_of_gram": 44740,
+      "without_u": 45540,
+      "without_v": 45540
     },
     "svd1x3_pseudo_inverse": {
-      "baseline": 43070,
-      "scaled_product": 61080
+      "baseline": 45270,
+      "scaled_product": 63680
     },
     "svd1x3_singular_values": {
       "baseline": 17720,
-      "eigen_of_gram": 28750
+      "eigen_of_gram": 28750,
+      "svd_without_factors": 45440
     },
     "svd1x3_to_polar": {
-      "baseline": 43070,
-      "products": 54600
+      "baseline": 45270,
+      "products": 57200
     }
   },
   "nalgebra_tests_linalg_svd_wide::svd1x4": {
     "svd1x4_new": {
       "baseline": 17920,
-      "eigen_of_gram": 50100
+      "eigen_of_gram": 51320,
+      "without_u": 52120,
+      "without_v": 52120
     },
     "svd1x4_pseudo_inverse": {
-      "baseline": 49530,
-      "scaled_product": 71000
+      "baseline": 51950,
+      "scaled_product": 73820
     },
     "svd1x4_singular_values": {
       "baseline": 17920,
-      "eigen_of_gram": 31230
+      "eigen_of_gram": 31230,
+      "svd_without_factors": 52020
     },
     "svd1x4_to_polar": {
-      "baseline": 49530,
-      "products": 62840
+      "baseline": 51950,
+      "products": 65660
     }
   },
   "nalgebra_tests_linalg_svd_wide::svd2x3": {
     "svd2x3_new": {
       "baseline": 18320,
-      "eigen_of_gram": 213720
+      "eigen_of_gram": 216500,
+      "without_u": 217300,
+      "without_v": 217300
     },
     "svd2x3_pseudo_inverse": {
-      "baseline": 213950,
-      "scaled_product": 249870
+      "baseline": 218430,
+      "scaled_product": 254750
     },
     "svd2x3_singular_values": {
       "baseline": 18320,
-      "eigen_of_gram": 130110
+      "eigen_of_gram": 130110,
+      "svd_without_factors": 217200
     },
     "svd2x3_to_polar": {
-      "baseline": 213950,
-      "products": 243820
+      "baseline": 218430,
+      "products": 248700
     }
   },
   "nalgebra_tests_linalg_svd_wide::svd2x4": {
     "svd2x4_new": {
       "baseline": 18720,
-      "eigen_of_gram": 257120
+      "eigen_of_gram": 263700,
+      "without_u": 264600,
+      "without_v": 264600
     },
     "svd2x4_pseudo_inverse": {
-      "baseline": 257350,
-      "scaled_product": 300790
+      "baseline": 264430,
+      "scaled_product": 308170
     },
     "svd2x4_singular_values": {
       "baseline": 18720,
-      "eigen_of_gram": 150370
+      "eigen_of_gram": 150370,
+      "svd_without_factors": 264600
     },
     "svd2x4_to_polar": {
-      "baseline": 257350,
-      "products": 291580
+      "baseline": 264430,
+      "products": 298960
     }
   },
   "nalgebra_tests_linalg_svd_wide::svd3x4": {
     "svd3x4_new": {
       "baseline": 19520,
-      "eigen_of_gram": 994380
+      "eigen_of_gram": 1003260,
+      "without_u": 1004160,
+      "without_v": 1004160
     },
     "svd3x4_pseudo_inverse": {
-      "baseline": 995810,
-      "scaled_product": 1062120
+      "baseline": 1005190,
+      "scaled_product": 1071800
     },
     "svd3x4_singular_values": {
       "baseline": 19520,
-      "eigen_of_gram": 793210
+      "eigen_of_gram": 793210,
+      "svd_without_factors": 1004160
     },
     "svd3x4_to_polar": {
-      "baseline": 995810,
-      "products": 1057900
+      "baseline": 1005190,
+      "products": 1067580
     }
   }
 }

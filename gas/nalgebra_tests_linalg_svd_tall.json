@@ -2,109 +2,127 @@
   "nalgebra_tests_linalg_svd_tall::svd2x1": {
     "svd2x1_new": {
       "baseline": 17520,
-      "eigen_of_gram": 37340
+      "eigen_of_gram": 37840,
+      "without_u": 38740,
+      "without_v": 38740
     },
     "svd2x1_pseudo_inverse": {
-      "baseline": 36770,
-      "scaled_product": 49640
+      "baseline": 37770,
+      "scaled_product": 50940
     },
     "svd2x1_singular_values": {
       "baseline": 17520,
-      "eigen_of_gram": 26470
+      "eigen_of_gram": 26470,
+      "svd_without_factors": 38740
     },
     "svd2x1_to_polar": {
-      "baseline": 36770,
-      "products": 51660
+      "baseline": 37770,
+      "products": 52960
     }
   },
   "nalgebra_tests_linalg_svd_tall::svd3x1": {
     "svd3x1_new": {
       "baseline": 17720,
-      "eigen_of_gram": 43640
+      "eigen_of_gram": 44140,
+      "without_u": 45040,
+      "without_v": 45040
     },
     "svd3x1_pseudo_inverse": {
-      "baseline": 43070,
-      "scaled_product": 57720
+      "baseline": 44070,
+      "scaled_product": 59020
     },
     "svd3x1_singular_values": {
       "baseline": 17720,
-      "eigen_of_gram": 28750
+      "eigen_of_gram": 28750,
+      "svd_without_factors": 45040
     },
     "svd3x1_to_polar": {
-      "baseline": 43070,
-      "products": 66660
+      "baseline": 44070,
+      "products": 67960
     }
   },
   "nalgebra_tests_linalg_svd_tall::svd3x2": {
     "svd3x2_new": {
       "baseline": 18320,
-      "eigen_of_gram": 213720
+      "eigen_of_gram": 215900,
+      "without_u": 216800,
+      "without_v": 216800
     },
     "svd3x2_pseudo_inverse": {
-      "baseline": 213950,
-      "scaled_product": 246710
+      "baseline": 216630,
+      "scaled_product": 249690
     },
     "svd3x2_singular_values": {
       "baseline": 18320,
-      "eigen_of_gram": 130110
+      "eigen_of_gram": 130110,
+      "svd_without_factors": 216800
     },
     "svd3x2_to_polar": {
-      "baseline": 213950,
-      "products": 253220
+      "baseline": 216630,
+      "products": 256200
     }
   },
   "nalgebra_tests_linalg_svd_tall::svd4x1": {
     "svd4x1_new": {
       "baseline": 17920,
-      "eigen_of_gram": 50100
+      "eigen_of_gram": 50720,
+      "without_u": 51620,
+      "without_v": 51620
     },
     "svd4x1_pseudo_inverse": {
-      "baseline": 49530,
-      "scaled_product": 65960
+      "baseline": 50650,
+      "scaled_product": 67380
     },
     "svd4x1_singular_values": {
       "baseline": 17920,
-      "eigen_of_gram": 31230
+      "eigen_of_gram": 31230,
+      "svd_without_factors": 51620
     },
     "svd4x1_to_polar": {
-      "baseline": 49530,
-      "products": 83600
+      "baseline": 50650,
+      "products": 85020
     }
   },
   "nalgebra_tests_linalg_svd_tall::svd4x2": {
     "svd4x2_new": {
       "baseline": 18720,
-      "eigen_of_gram": 257120
+      "eigen_of_gram": 259700,
+      "without_u": 260600,
+      "without_v": 260600
     },
     "svd4x2_pseudo_inverse": {
-      "baseline": 257350,
-      "scaled_product": 294470
+      "baseline": 260430,
+      "scaled_product": 297850
     },
     "svd4x2_singular_values": {
       "baseline": 18720,
-      "eigen_of_gram": 150370
+      "eigen_of_gram": 150370,
+      "svd_without_factors": 260600
     },
     "svd4x2_to_polar": {
-      "baseline": 257350,
-      "products": 312460
+      "baseline": 260430,
+      "products": 315840
     }
   },
   "nalgebra_tests_linalg_svd_tall::svd4x3": {
     "svd4x3_new": {
       "baseline": 19520,
-      "eigen_of_gram": 994380
+      "eigen_of_gram": 997360,
+      "without_u": 998260,
+      "without_v": 998260
     },
     "svd4x3_pseudo_inverse": {
-      "baseline": 995810,
-      "scaled_product": 1057380
+      "baseline": 999290,
+      "scaled_product": 1061160
     },
     "svd4x3_singular_values": {
       "baseline": 19520,
-      "eigen_of_gram": 791910
+      "eigen_of_gram": 791910,
+      "svd_without_factors": 998260
     },
     "svd4x3_to_polar": {
-      "baseline": 995810,
-      "products": 1071860
+      "baseline": 999290,
+      "products": 1075640
     }
   }
 }
