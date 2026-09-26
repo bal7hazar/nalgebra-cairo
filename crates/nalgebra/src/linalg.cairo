@@ -34,15 +34,26 @@
 //! them: the only item of `linalg` the rest of the crate uses is `Lu6` (`Matrix6::determinant` /
 //! `try_inverse`), and `lu` / `cholesky` / `udu` stay ungated.
 
+#[cfg(feature: 'balancing')]
+pub mod balancing;
+#[cfg(feature: 'bidiagonal')]
+pub mod bidiagonal;
 pub mod cholesky;
 #[cfg(feature: 'cholesky_update')]
 pub mod cholesky_update;
 #[cfg(feature: 'col_piv_qr')]
 pub mod col_piv_qr;
+#[cfg(feature: 'schur')]
+pub mod eigen;
 #[cfg(feature: 'full_piv_lu')]
 pub mod full_piv_lu;
 pub mod givens;
+#[cfg(feature: 'hessenberg')]
+pub mod hessenberg;
 pub mod householder;
+pub(crate) mod householder_kernels;
+#[cfg(feature: 'hessenberg')]
+pub mod householder_steps;
 pub mod inverse;
 #[cfg(feature: 'lblt')]
 pub mod lblt;
@@ -60,6 +71,8 @@ mod oracle_udu;
 pub mod permutation_sequence;
 #[cfg(feature: 'qr')]
 pub mod qr;
+#[cfg(feature: 'schur')]
+pub mod schur;
 #[cfg(feature: 'svd')]
 pub mod svd;
 #[cfg(feature: 'svd')]
@@ -78,6 +91,8 @@ pub mod symmetric_eigen4;
 pub mod symmetric_eigen5;
 #[cfg(feature: 'eigen')]
 pub mod symmetric_eigen6;
+#[cfg(feature: 'symmetric_tridiagonal')]
+pub mod symmetric_tridiagonal;
 pub mod udu;
 
 pub use cholesky::{

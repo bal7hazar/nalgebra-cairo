@@ -546,7 +546,14 @@ fn gen_len(gen: &Gen) -> usize {
         | Gen::Spd(n)
         | Gen::NearSingular(n)
         | Gen::Singular(n)
-        | Gen::Rot(n) => n * n,
+        | Gen::Rot(n)
+        | Gen::SpectrumReal(n)
+        | Gen::SpectrumComplex(n)
+        | Gen::NonNormal(n)
+        | Gen::SpectrumClustered(n)
+        | Gen::Defective(n)
+        | Gen::NearTriangular(n)
+        | Gen::BadlyScaled(n) => n * n,
         Gen::Group(parts) => parts.iter().map(gen_len).sum(),
         Gen::UnitDual => 8,
     }
