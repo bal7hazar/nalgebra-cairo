@@ -31,6 +31,17 @@ members = [
     "crates/tests_linalg_solve_rhs",
     "crates/tests_linalg_factor",
     "crates/tests_linalg_eigen",
+    "crates/tests_linalg_svd",
+    "crates/tests_linalg_svd5",
+    "crates/tests_linalg_svd6",
+    "crates/tests_linalg_svd_tall",
+    "crates/tests_linalg_svd_tall5",
+    "crates/tests_linalg_svd_tall6",
+    "crates/tests_linalg_svd_tall6b",
+    "crates/tests_linalg_svd_wide",
+    "crates/tests_linalg_svd_wide5",
+    "crates/tests_linalg_svd_wide6",
+    "crates/tests_linalg_svd_wide6b",
 ]
 
 [workspace.package]

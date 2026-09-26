@@ -3,12 +3,14 @@
 //! `nalgebra::linalg::SVD<T, U3, U5>`), its pseudo-inverse, least-squares solve, rank and polar
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix3x5::Matrix3x5;
 use crate::base::matrix5x3::Matrix5x3;
 use crate::base::vector3::Vector3;
 use crate::base::vector5::Vector5;
+use crate::base::{MatrixMul, MatrixTrMul};
 use super::kernels::SvdRightImpl;
 use super::svd5x3::{Svd5x3InternalTrait, Svd5x3Trait};
 
@@ -208,35 +210,23 @@ pub impl Svd3x5Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 3 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 3 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd3x5<T>) -> Matrix3x5<T> {
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a0_2 = self.u.m13 * self.singular_values.z;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        let a1_2 = self.u.m23 * self.singular_values.z;
-        let a2_0 = self.u.m31 * self.singular_values.x;
-        let a2_1 = self.u.m32 * self.singular_values.y;
-        let a2_2 = self.u.m33 * self.singular_values.z;
-        Matrix3x5 {
-            m11: R::sum_prod3(a0_0, self.v_t.m11, a0_1, self.v_t.m21, a0_2, self.v_t.m31),
-            m21: R::sum_prod3(a1_0, self.v_t.m11, a1_1, self.v_t.m21, a1_2, self.v_t.m31),
-            m31: R::sum_prod3(a2_0, self.v_t.m11, a2_1, self.v_t.m21, a2_2, self.v_t.m31),
-            m12: R::sum_prod3(a0_0, self.v_t.m12, a0_1, self.v_t.m22, a0_2, self.v_t.m32),
-            m22: R::sum_prod3(a1_0, self.v_t.m12, a1_1, self.v_t.m22, a1_2, self.v_t.m32),
-            m32: R::sum_prod3(a2_0, self.v_t.m12, a2_1, self.v_t.m22, a2_2, self.v_t.m32),
-            m13: R::sum_prod3(a0_0, self.v_t.m13, a0_1, self.v_t.m23, a0_2, self.v_t.m33),
-            m23: R::sum_prod3(a1_0, self.v_t.m13, a1_1, self.v_t.m23, a1_2, self.v_t.m33),
-            m33: R::sum_prod3(a2_0, self.v_t.m13, a2_1, self.v_t.m23, a2_2, self.v_t.m33),
-            m14: R::sum_prod3(a0_0, self.v_t.m14, a0_1, self.v_t.m24, a0_2, self.v_t.m34),
-            m24: R::sum_prod3(a1_0, self.v_t.m14, a1_1, self.v_t.m24, a1_2, self.v_t.m34),
-            m34: R::sum_prod3(a2_0, self.v_t.m14, a2_1, self.v_t.m24, a2_2, self.v_t.m34),
-            m15: R::sum_prod3(a0_0, self.v_t.m15, a0_1, self.v_t.m25, a0_2, self.v_t.m35),
-            m25: R::sum_prod3(a1_0, self.v_t.m15, a1_1, self.v_t.m25, a1_2, self.v_t.m35),
-            m35: R::sum_prod3(a2_0, self.v_t.m15, a2_1, self.v_t.m25, a2_2, self.v_t.m35),
+        revoke_ap_tracking();
+        Matrix3 {
+            m11: self.u.m11 * self.singular_values.x,
+            m21: self.u.m21 * self.singular_values.x,
+            m31: self.u.m31 * self.singular_values.x,
+            m12: self.u.m12 * self.singular_values.y,
+            m22: self.u.m22 * self.singular_values.y,
+            m32: self.u.m32 * self.singular_values.y,
+            m13: self.u.m13 * self.singular_values.z,
+            m23: self.u.m23 * self.singular_values.z,
+            m33: self.u.m33 * self.singular_values.z,
         }
+            .mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (5x3), `σ⁺_i = 1 / σ_i` when
@@ -245,45 +235,44 @@ pub impl Svd3x5Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd3x5<T>, eps: T) -> Option<Matrix5x3<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
         let p2 = SvdRightImpl::<T>::inverted(self.singular_values.z, eps);
-        let b0_0 = self.v_t.m11 * p0;
-        let b0_1 = self.v_t.m21 * p1;
-        let b0_2 = self.v_t.m31 * p2;
-        let b1_0 = self.v_t.m12 * p0;
-        let b1_1 = self.v_t.m22 * p1;
-        let b1_2 = self.v_t.m32 * p2;
-        let b2_0 = self.v_t.m13 * p0;
-        let b2_1 = self.v_t.m23 * p1;
-        let b2_2 = self.v_t.m33 * p2;
-        let b3_0 = self.v_t.m14 * p0;
-        let b3_1 = self.v_t.m24 * p1;
-        let b3_2 = self.v_t.m34 * p2;
-        let b4_0 = self.v_t.m15 * p0;
-        let b4_1 = self.v_t.m25 * p1;
-        let b4_2 = self.v_t.m35 * p2;
         Some(
             Matrix5x3 {
-                m11: R::sum_prod3(b0_0, self.u.m11, b0_1, self.u.m12, b0_2, self.u.m13),
-                m21: R::sum_prod3(b1_0, self.u.m11, b1_1, self.u.m12, b1_2, self.u.m13),
-                m31: R::sum_prod3(b2_0, self.u.m11, b2_1, self.u.m12, b2_2, self.u.m13),
-                m41: R::sum_prod3(b3_0, self.u.m11, b3_1, self.u.m12, b3_2, self.u.m13),
-                m51: R::sum_prod3(b4_0, self.u.m11, b4_1, self.u.m12, b4_2, self.u.m13),
-                m12: R::sum_prod3(b0_0, self.u.m21, b0_1, self.u.m22, b0_2, self.u.m23),
-                m22: R::sum_prod3(b1_0, self.u.m21, b1_1, self.u.m22, b1_2, self.u.m23),
-                m32: R::sum_prod3(b2_0, self.u.m21, b2_1, self.u.m22, b2_2, self.u.m23),
-                m42: R::sum_prod3(b3_0, self.u.m21, b3_1, self.u.m22, b3_2, self.u.m23),
-                m52: R::sum_prod3(b4_0, self.u.m21, b4_1, self.u.m22, b4_2, self.u.m23),
-                m13: R::sum_prod3(b0_0, self.u.m31, b0_1, self.u.m32, b0_2, self.u.m33),
-                m23: R::sum_prod3(b1_0, self.u.m31, b1_1, self.u.m32, b1_2, self.u.m33),
-                m33: R::sum_prod3(b2_0, self.u.m31, b2_1, self.u.m32, b2_2, self.u.m33),
-                m43: R::sum_prod3(b3_0, self.u.m31, b3_1, self.u.m32, b3_2, self.u.m33),
-                m53: R::sum_prod3(b4_0, self.u.m31, b4_1, self.u.m32, b4_2, self.u.m33),
-            },
+                m11: self.v_t.m11 * p0,
+                m21: self.v_t.m12 * p0,
+                m31: self.v_t.m13 * p0,
+                m41: self.v_t.m14 * p0,
+                m51: self.v_t.m15 * p0,
+                m12: self.v_t.m21 * p1,
+                m22: self.v_t.m22 * p1,
+                m32: self.v_t.m23 * p1,
+                m42: self.v_t.m24 * p1,
+                m52: self.v_t.m25 * p1,
+                m13: self.v_t.m31 * p2,
+                m23: self.v_t.m32 * p2,
+                m33: self.v_t.m33 * p2,
+                m43: self.v_t.m34 * p2,
+                m53: self.v_t.m35 * p2,
+            }
+                .mul_mat(
+                    Matrix3 {
+                        m11: self.u.m11,
+                        m21: self.u.m12,
+                        m31: self.u.m13,
+                        m12: self.u.m21,
+                        m22: self.u.m22,
+                        m32: self.u.m23,
+                        m13: self.u.m31,
+                        m23: self.u.m32,
+                        m33: self.u.m33,
+                    },
+                ),
         )
     }
 
@@ -292,23 +281,21 @@ pub impl Svd3x5Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd3x5<T>, b: Vector3<T>, eps: T) -> Option<Vector5<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = R::sum_prod3(self.u.m11, b.x, self.u.m21, b.y, self.u.m31, b.z);
-        let y1 = R::sum_prod3(self.u.m12, b.x, self.u.m22, b.y, self.u.m32, b.z);
-        let y2 = R::sum_prod3(self.u.m13, b.x, self.u.m23, b.y, self.u.m33, b.z);
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        let z1 = SvdRightImpl::<T>::divided(y1, self.singular_values.y, eps);
-        let z2 = SvdRightImpl::<T>::divided(y2, self.singular_values.z, eps);
+        let y = self.u.tr_mul(b);
         Some(
-            Vector5 {
-                x: R::sum_prod3(self.v_t.m11, z0, self.v_t.m21, z1, self.v_t.m31, z2),
-                y: R::sum_prod3(self.v_t.m12, z0, self.v_t.m22, z1, self.v_t.m32, z2),
-                z: R::sum_prod3(self.v_t.m13, z0, self.v_t.m23, z1, self.v_t.m33, z2),
-                w: R::sum_prod3(self.v_t.m14, z0, self.v_t.m24, z1, self.v_t.m34, z2),
-                a: R::sum_prod3(self.v_t.m15, z0, self.v_t.m25, z1, self.v_t.m35, z2),
-            },
+            self
+                .v_t
+                .tr_mul(
+                    Vector3 {
+                        x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
+                        y: SvdRightImpl::<T>::divided(y.y, self.singular_values.y, eps),
+                        z: SvdRightImpl::<T>::divided(y.z, self.singular_values.z, eps),
+                    },
+                ),
         )
     }
 
@@ -318,6 +305,7 @@ pub impl Svd3x5Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd3x5<T>) -> Option<(Matrix3<T>, Matrix3x5<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.m11 * self.singular_values.x;
         let a0_1 = self.u.m12 * self.singular_values.y;
         let a0_2 = self.u.m13 * self.singular_values.z;
@@ -346,128 +334,7 @@ pub impl Svd3x5Impl<
                     m23: p1_2,
                     m33: p2_2,
                 },
-                Matrix3x5 {
-                    m11: R::sum_prod3(
-                        self.u.m11,
-                        self.v_t.m11,
-                        self.u.m12,
-                        self.v_t.m21,
-                        self.u.m13,
-                        self.v_t.m31,
-                    ),
-                    m21: R::sum_prod3(
-                        self.u.m21,
-                        self.v_t.m11,
-                        self.u.m22,
-                        self.v_t.m21,
-                        self.u.m23,
-                        self.v_t.m31,
-                    ),
-                    m31: R::sum_prod3(
-                        self.u.m31,
-                        self.v_t.m11,
-                        self.u.m32,
-                        self.v_t.m21,
-                        self.u.m33,
-                        self.v_t.m31,
-                    ),
-                    m12: R::sum_prod3(
-                        self.u.m11,
-                        self.v_t.m12,
-                        self.u.m12,
-                        self.v_t.m22,
-                        self.u.m13,
-                        self.v_t.m32,
-                    ),
-                    m22: R::sum_prod3(
-                        self.u.m21,
-                        self.v_t.m12,
-                        self.u.m22,
-                        self.v_t.m22,
-                        self.u.m23,
-                        self.v_t.m32,
-                    ),
-                    m32: R::sum_prod3(
-                        self.u.m31,
-                        self.v_t.m12,
-                        self.u.m32,
-                        self.v_t.m22,
-                        self.u.m33,
-                        self.v_t.m32,
-                    ),
-                    m13: R::sum_prod3(
-                        self.u.m11,
-                        self.v_t.m13,
-                        self.u.m12,
-                        self.v_t.m23,
-                        self.u.m13,
-                        self.v_t.m33,
-                    ),
-                    m23: R::sum_prod3(
-                        self.u.m21,
-                        self.v_t.m13,
-                        self.u.m22,
-                        self.v_t.m23,
-                        self.u.m23,
-                        self.v_t.m33,
-                    ),
-                    m33: R::sum_prod3(
-                        self.u.m31,
-                        self.v_t.m13,
-                        self.u.m32,
-                        self.v_t.m23,
-                        self.u.m33,
-                        self.v_t.m33,
-                    ),
-                    m14: R::sum_prod3(
-                        self.u.m11,
-                        self.v_t.m14,
-                        self.u.m12,
-                        self.v_t.m24,
-                        self.u.m13,
-                        self.v_t.m34,
-                    ),
-                    m24: R::sum_prod3(
-                        self.u.m21,
-                        self.v_t.m14,
-                        self.u.m22,
-                        self.v_t.m24,
-                        self.u.m23,
-                        self.v_t.m34,
-                    ),
-                    m34: R::sum_prod3(
-                        self.u.m31,
-                        self.v_t.m14,
-                        self.u.m32,
-                        self.v_t.m24,
-                        self.u.m33,
-                        self.v_t.m34,
-                    ),
-                    m15: R::sum_prod3(
-                        self.u.m11,
-                        self.v_t.m15,
-                        self.u.m12,
-                        self.v_t.m25,
-                        self.u.m13,
-                        self.v_t.m35,
-                    ),
-                    m25: R::sum_prod3(
-                        self.u.m21,
-                        self.v_t.m15,
-                        self.u.m22,
-                        self.v_t.m25,
-                        self.u.m23,
-                        self.v_t.m35,
-                    ),
-                    m35: R::sum_prod3(
-                        self.u.m31,
-                        self.v_t.m15,
-                        self.u.m32,
-                        self.v_t.m25,
-                        self.u.m33,
-                        self.v_t.m35,
-                    ),
-                },
+                self.u.mul_mat(self.v_t),
             ),
         )
     }
@@ -477,6 +344,7 @@ pub impl Svd3x5Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd3x5<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut s2 = self.singular_values.z;

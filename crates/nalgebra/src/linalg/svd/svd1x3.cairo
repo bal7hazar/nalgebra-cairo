@@ -3,10 +3,12 @@
 //! `nalgebra::linalg::SVD<T, U1, U3>`), its pseudo-inverse, least-squares solve, rank and polar
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
 use crate::base::row_vector3::RowVector3;
 use crate::base::vector3::Vector3;
+use crate::base::{MatrixMul, MatrixTrMul};
 use super::kernels::SvdRightImpl;
 use super::svd3x1::{Svd3x1InternalTrait, Svd3x1Trait};
 
@@ -112,11 +114,12 @@ pub impl Svd1x3Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 1 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 1 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd1x3<T>) -> RowVector3<T> {
-        let a0_0 = self.u.x * self.singular_values.x;
-        RowVector3 { x: a0_0 * self.v_t.x, y: a0_0 * self.v_t.y, z: a0_0 * self.v_t.z }
+        revoke_ap_tracking();
+        Matrix1 { x: self.u.x * self.singular_values.x }.mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (3x1), `σ⁺_i = 1 / σ_i` when
@@ -125,14 +128,15 @@ pub impl Svd1x3Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd1x3<T>, eps: T) -> Option<Vector3<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
-        let b0_0 = self.v_t.x * p0;
-        let b1_0 = self.v_t.y * p0;
-        let b2_0 = self.v_t.z * p0;
-        Some(Vector3 { x: b0_0 * self.u.x, y: b1_0 * self.u.x, z: b2_0 * self.u.x })
+        Some(
+            Vector3 { x: self.v_t.x * p0, y: self.v_t.y * p0, z: self.v_t.z * p0 }
+                .mul_mat(Matrix1 { x: self.u.x }),
+        )
     }
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
@@ -140,12 +144,18 @@ pub impl Svd1x3Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd1x3<T>, b: Matrix1<T>, eps: T) -> Option<Vector3<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = self.u.x * b.x;
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        Some(Vector3 { x: self.v_t.x * z0, y: self.v_t.y * z0, z: self.v_t.z * z0 })
+        let y = self.u.tr_mul(b);
+        Some(
+            self
+                .v_t
+                .tr_mul(
+                    Matrix1 { x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps) },
+                ),
+        )
     }
 
     /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ`
@@ -154,16 +164,10 @@ pub impl Svd1x3Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd1x3<T>) -> Option<(Matrix1<T>, RowVector3<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.x * self.singular_values.x;
         let p0_0 = a0_0 * self.u.x;
-        Some(
-            (
-                Matrix1 { x: p0_0 },
-                RowVector3 {
-                    x: self.u.x * self.v_t.x, y: self.u.x * self.v_t.y, z: self.u.x * self.v_t.z,
-                },
-            ),
-        )
+        Some((Matrix1 { x: p0_0 }, self.u.mul_mat(self.v_t)))
     }
 
     /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
@@ -171,6 +175,7 @@ pub impl Svd1x3Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd1x3<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut uc0 = Matrix1 { x: self.u.x };
         let mut vr0 = Vector3 { x: self.v_t.x, y: self.v_t.y, z: self.v_t.z };

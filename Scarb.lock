@@ -346,6 +346,138 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_tests_linalg_svd"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_tall"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_tall5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_tall6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_tall6b"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_wide"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_wide5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_wide6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_svd_wide6b"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_tests_utils"
 version = "0.1.0"
 dependencies = [

@@ -3,12 +3,14 @@
 //! `nalgebra::linalg::SVD<T, U4, U5>`), its pseudo-inverse, least-squares solve, rank and polar
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix4::Matrix4;
 use crate::base::matrix4x5::Matrix4x5;
 use crate::base::matrix5x4::Matrix5x4;
 use crate::base::vector4::Vector4;
 use crate::base::vector5::Vector5;
+use crate::base::{MatrixMul, MatrixTrMul};
 use super::kernels::SvdRightImpl;
 use super::svd5x4::{Svd5x4InternalTrait, Svd5x4Trait};
 
@@ -245,87 +247,30 @@ pub impl Svd4x5Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 4 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 4 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd4x5<T>) -> Matrix4x5<T> {
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a0_2 = self.u.m13 * self.singular_values.z;
-        let a0_3 = self.u.m14 * self.singular_values.w;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        let a1_2 = self.u.m23 * self.singular_values.z;
-        let a1_3 = self.u.m24 * self.singular_values.w;
-        let a2_0 = self.u.m31 * self.singular_values.x;
-        let a2_1 = self.u.m32 * self.singular_values.y;
-        let a2_2 = self.u.m33 * self.singular_values.z;
-        let a2_3 = self.u.m34 * self.singular_values.w;
-        let a3_0 = self.u.m41 * self.singular_values.x;
-        let a3_1 = self.u.m42 * self.singular_values.y;
-        let a3_2 = self.u.m43 * self.singular_values.z;
-        let a3_3 = self.u.m44 * self.singular_values.w;
-        Matrix4x5 {
-            m11: R::sum_prod4(
-                a0_0, self.v_t.m11, a0_1, self.v_t.m21, a0_2, self.v_t.m31, a0_3, self.v_t.m41,
-            ),
-            m21: R::sum_prod4(
-                a1_0, self.v_t.m11, a1_1, self.v_t.m21, a1_2, self.v_t.m31, a1_3, self.v_t.m41,
-            ),
-            m31: R::sum_prod4(
-                a2_0, self.v_t.m11, a2_1, self.v_t.m21, a2_2, self.v_t.m31, a2_3, self.v_t.m41,
-            ),
-            m41: R::sum_prod4(
-                a3_0, self.v_t.m11, a3_1, self.v_t.m21, a3_2, self.v_t.m31, a3_3, self.v_t.m41,
-            ),
-            m12: R::sum_prod4(
-                a0_0, self.v_t.m12, a0_1, self.v_t.m22, a0_2, self.v_t.m32, a0_3, self.v_t.m42,
-            ),
-            m22: R::sum_prod4(
-                a1_0, self.v_t.m12, a1_1, self.v_t.m22, a1_2, self.v_t.m32, a1_3, self.v_t.m42,
-            ),
-            m32: R::sum_prod4(
-                a2_0, self.v_t.m12, a2_1, self.v_t.m22, a2_2, self.v_t.m32, a2_3, self.v_t.m42,
-            ),
-            m42: R::sum_prod4(
-                a3_0, self.v_t.m12, a3_1, self.v_t.m22, a3_2, self.v_t.m32, a3_3, self.v_t.m42,
-            ),
-            m13: R::sum_prod4(
-                a0_0, self.v_t.m13, a0_1, self.v_t.m23, a0_2, self.v_t.m33, a0_3, self.v_t.m43,
-            ),
-            m23: R::sum_prod4(
-                a1_0, self.v_t.m13, a1_1, self.v_t.m23, a1_2, self.v_t.m33, a1_3, self.v_t.m43,
-            ),
-            m33: R::sum_prod4(
-                a2_0, self.v_t.m13, a2_1, self.v_t.m23, a2_2, self.v_t.m33, a2_3, self.v_t.m43,
-            ),
-            m43: R::sum_prod4(
-                a3_0, self.v_t.m13, a3_1, self.v_t.m23, a3_2, self.v_t.m33, a3_3, self.v_t.m43,
-            ),
-            m14: R::sum_prod4(
-                a0_0, self.v_t.m14, a0_1, self.v_t.m24, a0_2, self.v_t.m34, a0_3, self.v_t.m44,
-            ),
-            m24: R::sum_prod4(
-                a1_0, self.v_t.m14, a1_1, self.v_t.m24, a1_2, self.v_t.m34, a1_3, self.v_t.m44,
-            ),
-            m34: R::sum_prod4(
-                a2_0, self.v_t.m14, a2_1, self.v_t.m24, a2_2, self.v_t.m34, a2_3, self.v_t.m44,
-            ),
-            m44: R::sum_prod4(
-                a3_0, self.v_t.m14, a3_1, self.v_t.m24, a3_2, self.v_t.m34, a3_3, self.v_t.m44,
-            ),
-            m15: R::sum_prod4(
-                a0_0, self.v_t.m15, a0_1, self.v_t.m25, a0_2, self.v_t.m35, a0_3, self.v_t.m45,
-            ),
-            m25: R::sum_prod4(
-                a1_0, self.v_t.m15, a1_1, self.v_t.m25, a1_2, self.v_t.m35, a1_3, self.v_t.m45,
-            ),
-            m35: R::sum_prod4(
-                a2_0, self.v_t.m15, a2_1, self.v_t.m25, a2_2, self.v_t.m35, a2_3, self.v_t.m45,
-            ),
-            m45: R::sum_prod4(
-                a3_0, self.v_t.m15, a3_1, self.v_t.m25, a3_2, self.v_t.m35, a3_3, self.v_t.m45,
-            ),
+        revoke_ap_tracking();
+        Matrix4 {
+            m11: self.u.m11 * self.singular_values.x,
+            m21: self.u.m21 * self.singular_values.x,
+            m31: self.u.m31 * self.singular_values.x,
+            m41: self.u.m41 * self.singular_values.x,
+            m12: self.u.m12 * self.singular_values.y,
+            m22: self.u.m22 * self.singular_values.y,
+            m32: self.u.m32 * self.singular_values.y,
+            m42: self.u.m42 * self.singular_values.y,
+            m13: self.u.m13 * self.singular_values.z,
+            m23: self.u.m23 * self.singular_values.z,
+            m33: self.u.m33 * self.singular_values.z,
+            m43: self.u.m43 * self.singular_values.z,
+            m14: self.u.m14 * self.singular_values.w,
+            m24: self.u.m24 * self.singular_values.w,
+            m34: self.u.m34 * self.singular_values.w,
+            m44: self.u.m44 * self.singular_values.w,
         }
+            .mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (5x4), `σ⁺_i = 1 / σ_i` when
@@ -334,6 +279,7 @@ pub impl Svd4x5Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd4x5<T>, eps: T) -> Option<Matrix5x4<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
@@ -341,89 +287,49 @@ pub impl Svd4x5Impl<
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
         let p2 = SvdRightImpl::<T>::inverted(self.singular_values.z, eps);
         let p3 = SvdRightImpl::<T>::inverted(self.singular_values.w, eps);
-        let b0_0 = self.v_t.m11 * p0;
-        let b0_1 = self.v_t.m21 * p1;
-        let b0_2 = self.v_t.m31 * p2;
-        let b0_3 = self.v_t.m41 * p3;
-        let b1_0 = self.v_t.m12 * p0;
-        let b1_1 = self.v_t.m22 * p1;
-        let b1_2 = self.v_t.m32 * p2;
-        let b1_3 = self.v_t.m42 * p3;
-        let b2_0 = self.v_t.m13 * p0;
-        let b2_1 = self.v_t.m23 * p1;
-        let b2_2 = self.v_t.m33 * p2;
-        let b2_3 = self.v_t.m43 * p3;
-        let b3_0 = self.v_t.m14 * p0;
-        let b3_1 = self.v_t.m24 * p1;
-        let b3_2 = self.v_t.m34 * p2;
-        let b3_3 = self.v_t.m44 * p3;
-        let b4_0 = self.v_t.m15 * p0;
-        let b4_1 = self.v_t.m25 * p1;
-        let b4_2 = self.v_t.m35 * p2;
-        let b4_3 = self.v_t.m45 * p3;
         Some(
             Matrix5x4 {
-                m11: R::sum_prod4(
-                    b0_0, self.u.m11, b0_1, self.u.m12, b0_2, self.u.m13, b0_3, self.u.m14,
+                m11: self.v_t.m11 * p0,
+                m21: self.v_t.m12 * p0,
+                m31: self.v_t.m13 * p0,
+                m41: self.v_t.m14 * p0,
+                m51: self.v_t.m15 * p0,
+                m12: self.v_t.m21 * p1,
+                m22: self.v_t.m22 * p1,
+                m32: self.v_t.m23 * p1,
+                m42: self.v_t.m24 * p1,
+                m52: self.v_t.m25 * p1,
+                m13: self.v_t.m31 * p2,
+                m23: self.v_t.m32 * p2,
+                m33: self.v_t.m33 * p2,
+                m43: self.v_t.m34 * p2,
+                m53: self.v_t.m35 * p2,
+                m14: self.v_t.m41 * p3,
+                m24: self.v_t.m42 * p3,
+                m34: self.v_t.m43 * p3,
+                m44: self.v_t.m44 * p3,
+                m54: self.v_t.m45 * p3,
+            }
+                .mul_mat(
+                    Matrix4 {
+                        m11: self.u.m11,
+                        m21: self.u.m12,
+                        m31: self.u.m13,
+                        m41: self.u.m14,
+                        m12: self.u.m21,
+                        m22: self.u.m22,
+                        m32: self.u.m23,
+                        m42: self.u.m24,
+                        m13: self.u.m31,
+                        m23: self.u.m32,
+                        m33: self.u.m33,
+                        m43: self.u.m34,
+                        m14: self.u.m41,
+                        m24: self.u.m42,
+                        m34: self.u.m43,
+                        m44: self.u.m44,
+                    },
                 ),
-                m21: R::sum_prod4(
-                    b1_0, self.u.m11, b1_1, self.u.m12, b1_2, self.u.m13, b1_3, self.u.m14,
-                ),
-                m31: R::sum_prod4(
-                    b2_0, self.u.m11, b2_1, self.u.m12, b2_2, self.u.m13, b2_3, self.u.m14,
-                ),
-                m41: R::sum_prod4(
-                    b3_0, self.u.m11, b3_1, self.u.m12, b3_2, self.u.m13, b3_3, self.u.m14,
-                ),
-                m51: R::sum_prod4(
-                    b4_0, self.u.m11, b4_1, self.u.m12, b4_2, self.u.m13, b4_3, self.u.m14,
-                ),
-                m12: R::sum_prod4(
-                    b0_0, self.u.m21, b0_1, self.u.m22, b0_2, self.u.m23, b0_3, self.u.m24,
-                ),
-                m22: R::sum_prod4(
-                    b1_0, self.u.m21, b1_1, self.u.m22, b1_2, self.u.m23, b1_3, self.u.m24,
-                ),
-                m32: R::sum_prod4(
-                    b2_0, self.u.m21, b2_1, self.u.m22, b2_2, self.u.m23, b2_3, self.u.m24,
-                ),
-                m42: R::sum_prod4(
-                    b3_0, self.u.m21, b3_1, self.u.m22, b3_2, self.u.m23, b3_3, self.u.m24,
-                ),
-                m52: R::sum_prod4(
-                    b4_0, self.u.m21, b4_1, self.u.m22, b4_2, self.u.m23, b4_3, self.u.m24,
-                ),
-                m13: R::sum_prod4(
-                    b0_0, self.u.m31, b0_1, self.u.m32, b0_2, self.u.m33, b0_3, self.u.m34,
-                ),
-                m23: R::sum_prod4(
-                    b1_0, self.u.m31, b1_1, self.u.m32, b1_2, self.u.m33, b1_3, self.u.m34,
-                ),
-                m33: R::sum_prod4(
-                    b2_0, self.u.m31, b2_1, self.u.m32, b2_2, self.u.m33, b2_3, self.u.m34,
-                ),
-                m43: R::sum_prod4(
-                    b3_0, self.u.m31, b3_1, self.u.m32, b3_2, self.u.m33, b3_3, self.u.m34,
-                ),
-                m53: R::sum_prod4(
-                    b4_0, self.u.m31, b4_1, self.u.m32, b4_2, self.u.m33, b4_3, self.u.m34,
-                ),
-                m14: R::sum_prod4(
-                    b0_0, self.u.m41, b0_1, self.u.m42, b0_2, self.u.m43, b0_3, self.u.m44,
-                ),
-                m24: R::sum_prod4(
-                    b1_0, self.u.m41, b1_1, self.u.m42, b1_2, self.u.m43, b1_3, self.u.m44,
-                ),
-                m34: R::sum_prod4(
-                    b2_0, self.u.m41, b2_1, self.u.m42, b2_2, self.u.m43, b2_3, self.u.m44,
-                ),
-                m44: R::sum_prod4(
-                    b3_0, self.u.m41, b3_1, self.u.m42, b3_2, self.u.m43, b3_3, self.u.m44,
-                ),
-                m54: R::sum_prod4(
-                    b4_0, self.u.m41, b4_1, self.u.m42, b4_2, self.u.m43, b4_3, self.u.m44,
-                ),
-            },
         )
     }
 
@@ -432,35 +338,22 @@ pub impl Svd4x5Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd4x5<T>, b: Vector4<T>, eps: T) -> Option<Vector5<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = R::sum_prod4(self.u.m11, b.x, self.u.m21, b.y, self.u.m31, b.z, self.u.m41, b.w);
-        let y1 = R::sum_prod4(self.u.m12, b.x, self.u.m22, b.y, self.u.m32, b.z, self.u.m42, b.w);
-        let y2 = R::sum_prod4(self.u.m13, b.x, self.u.m23, b.y, self.u.m33, b.z, self.u.m43, b.w);
-        let y3 = R::sum_prod4(self.u.m14, b.x, self.u.m24, b.y, self.u.m34, b.z, self.u.m44, b.w);
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        let z1 = SvdRightImpl::<T>::divided(y1, self.singular_values.y, eps);
-        let z2 = SvdRightImpl::<T>::divided(y2, self.singular_values.z, eps);
-        let z3 = SvdRightImpl::<T>::divided(y3, self.singular_values.w, eps);
+        let y = self.u.tr_mul(b);
         Some(
-            Vector5 {
-                x: R::sum_prod4(
-                    self.v_t.m11, z0, self.v_t.m21, z1, self.v_t.m31, z2, self.v_t.m41, z3,
+            self
+                .v_t
+                .tr_mul(
+                    Vector4 {
+                        x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
+                        y: SvdRightImpl::<T>::divided(y.y, self.singular_values.y, eps),
+                        z: SvdRightImpl::<T>::divided(y.z, self.singular_values.z, eps),
+                        w: SvdRightImpl::<T>::divided(y.w, self.singular_values.w, eps),
+                    },
                 ),
-                y: R::sum_prod4(
-                    self.v_t.m12, z0, self.v_t.m22, z1, self.v_t.m32, z2, self.v_t.m42, z3,
-                ),
-                z: R::sum_prod4(
-                    self.v_t.m13, z0, self.v_t.m23, z1, self.v_t.m33, z2, self.v_t.m43, z3,
-                ),
-                w: R::sum_prod4(
-                    self.v_t.m14, z0, self.v_t.m24, z1, self.v_t.m34, z2, self.v_t.m44, z3,
-                ),
-                a: R::sum_prod4(
-                    self.v_t.m15, z0, self.v_t.m25, z1, self.v_t.m35, z2, self.v_t.m45, z3,
-                ),
-            },
         )
     }
 
@@ -470,6 +363,7 @@ pub impl Svd4x5Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd4x5<T>) -> Option<(Matrix4<T>, Matrix4x5<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.m11 * self.singular_values.x;
         let a0_1 = self.u.m12 * self.singular_values.y;
         let a0_2 = self.u.m13 * self.singular_values.z;
@@ -536,208 +430,7 @@ pub impl Svd4x5Impl<
                     m34: p2_3,
                     m44: p3_3,
                 },
-                Matrix4x5 {
-                    m11: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m11,
-                        self.u.m12,
-                        self.v_t.m21,
-                        self.u.m13,
-                        self.v_t.m31,
-                        self.u.m14,
-                        self.v_t.m41,
-                    ),
-                    m21: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m11,
-                        self.u.m22,
-                        self.v_t.m21,
-                        self.u.m23,
-                        self.v_t.m31,
-                        self.u.m24,
-                        self.v_t.m41,
-                    ),
-                    m31: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m11,
-                        self.u.m32,
-                        self.v_t.m21,
-                        self.u.m33,
-                        self.v_t.m31,
-                        self.u.m34,
-                        self.v_t.m41,
-                    ),
-                    m41: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m11,
-                        self.u.m42,
-                        self.v_t.m21,
-                        self.u.m43,
-                        self.v_t.m31,
-                        self.u.m44,
-                        self.v_t.m41,
-                    ),
-                    m12: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m12,
-                        self.u.m12,
-                        self.v_t.m22,
-                        self.u.m13,
-                        self.v_t.m32,
-                        self.u.m14,
-                        self.v_t.m42,
-                    ),
-                    m22: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m12,
-                        self.u.m22,
-                        self.v_t.m22,
-                        self.u.m23,
-                        self.v_t.m32,
-                        self.u.m24,
-                        self.v_t.m42,
-                    ),
-                    m32: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m12,
-                        self.u.m32,
-                        self.v_t.m22,
-                        self.u.m33,
-                        self.v_t.m32,
-                        self.u.m34,
-                        self.v_t.m42,
-                    ),
-                    m42: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m12,
-                        self.u.m42,
-                        self.v_t.m22,
-                        self.u.m43,
-                        self.v_t.m32,
-                        self.u.m44,
-                        self.v_t.m42,
-                    ),
-                    m13: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m13,
-                        self.u.m12,
-                        self.v_t.m23,
-                        self.u.m13,
-                        self.v_t.m33,
-                        self.u.m14,
-                        self.v_t.m43,
-                    ),
-                    m23: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m13,
-                        self.u.m22,
-                        self.v_t.m23,
-                        self.u.m23,
-                        self.v_t.m33,
-                        self.u.m24,
-                        self.v_t.m43,
-                    ),
-                    m33: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m13,
-                        self.u.m32,
-                        self.v_t.m23,
-                        self.u.m33,
-                        self.v_t.m33,
-                        self.u.m34,
-                        self.v_t.m43,
-                    ),
-                    m43: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m13,
-                        self.u.m42,
-                        self.v_t.m23,
-                        self.u.m43,
-                        self.v_t.m33,
-                        self.u.m44,
-                        self.v_t.m43,
-                    ),
-                    m14: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m14,
-                        self.u.m12,
-                        self.v_t.m24,
-                        self.u.m13,
-                        self.v_t.m34,
-                        self.u.m14,
-                        self.v_t.m44,
-                    ),
-                    m24: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m14,
-                        self.u.m22,
-                        self.v_t.m24,
-                        self.u.m23,
-                        self.v_t.m34,
-                        self.u.m24,
-                        self.v_t.m44,
-                    ),
-                    m34: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m14,
-                        self.u.m32,
-                        self.v_t.m24,
-                        self.u.m33,
-                        self.v_t.m34,
-                        self.u.m34,
-                        self.v_t.m44,
-                    ),
-                    m44: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m14,
-                        self.u.m42,
-                        self.v_t.m24,
-                        self.u.m43,
-                        self.v_t.m34,
-                        self.u.m44,
-                        self.v_t.m44,
-                    ),
-                    m15: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m15,
-                        self.u.m12,
-                        self.v_t.m25,
-                        self.u.m13,
-                        self.v_t.m35,
-                        self.u.m14,
-                        self.v_t.m45,
-                    ),
-                    m25: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m15,
-                        self.u.m22,
-                        self.v_t.m25,
-                        self.u.m23,
-                        self.v_t.m35,
-                        self.u.m24,
-                        self.v_t.m45,
-                    ),
-                    m35: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m15,
-                        self.u.m32,
-                        self.v_t.m25,
-                        self.u.m33,
-                        self.v_t.m35,
-                        self.u.m34,
-                        self.v_t.m45,
-                    ),
-                    m45: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m15,
-                        self.u.m42,
-                        self.v_t.m25,
-                        self.u.m43,
-                        self.v_t.m35,
-                        self.u.m44,
-                        self.v_t.m45,
-                    ),
-                },
+                self.u.mul_mat(self.v_t),
             ),
         )
     }
@@ -747,6 +440,7 @@ pub impl Svd4x5Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd4x5<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut s2 = self.singular_values.z;

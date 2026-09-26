@@ -7,6 +7,7 @@ use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix4::Matrix4;
 use crate::base::vector4::Vector4;
+use crate::base::{MatrixMul, MatrixTrMul};
 use crate::linalg::symmetric_eigen4::Sym4;
 use super::kernels::{SvdComplete4Impl, SvdRightImpl};
 
@@ -71,8 +72,8 @@ pub impl Svd4Impl<
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. Panics on overflow of a component of `MᵀM` (the squares of the entries
-    /// must be representable).
+    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
+    /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
     fn new(matrix: Matrix4<T>) -> Svd4<T> {
         Svd4InternalTrait::from_right(matrix, Svd4InternalTrait::right(matrix))
     }
@@ -124,75 +125,30 @@ pub impl Svd4Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 4 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 4 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd4<T>) -> Matrix4<T> {
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a0_2 = self.u.m13 * self.singular_values.z;
-        let a0_3 = self.u.m14 * self.singular_values.w;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        let a1_2 = self.u.m23 * self.singular_values.z;
-        let a1_3 = self.u.m24 * self.singular_values.w;
-        let a2_0 = self.u.m31 * self.singular_values.x;
-        let a2_1 = self.u.m32 * self.singular_values.y;
-        let a2_2 = self.u.m33 * self.singular_values.z;
-        let a2_3 = self.u.m34 * self.singular_values.w;
-        let a3_0 = self.u.m41 * self.singular_values.x;
-        let a3_1 = self.u.m42 * self.singular_values.y;
-        let a3_2 = self.u.m43 * self.singular_values.z;
-        let a3_3 = self.u.m44 * self.singular_values.w;
+        revoke_ap_tracking();
         Matrix4 {
-            m11: R::sum_prod4(
-                a0_0, self.v_t.m11, a0_1, self.v_t.m21, a0_2, self.v_t.m31, a0_3, self.v_t.m41,
-            ),
-            m21: R::sum_prod4(
-                a1_0, self.v_t.m11, a1_1, self.v_t.m21, a1_2, self.v_t.m31, a1_3, self.v_t.m41,
-            ),
-            m31: R::sum_prod4(
-                a2_0, self.v_t.m11, a2_1, self.v_t.m21, a2_2, self.v_t.m31, a2_3, self.v_t.m41,
-            ),
-            m41: R::sum_prod4(
-                a3_0, self.v_t.m11, a3_1, self.v_t.m21, a3_2, self.v_t.m31, a3_3, self.v_t.m41,
-            ),
-            m12: R::sum_prod4(
-                a0_0, self.v_t.m12, a0_1, self.v_t.m22, a0_2, self.v_t.m32, a0_3, self.v_t.m42,
-            ),
-            m22: R::sum_prod4(
-                a1_0, self.v_t.m12, a1_1, self.v_t.m22, a1_2, self.v_t.m32, a1_3, self.v_t.m42,
-            ),
-            m32: R::sum_prod4(
-                a2_0, self.v_t.m12, a2_1, self.v_t.m22, a2_2, self.v_t.m32, a2_3, self.v_t.m42,
-            ),
-            m42: R::sum_prod4(
-                a3_0, self.v_t.m12, a3_1, self.v_t.m22, a3_2, self.v_t.m32, a3_3, self.v_t.m42,
-            ),
-            m13: R::sum_prod4(
-                a0_0, self.v_t.m13, a0_1, self.v_t.m23, a0_2, self.v_t.m33, a0_3, self.v_t.m43,
-            ),
-            m23: R::sum_prod4(
-                a1_0, self.v_t.m13, a1_1, self.v_t.m23, a1_2, self.v_t.m33, a1_3, self.v_t.m43,
-            ),
-            m33: R::sum_prod4(
-                a2_0, self.v_t.m13, a2_1, self.v_t.m23, a2_2, self.v_t.m33, a2_3, self.v_t.m43,
-            ),
-            m43: R::sum_prod4(
-                a3_0, self.v_t.m13, a3_1, self.v_t.m23, a3_2, self.v_t.m33, a3_3, self.v_t.m43,
-            ),
-            m14: R::sum_prod4(
-                a0_0, self.v_t.m14, a0_1, self.v_t.m24, a0_2, self.v_t.m34, a0_3, self.v_t.m44,
-            ),
-            m24: R::sum_prod4(
-                a1_0, self.v_t.m14, a1_1, self.v_t.m24, a1_2, self.v_t.m34, a1_3, self.v_t.m44,
-            ),
-            m34: R::sum_prod4(
-                a2_0, self.v_t.m14, a2_1, self.v_t.m24, a2_2, self.v_t.m34, a2_3, self.v_t.m44,
-            ),
-            m44: R::sum_prod4(
-                a3_0, self.v_t.m14, a3_1, self.v_t.m24, a3_2, self.v_t.m34, a3_3, self.v_t.m44,
-            ),
+            m11: self.u.m11 * self.singular_values.x,
+            m21: self.u.m21 * self.singular_values.x,
+            m31: self.u.m31 * self.singular_values.x,
+            m41: self.u.m41 * self.singular_values.x,
+            m12: self.u.m12 * self.singular_values.y,
+            m22: self.u.m22 * self.singular_values.y,
+            m32: self.u.m32 * self.singular_values.y,
+            m42: self.u.m42 * self.singular_values.y,
+            m13: self.u.m13 * self.singular_values.z,
+            m23: self.u.m23 * self.singular_values.z,
+            m33: self.u.m33 * self.singular_values.z,
+            m43: self.u.m43 * self.singular_values.z,
+            m14: self.u.m14 * self.singular_values.w,
+            m24: self.u.m24 * self.singular_values.w,
+            m34: self.u.m34 * self.singular_values.w,
+            m44: self.u.m44 * self.singular_values.w,
         }
+            .mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (4x4), `σ⁺_i = 1 / σ_i` when
@@ -201,6 +157,7 @@ pub impl Svd4Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd4<T>, eps: T) -> Option<Matrix4<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
@@ -208,73 +165,45 @@ pub impl Svd4Impl<
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
         let p2 = SvdRightImpl::<T>::inverted(self.singular_values.z, eps);
         let p3 = SvdRightImpl::<T>::inverted(self.singular_values.w, eps);
-        let b0_0 = self.v_t.m11 * p0;
-        let b0_1 = self.v_t.m21 * p1;
-        let b0_2 = self.v_t.m31 * p2;
-        let b0_3 = self.v_t.m41 * p3;
-        let b1_0 = self.v_t.m12 * p0;
-        let b1_1 = self.v_t.m22 * p1;
-        let b1_2 = self.v_t.m32 * p2;
-        let b1_3 = self.v_t.m42 * p3;
-        let b2_0 = self.v_t.m13 * p0;
-        let b2_1 = self.v_t.m23 * p1;
-        let b2_2 = self.v_t.m33 * p2;
-        let b2_3 = self.v_t.m43 * p3;
-        let b3_0 = self.v_t.m14 * p0;
-        let b3_1 = self.v_t.m24 * p1;
-        let b3_2 = self.v_t.m34 * p2;
-        let b3_3 = self.v_t.m44 * p3;
         Some(
             Matrix4 {
-                m11: R::sum_prod4(
-                    b0_0, self.u.m11, b0_1, self.u.m12, b0_2, self.u.m13, b0_3, self.u.m14,
+                m11: self.v_t.m11 * p0,
+                m21: self.v_t.m12 * p0,
+                m31: self.v_t.m13 * p0,
+                m41: self.v_t.m14 * p0,
+                m12: self.v_t.m21 * p1,
+                m22: self.v_t.m22 * p1,
+                m32: self.v_t.m23 * p1,
+                m42: self.v_t.m24 * p1,
+                m13: self.v_t.m31 * p2,
+                m23: self.v_t.m32 * p2,
+                m33: self.v_t.m33 * p2,
+                m43: self.v_t.m34 * p2,
+                m14: self.v_t.m41 * p3,
+                m24: self.v_t.m42 * p3,
+                m34: self.v_t.m43 * p3,
+                m44: self.v_t.m44 * p3,
+            }
+                .mul_mat(
+                    Matrix4 {
+                        m11: self.u.m11,
+                        m21: self.u.m12,
+                        m31: self.u.m13,
+                        m41: self.u.m14,
+                        m12: self.u.m21,
+                        m22: self.u.m22,
+                        m32: self.u.m23,
+                        m42: self.u.m24,
+                        m13: self.u.m31,
+                        m23: self.u.m32,
+                        m33: self.u.m33,
+                        m43: self.u.m34,
+                        m14: self.u.m41,
+                        m24: self.u.m42,
+                        m34: self.u.m43,
+                        m44: self.u.m44,
+                    },
                 ),
-                m21: R::sum_prod4(
-                    b1_0, self.u.m11, b1_1, self.u.m12, b1_2, self.u.m13, b1_3, self.u.m14,
-                ),
-                m31: R::sum_prod4(
-                    b2_0, self.u.m11, b2_1, self.u.m12, b2_2, self.u.m13, b2_3, self.u.m14,
-                ),
-                m41: R::sum_prod4(
-                    b3_0, self.u.m11, b3_1, self.u.m12, b3_2, self.u.m13, b3_3, self.u.m14,
-                ),
-                m12: R::sum_prod4(
-                    b0_0, self.u.m21, b0_1, self.u.m22, b0_2, self.u.m23, b0_3, self.u.m24,
-                ),
-                m22: R::sum_prod4(
-                    b1_0, self.u.m21, b1_1, self.u.m22, b1_2, self.u.m23, b1_3, self.u.m24,
-                ),
-                m32: R::sum_prod4(
-                    b2_0, self.u.m21, b2_1, self.u.m22, b2_2, self.u.m23, b2_3, self.u.m24,
-                ),
-                m42: R::sum_prod4(
-                    b3_0, self.u.m21, b3_1, self.u.m22, b3_2, self.u.m23, b3_3, self.u.m24,
-                ),
-                m13: R::sum_prod4(
-                    b0_0, self.u.m31, b0_1, self.u.m32, b0_2, self.u.m33, b0_3, self.u.m34,
-                ),
-                m23: R::sum_prod4(
-                    b1_0, self.u.m31, b1_1, self.u.m32, b1_2, self.u.m33, b1_3, self.u.m34,
-                ),
-                m33: R::sum_prod4(
-                    b2_0, self.u.m31, b2_1, self.u.m32, b2_2, self.u.m33, b2_3, self.u.m34,
-                ),
-                m43: R::sum_prod4(
-                    b3_0, self.u.m31, b3_1, self.u.m32, b3_2, self.u.m33, b3_3, self.u.m34,
-                ),
-                m14: R::sum_prod4(
-                    b0_0, self.u.m41, b0_1, self.u.m42, b0_2, self.u.m43, b0_3, self.u.m44,
-                ),
-                m24: R::sum_prod4(
-                    b1_0, self.u.m41, b1_1, self.u.m42, b1_2, self.u.m43, b1_3, self.u.m44,
-                ),
-                m34: R::sum_prod4(
-                    b2_0, self.u.m41, b2_1, self.u.m42, b2_2, self.u.m43, b2_3, self.u.m44,
-                ),
-                m44: R::sum_prod4(
-                    b3_0, self.u.m41, b3_1, self.u.m42, b3_2, self.u.m43, b3_3, self.u.m44,
-                ),
-            },
         )
     }
 
@@ -283,32 +212,22 @@ pub impl Svd4Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd4<T>, b: Vector4<T>, eps: T) -> Option<Vector4<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = R::sum_prod4(self.u.m11, b.x, self.u.m21, b.y, self.u.m31, b.z, self.u.m41, b.w);
-        let y1 = R::sum_prod4(self.u.m12, b.x, self.u.m22, b.y, self.u.m32, b.z, self.u.m42, b.w);
-        let y2 = R::sum_prod4(self.u.m13, b.x, self.u.m23, b.y, self.u.m33, b.z, self.u.m43, b.w);
-        let y3 = R::sum_prod4(self.u.m14, b.x, self.u.m24, b.y, self.u.m34, b.z, self.u.m44, b.w);
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        let z1 = SvdRightImpl::<T>::divided(y1, self.singular_values.y, eps);
-        let z2 = SvdRightImpl::<T>::divided(y2, self.singular_values.z, eps);
-        let z3 = SvdRightImpl::<T>::divided(y3, self.singular_values.w, eps);
+        let y = self.u.tr_mul(b);
         Some(
-            Vector4 {
-                x: R::sum_prod4(
-                    self.v_t.m11, z0, self.v_t.m21, z1, self.v_t.m31, z2, self.v_t.m41, z3,
+            self
+                .v_t
+                .tr_mul(
+                    Vector4 {
+                        x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
+                        y: SvdRightImpl::<T>::divided(y.y, self.singular_values.y, eps),
+                        z: SvdRightImpl::<T>::divided(y.z, self.singular_values.z, eps),
+                        w: SvdRightImpl::<T>::divided(y.w, self.singular_values.w, eps),
+                    },
                 ),
-                y: R::sum_prod4(
-                    self.v_t.m12, z0, self.v_t.m22, z1, self.v_t.m32, z2, self.v_t.m42, z3,
-                ),
-                z: R::sum_prod4(
-                    self.v_t.m13, z0, self.v_t.m23, z1, self.v_t.m33, z2, self.v_t.m43, z3,
-                ),
-                w: R::sum_prod4(
-                    self.v_t.m14, z0, self.v_t.m24, z1, self.v_t.m34, z2, self.v_t.m44, z3,
-                ),
-            },
         )
     }
 
@@ -318,6 +237,7 @@ pub impl Svd4Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd4<T>) -> Option<(Matrix4<T>, Matrix4<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.m11 * self.singular_values.x;
         let a0_1 = self.u.m12 * self.singular_values.y;
         let a0_2 = self.u.m13 * self.singular_values.z;
@@ -384,168 +304,7 @@ pub impl Svd4Impl<
                     m34: p2_3,
                     m44: p3_3,
                 },
-                Matrix4 {
-                    m11: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m11,
-                        self.u.m12,
-                        self.v_t.m21,
-                        self.u.m13,
-                        self.v_t.m31,
-                        self.u.m14,
-                        self.v_t.m41,
-                    ),
-                    m21: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m11,
-                        self.u.m22,
-                        self.v_t.m21,
-                        self.u.m23,
-                        self.v_t.m31,
-                        self.u.m24,
-                        self.v_t.m41,
-                    ),
-                    m31: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m11,
-                        self.u.m32,
-                        self.v_t.m21,
-                        self.u.m33,
-                        self.v_t.m31,
-                        self.u.m34,
-                        self.v_t.m41,
-                    ),
-                    m41: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m11,
-                        self.u.m42,
-                        self.v_t.m21,
-                        self.u.m43,
-                        self.v_t.m31,
-                        self.u.m44,
-                        self.v_t.m41,
-                    ),
-                    m12: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m12,
-                        self.u.m12,
-                        self.v_t.m22,
-                        self.u.m13,
-                        self.v_t.m32,
-                        self.u.m14,
-                        self.v_t.m42,
-                    ),
-                    m22: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m12,
-                        self.u.m22,
-                        self.v_t.m22,
-                        self.u.m23,
-                        self.v_t.m32,
-                        self.u.m24,
-                        self.v_t.m42,
-                    ),
-                    m32: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m12,
-                        self.u.m32,
-                        self.v_t.m22,
-                        self.u.m33,
-                        self.v_t.m32,
-                        self.u.m34,
-                        self.v_t.m42,
-                    ),
-                    m42: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m12,
-                        self.u.m42,
-                        self.v_t.m22,
-                        self.u.m43,
-                        self.v_t.m32,
-                        self.u.m44,
-                        self.v_t.m42,
-                    ),
-                    m13: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m13,
-                        self.u.m12,
-                        self.v_t.m23,
-                        self.u.m13,
-                        self.v_t.m33,
-                        self.u.m14,
-                        self.v_t.m43,
-                    ),
-                    m23: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m13,
-                        self.u.m22,
-                        self.v_t.m23,
-                        self.u.m23,
-                        self.v_t.m33,
-                        self.u.m24,
-                        self.v_t.m43,
-                    ),
-                    m33: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m13,
-                        self.u.m32,
-                        self.v_t.m23,
-                        self.u.m33,
-                        self.v_t.m33,
-                        self.u.m34,
-                        self.v_t.m43,
-                    ),
-                    m43: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m13,
-                        self.u.m42,
-                        self.v_t.m23,
-                        self.u.m43,
-                        self.v_t.m33,
-                        self.u.m44,
-                        self.v_t.m43,
-                    ),
-                    m14: R::sum_prod4(
-                        self.u.m11,
-                        self.v_t.m14,
-                        self.u.m12,
-                        self.v_t.m24,
-                        self.u.m13,
-                        self.v_t.m34,
-                        self.u.m14,
-                        self.v_t.m44,
-                    ),
-                    m24: R::sum_prod4(
-                        self.u.m21,
-                        self.v_t.m14,
-                        self.u.m22,
-                        self.v_t.m24,
-                        self.u.m23,
-                        self.v_t.m34,
-                        self.u.m24,
-                        self.v_t.m44,
-                    ),
-                    m34: R::sum_prod4(
-                        self.u.m31,
-                        self.v_t.m14,
-                        self.u.m32,
-                        self.v_t.m24,
-                        self.u.m33,
-                        self.v_t.m34,
-                        self.u.m34,
-                        self.v_t.m44,
-                    ),
-                    m44: R::sum_prod4(
-                        self.u.m41,
-                        self.v_t.m14,
-                        self.u.m42,
-                        self.v_t.m24,
-                        self.u.m43,
-                        self.v_t.m34,
-                        self.u.m44,
-                        self.v_t.m44,
-                    ),
-                },
+                self.u.mul_mat(self.v_t),
             ),
         )
     }
@@ -555,6 +314,7 @@ pub impl Svd4Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd4<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut s2 = self.singular_values.z;
@@ -684,8 +444,26 @@ pub impl Svd4Impl<
     }
 }
 
-/// Crate-internal kernels of `Svd4<T>`: the Gram matrix, the decomposition from the right
-/// singular vectors, the singular values alone.
+/// The columns `w_i = M v_i`, their norms and the right vectors, sorted (private state of
+/// `Svd4InternalTrait`).
+#[derive(Copy, Drop)]
+pub(crate) struct SortedSvd4<T> {
+    s0: T,
+    s1: T,
+    s2: T,
+    s3: T,
+    w0: Vector4<T>,
+    w1: Vector4<T>,
+    w2: Vector4<T>,
+    w3: Vector4<T>,
+    v0: Vector4<T>,
+    v1: Vector4<T>,
+    v2: Vector4<T>,
+    v3: Vector4<T>,
+}
+
+/// Crate-internal kernels of `Svd4<T>`: the Gram matrix, the right singular vectors, the sorted
+/// columns `M v_i`, the decomposition.
 #[generate_trait]
 pub(crate) impl Svd4InternalImpl<
     T,
@@ -700,7 +478,86 @@ pub(crate) impl Svd4InternalImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd4InternalTrait<T> {
-    /// `MᵀM` (10 fused sums of 4 products, one rounding each). Panics on overflow.
+    /// `m / max |m_ij|` (one prepared divisor per 6 entries), or `m` when it is zero: the input
+    /// of the Gram matrix. The right singular vectors do not depend on the scale, but their
+    /// fixed-point PRECISION does: the Gram matrix of a small matrix has tiny entries, whose
+    /// absolute rounding is a large relative error on the eigenvectors (measured on `Svd4`:
+    /// `pseudo_inverse` 1 749 ulp over the oracle tolerance on `small` inputs without it), and
+    /// the Gram matrix of a large one overflows. Normalised, `MᵀM` has entries in `[0, 4]`.
+    fn normalised(m: Matrix4<T>) -> Matrix4<T> {
+        let mut a = m.m11.abs();
+        if m.m21.abs() > a {
+            a = m.m21.abs();
+        }
+        if m.m31.abs() > a {
+            a = m.m31.abs();
+        }
+        if m.m41.abs() > a {
+            a = m.m41.abs();
+        }
+        if m.m12.abs() > a {
+            a = m.m12.abs();
+        }
+        if m.m22.abs() > a {
+            a = m.m22.abs();
+        }
+        if m.m32.abs() > a {
+            a = m.m32.abs();
+        }
+        if m.m42.abs() > a {
+            a = m.m42.abs();
+        }
+        if m.m13.abs() > a {
+            a = m.m13.abs();
+        }
+        if m.m23.abs() > a {
+            a = m.m23.abs();
+        }
+        if m.m33.abs() > a {
+            a = m.m33.abs();
+        }
+        if m.m43.abs() > a {
+            a = m.m43.abs();
+        }
+        if m.m14.abs() > a {
+            a = m.m14.abs();
+        }
+        if m.m24.abs() > a {
+            a = m.m24.abs();
+        }
+        if m.m34.abs() > a {
+            a = m.m34.abs();
+        }
+        if m.m44.abs() > a {
+            a = m.m44.abs();
+        }
+        if a == R::zero() {
+            return m;
+        }
+        let (q0, q1, q2, q3, q4, q5) = R::div6(m.m11, m.m21, m.m31, m.m41, m.m12, m.m22, a);
+        let (q6, q7, q8, q9, q10, q11) = R::div6(m.m32, m.m42, m.m13, m.m23, m.m33, m.m43, a);
+        let (q12, q13, q14, q15) = R::div4(m.m14, m.m24, m.m34, m.m44, a);
+        Matrix4 {
+            m11: q0,
+            m21: q1,
+            m31: q2,
+            m41: q3,
+            m12: q4,
+            m22: q5,
+            m32: q6,
+            m42: q7,
+            m13: q8,
+            m23: q9,
+            m33: q10,
+            m43: q11,
+            m14: q12,
+            m24: q13,
+            m34: q14,
+            m44: q15,
+        }
+    }
+
+    /// `MᵀM` (10 fused sums of 4 products, one rounding each).
     #[inline(always)]
     fn gram(m: Matrix4<T>) -> Sym4<T> {
         Sym4 {
@@ -720,55 +577,31 @@ pub(crate) impl Svd4InternalImpl<
     /// The right singular vectors (the columns of `v`, ascending eigenvalue order of `MᵀM`).
     #[inline(always)]
     fn right(m: Matrix4<T>) -> Matrix4<T> {
-        SvdRightImpl::<T>::right4(Self::gram(m))
+        SvdRightImpl::<T>::right4(Self::gram(Self::normalised(m)))
     }
 
     /// `right`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`.
     #[inline(always)]
     fn try_right(m: Matrix4<T>, eps: T) -> Option<Matrix4<T>> {
-        SvdRightImpl::<T>::try_right4(Self::gram(m), eps)
+        SvdRightImpl::<T>::try_right4(Self::gram(Self::normalised(m)), eps)
     }
 
-    /// The decomposition from the right singular vectors `v` (columns): `w_i = M v_i` (one
-    /// fused sum per component), `σ_i = |w_i|` (floored norm of the exact sum of squares), the
-    /// triples sorted DESCENDING by `σ` (stable odd-even transposition network, strict
-    /// comparison: ties keep their order), then the left vectors by classical Gram-Schmidt run
-    /// TWICE ("twice is enough"): `g = w_k - Σ <u_l, w_k> u_l` and `h = q - Σ <u_l, q> u_l`
-    /// with `q = g / |g|`, one fused sum per component each, `u_k = h / |h|`. The second pass
-    /// costs about as much as the first and makes `U` orthonormal to the rounding of `h` even
-    /// when `σ_k` is tiny (rank deficiency), where one pass leaves `u_k` as far from the others
-    /// as `rounding / σ_k`. A column that vanishes EXACTLY (`g = 0`, or `σ_1 = 0`) is completed
-    /// by the axis least represented in the span of the previous ones (`SvdComplete`).
-    fn from_right(m: Matrix4<T>, v: Matrix4<T>) -> Svd4<T> {
+    /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`
+    /// (floored norm of the exact
+    /// sum of squares) for the right vectors `v` (columns), the triples sorted DESCENDING by `σ`
+    /// (stable odd-even transposition network, strict comparison: ties keep their order). The
+    /// singular values alone stop here.
+    fn sorted(m: Matrix4<T>, v: Matrix4<T>) -> SortedSvd4<T> {
         revoke_ap_tracking();
         let v0 = Vector4 { x: v.m11, y: v.m21, z: v.m31, w: v.m41 };
         let v1 = Vector4 { x: v.m12, y: v.m22, z: v.m32, w: v.m42 };
         let v2 = Vector4 { x: v.m13, y: v.m23, z: v.m33, w: v.m43 };
         let v3 = Vector4 { x: v.m14, y: v.m24, z: v.m34, w: v.m44 };
-        let w0 = Vector4 {
-            x: R::sum_prod4(m.m11, v0.x, m.m12, v0.y, m.m13, v0.z, m.m14, v0.w),
-            y: R::sum_prod4(m.m21, v0.x, m.m22, v0.y, m.m23, v0.z, m.m24, v0.w),
-            z: R::sum_prod4(m.m31, v0.x, m.m32, v0.y, m.m33, v0.z, m.m34, v0.w),
-            w: R::sum_prod4(m.m41, v0.x, m.m42, v0.y, m.m43, v0.z, m.m44, v0.w),
-        };
-        let w1 = Vector4 {
-            x: R::sum_prod4(m.m11, v1.x, m.m12, v1.y, m.m13, v1.z, m.m14, v1.w),
-            y: R::sum_prod4(m.m21, v1.x, m.m22, v1.y, m.m23, v1.z, m.m24, v1.w),
-            z: R::sum_prod4(m.m31, v1.x, m.m32, v1.y, m.m33, v1.z, m.m34, v1.w),
-            w: R::sum_prod4(m.m41, v1.x, m.m42, v1.y, m.m43, v1.z, m.m44, v1.w),
-        };
-        let w2 = Vector4 {
-            x: R::sum_prod4(m.m11, v2.x, m.m12, v2.y, m.m13, v2.z, m.m14, v2.w),
-            y: R::sum_prod4(m.m21, v2.x, m.m22, v2.y, m.m23, v2.z, m.m24, v2.w),
-            z: R::sum_prod4(m.m31, v2.x, m.m32, v2.y, m.m33, v2.z, m.m34, v2.w),
-            w: R::sum_prod4(m.m41, v2.x, m.m42, v2.y, m.m43, v2.z, m.m44, v2.w),
-        };
-        let w3 = Vector4 {
-            x: R::sum_prod4(m.m11, v3.x, m.m12, v3.y, m.m13, v3.z, m.m14, v3.w),
-            y: R::sum_prod4(m.m21, v3.x, m.m22, v3.y, m.m23, v3.z, m.m24, v3.w),
-            z: R::sum_prod4(m.m31, v3.x, m.m32, v3.y, m.m33, v3.z, m.m34, v3.w),
-            w: R::sum_prod4(m.m41, v3.x, m.m42, v3.y, m.m43, v3.z, m.m44, v3.w),
-        };
+        let mv = m.mul_mat(v);
+        let w0 = Vector4 { x: mv.m11, y: mv.m21, z: mv.m31, w: mv.m41 };
+        let w1 = Vector4 { x: mv.m12, y: mv.m22, z: mv.m32, w: mv.m42 };
+        let w2 = Vector4 { x: mv.m13, y: mv.m23, z: mv.m33, w: mv.m43 };
+        let w3 = Vector4 { x: mv.m14, y: mv.m24, z: mv.m34, w: mv.m44 };
         let s0 = R::norm4(w0.x, w0.y, w0.z, w0.w);
         let s1 = R::norm4(w1.x, w1.y, w1.z, w1.w);
         let s2 = R::norm4(w2.x, w2.y, w2.z, w2.w);
@@ -843,217 +676,25 @@ pub(crate) impl Svd4InternalImpl<
             w2 = tmp1;
             v2 = tmp2;
         }
-        let u0 = if s0 == R::zero() {
-            Vector4 { x: R::one(), y: R::zero(), z: R::zero(), w: R::zero() }
-        } else {
-            {
-                let (q0, q1, q2, q3) = R::div4(w0.x, w0.y, w0.z, w0.w, s0);
-                Vector4 { x: q0, y: q1, z: q2, w: q3 }
-            }
-        };
-        let u1 = {
-            let p0 = R::sum_prod4(u0.x, w1.x, u0.y, w1.y, u0.z, w1.z, u0.w, w1.w);
-            let g = Vector4 {
-                x: R::mul_add(-p0, u0.x, w1.x),
-                y: R::mul_add(-p0, u0.y, w1.y),
-                z: R::mul_add(-p0, u0.z, w1.z),
-                w: R::mul_add(-p0, u0.w, w1.w),
-            };
-            let n = R::norm4(g.x, g.y, g.z, g.w);
-            if n == R::zero() {
-                SvdComplete4Impl::<T>::complete1(u0)
-            } else {
-                let q = {
-                    let (q0, q1, q2, q3) = R::div4(g.x, g.y, g.z, g.w, n);
-                    Vector4 { x: q0, y: q1, z: q2, w: q3 }
-                };
-                let p0 = R::sum_prod4(u0.x, q.x, u0.y, q.y, u0.z, q.z, u0.w, q.w);
-                let h = Vector4 {
-                    x: R::mul_add(-p0, u0.x, q.x),
-                    y: R::mul_add(-p0, u0.y, q.y),
-                    z: R::mul_add(-p0, u0.z, q.z),
-                    w: R::mul_add(-p0, u0.w, q.w),
-                };
-                {
-                    let (q0, q1, q2, q3) = R::div4(
-                        h.x, h.y, h.z, h.w, R::norm4(h.x, h.y, h.z, h.w),
-                    );
-                    Vector4 { x: q0, y: q1, z: q2, w: q3 }
-                }
-            }
-        };
-        let u2 = {
-            let p0 = R::sum_prod4(u0.x, w2.x, u0.y, w2.y, u0.z, w2.z, u0.w, w2.w);
-            let p1 = R::sum_prod4(u1.x, w2.x, u1.y, w2.y, u1.z, w2.z, u1.w, w2.w);
-            let g = Vector4 {
-                x: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.x), p0, u0.x), p1, u1.x,
-                    ),
-                ),
-                y: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.y), p0, u0.y), p1, u1.y,
-                    ),
-                ),
-                z: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.z), p0, u0.z), p1, u1.z,
-                    ),
-                ),
-                w: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.w), p0, u0.w), p1, u1.w,
-                    ),
-                ),
-            };
-            let n = R::norm4(g.x, g.y, g.z, g.w);
-            if n == R::zero() {
-                SvdComplete4Impl::<T>::complete2(u0, u1)
-            } else {
-                let q = {
-                    let (q0, q1, q2, q3) = R::div4(g.x, g.y, g.z, g.w, n);
-                    Vector4 { x: q0, y: q1, z: q2, w: q3 }
-                };
-                let p0 = R::sum_prod4(u0.x, q.x, u0.y, q.y, u0.z, q.z, u0.w, q.w);
-                let p1 = R::sum_prod4(u1.x, q.x, u1.y, q.y, u1.z, q.z, u1.w, q.w);
-                let h = Vector4 {
-                    x: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
-                        ),
-                    ),
-                    y: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
-                        ),
-                    ),
-                    z: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
-                        ),
-                    ),
-                    w: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
-                        ),
-                    ),
-                };
-                {
-                    let (q0, q1, q2, q3) = R::div4(
-                        h.x, h.y, h.z, h.w, R::norm4(h.x, h.y, h.z, h.w),
-                    );
-                    Vector4 { x: q0, y: q1, z: q2, w: q3 }
-                }
-            }
-        };
-        let u3 = {
-            let p0 = R::sum_prod4(u0.x, w3.x, u0.y, w3.y, u0.z, w3.z, u0.w, w3.w);
-            let p1 = R::sum_prod4(u1.x, w3.x, u1.y, w3.y, u1.z, w3.z, u1.w, w3.w);
-            let p2 = R::sum_prod4(u2.x, w3.x, u2.y, w3.y, u2.z, w3.z, u2.w, w3.w);
-            let g = Vector4 {
-                x: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.x), p0, u0.x), p1, u1.x,
-                        ),
-                        p2,
-                        u2.x,
-                    ),
-                ),
-                y: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.y), p0, u0.y), p1, u1.y,
-                        ),
-                        p2,
-                        u2.y,
-                    ),
-                ),
-                z: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.z), p0, u0.z), p1, u1.z,
-                        ),
-                        p2,
-                        u2.z,
-                    ),
-                ),
-                w: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.w), p0, u0.w), p1, u1.w,
-                        ),
-                        p2,
-                        u2.w,
-                    ),
-                ),
-            };
-            let n = R::norm4(g.x, g.y, g.z, g.w);
-            if n == R::zero() {
-                SvdComplete4Impl::<T>::complete3(u0, u1, u2)
-            } else {
-                let q = {
-                    let (q0, q1, q2, q3) = R::div4(g.x, g.y, g.z, g.w, n);
-                    Vector4 { x: q0, y: q1, z: q2, w: q3 }
-                };
-                let p0 = R::sum_prod4(u0.x, q.x, u0.y, q.y, u0.z, q.z, u0.w, q.w);
-                let p1 = R::sum_prod4(u1.x, q.x, u1.y, q.y, u1.z, q.z, u1.w, q.w);
-                let p2 = R::sum_prod4(u2.x, q.x, u2.y, q.y, u2.z, q.z, u2.w, q.w);
-                let h = Vector4 {
-                    x: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x),
-                                p1,
-                                u1.x,
-                            ),
-                            p2,
-                            u2.x,
-                        ),
-                    ),
-                    y: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y),
-                                p1,
-                                u1.y,
-                            ),
-                            p2,
-                            u2.y,
-                        ),
-                    ),
-                    z: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z),
-                                p1,
-                                u1.z,
-                            ),
-                            p2,
-                            u2.z,
-                        ),
-                    ),
-                    w: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w),
-                                p1,
-                                u1.w,
-                            ),
-                            p2,
-                            u2.w,
-                        ),
-                    ),
-                };
-                {
-                    let (q0, q1, q2, q3) = R::div4(
-                        h.x, h.y, h.z, h.w, R::norm4(h.x, h.y, h.z, h.w),
-                    );
-                    Vector4 { x: q0, y: q1, z: q2, w: q3 }
-                }
-            }
-        };
+        SortedSvd4 { s0, s1, s2, s3, w0, w1, w2, w3, v0, v1, v2, v3 }
+    }
+
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
+    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete4::gs*`):
+    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
+    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
+    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
+    /// = 0`) is completed by the axis least represented in the span of the previous ones.
+    fn from_right(m: Matrix4<T>, v: Matrix4<T>) -> Svd4<T> {
+        let t = Self::sorted(m, v);
+        let (s0, w0, v0) = (t.s0, t.w0, t.v0);
+        let (s1, w1, v1) = (t.s1, t.w1, t.v1);
+        let (s2, w2, v2) = (t.s2, t.w2, t.v2);
+        let (s3, w3, v3) = (t.s3, t.w3, t.v3);
+        let u0 = SvdComplete4Impl::<T>::first(w0, s0);
+        let u1 = SvdComplete4Impl::<T>::gs1(u0, w1);
+        let u2 = SvdComplete4Impl::<T>::gs2(u0, u1, w2);
+        let u3 = SvdComplete4Impl::<T>::gs3(u0, u1, u2, w3);
         Svd4 {
             u: Matrix4 {
                 m11: u0.x,
@@ -1095,76 +736,10 @@ pub(crate) impl Svd4InternalImpl<
         }
     }
 
-    /// The singular values alone: `from_right` without the left vectors.
+    /// The singular values alone: `sorted`, without the left vectors.
     fn values_from_right(m: Matrix4<T>, v: Matrix4<T>) -> Vector4<T> {
-        revoke_ap_tracking();
-        let v0 = Vector4 { x: v.m11, y: v.m21, z: v.m31, w: v.m41 };
-        let v1 = Vector4 { x: v.m12, y: v.m22, z: v.m32, w: v.m42 };
-        let v2 = Vector4 { x: v.m13, y: v.m23, z: v.m33, w: v.m43 };
-        let v3 = Vector4 { x: v.m14, y: v.m24, z: v.m34, w: v.m44 };
-        let w0 = Vector4 {
-            x: R::sum_prod4(m.m11, v0.x, m.m12, v0.y, m.m13, v0.z, m.m14, v0.w),
-            y: R::sum_prod4(m.m21, v0.x, m.m22, v0.y, m.m23, v0.z, m.m24, v0.w),
-            z: R::sum_prod4(m.m31, v0.x, m.m32, v0.y, m.m33, v0.z, m.m34, v0.w),
-            w: R::sum_prod4(m.m41, v0.x, m.m42, v0.y, m.m43, v0.z, m.m44, v0.w),
-        };
-        let w1 = Vector4 {
-            x: R::sum_prod4(m.m11, v1.x, m.m12, v1.y, m.m13, v1.z, m.m14, v1.w),
-            y: R::sum_prod4(m.m21, v1.x, m.m22, v1.y, m.m23, v1.z, m.m24, v1.w),
-            z: R::sum_prod4(m.m31, v1.x, m.m32, v1.y, m.m33, v1.z, m.m34, v1.w),
-            w: R::sum_prod4(m.m41, v1.x, m.m42, v1.y, m.m43, v1.z, m.m44, v1.w),
-        };
-        let w2 = Vector4 {
-            x: R::sum_prod4(m.m11, v2.x, m.m12, v2.y, m.m13, v2.z, m.m14, v2.w),
-            y: R::sum_prod4(m.m21, v2.x, m.m22, v2.y, m.m23, v2.z, m.m24, v2.w),
-            z: R::sum_prod4(m.m31, v2.x, m.m32, v2.y, m.m33, v2.z, m.m34, v2.w),
-            w: R::sum_prod4(m.m41, v2.x, m.m42, v2.y, m.m43, v2.z, m.m44, v2.w),
-        };
-        let w3 = Vector4 {
-            x: R::sum_prod4(m.m11, v3.x, m.m12, v3.y, m.m13, v3.z, m.m14, v3.w),
-            y: R::sum_prod4(m.m21, v3.x, m.m22, v3.y, m.m23, v3.z, m.m24, v3.w),
-            z: R::sum_prod4(m.m31, v3.x, m.m32, v3.y, m.m33, v3.z, m.m34, v3.w),
-            w: R::sum_prod4(m.m41, v3.x, m.m42, v3.y, m.m43, v3.z, m.m44, v3.w),
-        };
-        let s0 = R::norm4(w0.x, w0.y, w0.z, w0.w);
-        let s1 = R::norm4(w1.x, w1.y, w1.z, w1.w);
-        let s2 = R::norm4(w2.x, w2.y, w2.z, w2.w);
-        let s3 = R::norm4(w3.x, w3.y, w3.z, w3.w);
-        let mut s0 = s0;
-        let mut s1 = s1;
-        let mut s2 = s2;
-        let mut s3 = s3;
-        if s1 > s0 {
-            let tmp0 = s0;
-            s0 = s1;
-            s1 = tmp0;
-        }
-        if s3 > s2 {
-            let tmp0 = s2;
-            s2 = s3;
-            s3 = tmp0;
-        }
-        if s2 > s1 {
-            let tmp0 = s1;
-            s1 = s2;
-            s2 = tmp0;
-        }
-        if s1 > s0 {
-            let tmp0 = s0;
-            s0 = s1;
-            s1 = tmp0;
-        }
-        if s3 > s2 {
-            let tmp0 = s2;
-            s2 = s3;
-            s3 = tmp0;
-        }
-        if s2 > s1 {
-            let tmp0 = s1;
-            s1 = s2;
-            s2 = tmp0;
-        }
-        Vector4 { x: s0, y: s1, z: s2, w: s3 }
+        let t = Self::sorted(m, v);
+        Vector4 { x: t.s0, y: t.s1, z: t.s2, w: t.s3 }
     }
 }
 

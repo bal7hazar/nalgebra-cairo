@@ -3,6 +3,7 @@
 //! modified Gram-Schmidt, the algorithm of `Qr3` / `Qr4` (see `linalg::qr` for the study of the
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4x3::Matrix4x3;
@@ -50,6 +51,7 @@ pub impl Qr4x3Impl<
     /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: Matrix4x3<T>) -> Qr4x3<T> {
+        revoke_ap_tracking();
         let a0 = Vector4 { x: matrix.m11, y: matrix.m21, z: matrix.m31, w: matrix.m41 };
         let a1 = Vector4 { x: matrix.m12, y: matrix.m22, z: matrix.m32, w: matrix.m42 };
         let a2 = Vector4 { x: matrix.m13, y: matrix.m23, z: matrix.m33, w: matrix.m43 };

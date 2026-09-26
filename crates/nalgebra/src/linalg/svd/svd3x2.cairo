@@ -12,6 +12,7 @@ use crate::base::matrix3x2::Matrix3x2;
 use crate::base::sym_matrix2::SymMatrix2;
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
+use crate::base::{MatrixMul, MatrixTrMul};
 use super::kernels::{SvdComplete3Impl, SvdRightImpl};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix3x2<T>`:
@@ -75,8 +76,8 @@ pub impl Svd3x2Impl<
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. Panics on overflow of a component of `MᵀM` (the squares of the entries
-    /// must be representable).
+    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
+    /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
     fn new(matrix: Matrix3x2<T>) -> Svd3x2<T> {
         Svd3x2InternalTrait::from_right(matrix, Svd3x2InternalTrait::right(matrix))
     }
@@ -122,23 +123,20 @@ pub impl Svd3x2Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 2 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 2 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd3x2<T>) -> Matrix3x2<T> {
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        let a2_0 = self.u.m31 * self.singular_values.x;
-        let a2_1 = self.u.m32 * self.singular_values.y;
+        revoke_ap_tracking();
         Matrix3x2 {
-            m11: R::sum_prod2(a0_0, self.v_t.m11, a0_1, self.v_t.m21),
-            m21: R::sum_prod2(a1_0, self.v_t.m11, a1_1, self.v_t.m21),
-            m31: R::sum_prod2(a2_0, self.v_t.m11, a2_1, self.v_t.m21),
-            m12: R::sum_prod2(a0_0, self.v_t.m12, a0_1, self.v_t.m22),
-            m22: R::sum_prod2(a1_0, self.v_t.m12, a1_1, self.v_t.m22),
-            m32: R::sum_prod2(a2_0, self.v_t.m12, a2_1, self.v_t.m22),
+            m11: self.u.m11 * self.singular_values.x,
+            m21: self.u.m21 * self.singular_values.x,
+            m31: self.u.m31 * self.singular_values.x,
+            m12: self.u.m12 * self.singular_values.y,
+            m22: self.u.m22 * self.singular_values.y,
+            m32: self.u.m32 * self.singular_values.y,
         }
+            .mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (2x3), `σ⁺_i = 1 / σ_i` when
@@ -147,24 +145,29 @@ pub impl Svd3x2Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd3x2<T>, eps: T) -> Option<Matrix2x3<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
-        let b0_0 = self.v_t.m11 * p0;
-        let b0_1 = self.v_t.m21 * p1;
-        let b1_0 = self.v_t.m12 * p0;
-        let b1_1 = self.v_t.m22 * p1;
         Some(
-            Matrix2x3 {
-                m11: R::sum_prod2(b0_0, self.u.m11, b0_1, self.u.m12),
-                m21: R::sum_prod2(b1_0, self.u.m11, b1_1, self.u.m12),
-                m12: R::sum_prod2(b0_0, self.u.m21, b0_1, self.u.m22),
-                m22: R::sum_prod2(b1_0, self.u.m21, b1_1, self.u.m22),
-                m13: R::sum_prod2(b0_0, self.u.m31, b0_1, self.u.m32),
-                m23: R::sum_prod2(b1_0, self.u.m31, b1_1, self.u.m32),
-            },
+            Matrix2 {
+                m11: self.v_t.m11 * p0,
+                m21: self.v_t.m12 * p0,
+                m12: self.v_t.m21 * p1,
+                m22: self.v_t.m22 * p1,
+            }
+                .mul_mat(
+                    Matrix2x3 {
+                        m11: self.u.m11,
+                        m21: self.u.m12,
+                        m12: self.u.m21,
+                        m22: self.u.m22,
+                        m13: self.u.m31,
+                        m23: self.u.m32,
+                    },
+                ),
         )
     }
 
@@ -173,18 +176,20 @@ pub impl Svd3x2Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd3x2<T>, b: Vector3<T>, eps: T) -> Option<Vector2<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = R::sum_prod3(self.u.m11, b.x, self.u.m21, b.y, self.u.m31, b.z);
-        let y1 = R::sum_prod3(self.u.m12, b.x, self.u.m22, b.y, self.u.m32, b.z);
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        let z1 = SvdRightImpl::<T>::divided(y1, self.singular_values.y, eps);
+        let y = self.u.tr_mul(b);
         Some(
-            Vector2 {
-                x: R::sum_prod2(self.v_t.m11, z0, self.v_t.m21, z1),
-                y: R::sum_prod2(self.v_t.m12, z0, self.v_t.m22, z1),
-            },
+            self
+                .v_t
+                .tr_mul(
+                    Vector2 {
+                        x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
+                        y: SvdRightImpl::<T>::divided(y.y, self.singular_values.y, eps),
+                    },
+                ),
         )
     }
 
@@ -194,6 +199,7 @@ pub impl Svd3x2Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd3x2<T>) -> Option<(Matrix3<T>, Matrix3x2<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.m11 * self.singular_values.x;
         let a0_1 = self.u.m12 * self.singular_values.y;
         let a1_0 = self.u.m21 * self.singular_values.x;
@@ -219,14 +225,7 @@ pub impl Svd3x2Impl<
                     m23: p1_2,
                     m33: p2_2,
                 },
-                Matrix3x2 {
-                    m11: R::sum_prod2(self.u.m11, self.v_t.m11, self.u.m12, self.v_t.m21),
-                    m21: R::sum_prod2(self.u.m21, self.v_t.m11, self.u.m22, self.v_t.m21),
-                    m31: R::sum_prod2(self.u.m31, self.v_t.m11, self.u.m32, self.v_t.m21),
-                    m12: R::sum_prod2(self.u.m11, self.v_t.m12, self.u.m12, self.v_t.m22),
-                    m22: R::sum_prod2(self.u.m21, self.v_t.m12, self.u.m22, self.v_t.m22),
-                    m32: R::sum_prod2(self.u.m31, self.v_t.m12, self.u.m32, self.v_t.m22),
-                },
+                self.u.mul_mat(self.v_t),
             ),
         )
     }
@@ -236,6 +235,7 @@ pub impl Svd3x2Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd3x2<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut uc0 = Vector3 { x: self.u.m11, y: self.u.m21, z: self.u.m31 };
@@ -264,8 +264,20 @@ pub impl Svd3x2Impl<
     }
 }
 
-/// Crate-internal kernels of `Svd3x2<T>`: the Gram matrix, the decomposition from the right
-/// singular vectors, the singular values alone.
+/// The columns `w_i = M v_i`, their norms and the right vectors, sorted (private state of
+/// `Svd3x2InternalTrait`).
+#[derive(Copy, Drop)]
+pub(crate) struct SortedSvd3x2<T> {
+    s0: T,
+    s1: T,
+    w0: Vector3<T>,
+    w1: Vector3<T>,
+    v0: Vector2<T>,
+    v1: Vector2<T>,
+}
+
+/// Crate-internal kernels of `Svd3x2<T>`: the Gram matrix, the right singular vectors, the sorted
+/// columns `M v_i`, the decomposition.
 #[generate_trait]
 pub(crate) impl Svd3x2InternalImpl<
     T,
@@ -280,7 +292,37 @@ pub(crate) impl Svd3x2InternalImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd3x2InternalTrait<T> {
-    /// `MᵀM` (3 fused sums of 3 products, one rounding each). Panics on overflow.
+    /// `m / max |m_ij|` (one prepared divisor per 6 entries), or `m` when it is zero: the input
+    /// of the Gram matrix. The right singular vectors do not depend on the scale, but their
+    /// fixed-point PRECISION does: the Gram matrix of a small matrix has tiny entries, whose
+    /// absolute rounding is a large relative error on the eigenvectors (measured on `Svd4`:
+    /// `pseudo_inverse` 1 749 ulp over the oracle tolerance on `small` inputs without it), and
+    /// the Gram matrix of a large one overflows. Normalised, `MᵀM` has entries in `[0, 3]`.
+    fn normalised(m: Matrix3x2<T>) -> Matrix3x2<T> {
+        let mut a = m.m11.abs();
+        if m.m21.abs() > a {
+            a = m.m21.abs();
+        }
+        if m.m31.abs() > a {
+            a = m.m31.abs();
+        }
+        if m.m12.abs() > a {
+            a = m.m12.abs();
+        }
+        if m.m22.abs() > a {
+            a = m.m22.abs();
+        }
+        if m.m32.abs() > a {
+            a = m.m32.abs();
+        }
+        if a == R::zero() {
+            return m;
+        }
+        let (q0, q1, q2, q3, q4, q5) = R::div6(m.m11, m.m21, m.m31, m.m12, m.m22, m.m32, a);
+        Matrix3x2 { m11: q0, m21: q1, m31: q2, m12: q3, m22: q4, m32: q5 }
+    }
+
+    /// `MᵀM` (3 fused sums of 3 products, one rounding each).
     #[inline(always)]
     fn gram(m: Matrix3x2<T>) -> SymMatrix2<T> {
         SymMatrix2 {
@@ -293,40 +335,28 @@ pub(crate) impl Svd3x2InternalImpl<
     /// The right singular vectors (the columns of `v`, ascending eigenvalue order of `MᵀM`).
     #[inline(always)]
     fn right(m: Matrix3x2<T>) -> Matrix2<T> {
-        SvdRightImpl::<T>::right2(Self::gram(m))
+        SvdRightImpl::<T>::right2(Self::gram(Self::normalised(m)))
     }
 
     /// `right`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`.
     #[inline(always)]
     fn try_right(m: Matrix3x2<T>, eps: T) -> Option<Matrix2<T>> {
         let _ = eps;
-        Some(SvdRightImpl::<T>::right2(Self::gram(m)))
+        Some(SvdRightImpl::<T>::right2(Self::gram(Self::normalised(m))))
     }
 
-    /// The decomposition from the right singular vectors `v` (columns): `w_i = M v_i` (one
-    /// fused sum per component), `σ_i = |w_i|` (floored norm of the exact sum of squares), the
-    /// triples sorted DESCENDING by `σ` (stable odd-even transposition network, strict
-    /// comparison: ties keep their order), then the left vectors by classical Gram-Schmidt run
-    /// TWICE ("twice is enough"): `g = w_k - Σ <u_l, w_k> u_l` and `h = q - Σ <u_l, q> u_l`
-    /// with `q = g / |g|`, one fused sum per component each, `u_k = h / |h|`. The second pass
-    /// costs about as much as the first and makes `U` orthonormal to the rounding of `h` even
-    /// when `σ_k` is tiny (rank deficiency), where one pass leaves `u_k` as far from the others
-    /// as `rounding / σ_k`. A column that vanishes EXACTLY (`g = 0`, or `σ_1 = 0`) is completed
-    /// by the axis least represented in the span of the previous ones (`SvdComplete`).
-    fn from_right(m: Matrix3x2<T>, v: Matrix2<T>) -> Svd3x2<T> {
+    /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`
+    /// (floored norm of the exact
+    /// sum of squares) for the right vectors `v` (columns), the triples sorted DESCENDING by `σ`
+    /// (stable odd-even transposition network, strict comparison: ties keep their order). The
+    /// singular values alone stop here.
+    fn sorted(m: Matrix3x2<T>, v: Matrix2<T>) -> SortedSvd3x2<T> {
         revoke_ap_tracking();
         let v0 = Vector2 { x: v.m11, y: v.m21 };
         let v1 = Vector2 { x: v.m12, y: v.m22 };
-        let w0 = Vector3 {
-            x: R::sum_prod2(m.m11, v0.x, m.m12, v0.y),
-            y: R::sum_prod2(m.m21, v0.x, m.m22, v0.y),
-            z: R::sum_prod2(m.m31, v0.x, m.m32, v0.y),
-        };
-        let w1 = Vector3 {
-            x: R::sum_prod2(m.m11, v1.x, m.m12, v1.y),
-            y: R::sum_prod2(m.m21, v1.x, m.m22, v1.y),
-            z: R::sum_prod2(m.m31, v1.x, m.m32, v1.y),
-        };
+        let mv = m.mul_mat(v);
+        let w0 = Vector3 { x: mv.m11, y: mv.m21, z: mv.m31 };
+        let w1 = Vector3 { x: mv.m12, y: mv.m22, z: mv.m32 };
         let s0 = R::norm3(w0.x, w0.y, w0.z);
         let s1 = R::norm3(w1.x, w1.y, w1.z);
         let (mut s0, mut w0, mut v0) = (s0, w0, v0);
@@ -342,41 +372,21 @@ pub(crate) impl Svd3x2InternalImpl<
             w1 = tmp1;
             v1 = tmp2;
         }
-        let u0 = if s0 == R::zero() {
-            Vector3 { x: R::one(), y: R::zero(), z: R::zero() }
-        } else {
-            {
-                let (q0, q1, q2) = R::div3(w0.x, w0.y, w0.z, s0);
-                Vector3 { x: q0, y: q1, z: q2 }
-            }
-        };
-        let u1 = {
-            let p0 = R::sum_prod3(u0.x, w1.x, u0.y, w1.y, u0.z, w1.z);
-            let g = Vector3 {
-                x: R::mul_add(-p0, u0.x, w1.x),
-                y: R::mul_add(-p0, u0.y, w1.y),
-                z: R::mul_add(-p0, u0.z, w1.z),
-            };
-            let n = R::norm3(g.x, g.y, g.z);
-            if n == R::zero() {
-                SvdComplete3Impl::<T>::complete1(u0)
-            } else {
-                let q = {
-                    let (q0, q1, q2) = R::div3(g.x, g.y, g.z, n);
-                    Vector3 { x: q0, y: q1, z: q2 }
-                };
-                let p0 = R::sum_prod3(u0.x, q.x, u0.y, q.y, u0.z, q.z);
-                let h = Vector3 {
-                    x: R::mul_add(-p0, u0.x, q.x),
-                    y: R::mul_add(-p0, u0.y, q.y),
-                    z: R::mul_add(-p0, u0.z, q.z),
-                };
-                {
-                    let (q0, q1, q2) = R::div3(h.x, h.y, h.z, R::norm3(h.x, h.y, h.z));
-                    Vector3 { x: q0, y: q1, z: q2 }
-                }
-            }
-        };
+        SortedSvd3x2 { s0, s1, w0, w1, v0, v1 }
+    }
+
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
+    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete3::gs*`):
+    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
+    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
+    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
+    /// = 0`) is completed by the axis least represented in the span of the previous ones.
+    fn from_right(m: Matrix3x2<T>, v: Matrix2<T>) -> Svd3x2<T> {
+        let t = Self::sorted(m, v);
+        let (s0, w0, v0) = (t.s0, t.w0, t.v0);
+        let (s1, w1, v1) = (t.s1, t.w1, t.v1);
+        let u0 = SvdComplete3Impl::<T>::first(w0, s0);
+        let u1 = SvdComplete3Impl::<T>::gs1(u0, w1);
         Svd3x2 {
             u: Matrix3x2 { m11: u0.x, m21: u0.y, m31: u0.z, m12: u1.x, m22: u1.y, m32: u1.z },
             singular_values: Vector2 { x: s0, y: s1 },
@@ -384,31 +394,10 @@ pub(crate) impl Svd3x2InternalImpl<
         }
     }
 
-    /// The singular values alone: `from_right` without the left vectors.
+    /// The singular values alone: `sorted`, without the left vectors.
     fn values_from_right(m: Matrix3x2<T>, v: Matrix2<T>) -> Vector2<T> {
-        revoke_ap_tracking();
-        let v0 = Vector2 { x: v.m11, y: v.m21 };
-        let v1 = Vector2 { x: v.m12, y: v.m22 };
-        let w0 = Vector3 {
-            x: R::sum_prod2(m.m11, v0.x, m.m12, v0.y),
-            y: R::sum_prod2(m.m21, v0.x, m.m22, v0.y),
-            z: R::sum_prod2(m.m31, v0.x, m.m32, v0.y),
-        };
-        let w1 = Vector3 {
-            x: R::sum_prod2(m.m11, v1.x, m.m12, v1.y),
-            y: R::sum_prod2(m.m21, v1.x, m.m22, v1.y),
-            z: R::sum_prod2(m.m31, v1.x, m.m32, v1.y),
-        };
-        let s0 = R::norm3(w0.x, w0.y, w0.z);
-        let s1 = R::norm3(w1.x, w1.y, w1.z);
-        let mut s0 = s0;
-        let mut s1 = s1;
-        if s1 > s0 {
-            let tmp0 = s0;
-            s0 = s1;
-            s1 = tmp0;
-        }
-        Vector2 { x: s0, y: s1 }
+        let t = Self::sorted(m, v);
+        Vector2 { x: t.s0, y: t.s1 }
     }
 }
 

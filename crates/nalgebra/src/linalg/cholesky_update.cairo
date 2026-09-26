@@ -24,6 +24,7 @@
 //! and the scalar's square-root error when a downdate makes the matrix indefinite (upstream
 //! produces NaN in both cases); `nalgebra: index out of bounds` for a column index out of range.
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::errors::{INDEX_OUT_OF_BOUNDS, NOT_POSITIVE_DEFINITE};
 use crate::base::vector2::Vector2;
@@ -51,6 +52,7 @@ pub impl Cholesky2UpdateImpl<
     /// `sigma < 0`), see the module doc for the formulas, rounding and panics. Upstream:
     /// `Cholesky::rank_one_update`.
     fn rank_one_update(ref self: Cholesky2<T>, x: Vector2<T>, sigma: T) {
+        revoke_ap_tracking();
         let mut l0_0 = self.l11;
         let mut l1_0 = self.l21;
         let mut l1_1 = self.l22;
@@ -89,6 +91,7 @@ pub impl Cholesky2UpdateImpl<
     /// gives the scalar's square-root error) and `nalgebra: index out of bounds` when `j >
     /// 2`. Upstream: `Cholesky::insert_column`.
     fn insert_column(self: Cholesky2<T>, j: usize, col: Vector3<T>) -> Cholesky3<T> {
+        revoke_ap_tracking();
         let c = col;
         match j {
             0 => {
@@ -192,6 +195,7 @@ pub impl Cholesky3UpdateImpl<
     /// `sigma < 0`), see the module doc for the formulas, rounding and panics. Upstream:
     /// `Cholesky::rank_one_update`.
     fn rank_one_update(ref self: Cholesky3<T>, x: Vector3<T>, sigma: T) {
+        revoke_ap_tracking();
         let mut l0_0 = self.l11;
         let mut l1_0 = self.l21;
         let mut l2_0 = self.l31;
@@ -253,6 +257,7 @@ pub impl Cholesky3UpdateImpl<
     /// gives the scalar's square-root error) and `nalgebra: index out of bounds` when `j >
     /// 3`. Upstream: `Cholesky::insert_column`.
     fn insert_column(self: Cholesky3<T>, j: usize, col: Vector4<T>) -> Cholesky4<T> {
+        revoke_ap_tracking();
         let c = col;
         match j {
             0 => {
@@ -477,6 +482,7 @@ pub impl Cholesky3UpdateImpl<
     /// the removed column below the diagonal (`sigma = +1`, see the module doc). Panics with
     /// `nalgebra: index out of bounds` when `j >= 3`. Upstream: `Cholesky::remove_column`.
     fn remove_column(self: Cholesky3<T>, j: usize) -> Cholesky2<T> {
+        revoke_ap_tracking();
         match j {
             0 => {
                 let mut z0_0 = self.l22;
@@ -553,6 +559,7 @@ pub impl Cholesky4UpdateImpl<
     /// `sigma < 0`), see the module doc for the formulas, rounding and panics. Upstream:
     /// `Cholesky::rank_one_update`.
     fn rank_one_update(ref self: Cholesky4<T>, x: Vector4<T>, sigma: T) {
+        revoke_ap_tracking();
         let mut l0_0 = self.l11;
         let mut l1_0 = self.l21;
         let mut l2_0 = self.l31;
@@ -650,6 +657,7 @@ pub impl Cholesky4UpdateImpl<
     /// the removed column below the diagonal (`sigma = +1`, see the module doc). Panics with
     /// `nalgebra: index out of bounds` when `j >= 4`. Upstream: `Cholesky::remove_column`.
     fn remove_column(self: Cholesky4<T>, j: usize) -> Cholesky3<T> {
+        revoke_ap_tracking();
         match j {
             0 => {
                 let mut z0_0 = self.l22;
@@ -803,6 +811,7 @@ pub impl Cholesky6UpdateImpl<
     /// `sigma < 0`), see the module doc for the formulas, rounding and panics. Upstream:
     /// `Cholesky::rank_one_update`.
     fn rank_one_update(ref self: Cholesky6<T>, x: Vector6<T>, sigma: T) {
+        revoke_ap_tracking();
         let mut l0_0 = self.l11;
         let mut l1_0 = self.l21;
         let mut l2_0 = self.l31;

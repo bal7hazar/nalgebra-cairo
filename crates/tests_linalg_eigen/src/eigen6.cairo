@@ -11,10 +11,6 @@ use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 use crate::builders::{amax_6x6, mat6x6, max_ulp_6x6, orth_6x6, vec6};
 use crate::oracle_eigen as oracle;
 
-/// `|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`, in raw units, over every oracle case.
-const REC_BOUND: u128 = 100000;
-/// `|VᵀV - I|` in raw units, over every oracle case.
-const ORTH_BOUND: u128 = 100000;
 const ONE: i64 = 0x100000000;
 
 /// `(eigenvalue excess over the oracle tolerance, reconstruction error per unit, orthonormality
@@ -65,36 +61,40 @@ fn run(cases: Span<([[i64; 6]; 6], (i64, i64, i64, i64, i64, i64), u64)>) -> (u1
 }
 
 /// `symmetric_eigen6_eigenvalues` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen6_eigenvalues() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen6_eigenvalues_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 33 && orth <= 6, "measured {} {}", rec, orth);
 }
 /// `symmetric_eigen6_eigenvalues_spd` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen6_eigenvalues_spd() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen6_eigenvalues_spd_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 12 && orth <= 6, "measured {} {}", rec, orth);
 }
 /// `symmetric_eigen6_eigenvalues_clustered` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen6_eigenvalues_clustered() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen6_eigenvalues_clustered_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 8 && orth <= 5, "measured {} {}", rec, orth);
 }
 /// `symmetric_eigen6_eigenvalues_deficient` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen6_eigenvalues_deficient() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen6_eigenvalues_deficient_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 5 && orth <= 4, "measured {} {}", rec, orth);
 }
 
 #[test]

@@ -100,11 +100,53 @@ pub(crate) impl Jacobi5Impl<
         (t, c, t * c)
     }
 
+    /// `a b - c d` rounded to NEAREST (half up): the exact sum plus half a raw unit
+    /// (`HALF * default_epsilon()`, an exact product), floored once. The rotations update every
+    /// entry dozens of times, and the floor of the plain kernels biases all of them the same way:
+    /// measured on the fixed-point model, rounding to nearest cuts the eigenvector residual of
+    /// the 5x5 / 6x6 decompositions from 30 / 44 ulp to 7 / 6 (the matrix and the rotation must
+    /// both be rounded: either alone leaves 13 to 42), which is what lets the SVDs built on it
+    /// meet the oracle tolerance. One `wide_add_prod` more per updated entry.
+    #[inline(always)]
+    fn rdiff(a: T, b: T, c: T, d: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), a, b), c, d),
+                R::HALF,
+                R::default_epsilon(),
+            ),
+        )
+    }
+
+    /// `a b + c d` rounded to nearest, see `rdiff`.
+    #[inline(always)]
+    fn rsum(a: T, b: T, c: T, d: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a, b), c, d),
+                R::HALF,
+                R::default_epsilon(),
+            ),
+        )
+    }
+
+    /// `a b + c` rounded to nearest, see `rdiff` (the diagonal updates `a_pp -/+ t g`).
+    #[inline(always)]
+    fn rmul_add(a: T, b: T, c: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add(R::wide_add_prod(R::wide_zero(), a, b), c),
+                R::HALF,
+                R::default_epsilon(),
+            ),
+        )
+    }
+
     /// One cyclic sweep: the 10 rotations in row order, each skipped when its entry is already
     /// exactly zero (a correctness guard: `h = g = 0` would divide by zero; Sierra charges the
-    /// dearer branch, so it saves nothing). Per rotation: `a_pp -= t g`, `a_qq += t g` (one
-    /// `mul_add` each), `2 (5 - 2)` fused `diff_prod` / `sum_prod2` on the off-diagonal entries
-    /// and `2 * 5` on the accumulated rotation.
+    /// dearer branch, so it saves nothing). Per rotation: `a_pp -= t g`, `a_qq += t g`, `2 (5 -
+    /// 2)` fused sums of two products on the off-diagonal entries and `2 * 5` on the
+    /// accumulated rotation, each rounded to nearest (`rdiff` / `rsum` / `rmul_add`).
     fn sweep(self: Jacobi5<T>) -> Jacobi5<T> {
         let mut s = self.s;
         let mut v = self.v;
@@ -112,15 +154,15 @@ pub(crate) impl Jacobi5Impl<
             let (t, c, sn) = Self::rotation(s.m11, s.m12, s.m22);
             let g = s.m12;
             let s2 = Sym5 {
-                m11: R::mul_add(-t, g, s.m11),
+                m11: Self::rmul_add(-t, g, s.m11),
                 m12: R::zero(),
-                m13: R::diff_prod(c, s.m13, sn, s.m23),
-                m14: R::diff_prod(c, s.m14, sn, s.m24),
-                m15: R::diff_prod(c, s.m15, sn, s.m25),
-                m22: R::mul_add(t, g, s.m22),
-                m23: R::sum_prod2(sn, s.m13, c, s.m23),
-                m24: R::sum_prod2(sn, s.m14, c, s.m24),
-                m25: R::sum_prod2(sn, s.m15, c, s.m25),
+                m13: Self::rdiff(c, s.m13, sn, s.m23),
+                m14: Self::rdiff(c, s.m14, sn, s.m24),
+                m15: Self::rdiff(c, s.m15, sn, s.m25),
+                m22: Self::rmul_add(t, g, s.m22),
+                m23: Self::rsum(sn, s.m13, c, s.m23),
+                m24: Self::rsum(sn, s.m14, c, s.m24),
+                m25: Self::rsum(sn, s.m15, c, s.m25),
                 m33: s.m33,
                 m34: s.m34,
                 m35: s.m35,
@@ -130,16 +172,16 @@ pub(crate) impl Jacobi5Impl<
             };
             v =
                 Matrix5 {
-                    m11: R::diff_prod(c, v.m11, sn, v.m12),
-                    m21: R::diff_prod(c, v.m21, sn, v.m22),
-                    m31: R::diff_prod(c, v.m31, sn, v.m32),
-                    m41: R::diff_prod(c, v.m41, sn, v.m42),
-                    m51: R::diff_prod(c, v.m51, sn, v.m52),
-                    m12: R::sum_prod2(sn, v.m11, c, v.m12),
-                    m22: R::sum_prod2(sn, v.m21, c, v.m22),
-                    m32: R::sum_prod2(sn, v.m31, c, v.m32),
-                    m42: R::sum_prod2(sn, v.m41, c, v.m42),
-                    m52: R::sum_prod2(sn, v.m51, c, v.m52),
+                    m11: Self::rdiff(c, v.m11, sn, v.m12),
+                    m21: Self::rdiff(c, v.m21, sn, v.m22),
+                    m31: Self::rdiff(c, v.m31, sn, v.m32),
+                    m41: Self::rdiff(c, v.m41, sn, v.m42),
+                    m51: Self::rdiff(c, v.m51, sn, v.m52),
+                    m12: Self::rsum(sn, v.m11, c, v.m12),
+                    m22: Self::rsum(sn, v.m21, c, v.m22),
+                    m32: Self::rsum(sn, v.m31, c, v.m32),
+                    m42: Self::rsum(sn, v.m41, c, v.m42),
+                    m52: Self::rsum(sn, v.m51, c, v.m52),
                     m13: v.m13,
                     m23: v.m23,
                     m33: v.m33,
@@ -162,39 +204,39 @@ pub(crate) impl Jacobi5Impl<
             let (t, c, sn) = Self::rotation(s.m11, s.m13, s.m33);
             let g = s.m13;
             let s2 = Sym5 {
-                m11: R::mul_add(-t, g, s.m11),
-                m12: R::diff_prod(c, s.m12, sn, s.m23),
+                m11: Self::rmul_add(-t, g, s.m11),
+                m12: Self::rdiff(c, s.m12, sn, s.m23),
                 m13: R::zero(),
-                m14: R::diff_prod(c, s.m14, sn, s.m34),
-                m15: R::diff_prod(c, s.m15, sn, s.m35),
+                m14: Self::rdiff(c, s.m14, sn, s.m34),
+                m15: Self::rdiff(c, s.m15, sn, s.m35),
                 m22: s.m22,
-                m23: R::sum_prod2(sn, s.m12, c, s.m23),
+                m23: Self::rsum(sn, s.m12, c, s.m23),
                 m24: s.m24,
                 m25: s.m25,
-                m33: R::mul_add(t, g, s.m33),
-                m34: R::sum_prod2(sn, s.m14, c, s.m34),
-                m35: R::sum_prod2(sn, s.m15, c, s.m35),
+                m33: Self::rmul_add(t, g, s.m33),
+                m34: Self::rsum(sn, s.m14, c, s.m34),
+                m35: Self::rsum(sn, s.m15, c, s.m35),
                 m44: s.m44,
                 m45: s.m45,
                 m55: s.m55,
             };
             v =
                 Matrix5 {
-                    m11: R::diff_prod(c, v.m11, sn, v.m13),
-                    m21: R::diff_prod(c, v.m21, sn, v.m23),
-                    m31: R::diff_prod(c, v.m31, sn, v.m33),
-                    m41: R::diff_prod(c, v.m41, sn, v.m43),
-                    m51: R::diff_prod(c, v.m51, sn, v.m53),
+                    m11: Self::rdiff(c, v.m11, sn, v.m13),
+                    m21: Self::rdiff(c, v.m21, sn, v.m23),
+                    m31: Self::rdiff(c, v.m31, sn, v.m33),
+                    m41: Self::rdiff(c, v.m41, sn, v.m43),
+                    m51: Self::rdiff(c, v.m51, sn, v.m53),
                     m12: v.m12,
                     m22: v.m22,
                     m32: v.m32,
                     m42: v.m42,
                     m52: v.m52,
-                    m13: R::sum_prod2(sn, v.m11, c, v.m13),
-                    m23: R::sum_prod2(sn, v.m21, c, v.m23),
-                    m33: R::sum_prod2(sn, v.m31, c, v.m33),
-                    m43: R::sum_prod2(sn, v.m41, c, v.m43),
-                    m53: R::sum_prod2(sn, v.m51, c, v.m53),
+                    m13: Self::rsum(sn, v.m11, c, v.m13),
+                    m23: Self::rsum(sn, v.m21, c, v.m23),
+                    m33: Self::rsum(sn, v.m31, c, v.m33),
+                    m43: Self::rsum(sn, v.m41, c, v.m43),
+                    m53: Self::rsum(sn, v.m51, c, v.m53),
                     m14: v.m14,
                     m24: v.m24,
                     m34: v.m34,
@@ -212,29 +254,29 @@ pub(crate) impl Jacobi5Impl<
             let (t, c, sn) = Self::rotation(s.m11, s.m14, s.m44);
             let g = s.m14;
             let s2 = Sym5 {
-                m11: R::mul_add(-t, g, s.m11),
-                m12: R::diff_prod(c, s.m12, sn, s.m24),
-                m13: R::diff_prod(c, s.m13, sn, s.m34),
+                m11: Self::rmul_add(-t, g, s.m11),
+                m12: Self::rdiff(c, s.m12, sn, s.m24),
+                m13: Self::rdiff(c, s.m13, sn, s.m34),
                 m14: R::zero(),
-                m15: R::diff_prod(c, s.m15, sn, s.m45),
+                m15: Self::rdiff(c, s.m15, sn, s.m45),
                 m22: s.m22,
                 m23: s.m23,
-                m24: R::sum_prod2(sn, s.m12, c, s.m24),
+                m24: Self::rsum(sn, s.m12, c, s.m24),
                 m25: s.m25,
                 m33: s.m33,
-                m34: R::sum_prod2(sn, s.m13, c, s.m34),
+                m34: Self::rsum(sn, s.m13, c, s.m34),
                 m35: s.m35,
-                m44: R::mul_add(t, g, s.m44),
-                m45: R::sum_prod2(sn, s.m15, c, s.m45),
+                m44: Self::rmul_add(t, g, s.m44),
+                m45: Self::rsum(sn, s.m15, c, s.m45),
                 m55: s.m55,
             };
             v =
                 Matrix5 {
-                    m11: R::diff_prod(c, v.m11, sn, v.m14),
-                    m21: R::diff_prod(c, v.m21, sn, v.m24),
-                    m31: R::diff_prod(c, v.m31, sn, v.m34),
-                    m41: R::diff_prod(c, v.m41, sn, v.m44),
-                    m51: R::diff_prod(c, v.m51, sn, v.m54),
+                    m11: Self::rdiff(c, v.m11, sn, v.m14),
+                    m21: Self::rdiff(c, v.m21, sn, v.m24),
+                    m31: Self::rdiff(c, v.m31, sn, v.m34),
+                    m41: Self::rdiff(c, v.m41, sn, v.m44),
+                    m51: Self::rdiff(c, v.m51, sn, v.m54),
                     m12: v.m12,
                     m22: v.m22,
                     m32: v.m32,
@@ -245,11 +287,11 @@ pub(crate) impl Jacobi5Impl<
                     m33: v.m33,
                     m43: v.m43,
                     m53: v.m53,
-                    m14: R::sum_prod2(sn, v.m11, c, v.m14),
-                    m24: R::sum_prod2(sn, v.m21, c, v.m24),
-                    m34: R::sum_prod2(sn, v.m31, c, v.m34),
-                    m44: R::sum_prod2(sn, v.m41, c, v.m44),
-                    m54: R::sum_prod2(sn, v.m51, c, v.m54),
+                    m14: Self::rsum(sn, v.m11, c, v.m14),
+                    m24: Self::rsum(sn, v.m21, c, v.m24),
+                    m34: Self::rsum(sn, v.m31, c, v.m34),
+                    m44: Self::rsum(sn, v.m41, c, v.m44),
+                    m54: Self::rsum(sn, v.m51, c, v.m54),
                     m15: v.m15,
                     m25: v.m25,
                     m35: v.m35,
@@ -262,29 +304,29 @@ pub(crate) impl Jacobi5Impl<
             let (t, c, sn) = Self::rotation(s.m11, s.m15, s.m55);
             let g = s.m15;
             let s2 = Sym5 {
-                m11: R::mul_add(-t, g, s.m11),
-                m12: R::diff_prod(c, s.m12, sn, s.m25),
-                m13: R::diff_prod(c, s.m13, sn, s.m35),
-                m14: R::diff_prod(c, s.m14, sn, s.m45),
+                m11: Self::rmul_add(-t, g, s.m11),
+                m12: Self::rdiff(c, s.m12, sn, s.m25),
+                m13: Self::rdiff(c, s.m13, sn, s.m35),
+                m14: Self::rdiff(c, s.m14, sn, s.m45),
                 m15: R::zero(),
                 m22: s.m22,
                 m23: s.m23,
                 m24: s.m24,
-                m25: R::sum_prod2(sn, s.m12, c, s.m25),
+                m25: Self::rsum(sn, s.m12, c, s.m25),
                 m33: s.m33,
                 m34: s.m34,
-                m35: R::sum_prod2(sn, s.m13, c, s.m35),
+                m35: Self::rsum(sn, s.m13, c, s.m35),
                 m44: s.m44,
-                m45: R::sum_prod2(sn, s.m14, c, s.m45),
-                m55: R::mul_add(t, g, s.m55),
+                m45: Self::rsum(sn, s.m14, c, s.m45),
+                m55: Self::rmul_add(t, g, s.m55),
             };
             v =
                 Matrix5 {
-                    m11: R::diff_prod(c, v.m11, sn, v.m15),
-                    m21: R::diff_prod(c, v.m21, sn, v.m25),
-                    m31: R::diff_prod(c, v.m31, sn, v.m35),
-                    m41: R::diff_prod(c, v.m41, sn, v.m45),
-                    m51: R::diff_prod(c, v.m51, sn, v.m55),
+                    m11: Self::rdiff(c, v.m11, sn, v.m15),
+                    m21: Self::rdiff(c, v.m21, sn, v.m25),
+                    m31: Self::rdiff(c, v.m31, sn, v.m35),
+                    m41: Self::rdiff(c, v.m41, sn, v.m45),
+                    m51: Self::rdiff(c, v.m51, sn, v.m55),
                     m12: v.m12,
                     m22: v.m22,
                     m32: v.m32,
@@ -300,11 +342,11 @@ pub(crate) impl Jacobi5Impl<
                     m34: v.m34,
                     m44: v.m44,
                     m54: v.m54,
-                    m15: R::sum_prod2(sn, v.m11, c, v.m15),
-                    m25: R::sum_prod2(sn, v.m21, c, v.m25),
-                    m35: R::sum_prod2(sn, v.m31, c, v.m35),
-                    m45: R::sum_prod2(sn, v.m41, c, v.m45),
-                    m55: R::sum_prod2(sn, v.m51, c, v.m55),
+                    m15: Self::rsum(sn, v.m11, c, v.m15),
+                    m25: Self::rsum(sn, v.m21, c, v.m25),
+                    m35: Self::rsum(sn, v.m31, c, v.m35),
+                    m45: Self::rsum(sn, v.m41, c, v.m45),
+                    m55: Self::rsum(sn, v.m51, c, v.m55),
                 };
             s = s2;
         }
@@ -313,17 +355,17 @@ pub(crate) impl Jacobi5Impl<
             let g = s.m23;
             let s2 = Sym5 {
                 m11: s.m11,
-                m12: R::diff_prod(c, s.m12, sn, s.m13),
-                m13: R::sum_prod2(sn, s.m12, c, s.m13),
+                m12: Self::rdiff(c, s.m12, sn, s.m13),
+                m13: Self::rsum(sn, s.m12, c, s.m13),
                 m14: s.m14,
                 m15: s.m15,
-                m22: R::mul_add(-t, g, s.m22),
+                m22: Self::rmul_add(-t, g, s.m22),
                 m23: R::zero(),
-                m24: R::diff_prod(c, s.m24, sn, s.m34),
-                m25: R::diff_prod(c, s.m25, sn, s.m35),
-                m33: R::mul_add(t, g, s.m33),
-                m34: R::sum_prod2(sn, s.m24, c, s.m34),
-                m35: R::sum_prod2(sn, s.m25, c, s.m35),
+                m24: Self::rdiff(c, s.m24, sn, s.m34),
+                m25: Self::rdiff(c, s.m25, sn, s.m35),
+                m33: Self::rmul_add(t, g, s.m33),
+                m34: Self::rsum(sn, s.m24, c, s.m34),
+                m35: Self::rsum(sn, s.m25, c, s.m35),
                 m44: s.m44,
                 m45: s.m45,
                 m55: s.m55,
@@ -335,16 +377,16 @@ pub(crate) impl Jacobi5Impl<
                     m31: v.m31,
                     m41: v.m41,
                     m51: v.m51,
-                    m12: R::diff_prod(c, v.m12, sn, v.m13),
-                    m22: R::diff_prod(c, v.m22, sn, v.m23),
-                    m32: R::diff_prod(c, v.m32, sn, v.m33),
-                    m42: R::diff_prod(c, v.m42, sn, v.m43),
-                    m52: R::diff_prod(c, v.m52, sn, v.m53),
-                    m13: R::sum_prod2(sn, v.m12, c, v.m13),
-                    m23: R::sum_prod2(sn, v.m22, c, v.m23),
-                    m33: R::sum_prod2(sn, v.m32, c, v.m33),
-                    m43: R::sum_prod2(sn, v.m42, c, v.m43),
-                    m53: R::sum_prod2(sn, v.m52, c, v.m53),
+                    m12: Self::rdiff(c, v.m12, sn, v.m13),
+                    m22: Self::rdiff(c, v.m22, sn, v.m23),
+                    m32: Self::rdiff(c, v.m32, sn, v.m33),
+                    m42: Self::rdiff(c, v.m42, sn, v.m43),
+                    m52: Self::rdiff(c, v.m52, sn, v.m53),
+                    m13: Self::rsum(sn, v.m12, c, v.m13),
+                    m23: Self::rsum(sn, v.m22, c, v.m23),
+                    m33: Self::rsum(sn, v.m32, c, v.m33),
+                    m43: Self::rsum(sn, v.m42, c, v.m43),
+                    m53: Self::rsum(sn, v.m52, c, v.m53),
                     m14: v.m14,
                     m24: v.m24,
                     m34: v.m34,
@@ -363,19 +405,19 @@ pub(crate) impl Jacobi5Impl<
             let g = s.m24;
             let s2 = Sym5 {
                 m11: s.m11,
-                m12: R::diff_prod(c, s.m12, sn, s.m14),
+                m12: Self::rdiff(c, s.m12, sn, s.m14),
                 m13: s.m13,
-                m14: R::sum_prod2(sn, s.m12, c, s.m14),
+                m14: Self::rsum(sn, s.m12, c, s.m14),
                 m15: s.m15,
-                m22: R::mul_add(-t, g, s.m22),
-                m23: R::diff_prod(c, s.m23, sn, s.m34),
+                m22: Self::rmul_add(-t, g, s.m22),
+                m23: Self::rdiff(c, s.m23, sn, s.m34),
                 m24: R::zero(),
-                m25: R::diff_prod(c, s.m25, sn, s.m45),
+                m25: Self::rdiff(c, s.m25, sn, s.m45),
                 m33: s.m33,
-                m34: R::sum_prod2(sn, s.m23, c, s.m34),
+                m34: Self::rsum(sn, s.m23, c, s.m34),
                 m35: s.m35,
-                m44: R::mul_add(t, g, s.m44),
-                m45: R::sum_prod2(sn, s.m25, c, s.m45),
+                m44: Self::rmul_add(t, g, s.m44),
+                m45: Self::rsum(sn, s.m25, c, s.m45),
                 m55: s.m55,
             };
             v =
@@ -385,21 +427,21 @@ pub(crate) impl Jacobi5Impl<
                     m31: v.m31,
                     m41: v.m41,
                     m51: v.m51,
-                    m12: R::diff_prod(c, v.m12, sn, v.m14),
-                    m22: R::diff_prod(c, v.m22, sn, v.m24),
-                    m32: R::diff_prod(c, v.m32, sn, v.m34),
-                    m42: R::diff_prod(c, v.m42, sn, v.m44),
-                    m52: R::diff_prod(c, v.m52, sn, v.m54),
+                    m12: Self::rdiff(c, v.m12, sn, v.m14),
+                    m22: Self::rdiff(c, v.m22, sn, v.m24),
+                    m32: Self::rdiff(c, v.m32, sn, v.m34),
+                    m42: Self::rdiff(c, v.m42, sn, v.m44),
+                    m52: Self::rdiff(c, v.m52, sn, v.m54),
                     m13: v.m13,
                     m23: v.m23,
                     m33: v.m33,
                     m43: v.m43,
                     m53: v.m53,
-                    m14: R::sum_prod2(sn, v.m12, c, v.m14),
-                    m24: R::sum_prod2(sn, v.m22, c, v.m24),
-                    m34: R::sum_prod2(sn, v.m32, c, v.m34),
-                    m44: R::sum_prod2(sn, v.m42, c, v.m44),
-                    m54: R::sum_prod2(sn, v.m52, c, v.m54),
+                    m14: Self::rsum(sn, v.m12, c, v.m14),
+                    m24: Self::rsum(sn, v.m22, c, v.m24),
+                    m34: Self::rsum(sn, v.m32, c, v.m34),
+                    m44: Self::rsum(sn, v.m42, c, v.m44),
+                    m54: Self::rsum(sn, v.m52, c, v.m54),
                     m15: v.m15,
                     m25: v.m25,
                     m35: v.m35,
@@ -413,20 +455,20 @@ pub(crate) impl Jacobi5Impl<
             let g = s.m25;
             let s2 = Sym5 {
                 m11: s.m11,
-                m12: R::diff_prod(c, s.m12, sn, s.m15),
+                m12: Self::rdiff(c, s.m12, sn, s.m15),
                 m13: s.m13,
                 m14: s.m14,
-                m15: R::sum_prod2(sn, s.m12, c, s.m15),
-                m22: R::mul_add(-t, g, s.m22),
-                m23: R::diff_prod(c, s.m23, sn, s.m35),
-                m24: R::diff_prod(c, s.m24, sn, s.m45),
+                m15: Self::rsum(sn, s.m12, c, s.m15),
+                m22: Self::rmul_add(-t, g, s.m22),
+                m23: Self::rdiff(c, s.m23, sn, s.m35),
+                m24: Self::rdiff(c, s.m24, sn, s.m45),
                 m25: R::zero(),
                 m33: s.m33,
                 m34: s.m34,
-                m35: R::sum_prod2(sn, s.m23, c, s.m35),
+                m35: Self::rsum(sn, s.m23, c, s.m35),
                 m44: s.m44,
-                m45: R::sum_prod2(sn, s.m24, c, s.m45),
-                m55: R::mul_add(t, g, s.m55),
+                m45: Self::rsum(sn, s.m24, c, s.m45),
+                m55: Self::rmul_add(t, g, s.m55),
             };
             v =
                 Matrix5 {
@@ -435,11 +477,11 @@ pub(crate) impl Jacobi5Impl<
                     m31: v.m31,
                     m41: v.m41,
                     m51: v.m51,
-                    m12: R::diff_prod(c, v.m12, sn, v.m15),
-                    m22: R::diff_prod(c, v.m22, sn, v.m25),
-                    m32: R::diff_prod(c, v.m32, sn, v.m35),
-                    m42: R::diff_prod(c, v.m42, sn, v.m45),
-                    m52: R::diff_prod(c, v.m52, sn, v.m55),
+                    m12: Self::rdiff(c, v.m12, sn, v.m15),
+                    m22: Self::rdiff(c, v.m22, sn, v.m25),
+                    m32: Self::rdiff(c, v.m32, sn, v.m35),
+                    m42: Self::rdiff(c, v.m42, sn, v.m45),
+                    m52: Self::rdiff(c, v.m52, sn, v.m55),
                     m13: v.m13,
                     m23: v.m23,
                     m33: v.m33,
@@ -450,11 +492,11 @@ pub(crate) impl Jacobi5Impl<
                     m34: v.m34,
                     m44: v.m44,
                     m54: v.m54,
-                    m15: R::sum_prod2(sn, v.m12, c, v.m15),
-                    m25: R::sum_prod2(sn, v.m22, c, v.m25),
-                    m35: R::sum_prod2(sn, v.m32, c, v.m35),
-                    m45: R::sum_prod2(sn, v.m42, c, v.m45),
-                    m55: R::sum_prod2(sn, v.m52, c, v.m55),
+                    m15: Self::rsum(sn, v.m12, c, v.m15),
+                    m25: Self::rsum(sn, v.m22, c, v.m25),
+                    m35: Self::rsum(sn, v.m32, c, v.m35),
+                    m45: Self::rsum(sn, v.m42, c, v.m45),
+                    m55: Self::rsum(sn, v.m52, c, v.m55),
                 };
             s = s2;
         }
@@ -464,18 +506,18 @@ pub(crate) impl Jacobi5Impl<
             let s2 = Sym5 {
                 m11: s.m11,
                 m12: s.m12,
-                m13: R::diff_prod(c, s.m13, sn, s.m14),
-                m14: R::sum_prod2(sn, s.m13, c, s.m14),
+                m13: Self::rdiff(c, s.m13, sn, s.m14),
+                m14: Self::rsum(sn, s.m13, c, s.m14),
                 m15: s.m15,
                 m22: s.m22,
-                m23: R::diff_prod(c, s.m23, sn, s.m24),
-                m24: R::sum_prod2(sn, s.m23, c, s.m24),
+                m23: Self::rdiff(c, s.m23, sn, s.m24),
+                m24: Self::rsum(sn, s.m23, c, s.m24),
                 m25: s.m25,
-                m33: R::mul_add(-t, g, s.m33),
+                m33: Self::rmul_add(-t, g, s.m33),
                 m34: R::zero(),
-                m35: R::diff_prod(c, s.m35, sn, s.m45),
-                m44: R::mul_add(t, g, s.m44),
-                m45: R::sum_prod2(sn, s.m35, c, s.m45),
+                m35: Self::rdiff(c, s.m35, sn, s.m45),
+                m44: Self::rmul_add(t, g, s.m44),
+                m45: Self::rsum(sn, s.m35, c, s.m45),
                 m55: s.m55,
             };
             v =
@@ -490,16 +532,16 @@ pub(crate) impl Jacobi5Impl<
                     m32: v.m32,
                     m42: v.m42,
                     m52: v.m52,
-                    m13: R::diff_prod(c, v.m13, sn, v.m14),
-                    m23: R::diff_prod(c, v.m23, sn, v.m24),
-                    m33: R::diff_prod(c, v.m33, sn, v.m34),
-                    m43: R::diff_prod(c, v.m43, sn, v.m44),
-                    m53: R::diff_prod(c, v.m53, sn, v.m54),
-                    m14: R::sum_prod2(sn, v.m13, c, v.m14),
-                    m24: R::sum_prod2(sn, v.m23, c, v.m24),
-                    m34: R::sum_prod2(sn, v.m33, c, v.m34),
-                    m44: R::sum_prod2(sn, v.m43, c, v.m44),
-                    m54: R::sum_prod2(sn, v.m53, c, v.m54),
+                    m13: Self::rdiff(c, v.m13, sn, v.m14),
+                    m23: Self::rdiff(c, v.m23, sn, v.m24),
+                    m33: Self::rdiff(c, v.m33, sn, v.m34),
+                    m43: Self::rdiff(c, v.m43, sn, v.m44),
+                    m53: Self::rdiff(c, v.m53, sn, v.m54),
+                    m14: Self::rsum(sn, v.m13, c, v.m14),
+                    m24: Self::rsum(sn, v.m23, c, v.m24),
+                    m34: Self::rsum(sn, v.m33, c, v.m34),
+                    m44: Self::rsum(sn, v.m43, c, v.m44),
+                    m54: Self::rsum(sn, v.m53, c, v.m54),
                     m15: v.m15,
                     m25: v.m25,
                     m35: v.m35,
@@ -514,19 +556,19 @@ pub(crate) impl Jacobi5Impl<
             let s2 = Sym5 {
                 m11: s.m11,
                 m12: s.m12,
-                m13: R::diff_prod(c, s.m13, sn, s.m15),
+                m13: Self::rdiff(c, s.m13, sn, s.m15),
                 m14: s.m14,
-                m15: R::sum_prod2(sn, s.m13, c, s.m15),
+                m15: Self::rsum(sn, s.m13, c, s.m15),
                 m22: s.m22,
-                m23: R::diff_prod(c, s.m23, sn, s.m25),
+                m23: Self::rdiff(c, s.m23, sn, s.m25),
                 m24: s.m24,
-                m25: R::sum_prod2(sn, s.m23, c, s.m25),
-                m33: R::mul_add(-t, g, s.m33),
-                m34: R::diff_prod(c, s.m34, sn, s.m45),
+                m25: Self::rsum(sn, s.m23, c, s.m25),
+                m33: Self::rmul_add(-t, g, s.m33),
+                m34: Self::rdiff(c, s.m34, sn, s.m45),
                 m35: R::zero(),
                 m44: s.m44,
-                m45: R::sum_prod2(sn, s.m34, c, s.m45),
-                m55: R::mul_add(t, g, s.m55),
+                m45: Self::rsum(sn, s.m34, c, s.m45),
+                m55: Self::rmul_add(t, g, s.m55),
             };
             v =
                 Matrix5 {
@@ -540,21 +582,21 @@ pub(crate) impl Jacobi5Impl<
                     m32: v.m32,
                     m42: v.m42,
                     m52: v.m52,
-                    m13: R::diff_prod(c, v.m13, sn, v.m15),
-                    m23: R::diff_prod(c, v.m23, sn, v.m25),
-                    m33: R::diff_prod(c, v.m33, sn, v.m35),
-                    m43: R::diff_prod(c, v.m43, sn, v.m45),
-                    m53: R::diff_prod(c, v.m53, sn, v.m55),
+                    m13: Self::rdiff(c, v.m13, sn, v.m15),
+                    m23: Self::rdiff(c, v.m23, sn, v.m25),
+                    m33: Self::rdiff(c, v.m33, sn, v.m35),
+                    m43: Self::rdiff(c, v.m43, sn, v.m45),
+                    m53: Self::rdiff(c, v.m53, sn, v.m55),
                     m14: v.m14,
                     m24: v.m24,
                     m34: v.m34,
                     m44: v.m44,
                     m54: v.m54,
-                    m15: R::sum_prod2(sn, v.m13, c, v.m15),
-                    m25: R::sum_prod2(sn, v.m23, c, v.m25),
-                    m35: R::sum_prod2(sn, v.m33, c, v.m35),
-                    m45: R::sum_prod2(sn, v.m43, c, v.m45),
-                    m55: R::sum_prod2(sn, v.m53, c, v.m55),
+                    m15: Self::rsum(sn, v.m13, c, v.m15),
+                    m25: Self::rsum(sn, v.m23, c, v.m25),
+                    m35: Self::rsum(sn, v.m33, c, v.m35),
+                    m45: Self::rsum(sn, v.m43, c, v.m45),
+                    m55: Self::rsum(sn, v.m53, c, v.m55),
                 };
             s = s2;
         }
@@ -565,18 +607,18 @@ pub(crate) impl Jacobi5Impl<
                 m11: s.m11,
                 m12: s.m12,
                 m13: s.m13,
-                m14: R::diff_prod(c, s.m14, sn, s.m15),
-                m15: R::sum_prod2(sn, s.m14, c, s.m15),
+                m14: Self::rdiff(c, s.m14, sn, s.m15),
+                m15: Self::rsum(sn, s.m14, c, s.m15),
                 m22: s.m22,
                 m23: s.m23,
-                m24: R::diff_prod(c, s.m24, sn, s.m25),
-                m25: R::sum_prod2(sn, s.m24, c, s.m25),
+                m24: Self::rdiff(c, s.m24, sn, s.m25),
+                m25: Self::rsum(sn, s.m24, c, s.m25),
                 m33: s.m33,
-                m34: R::diff_prod(c, s.m34, sn, s.m35),
-                m35: R::sum_prod2(sn, s.m34, c, s.m35),
-                m44: R::mul_add(-t, g, s.m44),
+                m34: Self::rdiff(c, s.m34, sn, s.m35),
+                m35: Self::rsum(sn, s.m34, c, s.m35),
+                m44: Self::rmul_add(-t, g, s.m44),
                 m45: R::zero(),
-                m55: R::mul_add(t, g, s.m55),
+                m55: Self::rmul_add(t, g, s.m55),
             };
             v =
                 Matrix5 {
@@ -595,16 +637,16 @@ pub(crate) impl Jacobi5Impl<
                     m33: v.m33,
                     m43: v.m43,
                     m53: v.m53,
-                    m14: R::diff_prod(c, v.m14, sn, v.m15),
-                    m24: R::diff_prod(c, v.m24, sn, v.m25),
-                    m34: R::diff_prod(c, v.m34, sn, v.m35),
-                    m44: R::diff_prod(c, v.m44, sn, v.m45),
-                    m54: R::diff_prod(c, v.m54, sn, v.m55),
-                    m15: R::sum_prod2(sn, v.m14, c, v.m15),
-                    m25: R::sum_prod2(sn, v.m24, c, v.m25),
-                    m35: R::sum_prod2(sn, v.m34, c, v.m35),
-                    m45: R::sum_prod2(sn, v.m44, c, v.m45),
-                    m55: R::sum_prod2(sn, v.m54, c, v.m55),
+                    m14: Self::rdiff(c, v.m14, sn, v.m15),
+                    m24: Self::rdiff(c, v.m24, sn, v.m25),
+                    m34: Self::rdiff(c, v.m34, sn, v.m35),
+                    m44: Self::rdiff(c, v.m44, sn, v.m45),
+                    m54: Self::rdiff(c, v.m54, sn, v.m55),
+                    m15: Self::rsum(sn, v.m14, c, v.m15),
+                    m25: Self::rsum(sn, v.m24, c, v.m25),
+                    m35: Self::rsum(sn, v.m34, c, v.m35),
+                    m45: Self::rsum(sn, v.m44, c, v.m45),
+                    m55: Self::rsum(sn, v.m54, c, v.m55),
                 };
             s = s2;
         }
@@ -619,15 +661,15 @@ pub(crate) impl Jacobi5Impl<
             let g = s.m12;
             s =
                 Sym5 {
-                    m11: R::mul_add(-t, g, s.m11),
+                    m11: Self::rmul_add(-t, g, s.m11),
                     m12: R::zero(),
-                    m13: R::diff_prod(c, s.m13, sn, s.m23),
-                    m14: R::diff_prod(c, s.m14, sn, s.m24),
-                    m15: R::diff_prod(c, s.m15, sn, s.m25),
-                    m22: R::mul_add(t, g, s.m22),
-                    m23: R::sum_prod2(sn, s.m13, c, s.m23),
-                    m24: R::sum_prod2(sn, s.m14, c, s.m24),
-                    m25: R::sum_prod2(sn, s.m15, c, s.m25),
+                    m13: Self::rdiff(c, s.m13, sn, s.m23),
+                    m14: Self::rdiff(c, s.m14, sn, s.m24),
+                    m15: Self::rdiff(c, s.m15, sn, s.m25),
+                    m22: Self::rmul_add(t, g, s.m22),
+                    m23: Self::rsum(sn, s.m13, c, s.m23),
+                    m24: Self::rsum(sn, s.m14, c, s.m24),
+                    m25: Self::rsum(sn, s.m15, c, s.m25),
                     m33: s.m33,
                     m34: s.m34,
                     m35: s.m35,
@@ -641,18 +683,18 @@ pub(crate) impl Jacobi5Impl<
             let g = s.m13;
             s =
                 Sym5 {
-                    m11: R::mul_add(-t, g, s.m11),
-                    m12: R::diff_prod(c, s.m12, sn, s.m23),
+                    m11: Self::rmul_add(-t, g, s.m11),
+                    m12: Self::rdiff(c, s.m12, sn, s.m23),
                     m13: R::zero(),
-                    m14: R::diff_prod(c, s.m14, sn, s.m34),
-                    m15: R::diff_prod(c, s.m15, sn, s.m35),
+                    m14: Self::rdiff(c, s.m14, sn, s.m34),
+                    m15: Self::rdiff(c, s.m15, sn, s.m35),
                     m22: s.m22,
-                    m23: R::sum_prod2(sn, s.m12, c, s.m23),
+                    m23: Self::rsum(sn, s.m12, c, s.m23),
                     m24: s.m24,
                     m25: s.m25,
-                    m33: R::mul_add(t, g, s.m33),
-                    m34: R::sum_prod2(sn, s.m14, c, s.m34),
-                    m35: R::sum_prod2(sn, s.m15, c, s.m35),
+                    m33: Self::rmul_add(t, g, s.m33),
+                    m34: Self::rsum(sn, s.m14, c, s.m34),
+                    m35: Self::rsum(sn, s.m15, c, s.m35),
                     m44: s.m44,
                     m45: s.m45,
                     m55: s.m55,
@@ -663,20 +705,20 @@ pub(crate) impl Jacobi5Impl<
             let g = s.m14;
             s =
                 Sym5 {
-                    m11: R::mul_add(-t, g, s.m11),
-                    m12: R::diff_prod(c, s.m12, sn, s.m24),
-                    m13: R::diff_prod(c, s.m13, sn, s.m34),
+                    m11: Self::rmul_add(-t, g, s.m11),
+                    m12: Self::rdiff(c, s.m12, sn, s.m24),
+                    m13: Self::rdiff(c, s.m13, sn, s.m34),
                     m14: R::zero(),
-                    m15: R::diff_prod(c, s.m15, sn, s.m45),
+                    m15: Self::rdiff(c, s.m15, sn, s.m45),
                     m22: s.m22,
                     m23: s.m23,
-                    m24: R::sum_prod2(sn, s.m12, c, s.m24),
+                    m24: Self::rsum(sn, s.m12, c, s.m24),
                     m25: s.m25,
                     m33: s.m33,
-                    m34: R::sum_prod2(sn, s.m13, c, s.m34),
+                    m34: Self::rsum(sn, s.m13, c, s.m34),
                     m35: s.m35,
-                    m44: R::mul_add(t, g, s.m44),
-                    m45: R::sum_prod2(sn, s.m15, c, s.m45),
+                    m44: Self::rmul_add(t, g, s.m44),
+                    m45: Self::rsum(sn, s.m15, c, s.m45),
                     m55: s.m55,
                 };
         }
@@ -685,21 +727,21 @@ pub(crate) impl Jacobi5Impl<
             let g = s.m15;
             s =
                 Sym5 {
-                    m11: R::mul_add(-t, g, s.m11),
-                    m12: R::diff_prod(c, s.m12, sn, s.m25),
-                    m13: R::diff_prod(c, s.m13, sn, s.m35),
-                    m14: R::diff_prod(c, s.m14, sn, s.m45),
+                    m11: Self::rmul_add(-t, g, s.m11),
+                    m12: Self::rdiff(c, s.m12, sn, s.m25),
+                    m13: Self::rdiff(c, s.m13, sn, s.m35),
+                    m14: Self::rdiff(c, s.m14, sn, s.m45),
                     m15: R::zero(),
                     m22: s.m22,
                     m23: s.m23,
                     m24: s.m24,
-                    m25: R::sum_prod2(sn, s.m12, c, s.m25),
+                    m25: Self::rsum(sn, s.m12, c, s.m25),
                     m33: s.m33,
                     m34: s.m34,
-                    m35: R::sum_prod2(sn, s.m13, c, s.m35),
+                    m35: Self::rsum(sn, s.m13, c, s.m35),
                     m44: s.m44,
-                    m45: R::sum_prod2(sn, s.m14, c, s.m45),
-                    m55: R::mul_add(t, g, s.m55),
+                    m45: Self::rsum(sn, s.m14, c, s.m45),
+                    m55: Self::rmul_add(t, g, s.m55),
                 };
         }
         if s.m23 != R::zero() {
@@ -708,17 +750,17 @@ pub(crate) impl Jacobi5Impl<
             s =
                 Sym5 {
                     m11: s.m11,
-                    m12: R::diff_prod(c, s.m12, sn, s.m13),
-                    m13: R::sum_prod2(sn, s.m12, c, s.m13),
+                    m12: Self::rdiff(c, s.m12, sn, s.m13),
+                    m13: Self::rsum(sn, s.m12, c, s.m13),
                     m14: s.m14,
                     m15: s.m15,
-                    m22: R::mul_add(-t, g, s.m22),
+                    m22: Self::rmul_add(-t, g, s.m22),
                     m23: R::zero(),
-                    m24: R::diff_prod(c, s.m24, sn, s.m34),
-                    m25: R::diff_prod(c, s.m25, sn, s.m35),
-                    m33: R::mul_add(t, g, s.m33),
-                    m34: R::sum_prod2(sn, s.m24, c, s.m34),
-                    m35: R::sum_prod2(sn, s.m25, c, s.m35),
+                    m24: Self::rdiff(c, s.m24, sn, s.m34),
+                    m25: Self::rdiff(c, s.m25, sn, s.m35),
+                    m33: Self::rmul_add(t, g, s.m33),
+                    m34: Self::rsum(sn, s.m24, c, s.m34),
+                    m35: Self::rsum(sn, s.m25, c, s.m35),
                     m44: s.m44,
                     m45: s.m45,
                     m55: s.m55,
@@ -730,19 +772,19 @@ pub(crate) impl Jacobi5Impl<
             s =
                 Sym5 {
                     m11: s.m11,
-                    m12: R::diff_prod(c, s.m12, sn, s.m14),
+                    m12: Self::rdiff(c, s.m12, sn, s.m14),
                     m13: s.m13,
-                    m14: R::sum_prod2(sn, s.m12, c, s.m14),
+                    m14: Self::rsum(sn, s.m12, c, s.m14),
                     m15: s.m15,
-                    m22: R::mul_add(-t, g, s.m22),
-                    m23: R::diff_prod(c, s.m23, sn, s.m34),
+                    m22: Self::rmul_add(-t, g, s.m22),
+                    m23: Self::rdiff(c, s.m23, sn, s.m34),
                     m24: R::zero(),
-                    m25: R::diff_prod(c, s.m25, sn, s.m45),
+                    m25: Self::rdiff(c, s.m25, sn, s.m45),
                     m33: s.m33,
-                    m34: R::sum_prod2(sn, s.m23, c, s.m34),
+                    m34: Self::rsum(sn, s.m23, c, s.m34),
                     m35: s.m35,
-                    m44: R::mul_add(t, g, s.m44),
-                    m45: R::sum_prod2(sn, s.m25, c, s.m45),
+                    m44: Self::rmul_add(t, g, s.m44),
+                    m45: Self::rsum(sn, s.m25, c, s.m45),
                     m55: s.m55,
                 };
         }
@@ -752,20 +794,20 @@ pub(crate) impl Jacobi5Impl<
             s =
                 Sym5 {
                     m11: s.m11,
-                    m12: R::diff_prod(c, s.m12, sn, s.m15),
+                    m12: Self::rdiff(c, s.m12, sn, s.m15),
                     m13: s.m13,
                     m14: s.m14,
-                    m15: R::sum_prod2(sn, s.m12, c, s.m15),
-                    m22: R::mul_add(-t, g, s.m22),
-                    m23: R::diff_prod(c, s.m23, sn, s.m35),
-                    m24: R::diff_prod(c, s.m24, sn, s.m45),
+                    m15: Self::rsum(sn, s.m12, c, s.m15),
+                    m22: Self::rmul_add(-t, g, s.m22),
+                    m23: Self::rdiff(c, s.m23, sn, s.m35),
+                    m24: Self::rdiff(c, s.m24, sn, s.m45),
                     m25: R::zero(),
                     m33: s.m33,
                     m34: s.m34,
-                    m35: R::sum_prod2(sn, s.m23, c, s.m35),
+                    m35: Self::rsum(sn, s.m23, c, s.m35),
                     m44: s.m44,
-                    m45: R::sum_prod2(sn, s.m24, c, s.m45),
-                    m55: R::mul_add(t, g, s.m55),
+                    m45: Self::rsum(sn, s.m24, c, s.m45),
+                    m55: Self::rmul_add(t, g, s.m55),
                 };
         }
         if s.m34 != R::zero() {
@@ -775,18 +817,18 @@ pub(crate) impl Jacobi5Impl<
                 Sym5 {
                     m11: s.m11,
                     m12: s.m12,
-                    m13: R::diff_prod(c, s.m13, sn, s.m14),
-                    m14: R::sum_prod2(sn, s.m13, c, s.m14),
+                    m13: Self::rdiff(c, s.m13, sn, s.m14),
+                    m14: Self::rsum(sn, s.m13, c, s.m14),
                     m15: s.m15,
                     m22: s.m22,
-                    m23: R::diff_prod(c, s.m23, sn, s.m24),
-                    m24: R::sum_prod2(sn, s.m23, c, s.m24),
+                    m23: Self::rdiff(c, s.m23, sn, s.m24),
+                    m24: Self::rsum(sn, s.m23, c, s.m24),
                     m25: s.m25,
-                    m33: R::mul_add(-t, g, s.m33),
+                    m33: Self::rmul_add(-t, g, s.m33),
                     m34: R::zero(),
-                    m35: R::diff_prod(c, s.m35, sn, s.m45),
-                    m44: R::mul_add(t, g, s.m44),
-                    m45: R::sum_prod2(sn, s.m35, c, s.m45),
+                    m35: Self::rdiff(c, s.m35, sn, s.m45),
+                    m44: Self::rmul_add(t, g, s.m44),
+                    m45: Self::rsum(sn, s.m35, c, s.m45),
                     m55: s.m55,
                 };
         }
@@ -797,19 +839,19 @@ pub(crate) impl Jacobi5Impl<
                 Sym5 {
                     m11: s.m11,
                     m12: s.m12,
-                    m13: R::diff_prod(c, s.m13, sn, s.m15),
+                    m13: Self::rdiff(c, s.m13, sn, s.m15),
                     m14: s.m14,
-                    m15: R::sum_prod2(sn, s.m13, c, s.m15),
+                    m15: Self::rsum(sn, s.m13, c, s.m15),
                     m22: s.m22,
-                    m23: R::diff_prod(c, s.m23, sn, s.m25),
+                    m23: Self::rdiff(c, s.m23, sn, s.m25),
                     m24: s.m24,
-                    m25: R::sum_prod2(sn, s.m23, c, s.m25),
-                    m33: R::mul_add(-t, g, s.m33),
-                    m34: R::diff_prod(c, s.m34, sn, s.m45),
+                    m25: Self::rsum(sn, s.m23, c, s.m25),
+                    m33: Self::rmul_add(-t, g, s.m33),
+                    m34: Self::rdiff(c, s.m34, sn, s.m45),
                     m35: R::zero(),
                     m44: s.m44,
-                    m45: R::sum_prod2(sn, s.m34, c, s.m45),
-                    m55: R::mul_add(t, g, s.m55),
+                    m45: Self::rsum(sn, s.m34, c, s.m45),
+                    m55: Self::rmul_add(t, g, s.m55),
                 };
         }
         if s.m45 != R::zero() {
@@ -820,18 +862,18 @@ pub(crate) impl Jacobi5Impl<
                     m11: s.m11,
                     m12: s.m12,
                     m13: s.m13,
-                    m14: R::diff_prod(c, s.m14, sn, s.m15),
-                    m15: R::sum_prod2(sn, s.m14, c, s.m15),
+                    m14: Self::rdiff(c, s.m14, sn, s.m15),
+                    m15: Self::rsum(sn, s.m14, c, s.m15),
                     m22: s.m22,
                     m23: s.m23,
-                    m24: R::diff_prod(c, s.m24, sn, s.m25),
-                    m25: R::sum_prod2(sn, s.m24, c, s.m25),
+                    m24: Self::rdiff(c, s.m24, sn, s.m25),
+                    m25: Self::rsum(sn, s.m24, c, s.m25),
                     m33: s.m33,
-                    m34: R::diff_prod(c, s.m34, sn, s.m35),
-                    m35: R::sum_prod2(sn, s.m34, c, s.m35),
-                    m44: R::mul_add(-t, g, s.m44),
+                    m34: Self::rdiff(c, s.m34, sn, s.m35),
+                    m35: Self::rsum(sn, s.m34, c, s.m35),
+                    m44: Self::rmul_add(-t, g, s.m44),
                     m45: R::zero(),
-                    m55: R::mul_add(t, g, s.m55),
+                    m55: Self::rmul_add(t, g, s.m55),
                 };
         }
         s
@@ -934,6 +976,7 @@ pub(crate) impl Jacobi5Impl<
     /// equal eigenvalues keep their order, so a diagonal input keeps its axes), the matching
     /// columns renormalised (each accumulates the rounding of its rotations) and signed.
     fn finish(self: Jacobi5<T>) -> SymmetricEigen5<T> {
+        revoke_ap_tracking();
         let v = self.v;
         let mut c0 = Vector5 { x: v.m11, y: v.m21, z: v.m31, w: v.m41, a: v.m51 };
         let mut c1 = Vector5 { x: v.m12, y: v.m22, z: v.m32, w: v.m42, a: v.m52 };
@@ -1409,6 +1452,7 @@ pub(crate) impl SymmetricEigen5InternalImpl<
     }
     /// The upper triangle of `V * diag(eigenvalues) * Vᵀ`.
     fn recompose_sym(self: SymmetricEigen5<T>) -> Sym5<T> {
+        revoke_ap_tracking();
         let e = self;
         let w00 = e.eigenvectors.m11 * e.eigenvalues.x;
         let w01 = e.eigenvectors.m12 * e.eigenvalues.y;

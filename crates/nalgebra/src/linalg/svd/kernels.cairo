@@ -4,7 +4,9 @@
 //! the completion of `k` orthonormal `R`-vectors by one more (`complete`), the fallback of the
 //! Gram-Schmidt of the left singular vectors when a column vanishes EXACTLY.
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
+use crate::base::matrix1::Matrix1;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
@@ -140,7 +142,36 @@ pub(crate) impl SvdRightImpl<
     }
 }
 
-/// The completions of orthonormal families of 2-vectors (crate-internal).
+/// The left singular vectors of the SVDs with 1 rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of 1-vectors.
+#[generate_trait]
+pub(crate) impl SvdComplete1Impl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of SvdComplete1Trait<T> {
+    /// The first left singular vector: `w / s`, or the first axis when `s = |w|` is zero
+    /// (`M = 0`). Shared by every SVD with 1 rows.
+    #[inline(always)]
+    fn first(w: Matrix1<T>, s: T) -> Matrix1<T> {
+        if s == R::zero() {
+            Matrix1 { x: R::one() }
+        } else {
+            Matrix1 { x: R::div(w.x, s) }
+        }
+    }
+}
+
+/// The left singular vectors of the SVDs with 2 rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of 2-vectors.
 #[generate_trait]
 pub(crate) impl SvdComplete2Impl<
     T,
@@ -155,12 +186,57 @@ pub(crate) impl SvdComplete2Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of SvdComplete2Trait<T> {
+    /// The first left singular vector: `w / s`, or the first axis when `s = |w|` is zero
+    /// (`M = 0`). Shared by every SVD with 2 rows.
+    #[inline(always)]
+    fn first(w: Vector2<T>, s: T) -> Vector2<T> {
+        if s == R::zero() {
+            Vector2 { x: R::one(), y: R::zero() }
+        } else {
+            {
+                let (q0, q1) = (R::div(w.x, s), R::div(w.y, s));
+                Vector2 { x: q0, y: q1 }
+            }
+        }
+    }
+    /// The left singular vector `u_1` from `w = M v_1` and the orthonormal `u_0 .. u_0`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_1 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete1` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 2 rows.
+    fn gs1(u0: Vector2<T>, w: Vector2<T>) -> Vector2<T> {
+        revoke_ap_tracking();
+        let p0 = R::sum_prod2(u0.x, w.x, u0.y, w.y);
+        let g = Vector2 { x: R::mul_add(-p0, u0.x, w.x), y: R::mul_add(-p0, u0.y, w.y) };
+        let n = R::norm2(g.x, g.y);
+        if n == R::zero() {
+            return Self::complete1(u0);
+        }
+        let q = {
+            let (q0, q1) = (R::div(g.x, n), R::div(g.y, n));
+            Vector2 { x: q0, y: q1 }
+        };
+        let p0 = R::sum_prod2(u0.x, q.x, u0.y, q.y);
+        let h = Vector2 { x: R::mul_add(-p0, u0.x, q.x), y: R::mul_add(-p0, u0.y, q.y) };
+        let nh = R::norm2(h.x, h.y);
+        if nh < R::HALF {
+            return Self::complete1(u0);
+        }
+        {
+            let (q0, q1) = (R::div(h.x, nh), R::div(h.y, nh));
+            Vector2 { x: q0, y: q1 }
+        }
+    }
     /// A unit 2-vector orthogonal to the 1 orthonormal `u*`: the axis `e_i` whose squared
     /// projection `Σ u_l[i]²` onto their span is the SMALLEST (ties to the earlier axis; it is at
     /// most 1/2, so the residual has a squared norm of at least 1/2), stripped of that
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete1(u0: Vector2<T>) -> Vector2<T> {
+        revoke_ap_tracking();
         let c0 = u0.x * u0.x;
         let c1 = u0.y * u0.y;
         let mut best: usize = 0;
@@ -194,7 +270,8 @@ pub(crate) impl SvdComplete2Impl<
     }
 }
 
-/// The completions of orthonormal families of 3-vectors (crate-internal).
+/// The left singular vectors of the SVDs with 3 rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of 3-vectors.
 #[generate_trait]
 pub(crate) impl SvdComplete3Impl<
     T,
@@ -209,12 +286,130 @@ pub(crate) impl SvdComplete3Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of SvdComplete3Trait<T> {
+    /// The first left singular vector: `w / s`, or the first axis when `s = |w|` is zero
+    /// (`M = 0`). Shared by every SVD with 3 rows.
+    #[inline(always)]
+    fn first(w: Vector3<T>, s: T) -> Vector3<T> {
+        if s == R::zero() {
+            Vector3 { x: R::one(), y: R::zero(), z: R::zero() }
+        } else {
+            {
+                let (q0, q1, q2) = R::div3(w.x, w.y, w.z, s);
+                Vector3 { x: q0, y: q1, z: q2 }
+            }
+        }
+    }
+    /// The left singular vector `u_1` from `w = M v_1` and the orthonormal `u_0 .. u_0`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_1 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete1` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 3 rows.
+    fn gs1(u0: Vector3<T>, w: Vector3<T>) -> Vector3<T> {
+        revoke_ap_tracking();
+        let p0 = R::sum_prod3(u0.x, w.x, u0.y, w.y, u0.z, w.z);
+        let g = Vector3 {
+            x: R::mul_add(-p0, u0.x, w.x),
+            y: R::mul_add(-p0, u0.y, w.y),
+            z: R::mul_add(-p0, u0.z, w.z),
+        };
+        let n = R::norm3(g.x, g.y, g.z);
+        if n == R::zero() {
+            return Self::complete1(u0);
+        }
+        let q = {
+            let (q0, q1, q2) = R::div3(g.x, g.y, g.z, n);
+            Vector3 { x: q0, y: q1, z: q2 }
+        };
+        let p0 = R::sum_prod3(u0.x, q.x, u0.y, q.y, u0.z, q.z);
+        let h = Vector3 {
+            x: R::mul_add(-p0, u0.x, q.x),
+            y: R::mul_add(-p0, u0.y, q.y),
+            z: R::mul_add(-p0, u0.z, q.z),
+        };
+        let nh = R::norm3(h.x, h.y, h.z);
+        if nh < R::HALF {
+            return Self::complete1(u0);
+        }
+        {
+            let (q0, q1, q2) = R::div3(h.x, h.y, h.z, nh);
+            Vector3 { x: q0, y: q1, z: q2 }
+        }
+    }
+    /// The left singular vector `u_2` from `w = M v_2` and the orthonormal `u_0 .. u_1`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_2 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete2` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 3 rows.
+    fn gs2(u0: Vector3<T>, u1: Vector3<T>, w: Vector3<T>) -> Vector3<T> {
+        revoke_ap_tracking();
+        let p0 = R::sum_prod3(u0.x, w.x, u0.y, w.y, u0.z, w.z);
+        let p1 = R::sum_prod3(u1.x, w.x, u1.y, w.y, u1.z, w.z);
+        let g = Vector3 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+        };
+        let n = R::norm3(g.x, g.y, g.z);
+        if n == R::zero() {
+            return Self::complete2(u0, u1);
+        }
+        let q = {
+            let (q0, q1, q2) = R::div3(g.x, g.y, g.z, n);
+            Vector3 { x: q0, y: q1, z: q2 }
+        };
+        let p0 = R::sum_prod3(u0.x, q.x, u0.y, q.y, u0.z, q.z);
+        let p1 = R::sum_prod3(u1.x, q.x, u1.y, q.y, u1.z, q.z);
+        let h = Vector3 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+        };
+        let nh = R::norm3(h.x, h.y, h.z);
+        if nh < R::HALF {
+            return Self::complete2(u0, u1);
+        }
+        {
+            let (q0, q1, q2) = R::div3(h.x, h.y, h.z, nh);
+            Vector3 { x: q0, y: q1, z: q2 }
+        }
+    }
     /// A unit 3-vector orthogonal to the 1 orthonormal `u*`: the axis `e_i` whose squared
     /// projection `Σ u_l[i]²` onto their span is the SMALLEST (ties to the earlier axis; it is at
     /// most 1/3, so the residual has a squared norm of at least 2/3), stripped of that
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete1(u0: Vector3<T>) -> Vector3<T> {
+        revoke_ap_tracking();
         let c0 = u0.x * u0.x;
         let c1 = u0.y * u0.y;
         let c2 = u0.z * u0.z;
@@ -264,6 +459,7 @@ pub(crate) impl SvdComplete3Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete2(u0: Vector3<T>, u1: Vector3<T>) -> Vector3<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod2(u0.x, u0.x, u1.x, u1.x);
         let c1 = R::sum_prod2(u0.y, u0.y, u1.y, u1.y);
         let c2 = R::sum_prod2(u0.z, u0.z, u1.z, u1.z);
@@ -346,7 +542,8 @@ pub(crate) impl SvdComplete3Impl<
     }
 }
 
-/// The completions of orthonormal families of 4-vectors (crate-internal).
+/// The left singular vectors of the SVDs with 4 rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of 4-vectors.
 #[generate_trait]
 pub(crate) impl SvdComplete4Impl<
     T,
@@ -361,12 +558,251 @@ pub(crate) impl SvdComplete4Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of SvdComplete4Trait<T> {
+    /// The first left singular vector: `w / s`, or the first axis when `s = |w|` is zero
+    /// (`M = 0`). Shared by every SVD with 4 rows.
+    #[inline(always)]
+    fn first(w: Vector4<T>, s: T) -> Vector4<T> {
+        if s == R::zero() {
+            Vector4 { x: R::one(), y: R::zero(), z: R::zero(), w: R::zero() }
+        } else {
+            {
+                let (q0, q1, q2, q3) = R::div4(w.x, w.y, w.z, w.w, s);
+                Vector4 { x: q0, y: q1, z: q2, w: q3 }
+            }
+        }
+    }
+    /// The left singular vector `u_1` from `w = M v_1` and the orthonormal `u_0 .. u_0`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_1 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete1` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 4 rows.
+    fn gs1(u0: Vector4<T>, w: Vector4<T>) -> Vector4<T> {
+        revoke_ap_tracking();
+        let p0 = R::sum_prod4(u0.x, w.x, u0.y, w.y, u0.z, w.z, u0.w, w.w);
+        let g = Vector4 {
+            x: R::mul_add(-p0, u0.x, w.x),
+            y: R::mul_add(-p0, u0.y, w.y),
+            z: R::mul_add(-p0, u0.z, w.z),
+            w: R::mul_add(-p0, u0.w, w.w),
+        };
+        let n = R::norm4(g.x, g.y, g.z, g.w);
+        if n == R::zero() {
+            return Self::complete1(u0);
+        }
+        let q = {
+            let (q0, q1, q2, q3) = R::div4(g.x, g.y, g.z, g.w, n);
+            Vector4 { x: q0, y: q1, z: q2, w: q3 }
+        };
+        let p0 = R::sum_prod4(u0.x, q.x, u0.y, q.y, u0.z, q.z, u0.w, q.w);
+        let h = Vector4 {
+            x: R::mul_add(-p0, u0.x, q.x),
+            y: R::mul_add(-p0, u0.y, q.y),
+            z: R::mul_add(-p0, u0.z, q.z),
+            w: R::mul_add(-p0, u0.w, q.w),
+        };
+        let nh = R::norm4(h.x, h.y, h.z, h.w);
+        if nh < R::HALF {
+            return Self::complete1(u0);
+        }
+        {
+            let (q0, q1, q2, q3) = R::div4(h.x, h.y, h.z, h.w, nh);
+            Vector4 { x: q0, y: q1, z: q2, w: q3 }
+        }
+    }
+    /// The left singular vector `u_2` from `w = M v_2` and the orthonormal `u_0 .. u_1`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_2 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete2` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 4 rows.
+    fn gs2(u0: Vector4<T>, u1: Vector4<T>, w: Vector4<T>) -> Vector4<T> {
+        revoke_ap_tracking();
+        let p0 = R::sum_prod4(u0.x, w.x, u0.y, w.y, u0.z, w.z, u0.w, w.w);
+        let p1 = R::sum_prod4(u1.x, w.x, u1.y, w.y, u1.z, w.z, u1.w, w.w);
+        let g = Vector4 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                ),
+            ),
+        };
+        let n = R::norm4(g.x, g.y, g.z, g.w);
+        if n == R::zero() {
+            return Self::complete2(u0, u1);
+        }
+        let q = {
+            let (q0, q1, q2, q3) = R::div4(g.x, g.y, g.z, g.w, n);
+            Vector4 { x: q0, y: q1, z: q2, w: q3 }
+        };
+        let p0 = R::sum_prod4(u0.x, q.x, u0.y, q.y, u0.z, q.z, u0.w, q.w);
+        let p1 = R::sum_prod4(u1.x, q.x, u1.y, q.y, u1.z, q.z, u1.w, q.w);
+        let h = Vector4 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                ),
+            ),
+        };
+        let nh = R::norm4(h.x, h.y, h.z, h.w);
+        if nh < R::HALF {
+            return Self::complete2(u0, u1);
+        }
+        {
+            let (q0, q1, q2, q3) = R::div4(h.x, h.y, h.z, h.w, nh);
+            Vector4 { x: q0, y: q1, z: q2, w: q3 }
+        }
+    }
+    /// The left singular vector `u_3` from `w = M v_3` and the orthonormal `u_0 .. u_2`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_3 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete3` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 4 rows.
+    fn gs3(u0: Vector4<T>, u1: Vector4<T>, u2: Vector4<T>, w: Vector4<T>) -> Vector4<T> {
+        revoke_ap_tracking();
+        let p0 = R::sum_prod4(u0.x, w.x, u0.y, w.y, u0.z, w.z, u0.w, w.w);
+        let p1 = R::sum_prod4(u1.x, w.x, u1.y, w.y, u1.z, w.z, u1.w, w.w);
+        let p2 = R::sum_prod4(u2.x, w.x, u2.y, w.y, u2.z, w.z, u2.w, w.w);
+        let g = Vector4 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                    ),
+                    p2,
+                    u2.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                    ),
+                    p2,
+                    u2.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                    ),
+                    p2,
+                    u2.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                    ),
+                    p2,
+                    u2.w,
+                ),
+            ),
+        };
+        let n = R::norm4(g.x, g.y, g.z, g.w);
+        if n == R::zero() {
+            return Self::complete3(u0, u1, u2);
+        }
+        let q = {
+            let (q0, q1, q2, q3) = R::div4(g.x, g.y, g.z, g.w, n);
+            Vector4 { x: q0, y: q1, z: q2, w: q3 }
+        };
+        let p0 = R::sum_prod4(u0.x, q.x, u0.y, q.y, u0.z, q.z, u0.w, q.w);
+        let p1 = R::sum_prod4(u1.x, q.x, u1.y, q.y, u1.z, q.z, u1.w, q.w);
+        let p2 = R::sum_prod4(u2.x, q.x, u2.y, q.y, u2.z, q.z, u2.w, q.w);
+        let h = Vector4 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                    ),
+                    p2,
+                    u2.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                    ),
+                    p2,
+                    u2.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                    ),
+                    p2,
+                    u2.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                    ),
+                    p2,
+                    u2.w,
+                ),
+            ),
+        };
+        let nh = R::norm4(h.x, h.y, h.z, h.w);
+        if nh < R::HALF {
+            return Self::complete3(u0, u1, u2);
+        }
+        {
+            let (q0, q1, q2, q3) = R::div4(h.x, h.y, h.z, h.w, nh);
+            Vector4 { x: q0, y: q1, z: q2, w: q3 }
+        }
+    }
     /// A unit 4-vector orthogonal to the 1 orthonormal `u*`: the axis `e_i` whose squared
     /// projection `Σ u_l[i]²` onto their span is the SMALLEST (ties to the earlier axis; it is at
     /// most 1/4, so the residual has a squared norm of at least 3/4), stripped of that
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete1(u0: Vector4<T>) -> Vector4<T> {
+        revoke_ap_tracking();
         let c0 = u0.x * u0.x;
         let c1 = u0.y * u0.y;
         let c2 = u0.z * u0.z;
@@ -428,6 +864,7 @@ pub(crate) impl SvdComplete4Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete2(u0: Vector4<T>, u1: Vector4<T>) -> Vector4<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod2(u0.x, u0.x, u1.x, u1.x);
         let c1 = R::sum_prod2(u0.y, u0.y, u1.y, u1.y);
         let c2 = R::sum_prod2(u0.z, u0.z, u1.z, u1.z);
@@ -538,6 +975,7 @@ pub(crate) impl SvdComplete4Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete3(u0: Vector4<T>, u1: Vector4<T>, u2: Vector4<T>) -> Vector4<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod3(u0.x, u0.x, u1.x, u1.x, u2.x, u2.x);
         let c1 = R::sum_prod3(u0.y, u0.y, u1.y, u1.y, u2.y, u2.y);
         let c2 = R::sum_prod3(u0.z, u0.z, u1.z, u1.z, u2.z, u2.z);
@@ -677,7 +1115,8 @@ pub(crate) impl SvdComplete4Impl<
     }
 }
 
-/// The completions of orthonormal families of 5-vectors (crate-internal).
+/// The left singular vectors of the SVDs with 5 rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of 5-vectors.
 #[generate_trait]
 pub(crate) impl SvdComplete5Impl<
     T,
@@ -692,12 +1131,844 @@ pub(crate) impl SvdComplete5Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of SvdComplete5Trait<T> {
+    /// The first left singular vector: `w / s`, or the first axis when `s = |w|` is zero
+    /// (`M = 0`). Shared by every SVD with 5 rows.
+    #[inline(always)]
+    fn first(w: Vector5<T>, s: T) -> Vector5<T> {
+        if s == R::zero() {
+            Vector5 { x: R::one(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero() }
+        } else {
+            {
+                let (q0, q1, q2, q3, q4) = R::div5(w.x, w.y, w.z, w.w, w.a, s);
+                Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+            }
+        }
+    }
+    /// The left singular vector `u_1` from `w = M v_1` and the orthonormal `u_0 .. u_0`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_1 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete1` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 5 rows.
+    fn gs1(u0: Vector5<T>, w: Vector5<T>) -> Vector5<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y),
+                        u0.z,
+                        w.z,
+                    ),
+                    u0.w,
+                    w.w,
+                ),
+                u0.a,
+                w.a,
+            ),
+        );
+        let g = Vector5 {
+            x: R::mul_add(-p0, u0.x, w.x),
+            y: R::mul_add(-p0, u0.y, w.y),
+            z: R::mul_add(-p0, u0.z, w.z),
+            w: R::mul_add(-p0, u0.w, w.w),
+            a: R::mul_add(-p0, u0.a, w.a),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                        g.z,
+                        g.z,
+                    ),
+                    g.w,
+                    g.w,
+                ),
+                g.a,
+                g.a,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete1(u0);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y),
+                        u0.z,
+                        q.z,
+                    ),
+                    u0.w,
+                    q.w,
+                ),
+                u0.a,
+                q.a,
+            ),
+        );
+        let h = Vector5 {
+            x: R::mul_add(-p0, u0.x, q.x),
+            y: R::mul_add(-p0, u0.y, q.y),
+            z: R::mul_add(-p0, u0.z, q.z),
+            w: R::mul_add(-p0, u0.w, q.w),
+            a: R::mul_add(-p0, u0.a, q.a),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                        h.z,
+                        h.z,
+                    ),
+                    h.w,
+                    h.w,
+                ),
+                h.a,
+                h.a,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete1(u0);
+        }
+        {
+            let (q0, q1, q2, q3, q4) = R::div5(h.x, h.y, h.z, h.w, h.a, nh);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        }
+    }
+    /// The left singular vector `u_2` from `w = M v_2` and the orthonormal `u_0 .. u_1`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_2 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete2` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 5 rows.
+    fn gs2(u0: Vector5<T>, u1: Vector5<T>, w: Vector5<T>) -> Vector5<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y),
+                        u0.z,
+                        w.z,
+                    ),
+                    u0.w,
+                    w.w,
+                ),
+                u0.a,
+                w.a,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u1.x, w.x), u1.y, w.y),
+                        u1.z,
+                        w.z,
+                    ),
+                    u1.w,
+                    w.w,
+                ),
+                u1.a,
+                w.a,
+            ),
+        );
+        let g = Vector5 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.a), p0, u0.a), p1, u1.a,
+                ),
+            ),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                        g.z,
+                        g.z,
+                    ),
+                    g.w,
+                    g.w,
+                ),
+                g.a,
+                g.a,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete2(u0, u1);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y),
+                        u0.z,
+                        q.z,
+                    ),
+                    u0.w,
+                    q.w,
+                ),
+                u0.a,
+                q.a,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y),
+                        u1.z,
+                        q.z,
+                    ),
+                    u1.w,
+                    q.w,
+                ),
+                u1.a,
+                q.a,
+            ),
+        );
+        let h = Vector5 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a), p1, u1.a,
+                ),
+            ),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                        h.z,
+                        h.z,
+                    ),
+                    h.w,
+                    h.w,
+                ),
+                h.a,
+                h.a,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete2(u0, u1);
+        }
+        {
+            let (q0, q1, q2, q3, q4) = R::div5(h.x, h.y, h.z, h.w, h.a, nh);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        }
+    }
+    /// The left singular vector `u_3` from `w = M v_3` and the orthonormal `u_0 .. u_2`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_3 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete3` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 5 rows.
+    fn gs3(u0: Vector5<T>, u1: Vector5<T>, u2: Vector5<T>, w: Vector5<T>) -> Vector5<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y),
+                        u0.z,
+                        w.z,
+                    ),
+                    u0.w,
+                    w.w,
+                ),
+                u0.a,
+                w.a,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u1.x, w.x), u1.y, w.y),
+                        u1.z,
+                        w.z,
+                    ),
+                    u1.w,
+                    w.w,
+                ),
+                u1.a,
+                w.a,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u2.x, w.x), u2.y, w.y),
+                        u2.z,
+                        w.z,
+                    ),
+                    u2.w,
+                    w.w,
+                ),
+                u2.a,
+                w.a,
+            ),
+        );
+        let g = Vector5 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                    ),
+                    p2,
+                    u2.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                    ),
+                    p2,
+                    u2.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                    ),
+                    p2,
+                    u2.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                    ),
+                    p2,
+                    u2.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.a), p0, u0.a), p1, u1.a,
+                    ),
+                    p2,
+                    u2.a,
+                ),
+            ),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                        g.z,
+                        g.z,
+                    ),
+                    g.w,
+                    g.w,
+                ),
+                g.a,
+                g.a,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete3(u0, u1, u2);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y),
+                        u0.z,
+                        q.z,
+                    ),
+                    u0.w,
+                    q.w,
+                ),
+                u0.a,
+                q.a,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y),
+                        u1.z,
+                        q.z,
+                    ),
+                    u1.w,
+                    q.w,
+                ),
+                u1.a,
+                q.a,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u2.x, q.x), u2.y, q.y),
+                        u2.z,
+                        q.z,
+                    ),
+                    u2.w,
+                    q.w,
+                ),
+                u2.a,
+                q.a,
+            ),
+        );
+        let h = Vector5 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                    ),
+                    p2,
+                    u2.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                    ),
+                    p2,
+                    u2.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                    ),
+                    p2,
+                    u2.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                    ),
+                    p2,
+                    u2.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a), p1, u1.a,
+                    ),
+                    p2,
+                    u2.a,
+                ),
+            ),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                        h.z,
+                        h.z,
+                    ),
+                    h.w,
+                    h.w,
+                ),
+                h.a,
+                h.a,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete3(u0, u1, u2);
+        }
+        {
+            let (q0, q1, q2, q3, q4) = R::div5(h.x, h.y, h.z, h.w, h.a, nh);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        }
+    }
+    /// The left singular vector `u_4` from `w = M v_4` and the orthonormal `u_0 .. u_3`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_4 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete4` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 5 rows.
+    fn gs4(
+        u0: Vector5<T>, u1: Vector5<T>, u2: Vector5<T>, u3: Vector5<T>, w: Vector5<T>,
+    ) -> Vector5<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y),
+                        u0.z,
+                        w.z,
+                    ),
+                    u0.w,
+                    w.w,
+                ),
+                u0.a,
+                w.a,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u1.x, w.x), u1.y, w.y),
+                        u1.z,
+                        w.z,
+                    ),
+                    u1.w,
+                    w.w,
+                ),
+                u1.a,
+                w.a,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u2.x, w.x), u2.y, w.y),
+                        u2.z,
+                        w.z,
+                    ),
+                    u2.w,
+                    w.w,
+                ),
+                u2.a,
+                w.a,
+            ),
+        );
+        let p3 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u3.x, w.x), u3.y, w.y),
+                        u3.z,
+                        w.z,
+                    ),
+                    u3.w,
+                    w.w,
+                ),
+                u3.a,
+                w.a,
+            ),
+        );
+        let g = Vector5 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                        ),
+                        p2,
+                        u2.x,
+                    ),
+                    p3,
+                    u3.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                        ),
+                        p2,
+                        u2.y,
+                    ),
+                    p3,
+                    u3.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                        ),
+                        p2,
+                        u2.z,
+                    ),
+                    p3,
+                    u3.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                        ),
+                        p2,
+                        u2.w,
+                    ),
+                    p3,
+                    u3.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.a), p0, u0.a), p1, u1.a,
+                        ),
+                        p2,
+                        u2.a,
+                    ),
+                    p3,
+                    u3.a,
+                ),
+            ),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                        g.z,
+                        g.z,
+                    ),
+                    g.w,
+                    g.w,
+                ),
+                g.a,
+                g.a,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete4(u0, u1, u2, u3);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y),
+                        u0.z,
+                        q.z,
+                    ),
+                    u0.w,
+                    q.w,
+                ),
+                u0.a,
+                q.a,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y),
+                        u1.z,
+                        q.z,
+                    ),
+                    u1.w,
+                    q.w,
+                ),
+                u1.a,
+                q.a,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u2.x, q.x), u2.y, q.y),
+                        u2.z,
+                        q.z,
+                    ),
+                    u2.w,
+                    q.w,
+                ),
+                u2.a,
+                q.a,
+            ),
+        );
+        let p3 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), u3.x, q.x), u3.y, q.y),
+                        u3.z,
+                        q.z,
+                    ),
+                    u3.w,
+                    q.w,
+                ),
+                u3.a,
+                q.a,
+            ),
+        );
+        let h = Vector5 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                        ),
+                        p2,
+                        u2.x,
+                    ),
+                    p3,
+                    u3.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                        ),
+                        p2,
+                        u2.y,
+                    ),
+                    p3,
+                    u3.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                        ),
+                        p2,
+                        u2.z,
+                    ),
+                    p3,
+                    u3.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                        ),
+                        p2,
+                        u2.w,
+                    ),
+                    p3,
+                    u3.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a), p1, u1.a,
+                        ),
+                        p2,
+                        u2.a,
+                    ),
+                    p3,
+                    u3.a,
+                ),
+            ),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                        h.z,
+                        h.z,
+                    ),
+                    h.w,
+                    h.w,
+                ),
+                h.a,
+                h.a,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete4(u0, u1, u2, u3);
+        }
+        {
+            let (q0, q1, q2, q3, q4) = R::div5(h.x, h.y, h.z, h.w, h.a, nh);
+            Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+        }
+    }
     /// A unit 5-vector orthogonal to the 1 orthonormal `u*`: the axis `e_i` whose squared
     /// projection `Σ u_l[i]²` onto their span is the SMALLEST (ties to the earlier axis; it is at
     /// most 1/5, so the residual has a squared norm of at least 4/5), stripped of that
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete1(u0: Vector5<T>) -> Vector5<T> {
+        revoke_ap_tracking();
         let c0 = u0.x * u0.x;
         let c1 = u0.y * u0.y;
         let c2 = u0.z * u0.z;
@@ -794,6 +2065,7 @@ pub(crate) impl SvdComplete5Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete2(u0: Vector5<T>, u1: Vector5<T>) -> Vector5<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod2(u0.x, u0.x, u1.x, u1.x);
         let c1 = R::sum_prod2(u0.y, u0.y, u1.y, u1.y);
         let c2 = R::sum_prod2(u0.z, u0.z, u1.z, u1.z);
@@ -951,6 +2223,7 @@ pub(crate) impl SvdComplete5Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete3(u0: Vector5<T>, u1: Vector5<T>, u2: Vector5<T>) -> Vector5<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod3(u0.x, u0.x, u1.x, u1.x, u2.x, u2.x);
         let c1 = R::sum_prod3(u0.y, u0.y, u1.y, u1.y, u2.y, u2.y);
         let c2 = R::sum_prod3(u0.z, u0.z, u1.z, u1.z, u2.z, u2.z);
@@ -1149,6 +2422,7 @@ pub(crate) impl SvdComplete5Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete4(u0: Vector5<T>, u1: Vector5<T>, u2: Vector5<T>, u3: Vector5<T>) -> Vector5<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod4(u0.x, u0.x, u1.x, u1.x, u2.x, u2.x, u3.x, u3.x);
         let c1 = R::sum_prod4(u0.y, u0.y, u1.y, u1.y, u2.y, u2.y, u3.y, u3.y);
         let c2 = R::sum_prod4(u0.z, u0.z, u1.z, u1.z, u2.z, u2.z, u3.z, u3.z);
@@ -1374,7 +2648,8 @@ pub(crate) impl SvdComplete5Impl<
     }
 }
 
-/// The completions of orthonormal families of 6-vectors (crate-internal).
+/// The left singular vectors of the SVDs with 6 rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of 6-vectors.
 #[generate_trait]
 pub(crate) impl SvdComplete6Impl<
     T,
@@ -1389,12 +2664,1566 @@ pub(crate) impl SvdComplete6Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of SvdComplete6Trait<T> {
+    /// The first left singular vector: `w / s`, or the first axis when `s = |w|` is zero
+    /// (`M = 0`). Shared by every SVD with 6 rows.
+    #[inline(always)]
+    fn first(w: Vector6<T>, s: T) -> Vector6<T> {
+        if s == R::zero() {
+            Vector6 {
+                x: R::one(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            }
+        } else {
+            {
+                let (q0, q1, q2, q3, q4, q5) = R::div6(w.x, w.y, w.z, w.w, w.a, w.b, s);
+                Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+            }
+        }
+    }
+    /// The left singular vector `u_1` from `w = M v_1` and the orthonormal `u_0 .. u_0`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_1 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete1` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 6 rows.
+    fn gs1(u0: Vector6<T>, w: Vector6<T>) -> Vector6<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y,
+                            ),
+                            u0.z,
+                            w.z,
+                        ),
+                        u0.w,
+                        w.w,
+                    ),
+                    u0.a,
+                    w.a,
+                ),
+                u0.b,
+                w.b,
+            ),
+        );
+        let g = Vector6 {
+            x: R::mul_add(-p0, u0.x, w.x),
+            y: R::mul_add(-p0, u0.y, w.y),
+            z: R::mul_add(-p0, u0.z, w.z),
+            w: R::mul_add(-p0, u0.w, w.w),
+            a: R::mul_add(-p0, u0.a, w.a),
+            b: R::mul_add(-p0, u0.b, w.b),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                            g.z,
+                            g.z,
+                        ),
+                        g.w,
+                        g.w,
+                    ),
+                    g.a,
+                    g.a,
+                ),
+                g.b,
+                g.b,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete1(u0);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(g.x, g.y, g.z, g.w, g.a, g.b, n);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
+                            ),
+                            u0.z,
+                            q.z,
+                        ),
+                        u0.w,
+                        q.w,
+                    ),
+                    u0.a,
+                    q.a,
+                ),
+                u0.b,
+                q.b,
+            ),
+        );
+        let h = Vector6 {
+            x: R::mul_add(-p0, u0.x, q.x),
+            y: R::mul_add(-p0, u0.y, q.y),
+            z: R::mul_add(-p0, u0.z, q.z),
+            w: R::mul_add(-p0, u0.w, q.w),
+            a: R::mul_add(-p0, u0.a, q.a),
+            b: R::mul_add(-p0, u0.b, q.b),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                            h.z,
+                            h.z,
+                        ),
+                        h.w,
+                        h.w,
+                    ),
+                    h.a,
+                    h.a,
+                ),
+                h.b,
+                h.b,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete1(u0);
+        }
+        {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(h.x, h.y, h.z, h.w, h.a, h.b, nh);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        }
+    }
+    /// The left singular vector `u_2` from `w = M v_2` and the orthonormal `u_0 .. u_1`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_2 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete2` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 6 rows.
+    fn gs2(u0: Vector6<T>, u1: Vector6<T>, w: Vector6<T>) -> Vector6<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y,
+                            ),
+                            u0.z,
+                            w.z,
+                        ),
+                        u0.w,
+                        w.w,
+                    ),
+                    u0.a,
+                    w.a,
+                ),
+                u0.b,
+                w.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, w.x), u1.y, w.y,
+                            ),
+                            u1.z,
+                            w.z,
+                        ),
+                        u1.w,
+                        w.w,
+                    ),
+                    u1.a,
+                    w.a,
+                ),
+                u1.b,
+                w.b,
+            ),
+        );
+        let g = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.a), p0, u0.a), p1, u1.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), w.b), p0, u0.b), p1, u1.b,
+                ),
+            ),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                            g.z,
+                            g.z,
+                        ),
+                        g.w,
+                        g.w,
+                    ),
+                    g.a,
+                    g.a,
+                ),
+                g.b,
+                g.b,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete2(u0, u1);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(g.x, g.y, g.z, g.w, g.a, g.b, n);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
+                            ),
+                            u0.z,
+                            q.z,
+                        ),
+                        u0.w,
+                        q.w,
+                    ),
+                    u0.a,
+                    q.a,
+                ),
+                u0.b,
+                q.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y,
+                            ),
+                            u1.z,
+                            q.z,
+                        ),
+                        u1.w,
+                        q.w,
+                    ),
+                    u1.a,
+                    q.a,
+                ),
+                u1.b,
+                q.b,
+            ),
+        );
+        let h = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a), p1, u1.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.b), p0, u0.b), p1, u1.b,
+                ),
+            ),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                            h.z,
+                            h.z,
+                        ),
+                        h.w,
+                        h.w,
+                    ),
+                    h.a,
+                    h.a,
+                ),
+                h.b,
+                h.b,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete2(u0, u1);
+        }
+        {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(h.x, h.y, h.z, h.w, h.a, h.b, nh);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        }
+    }
+    /// The left singular vector `u_3` from `w = M v_3` and the orthonormal `u_0 .. u_2`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_3 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete3` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 6 rows.
+    fn gs3(u0: Vector6<T>, u1: Vector6<T>, u2: Vector6<T>, w: Vector6<T>) -> Vector6<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y,
+                            ),
+                            u0.z,
+                            w.z,
+                        ),
+                        u0.w,
+                        w.w,
+                    ),
+                    u0.a,
+                    w.a,
+                ),
+                u0.b,
+                w.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, w.x), u1.y, w.y,
+                            ),
+                            u1.z,
+                            w.z,
+                        ),
+                        u1.w,
+                        w.w,
+                    ),
+                    u1.a,
+                    w.a,
+                ),
+                u1.b,
+                w.b,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u2.x, w.x), u2.y, w.y,
+                            ),
+                            u2.z,
+                            w.z,
+                        ),
+                        u2.w,
+                        w.w,
+                    ),
+                    u2.a,
+                    w.a,
+                ),
+                u2.b,
+                w.b,
+            ),
+        );
+        let g = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                    ),
+                    p2,
+                    u2.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                    ),
+                    p2,
+                    u2.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                    ),
+                    p2,
+                    u2.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                    ),
+                    p2,
+                    u2.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.a), p0, u0.a), p1, u1.a,
+                    ),
+                    p2,
+                    u2.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w.b), p0, u0.b), p1, u1.b,
+                    ),
+                    p2,
+                    u2.b,
+                ),
+            ),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                            g.z,
+                            g.z,
+                        ),
+                        g.w,
+                        g.w,
+                    ),
+                    g.a,
+                    g.a,
+                ),
+                g.b,
+                g.b,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete3(u0, u1, u2);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(g.x, g.y, g.z, g.w, g.a, g.b, n);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
+                            ),
+                            u0.z,
+                            q.z,
+                        ),
+                        u0.w,
+                        q.w,
+                    ),
+                    u0.a,
+                    q.a,
+                ),
+                u0.b,
+                q.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y,
+                            ),
+                            u1.z,
+                            q.z,
+                        ),
+                        u1.w,
+                        q.w,
+                    ),
+                    u1.a,
+                    q.a,
+                ),
+                u1.b,
+                q.b,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u2.x, q.x), u2.y, q.y,
+                            ),
+                            u2.z,
+                            q.z,
+                        ),
+                        u2.w,
+                        q.w,
+                    ),
+                    u2.a,
+                    q.a,
+                ),
+                u2.b,
+                q.b,
+            ),
+        );
+        let h = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                    ),
+                    p2,
+                    u2.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                    ),
+                    p2,
+                    u2.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                    ),
+                    p2,
+                    u2.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                    ),
+                    p2,
+                    u2.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a), p1, u1.a,
+                    ),
+                    p2,
+                    u2.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q.b), p0, u0.b), p1, u1.b,
+                    ),
+                    p2,
+                    u2.b,
+                ),
+            ),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                            h.z,
+                            h.z,
+                        ),
+                        h.w,
+                        h.w,
+                    ),
+                    h.a,
+                    h.a,
+                ),
+                h.b,
+                h.b,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete3(u0, u1, u2);
+        }
+        {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(h.x, h.y, h.z, h.w, h.a, h.b, nh);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        }
+    }
+    /// The left singular vector `u_4` from `w = M v_4` and the orthonormal `u_0 .. u_3`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_4 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete4` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 6 rows.
+    fn gs4(
+        u0: Vector6<T>, u1: Vector6<T>, u2: Vector6<T>, u3: Vector6<T>, w: Vector6<T>,
+    ) -> Vector6<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y,
+                            ),
+                            u0.z,
+                            w.z,
+                        ),
+                        u0.w,
+                        w.w,
+                    ),
+                    u0.a,
+                    w.a,
+                ),
+                u0.b,
+                w.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, w.x), u1.y, w.y,
+                            ),
+                            u1.z,
+                            w.z,
+                        ),
+                        u1.w,
+                        w.w,
+                    ),
+                    u1.a,
+                    w.a,
+                ),
+                u1.b,
+                w.b,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u2.x, w.x), u2.y, w.y,
+                            ),
+                            u2.z,
+                            w.z,
+                        ),
+                        u2.w,
+                        w.w,
+                    ),
+                    u2.a,
+                    w.a,
+                ),
+                u2.b,
+                w.b,
+            ),
+        );
+        let p3 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u3.x, w.x), u3.y, w.y,
+                            ),
+                            u3.z,
+                            w.z,
+                        ),
+                        u3.w,
+                        w.w,
+                    ),
+                    u3.a,
+                    w.a,
+                ),
+                u3.b,
+                w.b,
+            ),
+        );
+        let g = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x), p1, u1.x,
+                        ),
+                        p2,
+                        u2.x,
+                    ),
+                    p3,
+                    u3.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y), p1, u1.y,
+                        ),
+                        p2,
+                        u2.y,
+                    ),
+                    p3,
+                    u3.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z), p1, u1.z,
+                        ),
+                        p2,
+                        u2.z,
+                    ),
+                    p3,
+                    u3.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w), p1, u1.w,
+                        ),
+                        p2,
+                        u2.w,
+                    ),
+                    p3,
+                    u3.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.a), p0, u0.a), p1, u1.a,
+                        ),
+                        p2,
+                        u2.a,
+                    ),
+                    p3,
+                    u3.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w.b), p0, u0.b), p1, u1.b,
+                        ),
+                        p2,
+                        u2.b,
+                    ),
+                    p3,
+                    u3.b,
+                ),
+            ),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                            g.z,
+                            g.z,
+                        ),
+                        g.w,
+                        g.w,
+                    ),
+                    g.a,
+                    g.a,
+                ),
+                g.b,
+                g.b,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete4(u0, u1, u2, u3);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(g.x, g.y, g.z, g.w, g.a, g.b, n);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
+                            ),
+                            u0.z,
+                            q.z,
+                        ),
+                        u0.w,
+                        q.w,
+                    ),
+                    u0.a,
+                    q.a,
+                ),
+                u0.b,
+                q.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y,
+                            ),
+                            u1.z,
+                            q.z,
+                        ),
+                        u1.w,
+                        q.w,
+                    ),
+                    u1.a,
+                    q.a,
+                ),
+                u1.b,
+                q.b,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u2.x, q.x), u2.y, q.y,
+                            ),
+                            u2.z,
+                            q.z,
+                        ),
+                        u2.w,
+                        q.w,
+                    ),
+                    u2.a,
+                    q.a,
+                ),
+                u2.b,
+                q.b,
+            ),
+        );
+        let p3 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u3.x, q.x), u3.y, q.y,
+                            ),
+                            u3.z,
+                            q.z,
+                        ),
+                        u3.w,
+                        q.w,
+                    ),
+                    u3.a,
+                    q.a,
+                ),
+                u3.b,
+                q.b,
+            ),
+        );
+        let h = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
+                        ),
+                        p2,
+                        u2.x,
+                    ),
+                    p3,
+                    u3.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
+                        ),
+                        p2,
+                        u2.y,
+                    ),
+                    p3,
+                    u3.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
+                        ),
+                        p2,
+                        u2.z,
+                    ),
+                    p3,
+                    u3.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
+                        ),
+                        p2,
+                        u2.w,
+                    ),
+                    p3,
+                    u3.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a), p1, u1.a,
+                        ),
+                        p2,
+                        u2.a,
+                    ),
+                    p3,
+                    u3.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.b), p0, u0.b), p1, u1.b,
+                        ),
+                        p2,
+                        u2.b,
+                    ),
+                    p3,
+                    u3.b,
+                ),
+            ),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                            h.z,
+                            h.z,
+                        ),
+                        h.w,
+                        h.w,
+                    ),
+                    h.a,
+                    h.a,
+                ),
+                h.b,
+                h.b,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete4(u0, u1, u2, u3);
+        }
+        {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(h.x, h.y, h.z, h.w, h.a, h.b, nh);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        }
+    }
+    /// The left singular vector `u_5` from `w = M v_5` and the orthonormal `u_0 .. u_4`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_5 = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete5` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with 6 rows.
+    fn gs5(
+        u0: Vector6<T>,
+        u1: Vector6<T>,
+        u2: Vector6<T>,
+        u3: Vector6<T>,
+        u4: Vector6<T>,
+        w: Vector6<T>,
+    ) -> Vector6<T> {
+        revoke_ap_tracking();
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, w.x), u0.y, w.y,
+                            ),
+                            u0.z,
+                            w.z,
+                        ),
+                        u0.w,
+                        w.w,
+                    ),
+                    u0.a,
+                    w.a,
+                ),
+                u0.b,
+                w.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, w.x), u1.y, w.y,
+                            ),
+                            u1.z,
+                            w.z,
+                        ),
+                        u1.w,
+                        w.w,
+                    ),
+                    u1.a,
+                    w.a,
+                ),
+                u1.b,
+                w.b,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u2.x, w.x), u2.y, w.y,
+                            ),
+                            u2.z,
+                            w.z,
+                        ),
+                        u2.w,
+                        w.w,
+                    ),
+                    u2.a,
+                    w.a,
+                ),
+                u2.b,
+                w.b,
+            ),
+        );
+        let p3 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u3.x, w.x), u3.y, w.y,
+                            ),
+                            u3.z,
+                            w.z,
+                        ),
+                        u3.w,
+                        w.w,
+                    ),
+                    u3.a,
+                    w.a,
+                ),
+                u3.b,
+                w.b,
+            ),
+        );
+        let p4 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u4.x, w.x), u4.y, w.y,
+                            ),
+                            u4.z,
+                            w.z,
+                        ),
+                        u4.w,
+                        w.w,
+                    ),
+                    u4.a,
+                    w.a,
+                ),
+                u4.b,
+                w.b,
+            ),
+        );
+        let g = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w.x), p0, u0.x),
+                                p1,
+                                u1.x,
+                            ),
+                            p2,
+                            u2.x,
+                        ),
+                        p3,
+                        u3.x,
+                    ),
+                    p4,
+                    u4.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w.y), p0, u0.y),
+                                p1,
+                                u1.y,
+                            ),
+                            p2,
+                            u2.y,
+                        ),
+                        p3,
+                        u3.y,
+                    ),
+                    p4,
+                    u4.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w.z), p0, u0.z),
+                                p1,
+                                u1.z,
+                            ),
+                            p2,
+                            u2.z,
+                        ),
+                        p3,
+                        u3.z,
+                    ),
+                    p4,
+                    u4.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w.w), p0, u0.w),
+                                p1,
+                                u1.w,
+                            ),
+                            p2,
+                            u2.w,
+                        ),
+                        p3,
+                        u3.w,
+                    ),
+                    p4,
+                    u4.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w.a), p0, u0.a),
+                                p1,
+                                u1.a,
+                            ),
+                            p2,
+                            u2.a,
+                        ),
+                        p3,
+                        u3.a,
+                    ),
+                    p4,
+                    u4.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w.b), p0, u0.b),
+                                p1,
+                                u1.b,
+                            ),
+                            p2,
+                            u2.b,
+                        ),
+                        p3,
+                        u3.b,
+                    ),
+                    p4,
+                    u4.b,
+                ),
+            ),
+        };
+        let n = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
+                            g.z,
+                            g.z,
+                        ),
+                        g.w,
+                        g.w,
+                    ),
+                    g.a,
+                    g.a,
+                ),
+                g.b,
+                g.b,
+            ),
+        );
+        if n == R::zero() {
+            return Self::complete5(u0, u1, u2, u3, u4);
+        }
+        let q = {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(g.x, g.y, g.z, g.w, g.a, g.b, n);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        };
+        let p0 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
+                            ),
+                            u0.z,
+                            q.z,
+                        ),
+                        u0.w,
+                        q.w,
+                    ),
+                    u0.a,
+                    q.a,
+                ),
+                u0.b,
+                q.b,
+            ),
+        );
+        let p1 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y,
+                            ),
+                            u1.z,
+                            q.z,
+                        ),
+                        u1.w,
+                        q.w,
+                    ),
+                    u1.a,
+                    q.a,
+                ),
+                u1.b,
+                q.b,
+            ),
+        );
+        let p2 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u2.x, q.x), u2.y, q.y,
+                            ),
+                            u2.z,
+                            q.z,
+                        ),
+                        u2.w,
+                        q.w,
+                    ),
+                    u2.a,
+                    q.a,
+                ),
+                u2.b,
+                q.b,
+            ),
+        );
+        let p3 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u3.x, q.x), u3.y, q.y,
+                            ),
+                            u3.z,
+                            q.z,
+                        ),
+                        u3.w,
+                        q.w,
+                    ),
+                    u3.a,
+                    q.a,
+                ),
+                u3.b,
+                q.b,
+            ),
+        );
+        let p4 = R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), u4.x, q.x), u4.y, q.y,
+                            ),
+                            u4.z,
+                            q.z,
+                        ),
+                        u4.w,
+                        q.w,
+                    ),
+                    u4.a,
+                    q.a,
+                ),
+                u4.b,
+                q.b,
+            ),
+        );
+        let h = Vector6 {
+            x: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x),
+                                p1,
+                                u1.x,
+                            ),
+                            p2,
+                            u2.x,
+                        ),
+                        p3,
+                        u3.x,
+                    ),
+                    p4,
+                    u4.x,
+                ),
+            ),
+            y: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y),
+                                p1,
+                                u1.y,
+                            ),
+                            p2,
+                            u2.y,
+                        ),
+                        p3,
+                        u3.y,
+                    ),
+                    p4,
+                    u4.y,
+                ),
+            ),
+            z: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z),
+                                p1,
+                                u1.z,
+                            ),
+                            p2,
+                            u2.z,
+                        ),
+                        p3,
+                        u3.z,
+                    ),
+                    p4,
+                    u4.z,
+                ),
+            ),
+            w: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w),
+                                p1,
+                                u1.w,
+                            ),
+                            p2,
+                            u2.w,
+                        ),
+                        p3,
+                        u3.w,
+                    ),
+                    p4,
+                    u4.w,
+                ),
+            ),
+            a: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a),
+                                p1,
+                                u1.a,
+                            ),
+                            p2,
+                            u2.a,
+                        ),
+                        p3,
+                        u3.a,
+                    ),
+                    p4,
+                    u4.a,
+                ),
+            ),
+            b: R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.b), p0, u0.b),
+                                p1,
+                                u1.b,
+                            ),
+                            p2,
+                            u2.b,
+                        ),
+                        p3,
+                        u3.b,
+                    ),
+                    p4,
+                    u4.b,
+                ),
+            ),
+        };
+        let nh = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y),
+                            h.z,
+                            h.z,
+                        ),
+                        h.w,
+                        h.w,
+                    ),
+                    h.a,
+                    h.a,
+                ),
+                h.b,
+                h.b,
+            ),
+        );
+        if nh < R::HALF {
+            return Self::complete5(u0, u1, u2, u3, u4);
+        }
+        {
+            let (q0, q1, q2, q3, q4, q5) = R::div6(h.x, h.y, h.z, h.w, h.a, h.b, nh);
+            Vector6 { x: q0, y: q1, z: q2, w: q3, a: q4, b: q5 }
+        }
+    }
     /// A unit 6-vector orthogonal to the 1 orthonormal `u*`: the axis `e_i` whose squared
     /// projection `Σ u_l[i]²` onto their span is the SMALLEST (ties to the earlier axis; it is at
     /// most 1/6, so the residual has a squared norm of at least 5/6), stripped of that
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete1(u0: Vector6<T>) -> Vector6<T> {
+        revoke_ap_tracking();
         let c0 = u0.x * u0.x;
         let c1 = u0.y * u0.y;
         let c2 = u0.z * u0.z;
@@ -1508,6 +4337,7 @@ pub(crate) impl SvdComplete6Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete2(u0: Vector6<T>, u1: Vector6<T>) -> Vector6<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod2(u0.x, u0.x, u1.x, u1.x);
         let c1 = R::sum_prod2(u0.y, u0.y, u1.y, u1.y);
         let c2 = R::sum_prod2(u0.z, u0.z, u1.z, u1.z);
@@ -1694,6 +4524,7 @@ pub(crate) impl SvdComplete6Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete3(u0: Vector6<T>, u1: Vector6<T>, u2: Vector6<T>) -> Vector6<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod3(u0.x, u0.x, u1.x, u1.x, u2.x, u2.x);
         let c1 = R::sum_prod3(u0.y, u0.y, u1.y, u1.y, u2.y, u2.y);
         let c2 = R::sum_prod3(u0.z, u0.z, u1.z, u1.z, u2.z, u2.z);
@@ -1929,6 +4760,7 @@ pub(crate) impl SvdComplete6Impl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete4(u0: Vector6<T>, u1: Vector6<T>, u2: Vector6<T>, u3: Vector6<T>) -> Vector6<T> {
+        revoke_ap_tracking();
         let c0 = R::sum_prod4(u0.x, u0.x, u1.x, u1.x, u2.x, u2.x, u3.x, u3.x);
         let c1 = R::sum_prod4(u0.y, u0.y, u1.y, u1.y, u2.y, u2.y, u3.y, u3.y);
         let c2 = R::sum_prod4(u0.z, u0.z, u1.z, u1.z, u2.z, u2.z, u3.z, u3.z);
@@ -2203,6 +5035,7 @@ pub(crate) impl SvdComplete6Impl<
     fn complete5(
         u0: Vector6<T>, u1: Vector6<T>, u2: Vector6<T>, u3: Vector6<T>, u4: Vector6<T>,
     ) -> Vector6<T> {
+        revoke_ap_tracking();
         let c0 = R::wide_rescale(
             R::wide_add_prod(
                 R::wide_add_prod(

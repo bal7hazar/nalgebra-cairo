@@ -6,7 +6,8 @@
 use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
-use super::kernels::SvdRightImpl;
+use crate::base::{MatrixMul, MatrixTrMul};
+use super::kernels::{SvdComplete1Impl, SvdRightImpl};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix1<T>`:
 /// `u` is 1x1 with orthonormal columns, `v_t` is 1x1 with orthonormal rows, the 1
@@ -69,8 +70,8 @@ pub impl Svd1Impl<
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. Panics on overflow of a component of `MᵀM` (the squares of the entries
-    /// must be representable).
+    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
+    /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
     fn new(matrix: Matrix1<T>) -> Svd1<T> {
         Svd1InternalTrait::from_right(matrix, Svd1InternalTrait::right(matrix))
     }
@@ -113,11 +114,12 @@ pub impl Svd1Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 1 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 1 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd1<T>) -> Matrix1<T> {
-        let a0_0 = self.u.x * self.singular_values.x;
-        Matrix1 { x: a0_0 * self.v_t.x }
+        revoke_ap_tracking();
+        Matrix1 { x: self.u.x * self.singular_values.x }.mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (1x1), `σ⁺_i = 1 / σ_i` when
@@ -126,12 +128,12 @@ pub impl Svd1Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd1<T>, eps: T) -> Option<Matrix1<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
-        let b0_0 = self.v_t.x * p0;
-        Some(Matrix1 { x: b0_0 * self.u.x })
+        Some(Matrix1 { x: self.v_t.x * p0 }.mul_mat(Matrix1 { x: self.u.x }))
     }
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
@@ -139,12 +141,18 @@ pub impl Svd1Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd1<T>, b: Matrix1<T>, eps: T) -> Option<Matrix1<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = self.u.x * b.x;
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        Some(Matrix1 { x: self.v_t.x * z0 })
+        let y = self.u.tr_mul(b);
+        Some(
+            self
+                .v_t
+                .tr_mul(
+                    Matrix1 { x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps) },
+                ),
+        )
     }
 
     /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ`
@@ -153,9 +161,10 @@ pub impl Svd1Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd1<T>) -> Option<(Matrix1<T>, Matrix1<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.x * self.singular_values.x;
         let p0_0 = a0_0 * self.u.x;
-        Some((Matrix1 { x: p0_0 }, Matrix1 { x: self.u.x * self.v_t.x }))
+        Some((Matrix1 { x: p0_0 }, self.u.mul_mat(self.v_t)))
     }
 
     /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
@@ -163,6 +172,7 @@ pub impl Svd1Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd1<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut uc0 = Matrix1 { x: self.u.x };
         let mut vr0 = Matrix1 { x: self.v_t.x };
@@ -176,8 +186,17 @@ pub impl Svd1Impl<
     }
 }
 
-/// Crate-internal kernels of `Svd1<T>`: the Gram matrix, the decomposition from the right
-/// singular vectors, the singular values alone.
+/// The columns `w_i = M v_i`, their norms and the right vectors, sorted (private state of
+/// `Svd1InternalTrait`).
+#[derive(Copy, Drop)]
+pub(crate) struct SortedSvd1<T> {
+    s0: T,
+    w0: Matrix1<T>,
+    v0: Matrix1<T>,
+}
+
+/// Crate-internal kernels of `Svd1<T>`: the Gram matrix, the right singular vectors, the sorted
+/// columns `M v_i`, the decomposition.
 #[generate_trait]
 pub(crate) impl Svd1InternalImpl<
     T,
@@ -205,42 +224,41 @@ pub(crate) impl Svd1InternalImpl<
         Some(Matrix1 { x: R::one() })
     }
 
-    /// The decomposition from the right singular vectors `v` (columns): `w_i = M v_i` (one
-    /// fused sum per component), `σ_i = |w_i|` (floored norm of the exact sum of squares), the
-    /// triples sorted DESCENDING by `σ` (stable odd-even transposition network, strict
-    /// comparison: ties keep their order), then the left vectors by classical Gram-Schmidt run
-    /// TWICE ("twice is enough"): `g = w_k - Σ <u_l, w_k> u_l` and `h = q - Σ <u_l, q> u_l`
-    /// with `q = g / |g|`, one fused sum per component each, `u_k = h / |h|`. The second pass
-    /// costs about as much as the first and makes `U` orthonormal to the rounding of `h` even
-    /// when `σ_k` is tiny (rank deficiency), where one pass leaves `u_k` as far from the others
-    /// as `rounding / σ_k`. A column that vanishes EXACTLY (`g = 0`, or `σ_1 = 0`) is completed
-    /// by the axis least represented in the span of the previous ones (`SvdComplete`).
-    fn from_right(m: Matrix1<T>, v: Matrix1<T>) -> Svd1<T> {
+    /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`
+    /// (floored norm of the exact
+    /// sum of squares) for the right vectors `v` (columns), the triples sorted DESCENDING by `σ`
+    /// (stable odd-even transposition network, strict comparison: ties keep their order). The
+    /// singular values alone stop here.
+    fn sorted(m: Matrix1<T>, v: Matrix1<T>) -> SortedSvd1<T> {
         revoke_ap_tracking();
         let v0 = Matrix1 { x: v.x };
-        let w0 = Matrix1 { x: m.x * v0.x };
+        let mv = m.mul_mat(v);
+        let w0 = Matrix1 { x: mv.x };
         let s0 = w0.x.abs();
         let (mut s0, mut w0, mut v0) = (s0, w0, v0);
 
-        let u0 = if s0 == R::zero() {
-            Matrix1 { x: R::one() }
-        } else {
-            Matrix1 { x: R::div(w0.x, s0) }
-        };
+        SortedSvd1 { s0, w0, v0 }
+    }
+
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
+    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete1::gs*`):
+    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
+    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
+    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
+    /// = 0`) is completed by the axis least represented in the span of the previous ones.
+    fn from_right(m: Matrix1<T>, v: Matrix1<T>) -> Svd1<T> {
+        let t = Self::sorted(m, v);
+        let (s0, w0, v0) = (t.s0, t.w0, t.v0);
+        let u0 = SvdComplete1Impl::<T>::first(w0, s0);
         Svd1 {
             u: Matrix1 { x: u0.x }, singular_values: Matrix1 { x: s0 }, v_t: Matrix1 { x: v0.x },
         }
     }
 
-    /// The singular values alone: `from_right` without the left vectors.
+    /// The singular values alone: `sorted`, without the left vectors.
     fn values_from_right(m: Matrix1<T>, v: Matrix1<T>) -> Matrix1<T> {
-        revoke_ap_tracking();
-        let v0 = Matrix1 { x: v.x };
-        let w0 = Matrix1 { x: m.x * v0.x };
-        let s0 = w0.x.abs();
-        let mut s0 = s0;
-
-        Matrix1 { x: s0 }
+        let t = Self::sorted(m, v);
+        Matrix1 { x: t.s0 }
     }
 }
 

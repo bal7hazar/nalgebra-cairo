@@ -11,10 +11,6 @@ use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 use crate::builders::{amax_4x4, mat4x4, max_ulp_4x4, orth_4x4, vec4};
 use crate::oracle_eigen as oracle;
 
-/// `|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`, in raw units, over every oracle case.
-const REC_BOUND: u128 = 100000;
-/// `|VᵀV - I|` in raw units, over every oracle case.
-const ORTH_BOUND: u128 = 100000;
 const ONE: i64 = 0x100000000;
 
 /// `(eigenvalue excess over the oracle tolerance, reconstruction error per unit, orthonormality
@@ -57,36 +53,40 @@ fn run(cases: Span<([[i64; 4]; 4], (i64, i64, i64, i64), u64)>) -> (u128, u128, 
 }
 
 /// `symmetric_eigen4_eigenvalues` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen4_eigenvalues() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen4_eigenvalues_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 21 && orth <= 3, "measured {} {}", rec, orth);
 }
 /// `symmetric_eigen4_eigenvalues_spd` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen4_eigenvalues_spd() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen4_eigenvalues_spd_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 5 && orth <= 3, "measured {} {}", rec, orth);
 }
 /// `symmetric_eigen4_eigenvalues_clustered` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen4_eigenvalues_clustered() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen4_eigenvalues_clustered_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 3 && orth <= 3, "measured {} {}", rec, orth);
 }
 /// `symmetric_eigen4_eigenvalues_deficient` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen4_eigenvalues_deficient() {
     let (ex, rec, orth) = run(oracle::symmetric_eigen4_eigenvalues_deficient_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {} {}", rec, orth);
+    assert!(rec <= 4 && orth <= 3, "measured {} {}", rec, orth);
 }
 
 #[test]

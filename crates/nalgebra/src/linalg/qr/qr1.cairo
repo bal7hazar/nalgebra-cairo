@@ -3,6 +3,7 @@
 //! modified Gram-Schmidt, the algorithm of `Qr3` / `Qr4` (see `linalg::qr` for the study of the
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
 use crate::base::solve::SolveKernel;
@@ -49,6 +50,7 @@ pub impl Qr1Impl<
     /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: Matrix1<T>) -> Qr1<T> {
+        revoke_ap_tracking();
         let a0 = Matrix1 { x: matrix.x };
         let r0_0 = a0.x.abs();
         let q0 = if r0_0 == R::zero() {
@@ -131,6 +133,7 @@ pub impl Qr1Impl<
     /// substitution of each row of `Q`. Two roundings per entry. Panics on overflow. Upstream:
     /// `QR::try_inverse`.
     fn try_inverse(self: Qr1<T>) -> Option<Matrix1<T>> {
+        revoke_ap_tracking();
         if !Self::is_invertible(self) {
             return None;
         }

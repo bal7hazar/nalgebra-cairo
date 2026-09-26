@@ -180,17 +180,17 @@ def rotation_s(n: int, p: int, q: int, src: str = "s") -> str:
 
     def value(i, j):
         if (i, j) == (p, p):
-            return f"R::mul_add(-t, g, {src}.{sym_f(p, p)})"
+            return f"Self::rmul_add(-t, g, {src}.{sym_f(p, p)})"
         if (i, j) == (q, q):
-            return f"R::mul_add(t, g, {src}.{sym_f(q, q)})"
+            return f"Self::rmul_add(t, g, {src}.{sym_f(q, q)})"
         if (i, j) == (p, q):
             return "R::zero()"
         if p in (i, j) and q not in (i, j):
             k = j if i == p else i
-            return f"R::diff_prod(c, {src}.{sym_f(k, p)}, sn, {src}.{sym_f(k, q)})"
+            return f"Self::rdiff(c, {src}.{sym_f(k, p)}, sn, {src}.{sym_f(k, q)})"
         if q in (i, j) and p not in (i, j):
             k = j if i == q else i
-            return f"R::sum_prod2(sn, {src}.{sym_f(k, p)}, c, {src}.{sym_f(k, q)})"
+            return f"Self::rsum(sn, {src}.{sym_f(k, p)}, c, {src}.{sym_f(k, q)})"
         return f"{src}.{sym_f(i, j)}"
 
     return sym_lit(n, value)
@@ -200,9 +200,9 @@ def rotation_v(n: int, p: int, q: int) -> str:
     def value(i, j):
         vp, vq = f"v.{fld(n, n, i, p)}", f"v.{fld(n, n, i, q)}"
         if j == p:
-            return f"R::diff_prod(c, {vp}, sn, {vq})"
+            return f"Self::rdiff(c, {vp}, sn, {vq})"
         if j == q:
-            return f"R::sum_prod2(sn, {vp}, c, {vq})"
+            return f"Self::rsum(sn, {vp}, c, {vq})"
         return f"v.{fld(n, n, i, j)}"
 
     return struct_lit(n, n, value)
@@ -359,11 +359,53 @@ pub(crate) impl Jacobi{n}Impl<
         (t, c, t * c)
     }}
 
+    /// `a b - c d` rounded to NEAREST (half up): the exact sum plus half a raw unit
+    /// (`HALF * default_epsilon()`, an exact product), floored once. The rotations update every
+    /// entry dozens of times, and the floor of the plain kernels biases all of them the same way:
+    /// measured on the fixed-point model, rounding to nearest cuts the eigenvector residual of
+    /// the 5x5 / 6x6 decompositions from 30 / 44 ulp to 7 / 6 (the matrix and the rotation must
+    /// both be rounded: either alone leaves 13 to 42), which is what lets the SVDs built on it
+    /// meet the oracle tolerance. One `wide_add_prod` more per updated entry.
+    #[inline(always)]
+    fn rdiff(a: T, b: T, c: T, d: T) -> T {{
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), a, b), c, d),
+                R::HALF,
+                R::default_epsilon(),
+            ),
+        )
+    }}
+
+    /// `a b + c d` rounded to nearest, see `rdiff`.
+    #[inline(always)]
+    fn rsum(a: T, b: T, c: T, d: T) -> T {{
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a, b), c, d),
+                R::HALF,
+                R::default_epsilon(),
+            ),
+        )
+    }}
+
+    /// `a b + c` rounded to nearest, see `rdiff` (the diagonal updates `a_pp -/+ t g`).
+    #[inline(always)]
+    fn rmul_add(a: T, b: T, c: T) -> T {{
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add(R::wide_add_prod(R::wide_zero(), a, b), c),
+                R::HALF,
+                R::default_epsilon(),
+            ),
+        )
+    }}
+
     /// One cyclic sweep: the {rot} rotations in row order, each skipped when its entry is already
     /// exactly zero (a correctness guard: `h = g = 0` would divide by zero; Sierra charges the
-    /// dearer branch, so it saves nothing). Per rotation: `a_pp -= t g`, `a_qq += t g` (one
-    /// `mul_add` each), `2 ({n} - 2)` fused `diff_prod` / `sum_prod2` on the off-diagonal entries
-    /// and `2 * {n}` on the accumulated rotation.
+    /// dearer branch, so it saves nothing). Per rotation: `a_pp -= t g`, `a_qq += t g`, `2 ({n} -
+    /// 2)` fused sums of two products on the off-diagonal entries and `2 * {n}` on the
+    /// accumulated rotation, each rounded to nearest (`rdiff` / `rsum` / `rmul_add`).
     fn sweep(self: Jacobi{n}<T>) -> Jacobi{n}<T> {{
         let mut s = self.s;
         let mut v = self.v;
@@ -408,6 +450,7 @@ pub(crate) impl Jacobi{n}Impl<
     /// equal eigenvalues keep their order, so a diagonal input keeps its axes), the matching
     /// columns renormalised (each accumulates the rounding of its rotations) and signed.
     fn finish(self: Jacobi{n}<T>) -> SymmetricEigen{n}<T> {{
+        revoke_ap_tracking();
         let v = self.v;
         {cols}
         {diag}
@@ -482,6 +525,7 @@ pub(crate) impl SymmetricEigen{n}InternalImpl<
     }}
     /// The upper triangle of `V * diag(eigenvalues) * Vᵀ`.
     fn recompose_sym(self: SymmetricEigen{n}<T>) -> Sym{n}<T> {{
+        revoke_ap_tracking();
         let e = self;
         {scaled}
         {recomp}
@@ -535,6 +579,7 @@ def outputs() -> dict[str, str]:
     """{path relative to the repository: unformatted content}."""
     lin = "crates/nalgebra/src/linalg/"
     out = {}
+    out[lin + "symmetric_eigen1.cairo"] = render_symmetric_eigen1()
     for n in (4, 5, 6):
         out[lin + f"symmetric_eigen{n}.cairo"] = render_symmetric_eigen(n)
     out[lin + "svd.cairo"] = render_svd_root()
@@ -545,6 +590,7 @@ def outputs() -> dict[str, str]:
         out[lin + f"qr/{qr_name(r, c).lower()}.cairo"] = render_qr(r, c)
     out[lin + "cholesky_update.cairo"] = render_cholesky_update()
     out.update(eigen_package())
+    out.update(svd_packages())
     return out
 
 
@@ -619,19 +665,27 @@ def rows_type(r: int, c: int) -> str:
 
 
 def tup_type(n: int) -> str:
-    return "i64" if n == 1 else f"({', '.join(['i64'] * n)})"
+    return "(i64,)" if n == 1 else f"({', '.join(['i64'] * n)})"
 
 
 def builder_name(r: int, c: int) -> str:
     return f"mat{r}x{c}"
 
 
-def render_builders(shapes: set[tuple[int, int]], vecs: set[int]) -> str:
-    """`matRxC(rows)` / `vecN(tuple)` from the raw oracle layout, and the error measures."""
+def render_builders(shapes: set[tuple[int, int]], vecs: set[int], eq_types=()) -> str:
+    """`matRxC(rows)` / `vecN(tuple)` from the raw oracle layout, the error measures, and the
+    test-only field-wise `PartialEq` of the decomposition types `eq_types` ((name, fields))."""
     out = [HEADER + "//! Builders of the static shapes from the raw oracle layout (ROW-major rows,\n"
-           "//! component tuples) and the raw-unit error measures of the tests.\n",
+           "//! component tuples), the raw-unit error measures of the tests and the test-only\n"
+           "//! `PartialEq` of the decompositions (upstream has none).\n",
            "use fixed::Fixed;",
            "use nalgebra_tests_utils::{abs_raw, fx, ulp_diff};"]
+    for name, fields in eq_types:
+        out.append(f"use nalgebra::linalg::{name};")
+        cond = " && ".join(f"lhs.{f} == rhs.{f}" for f in fields)
+        out.append(f"/// Field-wise equality of `{name}`.\n"
+                   f"pub impl {name}PartialEq<T, +PartialEq<T>> of PartialEq<{name}<T>> {{\n"
+                   f"    fn eq(lhs: @{name}<T>, rhs: @{name}<T>) -> bool {{ {cond} }}\n}}")
     used = set(shapes) | {(n, 1) for n in vecs}
     for r, c in sorted(used):
         out.append(f"use nalgebra::{tname(r, c)};")
@@ -674,12 +728,11 @@ def render_builders(shapes: set[tuple[int, int]], vecs: set[int]) -> str:
                    f"pub fn orth_{r}x{c}(a: {tname(r, c)}<Fixed>) -> u128 "
                    f"{{ let mut e: u128 = 0; {' '.join(terms)} e }}")
     for n in sorted(vecs):
-        if n == 1:
-            continue
         names = [f"a{i}" for i in range(n)]
+        pat = "(a0,)" if n == 1 else f"({', '.join(names)})"
         out.append(f"/// `{tname(n, 1)}` from a raw component tuple.\n"
                    f"pub fn vec{n}(t: {tup_type(n)}) -> {tname(n, 1)}<Fixed> "
-                   f"{{ let ({', '.join(names)}) = t; "
+                   f"{{ let {pat} = t; "
                    f"{vec_lit(n, lambda i: f'fx({names[i]})')} }}")
     out.append("""/// The raw value, widened.
 fn w(a: Fixed) -> i128 {
@@ -723,13 +776,15 @@ def render_eigen_tests(n: int) -> str:
         for a, b in zip(ev, ex))
     tests = []
     for suffix in ops:
+        rb, ob = EIGEN_BOUNDS.get((n, suffix), (0, 0))
         tests.append(f"""/// `symmetric_eigen{n}_eigenvalues{suffix}` (oracle): eigenvalues within the oracle tolerance,
-/// the reconstruction and the orthonormality of the eigenvectors within the measured bounds.
+/// the reconstruction (`|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`) and the
+/// orthonormality of the eigenvectors (`|VᵀV - I|`) within the measured bounds (raw units).
 #[test]
 fn test_oracle_symmetric_eigen{n}_eigenvalues{suffix}() {{
     let (ex, rec, orth) = run(oracle::symmetric_eigen{n}_eigenvalues{suffix}_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
-    assert!(rec <= REC_BOUND && orth <= ORTH_BOUND, "measured {{}} {{}}", rec, orth);
+    assert!(rec <= {rb} && orth <= {ob}, "measured {{}} {{}}", rec, orth);
 }}""")
     # Exact cases.
     diag = [3, -1, 7, 2, -5, 4][:n]
@@ -754,10 +809,6 @@ use nalgebra_tests_utils::{{abs_raw, excess, oracle_tol, ulp_diff}};
 use crate::builders::{{amax_{n}x{n}, mat{n}x{n}, max_ulp_{n}x{n}, orth_{n}x{n}, vec{n}}};
 use crate::oracle_eigen as oracle;
 
-/// `|V diag(λ) Vᵀ - A|` per unit of `max(1, max |a_ij|)`, in raw units, over every oracle case.
-const REC_BOUND: u128 = 100000;
-/// `|VᵀV - I|` in raw units, over every oracle case.
-const ORTH_BOUND: u128 = 100000;
 const ONE: i64 = 0x100000000;
 
 /// `(eigenvalue excess over the oracle tolerance, reconstruction error per unit, orthonormality
@@ -949,6 +1000,7 @@ def svd_kernels() -> str:
 //! the completion of `k` orthonormal `R`-vectors by one more (`complete`), the fallback of the
 //! Gram-Schmidt of the left singular vectors when a column vanishes EXACTLY.
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::sym_matrix2::SymMatrix2;
 use crate::base::sym_matrix3::SymMatrix3;
@@ -958,7 +1010,8 @@ use crate::linalg::symmetric_eigen4::{{Sym4, SymmetricEigen4InternalTrait}};
 use crate::linalg::symmetric_eigen5::{{Sym5, SymmetricEigen5InternalTrait}};
 use crate::linalg::symmetric_eigen6::{{Sym6, SymmetricEigen6InternalTrait}};
 {chr(10).join(use_shape(n, n) for n in range(2, 7))}
-{chr(10).join(use_shape(n, 1) for n in range(2, 7))}
+{chr(10).join(use_shape(n, 1) for n in range(1, 7) if n != 1)}
+use crate::base::matrix1::Matrix1;
 """]
     # right vectors
     body = []
@@ -1044,9 +1097,20 @@ pub(crate) impl SvdRightImpl<
 }}
 """)
     # completions
-    for r in range(2, 7):
+    for r in range(1, 7):
         V = tname(r, 1)
-        fns = []
+        e1 = vec_lit(r, lambda i: "R::one()" if i == 0 else "R::zero()")
+        fns = [f"""    /// The first left singular vector: `w / s`, or the first axis when `s = |w|` is zero
+    /// (`M = 0`). Shared by every SVD with {r} rows.
+    #[inline(always)]
+    fn first(w: {V}<T>, s: T) -> {V}<T> {{
+        if s == R::zero() {{
+            {e1}
+        }} else {{
+            {div_into(r, 'w', 's')}
+        }}
+    }}"""]
+        fns += [gs_kernel(r, k) for k in range(1, r)]
         for k in range(1, r):
             args = ", ".join(f"u{l}: {V}<T>" for l in range(k))
             cands = []
@@ -1070,6 +1134,7 @@ pub(crate) impl SvdRightImpl<
     /// projection in one fused sum per component and normalised.
     #[inline(never)]
     fn complete{k}({args}) -> {V}<T> {{
+        revoke_ap_tracking();
         {' '.join(cands)}
         {' '.join(pick)}
         let _ = cb;
@@ -1077,7 +1142,8 @@ pub(crate) impl SvdRightImpl<
         let r = {vec_lit(r, lambda i: comps[i])};
         {div_into(r, 'r', norm(cols(r, 'r')))}
     }}""")
-        parts.append(f"""/// The completions of orthonormal families of {r}-vectors (crate-internal).
+        parts.append(f"""/// The left singular vectors of the SVDs with {r} rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of {r}-vectors.
 #[generate_trait]
 pub(crate) impl SvdComplete{r}Impl<
 {BOUNDS}
@@ -1089,70 +1155,134 @@ pub(crate) impl SvdComplete{r}Impl<
 
 
 def svd_left(r: int, c: int) -> list[str]:
-    """Statements building `u0 .. u{c-1}` (`Vector{r}`) from the sorted `w*`, `s*`."""
-    V = tname(r, 1)
-    e1 = vec_lit(r, lambda i: "R::one()" if i == 0 else "R::zero()")
-    out = [f"let u0 = if s0 == R::zero() {{ {e1} }} else {{ {div_into(r, 'w0', 's0')} }};"]
+    """Statements building `u0 .. u{c-1}` (`Vector{r}`) from the sorted `w*`, `s*`: the shared
+    kernels of `SvdComplete{r}` (`first`, `gs{k}`)."""
+    out = [f"let u0 = SvdComplete{r}Impl::<T>::first(w0, s0);"]
     for k in range(1, c):
-        ps = [f"let p{l} = {dot(cols(r, f'u{l}'), cols(r, f'w{k}'))};" for l in range(k)]
-        res = vec_lit(r, lambda i: fused([(1, col(r, f'w{k}', i), None)]
-                                         + [(-1, f"p{l}", col(r, f'u{l}', i)) for l in range(k)]))
-        ps2 = [f"let p{l} = {dot(cols(r, f'u{l}'), cols(r, 'q'))};" for l in range(k)]
-        res2 = vec_lit(r, lambda i: fused([(1, col(r, 'q', i), None)]
-                                          + [(-1, f"p{l}", col(r, f'u{l}', i)) for l in range(k)]))
         us = ", ".join(f"u{l}" for l in range(k))
-        out.append(f"""let u{k} = {{
-    {' '.join(ps)}
-    let g = {res};
-    let n = {norm(cols(r, 'g'))};
-    if n == R::zero() {{
-        SvdComplete{r}Impl::<T>::complete{k}({us})
-    }} else {{
-        let q = {div_into(r, 'g', 'n')};
-        {' '.join(ps2)}
-        let h = {res2};
-        {div_into(r, 'h', norm(cols(r, 'h')))}
-    }}
-}};""")
+        out.append(f"let u{k} = SvdComplete{r}Impl::<T>::gs{k}({us}, w{k});")
     return out
 
 
+def gs_kernel(r: int, k: int) -> str:
+    """`gs{k}`: the Gram-Schmidt step of the left singular vector `k` (twice), with the exact-zero
+    completion."""
+    V = tname(r, 1)
+    ps = [f"let p{l} = {dot(cols(r, f'u{l}'), cols(r, 'w'))};" for l in range(k)]
+    res = vec_lit(r, lambda i: fused([(1, col(r, 'w', i), None)]
+                                     + [(-1, f"p{l}", col(r, f'u{l}', i)) for l in range(k)]))
+    ps2 = [f"let p{l} = {dot(cols(r, f'u{l}'), cols(r, 'q'))};" for l in range(k)]
+    res2 = vec_lit(r, lambda i: fused([(1, col(r, 'q', i), None)]
+                                      + [(-1, f"p{l}", col(r, f'u{l}', i)) for l in range(k)]))
+    us = ", ".join(f"u{l}" for l in range(k))
+    args = ", ".join(f"u{l}: {V}<T>" for l in range(k))
+    return f"""    /// The left singular vector `u_{k}` from `w = M v_{k}` and the orthonormal `u_0 .. u_{k - 1}`:
+    /// classical Gram-Schmidt run TWICE, `g = w - Σ <u_l, w> u_l`, `q = g / |g|`, `h = q - Σ
+    /// <u_l, q> u_l`, `u_{k} = h / |h|` (one fused sum per dot product and per component), or
+    /// `complete{k}` when `g` vanishes EXACTLY or when the second pass keeps less than half of
+    /// `|q| >= 1` (the DGKS criterion: `q` then lies numerically in the span of the previous
+    /// vectors — on a rank-deficient `M`, `w` is rounding noise of a few raw units and so is its
+    /// direction; measured on the `Svd6` oracle: `|UᵀU - I|` of 1.4 without the test). Shared by
+    /// every SVD with {r} rows.
+    fn gs{k}({args}, w: {V}<T>) -> {V}<T> {{
+        revoke_ap_tracking();
+        {' '.join(ps)}
+        let g = {res};
+        let n = {norm(cols(r, 'g'))};
+        if n == R::zero() {{
+            return Self::complete{k}({us});
+        }}
+        let q = {div_into(r, 'g', 'n')};
+        {' '.join(ps2)}
+        let h = {res2};
+        let nh = {norm(cols(r, 'h'))};
+        if nh < R::HALF {{
+            return Self::complete{k}({us});
+        }}
+        {div_into(r, 'h', 'nh')}
+    }}"""
+
+
 def svd_tall_kernel(r: int, c: int) -> str:
-    """Internal methods `gram`, `from_right`, `values_from_right` of the tall `SvdRxC`."""
+    """Internal methods `gram`, `right`, `try_right`, `sorted`, `from_right` of the tall
+    `SvdRxC`, and its private `Sorted` state."""
     S, M, VC, VR = svd_name(r, c), tname(r, c), tname(c, 1), tname(r, 1)
     MC = tname(c, c)
     lines = []
     for j in range(c):
         lines.append(f"let v{j} = {vec_lit(c, lambda i, j=j: f'v.{fld(c, c, i, j)}')};")
+    lines.append("let mv = m.mul_mat(v);")
     for j in range(c):
-        lines.append(f"let w{j} = {vec_lit(r, lambda i, j=j: dot([f'm.{fld(r, c, i, kk)}' for kk in range(c)], cols(c, f'v{j}')))};")
+        lines.append(f"let w{j} = {vec_lit(r, lambda i, j=j: f'mv.{fld(r, c, i, j)}')};")
     for j in range(c):
         lines.append(f"let s{j} = {norm(cols(r, f'w{j}'))};")
     mut = [f"let (mut s{j}, mut w{j}, mut v{j}) = (s{j}, w{j}, v{j});" for j in range(c)]
     net = sort_network(c, "{b} > {a}", [], lambda i: (f"s{i}", f"w{i}", f"v{i}"))
-    mut_s = [f"let mut s{j} = s{j};" for j in range(c)]
-    net_s = sort_network(c, "{b} > {a}", [], lambda i: (f"s{i}",))
+    fields = ", ".join([f"s{j}" for j in range(c)] + [f"w{j}" for j in range(c)] + [f"v{j}" for j in range(c)])
+    decl = "\n".join([f"    s{j}: T," for j in range(c)] + [f"    w{j}: {VR}<T>," for j in range(c)]
+                     + [f"    v{j}: {VC}<T>," for j in range(c)])
     left = svd_left(r, c)
+    unpack = " ".join(f"let (s{j}, w{j}, v{j}) = (t.s{j}, t.w{j}, t.v{j});" for j in range(c))
     u_lit = struct_lit(r, c, lambda i, j: col(r, f"u{j}", i))
     vt_lit = struct_lit(c, c, lambda i, j: col(c, f"v{i}", j))
     s_lit = vec_lit(c, lambda i: f"s{i}")
+    ts_lit = vec_lit(c, lambda i: f"t.s{i}")
     if c == 1:
         right, try_right, gram = f"{MC} {{ x: R::one() }}", f"Some({MC} {{ x: R::one() }})", ""
     else:
-        right = f"SvdRightImpl::<T>::right{c}(Self::gram(m))"
+        right = f"SvdRightImpl::<T>::right{c}(Self::gram(Self::normalised(m)))"
         if c == 2:
             try_right = f"Some({right})"
         else:
-            try_right = f"SvdRightImpl::<T>::try_right{c}(Self::gram(m), eps)"
-        gram = f"""    /// `MᵀM` ({c * (c + 1) // 2} fused sums of {r} products, one rounding each). Panics on overflow.
+            try_right = f"SvdRightImpl::<T>::try_right{c}(Self::gram(Self::normalised(m)), eps)"
+        comps = [f"m.{fld(r, c, i, j)}" for j in range(c) for i in range(r)]
+        amax = " ".join(f"if {x}.abs() > a {{ a = {x}.abs(); }}" for x in comps[1:])
+        chunks = [comps[i:i + 6] for i in range(0, len(comps), 6)]
+        qn = [f"q{i}" for i in range(len(comps))]
+        stmts, pos = [], 0
+        for ch in chunks:
+            names = qn[pos:pos + len(ch)]
+            pos += len(ch)
+            if len(ch) == 1:
+                stmts.append(f"let {names[0]} = R::div({ch[0]}, a);")
+            elif len(ch) == 2:
+                stmts.append(f"let ({names[0]}, {names[1]}) = (R::div({ch[0]}, a), R::div({ch[1]}, a));")
+            else:
+                stmts.append(f"let ({', '.join(names)}) = R::div{len(ch)}({', '.join(ch)}, a);")
+        order = [(i, j) for j in range(c) for i in range(r)]
+        lit = struct_lit(r, c, lambda i, j: qn[order.index((i, j))])
+        gram = f"""    /// `m / max |m_ij|` (one prepared divisor per 6 entries), or `m` when it is zero: the input
+    /// of the Gram matrix. The right singular vectors do not depend on the scale, but their
+    /// fixed-point PRECISION does: the Gram matrix of a small matrix has tiny entries, whose
+    /// absolute rounding is a large relative error on the eigenvectors (measured on `Svd4`:
+    /// `pseudo_inverse` 1 749 ulp over the oracle tolerance on `small` inputs without it), and
+    /// the Gram matrix of a large one overflows. Normalised, `MᵀM` has entries in `[0, {r}]`.
+    fn normalised(m: {M}<T>) -> {M}<T> {{
+        let mut a = {comps[0]}.abs();
+        {amax}
+        if a == R::zero() {{
+            return m;
+        }}
+        {' '.join(stmts)}
+        {lit}
+    }}
+
+    /// `MᵀM` ({c * (c + 1) // 2} fused sums of {r} products, one rounding each).
     #[inline(always)]
     fn gram(m: {M}<T>) -> {gram_type(c)}<T> {{
         {gram_lit(r, c)}
     }}
 """
     eps_unused = "let _ = eps;\n" if c <= 2 else ""
-    return f"""/// Crate-internal kernels of `{S}<T>`: the Gram matrix, the decomposition from the right
-/// singular vectors, the singular values alone.
+    return f"""/// The columns `w_i = M v_i`, their norms and the right vectors, sorted (private state of
+/// `{S}InternalTrait`).
+#[derive(Copy, Drop)]
+pub(crate) struct Sorted{S}<T> {{
+{decl}
+}}
+
+/// Crate-internal kernels of `{S}<T>`: the Gram matrix, the right singular vectors, the sorted
+/// columns `M v_i`, the decomposition.
 #[generate_trait]
 pub(crate) impl {S}InternalImpl<
 {BOUNDS}
@@ -1170,32 +1300,36 @@ pub(crate) impl {S}InternalImpl<
         {eps_unused}{try_right}
     }}
 
-    /// The decomposition from the right singular vectors `v` (columns): `w_i = M v_i` (one
-    /// fused sum per component), `σ_i = |w_i|` (floored norm of the exact sum of squares), the
-    /// triples sorted DESCENDING by `σ` (stable odd-even transposition network, strict
-    /// comparison: ties keep their order), then the left vectors by classical Gram-Schmidt run
-    /// TWICE ("twice is enough"): `g = w_k - Σ <u_l, w_k> u_l` and `h = q - Σ <u_l, q> u_l`
-    /// with `q = g / |g|`, one fused sum per component each, `u_k = h / |h|`. The second pass
-    /// costs about as much as the first and makes `U` orthonormal to the rounding of `h` even
-    /// when `σ_k` is tiny (rank deficiency), where one pass leaves `u_k` as far from the others
-    /// as `rounding / σ_k`. A column that vanishes EXACTLY (`g = 0`, or `σ_1 = 0`) is completed
-    /// by the axis least represented in the span of the previous ones (`SvdComplete`).
-    fn from_right(m: {M}<T>, v: {MC}<T>) -> {S}<T> {{
+    /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`
+    /// (floored norm of the exact
+    /// sum of squares) for the right vectors `v` (columns), the triples sorted DESCENDING by `σ`
+    /// (stable odd-even transposition network, strict comparison: ties keep their order). The
+    /// singular values alone stop here.
+    fn sorted(m: {M}<T>, v: {MC}<T>) -> Sorted{S}<T> {{
         revoke_ap_tracking();
         {chr(10).join(lines)}
         {chr(10).join(mut)}
         {net}
+        Sorted{S} {{ {fields} }}
+    }}
+
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
+    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete{r}::gs*`):
+    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
+    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
+    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
+    /// = 0`) is completed by the axis least represented in the span of the previous ones.
+    fn from_right(m: {M}<T>, v: {MC}<T>) -> {S}<T> {{
+        let t = Self::sorted(m, v);
+        {unpack}
         {chr(10).join(left)}
         {S} {{ u: {u_lit}, singular_values: {s_lit}, v_t: {vt_lit} }}
     }}
 
-    /// The singular values alone: `from_right` without the left vectors.
+    /// The singular values alone: `sorted`, without the left vectors.
     fn values_from_right(m: {M}<T>, v: {MC}<T>) -> {VC}<T> {{
-        revoke_ap_tracking();
-        {chr(10).join(lines)}
-        {chr(10).join(mut_s)}
-        {net_s}
-        {s_lit}
+        let t = Self::sorted(m, v);
+        {ts_lit}
     }}
 }}
 """
@@ -1204,38 +1338,20 @@ pub(crate) impl {S}InternalImpl<
 def svd_methods(r: int, c: int) -> str:
     """The public methods of `SvdRxC` shared by the tall and the wide shapes."""
     S, k = svd_name(r, c), min(r, c)
-    U, VT, SV = tname(r, k), tname(k, c), tname(k, 1)
-    ctr = []
     count = " ".join(f"if self.singular_values.{fld(k, 1, i, 0)} > eps {{ n += 1; }}" for i in range(k))
     sv = [f"self.singular_values.{fld(k, 1, l, 0)}" for l in range(k)]
-    # recompose: (u_il σ_l) then Σ_l with v_t_lj
-    scaled_u = " ".join(f"let a{i}_{l} = self.u.{fld(r, k, i, l)} * {sv[l]};"
-                        for i in range(r) for l in range(k))
-    recomp = struct_lit(r, c, lambda i, j: dot([f"a{i}_{l}" for l in range(k)],
-                                               [f"self.v_t.{fld(k, c, l, j)}" for l in range(k)]))
-    # pseudo-inverse: (v_il σ⁺_l) then Σ_l with u_jl; v_il = v_t_li. Result c x r.
+    scaled_u = struct_lit(r, k, lambda i, l: f"self.u.{fld(r, k, i, l)} * {sv[l]}")
     inv = " ".join(f"let p{l} = SvdRightImpl::<T>::inverted({sv[l]}, eps);" for l in range(k))
-    scaled_v = " ".join(f"let b{i}_{l} = self.v_t.{fld(k, c, l, i)} * p{l};"
-                        for i in range(c) for l in range(k))
-    pinv = struct_lit(c, r, lambda i, j: dot([f"b{i}_{l}" for l in range(k)],
-                                             [f"self.u.{fld(r, k, j, l)}" for l in range(k)]))
-    # solve
-    y = " ".join(f"let y{l} = {dot([f'self.u.{fld(r, k, i, l)}' for i in range(r)], cols(r, 'b'))};"
-                 for l in range(k))
-    z = " ".join(f"let z{l} = SvdRightImpl::<T>::divided(y{l}, {sv[l]}, eps);" for l in range(k))
-    x = vec_lit(c, lambda i: dot([f"self.v_t.{fld(k, c, l, i)}" for l in range(k)],
-                                 [f"z{l}" for l in range(k)]))
-    # polar: P = (u σ) uᵀ symmetric r x r (upper computed, mirrored), U = u v_t.
-    pvals = {}
-    for i in range(r):
-        for j in range(i, r):
-            pvals[(i, j)] = dot([f"a{i}_{l}" for l in range(k)],
-                                [f"self.u.{fld(r, k, j, l)}" for l in range(k)])
-    p_lets = " ".join(f"let p{i}_{j} = {pvals[(i, j)]};" for i in range(r) for j in range(i, r))
+    scaled_v = struct_lit(c, k, lambda i, l: f"self.v_t.{fld(k, c, l, i)} * p{l}")
+    u_t = transpose_lit(r, k, "self.u")
+    z = vec_lit(k, lambda l: f"SvdRightImpl::<T>::divided(y.{fld(k, 1, l, 0)}, {sv[l]}, eps)")
+    # P = (u σ) uᵀ: upper triangle, mirrored (exactly symmetric).
+    scaled = " ".join(f"let a{i}_{l} = self.u.{fld(r, k, i, l)} * {sv[l]};"
+                      for i in range(r) for l in range(k))
+    p_lets = " ".join(
+        f"let p{i}_{j} = {dot([f'a{i}_{l}' for l in range(k)], [f'self.u.{fld(r, k, j, l)}' for l in range(k)])};"
+        for i in range(r) for j in range(i, r))
     p_lit = struct_lit(r, r, lambda i, j: f"p{min(i, j)}_{max(i, j)}")
-    uv = struct_lit(r, c, lambda i, j: dot([f"self.u.{fld(r, k, i, l)}" for l in range(k)],
-                                           [f"self.v_t.{fld(k, c, l, j)}" for l in range(k)]))
-    # sort
     ucols = [f"let mut uc{l} = {vec_lit(r, lambda i, l=l: f'self.u.{fld(r, k, i, l)}')};" for l in range(k)]
     vrows = [f"let mut vr{l} = {vec_lit(c, lambda j, l=l: f'self.v_t.{fld(k, c, l, j)}')};" for l in range(k)]
     svs = [f"let mut s{l} = {sv[l]};" for l in range(k)]
@@ -1249,11 +1365,12 @@ def svd_methods(r: int, c: int) -> str:
     }}
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of {k} products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of {k} products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: {S}<T>) -> {tname(r, c)}<T> {{
-        {scaled_u}
-        {recomp}
+        revoke_ap_tracking();
+        {scaled_u}.mul_mat(self.v_t)
     }}
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` ({c}x{r}), `σ⁺_i = 1 / σ_i` when
@@ -1262,12 +1379,12 @@ def svd_methods(r: int, c: int) -> str:
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: {S}<T>, eps: T) -> Option<{tname(c, r)}<T>> {{
+        revoke_ap_tracking();
         if eps.is_sign_negative() {{
             return None;
         }}
         {inv}
-        {scaled_v}
-        Some({pinv})
+        Some({scaled_v}.mul_mat({u_t}))
     }}
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
@@ -1275,12 +1392,12 @@ def svd_methods(r: int, c: int) -> str:
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: {S}<T>, b: {tname(r, 1)}<T>, eps: T) -> Option<{tname(c, 1)}<T>> {{
+        revoke_ap_tracking();
         if eps.is_sign_negative() {{
             return None;
         }}
-        {y}
-        {z}
-        Some({x})
+        let y = self.u.tr_mul(b);
+        Some(self.v_t.tr_mul({z}))
     }}
 
     /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ`
@@ -1289,9 +1406,10 @@ def svd_methods(r: int, c: int) -> str:
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: {S}<T>) -> Option<({tname(r, r)}<T>, {tname(r, c)}<T>)> {{
-        {scaled_u}
+        revoke_ap_tracking();
+        {scaled}
         {p_lets}
-        Some(({p_lit}, {uv}))
+        Some(({p_lit}, self.u.mul_mat(self.v_t)))
     }}
 
     /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
@@ -1299,6 +1417,7 @@ def svd_methods(r: int, c: int) -> str:
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: {S}<T>) {{
+        revoke_ap_tracking();
         {chr(10).join(svs)}
         {chr(10).join(ucols)}
         {chr(10).join(vrows)}
@@ -1309,7 +1428,6 @@ def svd_methods(r: int, c: int) -> str:
             v_t: {struct_lit(k, c, lambda l, j: col(c, f'vr{l}', j))},
         }};
     }}
-
 """
 
 
@@ -1337,12 +1455,14 @@ def render_svd(r: int, c: int) -> str:
         elif c >= 4:
             uses.append(f"use crate::linalg::symmetric_eigen{c}::Sym{c};")
         uses.append("use core::internal::revoke_ap_tracking;")
-        kern = ["SvdRightImpl"] + ([f"SvdComplete{r}Impl"] if c >= 2 else [])
+        kern = ["SvdRightImpl", f"SvdComplete{r}Impl"]
         uses.append(f"use super::kernels::{{{', '.join(kern)}}};")
     else:
         uses.append(f"use super::{svd_mod(c, r)}::{{{svd_name(c, r)}InternalTrait, {svd_name(c, r)}Trait}};")
         uses.append("use super::kernels::SvdRightImpl;")
     uses.append("use simba::scalar::Real;")
+    uses.append("use crate::base::{MatrixMul, MatrixTrMul};")
+    uses.append("use core::internal::revoke_ap_tracking;")
     uses = sorted(set(uses))
     if tall:
         ctor = f"""    /// The singular value decomposition of `matrix`. Upstream: `SVD::new(matrix, true, true)`
@@ -1362,8 +1482,8 @@ def render_svd(r: int, c: int) -> str:
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. Panics on overflow of a component of `MᵀM` (the squares of the entries
-    /// must be representable).
+    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
+    /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
     fn new(matrix: {M}<T>) -> {S}<T> {{
         {S}InternalTrait::from_right(matrix, {S}InternalTrait::right(matrix))
     }}
@@ -1669,6 +1789,7 @@ def render_qr(r: int, c: int) -> str:
     /// substitution of each row of `Q`. Two roundings per entry. Panics on overflow. Upstream:
     /// `QR::try_inverse`.
     fn try_inverse(self: {Q}<T>) -> Option<{tname(n, n)}<T>> {{
+        revoke_ap_tracking();
         if !Self::is_invertible(self) {{
             return None;
         }}
@@ -1691,6 +1812,7 @@ pub(crate) impl {Q}InternalImpl<
 }}
 """
     uses.add("use simba::scalar::Real;")
+    uses.add("use core::internal::revoke_ap_tracking;")
     thin = "" if r <= c else f" (thin: {r}x{k}, orthonormal COLUMNS)"
     return f"""{HEADER}//! `{Q}`: the QR factorisation of a `{M}` (upstream `nalgebra::linalg::QR<T, U{r}, U{c}>`) by
 //! modified Gram-Schmidt, the algorithm of `Qr3` / `Qr4` (see `linalg::qr` for the study of the
@@ -1730,6 +1852,7 @@ pub impl {Q}Impl<
     /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: {M}<T>) -> {Q}<T> {{
+        revoke_ap_tracking();
         {chr(10).join(st)}
         {Q} {{ q: {q_lit}, r: {r_lit} }}
     }}
@@ -1870,6 +1993,7 @@ def render_cholesky_update() -> str:
 //! and the scalar's square-root error when a downdate makes the matrix indefinite (upstream
 //! produces NaN in both cases); `nalgebra: index out of bounds` for a column index out of range.
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::errors::{{INDEX_OUT_OF_BOUNDS, NOT_POSITIVE_DEFINITE}};
 {chr(10).join(f'use crate::base::vector{n}::Vector{n};' for n in (2, 3, 4, 6))}
@@ -1884,6 +2008,7 @@ use super::cholesky::{{{', '.join(f'Cholesky{n}' for n in sizes)}}};
     /// `sigma < 0`), see the module doc for the formulas, rounding and panics. Upstream:
     /// `Cholesky::rank_one_update`.
     fn rank_one_update(ref self: Cholesky{n}<T>, x: Vector{n}<T>, sigma: T) {{
+        revoke_ap_tracking();
         {load}
         {loadx}
         {chr(10).join(rank1_code(n, L, X, 'sigma'))}
@@ -1948,6 +2073,7 @@ use super::cholesky::{{{', '.join(f'Cholesky{n}' for n in sizes)}}};
     /// gives the scalar's square-root error) and `nalgebra: index out of bounds` when `j >
     /// {n}`. Upstream: `Cholesky::insert_column`.
     fn insert_column(self: Cholesky{n}<T>, j: usize, col: Vector{m}<T>) -> Cholesky{m}<T> {{
+        revoke_ap_tracking();
         let c = col;
         match j {{
             {chr(10).join(arms)}
@@ -1984,6 +2110,7 @@ use super::cholesky::{{{', '.join(f'Cholesky{n}' for n in sizes)}}};
     /// the removed column below the diagonal (`sigma = +1`, see the module doc). Panics with
     /// `nalgebra: index out of bounds` when `j >= {n}`. Upstream: `Cholesky::remove_column`.
     fn remove_column(self: Cholesky{n}<T>, j: usize) -> Cholesky{m}<T> {{
+        revoke_ap_tracking();
         match j {{
             {chr(10).join(arms)}
             _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
@@ -1998,6 +2125,460 @@ pub impl Cholesky{n}UpdateImpl<
 }}
 """)
     return "\n".join(parts)
+
+
+
+def render_symmetric_eigen1() -> str:
+    return f"""{HEADER}//! `SymmetricEigen1`: the (trivial) eigen decomposition of a `Matrix1` (WP 8.5-P14b), for the
+//! completeness of upstream's `SquareMatrix::symmetric_eigen` over the static sizes.
+
+use simba::scalar::Real;
+use crate::base::matrix1::Matrix1;
+
+/// The eigendecomposition of a 1x1 matrix: its entry, and the eigenvector `[1]`. Upstream:
+/// `SymmetricEigen {{ eigenvalues, eigenvectors }}` on `U1`.
+#[derive(Copy, Drop, Serde, Debug)]
+pub struct SymmetricEigen1<T> {{
+    /// The eigenvalue (the entry).
+    pub eigenvalues: Matrix1<T>,
+    /// The unit eigenvector `[1]`.
+    pub eigenvectors: Matrix1<T>,
+}}
+
+/// Test-only field-wise equality (upstream `SymmetricEigen` has no `PartialEq`).
+#[cfg(test)]
+impl SymmetricEigen1PartialEq<T, +PartialEq<T>> of PartialEq<SymmetricEigen1<T>> {{
+    fn eq(lhs: @SymmetricEigen1<T>, rhs: @SymmetricEigen1<T>) -> bool {{
+        lhs.eigenvalues == rhs.eigenvalues && lhs.eigenvectors == rhs.eigenvectors
+    }}
+}}
+
+/// Methods of `SymmetricEigen1<T>` for any `Real` scalar.
+#[generate_trait]
+pub impl SymmetricEigen1Impl<
+{BOUNDS}
+> of SymmetricEigen1Trait<T> {{
+    /// `(m, [1])`, exact. Upstream: `SymmetricEigen::new`.
+    #[inline(always)]
+    fn new(m: Matrix1<T>) -> SymmetricEigen1<T> {{
+        SymmetricEigen1 {{ eigenvalues: m, eigenvectors: Matrix1 {{ x: R::one() }} }}
+    }}
+
+    /// `Some(new(m))`: nothing to converge; `eps` and `max_niter` are ignored. Upstream:
+    /// `SymmetricEigen::try_new`.
+    #[inline(always)]
+    fn try_new(m: Matrix1<T>, eps: T, max_niter: usize) -> Option<SymmetricEigen1<T>> {{
+        let _ = eps;
+        let _ = max_niter;
+        Some(Self::new(m))
+    }}
+
+    /// `v λ v`: one floored product. Upstream: `SymmetricEigen::recompose`.
+    #[inline(always)]
+    fn recompose(self: SymmetricEigen1<T>) -> Matrix1<T> {{
+        Matrix1 {{ x: self.eigenvectors.x * self.eigenvalues.x * self.eigenvectors.x }}
+    }}
+}}
+
+/// Upstream's `SquareMatrix` methods that go through the symmetric eigen decomposition, on
+/// `Matrix1`. Import `Matrix1SymmetricEigenTrait` to use them.
+#[generate_trait]
+pub impl Matrix1SymmetricEigenImpl<
+{BOUNDS}
+> of Matrix1SymmetricEigenTrait<T> {{
+    /// See `SymmetricEigen1Trait::new`. Upstream: `Matrix::symmetric_eigen`.
+    #[inline(always)]
+    fn symmetric_eigen(self: Matrix1<T>) -> SymmetricEigen1<T> {{
+        SymmetricEigen1Trait::new(self)
+    }}
+
+    /// See `SymmetricEigen1Trait::try_new`. Upstream: `Matrix::try_symmetric_eigen`.
+    #[inline(always)]
+    fn try_symmetric_eigen(self: Matrix1<T>, eps: T, max_niter: usize) -> Option<SymmetricEigen1<T>> {{
+        SymmetricEigen1Trait::try_new(self, eps, max_niter)
+    }}
+
+    /// The entry. Upstream: `Matrix::symmetric_eigenvalues`.
+    #[inline(always)]
+    fn symmetric_eigenvalues(self: Matrix1<T>) -> Matrix1<T> {{
+        self
+    }}
+}}
+"""
+
+
+
+EPS_RAW = 429497  # round(1e-4 * 2^32): the oracle's `pseudo_inverse` / `rank` threshold
+
+
+def svd_suffix(r: int, c: int) -> str:
+    return f"{r}" if r == c else f"{r}x{c}"
+
+
+def render_svd_tests(r: int, c: int, bounds: dict, oracle_mod: str) -> str:
+    """Tests of `SvdRxC` / `MatrixRxCSvdTrait` (and `Svd2` / `Svd3`'s P14b API)."""
+    S, M, k = svd_name(r, c), tname(r, c), min(r, c)
+    sfx = svd_suffix(r, c)
+    b = bounds.get((r, c), {})
+    sv = [f"d.singular_values.{fld(k, 1, i, 0)}" for i in range(k)]
+    ex = [f"expected.{fld(k, 1, i, 0)}" for i in range(k)]
+    checks = " ".join(
+        f"ex = max(ex, excess(ulp_diff({a}, {e}), oracle_tol(abs_raw({e}), tol)));"
+        for a, e in zip(sv, ex))
+    orth_u = f"orth_{r}x{k}(d.u)"
+    orth_v = f"orth_{k}x{c}(d.v_t)"
+    tests = [f"""/// `svd{sfx}_singular_values` (oracle, well-conditioned): singular values within the oracle
+/// tolerance, `U Σ Vᵀ = M` and the orthonormality of `U` / `V` within the measured bounds.
+#[test]
+fn test_oracle_svd{sfx}_singular_values() {{
+    let (ex, rec, orth) = run(oracle::svd{sfx}_singular_values_cases());
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {b.get('rec', 0)} && orth <= {b.get('orth', 0)}, "measured {{}} {{}}", rec, orth);
+}}"""]
+    if k >= 2:
+        tests.append(f"""/// `svd{sfx}_singular_values_deficient` (oracle, EXACTLY rank-deficient integer matrices): the
+/// same checks; `U` stays orthonormal although some columns of `M V` vanish.
+#[test]
+fn test_oracle_svd{sfx}_singular_values_deficient() {{
+    let (ex, rec, orth) = run(oracle::svd{sfx}_singular_values_deficient_cases());
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {b.get('rec_def', 0)} && orth <= {b.get('orth_def', 0)}, "measured {{}} {{}}", rec, orth);
+}}
+
+/// `svd{sfx}_singular_values_near_singular` (oracle, FLAGGED: one singular value in [1e-4,
+/// 1e-2]).
+#[test]
+fn test_oracle_svd{sfx}_singular_values_near_singular() {{
+    let (ex, rec, orth) = run(oracle::svd{sfx}_singular_values_near_singular_cases());
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {b.get('rec_ns', 0)} && orth <= {b.get('orth_ns', 0)}, "measured {{}} {{}}", rec, orth);
+}}
+
+/// `svd{sfx}_rank_deficient` (oracle): `rank(1e-4)` of exactly rank-deficient integer matrices.
+#[test]
+fn test_oracle_svd{sfx}_rank_deficient() {{
+    let mut cases = oracle::svd{sfx}_rank_deficient_cases();
+    while let Some(case) = cases.pop_front() {{
+        let (a, expected, _) = *case;
+        let a = black_box(mat{r}x{c}(a));
+        let rank: i64 = a.rank(fx(EPS)).into();
+        assert!(rank * 0x100000000 == expected, "rank {{}}", rank);
+        let rank2: i64 = a.svd().rank(fx(EPS)).into();
+        assert!(rank2 == rank);
+    }}
+}}""")
+    pinv_cmp = " ".join(
+        f"ex = max(ex, excess(ulp_diff(p.{fld(c, r, i, j)}, e.{fld(c, r, i, j)}), oracle_tol(abs_raw(e.{fld(c, r, i, j)}), tol)));"
+        for i in range(c) for j in range(r))
+    polar_cmp = " ".join(
+        f"ex = max(ex, excess(ulp_diff(p.{fld(r, r, i, j)}, ep.{fld(r, r, i, j)}), oracle_tol(abs_raw(ep.{fld(r, r, i, j)}), tol)));"
+        for i in range(r) for j in range(r)) + " " + " ".join(
+        f"ex = max(ex, excess(ulp_diff(u.{fld(r, c, i, j)}, eu.{fld(r, c, i, j)}), oracle_tol(abs_raw(eu.{fld(r, c, i, j)}), tol)));"
+        for i in range(r) for j in range(c))
+    tests.append(f"""/// `svd{sfx}_pseudo_inverse` (oracle): every entry within the oracle tolerance.
+#[test]
+fn test_oracle_svd{sfx}_pseudo_inverse() {{
+    let mut cases = oracle::svd{sfx}_pseudo_inverse_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let p = black_box(mat{r}x{c}(a)).pseudo_inverse(fx(EPS)).unwrap();
+        let e = mat{c}x{r}(e);
+        {pinv_cmp}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+/// `svd{sfx}_polar` (oracle): `P` and `U` of the left polar decomposition, every entry within
+/// the oracle tolerance (both factors are unique for a full-rank `M`).
+#[test]
+fn test_oracle_svd{sfx}_polar() {{
+    let mut cases = oracle::svd{sfx}_polar_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, ep, eu, tol) = *case;
+        let (p, u) = black_box(mat{r}x{c}(a)).polar();
+        let (ep, eu) = (mat{r}x{r}(ep), mat{r}x{c}(eu));
+        {polar_cmp}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}""")
+    # exact / API tests
+    zero_rows = [[0] * c for _ in range(r)]
+    ax_rows = [[0] * c for _ in range(r)]
+    diag_vals = [3, 7, 5, 2, 6, 4][:k]
+    for i in range(k):
+        ax_rows[i][i] = diag_vals[i] * (1 << 32)
+    sorted_vals = sorted(diag_vals, reverse=True)
+    sv_exact = vec_lit(k, lambda i: f"fx({sorted_vals[i]} * ONE)")
+    tests.append(f"""#[test]
+fn test_svd{sfx}_diagonal_and_zero_are_exact() {{
+    // A rectangular diagonal: the singular values are its entries, sorted, and every factor is
+    // exact.
+    let a = black_box(mat{r}x{c}({int_rows(ax_rows)}));
+    let d = a.svd();
+    assert!(d.singular_values == {sv_exact});
+    assert!(d.recompose() == a);
+    assert!({orth_u} == 0 && {orth_v} == 0);
+    // The zero matrix: nothing divides by zero, `U` is completed to an orthonormal basis.
+    let z = black_box(mat{r}x{c}({int_rows(zero_rows)}));
+    let d = z.svd();
+    assert!(d.rank(fx(0)) == 0);
+    assert!(d.recompose() == z);
+    assert!({orth_u} == 0 && {orth_v} == 0);
+}}
+
+#[test]
+fn test_svd{sfx}_api() {{
+    let (a, _, _) = *oracle::svd{sfx}_singular_values_cases().at(0);
+    let a = black_box(mat{r}x{c}(a));
+    let d = {S}Trait::new(a);
+    // The unordered and `try` forms, `sort_by_singular_values` on a sorted decomposition.
+    assert!({S}Trait::new_unordered(a) == d);
+    assert!(a.svd_unordered() == d);
+    assert!({S}Trait::try_new(a, fx(ONE), 0).unwrap() == d);
+    assert!(a.try_svd(fx(ONE), 100).unwrap() == d);
+    assert!(a.try_svd_unordered(fx(ONE), 100).unwrap() == d);
+    assert!(a.singular_values_unordered() == d.singular_values);
+    let mut e = d;
+    e.sort_by_singular_values();
+    assert!(e == d);
+    let (p, u) = a.polar();
+    let (p2, u2) = a.try_polar(fx(ONE), 0).unwrap();
+    assert!(p2 == p && u2 == u);
+    let (p3, u3) = d.to_polar().unwrap();
+    assert!(p3 == p && u3 == u);
+    assert!(d.pseudo_inverse(fx(-1)).is_none());
+    assert!(d.solve({vec_lit(r, lambda i: 'fx(ONE)')}, fx(-1)).is_none());
+    assert!(d.solve({vec_lit(r, lambda i: 'fx(ONE)')}, fx(EPS)).is_some());
+}}""")
+    # benches
+    tests.append(f"""/// A `unit` oracle case: the benchmark input.
+fn a_bench() -> {M}<Fixed> {{
+    let (a, _, _) = *oracle::svd{sfx}_singular_values_cases().at(3);
+    mat{r}x{c}(a)
+}}
+
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_new__baseline() {{
+    let _a = black_box(a_bench());
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// The decomposition: Gram matrix, its eigen decomposition, `M V`, Gram-Schmidt twice.
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_new__eigen_of_gram() {{
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let d = a.svd();
+    assert!((d.singular_values.{fld(k, 1, 0, 0)} >= d.singular_values.{fld(k, 1, k - 1, 0)}) == e);
+}}
+
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_singular_values__baseline() {{
+    let _a = black_box(a_bench());
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// The singular values alone (no left vectors).
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_singular_values__eigen_of_gram() {{
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let s = a.singular_values();
+    assert!((s.{fld(k, 1, 0, 0)} >= s.{fld(k, 1, k - 1, 0)}) == e);
+}}
+
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_pseudo_inverse__baseline() {{
+    let _d = black_box(a_bench().svd());
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// `V diag(σ⁺) Uᵀ` from a decomposition.
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_pseudo_inverse__scaled_product() {{
+    let d = black_box(a_bench().svd());
+    let e = black_box(true);
+    let p = d.pseudo_inverse(fx(EPS)).unwrap();
+    assert!((p.{fld(c, r, 0, 0)} == p.{fld(c, r, 0, 0)}) == e);
+}}
+
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_to_polar__baseline() {{
+    let _d = black_box(a_bench().svd());
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// `(u σ uᵀ, u v_t)` from a decomposition.
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_to_polar__products() {{
+    let d = black_box(a_bench().svd());
+    let e = black_box(true);
+    let (p, _u) = d.to_polar().unwrap();
+    assert!((p.{fld(r, r, 0, 0)} == p.{fld(r, r, 0, 0)}) == e);
+}}""")
+    tup = tup_type(k)
+    eq_use = (f"use nalgebra_tests_utils::{S}PartialEq;" if (r, c) in SVD_EXISTING
+              else f"use crate::builders::{S}PartialEq;")
+    return f"""{HEADER}//! `{S}` / `{M}SvdTrait` through the public API (WP 8.5-P14b): oracle vectors (`tools/oracle` suite
+//! `spectral`), exact cases, the `try` / unordered forms, gas benchmarks.
+
+use core::cmp::max;
+use fixed::Fixed;
+use nalgebra::linalg::{{{M}SvdTrait, {S}Trait}};
+use nalgebra::{{{', '.join(sorted({tname(r, c), tname(k, 1), tname(r, 1)}))}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{c}x{r}', f'mat{r}x{r}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}', f'orth_{k}x{c}', f'vec{k}'}))}}};
+{eq_use}
+use crate::{oracle_mod} as oracle;
+
+const ONE: i64 = 0x100000000;
+/// `round(1e-4 * 2^32)`: the oracle's `pseudo_inverse` / `rank` threshold.
+const EPS: i64 = {EPS_RAW};
+
+/// `(singular-value excess over the oracle tolerance, reconstruction error per unit of
+/// `max(1, max |a_ij|)`, orthonormality error of `U` and `V`)` of one case, in raw units; also
+/// checks that `singular_values` is bit-identical to the decomposition's.
+fn measure(a: {M}<Fixed>, expected: {tname(k, 1)}<Fixed>, tol: u64) -> (u128, u128, u128) {{
+    let d = a.svd();
+    assert!(a.singular_values() == d.singular_values, "singular values differ from svd");
+    let mut ex = 0;
+    {checks}
+    (ex, max_ulp_{r}x{c}(d.recompose(), a) / amax_{r}x{c}(a), max({orth_u}, {orth_v}))
+}}
+
+/// The worst `measure` over `cases`.
+fn run(cases: Span<({rows_type(r, c)}, {tup}, u64)>) -> (u128, u128, u128) {{
+    let mut cases = cases;
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, expected, tol) = *case;
+        let (e, r, o) = measure(black_box(mat{r}x{c}(a)), vec{k}(expected), tol);
+        ex = max(ex, e);
+        rec = max(rec, r);
+        orth = max(orth, o);
+    }}
+    (ex, rec, orth)
+}}
+
+{chr(10).join(tests)}
+"""
+
+
+# Measured bounds of the eigen oracle tests: {(n, op suffix): (reconstruction, orthonormality)}.
+EIGEN_BOUNDS: dict = {
+    (4, ''): (21, 3),
+    (4, '_clustered'): (3, 3),
+    (4, '_deficient'): (4, 3),
+    (4, '_spd'): (5, 3),
+    (5, ''): (25, 5),
+    (5, '_clustered'): (6, 4),
+    (5, '_deficient'): (5, 3),
+    (5, '_spd'): (6, 6),
+    (6, ''): (33, 6),
+    (6, '_clustered'): (8, 5),
+    (6, '_deficient'): (5, 4),
+    (6, '_spd'): (12, 6),
+}
+
+# Measured bounds of the SVD oracle tests: {(r, c): {"rec": .., "orth": .., "rec_def": .., ...}}
+# (raw units; `rec` per unit of `max(1, max |a_ij|)`). Filled from the measurements.
+SVD_BOUNDS: dict = {
+    (1, 2): {'rec': 2, 'orth': 3},
+    (1, 3): {'rec': 1, 'orth': 4},
+    (1, 4): {'rec': 1, 'orth': 8},
+    (1, 5): {'rec': 1, 'orth': 3},
+    (1, 6): {'rec': 1, 'orth': 3},
+    (2, 1): {'rec': 1, 'orth': 16},
+    (2, 2): {'rec': 3, 'orth': 5, 'rec_ns': 2, 'orth_ns': 1},
+    (2, 3): {'rec_def': 0, 'orth_def': 1, 'rec': 2, 'orth': 4, 'rec_ns': 2, 'orth_ns': 2},
+    (2, 4): {'rec': 3, 'orth': 3, 'rec_def': 0, 'orth_def': 1, 'rec_ns': 3, 'orth_ns': 1},
+    (2, 5): {'rec': 3, 'orth': 11, 'rec_ns': 2, 'orth_ns': 1},
+    (2, 6): {'rec_def': 0, 'orth_def': 1, 'rec_ns': 2, 'orth_ns': 2, 'rec': 4, 'orth': 35},
+    (3, 1): {'rec': 1, 'orth': 19},
+    (3, 2): {'rec': 3, 'orth': 10, 'rec_ns': 3, 'orth_ns': 2},
+    (3, 3): {'rec_ns': 6, 'orth_ns': 5, 'rec': 64, 'orth': 67},
+    (3, 4): {'rec_ns': 7, 'orth_ns': 4, 'rec': 5, 'orth': 8, 'rec_def': 0, 'orth_def': 1},
+    (3, 5): {'rec_def': 4, 'orth_def': 5, 'rec': 6, 'orth': 7, 'rec_ns': 7, 'orth_ns': 7},
+    (3, 6): {'rec_def': 4, 'orth_def': 2, 'rec': 7, 'orth': 8, 'rec_ns': 4, 'orth_ns': 2},
+    (4, 1): {'rec': 1, 'orth': 3},
+    (4, 2): {'rec_ns': 2, 'orth_ns': 1, 'rec_def': 1, 'orth_def': 2, 'rec': 3, 'orth': 7},
+    (4, 3): {'rec_def': 2, 'orth_def': 2, 'rec_ns': 11, 'orth_ns': 4, 'rec': 9, 'orth': 11},
+    (4, 4): {'rec_def': 2, 'orth_def': 2, 'rec_ns': 5, 'orth_ns': 2, 'rec': 4, 'orth': 24},
+    (4, 5): {'rec_def': 10, 'orth_def': 3, 'rec_ns': 3, 'orth_ns': 3, 'rec': 4, 'orth': 4},
+    (4, 6): {'rec_ns': 4, 'orth_ns': 3, 'rec_def': 1, 'orth_def': 2, 'rec': 4, 'orth': 4},
+    (5, 1): {'rec': 1, 'orth': 8},
+    (5, 2): {'rec_def': 0, 'orth_def': 1, 'rec': 3, 'orth': 7, 'rec_ns': 3, 'orth_ns': 2},
+    (5, 3): {'rec_ns': 5, 'orth_ns': 3, 'rec': 5, 'orth': 5},
+    (5, 4): {'rec_def': 3, 'orth_def': 3, 'rec_ns': 4, 'orth_ns': 4, 'rec': 6, 'orth': 4},
+    (5, 5): {'rec_ns': 6, 'orth_ns': 4, 'rec_def': 7, 'orth_def': 5, 'rec': 11, 'orth': 5},
+    (5, 6): {'rec': 11, 'orth': 5, 'rec_def': 4, 'orth_def': 4, 'rec_ns': 7, 'orth_ns': 5},
+    (6, 1): {'rec': 1, 'orth': 16},
+    (6, 2): {'rec': 4, 'orth': 7, 'rec_def': 0, 'orth_def': 1, 'rec_ns': 3, 'orth_ns': 1},
+    (6, 3): {'rec_def': 2, 'orth_def': 3, 'rec_ns': 8, 'orth_ns': 8, 'rec': 9, 'orth': 6},
+    (6, 4): {'rec': 5, 'orth': 6, 'rec_ns': 6, 'orth_ns': 4, 'rec_def': 2, 'orth_def': 3},
+    (6, 5): {'rec_def': 5, 'orth_def': 5, 'rec_ns': 8, 'orth_ns': 4, 'rec': 6, 'orth': 7},
+    (6, 6): {'rec_def': 5, 'orth_def': 2, 'rec_ns': 7, 'orth_ns': 4, 'rec': 8, 'orth': 8},
+}
+
+SVD_PACKAGES = {
+    "tests_linalg_svd": ("squares 1 to 4", lambda r, c: r == c and r <= 4),
+    "tests_linalg_svd5": ("square 5", lambda r, c: r == c == 5),
+    "tests_linalg_svd6": ("square 6", lambda r, c: r == c == 6),
+    "tests_linalg_svd_tall": ("tall shapes of 2 to 4 rows", lambda r, c: r > c and r <= 4),
+    "tests_linalg_svd_tall5": ("tall shapes of 5 rows", lambda r, c: r > c and r == 5),
+    "tests_linalg_svd_tall6": ("shapes 6x1 to 6x3", lambda r, c: r == 6 and c <= 3),
+    "tests_linalg_svd_tall6b": ("shapes 6x4 and 6x5", lambda r, c: r == 6 and c in (4, 5)),
+    "tests_linalg_svd_wide": ("wide shapes of 2 to 4 columns", lambda r, c: r < c and c <= 4),
+    "tests_linalg_svd_wide5": ("wide shapes of 5 columns", lambda r, c: r < c and c == 5),
+    "tests_linalg_svd_wide6": ("shapes 1x6 to 3x6", lambda r, c: c == 6 and r <= 3),
+    "tests_linalg_svd_wide6b": ("shapes 4x6 and 5x6", lambda r, c: c == 6 and r in (4, 5)),
+}
+
+
+def svd_packages() -> dict[str, str]:
+    out = {}
+    for pkg, (what, keep) in SVD_PACKAGES.items():
+        base = f"crates/{pkg}/"
+        shapes = [(r, c) for r in range(1, 7) for c in range(1, 7) if keep(r, c)]
+        out[base + "Scarb.toml"] = TEST_MANIFEST.format(
+            name=pkg, description=f"Tests and gas benchmarks of the SVD of the {what}: "
+                                  "singular values, rank, pseudo-inverse, polar decomposition "
+                                  "(WP 8.5-P14b; not published).")
+        need, vecs = set(), set()
+        for r, c in shapes:
+            k = min(r, c)
+            need |= {(r, c), (c, r), (r, r), (r, k), (k, c)}
+            vecs |= {k, r}
+        eq = [(svd_name(r, c), ("u", "singular_values", "v_t")) for r, c in shapes
+              if (r, c) not in SVD_EXISTING]
+        out[base + "src/builders.cairo"] = render_builders(need, vecs, eq)
+        mods = ["builders", "oracle_svd"]
+        for r, c in shapes:
+            m = f"svd{svd_suffix(r, c)}"
+            mods.append(m)
+            out[base + f"src/{m}.cairo"] = render_svd_tests(r, c, SVD_BOUNDS, "oracle_svd")
+        out[base + "src/lib.cairo"] = (
+            HEADER + f"//! Package `nalgebra_{pkg}` (WP 8.5-P14b): tests and gas benchmarks of the SVD of the\n"
+            f"//! {what}, through the public API. Oracle vectors: `tools/oracle` suite `spectral`\n"
+            f"//! (`oracle emit-cairo spectral --from vectors --max-per-dist 2 --ops <the svd ops of these\n"
+            f"//! shapes> --out src/oracle_svd.cairo`).\n\n"
+            + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
+    return out
 
 
 if __name__ == "__main__":

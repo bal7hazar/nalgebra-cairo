@@ -3,12 +3,14 @@
 //! `nalgebra::linalg::SVD<T, U2, U5>`), its pseudo-inverse, least-squares solve, rank and polar
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix2x5::Matrix2x5;
 use crate::base::matrix5x2::Matrix5x2;
 use crate::base::vector2::Vector2;
 use crate::base::vector5::Vector5;
+use crate::base::{MatrixMul, MatrixTrMul};
 use super::kernels::SvdRightImpl;
 use super::svd5x2::{Svd5x2InternalTrait, Svd5x2Trait};
 
@@ -165,25 +167,18 @@ pub impl Svd2x5Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 2 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 2 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd2x5<T>) -> Matrix2x5<T> {
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        Matrix2x5 {
-            m11: R::sum_prod2(a0_0, self.v_t.m11, a0_1, self.v_t.m21),
-            m21: R::sum_prod2(a1_0, self.v_t.m11, a1_1, self.v_t.m21),
-            m12: R::sum_prod2(a0_0, self.v_t.m12, a0_1, self.v_t.m22),
-            m22: R::sum_prod2(a1_0, self.v_t.m12, a1_1, self.v_t.m22),
-            m13: R::sum_prod2(a0_0, self.v_t.m13, a0_1, self.v_t.m23),
-            m23: R::sum_prod2(a1_0, self.v_t.m13, a1_1, self.v_t.m23),
-            m14: R::sum_prod2(a0_0, self.v_t.m14, a0_1, self.v_t.m24),
-            m24: R::sum_prod2(a1_0, self.v_t.m14, a1_1, self.v_t.m24),
-            m15: R::sum_prod2(a0_0, self.v_t.m15, a0_1, self.v_t.m25),
-            m25: R::sum_prod2(a1_0, self.v_t.m15, a1_1, self.v_t.m25),
+        revoke_ap_tracking();
+        Matrix2 {
+            m11: self.u.m11 * self.singular_values.x,
+            m21: self.u.m21 * self.singular_values.x,
+            m12: self.u.m12 * self.singular_values.y,
+            m22: self.u.m22 * self.singular_values.y,
         }
+            .mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (5x2), `σ⁺_i = 1 / σ_i` when
@@ -192,34 +187,28 @@ pub impl Svd2x5Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd2x5<T>, eps: T) -> Option<Matrix5x2<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
-        let b0_0 = self.v_t.m11 * p0;
-        let b0_1 = self.v_t.m21 * p1;
-        let b1_0 = self.v_t.m12 * p0;
-        let b1_1 = self.v_t.m22 * p1;
-        let b2_0 = self.v_t.m13 * p0;
-        let b2_1 = self.v_t.m23 * p1;
-        let b3_0 = self.v_t.m14 * p0;
-        let b3_1 = self.v_t.m24 * p1;
-        let b4_0 = self.v_t.m15 * p0;
-        let b4_1 = self.v_t.m25 * p1;
         Some(
             Matrix5x2 {
-                m11: R::sum_prod2(b0_0, self.u.m11, b0_1, self.u.m12),
-                m21: R::sum_prod2(b1_0, self.u.m11, b1_1, self.u.m12),
-                m31: R::sum_prod2(b2_0, self.u.m11, b2_1, self.u.m12),
-                m41: R::sum_prod2(b3_0, self.u.m11, b3_1, self.u.m12),
-                m51: R::sum_prod2(b4_0, self.u.m11, b4_1, self.u.m12),
-                m12: R::sum_prod2(b0_0, self.u.m21, b0_1, self.u.m22),
-                m22: R::sum_prod2(b1_0, self.u.m21, b1_1, self.u.m22),
-                m32: R::sum_prod2(b2_0, self.u.m21, b2_1, self.u.m22),
-                m42: R::sum_prod2(b3_0, self.u.m21, b3_1, self.u.m22),
-                m52: R::sum_prod2(b4_0, self.u.m21, b4_1, self.u.m22),
-            },
+                m11: self.v_t.m11 * p0,
+                m21: self.v_t.m12 * p0,
+                m31: self.v_t.m13 * p0,
+                m41: self.v_t.m14 * p0,
+                m51: self.v_t.m15 * p0,
+                m12: self.v_t.m21 * p1,
+                m22: self.v_t.m22 * p1,
+                m32: self.v_t.m23 * p1,
+                m42: self.v_t.m24 * p1,
+                m52: self.v_t.m25 * p1,
+            }
+                .mul_mat(
+                    Matrix2 { m11: self.u.m11, m21: self.u.m12, m12: self.u.m21, m22: self.u.m22 },
+                ),
         )
     }
 
@@ -228,21 +217,20 @@ pub impl Svd2x5Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd2x5<T>, b: Vector2<T>, eps: T) -> Option<Vector5<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = R::sum_prod2(self.u.m11, b.x, self.u.m21, b.y);
-        let y1 = R::sum_prod2(self.u.m12, b.x, self.u.m22, b.y);
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        let z1 = SvdRightImpl::<T>::divided(y1, self.singular_values.y, eps);
+        let y = self.u.tr_mul(b);
         Some(
-            Vector5 {
-                x: R::sum_prod2(self.v_t.m11, z0, self.v_t.m21, z1),
-                y: R::sum_prod2(self.v_t.m12, z0, self.v_t.m22, z1),
-                z: R::sum_prod2(self.v_t.m13, z0, self.v_t.m23, z1),
-                w: R::sum_prod2(self.v_t.m14, z0, self.v_t.m24, z1),
-                a: R::sum_prod2(self.v_t.m15, z0, self.v_t.m25, z1),
-            },
+            self
+                .v_t
+                .tr_mul(
+                    Vector2 {
+                        x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
+                        y: SvdRightImpl::<T>::divided(y.y, self.singular_values.y, eps),
+                    },
+                ),
         )
     }
 
@@ -252,6 +240,7 @@ pub impl Svd2x5Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd2x5<T>) -> Option<(Matrix2<T>, Matrix2x5<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.m11 * self.singular_values.x;
         let a0_1 = self.u.m12 * self.singular_values.y;
         let a1_0 = self.u.m21 * self.singular_values.x;
@@ -259,23 +248,7 @@ pub impl Svd2x5Impl<
         let p0_0 = R::sum_prod2(a0_0, self.u.m11, a0_1, self.u.m12);
         let p0_1 = R::sum_prod2(a0_0, self.u.m21, a0_1, self.u.m22);
         let p1_1 = R::sum_prod2(a1_0, self.u.m21, a1_1, self.u.m22);
-        Some(
-            (
-                Matrix2 { m11: p0_0, m21: p0_1, m12: p0_1, m22: p1_1 },
-                Matrix2x5 {
-                    m11: R::sum_prod2(self.u.m11, self.v_t.m11, self.u.m12, self.v_t.m21),
-                    m21: R::sum_prod2(self.u.m21, self.v_t.m11, self.u.m22, self.v_t.m21),
-                    m12: R::sum_prod2(self.u.m11, self.v_t.m12, self.u.m12, self.v_t.m22),
-                    m22: R::sum_prod2(self.u.m21, self.v_t.m12, self.u.m22, self.v_t.m22),
-                    m13: R::sum_prod2(self.u.m11, self.v_t.m13, self.u.m12, self.v_t.m23),
-                    m23: R::sum_prod2(self.u.m21, self.v_t.m13, self.u.m22, self.v_t.m23),
-                    m14: R::sum_prod2(self.u.m11, self.v_t.m14, self.u.m12, self.v_t.m24),
-                    m24: R::sum_prod2(self.u.m21, self.v_t.m14, self.u.m22, self.v_t.m24),
-                    m15: R::sum_prod2(self.u.m11, self.v_t.m15, self.u.m12, self.v_t.m25),
-                    m25: R::sum_prod2(self.u.m21, self.v_t.m15, self.u.m22, self.v_t.m25),
-                },
-            ),
-        )
+        Some((Matrix2 { m11: p0_0, m21: p0_1, m12: p0_1, m22: p1_1 }, self.u.mul_mat(self.v_t)))
     }
 
     /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
@@ -283,6 +256,7 @@ pub impl Svd2x5Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd2x5<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut uc0 = Vector2 { x: self.u.m11, y: self.u.m21 };

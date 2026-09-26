@@ -7,6 +7,7 @@ use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix5::Matrix5;
 use crate::base::vector5::Vector5;
+use crate::base::{MatrixMul, MatrixTrMul};
 use crate::linalg::symmetric_eigen5::Sym5;
 use super::kernels::{SvdComplete5Impl, SvdRightImpl};
 
@@ -71,8 +72,8 @@ pub impl Svd5Impl<
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. Panics on overflow of a component of `MᵀM` (the squares of the entries
-    /// must be representable).
+    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
+    /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
     fn new(matrix: Matrix5<T>) -> Svd5<T> {
         Svd5InternalTrait::from_right(matrix, Svd5InternalTrait::right(matrix))
     }
@@ -127,511 +128,39 @@ pub impl Svd5Impl<
     }
 
     /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then one fused sum of 5 products per entry. Panics on overflow. Upstream:
-    /// `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never here).
+    /// then `MatrixMul::mul_mat` (one fused sum of 5 products per entry). Panics on overflow.
+    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
+    /// here).
     fn recompose(self: Svd5<T>) -> Matrix5<T> {
-        let a0_0 = self.u.m11 * self.singular_values.x;
-        let a0_1 = self.u.m12 * self.singular_values.y;
-        let a0_2 = self.u.m13 * self.singular_values.z;
-        let a0_3 = self.u.m14 * self.singular_values.w;
-        let a0_4 = self.u.m15 * self.singular_values.a;
-        let a1_0 = self.u.m21 * self.singular_values.x;
-        let a1_1 = self.u.m22 * self.singular_values.y;
-        let a1_2 = self.u.m23 * self.singular_values.z;
-        let a1_3 = self.u.m24 * self.singular_values.w;
-        let a1_4 = self.u.m25 * self.singular_values.a;
-        let a2_0 = self.u.m31 * self.singular_values.x;
-        let a2_1 = self.u.m32 * self.singular_values.y;
-        let a2_2 = self.u.m33 * self.singular_values.z;
-        let a2_3 = self.u.m34 * self.singular_values.w;
-        let a2_4 = self.u.m35 * self.singular_values.a;
-        let a3_0 = self.u.m41 * self.singular_values.x;
-        let a3_1 = self.u.m42 * self.singular_values.y;
-        let a3_2 = self.u.m43 * self.singular_values.z;
-        let a3_3 = self.u.m44 * self.singular_values.w;
-        let a3_4 = self.u.m45 * self.singular_values.a;
-        let a4_0 = self.u.m51 * self.singular_values.x;
-        let a4_1 = self.u.m52 * self.singular_values.y;
-        let a4_2 = self.u.m53 * self.singular_values.z;
-        let a4_3 = self.u.m54 * self.singular_values.w;
-        let a4_4 = self.u.m55 * self.singular_values.a;
+        revoke_ap_tracking();
         Matrix5 {
-            m11: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.v_t.m11),
-                                a0_1,
-                                self.v_t.m21,
-                            ),
-                            a0_2,
-                            self.v_t.m31,
-                        ),
-                        a0_3,
-                        self.v_t.m41,
-                    ),
-                    a0_4,
-                    self.v_t.m51,
-                ),
-            ),
-            m21: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.v_t.m11),
-                                a1_1,
-                                self.v_t.m21,
-                            ),
-                            a1_2,
-                            self.v_t.m31,
-                        ),
-                        a1_3,
-                        self.v_t.m41,
-                    ),
-                    a1_4,
-                    self.v_t.m51,
-                ),
-            ),
-            m31: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.v_t.m11),
-                                a2_1,
-                                self.v_t.m21,
-                            ),
-                            a2_2,
-                            self.v_t.m31,
-                        ),
-                        a2_3,
-                        self.v_t.m41,
-                    ),
-                    a2_4,
-                    self.v_t.m51,
-                ),
-            ),
-            m41: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.v_t.m11),
-                                a3_1,
-                                self.v_t.m21,
-                            ),
-                            a3_2,
-                            self.v_t.m31,
-                        ),
-                        a3_3,
-                        self.v_t.m41,
-                    ),
-                    a3_4,
-                    self.v_t.m51,
-                ),
-            ),
-            m51: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a4_0, self.v_t.m11),
-                                a4_1,
-                                self.v_t.m21,
-                            ),
-                            a4_2,
-                            self.v_t.m31,
-                        ),
-                        a4_3,
-                        self.v_t.m41,
-                    ),
-                    a4_4,
-                    self.v_t.m51,
-                ),
-            ),
-            m12: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.v_t.m12),
-                                a0_1,
-                                self.v_t.m22,
-                            ),
-                            a0_2,
-                            self.v_t.m32,
-                        ),
-                        a0_3,
-                        self.v_t.m42,
-                    ),
-                    a0_4,
-                    self.v_t.m52,
-                ),
-            ),
-            m22: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.v_t.m12),
-                                a1_1,
-                                self.v_t.m22,
-                            ),
-                            a1_2,
-                            self.v_t.m32,
-                        ),
-                        a1_3,
-                        self.v_t.m42,
-                    ),
-                    a1_4,
-                    self.v_t.m52,
-                ),
-            ),
-            m32: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.v_t.m12),
-                                a2_1,
-                                self.v_t.m22,
-                            ),
-                            a2_2,
-                            self.v_t.m32,
-                        ),
-                        a2_3,
-                        self.v_t.m42,
-                    ),
-                    a2_4,
-                    self.v_t.m52,
-                ),
-            ),
-            m42: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.v_t.m12),
-                                a3_1,
-                                self.v_t.m22,
-                            ),
-                            a3_2,
-                            self.v_t.m32,
-                        ),
-                        a3_3,
-                        self.v_t.m42,
-                    ),
-                    a3_4,
-                    self.v_t.m52,
-                ),
-            ),
-            m52: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a4_0, self.v_t.m12),
-                                a4_1,
-                                self.v_t.m22,
-                            ),
-                            a4_2,
-                            self.v_t.m32,
-                        ),
-                        a4_3,
-                        self.v_t.m42,
-                    ),
-                    a4_4,
-                    self.v_t.m52,
-                ),
-            ),
-            m13: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.v_t.m13),
-                                a0_1,
-                                self.v_t.m23,
-                            ),
-                            a0_2,
-                            self.v_t.m33,
-                        ),
-                        a0_3,
-                        self.v_t.m43,
-                    ),
-                    a0_4,
-                    self.v_t.m53,
-                ),
-            ),
-            m23: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.v_t.m13),
-                                a1_1,
-                                self.v_t.m23,
-                            ),
-                            a1_2,
-                            self.v_t.m33,
-                        ),
-                        a1_3,
-                        self.v_t.m43,
-                    ),
-                    a1_4,
-                    self.v_t.m53,
-                ),
-            ),
-            m33: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.v_t.m13),
-                                a2_1,
-                                self.v_t.m23,
-                            ),
-                            a2_2,
-                            self.v_t.m33,
-                        ),
-                        a2_3,
-                        self.v_t.m43,
-                    ),
-                    a2_4,
-                    self.v_t.m53,
-                ),
-            ),
-            m43: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.v_t.m13),
-                                a3_1,
-                                self.v_t.m23,
-                            ),
-                            a3_2,
-                            self.v_t.m33,
-                        ),
-                        a3_3,
-                        self.v_t.m43,
-                    ),
-                    a3_4,
-                    self.v_t.m53,
-                ),
-            ),
-            m53: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a4_0, self.v_t.m13),
-                                a4_1,
-                                self.v_t.m23,
-                            ),
-                            a4_2,
-                            self.v_t.m33,
-                        ),
-                        a4_3,
-                        self.v_t.m43,
-                    ),
-                    a4_4,
-                    self.v_t.m53,
-                ),
-            ),
-            m14: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.v_t.m14),
-                                a0_1,
-                                self.v_t.m24,
-                            ),
-                            a0_2,
-                            self.v_t.m34,
-                        ),
-                        a0_3,
-                        self.v_t.m44,
-                    ),
-                    a0_4,
-                    self.v_t.m54,
-                ),
-            ),
-            m24: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.v_t.m14),
-                                a1_1,
-                                self.v_t.m24,
-                            ),
-                            a1_2,
-                            self.v_t.m34,
-                        ),
-                        a1_3,
-                        self.v_t.m44,
-                    ),
-                    a1_4,
-                    self.v_t.m54,
-                ),
-            ),
-            m34: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.v_t.m14),
-                                a2_1,
-                                self.v_t.m24,
-                            ),
-                            a2_2,
-                            self.v_t.m34,
-                        ),
-                        a2_3,
-                        self.v_t.m44,
-                    ),
-                    a2_4,
-                    self.v_t.m54,
-                ),
-            ),
-            m44: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.v_t.m14),
-                                a3_1,
-                                self.v_t.m24,
-                            ),
-                            a3_2,
-                            self.v_t.m34,
-                        ),
-                        a3_3,
-                        self.v_t.m44,
-                    ),
-                    a3_4,
-                    self.v_t.m54,
-                ),
-            ),
-            m54: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a4_0, self.v_t.m14),
-                                a4_1,
-                                self.v_t.m24,
-                            ),
-                            a4_2,
-                            self.v_t.m34,
-                        ),
-                        a4_3,
-                        self.v_t.m44,
-                    ),
-                    a4_4,
-                    self.v_t.m54,
-                ),
-            ),
-            m15: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a0_0, self.v_t.m15),
-                                a0_1,
-                                self.v_t.m25,
-                            ),
-                            a0_2,
-                            self.v_t.m35,
-                        ),
-                        a0_3,
-                        self.v_t.m45,
-                    ),
-                    a0_4,
-                    self.v_t.m55,
-                ),
-            ),
-            m25: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a1_0, self.v_t.m15),
-                                a1_1,
-                                self.v_t.m25,
-                            ),
-                            a1_2,
-                            self.v_t.m35,
-                        ),
-                        a1_3,
-                        self.v_t.m45,
-                    ),
-                    a1_4,
-                    self.v_t.m55,
-                ),
-            ),
-            m35: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a2_0, self.v_t.m15),
-                                a2_1,
-                                self.v_t.m25,
-                            ),
-                            a2_2,
-                            self.v_t.m35,
-                        ),
-                        a2_3,
-                        self.v_t.m45,
-                    ),
-                    a2_4,
-                    self.v_t.m55,
-                ),
-            ),
-            m45: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a3_0, self.v_t.m15),
-                                a3_1,
-                                self.v_t.m25,
-                            ),
-                            a3_2,
-                            self.v_t.m35,
-                        ),
-                        a3_3,
-                        self.v_t.m45,
-                    ),
-                    a3_4,
-                    self.v_t.m55,
-                ),
-            ),
-            m55: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), a4_0, self.v_t.m15),
-                                a4_1,
-                                self.v_t.m25,
-                            ),
-                            a4_2,
-                            self.v_t.m35,
-                        ),
-                        a4_3,
-                        self.v_t.m45,
-                    ),
-                    a4_4,
-                    self.v_t.m55,
-                ),
-            ),
+            m11: self.u.m11 * self.singular_values.x,
+            m21: self.u.m21 * self.singular_values.x,
+            m31: self.u.m31 * self.singular_values.x,
+            m41: self.u.m41 * self.singular_values.x,
+            m51: self.u.m51 * self.singular_values.x,
+            m12: self.u.m12 * self.singular_values.y,
+            m22: self.u.m22 * self.singular_values.y,
+            m32: self.u.m32 * self.singular_values.y,
+            m42: self.u.m42 * self.singular_values.y,
+            m52: self.u.m52 * self.singular_values.y,
+            m13: self.u.m13 * self.singular_values.z,
+            m23: self.u.m23 * self.singular_values.z,
+            m33: self.u.m33 * self.singular_values.z,
+            m43: self.u.m43 * self.singular_values.z,
+            m53: self.u.m53 * self.singular_values.z,
+            m14: self.u.m14 * self.singular_values.w,
+            m24: self.u.m24 * self.singular_values.w,
+            m34: self.u.m34 * self.singular_values.w,
+            m44: self.u.m44 * self.singular_values.w,
+            m54: self.u.m54 * self.singular_values.w,
+            m15: self.u.m15 * self.singular_values.a,
+            m25: self.u.m25 * self.singular_values.a,
+            m35: self.u.m35 * self.singular_values.a,
+            m45: self.u.m45 * self.singular_values.a,
+            m55: self.u.m55 * self.singular_values.a,
         }
+            .mul_mat(self.v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` (5x5), `σ⁺_i = 1 / σ_i` when
@@ -640,6 +169,7 @@ pub impl Svd5Impl<
     /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
     /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
     fn pseudo_inverse(self: Svd5<T>, eps: T) -> Option<Matrix5<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
@@ -648,509 +178,63 @@ pub impl Svd5Impl<
         let p2 = SvdRightImpl::<T>::inverted(self.singular_values.z, eps);
         let p3 = SvdRightImpl::<T>::inverted(self.singular_values.w, eps);
         let p4 = SvdRightImpl::<T>::inverted(self.singular_values.a, eps);
-        let b0_0 = self.v_t.m11 * p0;
-        let b0_1 = self.v_t.m21 * p1;
-        let b0_2 = self.v_t.m31 * p2;
-        let b0_3 = self.v_t.m41 * p3;
-        let b0_4 = self.v_t.m51 * p4;
-        let b1_0 = self.v_t.m12 * p0;
-        let b1_1 = self.v_t.m22 * p1;
-        let b1_2 = self.v_t.m32 * p2;
-        let b1_3 = self.v_t.m42 * p3;
-        let b1_4 = self.v_t.m52 * p4;
-        let b2_0 = self.v_t.m13 * p0;
-        let b2_1 = self.v_t.m23 * p1;
-        let b2_2 = self.v_t.m33 * p2;
-        let b2_3 = self.v_t.m43 * p3;
-        let b2_4 = self.v_t.m53 * p4;
-        let b3_0 = self.v_t.m14 * p0;
-        let b3_1 = self.v_t.m24 * p1;
-        let b3_2 = self.v_t.m34 * p2;
-        let b3_3 = self.v_t.m44 * p3;
-        let b3_4 = self.v_t.m54 * p4;
-        let b4_0 = self.v_t.m15 * p0;
-        let b4_1 = self.v_t.m25 * p1;
-        let b4_2 = self.v_t.m35 * p2;
-        let b4_3 = self.v_t.m45 * p3;
-        let b4_4 = self.v_t.m55 * p4;
         Some(
             Matrix5 {
-                m11: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b0_0, self.u.m11),
-                                    b0_1,
-                                    self.u.m12,
-                                ),
-                                b0_2,
-                                self.u.m13,
-                            ),
-                            b0_3,
-                            self.u.m14,
-                        ),
-                        b0_4,
-                        self.u.m15,
-                    ),
+                m11: self.v_t.m11 * p0,
+                m21: self.v_t.m12 * p0,
+                m31: self.v_t.m13 * p0,
+                m41: self.v_t.m14 * p0,
+                m51: self.v_t.m15 * p0,
+                m12: self.v_t.m21 * p1,
+                m22: self.v_t.m22 * p1,
+                m32: self.v_t.m23 * p1,
+                m42: self.v_t.m24 * p1,
+                m52: self.v_t.m25 * p1,
+                m13: self.v_t.m31 * p2,
+                m23: self.v_t.m32 * p2,
+                m33: self.v_t.m33 * p2,
+                m43: self.v_t.m34 * p2,
+                m53: self.v_t.m35 * p2,
+                m14: self.v_t.m41 * p3,
+                m24: self.v_t.m42 * p3,
+                m34: self.v_t.m43 * p3,
+                m44: self.v_t.m44 * p3,
+                m54: self.v_t.m45 * p3,
+                m15: self.v_t.m51 * p4,
+                m25: self.v_t.m52 * p4,
+                m35: self.v_t.m53 * p4,
+                m45: self.v_t.m54 * p4,
+                m55: self.v_t.m55 * p4,
+            }
+                .mul_mat(
+                    Matrix5 {
+                        m11: self.u.m11,
+                        m21: self.u.m12,
+                        m31: self.u.m13,
+                        m41: self.u.m14,
+                        m51: self.u.m15,
+                        m12: self.u.m21,
+                        m22: self.u.m22,
+                        m32: self.u.m23,
+                        m42: self.u.m24,
+                        m52: self.u.m25,
+                        m13: self.u.m31,
+                        m23: self.u.m32,
+                        m33: self.u.m33,
+                        m43: self.u.m34,
+                        m53: self.u.m35,
+                        m14: self.u.m41,
+                        m24: self.u.m42,
+                        m34: self.u.m43,
+                        m44: self.u.m44,
+                        m54: self.u.m45,
+                        m15: self.u.m51,
+                        m25: self.u.m52,
+                        m35: self.u.m53,
+                        m45: self.u.m54,
+                        m55: self.u.m55,
+                    },
                 ),
-                m21: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b1_0, self.u.m11),
-                                    b1_1,
-                                    self.u.m12,
-                                ),
-                                b1_2,
-                                self.u.m13,
-                            ),
-                            b1_3,
-                            self.u.m14,
-                        ),
-                        b1_4,
-                        self.u.m15,
-                    ),
-                ),
-                m31: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b2_0, self.u.m11),
-                                    b2_1,
-                                    self.u.m12,
-                                ),
-                                b2_2,
-                                self.u.m13,
-                            ),
-                            b2_3,
-                            self.u.m14,
-                        ),
-                        b2_4,
-                        self.u.m15,
-                    ),
-                ),
-                m41: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b3_0, self.u.m11),
-                                    b3_1,
-                                    self.u.m12,
-                                ),
-                                b3_2,
-                                self.u.m13,
-                            ),
-                            b3_3,
-                            self.u.m14,
-                        ),
-                        b3_4,
-                        self.u.m15,
-                    ),
-                ),
-                m51: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b4_0, self.u.m11),
-                                    b4_1,
-                                    self.u.m12,
-                                ),
-                                b4_2,
-                                self.u.m13,
-                            ),
-                            b4_3,
-                            self.u.m14,
-                        ),
-                        b4_4,
-                        self.u.m15,
-                    ),
-                ),
-                m12: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b0_0, self.u.m21),
-                                    b0_1,
-                                    self.u.m22,
-                                ),
-                                b0_2,
-                                self.u.m23,
-                            ),
-                            b0_3,
-                            self.u.m24,
-                        ),
-                        b0_4,
-                        self.u.m25,
-                    ),
-                ),
-                m22: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b1_0, self.u.m21),
-                                    b1_1,
-                                    self.u.m22,
-                                ),
-                                b1_2,
-                                self.u.m23,
-                            ),
-                            b1_3,
-                            self.u.m24,
-                        ),
-                        b1_4,
-                        self.u.m25,
-                    ),
-                ),
-                m32: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b2_0, self.u.m21),
-                                    b2_1,
-                                    self.u.m22,
-                                ),
-                                b2_2,
-                                self.u.m23,
-                            ),
-                            b2_3,
-                            self.u.m24,
-                        ),
-                        b2_4,
-                        self.u.m25,
-                    ),
-                ),
-                m42: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b3_0, self.u.m21),
-                                    b3_1,
-                                    self.u.m22,
-                                ),
-                                b3_2,
-                                self.u.m23,
-                            ),
-                            b3_3,
-                            self.u.m24,
-                        ),
-                        b3_4,
-                        self.u.m25,
-                    ),
-                ),
-                m52: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b4_0, self.u.m21),
-                                    b4_1,
-                                    self.u.m22,
-                                ),
-                                b4_2,
-                                self.u.m23,
-                            ),
-                            b4_3,
-                            self.u.m24,
-                        ),
-                        b4_4,
-                        self.u.m25,
-                    ),
-                ),
-                m13: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b0_0, self.u.m31),
-                                    b0_1,
-                                    self.u.m32,
-                                ),
-                                b0_2,
-                                self.u.m33,
-                            ),
-                            b0_3,
-                            self.u.m34,
-                        ),
-                        b0_4,
-                        self.u.m35,
-                    ),
-                ),
-                m23: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b1_0, self.u.m31),
-                                    b1_1,
-                                    self.u.m32,
-                                ),
-                                b1_2,
-                                self.u.m33,
-                            ),
-                            b1_3,
-                            self.u.m34,
-                        ),
-                        b1_4,
-                        self.u.m35,
-                    ),
-                ),
-                m33: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b2_0, self.u.m31),
-                                    b2_1,
-                                    self.u.m32,
-                                ),
-                                b2_2,
-                                self.u.m33,
-                            ),
-                            b2_3,
-                            self.u.m34,
-                        ),
-                        b2_4,
-                        self.u.m35,
-                    ),
-                ),
-                m43: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b3_0, self.u.m31),
-                                    b3_1,
-                                    self.u.m32,
-                                ),
-                                b3_2,
-                                self.u.m33,
-                            ),
-                            b3_3,
-                            self.u.m34,
-                        ),
-                        b3_4,
-                        self.u.m35,
-                    ),
-                ),
-                m53: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b4_0, self.u.m31),
-                                    b4_1,
-                                    self.u.m32,
-                                ),
-                                b4_2,
-                                self.u.m33,
-                            ),
-                            b4_3,
-                            self.u.m34,
-                        ),
-                        b4_4,
-                        self.u.m35,
-                    ),
-                ),
-                m14: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b0_0, self.u.m41),
-                                    b0_1,
-                                    self.u.m42,
-                                ),
-                                b0_2,
-                                self.u.m43,
-                            ),
-                            b0_3,
-                            self.u.m44,
-                        ),
-                        b0_4,
-                        self.u.m45,
-                    ),
-                ),
-                m24: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b1_0, self.u.m41),
-                                    b1_1,
-                                    self.u.m42,
-                                ),
-                                b1_2,
-                                self.u.m43,
-                            ),
-                            b1_3,
-                            self.u.m44,
-                        ),
-                        b1_4,
-                        self.u.m45,
-                    ),
-                ),
-                m34: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b2_0, self.u.m41),
-                                    b2_1,
-                                    self.u.m42,
-                                ),
-                                b2_2,
-                                self.u.m43,
-                            ),
-                            b2_3,
-                            self.u.m44,
-                        ),
-                        b2_4,
-                        self.u.m45,
-                    ),
-                ),
-                m44: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b3_0, self.u.m41),
-                                    b3_1,
-                                    self.u.m42,
-                                ),
-                                b3_2,
-                                self.u.m43,
-                            ),
-                            b3_3,
-                            self.u.m44,
-                        ),
-                        b3_4,
-                        self.u.m45,
-                    ),
-                ),
-                m54: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b4_0, self.u.m41),
-                                    b4_1,
-                                    self.u.m42,
-                                ),
-                                b4_2,
-                                self.u.m43,
-                            ),
-                            b4_3,
-                            self.u.m44,
-                        ),
-                        b4_4,
-                        self.u.m45,
-                    ),
-                ),
-                m15: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b0_0, self.u.m51),
-                                    b0_1,
-                                    self.u.m52,
-                                ),
-                                b0_2,
-                                self.u.m53,
-                            ),
-                            b0_3,
-                            self.u.m54,
-                        ),
-                        b0_4,
-                        self.u.m55,
-                    ),
-                ),
-                m25: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b1_0, self.u.m51),
-                                    b1_1,
-                                    self.u.m52,
-                                ),
-                                b1_2,
-                                self.u.m53,
-                            ),
-                            b1_3,
-                            self.u.m54,
-                        ),
-                        b1_4,
-                        self.u.m55,
-                    ),
-                ),
-                m35: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b2_0, self.u.m51),
-                                    b2_1,
-                                    self.u.m52,
-                                ),
-                                b2_2,
-                                self.u.m53,
-                            ),
-                            b2_3,
-                            self.u.m54,
-                        ),
-                        b2_4,
-                        self.u.m55,
-                    ),
-                ),
-                m45: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b3_0, self.u.m51),
-                                    b3_1,
-                                    self.u.m52,
-                                ),
-                                b3_2,
-                                self.u.m53,
-                            ),
-                            b3_3,
-                            self.u.m54,
-                        ),
-                        b3_4,
-                        self.u.m55,
-                    ),
-                ),
-                m55: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), b4_0, self.u.m51),
-                                    b4_1,
-                                    self.u.m52,
-                                ),
-                                b4_2,
-                                self.u.m53,
-                            ),
-                            b4_3,
-                            self.u.m54,
-                        ),
-                        b4_4,
-                        self.u.m55,
-                    ),
-                ),
-            },
         )
     }
 
@@ -1159,197 +243,23 @@ pub impl Svd5Impl<
     /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
     /// right-hand side there; a vector here).
     fn solve(self: Svd5<T>, b: Vector5<T>, eps: T) -> Option<Vector5<T>> {
+        revoke_ap_tracking();
         if eps.is_sign_negative() {
             return None;
         }
-        let y0 = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_zero(), self.u.m11, b.x), self.u.m21, b.y,
-                        ),
-                        self.u.m31,
-                        b.z,
-                    ),
-                    self.u.m41,
-                    b.w,
-                ),
-                self.u.m51,
-                b.a,
-            ),
-        );
-        let y1 = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_zero(), self.u.m12, b.x), self.u.m22, b.y,
-                        ),
-                        self.u.m32,
-                        b.z,
-                    ),
-                    self.u.m42,
-                    b.w,
-                ),
-                self.u.m52,
-                b.a,
-            ),
-        );
-        let y2 = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_zero(), self.u.m13, b.x), self.u.m23, b.y,
-                        ),
-                        self.u.m33,
-                        b.z,
-                    ),
-                    self.u.m43,
-                    b.w,
-                ),
-                self.u.m53,
-                b.a,
-            ),
-        );
-        let y3 = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_zero(), self.u.m14, b.x), self.u.m24, b.y,
-                        ),
-                        self.u.m34,
-                        b.z,
-                    ),
-                    self.u.m44,
-                    b.w,
-                ),
-                self.u.m54,
-                b.a,
-            ),
-        );
-        let y4 = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_zero(), self.u.m15, b.x), self.u.m25, b.y,
-                        ),
-                        self.u.m35,
-                        b.z,
-                    ),
-                    self.u.m45,
-                    b.w,
-                ),
-                self.u.m55,
-                b.a,
-            ),
-        );
-        let z0 = SvdRightImpl::<T>::divided(y0, self.singular_values.x, eps);
-        let z1 = SvdRightImpl::<T>::divided(y1, self.singular_values.y, eps);
-        let z2 = SvdRightImpl::<T>::divided(y2, self.singular_values.z, eps);
-        let z3 = SvdRightImpl::<T>::divided(y3, self.singular_values.w, eps);
-        let z4 = SvdRightImpl::<T>::divided(y4, self.singular_values.a, eps);
+        let y = self.u.tr_mul(b);
         Some(
-            Vector5 {
-                x: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), self.v_t.m11, z0),
-                                    self.v_t.m21,
-                                    z1,
-                                ),
-                                self.v_t.m31,
-                                z2,
-                            ),
-                            self.v_t.m41,
-                            z3,
-                        ),
-                        self.v_t.m51,
-                        z4,
-                    ),
+            self
+                .v_t
+                .tr_mul(
+                    Vector5 {
+                        x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps),
+                        y: SvdRightImpl::<T>::divided(y.y, self.singular_values.y, eps),
+                        z: SvdRightImpl::<T>::divided(y.z, self.singular_values.z, eps),
+                        w: SvdRightImpl::<T>::divided(y.w, self.singular_values.w, eps),
+                        a: SvdRightImpl::<T>::divided(y.a, self.singular_values.a, eps),
+                    },
                 ),
-                y: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), self.v_t.m12, z0),
-                                    self.v_t.m22,
-                                    z1,
-                                ),
-                                self.v_t.m32,
-                                z2,
-                            ),
-                            self.v_t.m42,
-                            z3,
-                        ),
-                        self.v_t.m52,
-                        z4,
-                    ),
-                ),
-                z: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), self.v_t.m13, z0),
-                                    self.v_t.m23,
-                                    z1,
-                                ),
-                                self.v_t.m33,
-                                z2,
-                            ),
-                            self.v_t.m43,
-                            z3,
-                        ),
-                        self.v_t.m53,
-                        z4,
-                    ),
-                ),
-                w: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), self.v_t.m14, z0),
-                                    self.v_t.m24,
-                                    z1,
-                                ),
-                                self.v_t.m34,
-                                z2,
-                            ),
-                            self.v_t.m44,
-                            z3,
-                        ),
-                        self.v_t.m54,
-                        z4,
-                    ),
-                ),
-                a: R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), self.v_t.m15, z0),
-                                    self.v_t.m25,
-                                    z1,
-                                ),
-                                self.v_t.m35,
-                                z2,
-                            ),
-                            self.v_t.m45,
-                            z3,
-                        ),
-                        self.v_t.m55,
-                        z4,
-                    ),
-                ),
-            },
         )
     }
 
@@ -1359,6 +269,7 @@ pub impl Svd5Impl<
     /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd5<T>) -> Option<(Matrix5<T>, Matrix5<T>)> {
+        revoke_ap_tracking();
         let a0_0 = self.u.m11 * self.singular_values.x;
         let a0_1 = self.u.m12 * self.singular_values.y;
         let a0_2 = self.u.m13 * self.singular_values.z;
@@ -1668,483 +579,7 @@ pub impl Svd5Impl<
                     m45: p3_4,
                     m55: p4_4,
                 },
-                Matrix5 {
-                    m11: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m11, self.v_t.m11),
-                                        self.u.m12,
-                                        self.v_t.m21,
-                                    ),
-                                    self.u.m13,
-                                    self.v_t.m31,
-                                ),
-                                self.u.m14,
-                                self.v_t.m41,
-                            ),
-                            self.u.m15,
-                            self.v_t.m51,
-                        ),
-                    ),
-                    m21: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m21, self.v_t.m11),
-                                        self.u.m22,
-                                        self.v_t.m21,
-                                    ),
-                                    self.u.m23,
-                                    self.v_t.m31,
-                                ),
-                                self.u.m24,
-                                self.v_t.m41,
-                            ),
-                            self.u.m25,
-                            self.v_t.m51,
-                        ),
-                    ),
-                    m31: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m31, self.v_t.m11),
-                                        self.u.m32,
-                                        self.v_t.m21,
-                                    ),
-                                    self.u.m33,
-                                    self.v_t.m31,
-                                ),
-                                self.u.m34,
-                                self.v_t.m41,
-                            ),
-                            self.u.m35,
-                            self.v_t.m51,
-                        ),
-                    ),
-                    m41: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m41, self.v_t.m11),
-                                        self.u.m42,
-                                        self.v_t.m21,
-                                    ),
-                                    self.u.m43,
-                                    self.v_t.m31,
-                                ),
-                                self.u.m44,
-                                self.v_t.m41,
-                            ),
-                            self.u.m45,
-                            self.v_t.m51,
-                        ),
-                    ),
-                    m51: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m51, self.v_t.m11),
-                                        self.u.m52,
-                                        self.v_t.m21,
-                                    ),
-                                    self.u.m53,
-                                    self.v_t.m31,
-                                ),
-                                self.u.m54,
-                                self.v_t.m41,
-                            ),
-                            self.u.m55,
-                            self.v_t.m51,
-                        ),
-                    ),
-                    m12: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m11, self.v_t.m12),
-                                        self.u.m12,
-                                        self.v_t.m22,
-                                    ),
-                                    self.u.m13,
-                                    self.v_t.m32,
-                                ),
-                                self.u.m14,
-                                self.v_t.m42,
-                            ),
-                            self.u.m15,
-                            self.v_t.m52,
-                        ),
-                    ),
-                    m22: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m21, self.v_t.m12),
-                                        self.u.m22,
-                                        self.v_t.m22,
-                                    ),
-                                    self.u.m23,
-                                    self.v_t.m32,
-                                ),
-                                self.u.m24,
-                                self.v_t.m42,
-                            ),
-                            self.u.m25,
-                            self.v_t.m52,
-                        ),
-                    ),
-                    m32: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m31, self.v_t.m12),
-                                        self.u.m32,
-                                        self.v_t.m22,
-                                    ),
-                                    self.u.m33,
-                                    self.v_t.m32,
-                                ),
-                                self.u.m34,
-                                self.v_t.m42,
-                            ),
-                            self.u.m35,
-                            self.v_t.m52,
-                        ),
-                    ),
-                    m42: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m41, self.v_t.m12),
-                                        self.u.m42,
-                                        self.v_t.m22,
-                                    ),
-                                    self.u.m43,
-                                    self.v_t.m32,
-                                ),
-                                self.u.m44,
-                                self.v_t.m42,
-                            ),
-                            self.u.m45,
-                            self.v_t.m52,
-                        ),
-                    ),
-                    m52: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m51, self.v_t.m12),
-                                        self.u.m52,
-                                        self.v_t.m22,
-                                    ),
-                                    self.u.m53,
-                                    self.v_t.m32,
-                                ),
-                                self.u.m54,
-                                self.v_t.m42,
-                            ),
-                            self.u.m55,
-                            self.v_t.m52,
-                        ),
-                    ),
-                    m13: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m11, self.v_t.m13),
-                                        self.u.m12,
-                                        self.v_t.m23,
-                                    ),
-                                    self.u.m13,
-                                    self.v_t.m33,
-                                ),
-                                self.u.m14,
-                                self.v_t.m43,
-                            ),
-                            self.u.m15,
-                            self.v_t.m53,
-                        ),
-                    ),
-                    m23: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m21, self.v_t.m13),
-                                        self.u.m22,
-                                        self.v_t.m23,
-                                    ),
-                                    self.u.m23,
-                                    self.v_t.m33,
-                                ),
-                                self.u.m24,
-                                self.v_t.m43,
-                            ),
-                            self.u.m25,
-                            self.v_t.m53,
-                        ),
-                    ),
-                    m33: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m31, self.v_t.m13),
-                                        self.u.m32,
-                                        self.v_t.m23,
-                                    ),
-                                    self.u.m33,
-                                    self.v_t.m33,
-                                ),
-                                self.u.m34,
-                                self.v_t.m43,
-                            ),
-                            self.u.m35,
-                            self.v_t.m53,
-                        ),
-                    ),
-                    m43: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m41, self.v_t.m13),
-                                        self.u.m42,
-                                        self.v_t.m23,
-                                    ),
-                                    self.u.m43,
-                                    self.v_t.m33,
-                                ),
-                                self.u.m44,
-                                self.v_t.m43,
-                            ),
-                            self.u.m45,
-                            self.v_t.m53,
-                        ),
-                    ),
-                    m53: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m51, self.v_t.m13),
-                                        self.u.m52,
-                                        self.v_t.m23,
-                                    ),
-                                    self.u.m53,
-                                    self.v_t.m33,
-                                ),
-                                self.u.m54,
-                                self.v_t.m43,
-                            ),
-                            self.u.m55,
-                            self.v_t.m53,
-                        ),
-                    ),
-                    m14: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m11, self.v_t.m14),
-                                        self.u.m12,
-                                        self.v_t.m24,
-                                    ),
-                                    self.u.m13,
-                                    self.v_t.m34,
-                                ),
-                                self.u.m14,
-                                self.v_t.m44,
-                            ),
-                            self.u.m15,
-                            self.v_t.m54,
-                        ),
-                    ),
-                    m24: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m21, self.v_t.m14),
-                                        self.u.m22,
-                                        self.v_t.m24,
-                                    ),
-                                    self.u.m23,
-                                    self.v_t.m34,
-                                ),
-                                self.u.m24,
-                                self.v_t.m44,
-                            ),
-                            self.u.m25,
-                            self.v_t.m54,
-                        ),
-                    ),
-                    m34: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m31, self.v_t.m14),
-                                        self.u.m32,
-                                        self.v_t.m24,
-                                    ),
-                                    self.u.m33,
-                                    self.v_t.m34,
-                                ),
-                                self.u.m34,
-                                self.v_t.m44,
-                            ),
-                            self.u.m35,
-                            self.v_t.m54,
-                        ),
-                    ),
-                    m44: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m41, self.v_t.m14),
-                                        self.u.m42,
-                                        self.v_t.m24,
-                                    ),
-                                    self.u.m43,
-                                    self.v_t.m34,
-                                ),
-                                self.u.m44,
-                                self.v_t.m44,
-                            ),
-                            self.u.m45,
-                            self.v_t.m54,
-                        ),
-                    ),
-                    m54: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m51, self.v_t.m14),
-                                        self.u.m52,
-                                        self.v_t.m24,
-                                    ),
-                                    self.u.m53,
-                                    self.v_t.m34,
-                                ),
-                                self.u.m54,
-                                self.v_t.m44,
-                            ),
-                            self.u.m55,
-                            self.v_t.m54,
-                        ),
-                    ),
-                    m15: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m11, self.v_t.m15),
-                                        self.u.m12,
-                                        self.v_t.m25,
-                                    ),
-                                    self.u.m13,
-                                    self.v_t.m35,
-                                ),
-                                self.u.m14,
-                                self.v_t.m45,
-                            ),
-                            self.u.m15,
-                            self.v_t.m55,
-                        ),
-                    ),
-                    m25: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m21, self.v_t.m15),
-                                        self.u.m22,
-                                        self.v_t.m25,
-                                    ),
-                                    self.u.m23,
-                                    self.v_t.m35,
-                                ),
-                                self.u.m24,
-                                self.v_t.m45,
-                            ),
-                            self.u.m25,
-                            self.v_t.m55,
-                        ),
-                    ),
-                    m35: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m31, self.v_t.m15),
-                                        self.u.m32,
-                                        self.v_t.m25,
-                                    ),
-                                    self.u.m33,
-                                    self.v_t.m35,
-                                ),
-                                self.u.m34,
-                                self.v_t.m45,
-                            ),
-                            self.u.m35,
-                            self.v_t.m55,
-                        ),
-                    ),
-                    m45: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m41, self.v_t.m15),
-                                        self.u.m42,
-                                        self.v_t.m25,
-                                    ),
-                                    self.u.m43,
-                                    self.v_t.m35,
-                                ),
-                                self.u.m44,
-                                self.v_t.m45,
-                            ),
-                            self.u.m45,
-                            self.v_t.m55,
-                        ),
-                    ),
-                    m55: R::wide_rescale(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), self.u.m51, self.v_t.m15),
-                                        self.u.m52,
-                                        self.v_t.m25,
-                                    ),
-                                    self.u.m53,
-                                    self.v_t.m35,
-                                ),
-                                self.u.m54,
-                                self.v_t.m45,
-                            ),
-                            self.u.m55,
-                            self.v_t.m55,
-                        ),
-                    ),
-                },
+                self.u.mul_mat(self.v_t),
             ),
         )
     }
@@ -2154,6 +589,7 @@ pub impl Svd5Impl<
     /// their order). `new` already returns them sorted, so this only matters after the fields
     /// were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd5<T>) {
+        revoke_ap_tracking();
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut s2 = self.singular_values.z;
@@ -2360,8 +796,29 @@ pub impl Svd5Impl<
     }
 }
 
-/// Crate-internal kernels of `Svd5<T>`: the Gram matrix, the decomposition from the right
-/// singular vectors, the singular values alone.
+/// The columns `w_i = M v_i`, their norms and the right vectors, sorted (private state of
+/// `Svd5InternalTrait`).
+#[derive(Copy, Drop)]
+pub(crate) struct SortedSvd5<T> {
+    s0: T,
+    s1: T,
+    s2: T,
+    s3: T,
+    s4: T,
+    w0: Vector5<T>,
+    w1: Vector5<T>,
+    w2: Vector5<T>,
+    w3: Vector5<T>,
+    w4: Vector5<T>,
+    v0: Vector5<T>,
+    v1: Vector5<T>,
+    v2: Vector5<T>,
+    v3: Vector5<T>,
+    v4: Vector5<T>,
+}
+
+/// Crate-internal kernels of `Svd5<T>`: the Gram matrix, the right singular vectors, the sorted
+/// columns `M v_i`, the decomposition.
 #[generate_trait]
 pub(crate) impl Svd5InternalImpl<
     T,
@@ -2376,7 +833,124 @@ pub(crate) impl Svd5InternalImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd5InternalTrait<T> {
-    /// `MᵀM` (15 fused sums of 5 products, one rounding each). Panics on overflow.
+    /// `m / max |m_ij|` (one prepared divisor per 6 entries), or `m` when it is zero: the input
+    /// of the Gram matrix. The right singular vectors do not depend on the scale, but their
+    /// fixed-point PRECISION does: the Gram matrix of a small matrix has tiny entries, whose
+    /// absolute rounding is a large relative error on the eigenvectors (measured on `Svd4`:
+    /// `pseudo_inverse` 1 749 ulp over the oracle tolerance on `small` inputs without it), and
+    /// the Gram matrix of a large one overflows. Normalised, `MᵀM` has entries in `[0, 5]`.
+    fn normalised(m: Matrix5<T>) -> Matrix5<T> {
+        let mut a = m.m11.abs();
+        if m.m21.abs() > a {
+            a = m.m21.abs();
+        }
+        if m.m31.abs() > a {
+            a = m.m31.abs();
+        }
+        if m.m41.abs() > a {
+            a = m.m41.abs();
+        }
+        if m.m51.abs() > a {
+            a = m.m51.abs();
+        }
+        if m.m12.abs() > a {
+            a = m.m12.abs();
+        }
+        if m.m22.abs() > a {
+            a = m.m22.abs();
+        }
+        if m.m32.abs() > a {
+            a = m.m32.abs();
+        }
+        if m.m42.abs() > a {
+            a = m.m42.abs();
+        }
+        if m.m52.abs() > a {
+            a = m.m52.abs();
+        }
+        if m.m13.abs() > a {
+            a = m.m13.abs();
+        }
+        if m.m23.abs() > a {
+            a = m.m23.abs();
+        }
+        if m.m33.abs() > a {
+            a = m.m33.abs();
+        }
+        if m.m43.abs() > a {
+            a = m.m43.abs();
+        }
+        if m.m53.abs() > a {
+            a = m.m53.abs();
+        }
+        if m.m14.abs() > a {
+            a = m.m14.abs();
+        }
+        if m.m24.abs() > a {
+            a = m.m24.abs();
+        }
+        if m.m34.abs() > a {
+            a = m.m34.abs();
+        }
+        if m.m44.abs() > a {
+            a = m.m44.abs();
+        }
+        if m.m54.abs() > a {
+            a = m.m54.abs();
+        }
+        if m.m15.abs() > a {
+            a = m.m15.abs();
+        }
+        if m.m25.abs() > a {
+            a = m.m25.abs();
+        }
+        if m.m35.abs() > a {
+            a = m.m35.abs();
+        }
+        if m.m45.abs() > a {
+            a = m.m45.abs();
+        }
+        if m.m55.abs() > a {
+            a = m.m55.abs();
+        }
+        if a == R::zero() {
+            return m;
+        }
+        let (q0, q1, q2, q3, q4, q5) = R::div6(m.m11, m.m21, m.m31, m.m41, m.m51, m.m12, a);
+        let (q6, q7, q8, q9, q10, q11) = R::div6(m.m22, m.m32, m.m42, m.m52, m.m13, m.m23, a);
+        let (q12, q13, q14, q15, q16, q17) = R::div6(m.m33, m.m43, m.m53, m.m14, m.m24, m.m34, a);
+        let (q18, q19, q20, q21, q22, q23) = R::div6(m.m44, m.m54, m.m15, m.m25, m.m35, m.m45, a);
+        let q24 = R::div(m.m55, a);
+        Matrix5 {
+            m11: q0,
+            m21: q1,
+            m31: q2,
+            m41: q3,
+            m51: q4,
+            m12: q5,
+            m22: q6,
+            m32: q7,
+            m42: q8,
+            m52: q9,
+            m13: q10,
+            m23: q11,
+            m33: q12,
+            m43: q13,
+            m53: q14,
+            m14: q15,
+            m24: q16,
+            m34: q17,
+            m44: q18,
+            m54: q19,
+            m15: q20,
+            m25: q21,
+            m35: q22,
+            m45: q23,
+            m55: q24,
+        }
+    }
+
+    /// `MᵀM` (15 fused sums of 5 products, one rounding each).
     #[inline(always)]
     fn gram(m: Matrix5<T>) -> Sym5<T> {
         Sym5 {
@@ -2641,467 +1215,33 @@ pub(crate) impl Svd5InternalImpl<
     /// The right singular vectors (the columns of `v`, ascending eigenvalue order of `MᵀM`).
     #[inline(always)]
     fn right(m: Matrix5<T>) -> Matrix5<T> {
-        SvdRightImpl::<T>::right5(Self::gram(m))
+        SvdRightImpl::<T>::right5(Self::gram(Self::normalised(m)))
     }
 
     /// `right`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`.
     #[inline(always)]
     fn try_right(m: Matrix5<T>, eps: T) -> Option<Matrix5<T>> {
-        SvdRightImpl::<T>::try_right5(Self::gram(m), eps)
+        SvdRightImpl::<T>::try_right5(Self::gram(Self::normalised(m)), eps)
     }
 
-    /// The decomposition from the right singular vectors `v` (columns): `w_i = M v_i` (one
-    /// fused sum per component), `σ_i = |w_i|` (floored norm of the exact sum of squares), the
-    /// triples sorted DESCENDING by `σ` (stable odd-even transposition network, strict
-    /// comparison: ties keep their order), then the left vectors by classical Gram-Schmidt run
-    /// TWICE ("twice is enough"): `g = w_k - Σ <u_l, w_k> u_l` and `h = q - Σ <u_l, q> u_l`
-    /// with `q = g / |g|`, one fused sum per component each, `u_k = h / |h|`. The second pass
-    /// costs about as much as the first and makes `U` orthonormal to the rounding of `h` even
-    /// when `σ_k` is tiny (rank deficiency), where one pass leaves `u_k` as far from the others
-    /// as `rounding / σ_k`. A column that vanishes EXACTLY (`g = 0`, or `σ_1 = 0`) is completed
-    /// by the axis least represented in the span of the previous ones (`SvdComplete`).
-    fn from_right(m: Matrix5<T>, v: Matrix5<T>) -> Svd5<T> {
+    /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`
+    /// (floored norm of the exact
+    /// sum of squares) for the right vectors `v` (columns), the triples sorted DESCENDING by `σ`
+    /// (stable odd-even transposition network, strict comparison: ties keep their order). The
+    /// singular values alone stop here.
+    fn sorted(m: Matrix5<T>, v: Matrix5<T>) -> SortedSvd5<T> {
         revoke_ap_tracking();
         let v0 = Vector5 { x: v.m11, y: v.m21, z: v.m31, w: v.m41, a: v.m51 };
         let v1 = Vector5 { x: v.m12, y: v.m22, z: v.m32, w: v.m42, a: v.m52 };
         let v2 = Vector5 { x: v.m13, y: v.m23, z: v.m33, w: v.m43, a: v.m53 };
         let v3 = Vector5 { x: v.m14, y: v.m24, z: v.m34, w: v.m44, a: v.m54 };
         let v4 = Vector5 { x: v.m15, y: v.m25, z: v.m35, w: v.m45, a: v.m55 };
-        let w0 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v0.x), m.m12, v0.y,
-                            ),
-                            m.m13,
-                            v0.z,
-                        ),
-                        m.m14,
-                        v0.w,
-                    ),
-                    m.m15,
-                    v0.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v0.x), m.m22, v0.y,
-                            ),
-                            m.m23,
-                            v0.z,
-                        ),
-                        m.m24,
-                        v0.w,
-                    ),
-                    m.m25,
-                    v0.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v0.x), m.m32, v0.y,
-                            ),
-                            m.m33,
-                            v0.z,
-                        ),
-                        m.m34,
-                        v0.w,
-                    ),
-                    m.m35,
-                    v0.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v0.x), m.m42, v0.y,
-                            ),
-                            m.m43,
-                            v0.z,
-                        ),
-                        m.m44,
-                        v0.w,
-                    ),
-                    m.m45,
-                    v0.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v0.x), m.m52, v0.y,
-                            ),
-                            m.m53,
-                            v0.z,
-                        ),
-                        m.m54,
-                        v0.w,
-                    ),
-                    m.m55,
-                    v0.a,
-                ),
-            ),
-        };
-        let w1 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v1.x), m.m12, v1.y,
-                            ),
-                            m.m13,
-                            v1.z,
-                        ),
-                        m.m14,
-                        v1.w,
-                    ),
-                    m.m15,
-                    v1.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v1.x), m.m22, v1.y,
-                            ),
-                            m.m23,
-                            v1.z,
-                        ),
-                        m.m24,
-                        v1.w,
-                    ),
-                    m.m25,
-                    v1.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v1.x), m.m32, v1.y,
-                            ),
-                            m.m33,
-                            v1.z,
-                        ),
-                        m.m34,
-                        v1.w,
-                    ),
-                    m.m35,
-                    v1.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v1.x), m.m42, v1.y,
-                            ),
-                            m.m43,
-                            v1.z,
-                        ),
-                        m.m44,
-                        v1.w,
-                    ),
-                    m.m45,
-                    v1.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v1.x), m.m52, v1.y,
-                            ),
-                            m.m53,
-                            v1.z,
-                        ),
-                        m.m54,
-                        v1.w,
-                    ),
-                    m.m55,
-                    v1.a,
-                ),
-            ),
-        };
-        let w2 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v2.x), m.m12, v2.y,
-                            ),
-                            m.m13,
-                            v2.z,
-                        ),
-                        m.m14,
-                        v2.w,
-                    ),
-                    m.m15,
-                    v2.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v2.x), m.m22, v2.y,
-                            ),
-                            m.m23,
-                            v2.z,
-                        ),
-                        m.m24,
-                        v2.w,
-                    ),
-                    m.m25,
-                    v2.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v2.x), m.m32, v2.y,
-                            ),
-                            m.m33,
-                            v2.z,
-                        ),
-                        m.m34,
-                        v2.w,
-                    ),
-                    m.m35,
-                    v2.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v2.x), m.m42, v2.y,
-                            ),
-                            m.m43,
-                            v2.z,
-                        ),
-                        m.m44,
-                        v2.w,
-                    ),
-                    m.m45,
-                    v2.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v2.x), m.m52, v2.y,
-                            ),
-                            m.m53,
-                            v2.z,
-                        ),
-                        m.m54,
-                        v2.w,
-                    ),
-                    m.m55,
-                    v2.a,
-                ),
-            ),
-        };
-        let w3 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v3.x), m.m12, v3.y,
-                            ),
-                            m.m13,
-                            v3.z,
-                        ),
-                        m.m14,
-                        v3.w,
-                    ),
-                    m.m15,
-                    v3.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v3.x), m.m22, v3.y,
-                            ),
-                            m.m23,
-                            v3.z,
-                        ),
-                        m.m24,
-                        v3.w,
-                    ),
-                    m.m25,
-                    v3.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v3.x), m.m32, v3.y,
-                            ),
-                            m.m33,
-                            v3.z,
-                        ),
-                        m.m34,
-                        v3.w,
-                    ),
-                    m.m35,
-                    v3.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v3.x), m.m42, v3.y,
-                            ),
-                            m.m43,
-                            v3.z,
-                        ),
-                        m.m44,
-                        v3.w,
-                    ),
-                    m.m45,
-                    v3.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v3.x), m.m52, v3.y,
-                            ),
-                            m.m53,
-                            v3.z,
-                        ),
-                        m.m54,
-                        v3.w,
-                    ),
-                    m.m55,
-                    v3.a,
-                ),
-            ),
-        };
-        let w4 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v4.x), m.m12, v4.y,
-                            ),
-                            m.m13,
-                            v4.z,
-                        ),
-                        m.m14,
-                        v4.w,
-                    ),
-                    m.m15,
-                    v4.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v4.x), m.m22, v4.y,
-                            ),
-                            m.m23,
-                            v4.z,
-                        ),
-                        m.m24,
-                        v4.w,
-                    ),
-                    m.m25,
-                    v4.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v4.x), m.m32, v4.y,
-                            ),
-                            m.m33,
-                            v4.z,
-                        ),
-                        m.m34,
-                        v4.w,
-                    ),
-                    m.m35,
-                    v4.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v4.x), m.m42, v4.y,
-                            ),
-                            m.m43,
-                            v4.z,
-                        ),
-                        m.m44,
-                        v4.w,
-                    ),
-                    m.m45,
-                    v4.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v4.x), m.m52, v4.y,
-                            ),
-                            m.m53,
-                            v4.z,
-                        ),
-                        m.m54,
-                        v4.w,
-                    ),
-                    m.m55,
-                    v4.a,
-                ),
-            ),
-        };
+        let mv = m.mul_mat(v);
+        let w0 = Vector5 { x: mv.m11, y: mv.m21, z: mv.m31, w: mv.m41, a: mv.m51 };
+        let w1 = Vector5 { x: mv.m12, y: mv.m22, z: mv.m32, w: mv.m42, a: mv.m52 };
+        let w2 = Vector5 { x: mv.m13, y: mv.m23, z: mv.m33, w: mv.m43, a: mv.m53 };
+        let w3 = Vector5 { x: mv.m14, y: mv.m24, z: mv.m34, w: mv.m44, a: mv.m54 };
+        let w4 = Vector5 { x: mv.m15, y: mv.m25, z: mv.m35, w: mv.m45, a: mv.m55 };
         let s0 = R::wide_sqrt(
             R::wide_add_prod(
                 R::wide_add_prod(
@@ -3292,888 +1432,27 @@ pub(crate) impl Svd5InternalImpl<
             w3 = tmp1;
             v3 = tmp2;
         }
-        let u0 = if s0 == R::zero() {
-            Vector5 { x: R::one(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero() }
-        } else {
-            {
-                let (q0, q1, q2, q3, q4) = R::div5(w0.x, w0.y, w0.z, w0.w, w0.a, s0);
-                Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-            }
-        };
-        let u1 = {
-            let p0 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u0.x, w1.x), u0.y, w1.y,
-                            ),
-                            u0.z,
-                            w1.z,
-                        ),
-                        u0.w,
-                        w1.w,
-                    ),
-                    u0.a,
-                    w1.a,
-                ),
-            );
-            let g = Vector5 {
-                x: R::mul_add(-p0, u0.x, w1.x),
-                y: R::mul_add(-p0, u0.y, w1.y),
-                z: R::mul_add(-p0, u0.z, w1.z),
-                w: R::mul_add(-p0, u0.w, w1.w),
-                a: R::mul_add(-p0, u0.a, w1.a),
-            };
-            let n = R::wide_sqrt(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
-                            g.z,
-                            g.z,
-                        ),
-                        g.w,
-                        g.w,
-                    ),
-                    g.a,
-                    g.a,
-                ),
-            );
-            if n == R::zero() {
-                SvdComplete5Impl::<T>::complete1(u0)
-            } else {
-                let q = {
-                    let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                };
-                let p0 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
-                                ),
-                                u0.z,
-                                q.z,
-                            ),
-                            u0.w,
-                            q.w,
-                        ),
-                        u0.a,
-                        q.a,
-                    ),
-                );
-                let h = Vector5 {
-                    x: R::mul_add(-p0, u0.x, q.x),
-                    y: R::mul_add(-p0, u0.y, q.y),
-                    z: R::mul_add(-p0, u0.z, q.z),
-                    w: R::mul_add(-p0, u0.w, q.w),
-                    a: R::mul_add(-p0, u0.a, q.a),
-                };
-                {
-                    let (q0, q1, q2, q3, q4) = R::div5(
-                        h.x,
-                        h.y,
-                        h.z,
-                        h.w,
-                        h.a,
-                        R::wide_sqrt(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(
-                                            R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y,
-                                        ),
-                                        h.z,
-                                        h.z,
-                                    ),
-                                    h.w,
-                                    h.w,
-                                ),
-                                h.a,
-                                h.a,
-                            ),
-                        ),
-                    );
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                }
-            }
-        };
-        let u2 = {
-            let p0 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u0.x, w2.x), u0.y, w2.y,
-                            ),
-                            u0.z,
-                            w2.z,
-                        ),
-                        u0.w,
-                        w2.w,
-                    ),
-                    u0.a,
-                    w2.a,
-                ),
-            );
-            let p1 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u1.x, w2.x), u1.y, w2.y,
-                            ),
-                            u1.z,
-                            w2.z,
-                        ),
-                        u1.w,
-                        w2.w,
-                    ),
-                    u1.a,
-                    w2.a,
-                ),
-            );
-            let g = Vector5 {
-                x: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.x), p0, u0.x), p1, u1.x,
-                    ),
-                ),
-                y: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.y), p0, u0.y), p1, u1.y,
-                    ),
-                ),
-                z: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.z), p0, u0.z), p1, u1.z,
-                    ),
-                ),
-                w: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.w), p0, u0.w), p1, u1.w,
-                    ),
-                ),
-                a: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(R::wide_add(R::wide_zero(), w2.a), p0, u0.a), p1, u1.a,
-                    ),
-                ),
-            };
-            let n = R::wide_sqrt(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
-                            g.z,
-                            g.z,
-                        ),
-                        g.w,
-                        g.w,
-                    ),
-                    g.a,
-                    g.a,
-                ),
-            );
-            if n == R::zero() {
-                SvdComplete5Impl::<T>::complete2(u0, u1)
-            } else {
-                let q = {
-                    let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                };
-                let p0 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
-                                ),
-                                u0.z,
-                                q.z,
-                            ),
-                            u0.w,
-                            q.w,
-                        ),
-                        u0.a,
-                        q.a,
-                    ),
-                );
-                let p1 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y,
-                                ),
-                                u1.z,
-                                q.z,
-                            ),
-                            u1.w,
-                            q.w,
-                        ),
-                        u1.a,
-                        q.a,
-                    ),
-                );
-                let h = Vector5 {
-                    x: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x), p1, u1.x,
-                        ),
-                    ),
-                    y: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y), p1, u1.y,
-                        ),
-                    ),
-                    z: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z), p1, u1.z,
-                        ),
-                    ),
-                    w: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w), p1, u1.w,
-                        ),
-                    ),
-                    a: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a), p1, u1.a,
-                        ),
-                    ),
-                };
-                {
-                    let (q0, q1, q2, q3, q4) = R::div5(
-                        h.x,
-                        h.y,
-                        h.z,
-                        h.w,
-                        h.a,
-                        R::wide_sqrt(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(
-                                            R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y,
-                                        ),
-                                        h.z,
-                                        h.z,
-                                    ),
-                                    h.w,
-                                    h.w,
-                                ),
-                                h.a,
-                                h.a,
-                            ),
-                        ),
-                    );
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                }
-            }
-        };
-        let u3 = {
-            let p0 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u0.x, w3.x), u0.y, w3.y,
-                            ),
-                            u0.z,
-                            w3.z,
-                        ),
-                        u0.w,
-                        w3.w,
-                    ),
-                    u0.a,
-                    w3.a,
-                ),
-            );
-            let p1 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u1.x, w3.x), u1.y, w3.y,
-                            ),
-                            u1.z,
-                            w3.z,
-                        ),
-                        u1.w,
-                        w3.w,
-                    ),
-                    u1.a,
-                    w3.a,
-                ),
-            );
-            let p2 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u2.x, w3.x), u2.y, w3.y,
-                            ),
-                            u2.z,
-                            w3.z,
-                        ),
-                        u2.w,
-                        w3.w,
-                    ),
-                    u2.a,
-                    w3.a,
-                ),
-            );
-            let g = Vector5 {
-                x: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.x), p0, u0.x), p1, u1.x,
-                        ),
-                        p2,
-                        u2.x,
-                    ),
-                ),
-                y: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.y), p0, u0.y), p1, u1.y,
-                        ),
-                        p2,
-                        u2.y,
-                    ),
-                ),
-                z: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.z), p0, u0.z), p1, u1.z,
-                        ),
-                        p2,
-                        u2.z,
-                    ),
-                ),
-                w: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.w), p0, u0.w), p1, u1.w,
-                        ),
-                        p2,
-                        u2.w,
-                    ),
-                ),
-                a: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), w3.a), p0, u0.a), p1, u1.a,
-                        ),
-                        p2,
-                        u2.a,
-                    ),
-                ),
-            };
-            let n = R::wide_sqrt(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
-                            g.z,
-                            g.z,
-                        ),
-                        g.w,
-                        g.w,
-                    ),
-                    g.a,
-                    g.a,
-                ),
-            );
-            if n == R::zero() {
-                SvdComplete5Impl::<T>::complete3(u0, u1, u2)
-            } else {
-                let q = {
-                    let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                };
-                let p0 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
-                                ),
-                                u0.z,
-                                q.z,
-                            ),
-                            u0.w,
-                            q.w,
-                        ),
-                        u0.a,
-                        q.a,
-                    ),
-                );
-                let p1 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y,
-                                ),
-                                u1.z,
-                                q.z,
-                            ),
-                            u1.w,
-                            q.w,
-                        ),
-                        u1.a,
-                        q.a,
-                    ),
-                );
-                let p2 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u2.x, q.x), u2.y, q.y,
-                                ),
-                                u2.z,
-                                q.z,
-                            ),
-                            u2.w,
-                            q.w,
-                        ),
-                        u2.a,
-                        q.a,
-                    ),
-                );
-                let h = Vector5 {
-                    x: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x),
-                                p1,
-                                u1.x,
-                            ),
-                            p2,
-                            u2.x,
-                        ),
-                    ),
-                    y: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y),
-                                p1,
-                                u1.y,
-                            ),
-                            p2,
-                            u2.y,
-                        ),
-                    ),
-                    z: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z),
-                                p1,
-                                u1.z,
-                            ),
-                            p2,
-                            u2.z,
-                        ),
-                    ),
-                    w: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w),
-                                p1,
-                                u1.w,
-                            ),
-                            p2,
-                            u2.w,
-                        ),
-                    ),
-                    a: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a),
-                                p1,
-                                u1.a,
-                            ),
-                            p2,
-                            u2.a,
-                        ),
-                    ),
-                };
-                {
-                    let (q0, q1, q2, q3, q4) = R::div5(
-                        h.x,
-                        h.y,
-                        h.z,
-                        h.w,
-                        h.a,
-                        R::wide_sqrt(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(
-                                            R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y,
-                                        ),
-                                        h.z,
-                                        h.z,
-                                    ),
-                                    h.w,
-                                    h.w,
-                                ),
-                                h.a,
-                                h.a,
-                            ),
-                        ),
-                    );
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                }
-            }
-        };
-        let u4 = {
-            let p0 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u0.x, w4.x), u0.y, w4.y,
-                            ),
-                            u0.z,
-                            w4.z,
-                        ),
-                        u0.w,
-                        w4.w,
-                    ),
-                    u0.a,
-                    w4.a,
-                ),
-            );
-            let p1 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u1.x, w4.x), u1.y, w4.y,
-                            ),
-                            u1.z,
-                            w4.z,
-                        ),
-                        u1.w,
-                        w4.w,
-                    ),
-                    u1.a,
-                    w4.a,
-                ),
-            );
-            let p2 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u2.x, w4.x), u2.y, w4.y,
-                            ),
-                            u2.z,
-                            w4.z,
-                        ),
-                        u2.w,
-                        w4.w,
-                    ),
-                    u2.a,
-                    w4.a,
-                ),
-            );
-            let p3 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), u3.x, w4.x), u3.y, w4.y,
-                            ),
-                            u3.z,
-                            w4.z,
-                        ),
-                        u3.w,
-                        w4.w,
-                    ),
-                    u3.a,
-                    w4.a,
-                ),
-            );
-            let g = Vector5 {
-                x: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w4.x), p0, u0.x),
-                                p1,
-                                u1.x,
-                            ),
-                            p2,
-                            u2.x,
-                        ),
-                        p3,
-                        u3.x,
-                    ),
-                ),
-                y: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w4.y), p0, u0.y),
-                                p1,
-                                u1.y,
-                            ),
-                            p2,
-                            u2.y,
-                        ),
-                        p3,
-                        u3.y,
-                    ),
-                ),
-                z: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w4.z), p0, u0.z),
-                                p1,
-                                u1.z,
-                            ),
-                            p2,
-                            u2.z,
-                        ),
-                        p3,
-                        u3.z,
-                    ),
-                ),
-                w: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w4.w), p0, u0.w),
-                                p1,
-                                u1.w,
-                            ),
-                            p2,
-                            u2.w,
-                        ),
-                        p3,
-                        u3.w,
-                    ),
-                ),
-                a: R::wide_rescale(
-                    R::wide_sub_prod(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), w4.a), p0, u0.a),
-                                p1,
-                                u1.a,
-                            ),
-                            p2,
-                            u2.a,
-                        ),
-                        p3,
-                        u3.a,
-                    ),
-                ),
-            };
-            let n = R::wide_sqrt(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), g.x, g.x), g.y, g.y),
-                            g.z,
-                            g.z,
-                        ),
-                        g.w,
-                        g.w,
-                    ),
-                    g.a,
-                    g.a,
-                ),
-            );
-            if n == R::zero() {
-                SvdComplete5Impl::<T>::complete4(u0, u1, u2, u3)
-            } else {
-                let q = {
-                    let (q0, q1, q2, q3, q4) = R::div5(g.x, g.y, g.z, g.w, g.a, n);
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                };
-                let p0 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u0.x, q.x), u0.y, q.y,
-                                ),
-                                u0.z,
-                                q.z,
-                            ),
-                            u0.w,
-                            q.w,
-                        ),
-                        u0.a,
-                        q.a,
-                    ),
-                );
-                let p1 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u1.x, q.x), u1.y, q.y,
-                                ),
-                                u1.z,
-                                q.z,
-                            ),
-                            u1.w,
-                            q.w,
-                        ),
-                        u1.a,
-                        q.a,
-                    ),
-                );
-                let p2 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u2.x, q.x), u2.y, q.y,
-                                ),
-                                u2.z,
-                                q.z,
-                            ),
-                            u2.w,
-                            q.w,
-                        ),
-                        u2.a,
-                        q.a,
-                    ),
-                );
-                let p3 = R::wide_rescale(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), u3.x, q.x), u3.y, q.y,
-                                ),
-                                u3.z,
-                                q.z,
-                            ),
-                            u3.w,
-                            q.w,
-                        ),
-                        u3.a,
-                        q.a,
-                    ),
-                );
-                let h = Vector5 {
-                    x: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(
-                                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.x), p0, u0.x),
-                                    p1,
-                                    u1.x,
-                                ),
-                                p2,
-                                u2.x,
-                            ),
-                            p3,
-                            u3.x,
-                        ),
-                    ),
-                    y: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(
-                                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.y), p0, u0.y),
-                                    p1,
-                                    u1.y,
-                                ),
-                                p2,
-                                u2.y,
-                            ),
-                            p3,
-                            u3.y,
-                        ),
-                    ),
-                    z: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(
-                                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.z), p0, u0.z),
-                                    p1,
-                                    u1.z,
-                                ),
-                                p2,
-                                u2.z,
-                            ),
-                            p3,
-                            u3.z,
-                        ),
-                    ),
-                    w: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(
-                                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.w), p0, u0.w),
-                                    p1,
-                                    u1.w,
-                                ),
-                                p2,
-                                u2.w,
-                            ),
-                            p3,
-                            u3.w,
-                        ),
-                    ),
-                    a: R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(
-                                    R::wide_sub_prod(R::wide_add(R::wide_zero(), q.a), p0, u0.a),
-                                    p1,
-                                    u1.a,
-                                ),
-                                p2,
-                                u2.a,
-                            ),
-                            p3,
-                            u3.a,
-                        ),
-                    ),
-                };
-                {
-                    let (q0, q1, q2, q3, q4) = R::div5(
-                        h.x,
-                        h.y,
-                        h.z,
-                        h.w,
-                        h.a,
-                        R::wide_sqrt(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(
-                                            R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y,
-                                        ),
-                                        h.z,
-                                        h.z,
-                                    ),
-                                    h.w,
-                                    h.w,
-                                ),
-                                h.a,
-                                h.a,
-                            ),
-                        ),
-                    );
-                    Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
-                }
-            }
-        };
+        SortedSvd5 { s0, s1, s2, s3, s4, w0, w1, w2, w3, w4, v0, v1, v2, v3, v4 }
+    }
+
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
+    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete5::gs*`):
+    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
+    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
+    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
+    /// = 0`) is completed by the axis least represented in the span of the previous ones.
+    fn from_right(m: Matrix5<T>, v: Matrix5<T>) -> Svd5<T> {
+        let t = Self::sorted(m, v);
+        let (s0, w0, v0) = (t.s0, t.w0, t.v0);
+        let (s1, w1, v1) = (t.s1, t.w1, t.v1);
+        let (s2, w2, v2) = (t.s2, t.w2, t.v2);
+        let (s3, w3, v3) = (t.s3, t.w3, t.v3);
+        let (s4, w4, v4) = (t.s4, t.w4, t.v4);
+        let u0 = SvdComplete5Impl::<T>::first(w0, s0);
+        let u1 = SvdComplete5Impl::<T>::gs1(u0, w1);
+        let u2 = SvdComplete5Impl::<T>::gs2(u0, u1, w2);
+        let u3 = SvdComplete5Impl::<T>::gs3(u0, u1, u2, w3);
+        let u4 = SvdComplete5Impl::<T>::gs4(u0, u1, u2, u3, w4);
         Svd5 {
             u: Matrix5 {
                 m11: u0.x,
@@ -4233,580 +1512,10 @@ pub(crate) impl Svd5InternalImpl<
         }
     }
 
-    /// The singular values alone: `from_right` without the left vectors.
+    /// The singular values alone: `sorted`, without the left vectors.
     fn values_from_right(m: Matrix5<T>, v: Matrix5<T>) -> Vector5<T> {
-        revoke_ap_tracking();
-        let v0 = Vector5 { x: v.m11, y: v.m21, z: v.m31, w: v.m41, a: v.m51 };
-        let v1 = Vector5 { x: v.m12, y: v.m22, z: v.m32, w: v.m42, a: v.m52 };
-        let v2 = Vector5 { x: v.m13, y: v.m23, z: v.m33, w: v.m43, a: v.m53 };
-        let v3 = Vector5 { x: v.m14, y: v.m24, z: v.m34, w: v.m44, a: v.m54 };
-        let v4 = Vector5 { x: v.m15, y: v.m25, z: v.m35, w: v.m45, a: v.m55 };
-        let w0 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v0.x), m.m12, v0.y,
-                            ),
-                            m.m13,
-                            v0.z,
-                        ),
-                        m.m14,
-                        v0.w,
-                    ),
-                    m.m15,
-                    v0.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v0.x), m.m22, v0.y,
-                            ),
-                            m.m23,
-                            v0.z,
-                        ),
-                        m.m24,
-                        v0.w,
-                    ),
-                    m.m25,
-                    v0.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v0.x), m.m32, v0.y,
-                            ),
-                            m.m33,
-                            v0.z,
-                        ),
-                        m.m34,
-                        v0.w,
-                    ),
-                    m.m35,
-                    v0.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v0.x), m.m42, v0.y,
-                            ),
-                            m.m43,
-                            v0.z,
-                        ),
-                        m.m44,
-                        v0.w,
-                    ),
-                    m.m45,
-                    v0.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v0.x), m.m52, v0.y,
-                            ),
-                            m.m53,
-                            v0.z,
-                        ),
-                        m.m54,
-                        v0.w,
-                    ),
-                    m.m55,
-                    v0.a,
-                ),
-            ),
-        };
-        let w1 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v1.x), m.m12, v1.y,
-                            ),
-                            m.m13,
-                            v1.z,
-                        ),
-                        m.m14,
-                        v1.w,
-                    ),
-                    m.m15,
-                    v1.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v1.x), m.m22, v1.y,
-                            ),
-                            m.m23,
-                            v1.z,
-                        ),
-                        m.m24,
-                        v1.w,
-                    ),
-                    m.m25,
-                    v1.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v1.x), m.m32, v1.y,
-                            ),
-                            m.m33,
-                            v1.z,
-                        ),
-                        m.m34,
-                        v1.w,
-                    ),
-                    m.m35,
-                    v1.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v1.x), m.m42, v1.y,
-                            ),
-                            m.m43,
-                            v1.z,
-                        ),
-                        m.m44,
-                        v1.w,
-                    ),
-                    m.m45,
-                    v1.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v1.x), m.m52, v1.y,
-                            ),
-                            m.m53,
-                            v1.z,
-                        ),
-                        m.m54,
-                        v1.w,
-                    ),
-                    m.m55,
-                    v1.a,
-                ),
-            ),
-        };
-        let w2 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v2.x), m.m12, v2.y,
-                            ),
-                            m.m13,
-                            v2.z,
-                        ),
-                        m.m14,
-                        v2.w,
-                    ),
-                    m.m15,
-                    v2.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v2.x), m.m22, v2.y,
-                            ),
-                            m.m23,
-                            v2.z,
-                        ),
-                        m.m24,
-                        v2.w,
-                    ),
-                    m.m25,
-                    v2.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v2.x), m.m32, v2.y,
-                            ),
-                            m.m33,
-                            v2.z,
-                        ),
-                        m.m34,
-                        v2.w,
-                    ),
-                    m.m35,
-                    v2.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v2.x), m.m42, v2.y,
-                            ),
-                            m.m43,
-                            v2.z,
-                        ),
-                        m.m44,
-                        v2.w,
-                    ),
-                    m.m45,
-                    v2.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v2.x), m.m52, v2.y,
-                            ),
-                            m.m53,
-                            v2.z,
-                        ),
-                        m.m54,
-                        v2.w,
-                    ),
-                    m.m55,
-                    v2.a,
-                ),
-            ),
-        };
-        let w3 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v3.x), m.m12, v3.y,
-                            ),
-                            m.m13,
-                            v3.z,
-                        ),
-                        m.m14,
-                        v3.w,
-                    ),
-                    m.m15,
-                    v3.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v3.x), m.m22, v3.y,
-                            ),
-                            m.m23,
-                            v3.z,
-                        ),
-                        m.m24,
-                        v3.w,
-                    ),
-                    m.m25,
-                    v3.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v3.x), m.m32, v3.y,
-                            ),
-                            m.m33,
-                            v3.z,
-                        ),
-                        m.m34,
-                        v3.w,
-                    ),
-                    m.m35,
-                    v3.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v3.x), m.m42, v3.y,
-                            ),
-                            m.m43,
-                            v3.z,
-                        ),
-                        m.m44,
-                        v3.w,
-                    ),
-                    m.m45,
-                    v3.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v3.x), m.m52, v3.y,
-                            ),
-                            m.m53,
-                            v3.z,
-                        ),
-                        m.m54,
-                        v3.w,
-                    ),
-                    m.m55,
-                    v3.a,
-                ),
-            ),
-        };
-        let w4 = Vector5 {
-            x: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m11, v4.x), m.m12, v4.y,
-                            ),
-                            m.m13,
-                            v4.z,
-                        ),
-                        m.m14,
-                        v4.w,
-                    ),
-                    m.m15,
-                    v4.a,
-                ),
-            ),
-            y: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m21, v4.x), m.m22, v4.y,
-                            ),
-                            m.m23,
-                            v4.z,
-                        ),
-                        m.m24,
-                        v4.w,
-                    ),
-                    m.m25,
-                    v4.a,
-                ),
-            ),
-            z: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m31, v4.x), m.m32, v4.y,
-                            ),
-                            m.m33,
-                            v4.z,
-                        ),
-                        m.m34,
-                        v4.w,
-                    ),
-                    m.m35,
-                    v4.a,
-                ),
-            ),
-            w: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m41, v4.x), m.m42, v4.y,
-                            ),
-                            m.m43,
-                            v4.z,
-                        ),
-                        m.m44,
-                        v4.w,
-                    ),
-                    m.m45,
-                    v4.a,
-                ),
-            ),
-            a: R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), m.m51, v4.x), m.m52, v4.y,
-                            ),
-                            m.m53,
-                            v4.z,
-                        ),
-                        m.m54,
-                        v4.w,
-                    ),
-                    m.m55,
-                    v4.a,
-                ),
-            ),
-        };
-        let s0 = R::wide_sqrt(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), w0.x, w0.x), w0.y, w0.y),
-                        w0.z,
-                        w0.z,
-                    ),
-                    w0.w,
-                    w0.w,
-                ),
-                w0.a,
-                w0.a,
-            ),
-        );
-        let s1 = R::wide_sqrt(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), w1.x, w1.x), w1.y, w1.y),
-                        w1.z,
-                        w1.z,
-                    ),
-                    w1.w,
-                    w1.w,
-                ),
-                w1.a,
-                w1.a,
-            ),
-        );
-        let s2 = R::wide_sqrt(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), w2.x, w2.x), w2.y, w2.y),
-                        w2.z,
-                        w2.z,
-                    ),
-                    w2.w,
-                    w2.w,
-                ),
-                w2.a,
-                w2.a,
-            ),
-        );
-        let s3 = R::wide_sqrt(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), w3.x, w3.x), w3.y, w3.y),
-                        w3.z,
-                        w3.z,
-                    ),
-                    w3.w,
-                    w3.w,
-                ),
-                w3.a,
-                w3.a,
-            ),
-        );
-        let s4 = R::wide_sqrt(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), w4.x, w4.x), w4.y, w4.y),
-                        w4.z,
-                        w4.z,
-                    ),
-                    w4.w,
-                    w4.w,
-                ),
-                w4.a,
-                w4.a,
-            ),
-        );
-        let mut s0 = s0;
-        let mut s1 = s1;
-        let mut s2 = s2;
-        let mut s3 = s3;
-        let mut s4 = s4;
-        if s1 > s0 {
-            let tmp0 = s0;
-            s0 = s1;
-            s1 = tmp0;
-        }
-        if s3 > s2 {
-            let tmp0 = s2;
-            s2 = s3;
-            s3 = tmp0;
-        }
-        if s2 > s1 {
-            let tmp0 = s1;
-            s1 = s2;
-            s2 = tmp0;
-        }
-        if s4 > s3 {
-            let tmp0 = s3;
-            s3 = s4;
-            s4 = tmp0;
-        }
-        if s1 > s0 {
-            let tmp0 = s0;
-            s0 = s1;
-            s1 = tmp0;
-        }
-        if s3 > s2 {
-            let tmp0 = s2;
-            s2 = s3;
-            s3 = tmp0;
-        }
-        if s2 > s1 {
-            let tmp0 = s1;
-            s1 = s2;
-            s2 = tmp0;
-        }
-        if s4 > s3 {
-            let tmp0 = s3;
-            s3 = s4;
-            s4 = tmp0;
-        }
-        if s1 > s0 {
-            let tmp0 = s0;
-            s0 = s1;
-            s1 = tmp0;
-        }
-        if s3 > s2 {
-            let tmp0 = s2;
-            s2 = s3;
-            s3 = tmp0;
-        }
-        Vector5 { x: s0, y: s1, z: s2, w: s3, a: s4 }
+        let t = Self::sorted(m, v);
+        Vector5 { x: t.s0, y: t.s1, z: t.s2, w: t.s3, a: t.s4 }
     }
 }
 

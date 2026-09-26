@@ -45,6 +45,7 @@ pub mod qr;
 pub mod svd;
 pub mod svd2;
 pub mod svd3;
+pub mod symmetric_eigen1;
 pub mod symmetric_eigen2;
 pub mod symmetric_eigen3;
 pub mod symmetric_eigen4;
@@ -73,10 +74,42 @@ pub use lu::{
 pub use lu_steps::{gauss_step, gauss_step_swap, try_invert_to};
 pub use permutation_sequence::{PermuteColumns, PermuteRows};
 pub use qr::{
-    Matrix2QrTrait, Matrix3QrTrait, Matrix4QrTrait, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait,
+    Matrix1QrTrait, Matrix2QrTrait, Matrix2x3QrTrait, Matrix2x4QrTrait, Matrix2x5QrTrait,
+    Matrix2x6QrTrait, Matrix3QrTrait, Matrix3x2QrTrait, Matrix3x4QrTrait, Matrix3x5QrTrait,
+    Matrix3x6QrTrait, Matrix4QrTrait, Matrix4x2QrTrait, Matrix4x3QrTrait, Matrix4x5QrTrait,
+    Matrix4x6QrTrait, Matrix5QrTrait, Matrix5x2QrTrait, Matrix5x3QrTrait, Matrix5x4QrTrait,
+    Matrix5x6QrTrait, Matrix6QrTrait, Matrix6x2QrTrait, Matrix6x3QrTrait, Matrix6x4QrTrait,
+    Matrix6x5QrTrait, Qr1, Qr1Trait, Qr1x2, Qr1x2Trait, Qr1x3, Qr1x3Trait, Qr1x4, Qr1x4Trait, Qr1x5,
+    Qr1x5Trait, Qr1x6, Qr1x6Trait, Qr2, Qr2Trait, Qr2x1, Qr2x1Trait, Qr2x3, Qr2x3Trait, Qr2x4,
+    Qr2x4Trait, Qr2x5, Qr2x5Trait, Qr2x6, Qr2x6Trait, Qr3, Qr3Trait, Qr3x1, Qr3x1Trait, Qr3x2,
+    Qr3x2Trait, Qr3x4, Qr3x4Trait, Qr3x5, Qr3x5Trait, Qr3x6, Qr3x6Trait, Qr4, Qr4Trait, Qr4x1,
+    Qr4x1Trait, Qr4x2, Qr4x2Trait, Qr4x3, Qr4x3Trait, Qr4x5, Qr4x5Trait, Qr4x6, Qr4x6Trait, Qr5,
+    Qr5Trait, Qr5x1, Qr5x1Trait, Qr5x2, Qr5x2Trait, Qr5x3, Qr5x3Trait, Qr5x4, Qr5x4Trait, Qr5x6,
+    Qr5x6Trait, Qr6, Qr6Trait, Qr6x1, Qr6x1Trait, Qr6x2, Qr6x2Trait, Qr6x3, Qr6x3Trait, Qr6x4,
+    Qr6x4Trait, Qr6x5, Qr6x5Trait, RowVector2QrTrait, RowVector3QrTrait, RowVector4QrTrait,
+    RowVector5QrTrait, RowVector6QrTrait, Vector2QrTrait, Vector3QrTrait, Vector4QrTrait,
+    Vector5QrTrait, Vector6QrTrait,
+};
+pub use svd::{
+    Matrix1SvdTrait, Matrix2x3SvdTrait, Matrix2x4SvdTrait, Matrix2x5SvdTrait, Matrix2x6SvdTrait,
+    Matrix3x2SvdTrait, Matrix3x4SvdTrait, Matrix3x5SvdTrait, Matrix3x6SvdTrait, Matrix4SvdTrait,
+    Matrix4x2SvdTrait, Matrix4x3SvdTrait, Matrix4x5SvdTrait, Matrix4x6SvdTrait, Matrix5SvdTrait,
+    Matrix5x2SvdTrait, Matrix5x3SvdTrait, Matrix5x4SvdTrait, Matrix5x6SvdTrait, Matrix6SvdTrait,
+    Matrix6x2SvdTrait, Matrix6x3SvdTrait, Matrix6x4SvdTrait, Matrix6x5SvdTrait, RowVector2SvdTrait,
+    RowVector3SvdTrait, RowVector4SvdTrait, RowVector5SvdTrait, RowVector6SvdTrait, Svd1, Svd1Trait,
+    Svd1x2, Svd1x2Trait, Svd1x3, Svd1x3Trait, Svd1x4, Svd1x4Trait, Svd1x5, Svd1x5Trait, Svd1x6,
+    Svd1x6Trait, Svd2x1, Svd2x1Trait, Svd2x3, Svd2x3Trait, Svd2x4, Svd2x4Trait, Svd2x5, Svd2x5Trait,
+    Svd2x6, Svd2x6Trait, Svd3x1, Svd3x1Trait, Svd3x2, Svd3x2Trait, Svd3x4, Svd3x4Trait, Svd3x5,
+    Svd3x5Trait, Svd3x6, Svd3x6Trait, Svd4, Svd4Trait, Svd4x1, Svd4x1Trait, Svd4x2, Svd4x2Trait,
+    Svd4x3, Svd4x3Trait, Svd4x5, Svd4x5Trait, Svd4x6, Svd4x6Trait, Svd5, Svd5Trait, Svd5x1,
+    Svd5x1Trait, Svd5x2, Svd5x2Trait, Svd5x3, Svd5x3Trait, Svd5x4, Svd5x4Trait, Svd5x6, Svd5x6Trait,
+    Svd6, Svd6Trait, Svd6x1, Svd6x1Trait, Svd6x2, Svd6x2Trait, Svd6x3, Svd6x3Trait, Svd6x4,
+    Svd6x4Trait, Svd6x5, Svd6x5Trait, Vector2SvdTrait, Vector3SvdTrait, Vector4SvdTrait,
+    Vector5SvdTrait, Vector6SvdTrait,
 };
 pub use svd2::{Matrix2SvdTrait, Svd2, Svd2Trait, svd_ordered2};
 pub use svd3::{Matrix3SvdTrait, Svd3, Svd3Trait, svd_ordered3};
+pub use symmetric_eigen1::{Matrix1SymmetricEigenTrait, SymmetricEigen1, SymmetricEigen1Trait};
 pub use symmetric_eigen2::{
     Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2Trait, wilkinson_shift,
 };
