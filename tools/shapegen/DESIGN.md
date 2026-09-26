@@ -526,15 +526,32 @@ lock taken before the timer); raw results in `budget-results.jsonl`. Library bui
   `#[generate_trait]` impl and on trait declarations), `default-features = false` /
   `features = [..]` on a workspace path dependency. Features are resolved per compilation unit:
   building two packages together does not unify them, while one unit that reaches the library
-  through two paths (a dev-dependency with the defaults) gets the union. `FEATURES` (`shapes.py`)
-  gates `statistics` and `blas` (shared modules and their re-exports), `functional.FEATURE` (`closures`) the
-  closure methods (per method); all three are in `default`, so the API and `api_parity.py` are
-  unchanged. `cg` cannot be gated while the P11a transforms use it.
-- **Measured with the three features off**: library 6.08 → 4.94 GB (CPU 92 → 56 s); the library's
-  own tests 9.12 → 8.08 GB; trivial test unit 6.17 → 5.07 GB; `shapes_tests_core` 10.37-10.40 →
-  9.36-9.89 GB; `tests_geometry` 10.42 → 9.35 GB; `shapes_tests_gemm_large` (`blas` on)
-  8.20 → 7.50 GB; `shapes_tests_stats` (`statistics` on) 7.42 → 7.08 GB;
-  `shapes_tests_functional` (`functional` on) 9.85 → 9.02 GB.
+  through two paths (a dev-dependency with the defaults) gets the union (so `tests_utils` opts out
+  too).
+- **Final design (WP 8.1e, DESIGN D9).** `crates/nalgebra/Scarb.toml`:
+  `default = ["statistics", "blas", "closures"]`. `FEATURES` (`shapes.py`) gates the shared modules
+  `statistics` and `blas` (the `pub mod` in `base.cairo` and the re-exports in `base.cairo` and
+  `lib.cairo`); `functional.FEATURE` (`closures`) gates, per method, the P03 methods that take a
+  closure (`map`, `map_with_location`, `map_diagonal`, `fold`, `fold_with`, `apply`, `apply_into`,
+  `zip_*`, `fill_with`: definition and declaration). A feature is a leaf: nothing ungated may use
+  it, which is why `BlasTranspose` (needed by the always-compiled `solve`) lives in the private
+  module `transpose` (`blas.py: render_transpose`) and not in `blas`. `cg` cannot be gated while the
+  P11a transforms use it. All features are in `default`, so the API, `api_parity.py` and every
+  gas figure are unchanged; each test package depends on `nalgebra` with `default-features = false`
+  plus the features it tests (`shapes_tests_stats` `statistics`; `shapes_tests_blas`, `gemm`,
+  `gemm_large` `blas`; `shapes_tests_functional` `closures`); no other package needed one. CI:
+  the `Workspace` job builds and lints `nalgebra` with the defaults and with
+  `--no-default-features`, the `nalgebra` shard tests with `--no-default-features`.
+- **Measured with the features off** (spike, before WP 8.5-P14a): library 6.08 → 4.94 GB
+  (CPU 92 → 56 s); the library's own tests 9.12 → 8.08 GB; trivial test unit 6.17 → 5.07 GB;
+  `shapes_tests_core` 10.37-10.40 → 9.36-9.89 GB; `tests_geometry` 10.42 → 9.35 GB;
+  `shapes_tests_gemm_large` (`blas` on) 8.20 → 7.50 GB; `shapes_tests_stats` (`statistics` on)
+  7.42 → 7.08 GB; `shapes_tests_functional` (`closures` on) 9.85 → 9.02 GB. **Final, on main with
+  P14a** (`budget.py full`, cold, peak RSS / CPU): library 6,443 MB / 92.5 s with the defaults,
+  5,388 MB / 62.5 s with `--no-default-features` (−16 % / −32 %); `shapes_tests_core` 10,733 →
+  9,718 MB (CPU 244 → 202 s); `tests_geometry` 10,989 → 9,945 MB (187 → 161 s); `tests_base`
+  10,812 → 9,784 MB (189 → 145 s); the `nalgebra` shard (`snforge test -p nalgebra
+  --no-default-features`) peaks at 2.9 GB.
 - **`#[inline(always)]`** costs little in the library but a lot in the units that instantiate it:
   without it in the generated modules, `shapes_tests_core` 9.80 → 9.08 GB and 441 → 323 s CPU
   (snforge), at +1.7 % total gas (median 0, benches unchanged, worst test +15 %); `tests_geometry`
