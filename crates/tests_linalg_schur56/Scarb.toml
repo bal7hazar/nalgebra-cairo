@@ -1,6 +1,6 @@
 [package]
-name = "nalgebra_tests_linalg_schur"
-description = "Tests and gas benchmarks of the Schur and general eigen decompositions of the squares 1 to 4 (WP 8.5-P16; not published)."
+name = "nalgebra_tests_linalg_schur56"
+description = "Tests and gas benchmarks of the Schur and general eigen decompositions of the squares 5 and 6 (WP 8.5-P16; not published)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

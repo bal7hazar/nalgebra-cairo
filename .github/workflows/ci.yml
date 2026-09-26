@@ -93,6 +93,7 @@ jobs:
           - { name: tests_linalg_pivot_qr_tall, package: nalgebra_tests_linalg_pivot_qr_tall, filters: "nalgebra_tests_linalg_pivot_qr_tall" }
           - { name: tests_linalg_pivot_lblt, package: nalgebra_tests_linalg_pivot_lblt, filters: "nalgebra_tests_linalg_pivot_lblt" }
           - { name: tests_linalg_schur, package: nalgebra_tests_linalg_schur, filters: "nalgebra_tests_linalg_schur" }
+          - { name: tests_linalg_schur56, package: nalgebra_tests_linalg_schur56, filters: "nalgebra_tests_linalg_schur56" }
           - { name: tests_linalg_hessenberg, package: nalgebra_tests_linalg_hessenberg, filters: "nalgebra_tests_linalg_hessenberg" }
           - { name: tests_linalg_bidiagonal, package: nalgebra_tests_linalg_bidiagonal, filters: "nalgebra_tests_linalg_bidiagonal" }
           - { name: tests_linalg_bidiagonal_wide, package: nalgebra_tests_linalg_bidiagonal_wide, filters: "nalgebra_tests_linalg_bidiagonal_wide" }

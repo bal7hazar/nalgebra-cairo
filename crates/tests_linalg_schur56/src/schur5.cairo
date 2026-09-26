@@ -14,484 +14,129 @@ use crate::util::{sorted, sorted_pairs};
 
 const ONE: i64 = 0x100000000;
 
-/// `schur5_eigenvalues` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured bounds, `T`
-/// upper quasi-triangular, the complex eigenvalues (of the decomposition and of the matrix: equal)
-/// sorted and compared with upstream's within the oracle tolerance.
+/// The checks of one `schur5_eigenvalues*` oracle op: `A = Q T Qᵀ` and `QᵀQ = I` (returned, the
+/// measured bounds), `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and
+/// of the matrix: equal) sorted and compared with upstream's (the largest excess over the oracle
+/// tolerance, returned).
+fn check_schur5(
+    mut cases: Span<([[i64; 5]; 5], (i64, i64, i64, i64, i64), (i64, i64, i64, i64, i64), u64)>,
+) -> (u128, u128, u128) {
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {
+        let (a, ere, eim, tol) = *case;
+        let a = black_box(mat5x5(a));
+        let s = a.schur();
+        let (q, t) = s.unpack();
+        assert!(t.m31 == fx(0), "below the subdiagonal");
+        assert!(t.m41 == fx(0), "below the subdiagonal");
+        assert!(t.m51 == fx(0), "below the subdiagonal");
+        assert!(t.m42 == fx(0), "below the subdiagonal");
+        assert!(t.m52 == fx(0), "below the subdiagonal");
+        assert!(t.m53 == fx(0), "below the subdiagonal");
+        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
+        assert!(t.m32 == fx(0) || t.m43 == fx(0), "two consecutive subdiagonal entries");
+        assert!(t.m43 == fx(0) || t.m54 == fx(0), "two consecutive subdiagonal entries");
+        let qt = Matrix5 {
+            m11: q.m11,
+            m21: q.m12,
+            m31: q.m13,
+            m41: q.m14,
+            m51: q.m15,
+            m12: q.m21,
+            m22: q.m22,
+            m32: q.m23,
+            m42: q.m24,
+            m52: q.m25,
+            m13: q.m31,
+            m23: q.m32,
+            m33: q.m33,
+            m43: q.m34,
+            m53: q.m35,
+            m14: q.m41,
+            m24: q.m42,
+            m34: q.m43,
+            m44: q.m44,
+            m54: q.m45,
+            m15: q.m51,
+            m25: q.m52,
+            m35: q.m53,
+            m45: q.m54,
+            m55: q.m55,
+        };
+        rec = max(rec, max_ulp_5x5(q.mul_mat(t).mul_mat(qt), a) / amax_5x5(a));
+        orth = max(orth, orth_5x5(q));
+        let (re, im) = s.complex_eigenvalues();
+        let (re2, im2) = a.complex_eigenvalues();
+        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
+        let got = sorted_pairs(
+            array![re.x, re.y, re.z, re.w, re.a], array![im.x, im.y, im.z, im.w, im.a],
+        );
+        let ere = {
+            let (ere_0, ere_1, ere_2, ere_3, ere_4) = ere;
+            array![ere_0, ere_1, ere_2, ere_3, ere_4]
+        };
+        let eim = {
+            let (eim_0, eim_1, eim_2, eim_3, eim_4) = eim;
+            array![eim_0, eim_1, eim_2, eim_3, eim_4]
+        };
+        let mut k = 0;
+        while k < 5 {
+            let (gr, gi) = *got[k];
+            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
+            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
+            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
+            k += 1;
+        }
+    }
+    (ex, rec, orth)
+}
+
+/// `schur5_eigenvalues` (oracle): see `check_schur5`.
 #[test]
 fn test_oracle_schur5_eigenvalues() {
-    let mut cases = oracle::schur5_eigenvalues_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat5x5(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m41 == fx(0), "below the subdiagonal");
-        assert!(t.m51 == fx(0), "below the subdiagonal");
-        assert!(t.m42 == fx(0), "below the subdiagonal");
-        assert!(t.m52 == fx(0), "below the subdiagonal");
-        assert!(t.m53 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m32 == fx(0) || t.m43 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m43 == fx(0) || t.m54 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix5 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m41: q.m14,
-            m51: q.m15,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m42: q.m24,
-            m52: q.m25,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-            m43: q.m34,
-            m53: q.m35,
-            m14: q.m41,
-            m24: q.m42,
-            m34: q.m43,
-            m44: q.m44,
-            m54: q.m45,
-            m15: q.m51,
-            m25: q.m52,
-            m35: q.m53,
-            m45: q.m54,
-            m55: q.m55,
-        };
-        rec = max(rec, max_ulp_5x5(q.mul_mat(t).mul_mat(qt), a) / amax_5x5(a));
-        orth = max(orth, orth_5x5(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(
-            array![re.x, re.y, re.z, re.w, re.a], array![im.x, im.y, im.z, im.w, im.a],
-        );
-        let ere = {
-            let (ere_0, ere_1, ere_2, ere_3, ere_4) = ere;
-            array![ere_0, ere_1, ere_2, ere_3, ere_4]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2, eim_3, eim_4) = eim;
-            array![eim_0, eim_1, eim_2, eim_3, eim_4]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 5 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur5(oracle::schur5_eigenvalues_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 239 && orth <= 107, "measured {} {}", rec, orth);
+    assert!(rec <= 192 && orth <= 58, "measured {} {}", rec, orth);
 }
 
-/// `schur5_eigenvalues_complex` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur5_eigenvalues_complex` (oracle): see `check_schur5`.
 #[test]
 fn test_oracle_schur5_eigenvalues_complex() {
-    let mut cases = oracle::schur5_eigenvalues_complex_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat5x5(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m41 == fx(0), "below the subdiagonal");
-        assert!(t.m51 == fx(0), "below the subdiagonal");
-        assert!(t.m42 == fx(0), "below the subdiagonal");
-        assert!(t.m52 == fx(0), "below the subdiagonal");
-        assert!(t.m53 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m32 == fx(0) || t.m43 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m43 == fx(0) || t.m54 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix5 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m41: q.m14,
-            m51: q.m15,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m42: q.m24,
-            m52: q.m25,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-            m43: q.m34,
-            m53: q.m35,
-            m14: q.m41,
-            m24: q.m42,
-            m34: q.m43,
-            m44: q.m44,
-            m54: q.m45,
-            m15: q.m51,
-            m25: q.m52,
-            m35: q.m53,
-            m45: q.m54,
-            m55: q.m55,
-        };
-        rec = max(rec, max_ulp_5x5(q.mul_mat(t).mul_mat(qt), a) / amax_5x5(a));
-        orth = max(orth, orth_5x5(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(
-            array![re.x, re.y, re.z, re.w, re.a], array![im.x, im.y, im.z, im.w, im.a],
-        );
-        let ere = {
-            let (ere_0, ere_1, ere_2, ere_3, ere_4) = ere;
-            array![ere_0, ere_1, ere_2, ere_3, ere_4]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2, eim_3, eim_4) = eim;
-            array![eim_0, eim_1, eim_2, eim_3, eim_4]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 5 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur5(oracle::schur5_eigenvalues_complex_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 67 && orth <= 55, "measured {} {}", rec, orth);
+    assert!(rec <= 62 && orth <= 43, "measured {} {}", rec, orth);
 }
 
-/// `schur5_eigenvalues_nonnormal` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur5_eigenvalues_nonnormal` (oracle): see `check_schur5`.
 #[test]
 fn test_oracle_schur5_eigenvalues_nonnormal() {
-    let mut cases = oracle::schur5_eigenvalues_nonnormal_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat5x5(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m41 == fx(0), "below the subdiagonal");
-        assert!(t.m51 == fx(0), "below the subdiagonal");
-        assert!(t.m42 == fx(0), "below the subdiagonal");
-        assert!(t.m52 == fx(0), "below the subdiagonal");
-        assert!(t.m53 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m32 == fx(0) || t.m43 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m43 == fx(0) || t.m54 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix5 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m41: q.m14,
-            m51: q.m15,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m42: q.m24,
-            m52: q.m25,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-            m43: q.m34,
-            m53: q.m35,
-            m14: q.m41,
-            m24: q.m42,
-            m34: q.m43,
-            m44: q.m44,
-            m54: q.m45,
-            m15: q.m51,
-            m25: q.m52,
-            m35: q.m53,
-            m45: q.m54,
-            m55: q.m55,
-        };
-        rec = max(rec, max_ulp_5x5(q.mul_mat(t).mul_mat(qt), a) / amax_5x5(a));
-        orth = max(orth, orth_5x5(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(
-            array![re.x, re.y, re.z, re.w, re.a], array![im.x, im.y, im.z, im.w, im.a],
-        );
-        let ere = {
-            let (ere_0, ere_1, ere_2, ere_3, ere_4) = ere;
-            array![ere_0, ere_1, ere_2, ere_3, ere_4]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2, eim_3, eim_4) = eim;
-            array![eim_0, eim_1, eim_2, eim_3, eim_4]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 5 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur5(oracle::schur5_eigenvalues_nonnormal_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 294 && orth <= 139, "measured {} {}", rec, orth);
+    assert!(rec <= 265 && orth <= 107, "measured {} {}", rec, orth);
 }
 
-/// `schur5_eigenvalues_clustered` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur5_eigenvalues_clustered` (oracle): see `check_schur5`.
 #[test]
 fn test_oracle_schur5_eigenvalues_clustered() {
-    let mut cases = oracle::schur5_eigenvalues_clustered_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat5x5(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m41 == fx(0), "below the subdiagonal");
-        assert!(t.m51 == fx(0), "below the subdiagonal");
-        assert!(t.m42 == fx(0), "below the subdiagonal");
-        assert!(t.m52 == fx(0), "below the subdiagonal");
-        assert!(t.m53 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m32 == fx(0) || t.m43 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m43 == fx(0) || t.m54 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix5 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m41: q.m14,
-            m51: q.m15,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m42: q.m24,
-            m52: q.m25,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-            m43: q.m34,
-            m53: q.m35,
-            m14: q.m41,
-            m24: q.m42,
-            m34: q.m43,
-            m44: q.m44,
-            m54: q.m45,
-            m15: q.m51,
-            m25: q.m52,
-            m35: q.m53,
-            m45: q.m54,
-            m55: q.m55,
-        };
-        rec = max(rec, max_ulp_5x5(q.mul_mat(t).mul_mat(qt), a) / amax_5x5(a));
-        orth = max(orth, orth_5x5(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(
-            array![re.x, re.y, re.z, re.w, re.a], array![im.x, im.y, im.z, im.w, im.a],
-        );
-        let ere = {
-            let (ere_0, ere_1, ere_2, ere_3, ere_4) = ere;
-            array![ere_0, ere_1, ere_2, ere_3, ere_4]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2, eim_3, eim_4) = eim;
-            array![eim_0, eim_1, eim_2, eim_3, eim_4]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 5 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur5(oracle::schur5_eigenvalues_clustered_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 77 && orth <= 48, "measured {} {}", rec, orth);
+    assert!(rec <= 103 && orth <= 42, "measured {} {}", rec, orth);
 }
 
-/// `schur5_eigenvalues_defective` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur5_eigenvalues_defective` (oracle): see `check_schur5`.
 #[test]
 fn test_oracle_schur5_eigenvalues_defective() {
-    let mut cases = oracle::schur5_eigenvalues_defective_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat5x5(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m41 == fx(0), "below the subdiagonal");
-        assert!(t.m51 == fx(0), "below the subdiagonal");
-        assert!(t.m42 == fx(0), "below the subdiagonal");
-        assert!(t.m52 == fx(0), "below the subdiagonal");
-        assert!(t.m53 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m32 == fx(0) || t.m43 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m43 == fx(0) || t.m54 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix5 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m41: q.m14,
-            m51: q.m15,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m42: q.m24,
-            m52: q.m25,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-            m43: q.m34,
-            m53: q.m35,
-            m14: q.m41,
-            m24: q.m42,
-            m34: q.m43,
-            m44: q.m44,
-            m54: q.m45,
-            m15: q.m51,
-            m25: q.m52,
-            m35: q.m53,
-            m45: q.m54,
-            m55: q.m55,
-        };
-        rec = max(rec, max_ulp_5x5(q.mul_mat(t).mul_mat(qt), a) / amax_5x5(a));
-        orth = max(orth, orth_5x5(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(
-            array![re.x, re.y, re.z, re.w, re.a], array![im.x, im.y, im.z, im.w, im.a],
-        );
-        let ere = {
-            let (ere_0, ere_1, ere_2, ere_3, ere_4) = ere;
-            array![ere_0, ere_1, ere_2, ere_3, ere_4]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2, eim_3, eim_4) = eim;
-            array![eim_0, eim_1, eim_2, eim_3, eim_4]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 5 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur5(oracle::schur5_eigenvalues_defective_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 424 && orth <= 178, "measured {} {}", rec, orth);
+    assert!(rec <= 247 && orth <= 150, "measured {} {}", rec, orth);
 }
 
-/// `schur5_eigenvalues_near_triangular` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the
-/// measured bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and
-/// of the matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur5_eigenvalues_near_triangular` (oracle): see `check_schur5`.
 #[test]
 fn test_oracle_schur5_eigenvalues_near_triangular() {
-    let mut cases = oracle::schur5_eigenvalues_near_triangular_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat5x5(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m41 == fx(0), "below the subdiagonal");
-        assert!(t.m51 == fx(0), "below the subdiagonal");
-        assert!(t.m42 == fx(0), "below the subdiagonal");
-        assert!(t.m52 == fx(0), "below the subdiagonal");
-        assert!(t.m53 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m32 == fx(0) || t.m43 == fx(0), "two consecutive subdiagonal entries");
-        assert!(t.m43 == fx(0) || t.m54 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix5 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m41: q.m14,
-            m51: q.m15,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m42: q.m24,
-            m52: q.m25,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-            m43: q.m34,
-            m53: q.m35,
-            m14: q.m41,
-            m24: q.m42,
-            m34: q.m43,
-            m44: q.m44,
-            m54: q.m45,
-            m15: q.m51,
-            m25: q.m52,
-            m35: q.m53,
-            m45: q.m54,
-            m55: q.m55,
-        };
-        rec = max(rec, max_ulp_5x5(q.mul_mat(t).mul_mat(qt), a) / amax_5x5(a));
-        orth = max(orth, orth_5x5(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(
-            array![re.x, re.y, re.z, re.w, re.a], array![im.x, im.y, im.z, im.w, im.a],
-        );
-        let ere = {
-            let (ere_0, ere_1, ere_2, ere_3, ere_4) = ere;
-            array![ere_0, ere_1, ere_2, ere_3, ere_4]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2, eim_3, eim_4) = eim;
-            array![eim_0, eim_1, eim_2, eim_3, eim_4]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 5 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur5(oracle::schur5_eigenvalues_near_triangular_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 114 && orth <= 55, "measured {} {}", rec, orth);
+    assert!(rec <= 279 && orth <= 58, "measured {} {}", rec, orth);
 }
 
 /// `schur5_eigenvalues_real` (oracle): `eigenvalues()` of the matrix and of the decomposition
@@ -621,7 +266,7 @@ fn test_oracle_schur5_eigenvalues_real() {
             );
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(res <= 121 && unit <= 3, "measured {} {}", res, unit);
+    assert!(res <= 127 && unit <= 3, "measured {} {}", res, unit);
 }
 
 /// The Schur iteration count (the smallest `max_niter` for which `try_schur` succeeds, minus
@@ -843,7 +488,8 @@ fn test_schur5_rotation_block() {
 }
 
 /// The cyclic permutation matrix (eigenvalues: the 5-th roots of unity), the classic hard case
-/// of the Francis iteration without exceptional shifts (upstream has none).
+/// of the Francis iteration: it converges thanks to the exceptional shifts (upstream has none, and
+/// cycles forever on the size 6).
 #[test]
 fn test_schur5_cyclic_permutation() {
     let a = black_box(

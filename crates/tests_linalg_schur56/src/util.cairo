@@ -75,49 +75,36 @@ pub fn sorted(xs: Array<Fixed>) -> Array<i64> {
     }
     out
 }
-use nalgebra::{Matrix1, Matrix2, Matrix3, Matrix4, Vector2, Vector3, Vector4};
+use nalgebra::{Matrix5, Matrix6, Vector5, Vector6};
 
-impl Flat1x1 of Flat<Matrix1<Fixed>> {
-    fn flat(m: Matrix1<Fixed>) -> Array<Fixed> {
-        array![m.x]
+impl Flat5x1 of Flat<Vector5<Fixed>> {
+    fn flat(m: Vector5<Fixed>) -> Array<Fixed> {
+        array![m.x, m.y, m.z, m.w, m.a]
     }
 }
 
-impl Flat2x1 of Flat<Vector2<Fixed>> {
-    fn flat(m: Vector2<Fixed>) -> Array<Fixed> {
-        array![m.x, m.y]
-    }
-}
-
-impl Flat2x2 of Flat<Matrix2<Fixed>> {
-    fn flat(m: Matrix2<Fixed>) -> Array<Fixed> {
-        array![m.m11, m.m21, m.m12, m.m22]
-    }
-}
-
-impl Flat3x1 of Flat<Vector3<Fixed>> {
-    fn flat(m: Vector3<Fixed>) -> Array<Fixed> {
-        array![m.x, m.y, m.z]
-    }
-}
-
-impl Flat3x3 of Flat<Matrix3<Fixed>> {
-    fn flat(m: Matrix3<Fixed>) -> Array<Fixed> {
-        array![m.m11, m.m21, m.m31, m.m12, m.m22, m.m32, m.m13, m.m23, m.m33]
-    }
-}
-
-impl Flat4x1 of Flat<Vector4<Fixed>> {
-    fn flat(m: Vector4<Fixed>) -> Array<Fixed> {
-        array![m.x, m.y, m.z, m.w]
-    }
-}
-
-impl Flat4x4 of Flat<Matrix4<Fixed>> {
-    fn flat(m: Matrix4<Fixed>) -> Array<Fixed> {
+impl Flat5x5 of Flat<Matrix5<Fixed>> {
+    fn flat(m: Matrix5<Fixed>) -> Array<Fixed> {
         array![
-            m.m11, m.m21, m.m31, m.m41, m.m12, m.m22, m.m32, m.m42, m.m13, m.m23, m.m33, m.m43,
-            m.m14, m.m24, m.m34, m.m44,
+            m.m11, m.m21, m.m31, m.m41, m.m51, m.m12, m.m22, m.m32, m.m42, m.m52, m.m13, m.m23,
+            m.m33, m.m43, m.m53, m.m14, m.m24, m.m34, m.m44, m.m54, m.m15, m.m25, m.m35, m.m45,
+            m.m55,
+        ]
+    }
+}
+
+impl Flat6x1 of Flat<Vector6<Fixed>> {
+    fn flat(m: Vector6<Fixed>) -> Array<Fixed> {
+        array![m.x, m.y, m.z, m.w, m.a, m.b]
+    }
+}
+
+impl Flat6x6 of Flat<Matrix6<Fixed>> {
+    fn flat(m: Matrix6<Fixed>) -> Array<Fixed> {
+        array![
+            m.m11, m.m21, m.m31, m.m41, m.m51, m.m61, m.m12, m.m22, m.m32, m.m42, m.m52, m.m62,
+            m.m13, m.m23, m.m33, m.m43, m.m53, m.m63, m.m14, m.m24, m.m34, m.m44, m.m54, m.m64,
+            m.m15, m.m25, m.m35, m.m45, m.m55, m.m65, m.m16, m.m26, m.m36, m.m46, m.m56, m.m66,
         ]
     }
 }

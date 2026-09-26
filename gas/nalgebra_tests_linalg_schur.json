@@ -38,73 +38,37 @@
   "nalgebra_tests_linalg_schur::schur3": {
     "eigen3_new": {
       "baseline": 18920,
-      "schur": 1702820
+      "schur": 1841330
     },
     "schur3_complex_eigenvalues": {
       "baseline": 18920,
-      "without_q": 1908920
+      "without_q": 2045470
     },
     "schur3_eigenvalues": {
       "baseline": 18920,
-      "without_q": 1605520
+      "without_q": 1518830
     },
     "schur3_new": {
       "baseline": 18920,
-      "francis": 1889400
+      "francis": 2341510
     }
   },
   "nalgebra_tests_linalg_schur::schur4": {
     "eigen4_new": {
       "baseline": 20320,
-      "schur": 13873400
+      "schur": 2785350
     },
     "schur4_complex_eigenvalues": {
       "baseline": 20320,
-      "without_q": 2804910
+      "without_q": 2880260
     },
     "schur4_eigenvalues": {
       "baseline": 20320,
-      "without_q": 13671710
+      "without_q": 2205180
     },
     "schur4_new": {
       "baseline": 20320,
-      "francis": 2795970
-    }
-  },
-  "nalgebra_tests_linalg_schur::schur5": {
-    "eigen5_new": {
-      "baseline": 22120,
-      "schur": 17183030
-    },
-    "schur5_complex_eigenvalues": {
-      "baseline": 22120,
-      "without_q": 5409360
-    },
-    "schur5_eigenvalues": {
-      "baseline": 22120,
-      "without_q": 16805970
-    },
-    "schur5_new": {
-      "baseline": 22120,
-      "francis": 5426750
-    }
-  },
-  "nalgebra_tests_linalg_schur::schur6": {
-    "eigen6_new": {
-      "baseline": 24320,
-      "schur": 24495550
-    },
-    "schur6_complex_eigenvalues": {
-      "baseline": 24320,
-      "without_q": 18605130
-    },
-    "schur6_eigenvalues": {
-      "baseline": 24320,
-      "without_q": 23883890
-    },
-    "schur6_new": {
-      "baseline": 24320,
-      "francis": 18676920
+      "francis": 3476000
     }
   }
 }

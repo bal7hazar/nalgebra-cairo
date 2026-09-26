@@ -54,6 +54,7 @@ members = [
     "crates/tests_linalg_pivot_qr_tall",
     "crates/tests_linalg_pivot_lblt",
     "crates/tests_linalg_schur",
+    "crates/tests_linalg_schur56",
     "crates/tests_linalg_hessenberg",
     "crates/tests_linalg_bidiagonal",
     "crates/tests_linalg_bidiagonal_wide",

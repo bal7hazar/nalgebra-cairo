@@ -54,7 +54,7 @@ nalgebra = { version = "x.y", default-features = false, features = ["statistics"
 | `lblt` | `Lblt1..Lblt6`, `lblt` (`linalg::lblt`, Bunch-Kaufman) |
 | `hessenberg` | `Hessenberg1..6`, `hessenberg`; `SymmetricTridiagonal1..6`, `symmetric_tridiagonalize`; `balance_parlett_reinsch`, `unbalance`; `clear_column_unchecked`, `clear_row_unchecked`, `assemble_q` (`linalg::hessenberg`, `linalg::symmetric_tridiagonal`, `linalg::balancing`, `linalg::householder_steps`; 0.19 GB) |
 | `bidiagonal` | `Bidiagonal1..Bidiagonal6x5`, `bidiagonalize` (`linalg::bidiagonal`; 0.37 GB) |
-| `schur` | `Schur1..6`, `schur`, `try_schur`, `eigenvalues`, `complex_eigenvalues`; `Eigen1..6` (`linalg::schur`, `linalg::eigen`; enables `hessenberg`; 0.22 GB more) |
+| `schur` | `Schur1..6`, `schur`, `try_schur`, `eigenvalues`, `complex_eigenvalues`; `Eigen1..6` (`linalg::schur`, `linalg::eigen`; enables `hessenberg`; 0.48 GB more) |
 
 Turning the first three off cuts a cold build of the library by about 16 % of the memory and 32 % of the
 CPU time ([measurements](tools/shapegen/DESIGN.md)); the test packages of this repository do it. `dynamic` adds about 0.55 GB to a cold build,

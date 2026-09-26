@@ -27,7 +27,7 @@ keywords.workspace = true
 # (linalg/hessenberg*, the Householder building blocks, and, grouped with it because each saves
 # less than 0.1 GB, linalg/symmetric_tridiagonal* and linalg/balancing: 0.19 GB), `bidiagonal`
 # (linalg/bidiagonal*, 0.37 GB), `schur` (linalg/schur*, linalg/eigen*, on top of `hessenberg`,
-# 0.22 GB more).
+# 0.48 GB more).
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",

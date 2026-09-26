@@ -27,6 +27,7 @@ STUCK_CAP_LOG2 = 16
 # Pass (counted like `STUCK_PASSES`, i.e. then every 8 passes) at which a stalled window gets
 # LAPACK's exceptional shift: see `schur_doc`.
 EXCEPTIONAL_AT = 5
+REVOKE_FRANCIS = True
 
 
 def shp(r: int, c: int) -> str:
@@ -1098,9 +1099,15 @@ def block_fn(n: int, s: int) -> str:
 """
 
 
-def francis_fn(n: int, s: int, e: int) -> str:
-    """One implicit double-shift QR step on the active window `s..=e` (`e - s >= 2`)."""
-    st = ["revoke_ap_tracking();"] + load(n, "t", tv)
+def francis_fn(n: int, s: int, e: int, with_q: bool) -> str:
+    """One implicit double-shift QR step on the active window `s..=e` (`e - s >= 2`), BRANCH-FREE:
+    a zero axis is an exact no-op (its entries are already zero, `h = 0`), and every `if` inside
+    such a large unrolled function merges all its live variables (measured: a not-taken `if
+    compute_q { .. }` cost as much as the `Q` updates it guards). `with_q`: also the updates
+    outside the window and of `Q` (the full decomposition); without: the window only."""
+    st = (["revoke_ap_tracking();"] if REVOKE_FRANCIS else []) + load(n, "t", tv)
+    if with_q:
+        st += load(n, "q", qv)
     m = e - 1
     T = {(i, j): tv(i, j) for i in range(n) for j in range(n)}
     Q = {(i, j): qv(i, j) for i in range(n) for j in range(n)}
@@ -1125,48 +1132,48 @@ def francis_fn(n: int, s: int, e: int) -> str:
         us = ["u0", "u1", "u2"]
         rows = [k, k + 1, k + 2]
         st.append(f"// bulge at column {k}")
-        st.append(axis_call(3, ["ax", "ay", "az"], "nrm", "nz", us))
-        body = []
+        st.append(axis_call(3, ["ax", "ay", "az"], "nrm", "_nz", us))
         if k > s:
-            body.append(f"{tv(k, k - 1)} = nrm; {tv(k + 1, k - 1)} = R::zero(); "
-                        f"{tv(k + 2, k - 1)} = R::zero();")
+            st.append(f"{tv(k, k - 1)} = nrm; {tv(k + 1, k - 1)} = R::zero(); "
+                      f"{tv(k + 2, k - 1)} = R::zero();")
         else:
-            body.append("let _ = nrm;")
-        body += prep(us, False)
-        body += reflect_cols(T, us, rows, range(k, e + 1), None, True)
-        body += reflect_rows(T, us, rows, range(s, min(k + 4, e + 1)), None, True)
-        qb = reflect_cols(T, us, rows, range(e + 1, n), None, True)
-        qb += reflect_rows(T, us, rows, range(0, s), None, True)
-        if qb:
-            body.append("if compute_q {\n" + "\n".join(qb) + "\n}")
-        body.append(f"if compute_q {{\nSelf::q_reflect3_{k}(ref q, u0, u1, u2);\n}}")
-        st.append("if nz {\n" + "\n".join(body) + "\n}")
+            st.append("let _ = nrm;")
+        st += prep(us, False)
+        st += reflect_cols(T, us, rows, range(k, e + 1), None, True)
+        st += reflect_rows(T, us, rows, range(s, min(k + 4, e + 1)), None, True)
+        if with_q:
+            st += reflect_cols(T, us, rows, range(e + 1, n), None, True)
+            st += reflect_rows(T, us, rows, range(0, s), None, True)
+            st += reflect_rows(Q, us, rows, range(n), None, True)
         st.append(f"ax = {tv(k + 1, k)}; ay = {tv(k + 2, k)};")
         if k < e - 2:
             st.append(f"az = {tv(k + 3, k)};")
     st.append("let _ = az;")
     us = ["u0", "u1"]
     rows = [m, e]
-    st.append(axis_call(2, ["ax", "ay"], "nrm", "nz", us))
-    body = [f"{tv(m, m - 1)} = nrm; {tv(e, m - 1)} = R::zero();"] + prep(us, False)
-    body += reflect_cols(T, us, rows, range(m, e + 1), None, True)
-    body += reflect_rows(T, us, rows, range(s, e + 1), None, True)
-    qb = reflect_cols(T, us, rows, range(e + 1, n), None, True)
-    qb += reflect_rows(T, us, rows, range(0, s), None, True)
-    if qb:
-        body.append("if compute_q {\n" + "\n".join(qb) + "\n}")
-    body.append(f"if compute_q {{\nSelf::q_reflect2_{m}(ref q, u0, u1);\n}}")
-    st.append("if nz {\n" + "\n".join(body) + "\n}")
+    st.append(axis_call(2, ["ax", "ay"], "nrm", "_nz", us))
+    st.append(f"{tv(m, m - 1)} = nrm; {tv(e, m - 1)} = R::zero();")
+    st += prep(us, False)
+    st += reflect_cols(T, us, rows, range(m, e + 1), None, True)
+    st += reflect_rows(T, us, rows, range(s, e + 1), None, True)
+    if with_q:
+        st += reflect_cols(T, us, rows, range(e + 1, n), None, True)
+        st += reflect_rows(T, us, rows, range(0, s), None, True)
+        st += reflect_rows(Q, us, rows, range(n), None, True)
     st.append(f"t = {struct_lit(n, n, tv)};")
+    if with_q:
+        st.append(f"q = {struct_lit(n, n, qv)};")
+    qparam = f", ref q: {tname(n, n)}<T>" if with_q else ""
+    name = f"francis{s}_{e}" + ("" if with_q else "_t")
+    what = ("each reflection is applied to `t` from both sides (the whole rows / columns of the "
+            "quasi-triangular form) and to the columns of `q`" if with_q else
+            "each reflection is applied to the entries of the window only (no `Q`: see `try_new`)")
     return f"""    /// One implicit double-shift (Francis) QR step on the active window {s}..={e}, upstream's
     /// `subdim > 2` branch: the bulge made by the first column of `(H - σ1)(H - σ2)` (`σ` the
     /// eigenvalues of the trailing 2x2 block) is chased down by 3-reflections, then a 2-reflection
-    /// on the rows {m}, {e}; each reflection is applied to `t` from both sides (the whole rows /
-    /// columns of the quasi-triangular form) and to the columns of `q`. `exceptional`: the shifts
-    /// are those of LAPACK `dlahqr`'s exceptional 2x2 block instead (see `try_new`).
-    fn francis{s}_{e}(
-        ref t: {tname(n, n)}<T>, ref q: {tname(n, n)}<T>, compute_q: bool, exceptional: bool,
-    ) {{
+    /// on the rows {m}, {e}; {what}. `exceptional`: the shifts are those of LAPACK `dlahqr`'s
+    /// exceptional 2x2 block instead (see `try_new`). Branch-free: a zero axis is an exact no-op.
+    fn {name}(ref t: {tname(n, n)}<T>{qparam}, exceptional: bool) {{
         {chr(10).join(st)}
     }}
 """
@@ -1360,16 +1367,18 @@ def render_schur(n: int) -> str:
                  "use core::internal::revoke_ap_tracking;"}
         fns = [delimit_fn(n, e) for e in range(1, n)]
         fns += [block_fn(n, s) for s in range(0, n - 1)]
-        fns += [francis_fn(n, s, e) for e in range(2, n) for s in range(0, e - 1)]
-        fns += [q_reflect_fn(n, 3, k) for k in range(0, n - 2)]
-        fns += [q_reflect_fn(n, 2, m) for m in range(1, n - 1)]
+        fns += [francis_fn(n, s, e, wq) for e in range(2, n) for s in range(0, e - 1)
+                for wq in (True, False)]
         dl = " else ".join(f"if end == {e} {{\nSelf::delimit{e}(ref t, eps, thr)\n}}"
                            for e in range(1, n - 1)) + (
             f" else {{\nSelf::delimit{n - 1}(ref t, eps, thr)\n}}" if n > 2 else "")
-        fr = " else ".join(
-            f"if end == {e} && start == {s} {{\nSelf::francis{s}_{e}(ref t, ref q, compute_q, "
-            f"stuck == {EXCEPTIONAL_AT});\n}}"
+        frq = " else ".join(
+            f"if end == {e} && start == {s} {{\nSelf::francis{s}_{e}(ref t, ref q, exceptional);\n}}"
             for e in range(2, n) for s in range(0, e - 1))
+        frt = " else ".join(
+            f"if end == {e} && start == {s} {{\nSelf::francis{s}_{e}_t(ref t, exceptional);\n}}"
+            for e in range(2, n) for s in range(0, e - 1))
+        fr = f"let exceptional = stuck == {EXCEPTIONAL_AT};\nif compute_q {{\n{frq}\n}} else {frt}"
         bl = " else ".join(f"if start == {s} {{\nSelf::block{s}(ref t, ref q, compute_q);\n}}"
                            for s in range(0, n - 1))
         amax = "let mut amax = R::abs(m.m11);\n" + "\n".join(
@@ -2566,14 +2575,12 @@ def render_schur_tests(n: int) -> str:
     b = {mat, f"amax_{n}x{n}", f"max_ulp_{n}x{n}", f"orth_{n}x{n}"}
     parts = []
     tr = transpose_lit(n, n, "q")
-    for fam in SCHUR_FAMILIES if n >= 2 else [""]:
-        op = f"schur{n}_eigenvalues{fam}"
-        parts.append(f"""/// `{op}` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured bounds, `T` upper
-/// quasi-triangular, the complex eigenvalues (of the decomposition and of the matrix: equal) sorted
-/// and compared with upstream's within the oracle tolerance.
-#[test]
-fn test_oracle_{op}() {{
-    let mut cases = oracle::{op}_cases();
+    tup = "(i64,)" if n == 1 else "(" + ", ".join(["i64"] * n) + ")"
+    parts.append(f"""/// The checks of one `schur{n}_eigenvalues*` oracle op: `A = Q T Qᵀ` and `QᵀQ = I` (returned, the
+/// measured bounds), `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and
+/// of the matrix: equal) sorted and compared with upstream's (the largest excess over the oracle
+/// tolerance, returned).
+fn check_schur{n}(mut cases: Span<([[i64; {n}]; {n}], {tup}, {tup}, u64)>) -> (u128, u128, u128) {{
     let (mut ex, mut rec, mut orth) = (0, 0, 0);
     while let Some(case) = cases.pop_front() {{
         let (a, ere, eim, tol) = *case;
@@ -2591,17 +2598,23 @@ fn test_oracle_{op}() {{
         let ere = {tuple_arr(n, 'ere')};
         let eim = {tuple_arr(n, 'eim')};
         let mut k = 0;
-        let mut cerr = 0;
         while k < {n} {{
             let (gr, gi) = *got[k];
             let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
             ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
             ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
             k += 1;
         }}
-        {DEBUG_PRINT.replace('%s', f'{n}x{n}').replace('OPNAME', op)}
     }}
+    (ex, rec, orth)
+}}
+""")
+    for fam in SCHUR_FAMILIES if n >= 2 else [""]:
+        op = f"schur{n}_eigenvalues{fam}"
+        parts.append(f"""/// `{op}` (oracle): see `check_schur{n}`.
+#[test]
+fn test_oracle_{op}() {{
+    let (ex, rec, orth) = check_schur{n}(oracle::{op}_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
     assert!(rec <= {mb('schur_rec' + fam, n)} && orth <= {mb('schur_orth' + fam, n)}, "measured {{}} {{}}", rec, orth);
 }}
@@ -2811,8 +2824,11 @@ def flat_impls(shapes) -> str:
 
 PACKAGES = {
     # package: (features, description, modules)
-    "tests_linalg_schur": (["schur"], "the Schur and general eigen decompositions",
-                           [("schur", n) for n in DIMS]),
+    "tests_linalg_schur": (["schur"], "the Schur and general eigen decompositions of the squares 1 to 4",
+                           [("schur", n) for n in range(1, 5)]),
+    "tests_linalg_schur56": (["schur"],
+                             "the Schur and general eigen decompositions of the squares 5 and 6",
+                             [("schur", n) for n in (5, 6)]),
     "tests_linalg_hessenberg": (["hessenberg"],
                                 "the Hessenberg decomposition, the symmetric tridiagonalisation, "
                                 "the balancing",

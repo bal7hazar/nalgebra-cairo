@@ -76,10 +76,14 @@ pub impl Schur3Impl<
     ///   (defective and clustered spectra, tiny subdiagonal entries) would otherwise keep the loop
     ///   running (a defective 4x4 of the oracle never converged); the eigenvalue error then grows
     ///   with the threshold reached, which the oracle's scaled tolerance of those families covers.
-    ///   Below the cap nothing changes for a window that converges; above it, like upstream, a
-    ///   matrix on which the iteration cycles without converging (e.g. the cyclic permutation of
-    ///   size 6: upstream's `f64` code loops forever on it too, there are no exceptional shifts)
-    ///   never returns with `max_niter = 0`.
+    ///   Nothing changes for a window that converges.
+    /// - Exceptional shifts (a deviation: upstream has none): at the 5th consecutive pass on the
+    ///   same window (then every 8 passes), the Francis step uses LAPACK `dlahqr`'s exceptional
+    ///   shifts, those of the 2x2 block `[[d, -0.4375 s], [s, d]]` with `s = |t_n,n-1| +
+    ///   |t_n-1,n-2|` and `d = 0.75 s + t_nn`. Without them the rounded iteration cycles forever on
+    ///   the cyclic permutations of size 3 to 6 (upstream's `f64` code cycles on the one of size 6,
+    ///   and escapes the smaller ones only through its rounding noise), and stalls longer on
+    ///   defective spectra (model: 474 passes over 15 defective 3x3 inputs without them, 186 with).
     ///
     /// Shift vector: upstream's first column of `(H - σ1)(H - σ2)`, `(h11² + h12 h21 - tra h11 +
     /// det, h21 (h11 + h22 - tra), h21 h32)`, DIVIDED by `sc = |h21| + |h11 - hmm| + |h11 - hnn| +
@@ -97,9 +101,19 @@ pub impl Schur3Impl<
     /// (what the rotation gives in exact arithmetic; the rotated entries lose `ulp / |x|`, hundreds
     /// of ulp on clustered eigenvalues, measured).
     ///
-    /// Reflections: axes by `linalg::householder_kernels` (upstream's two normalisations), one
-    /// fused dot product (doubled exactly) and one `Real::mul_add` per updated entry. Panics on
-    /// overflow.
+    /// Without `Q` (the matrix methods `eigenvalues` / `complex_eigenvalues`), the steps only
+    /// update the entries of the active window (LAPACK `dlahqr`'s `wantt = false`): the window
+    /// never reads the others, so the eigenvalues are bit-identical to those of the full
+    /// decomposition (upstream updates the whole `T` and discards it).
+    ///
+    /// Rounding: the reflection axes by `linalg::householder_kernels` (upstream's two
+    /// normalisations); every dot product, updated entry (one exact `h (-2 u_k) + x`), rotated
+    /// entry and the shift vector is ROUNDED TO NEAREST (the exact sum plus half an ulp, floored
+    /// once: `HouseholderKernelTrait::rmul_add` / `rsum2` / `rsum3` / `rdiff2`): the floor's bias
+    /// keeps entries in the noise longer (model and Cairo, same inputs: a real-spectrum 4x4 of the
+    /// oracle takes 31 passes floored, 5 rounded to nearest; over the oracle's inputs of sizes 3 to
+    /// 6 the passes drop by 11 % overall, 30 % on general 6x6), for a few percent more gas per
+    /// operation. Panics on overflow.
     fn try_new(m: Matrix3<T>, eps: T, max_niter: usize) -> Option<Schur3<T>> {
         match Schur3KernelTrait::decompose(m, eps, max_niter, true) {
             Option::Some((q, t)) => Option::Some(Schur3 { q, t }),
@@ -295,8 +309,13 @@ pub(crate) impl Schur3KernelImpl<
         while end != start {
             let (old_start, old_end) = (start, end);
             if end - start >= 2 {
-                if end == 2 && start == 0 {
-                    Self::francis0_2(ref t, ref q, compute_q);
+                let exceptional = stuck == 5;
+                if compute_q {
+                    if end == 2 && start == 0 {
+                        Self::francis0_2(ref t, ref q, exceptional);
+                    }
+                } else if end == 2 && start == 0 {
+                    Self::francis0_2_t(ref t, exceptional);
                 }
             } else {
                 if start == 0 {
@@ -437,6 +456,8 @@ pub(crate) impl Schur3KernelImpl<
         let h11 = t11;
         if h10 != R::zero() {
             let half = R::from_ratio(1, 2);
+            let hf = half;
+            let ep = R::default_epsilon();
             let dd = h00 - h11;
             let d4 = HouseholderKernelTrait::<T>::disc4(h00, h01, h10, h11);
             if d4 >= R::zero() {
@@ -451,40 +472,40 @@ pub(crate) impl Schur3KernelImpl<
                 let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);
                 let a = t00;
                 let b = t10;
-                t00 = R::sum_prod2(a, c, sn, b);
-                t10 = R::diff_prod(c, b, sn, a);
+                t00 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t10 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 let a = t01;
                 let b = t11;
-                t01 = R::sum_prod2(a, c, sn, b);
-                t11 = R::diff_prod(c, b, sn, a);
-                let a = t02;
-                let b = t12;
-                t02 = R::sum_prod2(a, c, sn, b);
-                t12 = R::diff_prod(c, b, sn, a);
+                t01 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t11 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 let a = t00;
                 let b = t01;
-                t00 = R::sum_prod2(a, c, sn, b);
-                t01 = R::diff_prod(c, b, sn, a);
+                t00 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t01 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 let a = t10;
                 let b = t11;
-                t10 = R::sum_prod2(a, c, sn, b);
-                t11 = R::diff_prod(c, b, sn, a);
+                t10 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t11 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 t10 = R::zero();
                 t00 = h11 + x;
                 t11 = h00 - x;
                 if compute_q {
+                    let a = t02;
+                    let b = t12;
+                    t02 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    t12 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                     let a = q00;
                     let b = q01;
-                    q00 = R::sum_prod2(a, c, sn, b);
-                    q01 = R::diff_prod(c, b, sn, a);
+                    q00 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    q01 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                     let a = q10;
                     let b = q11;
-                    q10 = R::sum_prod2(a, c, sn, b);
-                    q11 = R::diff_prod(c, b, sn, a);
+                    q10 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    q11 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                     let a = q20;
                     let b = q21;
-                    q20 = R::sum_prod2(a, c, sn, b);
-                    q21 = R::diff_prod(c, b, sn, a);
+                    q20 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    q21 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 }
             }
         }
@@ -543,6 +564,8 @@ pub(crate) impl Schur3KernelImpl<
         let h11 = t22;
         if h10 != R::zero() {
             let half = R::from_ratio(1, 2);
+            let hf = half;
+            let ep = R::default_epsilon();
             let dd = h00 - h11;
             let d4 = HouseholderKernelTrait::<T>::disc4(h00, h01, h10, h11);
             if d4 >= R::zero() {
@@ -557,40 +580,40 @@ pub(crate) impl Schur3KernelImpl<
                 let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);
                 let a = t11;
                 let b = t21;
-                t11 = R::sum_prod2(a, c, sn, b);
-                t21 = R::diff_prod(c, b, sn, a);
+                t11 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t21 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 let a = t12;
                 let b = t22;
-                t12 = R::sum_prod2(a, c, sn, b);
-                t22 = R::diff_prod(c, b, sn, a);
-                let a = t01;
-                let b = t02;
-                t01 = R::sum_prod2(a, c, sn, b);
-                t02 = R::diff_prod(c, b, sn, a);
+                t12 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t22 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 let a = t11;
                 let b = t12;
-                t11 = R::sum_prod2(a, c, sn, b);
-                t12 = R::diff_prod(c, b, sn, a);
+                t11 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t12 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 let a = t21;
                 let b = t22;
-                t21 = R::sum_prod2(a, c, sn, b);
-                t22 = R::diff_prod(c, b, sn, a);
+                t21 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                t22 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 t21 = R::zero();
                 t11 = h11 + x;
                 t22 = h00 - x;
                 if compute_q {
+                    let a = t01;
+                    let b = t02;
+                    t01 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    t02 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                     let a = q01;
                     let b = q02;
-                    q01 = R::sum_prod2(a, c, sn, b);
-                    q02 = R::diff_prod(c, b, sn, a);
+                    q01 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    q02 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                     let a = q11;
                     let b = q12;
-                    q11 = R::sum_prod2(a, c, sn, b);
-                    q12 = R::diff_prod(c, b, sn, a);
+                    q11 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    q12 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                     let a = q21;
                     let b = q22;
-                    q21 = R::sum_prod2(a, c, sn, b);
-                    q22 = R::diff_prod(c, b, sn, a);
+                    q21 = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep);
+                    q22 = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);
                 }
             }
         }
@@ -624,8 +647,10 @@ pub(crate) impl Schur3KernelImpl<
     /// `subdim > 2` branch: the bulge made by the first column of `(H - σ1)(H - σ2)` (`σ` the
     /// eigenvalues of the trailing 2x2 block) is chased down by 3-reflections, then a 2-reflection
     /// on the rows 1, 2; each reflection is applied to `t` from both sides (the whole rows /
-    /// columns of the quasi-triangular form) and to the columns of `q`.
-    fn francis0_2(ref t: Matrix3<T>, ref q: Matrix3<T>, compute_q: bool) {
+    /// columns of the quasi-triangular form) and to the columns of `q`. `exceptional`: the shifts
+    /// are those of LAPACK `dlahqr`'s exceptional 2x2 block instead (see `try_new`). Branch-free: a
+    /// zero axis is an exact no-op.
+    fn francis0_2(ref t: Matrix3<T>, ref q: Matrix3<T>, exceptional: bool) {
         revoke_ap_tracking();
         let mut t00 = t.m11;
         let mut t10 = t.m21;
@@ -650,104 +675,98 @@ pub(crate) impl Schur3KernelImpl<
         let h21 = t10;
         let h22 = t11;
         let h32 = t21;
-        let hnn = t22;
-        let hmm = t11;
-        let hnm = t21;
-        let hmn = t12;
+        let (hnn, hmm, hnm, hmn) = if exceptional {
+            let sx = R::abs(t21) + R::abs(t10);
+            let d = sx * R::from_ratio(3, 4) + t22;
+            (d, d, sx, -(sx * R::from_ratio(7, 16)))
+        } else {
+            (t22, t11, t21, t12)
+        };
         let tra = hnn + hmm;
         let d1 = h11 - hmm;
         let d2 = h11 - hnn;
         let sc = R::abs(h21) + R::abs(d1) + R::abs(d2) + R::abs(hnm);
         let (p, r, g) = R::div3(d1, hnm, h21, sc);
-        let mut ax = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), p, d2), hmn, r), h12, g,
-            ),
-        );
+        let hf = R::from_ratio(1, 2);
+        let ep = R::default_epsilon();
+        let nhmn = -hmn;
+        let mut ax = HouseholderKernelTrait::<T>::rsum3(p, d2, nhmn, r, h12, g, hf, ep);
         let mut ay = g * (h11 + h22 - tra);
         let mut az = g * h32;
         // bulge at column 0
-        let (nrm, nz, u0, u1, u2) = HouseholderKernelTrait::<T>::axis3(ax, ay, az);
-        if nz {
-            let _ = nrm;
-            let nv_u0 = -(u0 + u0);
-            let nv_u1 = -(u1 + u1);
-            let nv_u2 = -(u2 + u2);
-            let h = R::sum_prod3(u0, t00, u1, t10, u2, t20);
-            t00 = R::mul_add(h, nv_u0, t00);
-            t10 = R::mul_add(h, nv_u1, t10);
-            t20 = R::mul_add(h, nv_u2, t20);
-            let h = R::sum_prod3(u0, t01, u1, t11, u2, t21);
-            t01 = R::mul_add(h, nv_u0, t01);
-            t11 = R::mul_add(h, nv_u1, t11);
-            t21 = R::mul_add(h, nv_u2, t21);
-            let h = R::sum_prod3(u0, t02, u1, t12, u2, t22);
-            t02 = R::mul_add(h, nv_u0, t02);
-            t12 = R::mul_add(h, nv_u1, t12);
-            t22 = R::mul_add(h, nv_u2, t22);
-            let h = R::sum_prod3(t00, u0, t01, u1, t02, u2);
-            t00 = R::mul_add(h, nv_u0, t00);
-            t01 = R::mul_add(h, nv_u1, t01);
-            t02 = R::mul_add(h, nv_u2, t02);
-            let h = R::sum_prod3(t10, u0, t11, u1, t12, u2);
-            t10 = R::mul_add(h, nv_u0, t10);
-            t11 = R::mul_add(h, nv_u1, t11);
-            t12 = R::mul_add(h, nv_u2, t12);
-            let h = R::sum_prod3(t20, u0, t21, u1, t22, u2);
-            t20 = R::mul_add(h, nv_u0, t20);
-            t21 = R::mul_add(h, nv_u1, t21);
-            t22 = R::mul_add(h, nv_u2, t22);
-            if compute_q {
-                let h = R::sum_prod3(q00, u0, q01, u1, q02, u2);
-                q00 = R::mul_add(h, nv_u0, q00);
-                q01 = R::mul_add(h, nv_u1, q01);
-                q02 = R::mul_add(h, nv_u2, q02);
-                let h = R::sum_prod3(q10, u0, q11, u1, q12, u2);
-                q10 = R::mul_add(h, nv_u0, q10);
-                q11 = R::mul_add(h, nv_u1, q11);
-                q12 = R::mul_add(h, nv_u2, q12);
-                let h = R::sum_prod3(q20, u0, q21, u1, q22, u2);
-                q20 = R::mul_add(h, nv_u0, q20);
-                q21 = R::mul_add(h, nv_u1, q21);
-                q22 = R::mul_add(h, nv_u2, q22);
-            }
-        }
+        let (nrm, _nz, u0, u1, u2) = HouseholderKernelTrait::<T>::axis3(ax, ay, az);
+        let _ = nrm;
+        let nv_u0 = -(u0 + u0);
+        let nv_u1 = -(u1 + u1);
+        let nv_u2 = -(u2 + u2);
+        let h = HouseholderKernelTrait::<T>::rsum3(u0, t00, u1, t10, u2, t20, hf, ep);
+        t00 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t00, hf, ep);
+        t10 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t10, hf, ep);
+        t20 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t20, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(u0, t01, u1, t11, u2, t21, hf, ep);
+        t01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t01, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t11, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t21, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(u0, t02, u1, t12, u2, t22, hf, ep);
+        t02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t02, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t12, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t22, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(t00, u0, t01, u1, t02, u2, hf, ep);
+        t00 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t00, hf, ep);
+        t01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t01, hf, ep);
+        t02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t02, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(t10, u0, t11, u1, t12, u2, hf, ep);
+        t10 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t10, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t11, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t12, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(t20, u0, t21, u1, t22, u2, hf, ep);
+        t20 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t20, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t21, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t22, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(q00, u0, q01, u1, q02, u2, hf, ep);
+        q00 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, q00, hf, ep);
+        q01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, q01, hf, ep);
+        q02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, q02, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(q10, u0, q11, u1, q12, u2, hf, ep);
+        q10 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, q10, hf, ep);
+        q11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, q11, hf, ep);
+        q12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, q12, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(q20, u0, q21, u1, q22, u2, hf, ep);
+        q20 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, q20, hf, ep);
+        q21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, q21, hf, ep);
+        q22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, q22, hf, ep);
         ax = t10;
         ay = t20;
         let _ = az;
-        let (nrm, nz, u0, u1) = HouseholderKernelTrait::<T>::axis2(ax, ay);
-        if nz {
-            t10 = nrm;
-            t20 = R::zero();
-            let nv_u0 = -(u0 + u0);
-            let nv_u1 = -(u1 + u1);
-            let h = R::sum_prod2(u0, t11, u1, t21);
-            t11 = R::mul_add(h, nv_u0, t11);
-            t21 = R::mul_add(h, nv_u1, t21);
-            let h = R::sum_prod2(u0, t12, u1, t22);
-            t12 = R::mul_add(h, nv_u0, t12);
-            t22 = R::mul_add(h, nv_u1, t22);
-            let h = R::sum_prod2(t01, u0, t02, u1);
-            t01 = R::mul_add(h, nv_u0, t01);
-            t02 = R::mul_add(h, nv_u1, t02);
-            let h = R::sum_prod2(t11, u0, t12, u1);
-            t11 = R::mul_add(h, nv_u0, t11);
-            t12 = R::mul_add(h, nv_u1, t12);
-            let h = R::sum_prod2(t21, u0, t22, u1);
-            t21 = R::mul_add(h, nv_u0, t21);
-            t22 = R::mul_add(h, nv_u1, t22);
-            if compute_q {
-                let h = R::sum_prod2(q01, u0, q02, u1);
-                q01 = R::mul_add(h, nv_u0, q01);
-                q02 = R::mul_add(h, nv_u1, q02);
-                let h = R::sum_prod2(q11, u0, q12, u1);
-                q11 = R::mul_add(h, nv_u0, q11);
-                q12 = R::mul_add(h, nv_u1, q12);
-                let h = R::sum_prod2(q21, u0, q22, u1);
-                q21 = R::mul_add(h, nv_u0, q21);
-                q22 = R::mul_add(h, nv_u1, q22);
-            }
-        }
+        let (nrm, _nz, u0, u1) = HouseholderKernelTrait::<T>::axis2(ax, ay);
+        t10 = nrm;
+        t20 = R::zero();
+        let nv_u0 = -(u0 + u0);
+        let nv_u1 = -(u1 + u1);
+        let h = HouseholderKernelTrait::<T>::rsum2(u0, t11, u1, t21, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t11, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t21, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(u0, t12, u1, t22, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t12, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t22, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(t01, u0, t02, u1, hf, ep);
+        t01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t01, hf, ep);
+        t02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t02, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(t11, u0, t12, u1, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t11, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t12, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(t21, u0, t22, u1, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t21, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t22, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(q01, u0, q02, u1, hf, ep);
+        q01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, q01, hf, ep);
+        q02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, q02, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(q11, u0, q12, u1, hf, ep);
+        q11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, q11, hf, ep);
+        q12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, q12, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(q21, u0, q22, u1, hf, ep);
+        q21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, q21, hf, ep);
+        q22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, q22, hf, ep);
         t =
             Matrix3 {
                 m11: t00,
@@ -771,6 +790,113 @@ pub(crate) impl Schur3KernelImpl<
                 m13: q02,
                 m23: q12,
                 m33: q22,
+            };
+    }
+
+    /// One implicit double-shift (Francis) QR step on the active window 0..=2, upstream's
+    /// `subdim > 2` branch: the bulge made by the first column of `(H - σ1)(H - σ2)` (`σ` the
+    /// eigenvalues of the trailing 2x2 block) is chased down by 3-reflections, then a 2-reflection
+    /// on the rows 1, 2; each reflection is applied to the entries of the window only (no `Q`: see
+    /// `try_new`). `exceptional`: the shifts are those of LAPACK `dlahqr`'s exceptional 2x2 block
+    /// instead (see `try_new`). Branch-free: a zero axis is an exact no-op.
+    fn francis0_2_t(ref t: Matrix3<T>, exceptional: bool) {
+        revoke_ap_tracking();
+        let mut t00 = t.m11;
+        let mut t10 = t.m21;
+        let mut t20 = t.m31;
+        let mut t01 = t.m12;
+        let mut t11 = t.m22;
+        let mut t21 = t.m32;
+        let mut t02 = t.m13;
+        let mut t12 = t.m23;
+        let mut t22 = t.m33;
+        let h11 = t00;
+        let h12 = t01;
+        let h21 = t10;
+        let h22 = t11;
+        let h32 = t21;
+        let (hnn, hmm, hnm, hmn) = if exceptional {
+            let sx = R::abs(t21) + R::abs(t10);
+            let d = sx * R::from_ratio(3, 4) + t22;
+            (d, d, sx, -(sx * R::from_ratio(7, 16)))
+        } else {
+            (t22, t11, t21, t12)
+        };
+        let tra = hnn + hmm;
+        let d1 = h11 - hmm;
+        let d2 = h11 - hnn;
+        let sc = R::abs(h21) + R::abs(d1) + R::abs(d2) + R::abs(hnm);
+        let (p, r, g) = R::div3(d1, hnm, h21, sc);
+        let hf = R::from_ratio(1, 2);
+        let ep = R::default_epsilon();
+        let nhmn = -hmn;
+        let mut ax = HouseholderKernelTrait::<T>::rsum3(p, d2, nhmn, r, h12, g, hf, ep);
+        let mut ay = g * (h11 + h22 - tra);
+        let mut az = g * h32;
+        // bulge at column 0
+        let (nrm, _nz, u0, u1, u2) = HouseholderKernelTrait::<T>::axis3(ax, ay, az);
+        let _ = nrm;
+        let nv_u0 = -(u0 + u0);
+        let nv_u1 = -(u1 + u1);
+        let nv_u2 = -(u2 + u2);
+        let h = HouseholderKernelTrait::<T>::rsum3(u0, t00, u1, t10, u2, t20, hf, ep);
+        t00 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t00, hf, ep);
+        t10 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t10, hf, ep);
+        t20 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t20, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(u0, t01, u1, t11, u2, t21, hf, ep);
+        t01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t01, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t11, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t21, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(u0, t02, u1, t12, u2, t22, hf, ep);
+        t02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t02, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t12, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t22, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(t00, u0, t01, u1, t02, u2, hf, ep);
+        t00 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t00, hf, ep);
+        t01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t01, hf, ep);
+        t02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t02, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(t10, u0, t11, u1, t12, u2, hf, ep);
+        t10 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t10, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t11, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t12, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum3(t20, u0, t21, u1, t22, u2, hf, ep);
+        t20 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t20, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t21, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u2, t22, hf, ep);
+        ax = t10;
+        ay = t20;
+        let _ = az;
+        let (nrm, _nz, u0, u1) = HouseholderKernelTrait::<T>::axis2(ax, ay);
+        t10 = nrm;
+        t20 = R::zero();
+        let nv_u0 = -(u0 + u0);
+        let nv_u1 = -(u1 + u1);
+        let h = HouseholderKernelTrait::<T>::rsum2(u0, t11, u1, t21, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t11, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t21, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(u0, t12, u1, t22, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t12, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t22, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(t01, u0, t02, u1, hf, ep);
+        t01 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t01, hf, ep);
+        t02 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t02, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(t11, u0, t12, u1, hf, ep);
+        t11 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t11, hf, ep);
+        t12 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t12, hf, ep);
+        let h = HouseholderKernelTrait::<T>::rsum2(t21, u0, t22, u1, hf, ep);
+        t21 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u0, t21, hf, ep);
+        t22 = HouseholderKernelTrait::<T>::rmul_add(h, nv_u1, t22, hf, ep);
+        t =
+            Matrix3 {
+                m11: t00,
+                m21: t10,
+                m31: t20,
+                m12: t01,
+                m22: t11,
+                m32: t21,
+                m13: t02,
+                m23: t12,
+                m33: t22,
             };
     }
 }

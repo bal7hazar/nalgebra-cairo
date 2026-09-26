@@ -14,12 +14,11 @@ use crate::util::{sorted, sorted_pairs};
 
 const ONE: i64 = 0x100000000;
 
-/// `schur1_eigenvalues` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured bounds, `T`
-/// upper quasi-triangular, the complex eigenvalues (of the decomposition and of the matrix: equal)
-/// sorted and compared with upstream's within the oracle tolerance.
-#[test]
-fn test_oracle_schur1_eigenvalues() {
-    let mut cases = oracle::schur1_eigenvalues_cases();
+/// The checks of one `schur1_eigenvalues*` oracle op: `A = Q T Qᵀ` and `QᵀQ = I` (returned, the
+/// measured bounds), `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and
+/// of the matrix: equal) sorted and compared with upstream's (the largest excess over the oracle
+/// tolerance, returned).
+fn check_schur1(mut cases: Span<([[i64; 1]; 1], (i64,), (i64,), u64)>) -> (u128, u128, u128) {
     let (mut ex, mut rec, mut orth) = (0, 0, 0);
     while let Some(case) = cases.pop_front() {
         let (a, ere, eim, tol) = *case;
@@ -43,17 +42,21 @@ fn test_oracle_schur1_eigenvalues() {
             array![eim_0]
         };
         let mut k = 0;
-        let mut cerr = 0;
         while k < 1 {
             let (gr, gi) = *got[k];
             let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
             ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
             ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
             k += 1;
         }
-        let _ = cerr;
     }
+    (ex, rec, orth)
+}
+
+/// `schur1_eigenvalues` (oracle): see `check_schur1`.
+#[test]
+fn test_oracle_schur1_eigenvalues() {
+    let (ex, rec, orth) = check_schur1(oracle::schur1_eigenvalues_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
     assert!(rec <= 0 && orth <= 0, "measured {} {}", rec, orth);
 }

@@ -241,6 +241,49 @@ pub(crate) impl HouseholderKernelImpl<
         (-signed, true, u0, u1, u2, u3, u4, u5)
     }
 
+    /// `a b + c` rounded to NEAREST (ties up): the exact sum plus the exact product `hf ep` (half
+    /// an ulp: `hf = 1 / 2`, `ep = default_epsilon()`), floored once (see `SchurN::try_new`).
+    #[inline(always)]
+    fn rmul_add(a: T, b: T, c: T, hf: T, ep: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(R::wide_add_prod(R::wide_add(R::wide_zero(), c), a, b), hf, ep),
+        )
+    }
+
+    /// `a0 b0 + a1 b1` rounded to nearest (see `rmul_add`).
+    #[inline(always)]
+    fn rsum2(a0: T, b0: T, a1: T, b1: T, hf: T, ep: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a0, b0), a1, b1), hf, ep,
+            ),
+        )
+    }
+
+    /// `a0 b0 - a1 b1` rounded to nearest (see `rmul_add`).
+    #[inline(always)]
+    fn rdiff2(a0: T, b0: T, a1: T, b1: T, hf: T, ep: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), a0, b0), a1, b1), hf, ep,
+            ),
+        )
+    }
+
+    /// `a0 b0 + a1 b1 + a2 b2` rounded to nearest (see `rmul_add`).
+    #[inline(always)]
+    fn rsum3(a0: T, b0: T, a1: T, b1: T, a2: T, b2: T, hf: T, ep: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a0, b0), a1, b1), a2, b2,
+                ),
+                hf,
+                ep,
+            ),
+        )
+    }
+
     /// Upstream's `GivensRotation::new(x, y)` components `(c, s)` (`c = |x| / r`, `s = y / (sign(x)
     /// r)`, `r = |(x, y)|`; the identity for `(0, 0)`), NORMALISED AGAIN like the Householder axes:
     /// a floored `r` of a small `(x, y)` (a 2x2 block of close eigenvalues: `x`, `y` ~ 1e-4) is

@@ -14,334 +14,104 @@ use crate::util::{sorted, sorted_pairs};
 
 const ONE: i64 = 0x100000000;
 
-/// `schur3_eigenvalues` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured bounds, `T`
-/// upper quasi-triangular, the complex eigenvalues (of the decomposition and of the matrix: equal)
-/// sorted and compared with upstream's within the oracle tolerance.
+/// The checks of one `schur3_eigenvalues*` oracle op: `A = Q T Qᵀ` and `QᵀQ = I` (returned, the
+/// measured bounds), `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and
+/// of the matrix: equal) sorted and compared with upstream's (the largest excess over the oracle
+/// tolerance, returned).
+fn check_schur3(
+    mut cases: Span<([[i64; 3]; 3], (i64, i64, i64), (i64, i64, i64), u64)>,
+) -> (u128, u128, u128) {
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {
+        let (a, ere, eim, tol) = *case;
+        let a = black_box(mat3x3(a));
+        let s = a.schur();
+        let (q, t) = s.unpack();
+        assert!(t.m31 == fx(0), "below the subdiagonal");
+        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
+        let qt = Matrix3 {
+            m11: q.m11,
+            m21: q.m12,
+            m31: q.m13,
+            m12: q.m21,
+            m22: q.m22,
+            m32: q.m23,
+            m13: q.m31,
+            m23: q.m32,
+            m33: q.m33,
+        };
+        rec = max(rec, max_ulp_3x3(q.mul_mat(t).mul_mat(qt), a) / amax_3x3(a));
+        orth = max(orth, orth_3x3(q));
+        let (re, im) = s.complex_eigenvalues();
+        let (re2, im2) = a.complex_eigenvalues();
+        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
+        let got = sorted_pairs(array![re.x, re.y, re.z], array![im.x, im.y, im.z]);
+        let ere = {
+            let (ere_0, ere_1, ere_2) = ere;
+            array![ere_0, ere_1, ere_2]
+        };
+        let eim = {
+            let (eim_0, eim_1, eim_2) = eim;
+            array![eim_0, eim_1, eim_2]
+        };
+        let mut k = 0;
+        while k < 3 {
+            let (gr, gi) = *got[k];
+            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
+            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
+            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
+            k += 1;
+        }
+    }
+    (ex, rec, orth)
+}
+
+/// `schur3_eigenvalues` (oracle): see `check_schur3`.
 #[test]
 fn test_oracle_schur3_eigenvalues() {
-    let mut cases = oracle::schur3_eigenvalues_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat3x3(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix3 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-        };
-        rec = max(rec, max_ulp_3x3(q.mul_mat(t).mul_mat(qt), a) / amax_3x3(a));
-        orth = max(orth, orth_3x3(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(array![re.x, re.y, re.z], array![im.x, im.y, im.z]);
-        let ere = {
-            let (ere_0, ere_1, ere_2) = ere;
-            array![ere_0, ere_1, ere_2]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2) = eim;
-            array![eim_0, eim_1, eim_2]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 3 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur3(oracle::schur3_eigenvalues_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 74 && orth <= 34, "measured {} {}", rec, orth);
+    assert!(rec <= 84 && orth <= 44, "measured {} {}", rec, orth);
 }
 
-/// `schur3_eigenvalues_complex` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur3_eigenvalues_complex` (oracle): see `check_schur3`.
 #[test]
 fn test_oracle_schur3_eigenvalues_complex() {
-    let mut cases = oracle::schur3_eigenvalues_complex_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat3x3(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix3 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-        };
-        rec = max(rec, max_ulp_3x3(q.mul_mat(t).mul_mat(qt), a) / amax_3x3(a));
-        orth = max(orth, orth_3x3(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(array![re.x, re.y, re.z], array![im.x, im.y, im.z]);
-        let ere = {
-            let (ere_0, ere_1, ere_2) = ere;
-            array![ere_0, ere_1, ere_2]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2) = eim;
-            array![eim_0, eim_1, eim_2]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 3 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur3(oracle::schur3_eigenvalues_complex_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 61 && orth <= 31, "measured {} {}", rec, orth);
+    assert!(rec <= 63 && orth <= 42, "measured {} {}", rec, orth);
 }
 
-/// `schur3_eigenvalues_nonnormal` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur3_eigenvalues_nonnormal` (oracle): see `check_schur3`.
 #[test]
 fn test_oracle_schur3_eigenvalues_nonnormal() {
-    let mut cases = oracle::schur3_eigenvalues_nonnormal_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat3x3(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix3 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-        };
-        rec = max(rec, max_ulp_3x3(q.mul_mat(t).mul_mat(qt), a) / amax_3x3(a));
-        orth = max(orth, orth_3x3(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(array![re.x, re.y, re.z], array![im.x, im.y, im.z]);
-        let ere = {
-            let (ere_0, ere_1, ere_2) = ere;
-            array![ere_0, ere_1, ere_2]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2) = eim;
-            array![eim_0, eim_1, eim_2]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 3 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur3(oracle::schur3_eigenvalues_nonnormal_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 71 && orth <= 39, "measured {} {}", rec, orth);
+    assert!(rec <= 85 && orth <= 47, "measured {} {}", rec, orth);
 }
 
-/// `schur3_eigenvalues_clustered` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur3_eigenvalues_clustered` (oracle): see `check_schur3`.
 #[test]
 fn test_oracle_schur3_eigenvalues_clustered() {
-    let mut cases = oracle::schur3_eigenvalues_clustered_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat3x3(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix3 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-        };
-        rec = max(rec, max_ulp_3x3(q.mul_mat(t).mul_mat(qt), a) / amax_3x3(a));
-        orth = max(orth, orth_3x3(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(array![re.x, re.y, re.z], array![im.x, im.y, im.z]);
-        let ere = {
-            let (ere_0, ere_1, ere_2) = ere;
-            array![ere_0, ere_1, ere_2]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2) = eim;
-            array![eim_0, eim_1, eim_2]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 3 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur3(oracle::schur3_eigenvalues_clustered_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 65 && orth <= 17, "measured {} {}", rec, orth);
+    assert!(rec <= 66 && orth <= 17, "measured {} {}", rec, orth);
 }
 
-/// `schur3_eigenvalues_defective` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured
-/// bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and of the
-/// matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur3_eigenvalues_defective` (oracle): see `check_schur3`.
 #[test]
 fn test_oracle_schur3_eigenvalues_defective() {
-    let mut cases = oracle::schur3_eigenvalues_defective_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat3x3(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix3 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-        };
-        rec = max(rec, max_ulp_3x3(q.mul_mat(t).mul_mat(qt), a) / amax_3x3(a));
-        orth = max(orth, orth_3x3(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(array![re.x, re.y, re.z], array![im.x, im.y, im.z]);
-        let ere = {
-            let (ere_0, ere_1, ere_2) = ere;
-            array![ere_0, ere_1, ere_2]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2) = eim;
-            array![eim_0, eim_1, eim_2]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 3 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur3(oracle::schur3_eigenvalues_defective_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 1447 && orth <= 164, "measured {} {}", rec, orth);
+    assert!(rec <= 81 && orth <= 60, "measured {} {}", rec, orth);
 }
 
-/// `schur3_eigenvalues_near_triangular` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the
-/// measured bounds, `T` upper quasi-triangular, the complex eigenvalues (of the decomposition and
-/// of the matrix: equal) sorted and compared with upstream's within the oracle tolerance.
+/// `schur3_eigenvalues_near_triangular` (oracle): see `check_schur3`.
 #[test]
 fn test_oracle_schur3_eigenvalues_near_triangular() {
-    let mut cases = oracle::schur3_eigenvalues_near_triangular_cases();
-    let (mut ex, mut rec, mut orth) = (0, 0, 0);
-    while let Some(case) = cases.pop_front() {
-        let (a, ere, eim, tol) = *case;
-        let a = black_box(mat3x3(a));
-        let s = a.schur();
-        let (q, t) = s.unpack();
-        assert!(t.m31 == fx(0), "below the subdiagonal");
-        assert!(t.m21 == fx(0) || t.m32 == fx(0), "two consecutive subdiagonal entries");
-        let qt = Matrix3 {
-            m11: q.m11,
-            m21: q.m12,
-            m31: q.m13,
-            m12: q.m21,
-            m22: q.m22,
-            m32: q.m23,
-            m13: q.m31,
-            m23: q.m32,
-            m33: q.m33,
-        };
-        rec = max(rec, max_ulp_3x3(q.mul_mat(t).mul_mat(qt), a) / amax_3x3(a));
-        orth = max(orth, orth_3x3(q));
-        let (re, im) = s.complex_eigenvalues();
-        let (re2, im2) = a.complex_eigenvalues();
-        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
-        let got = sorted_pairs(array![re.x, re.y, re.z], array![im.x, im.y, im.z]);
-        let ere = {
-            let (ere_0, ere_1, ere_2) = ere;
-            array![ere_0, ere_1, ere_2]
-        };
-        let eim = {
-            let (eim_0, eim_1, eim_2) = eim;
-            array![eim_0, eim_1, eim_2]
-        };
-        let mut k = 0;
-        let mut cerr = 0;
-        while k < 3 {
-            let (gr, gi) = *got[k];
-            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
-            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
-            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
-            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
-            k += 1;
-        }
-        let _ = cerr;
-    }
+    let (ex, rec, orth) = check_schur3(oracle::schur3_eigenvalues_near_triangular_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 27 && orth <= 4, "measured {} {}", rec, orth);
+    assert!(rec <= 27 && orth <= 1, "measured {} {}", rec, orth);
 }
 
 /// `schur3_eigenvalues_real` (oracle): `eigenvalues()` of the matrix and of the decomposition
@@ -406,7 +176,7 @@ fn test_oracle_schur3_eigenvalues_real() {
             );
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(res <= 18 && unit <= 2, "measured {} {}", res, unit);
+    assert!(res <= 15 && unit <= 2, "measured {} {}", res, unit);
 }
 
 /// The Schur iteration count (the smallest `max_niter` for which `try_schur` succeeds, minus
@@ -552,7 +322,8 @@ fn test_schur3_rotation_block() {
 }
 
 /// The cyclic permutation matrix (eigenvalues: the 3-th roots of unity), the classic hard case
-/// of the Francis iteration without exceptional shifts (upstream has none).
+/// of the Francis iteration: it converges thanks to the exceptional shifts (upstream has none, and
+/// cycles forever on the size 6).
 #[test]
 fn test_schur3_cyclic_permutation() {
     let a = black_box(
