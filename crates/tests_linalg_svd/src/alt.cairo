@@ -464,6 +464,15 @@ fn test_one_sided_jacobi4_candidate() {
     );
 }
 
+#[test]
+#[inline(never)]
+fn bench_svd4_new__baseline() {
+    let (a, _, _) = *oracle::svd4_singular_values_cases().at(3);
+    let _a = black_box(mat4x4(a));
+    let e = black_box(true);
+    assert!(e == e);
+}
+
 /// The one-sided candidate on the benchmark input of `bench_svd4_new__eigen_of_gram`.
 #[test]
 #[inline(never)]

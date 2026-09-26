@@ -1,7 +1,8 @@
 {
   "nalgebra_tests_linalg_svd::alt": {
     "svd4_new": {
-      "alt_one_sided_jacobi": 1924670
+      "alt_one_sided_jacobi": 1924670,
+      "baseline": 20320
     }
   },
   "nalgebra_tests_linalg_svd::svd1": {

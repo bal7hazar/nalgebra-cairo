@@ -8,7 +8,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_one_sided_jacobi` | 1924670 | - | x1.00 |
+| `alt_one_sided_jacobi` | 1924670 | 1904350 | x1.00 |
 
 ## nalgebra_tests_linalg_svd::svd1
 
