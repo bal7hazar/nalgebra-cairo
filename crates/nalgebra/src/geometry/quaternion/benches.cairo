@@ -8,9 +8,9 @@
 //! in `crates/tests_geometry/src/quaternion/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::{ONE_RAW, q};
 use crate::geometry::quaternion::QuaternionInternalTrait;
+use crate::testing::black_box;
 use super::Quaternion;
 
 /// `1 + 2i - 3j + 4k`, of squared norm 30 (norm 5.477).

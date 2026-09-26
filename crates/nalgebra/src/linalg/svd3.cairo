@@ -653,7 +653,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/svd3/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
     use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
@@ -663,6 +662,7 @@ mod tests {
     use crate::base::vector3::{Vector3, Vector3Trait};
     use crate::linalg::oracle_svd;
     use crate::linalg::symmetric_eigen3::{SymmetricEigen3, SymmetricEigen3InternalTrait};
+    use crate::testing::black_box;
     use super::{Svd3, Svd3InternalTrait, Svd3Trait};
 
     /// An oracle `unit` 3x3 case: the benchmark input.

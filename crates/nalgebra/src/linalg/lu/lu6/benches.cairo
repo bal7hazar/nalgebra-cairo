@@ -15,12 +15,12 @@
 //! in `crates/tests_linalg/src/lu/lu6/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::matrix_test_utils::{m6, v6t};
 use crate::base::vector6::Vector6;
 use crate::linalg::lu::Perm6;
+use crate::testing::black_box;
 use super::{Lu6, Lu6InternalTrait, Lu6Trait};
 
 /// The oracle's first `unit` 6x6 case whose factorisation actually swaps rows (all the benchmarks

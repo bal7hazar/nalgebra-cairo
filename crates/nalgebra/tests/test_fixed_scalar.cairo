@@ -20,6 +20,13 @@ fn g(raw: i64) -> Fixed {
     Fixed { raw }
 }
 
+/// Opaque identity: prevents the compiler from const-folding the operand (the in-crate `testing`
+/// module is not visible to integration tests).
+#[inline(never)]
+fn black_box<T>(value: T) -> T {
+    value
+}
+
 fn gv(x: i64, y: i64, z: i64) -> Vector3<Fixed> {
     Vector3 { x: g(x), y: g(y), z: g(z) }
 }
@@ -221,12 +228,12 @@ fn test_isometry3_kernels() {
 #[test]
 #[should_panic(expected: 'Fixed: overflow')]
 fn test_overflow_in_a_kernel_panics() {
-    let huge = nalgebra_testing::black_box(gv(0x40_0000_0000_0000, 0, 0));
+    let huge = black_box(gv(0x40_0000_0000_0000, 0, 0));
     let _ = huge.dot(huge);
 }
 
 #[test]
 #[should_panic(expected: 'Fixed: division by zero')]
 fn test_zero_normalize_panics() {
-    let _ = nalgebra_testing::black_box(gv(0, 0, 0)).normalize();
+    let _ = black_box(gv(0, 0, 0)).normalize();
 }

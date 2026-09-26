@@ -352,7 +352,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/qr/qr3/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
     use crate::base::matrix_test_utils::{
@@ -360,6 +359,7 @@ mod tests {
     };
     use crate::base::vector3::{Vector3, Vector3InternalTrait, Vector3Trait};
     use crate::linalg::qr::oracle_qr3 as oracle;
+    use crate::testing::black_box;
     use super::{Qr3, Qr3InternalTrait, Qr3Trait};
 
     /// The oracle's first 3x3 case: the benchmark input.

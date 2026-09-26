@@ -69,7 +69,6 @@ simba.workspace = true
 fixed.workspace = true
 snforge_std.workspace = true
 assert_macros.workspace = true
-nalgebra_testing = { path = "../testing" }
 
 [tool]
 fmt.workspace = true

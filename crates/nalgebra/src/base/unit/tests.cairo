@@ -10,10 +10,10 @@
 //! in `crates/tests_base/src/unit/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::{u2, u3, u4};
 use crate::base::unit::UnitInternalTrait;
 use crate::base::vector3::Vector3;
+use crate::testing::black_box;
 use super::{Unit, Unit3Trait, UnitTrait, oracle};
 
 /// `p / 13`, rounded to nearest

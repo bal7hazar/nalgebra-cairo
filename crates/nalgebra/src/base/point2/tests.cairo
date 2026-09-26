@@ -12,10 +12,10 @@
 //! in `crates/tests_base/src/point2/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, p2, p2t};
 use crate::base::vector2::Vector2Trait;
+use crate::testing::black_box;
 use super::{Point2, Point2InternalTrait, Point2Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;

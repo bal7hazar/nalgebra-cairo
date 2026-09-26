@@ -271,7 +271,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/qr/qr2/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
     use crate::base::matrix_test_utils::{
@@ -279,6 +278,7 @@ mod tests {
     };
     use crate::base::vector2::Vector2;
     use crate::linalg::qr::oracle_qr2 as oracle;
+    use crate::testing::black_box;
     use super::{Qr2, Qr2InternalTrait, Qr2Trait};
 
     /// The oracle's first `unit` 2x2 case: the benchmark input.

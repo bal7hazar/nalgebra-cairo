@@ -981,7 +981,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/lu/lu4/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::matrix4::{Matrix4, Matrix4Trait};
     use crate::base::matrix_test_utils::{
@@ -989,6 +988,7 @@ mod tests {
     };
     use crate::base::vector4::Vector4;
     use crate::linalg::lu::{Perm4, Perm4Trait, oracle_lu4 as oracle};
+    use crate::testing::black_box;
     use super::{Lu4, Lu4InternalTrait, Lu4Trait};
 
     /// The oracle's first `unit` 4x4 case whose factorisation actually swaps rows, so every

@@ -7,10 +7,10 @@
 //! replacement of the other, so the internal helpers stay, with this measurement.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::{int, m3i};
 use crate::base::row_vector3::{RowVector3, RowVector3Trait};
 use crate::base::vector3::Vector3;
+use crate::testing::black_box;
 use super::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 
 fn input() -> Matrix3<Fixed> {

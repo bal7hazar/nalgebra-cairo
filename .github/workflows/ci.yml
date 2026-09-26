@@ -29,7 +29,7 @@ jobs:
           scarb fmt --check
           python3 scripts/api_parity.py --check
           python3 tools/shapegen/shapegen.py --check
-          python3 crates/nalgebra/src/linalg/generate.py --check
+          python3 tools/linalggen/generate.py --check
       - name: Lint (default features, then the lightest `nalgebra`)
         run: |
           scarb lint --deny-warnings

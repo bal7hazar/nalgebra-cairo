@@ -8,8 +8,8 @@
 //! in `crates/tests_base/src/vector3/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::v3;
+use crate::testing::black_box;
 use super::{Vector3, Vector3InternalTrait};
 
 #[test]

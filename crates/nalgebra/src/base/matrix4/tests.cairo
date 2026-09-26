@@ -3,10 +3,10 @@
 //! in `crates/tests_base/src/matrix4/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, int, m4, m4i, max_ulp_diff4, v4i, v4t};
 use crate::base::{oracle_matrix4, oracle_matrix4_inverse};
+use crate::testing::black_box;
 use super::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
 
 /// `adjugate / determinant` without the integer pre-scaling of small matrices.

@@ -26,7 +26,6 @@
 //! asserted values are exact, and all variants of a group take the same branches.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2Trait;
 use crate::base::matrix3::Matrix3Trait;
@@ -44,6 +43,7 @@ use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
 use crate::base::vector6::Vector6;
 use crate::linalg::oracle_udu;
+use crate::testing::black_box;
 use super::{Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait, Ldlt6, Ldlt6Trait};
 
 // --- size 2 -------------------------------------------------------------------------------------

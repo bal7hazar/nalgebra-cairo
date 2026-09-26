@@ -67,10 +67,10 @@ pub(crate) impl SymMatrix2Impl<
 
 #[cfg(test)]
 mod tests {
-    use nalgebra_testing::black_box;
     use crate::base::matrix2::Matrix2Trait;
     use crate::base::matrix_test_utils::{int, m2, m2i, s2, s2i, sym2_upper, v2i, v2t};
     use crate::base::oracle_matrix2;
+    use crate::testing::black_box;
     use super::SymMatrix2Trait;
 
     /// The oracle's `matrix2` cases without the `large` distribution (indices [12..16)), whose

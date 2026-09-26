@@ -570,7 +570,6 @@ pub impl Matrix3SymmetricEigenImpl<
 mod tests {
     use fixed::Fixed;
     use fixed::wide::{NormTrait, RecipTrait, norm3_wide};
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
     use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
@@ -581,6 +580,7 @@ mod tests {
     use crate::base::vector3::{Vector3, Vector3Trait};
     use crate::linalg::oracle_symmetric_eigen;
     use crate::linalg::symmetric_eigen3::{Matrix3SymmetricEigenTrait, SymmetricEigen3InternalTrait};
+    use crate::testing::black_box;
     use super::{Jacobi3, Jacobi3Impl, Jacobi3Trait, SymmetricEigen3, SymmetricEigen3Trait};
 
     // --- the losing candidates of the sweep-count study (kept as evidence) ----------------------

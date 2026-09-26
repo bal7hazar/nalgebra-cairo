@@ -15,9 +15,9 @@
 //! in `crates/tests_geometry/src/quaternion/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::{ONE_RAW, qi, qt};
 use crate::geometry::quaternion::QuaternionInternalTrait;
+use crate::testing::black_box;
 use super::{Quaternion, QuaternionTrait, oracle};
 
 const MIN: i64 = -0x8000000000000000;

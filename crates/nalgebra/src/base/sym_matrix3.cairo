@@ -86,10 +86,10 @@ pub(crate) impl SymMatrix3Impl<
 
 #[cfg(test)]
 mod tests {
-    use nalgebra_testing::black_box;
     use crate::base::matrix3::Matrix3Trait;
     use crate::base::matrix_test_utils::{int, m3, m3i, s3, s3i, sym3_upper, v3i, v3t};
     use crate::base::oracle_matrix3;
+    use crate::testing::black_box;
     use super::SymMatrix3Trait;
 
     /// The oracle's `matrix3` cases without the `large` distribution (indices [12..16)), whose

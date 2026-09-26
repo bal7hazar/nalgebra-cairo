@@ -3,6 +3,13 @@
 use fixed::Fixed;
 use nalgebra::{Vector2, Vector3, Vector4};
 
+/// Opaque identity: prevents the compiler from const-folding the operand (the in-crate `testing`
+/// module is not visible to integration tests).
+#[inline(never)]
+fn black_box<T>(value: T) -> T {
+    value
+}
+
 fn f(v: i32) -> Fixed {
     simba::scalar::Real::from_int(v)
 }
@@ -39,7 +46,7 @@ mod with_traits {
     use nalgebra::base::vector3::Vector3Trait;
     use nalgebra::base::vector4::Vector4Trait;
     use simba::prelude::*;
-    use super::f;
+    use super::{black_box, f};
 
     /// The three vector traits and the scalar trait share method names (`abs`, `min`, `max`,
     /// `abs_diff_eq`, `lerp`...): everything resolves on the type of the receiver.
@@ -106,6 +113,6 @@ mod with_traits {
     #[test]
     #[should_panic(expected: 'Fixed: division by zero')]
     fn test_api_stable_panic_message() {
-        let _ = nalgebra_testing::black_box(Vector4Trait::<Fixed>::zeros()).normalize();
+        let _ = black_box(Vector4Trait::<Fixed>::zeros()).normalize();
     }
 }

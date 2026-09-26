@@ -276,7 +276,6 @@ pub fn wilkinson_shift<
 #[cfg(test)]
 mod tests {
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
     use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
@@ -286,6 +285,7 @@ mod tests {
     use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
     use crate::base::vector2::{Vector2, Vector2Trait};
     use crate::linalg::oracle_symmetric_eigen;
+    use crate::testing::black_box;
     use super::{
         Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2InternalTrait,
         SymmetricEigen2Trait,
