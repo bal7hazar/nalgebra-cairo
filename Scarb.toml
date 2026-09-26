@@ -55,6 +55,7 @@ members = [
     "crates/tests_linalg_pivot_lblt",
     "crates/tests_dynamic",
     "crates/tests_sparse",
+    "crates/tests_root",
 ]
 
 [workspace.package]

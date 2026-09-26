@@ -41,6 +41,7 @@ import stats as P06
 import solve as P14
 import linalg_p14 as P14L
 import dynamic as D
+import root_ops as P21
 import library as L
 from model import ALL_SHAPES, Shape
 
@@ -199,7 +200,7 @@ def legacy_extra(s: Shape, docs: dict[str, str]) -> L.Extra:
     return L.Extra(uses=[u for u in L.dedup(au + pu + C.uses(s) + P03.uses(s) + P05.uses(s))
                          if u != use_of(s)],
                    struct=ai, end=[L.section("products", 100)] + pi + C.items(s) + P03.items(s)
-                   + P05.items(s),
+                   + P05.items(s) + P21.items(s),
                    methods=base,
                    angle=[f for f in C.angle_methods(s) if f.name not in have],
                    functional=functional,
@@ -382,7 +383,7 @@ def render_new(s: Shape) -> str:
     blocks = [module_doc, "\n".join(f"use {u};" for u in uses), struct] + ai + [impl]
     blocks.append(C.angle_impl(s, C.angle_methods(s)))
     blocks += new_operators(s) + [L.section("products", 100)] + pi + C.items(s) + P03.items(s)
-    blocks += P05.items(s)
+    blocks += P05.items(s) + P21.items(s)
     return HEADER + "\n\n".join(blocks) + "\n"
 
 
@@ -540,6 +541,9 @@ pub const PERMUTATION_ORDER: felt252 = 'nalgebra: permutation order';
 /// (upstream takes the square root of a negative number or divides by zero: NaN / infinities,
 /// which a fixed-point scalar does not have).
 pub const NOT_POSITIVE_DEFINITE: felt252 = 'nalgebra: not positive definite';
+/// `iter.sum()` of an empty iterator of dynamic matrices, whose size is unknown (upstream:
+/// "Cannot compute `sum` of empty iterator.").
+pub const EMPTY_SUM: felt252 = 'nalgebra: sum of empty iterator';
 """
 
 

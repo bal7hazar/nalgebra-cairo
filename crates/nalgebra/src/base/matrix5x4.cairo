@@ -7418,3 +7418,128 @@ pub(crate) impl Matrix5x4ShapeDims<T> of ShapeDims<Matrix5x4<T>> {
         (5, 4)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `Matrix5x4`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 5x4 matrix when empty. Upstream: `Sum for Matrix` (a fold
+/// from `zero()`: the same result, one addition more).
+pub impl Matrix5x4Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<Matrix5x4<T>> {
+    fn sum<I, +Iterator<I>[Item: Matrix5x4<T>], +Destruct<I>, +Destruct<Matrix5x4<T>>>(
+        mut iter: I,
+    ) -> Matrix5x4<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return Matrix5x4 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m43: R::zero(),
+                m53: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+                m44: R::zero(),
+                m54: R::zero(),
+            };
+        };
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@Matrix5x4` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<Matrix5x4>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl Matrix5x4SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@Matrix5x4<T>> {
+    fn sum<I, +Iterator<I>[Item: @Matrix5x4<T>], +Destruct<I>, +Destruct<@Matrix5x4<T>>>(
+        mut iter: I,
+    ) -> @Matrix5x4<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Matrix5x4 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m43: R::zero(),
+                m53: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+                m44: R::zero(),
+                m54: R::zero(),
+            };
+        };
+        let mut acc = *first;
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix5x4`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix5x4InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix5x4<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix5x4<T>, b: Matrix5x4<T>) -> Matrix5x4<T> {
+        Matrix5x4Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix5x4<T>, b: Matrix5x4<T>) -> Matrix5x4<T> {
+        Matrix5x4Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix5x4<T>, b: Matrix5x4<T>) -> (Matrix5x4<T>, Matrix5x4<T>) {
+        Matrix5x4Trait::inf_sup(a, b)
+    }
+}
