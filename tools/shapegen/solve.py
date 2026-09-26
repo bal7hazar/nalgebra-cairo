@@ -41,14 +41,17 @@ def pairs() -> list[tuple[Shape, Shape]]:
 
 def small(b: Shape) -> bool:
     """`#[inline(always)]` for the column-vector right-hand sides (and the other shapes of at most
-    4 components), measured (`crates/tests_linalg_solve`, net gas of
+    4 components), measured (`crates/tests_linalg_solve*`, net gas of
     `solve_lower_triangular_unchecked`): out of line, a kernel costs `Vector6` 44 740 against
     31 090 inlined (the operands copied in and out of the call), `Matrix3` 54 410 against 39 980,
-    `Matrix6` 227 000 against 174 260. The matrix right-hand sides stay out of line anyway: every
-    call site would carry a copy of the whole unrolled kernel, and the test package of this WP,
-    compiled with every kernel inlined, peaked at 16.9 GB (12 min) against the budget of ~8.5 GB.
-    Destructuring the operands once at the top of an out-of-line kernel was also measured: the
-    same gas to the unit (the compiler already does it)."""
+    `Matrix6` 227 000 against 174 260. The MATRIX right-hand sides stay out of line all the same,
+    for the compile budget: every call site carries a copy of an inlined kernel, and
+    `nalgebra_tests_linalg_solve_rhs` (one call of each of the 3 kernels per pair) peaks at
+    12.9 GB of `scarb build --test` with them inlined against 8.3 GB out of line (budget ~8.5 GB).
+    A caller that wants the inlined speed on a small matrix right-hand side solves its columns as
+    vectors (`bench_matrix3_solve_matrix3__alt_columns`: 41 630 against 54 410; bit-identical).
+    Destructuring the operands once at the top of an out-of-line kernel was measured too: the
+    same gas to the unit."""
     return b.is_column or b.n <= 4
 
 

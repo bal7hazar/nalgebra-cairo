@@ -1,0 +1,36 @@
+{
+  "nalgebra_tests_linalg_solve::solve::benches": {
+    "matrix2_solve_vector2": {
+      "baseline": 17240,
+      "lower": 26150,
+      "lower_unchecked": 25750,
+      "tr_lower": 26150,
+      "upper": 26150,
+      "with_diag": 22240
+    },
+    "matrix3_solve_vector3": {
+      "baseline": 18440,
+      "lower": 33030,
+      "lower_unchecked": 32430,
+      "tr_lower": 32760,
+      "upper": 32760,
+      "with_diag": 28270
+    },
+    "matrix4_solve_vector4": {
+      "baseline": 20040,
+      "lower": 40240,
+      "lower_unchecked": 39440,
+      "tr_lower": 39970,
+      "upper": 39970,
+      "with_diag": 35170
+    },
+    "matrix6_solve_vector6": {
+      "baseline": 24440,
+      "lower": 56730,
+      "lower_unchecked": 55530,
+      "tr_lower": 56730,
+      "upper": 56730,
+      "with_diag": 50500
+    }
+  }
+}
