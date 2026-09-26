@@ -1622,7 +1622,7 @@ def balance_impl(n: int) -> str:
     ub = [f"let dinv{j} = R::recip(d.{fld(n, 1, j, 0)});" for j in range(n)]
     ub.append(f"m = {struct_lit(n, n, lambda i, j: f'm.{fld(n, n, i, j)} * (d.{fld(n, 1, i, 0)} * dinv{j})')};")
     return f"""/// `balance_parlett_reinsch` / `unbalance` on `{M}` (see the free functions).
-pub impl {M}Balancing<
+impl {M}Balancing<
 {BOUNDS}
 > of Balancing<{M}<T>, {V}<T>> {{
     fn balance_parlett_reinsch(ref matrix: {M}<T>) -> {V}<T> {{
@@ -1647,9 +1647,9 @@ def render_balancing() -> str:
 
 {chr(10).join(sorted(uses))}
 
-/// The balancing of one square shape `M` with its diagonal vector `V` (the free functions below
-/// are upstream's interface).
-pub trait Balancing<M, V> {{
+/// The balancing of one square shape `M` with its diagonal vector `V` (crate-private: the free
+/// functions below are upstream's interface).
+pub(crate) trait Balancing<M, V> {{
     fn balance_parlett_reinsch(ref matrix: M) -> V;
     fn unbalance(ref m: M, d: V);
 }}
@@ -1717,8 +1717,9 @@ def column_major_impl(r: int, c: int) -> str:
 
 STEPS_BODY = """
 /// Run-time column-major access to a static shape: the interface of the building blocks below
-/// (their indices are run-time values, like upstream's).
-pub trait ColumnMajor<M, T> {
+/// (their indices are run-time values, like upstream's). Crate-private: the free functions are
+/// upstream's interface.
+pub(crate) trait ColumnMajor<M, T> {
     /// The number of rows.
     fn nrows() -> usize;
     /// The number of columns.
@@ -2338,14 +2339,18 @@ UTIL = HEADER + """//! Test helpers of the WP 8.5-P16 packages: the oracle compa
 //! compile budget), the sorting of the eigenvalues (the oracle emits them sorted).
 
 use fixed::Fixed;
-use nalgebra::linalg::ColumnMajor;
 use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 
+/// The entries of a static shape, in any fixed order (the comparisons are entry-wise).
+pub trait Flat<M> {
+    fn flat(m: M) -> Array<Fixed>;
+}
+
 /// The largest excess of `|got - exp|` over the oracle tolerance (`oracle_tol(|exp|, tol)`), over
-/// every entry of two matrices of the same shape.
-pub fn excess_all<M, impl C: ColumnMajor<M, Fixed>, +Drop<M>>(got: M, exp: M, tol: u64) -> u128 {
-    let g = C::to_column_major(got);
-    let e = C::to_column_major(exp);
+/// every entry of two matrices of the same shape (flattened by `Flat`).
+pub fn excess_all<M, impl C: Flat<M>, +Drop<M>>(got: M, exp: M, tol: u64) -> u128 {
+    let g = C::flat(got);
+    let e = C::flat(exp);
     let mut ex = 0;
     let mut i = 0;
     while i < g.len() {
@@ -2682,6 +2687,17 @@ const ONE: i64 = 0x100000000;
 ONE_RAW = 0x100000000
 
 
+def flat_impls(shapes) -> str:
+    uses = sorted({f"use nalgebra::{tname(r, c)};" for r, c in shapes})
+    impls = []
+    for r, c in sorted(shapes):
+        M = tname(r, c)
+        comps = ", ".join(f"m.{fld(r, c, i, j)}" for j in range(c) for i in range(r))
+        impls.append(f"impl Flat{r}x{c} of Flat<{M}<Fixed>> {{\n    fn flat(m: {M}<Fixed>) -> "
+                     f"Array<Fixed> {{\n        array![{comps}]\n    }}\n}}\n")
+    return "\n" + "\n".join(uses) + "\n\n" + "\n".join(impls)
+
+
 PACKAGES = {
     # package: (features, description, modules)
     "tests_linalg_schur": (["schur"], "the Schur and general eigen decompositions",
@@ -2758,7 +2774,7 @@ def test_packages() -> dict[str, str]:
                       "symmetric_tridiagonal": render_tridiagonal_tests}[kind]
             out[base + f"src/{kind}{n}.cairo"] = render(n)
         out[base + "src/builders.cairo"] = render_builders(need, vecs)
-        out[base + "src/util.cairo"] = UTIL
+        out[base + "src/util.cairo"] = UTIL + flat_impls(need | {(n, 1) for n in vecs})
         out[base + "src/lib.cairo"] = (
             HEADER + f"//! Package `nalgebra_{pkg}` (WP 8.5-P16): tests and gas benchmarks of {what},\n"
             "//! through the public API. Oracle vectors: `tools/oracle` suite `schur` (`oracle\n"

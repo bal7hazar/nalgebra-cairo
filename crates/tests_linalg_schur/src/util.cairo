@@ -3,14 +3,18 @@
 //! compile budget), the sorting of the eigenvalues (the oracle emits them sorted).
 
 use fixed::Fixed;
-use nalgebra::linalg::ColumnMajor;
 use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 
+/// The entries of a static shape, in any fixed order (the comparisons are entry-wise).
+pub trait Flat<M> {
+    fn flat(m: M) -> Array<Fixed>;
+}
+
 /// The largest excess of `|got - exp|` over the oracle tolerance (`oracle_tol(|exp|, tol)`), over
-/// every entry of two matrices of the same shape.
-pub fn excess_all<M, impl C: ColumnMajor<M, Fixed>, +Drop<M>>(got: M, exp: M, tol: u64) -> u128 {
-    let g = C::to_column_major(got);
-    let e = C::to_column_major(exp);
+/// every entry of two matrices of the same shape (flattened by `Flat`).
+pub fn excess_all<M, impl C: Flat<M>, +Drop<M>>(got: M, exp: M, tol: u64) -> u128 {
+    let g = C::flat(got);
+    let e = C::flat(exp);
     let mut ex = 0;
     let mut i = 0;
     while i < g.len() {
@@ -70,4 +74,85 @@ pub fn sorted(xs: Array<Fixed>) -> Array<i64> {
         out.append(a);
     }
     out
+}
+use nalgebra::{
+    Matrix1, Matrix2, Matrix3, Matrix4, Matrix5, Matrix6, Vector2, Vector3, Vector4, Vector5,
+    Vector6,
+};
+
+impl Flat1x1 of Flat<Matrix1<Fixed>> {
+    fn flat(m: Matrix1<Fixed>) -> Array<Fixed> {
+        array![m.x]
+    }
+}
+
+impl Flat2x1 of Flat<Vector2<Fixed>> {
+    fn flat(m: Vector2<Fixed>) -> Array<Fixed> {
+        array![m.x, m.y]
+    }
+}
+
+impl Flat2x2 of Flat<Matrix2<Fixed>> {
+    fn flat(m: Matrix2<Fixed>) -> Array<Fixed> {
+        array![m.m11, m.m21, m.m12, m.m22]
+    }
+}
+
+impl Flat3x1 of Flat<Vector3<Fixed>> {
+    fn flat(m: Vector3<Fixed>) -> Array<Fixed> {
+        array![m.x, m.y, m.z]
+    }
+}
+
+impl Flat3x3 of Flat<Matrix3<Fixed>> {
+    fn flat(m: Matrix3<Fixed>) -> Array<Fixed> {
+        array![m.m11, m.m21, m.m31, m.m12, m.m22, m.m32, m.m13, m.m23, m.m33]
+    }
+}
+
+impl Flat4x1 of Flat<Vector4<Fixed>> {
+    fn flat(m: Vector4<Fixed>) -> Array<Fixed> {
+        array![m.x, m.y, m.z, m.w]
+    }
+}
+
+impl Flat4x4 of Flat<Matrix4<Fixed>> {
+    fn flat(m: Matrix4<Fixed>) -> Array<Fixed> {
+        array![
+            m.m11, m.m21, m.m31, m.m41, m.m12, m.m22, m.m32, m.m42, m.m13, m.m23, m.m33, m.m43,
+            m.m14, m.m24, m.m34, m.m44,
+        ]
+    }
+}
+
+impl Flat5x1 of Flat<Vector5<Fixed>> {
+    fn flat(m: Vector5<Fixed>) -> Array<Fixed> {
+        array![m.x, m.y, m.z, m.w, m.a]
+    }
+}
+
+impl Flat5x5 of Flat<Matrix5<Fixed>> {
+    fn flat(m: Matrix5<Fixed>) -> Array<Fixed> {
+        array![
+            m.m11, m.m21, m.m31, m.m41, m.m51, m.m12, m.m22, m.m32, m.m42, m.m52, m.m13, m.m23,
+            m.m33, m.m43, m.m53, m.m14, m.m24, m.m34, m.m44, m.m54, m.m15, m.m25, m.m35, m.m45,
+            m.m55,
+        ]
+    }
+}
+
+impl Flat6x1 of Flat<Vector6<Fixed>> {
+    fn flat(m: Vector6<Fixed>) -> Array<Fixed> {
+        array![m.x, m.y, m.z, m.w, m.a, m.b]
+    }
+}
+
+impl Flat6x6 of Flat<Matrix6<Fixed>> {
+    fn flat(m: Matrix6<Fixed>) -> Array<Fixed> {
+        array![
+            m.m11, m.m21, m.m31, m.m41, m.m51, m.m61, m.m12, m.m22, m.m32, m.m42, m.m52, m.m62,
+            m.m13, m.m23, m.m33, m.m43, m.m53, m.m63, m.m14, m.m24, m.m34, m.m44, m.m54, m.m64,
+            m.m15, m.m25, m.m35, m.m45, m.m55, m.m65, m.m16, m.m26, m.m36, m.m46, m.m56, m.m66,
+        ]
+    }
 }

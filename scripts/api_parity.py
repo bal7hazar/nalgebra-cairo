@@ -1199,6 +1199,13 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "FullPivLU": [f"FullPivLu{r}" if r == c else f"FullPivLu{r}x{c}" for r in DIMS for c in DIMS],
     "ColPivQR": [f"ColPivQr{r}" if r == c else f"ColPivQr{r}x{c}" for r in DIMS for c in DIMS],
     "LBLT": [f"Lblt{n}" for n in DIMS],
+    # WP 8.5-P16: one type per static square (`Hessenberg1..6`, `SymmetricTridiagonal1..6`,
+    # `Schur1..6`, `Eigen1..6`) / shape (`Bidiagonal1` .. `Bidiagonal6x5`).
+    "Hessenberg": [f"Hessenberg{n}" for n in DIMS],
+    "SymmetricTridiagonal": [f"SymmetricTridiagonal{n}" for n in DIMS],
+    "Schur": [f"Schur{n}" for n in DIMS],
+    "Eigen": [f"Eigen{n}" for n in DIMS],
+    "Bidiagonal": [f"Bidiagonal{r}" if r == c else f"Bidiagonal{r}x{c}" for r in DIMS for c in DIMS],
     # WP 8.5-P14a.
     "GivensRotation": ["GivensRotation"],
     "nalgebra::linalg": ["nalgebra::linalg"],
@@ -2161,8 +2168,9 @@ WORK_PACKAGES = (
     wp("P16", "Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen", "hard numerics",
        "P14",
        "`Schur` (real Schur form, `eigenvalues`, `complex_eigenvalues`), `Hessenberg`, "
-       "`Bidiagonal`, `SymmetricTridiagonal`, `Eigen`, balancing, Wilkinson shift: iterative "
-       "algorithms upstream, need a fixed-cost formulation (no convergence loop, AGENTS.md)",
+       "`Bidiagonal`, `SymmetricTridiagonal`, `Eigen`, balancing, Wilkinson shift: the "
+       "Householder reductions unrolled; the Schur iteration and the balancing keep upstream's "
+       "data-dependent loops (owner ruling for WP 8.5-P16)",
        (r".*", r".*", r"linalg/(?:schur|hessenberg|bidiagonal|symmetric_tridiagonal|eigen|"
         r"balancing|mod)\.rs"),
        (r".*", r"(?:bidiagonalize|hessenberg|schur|try_schur|symmetric_tridiagonalize|"

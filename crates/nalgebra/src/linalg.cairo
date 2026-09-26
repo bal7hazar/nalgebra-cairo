@@ -105,7 +105,7 @@ pub mod symmetric_eigen6;
 pub mod symmetric_tridiagonal;
 pub mod udu;
 #[cfg(feature: 'hessenberg')]
-pub use balancing::{Balancing, balance_parlett_reinsch, unbalance};
+pub use balancing::{balance_parlett_reinsch, unbalance};
 #[cfg(feature: 'bidiagonal')]
 pub use bidiagonal::{
     Bidiagonal1, Bidiagonal1Trait, Bidiagonal1x2, Bidiagonal1x2Trait, Bidiagonal1x3,
@@ -213,7 +213,7 @@ pub use hessenberg::{
 };
 pub use householder::reflection_axis_mut;
 #[cfg(feature: 'hessenberg')]
-pub use householder_steps::{ColumnMajor, assemble_q, clear_column_unchecked, clear_row_unchecked};
+pub use householder_steps::{assemble_q, clear_column_unchecked, clear_row_unchecked};
 pub use inverse::{
     Matrix2InverseTrait, Matrix3InverseTrait, Matrix4InverseTrait, Matrix6InverseTrait,
 };

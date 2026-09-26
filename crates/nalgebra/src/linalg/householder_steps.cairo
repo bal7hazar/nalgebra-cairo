@@ -46,8 +46,9 @@ use crate::base::vector5::Vector5;
 use crate::base::vector6::Vector6;
 
 /// Run-time column-major access to a static shape: the interface of the building blocks below
-/// (their indices are run-time values, like upstream's).
-pub trait ColumnMajor<M, T> {
+/// (their indices are run-time values, like upstream's). Crate-private: the free functions are
+/// upstream's interface.
+pub(crate) trait ColumnMajor<M, T> {
     /// The number of rows.
     fn nrows() -> usize;
     /// The number of columns.

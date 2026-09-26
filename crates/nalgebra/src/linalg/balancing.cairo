@@ -15,9 +15,9 @@ use crate::base::vector4::Vector4;
 use crate::base::vector5::Vector5;
 use crate::base::vector6::Vector6;
 
-/// The balancing of one square shape `M` with its diagonal vector `V` (the free functions below
-/// are upstream's interface).
-pub trait Balancing<M, V> {
+/// The balancing of one square shape `M` with its diagonal vector `V` (crate-private: the free
+/// functions below are upstream's interface).
+pub(crate) trait Balancing<M, V> {
     fn balance_parlett_reinsch(ref matrix: M) -> V;
     fn unbalance(ref m: M, d: V);
 }
@@ -49,7 +49,7 @@ pub fn unbalance<M, V, impl B: Balancing<M, V>>(ref m: M, d: V) {
 }
 
 /// `balance_parlett_reinsch` / `unbalance` on `Matrix1` (see the free functions).
-pub impl Matrix1Balancing<
+impl Matrix1Balancing<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -116,7 +116,7 @@ pub impl Matrix1Balancing<
 }
 
 /// `balance_parlett_reinsch` / `unbalance` on `Matrix2` (see the free functions).
-pub impl Matrix2Balancing<
+impl Matrix2Balancing<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -231,7 +231,7 @@ pub impl Matrix2Balancing<
 }
 
 /// `balance_parlett_reinsch` / `unbalance` on `Matrix3` (see the free functions).
-pub impl Matrix3Balancing<
+impl Matrix3Balancing<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -410,7 +410,7 @@ pub impl Matrix3Balancing<
 }
 
 /// `balance_parlett_reinsch` / `unbalance` on `Matrix4` (see the free functions).
-pub impl Matrix4Balancing<
+impl Matrix4Balancing<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -657,7 +657,7 @@ pub impl Matrix4Balancing<
 }
 
 /// `balance_parlett_reinsch` / `unbalance` on `Matrix5` (see the free functions).
-pub impl Matrix5Balancing<
+impl Matrix5Balancing<
     T,
     impl R: Real<T>,
     +Copy<T>,
@@ -1142,7 +1142,7 @@ pub impl Matrix5Balancing<
 }
 
 /// `balance_parlett_reinsch` / `unbalance` on `Matrix6` (see the free functions).
-pub impl Matrix6Balancing<
+impl Matrix6Balancing<
     T,
     impl R: Real<T>,
     +Copy<T>,
