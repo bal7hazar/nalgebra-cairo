@@ -144,14 +144,8 @@ pub impl Svd5x4Impl<
     /// factor is missing; `None` here).
     fn recompose(self: Svd5x4<T>) -> Option<Matrix5x4<T>> {
         revoke_ap_tracking();
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         Some(
             Matrix5x4 {
                 m11: u.m11 * self.singular_values.x,
@@ -190,14 +184,8 @@ pub impl Svd5x4Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
         let p1 = SvdRightImpl::<T>::inverted(self.singular_values.y, eps);
         let p2 = SvdRightImpl::<T>::inverted(self.singular_values.z, eps);
@@ -258,14 +246,8 @@ pub impl Svd5x4Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let y = u.tr_mul(b);
         Some(
             v_t
@@ -286,14 +268,8 @@ pub impl Svd5x4Impl<
     /// entry of `P`, one per entry of `U`. Panics on overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd5x4<T>) -> Option<(Matrix5<T>, Matrix5x4<T>)> {
         revoke_ap_tracking();
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let a0_0 = u.m11 * self.singular_values.x;
         let a0_1 = u.m12 * self.singular_values.y;
         let a0_2 = u.m13 * self.singular_values.z;
@@ -370,52 +346,54 @@ pub impl Svd5x4Impl<
     fn sort_by_singular_values(ref self: Svd5x4<T>) {
         revoke_ap_tracking();
         let (has_u, has_v) = (self.u.is_some(), self.v_t.is_some());
-        let u = match self.u {
-            Some(u) => u,
-            None => Matrix5x4 {
-                m11: R::zero(),
-                m21: R::zero(),
-                m31: R::zero(),
-                m41: R::zero(),
-                m51: R::zero(),
-                m12: R::zero(),
-                m22: R::zero(),
-                m32: R::zero(),
-                m42: R::zero(),
-                m52: R::zero(),
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: R::zero(),
-                m43: R::zero(),
-                m53: R::zero(),
-                m14: R::zero(),
-                m24: R::zero(),
-                m34: R::zero(),
-                m44: R::zero(),
-                m54: R::zero(),
-            },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => Matrix4 {
-                m11: R::zero(),
-                m21: R::zero(),
-                m31: R::zero(),
-                m41: R::zero(),
-                m12: R::zero(),
-                m22: R::zero(),
-                m32: R::zero(),
-                m42: R::zero(),
-                m13: R::zero(),
-                m23: R::zero(),
-                m33: R::zero(),
-                m43: R::zero(),
-                m14: R::zero(),
-                m24: R::zero(),
-                m34: R::zero(),
-                m44: R::zero(),
-            },
-        };
+        let u = self
+            .u
+            .unwrap_or_else(
+                || Matrix5x4 {
+                    m11: R::zero(),
+                    m21: R::zero(),
+                    m31: R::zero(),
+                    m41: R::zero(),
+                    m51: R::zero(),
+                    m12: R::zero(),
+                    m22: R::zero(),
+                    m32: R::zero(),
+                    m42: R::zero(),
+                    m52: R::zero(),
+                    m13: R::zero(),
+                    m23: R::zero(),
+                    m33: R::zero(),
+                    m43: R::zero(),
+                    m53: R::zero(),
+                    m14: R::zero(),
+                    m24: R::zero(),
+                    m34: R::zero(),
+                    m44: R::zero(),
+                    m54: R::zero(),
+                },
+            );
+        let v_t = self
+            .v_t
+            .unwrap_or_else(
+                || Matrix4 {
+                    m11: R::zero(),
+                    m21: R::zero(),
+                    m31: R::zero(),
+                    m41: R::zero(),
+                    m12: R::zero(),
+                    m22: R::zero(),
+                    m32: R::zero(),
+                    m42: R::zero(),
+                    m13: R::zero(),
+                    m23: R::zero(),
+                    m33: R::zero(),
+                    m43: R::zero(),
+                    m14: R::zero(),
+                    m24: R::zero(),
+                    m34: R::zero(),
+                    m44: R::zero(),
+                },
+            );
         let mut s0 = self.singular_values.x;
         let mut s1 = self.singular_values.y;
         let mut s2 = self.singular_values.z;

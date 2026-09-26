@@ -176,14 +176,8 @@ pub impl Svd3Impl<
             self.singular_values.x, self.singular_values.y, self.singular_values.z,
         );
         let (has_u, has_v) = (self.u.is_some(), self.v_t.is_some());
-        let u = match self.u {
-            Some(u) => u,
-            None => Matrix3Trait::zeros(),
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => Matrix3Trait::zeros(),
-        };
+        let u = self.u.unwrap_or_else(|| Matrix3Trait::zeros());
+        let v_t = self.v_t.unwrap_or_else(|| Matrix3Trait::zeros());
         let (mut u1, mut u2, mut u3) = (u.column1(), u.column2(), u.column3());
         let (mut v1, mut v2, mut v3) = (v_t.row1(), v_t.row2(), v_t.row3());
         if s2 > s1 {
@@ -253,14 +247,8 @@ pub impl Svd3Impl<
     /// products), then the product with `v_t` is 9 fused `sum_prod3`. Panics on overflow.
     /// Upstream: `SVD::recompose` (`Err` when a factor is missing; `None` here).
     fn recompose(self: Svd3<T>) -> Option<Matrix3<T>> {
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         Some(Svd3InternalTrait::scale_columns(u, self.singular_values) * v_t)
     }
 
@@ -280,14 +268,8 @@ pub impl Svd3Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let r = Vector3 {
             x: Svd3InternalTrait::inverted(self.singular_values.x, eps),
             y: Svd3InternalTrait::inverted(self.singular_values.y, eps),
@@ -307,14 +289,8 @@ pub impl Svd3Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let y = u.tr_mul(b);
         let z = Vector3 {
             x: Svd3InternalTrait::divided(y.x, self.singular_values.x, eps),
@@ -333,14 +309,8 @@ pub impl Svd3Impl<
     /// overflow. Upstream: `SVD::to_polar`.
     #[inline(always)]
     fn to_polar(self: Svd3<T>) -> Option<(Matrix3<T>, Matrix3<T>)> {
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         Some((SymMatrix3Trait::quadform(u, self.singular_values).to_matrix(), u * v_t))
     }
 }

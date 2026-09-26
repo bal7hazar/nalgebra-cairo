@@ -249,13 +249,9 @@ pub use linalg::{
 };
 #[cfg(feature: 'exp')]
 pub use linalg::{
-    Matrix1ExpTrait, Matrix2ExpTrait, Matrix3ExpTrait, Matrix4ExpTrait, Matrix5ExpTrait,
-    Matrix6ExpTrait,
-};
-#[cfg(feature: 'pow')]
-pub use linalg::{
-    Matrix1PowTrait, Matrix2PowTrait, Matrix3PowTrait, Matrix4PowTrait, Matrix5PowTrait,
-    Matrix6PowTrait,
+    Matrix1ExpTrait, Matrix1PowTrait, Matrix2ExpTrait, Matrix2PowTrait, Matrix3ExpTrait,
+    Matrix3PowTrait, Matrix4ExpTrait, Matrix4PowTrait, Matrix5ExpTrait, Matrix5PowTrait,
+    Matrix6ExpTrait, Matrix6PowTrait,
 };
 #[cfg(feature: 'qr')]
 pub use linalg::{

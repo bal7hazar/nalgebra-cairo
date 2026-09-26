@@ -29,7 +29,7 @@
     },
     "svd5x6_pseudo_inverse": {
       "baseline": 4735890,
-      "scaled_product": 4897840
+      "scaled_product": 4897870
     },
     "svd5x6_singular_values": {
       "baseline": 27520,

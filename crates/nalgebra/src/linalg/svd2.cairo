@@ -243,14 +243,8 @@ pub impl Svd2Impl<
     /// products), then the product with `v_t` is 4 fused `sum_prod2`. Panics on overflow.
     /// Upstream: `SVD::recompose` (`Err` when a factor is missing; `None` here).
     fn recompose(self: Svd2<T>) -> Option<Matrix2<T>> {
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let us = Matrix2 {
             m11: u.m11 * self.singular_values.x,
             m21: u.m21 * self.singular_values.x,
@@ -276,14 +270,8 @@ pub impl Svd2Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let r1 = if self.singular_values.x > eps {
             self.singular_values.x.recip()
         } else {
@@ -310,14 +298,8 @@ pub impl Svd2Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let y = u.tr_mul(b);
         let y1 = if self.singular_values.x > eps {
             R::div(y.x, self.singular_values.x)
@@ -341,14 +323,8 @@ pub impl Svd2Impl<
     /// overflow. Upstream: `SVD::to_polar`.
     #[inline(always)]
     fn to_polar(self: Svd2<T>) -> Option<(Matrix2<T>, Matrix2<T>)> {
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         Some((SymMatrix2Trait::quadform(u, self.singular_values).to_matrix(), u * v_t))
     }
 }

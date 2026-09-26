@@ -1418,14 +1418,8 @@ def svd_methods(r: int, c: int) -> str:
     /// factor is missing; `None` here).
     fn recompose(self: {S}<T>) -> Option<{tname(r, c)}<T>> {{
         revoke_ap_tracking();
-        let u = match self.u {{
-            Some(u) => u,
-            None => {{ return None; }},
-        }};
-        let v_t = match self.v_t {{
-            Some(v_t) => v_t,
-            None => {{ return None; }},
-        }};
+        let u = self.u?;
+        let v_t = self.v_t?;
         Some({scaled_u}.mul_mat(v_t))
     }}
 
@@ -1440,14 +1434,8 @@ def svd_methods(r: int, c: int) -> str:
         if eps.is_sign_negative() {{
             return None;
         }}
-        let u = match self.u {{
-            Some(u) => u,
-            None => {{ return None; }},
-        }};
-        let v_t = match self.v_t {{
-            Some(v_t) => v_t,
-            None => {{ return None; }},
-        }};
+        let u = self.u?;
+        let v_t = self.v_t?;
         {inv}
         Some({scaled_v}.mul_mat({u_t}))
     }}
@@ -1462,14 +1450,8 @@ def svd_methods(r: int, c: int) -> str:
         if eps.is_sign_negative() {{
             return None;
         }}
-        let u = match self.u {{
-            Some(u) => u,
-            None => {{ return None; }},
-        }};
-        let v_t = match self.v_t {{
-            Some(v_t) => v_t,
-            None => {{ return None; }},
-        }};
+        let u = self.u?;
+        let v_t = self.v_t?;
         let y = u.tr_mul(b);
         Some(v_t.tr_mul({z}))
     }}
@@ -1480,14 +1462,8 @@ def svd_methods(r: int, c: int) -> str:
     /// entry of `P`, one per entry of `U`. Panics on overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: {S}<T>) -> Option<({tname(r, r)}<T>, {tname(r, c)}<T>)> {{
         revoke_ap_tracking();
-        let u = match self.u {{
-            Some(u) => u,
-            None => {{ return None; }},
-        }};
-        let v_t = match self.v_t {{
-            Some(v_t) => v_t,
-            None => {{ return None; }},
-        }};
+        let u = self.u?;
+        let v_t = self.v_t?;
         {scaled}
         {p_lets}
         Some(({p_lit}, u.mul_mat(v_t)))
@@ -1500,14 +1476,8 @@ def svd_methods(r: int, c: int) -> str:
     fn sort_by_singular_values(ref self: {S}<T>) {{
         revoke_ap_tracking();
         let (has_u, has_v) = (self.u.is_some(), self.v_t.is_some());
-        let u = match self.u {{
-            Some(u) => u,
-            None => {zero_u},
-        }};
-        let v_t = match self.v_t {{
-            Some(v_t) => v_t,
-            None => {zero_v},
-        }};
+        let u = self.u.unwrap_or_else(|| {zero_u});
+        let v_t = self.v_t.unwrap_or_else(|| {zero_v});
         {chr(10).join(svs)}
         {chr(10).join(ucols)}
         {chr(10).join(vrows)}

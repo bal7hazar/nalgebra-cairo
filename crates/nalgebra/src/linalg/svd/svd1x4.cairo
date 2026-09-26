@@ -141,14 +141,8 @@ pub impl Svd1x4Impl<
     /// factor is missing; `None` here).
     fn recompose(self: Svd1x4<T>) -> Option<RowVector4<T>> {
         revoke_ap_tracking();
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         Some(Matrix1 { x: u.x * self.singular_values.x }.mul_mat(v_t))
     }
 
@@ -163,14 +157,8 @@ pub impl Svd1x4Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let p0 = SvdRightImpl::<T>::inverted(self.singular_values.x, eps);
         Some(
             Vector4 { x: v_t.x * p0, y: v_t.y * p0, z: v_t.z * p0, w: v_t.w * p0 }
@@ -188,14 +176,8 @@ pub impl Svd1x4Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let y = u.tr_mul(b);
         Some(
             v_t.tr_mul(Matrix1 { x: SvdRightImpl::<T>::divided(y.x, self.singular_values.x, eps) }),
@@ -208,14 +190,8 @@ pub impl Svd1x4Impl<
     /// entry of `P`, one per entry of `U`. Panics on overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: Svd1x4<T>) -> Option<(Matrix1<T>, RowVector4<T>)> {
         revoke_ap_tracking();
-        let u = match self.u {
-            Some(u) => u,
-            None => { return None; },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => { return None; },
-        };
+        let u = self.u?;
+        let v_t = self.v_t?;
         let a0_0 = u.x * self.singular_values.x;
         let p0_0 = a0_0 * u.x;
         Some((Matrix1 { x: p0_0 }, u.mul_mat(v_t)))
@@ -228,14 +204,12 @@ pub impl Svd1x4Impl<
     fn sort_by_singular_values(ref self: Svd1x4<T>) {
         revoke_ap_tracking();
         let (has_u, has_v) = (self.u.is_some(), self.v_t.is_some());
-        let u = match self.u {
-            Some(u) => u,
-            None => Matrix1 { x: R::zero() },
-        };
-        let v_t = match self.v_t {
-            Some(v_t) => v_t,
-            None => RowVector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() },
-        };
+        let u = self.u.unwrap_or_else(|| Matrix1 { x: R::zero() });
+        let v_t = self
+            .v_t
+            .unwrap_or_else(
+                || RowVector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() },
+            );
         let mut s0 = self.singular_values.x;
         let mut uc0 = Matrix1 { x: u.x };
         let mut vr0 = Vector4 { x: v_t.x, y: v_t.y, z: v_t.z, w: v_t.w };
