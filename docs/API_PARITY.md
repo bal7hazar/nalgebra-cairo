@@ -22,11 +22,11 @@ How to read it:
 | linalg | 228 | 0 | 70 | 6 | 304 | 76.5% |
 | sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
 | io | 1 | 0 | 1 | 0 | 2 | 50.0% |
-| third_party | 0 | 0 | 91 | 72 | 163 | 0.0% |
+| third_party | 91 | 0 | 0 | 72 | 163 | 100.0% |
 | root | 35 | 0 | 0 | 0 | 35 | 100.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1716** | **3** | **162** | **555** | **2436** | **91.2%** |
+| **total** | **1807** | **3** | **71** | **555** | **2436** | **96.1%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -56,7 +56,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P16](#p16-schur-hessenberg-bidiagonal-tridiagonal-general-eigen) | Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen | 64 | hard numerics | P14 | `linalg/bidiagonal.rs` (14), `linalg/symmetric_tridiagonal.rs` (13), `linalg/hessenberg.rs` (12), `linalg/schur.rs` (12), `linalg/eigen.rs` (6) |
 | [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 3 | hard numerics | P14, P16 | `linalg/pow.rs` (2), `linalg/exp.rs` (1) |
 | [P18](#p18-convolution) | Convolution | 0 | mechanical | P13 |  |
-| [P19](#p19-glam-cairo-conversions) | glam-cairo conversions | 91 | mechanical | WP 6.2 (glam-cairo pin) | `third_party/glam/common/glam_matrix.rs` (36), `third_party/glam/common/glam_point.rs` (24), `third_party/glam/common/glam_isometry.rs` (11), `third_party/glam/common/glam_translation.rs` (6), `third_party/glam/common/glam_quaternion.rs` (4) |
+| [P19](#p19-glam-cairo-conversions) | glam-cairo conversions | 0 | mechanical | WP 6.2 (glam-cairo pin) |  |
 | [P20](#p20-sparse-matrices-and-matrix-market-i-o) | Sparse matrices and Matrix Market I/O | 1 | standard numerics | P13 | `io/matrix_market.rs` (1) |
 | [P21](#p21-crate-root-functions-and-construction-macros) | Crate-root functions and construction macros | 0 | mechanical | P01, P13 |  |
 
@@ -175,32 +175,8 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P19 glam-cairo conversions
 
-`third_party/glam`: `From` / `Into` between nalgebra-cairo and glam-cairo (`Vec2/3/4`, `IVec*`, `UVec*`, `BVec*`, `Mat2/3/4`, `Quat`, `Affine2/3` through isometries); f64 / aligned variants are excluded (`interop`). Tier: mechanical. Depends on: WP 6.2 (glam-cairo pin). 91 items (`*` = partial):
+`third_party/glam`: `From` / `Into` between nalgebra-cairo and glam-cairo (`Vec2/3/4`, `IVec*`, `UVec*`, `BVec*`, `Mat2/3/4`, `Quat`, `Affine2/3` through isometries), in the package `nalgebra_glam` (DESIGN D11); f64 / aligned variants are excluded (`interop`). Tier: mechanical. Depends on: WP 6.2 (glam-cairo pin). 0 items (`*` = partial):
 
-- **Isometry2**: `impl:From<(Vec2, T)>`, `impl:From<Vec2>`, `impl:Into<(Vec2, T)>`, `impl:Into<Mat3>`, `impl:TryFrom<Mat3>`
-- **Isometry3**: `impl:From<(Vec3, Quat)>`, `impl:From<Quat>`, `impl:From<Vec3>`, `impl:Into<(Vec3, Quat)>`, `impl:Into<Mat4>`, `impl:TryFrom<Mat4>`
-- **Matrix2**: `impl:From<Mat2>`, `impl:Into<Mat2>`
-- **Matrix3**: `impl:From<Mat3>`, `impl:Into<Mat3>`
-- **Matrix4**: `impl:From<Mat4>`, `impl:Into<Mat4>`
-- **Point2**: `impl:From<BVec2>`, `impl:From<IVec2>`, `impl:From<UVec2>`, `impl:From<Vec2>`, `impl:Into<BVec2>`, `impl:Into<IVec2>`, `impl:Into<UVec2>`, `impl:Into<Vec2>`
-- **Point3**: `impl:From<BVec3>`, `impl:From<IVec3>`, `impl:From<UVec3>`, `impl:From<Vec3>`, `impl:Into<BVec3>`, `impl:Into<IVec3>`, `impl:Into<UVec3>`, `impl:Into<Vec3>`
-- **Point4**: `impl:From<BVec4>`, `impl:From<IVec4>`, `impl:From<UVec4>`, `impl:From<Vec4>`, `impl:Into<BVec4>`, `impl:Into<IVec4>`, `impl:Into<UVec4>`, `impl:Into<Vec4>`
-- **Quaternion**: `impl:From<Quat>`, `impl:Into<Quat>`
-- **Rotation2**: `impl:From<Mat2>`, `impl:Into<Mat2>`
-- **Rotation3**: `impl:From<Quat>`, `impl:Into<Quat>`
-- **Similarity2**: `impl:Into<Mat3>`, `impl:TryFrom<Mat3>`
-- **Similarity3**: `impl:Into<Mat4>`, `impl:TryFrom<Mat4>`
-- **Translation2**: `impl:From<Vec2>`, `impl:Into<Vec2>`
-- **Translation3**: `impl:From<Vec3>`, `impl:Into<Vec3>`
-- **Translation4**: `impl:From<Vec4>`, `impl:Into<Vec4>`
-- **UnitComplex**: `impl:From<Mat2>`, `impl:Into<Mat2>`
-- **UnitQuaternion**: `impl:From<Quat>`, `impl:Into<Quat>`
-- **UnitVector2**: `impl:Into<Vec2>`, `impl:TryFrom<Vec2>`
-- **UnitVector3**: `impl:Into<Vec3>`, `impl:TryFrom<Vec3>`
-- **UnitVector4**: `impl:Into<Vec4>`, `impl:TryFrom<Vec4>`
-- **Vector2**: `impl:From<BVec2>`, `impl:From<IVec2>`, `impl:From<UVec2>`, `impl:From<Vec2>`, `impl:Into<BVec2>`, `impl:Into<IVec2>`, `impl:Into<UVec2>`, `impl:Into<Vec2>`
-- **Vector3**: `impl:From<BVec3>`, `impl:From<IVec3>`, `impl:From<UVec3>`, `impl:From<Vec3>`, `impl:Into<BVec3>`, `impl:Into<IVec3>`, `impl:Into<UVec3>`, `impl:Into<Vec3>`
-- **Vector4**: `impl:From<BVec4>`, `impl:From<IVec4>`, `impl:From<UVec4>`, `impl:From<Vec4>`, `impl:Into<BVec4>`, `impl:Into<IVec4>`, `impl:Into<UVec4>`, `impl:Into<Vec4>`
 
 ### P20 Sparse matrices and Matrix Market I/O
 
@@ -3506,39 +3482,39 @@ Cairo: nalgebra::io · ported 1, partial 0, missing 1, excluded 0.
 
 #### Isometry2 (third_party)
 
-Cairo: Isometry2 · ported 0, partial 0, missing 5, excluded 5.
+Cairo: Isometry2 · ported 5, partial 0, missing 0, excluded 5.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<(DVec2, T)>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `From<(Vec2, T)>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `From<(Vec2, T)>` | ported | Isometry2 (impl `From<(Vec2, T)>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `From<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `From<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `From<Vec2>` | ported | Isometry2 (impl `From<Vec2>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `Into<(DVec2, T)>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `Into<(Vec2, T)>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `Into<(Vec2, T)>` | ported | Isometry2 (impl `Into<(Vec2, T)>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `Into<DMat3>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `Into<Mat3>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `Into<Mat3>` | ported | Isometry2 (impl `Into<Mat3>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `TryFrom<DMat3>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `TryFrom<Mat3>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `TryFrom<Mat3>` | ported | Isometry2 (impl `TryFrom<Mat3>`) |  | `third_party/glam/common/glam_isometry.rs` |
 
 #### Isometry3 (third_party)
 
-Cairo: Isometry3 · ported 0, partial 0, missing 6, excluded 6.
+Cairo: Isometry3 · ported 6, partial 0, missing 0, excluded 6.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<(DVec3, DQuat)>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `From<(Vec3, Quat)>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `From<(Vec3, Quat)>` | ported | Isometry3 (impl `From<(Vec3, Quat)>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `From<DQuat>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
 | impl `From<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `From<Quat>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
-| impl `From<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `From<Quat>` | ported | Isometry3 (impl `From<Quat>`) |  | `third_party/glam/common/glam_isometry.rs` |
+| impl `From<Vec3>` | ported | Isometry3 (impl `From<Vec3>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `Into<(DVec3, DQuat)>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `Into<(Vec3, Quat)>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `Into<(Vec3, Quat)>` | ported | Isometry3 (impl `Into<(Vec3, Quat)>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `Into<DMat4>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `Into<Mat4>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `Into<Mat4>` | ported | Isometry3 (impl `Into<Mat4>`) |  | `third_party/glam/common/glam_isometry.rs` |
 | impl `TryFrom<DMat4>` | excluded |  | interop | `third_party/glam/common/glam_isometry.rs` |
-| impl `TryFrom<Mat4>` | missing |  | P19 | `third_party/glam/common/glam_isometry.rs` |
+| impl `TryFrom<Mat4>` | ported | Isometry3 (impl `TryFrom<Mat4>`) |  | `third_party/glam/common/glam_isometry.rs` |
 
 #### Matrix (third_party)
 
@@ -3550,36 +3526,36 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 
 #### Matrix2 (third_party)
 
-Cairo: Matrix2 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Matrix2 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DMat2>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<Mat2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<Mat2>` | ported | Matrix2 (impl `From<Mat2>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<DMat2>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Mat2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Mat2>` | ported | Matrix2 (impl `Into<Mat2>`) |  | `third_party/glam/common/glam_matrix.rs` |
 
 #### Matrix3 (third_party)
 
-Cairo: Matrix3 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Matrix3 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DMat3>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<Mat3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<Mat3>` | ported | Matrix3 (impl `From<Mat3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<DMat3>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Mat3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Mat3>` | ported | Matrix3 (impl `Into<Mat3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 
 #### Matrix4 (third_party)
 
-Cairo: Matrix4 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Matrix4 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DMat4>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<Mat4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<Mat4>` | ported | Matrix4 (impl `From<Mat4>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<DMat4>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Mat4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Mat4>` | ported | Matrix4 (impl `Into<Mat4>`) |  | `third_party/glam/common/glam_matrix.rs` |
 
 #### Point (third_party)
 
@@ -3593,205 +3569,205 @@ Cairo: Point1/2/3/4/5/6 · ported 0, partial 0, missing 0, excluded 3.
 
 #### Point2 (third_party)
 
-Cairo: Point2 · ported 0, partial 0, missing 8, excluded 2.
+Cairo: Point2 · ported 8, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<BVec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `From<BVec2>` | ported | Point2 (impl `From<BVec2>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `From<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
-| impl `From<IVec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `From<UVec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `From<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<BVec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `From<IVec2>` | ported | Point2 (impl `From<IVec2>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `From<UVec2>` | ported | Point2 (impl `From<UVec2>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `From<Vec2>` | ported | Point2 (impl `From<Vec2>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<BVec2>` | ported | Point2 (impl `Into<BVec2>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `Into<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
-| impl `Into<IVec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<UVec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `Into<IVec2>` | ported | Point2 (impl `Into<IVec2>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<UVec2>` | ported | Point2 (impl `Into<UVec2>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<Vec2>` | ported | Point2 (impl `Into<Vec2>`) |  | `third_party/glam/common/glam_point.rs` |
 
 #### Point3 (third_party)
 
-Cairo: Point3 · ported 0, partial 0, missing 8, excluded 4.
+Cairo: Point3 · ported 8, partial 0, missing 0, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<BVec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `From<BVec3>` | ported | Point3 (impl `From<BVec3>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `From<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
-| impl `From<IVec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `From<UVec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `From<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `From<IVec3>` | ported | Point3 (impl `From<IVec3>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `From<UVec3>` | ported | Point3 (impl `From<UVec3>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `From<Vec3>` | ported | Point3 (impl `From<Vec3>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `From<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
-| impl `Into<BVec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `Into<BVec3>` | ported | Point3 (impl `Into<BVec3>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `Into<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
-| impl `Into<IVec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<UVec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `Into<IVec3>` | ported | Point3 (impl `Into<IVec3>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<UVec3>` | ported | Point3 (impl `Into<UVec3>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<Vec3>` | ported | Point3 (impl `Into<Vec3>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `Into<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
 
 #### Point4 (third_party)
 
-Cairo: Point4 · ported 0, partial 0, missing 8, excluded 2.
+Cairo: Point4 · ported 8, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<BVec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `From<BVec4>` | ported | Point4 (impl `From<BVec4>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `From<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
-| impl `From<IVec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `From<UVec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `From<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<BVec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `From<IVec4>` | ported | Point4 (impl `From<IVec4>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `From<UVec4>` | ported | Point4 (impl `From<UVec4>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `From<Vec4>` | ported | Point4 (impl `From<Vec4>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<BVec4>` | ported | Point4 (impl `Into<BVec4>`) |  | `third_party/glam/common/glam_point.rs` |
 | impl `Into<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_point.rs` |
-| impl `Into<IVec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<UVec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
-| impl `Into<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_point.rs` |
+| impl `Into<IVec4>` | ported | Point4 (impl `Into<IVec4>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<UVec4>` | ported | Point4 (impl `Into<UVec4>`) |  | `third_party/glam/common/glam_point.rs` |
+| impl `Into<Vec4>` | ported | Point4 (impl `Into<Vec4>`) |  | `third_party/glam/common/glam_point.rs` |
 
 #### Quaternion (third_party)
 
-Cairo: Quaternion · ported 0, partial 0, missing 2, excluded 3.
+Cairo: Quaternion · ported 2, partial 0, missing 0, excluded 3.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DQuat>` | excluded |  | interop | `third_party/glam/common/glam_quaternion.rs` |
-| impl `From<Quat>` | missing |  | P19 | `third_party/glam/common/glam_quaternion.rs` |
+| impl `From<Quat>` | ported | Quaternion (impl `From<Quat>`) |  | `third_party/glam/common/glam_quaternion.rs` |
 | impl `From<mint::Quaternion<T>>` | excluded |  | interop | `third_party/mint/mint_quaternion.rs` |
 | impl `Into<DQuat>` | excluded |  | interop | `third_party/glam/common/glam_quaternion.rs` |
-| impl `Into<Quat>` | missing |  | P19 | `third_party/glam/common/glam_quaternion.rs` |
+| impl `Into<Quat>` | ported | Quaternion (impl `Into<Quat>`) |  | `third_party/glam/common/glam_quaternion.rs` |
 
 #### Rotation2 (third_party)
 
-Cairo: Rotation2 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Rotation2 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DMat2>` | excluded |  | interop | `third_party/glam/common/glam_rotation.rs` |
-| impl `From<Mat2>` | missing |  | P19 | `third_party/glam/common/glam_rotation.rs` |
+| impl `From<Mat2>` | ported | Rotation2 (impl `From<Mat2>`) |  | `third_party/glam/common/glam_rotation.rs` |
 | impl `Into<DMat2>` | excluded |  | interop | `third_party/glam/common/glam_rotation.rs` |
-| impl `Into<Mat2>` | missing |  | P19 | `third_party/glam/common/glam_rotation.rs` |
+| impl `Into<Mat2>` | ported | Rotation2 (impl `Into<Mat2>`) |  | `third_party/glam/common/glam_rotation.rs` |
 
 #### Rotation3 (third_party)
 
-Cairo: Rotation3 · ported 0, partial 0, missing 2, excluded 3.
+Cairo: Rotation3 · ported 2, partial 0, missing 0, excluded 3.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DQuat>` | excluded |  | interop | `third_party/glam/common/glam_rotation.rs` |
-| impl `From<Quat>` | missing |  | P19 | `third_party/glam/common/glam_rotation.rs` |
+| impl `From<Quat>` | ported | Rotation3 (impl `From<Quat>`) |  | `third_party/glam/common/glam_rotation.rs` |
 | impl `From<mint::EulerAngles<T, mint::IntraXYZ>>` | excluded |  | interop | `third_party/mint/mint_rotation.rs` |
 | impl `Into<DQuat>` | excluded |  | interop | `third_party/glam/common/glam_rotation.rs` |
-| impl `Into<Quat>` | missing |  | P19 | `third_party/glam/common/glam_rotation.rs` |
+| impl `Into<Quat>` | ported | Rotation3 (impl `Into<Quat>`) |  | `third_party/glam/common/glam_rotation.rs` |
 
 #### Similarity2 (third_party)
 
-Cairo: Similarity2 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Similarity2 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Into<DMat3>` | excluded |  | interop | `third_party/glam/common/glam_similarity.rs` |
-| impl `Into<Mat3>` | missing |  | P19 | `third_party/glam/common/glam_similarity.rs` |
+| impl `Into<Mat3>` | ported | Similarity2 (impl `Into<Mat3>`) |  | `third_party/glam/common/glam_similarity.rs` |
 | impl `TryFrom<DMat3>` | excluded |  | interop | `third_party/glam/common/glam_similarity.rs` |
-| impl `TryFrom<Mat3>` | missing |  | P19 | `third_party/glam/common/glam_similarity.rs` |
+| impl `TryFrom<Mat3>` | ported | Similarity2 (impl `TryFrom<Mat3>`) |  | `third_party/glam/common/glam_similarity.rs` |
 
 #### Similarity3 (third_party)
 
-Cairo: Similarity3 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Similarity3 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Into<DMat4>` | excluded |  | interop | `third_party/glam/common/glam_similarity.rs` |
-| impl `Into<Mat4>` | missing |  | P19 | `third_party/glam/common/glam_similarity.rs` |
+| impl `Into<Mat4>` | ported | Similarity3 (impl `Into<Mat4>`) |  | `third_party/glam/common/glam_similarity.rs` |
 | impl `TryFrom<DMat4>` | excluded |  | interop | `third_party/glam/common/glam_similarity.rs` |
-| impl `TryFrom<Mat4>` | missing |  | P19 | `third_party/glam/common/glam_similarity.rs` |
+| impl `TryFrom<Mat4>` | ported | Similarity3 (impl `TryFrom<Mat4>`) |  | `third_party/glam/common/glam_similarity.rs` |
 
 #### Translation2 (third_party)
 
-Cairo: Translation2 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Translation2 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
-| impl `From<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_translation.rs` |
+| impl `From<Vec2>` | ported | Translation2 (impl `From<Vec2>`) |  | `third_party/glam/common/glam_translation.rs` |
 | impl `Into<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
-| impl `Into<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_translation.rs` |
+| impl `Into<Vec2>` | ported | Translation2 (impl `Into<Vec2>`) |  | `third_party/glam/common/glam_translation.rs` |
 
 #### Translation3 (third_party)
 
-Cairo: Translation3 · ported 0, partial 0, missing 2, excluded 4.
+Cairo: Translation3 · ported 2, partial 0, missing 0, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
-| impl `From<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_translation.rs` |
+| impl `From<Vec3>` | ported | Translation3 (impl `From<Vec3>`) |  | `third_party/glam/common/glam_translation.rs` |
 | impl `From<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
 | impl `Into<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
-| impl `Into<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_translation.rs` |
+| impl `Into<Vec3>` | ported | Translation3 (impl `Into<Vec3>`) |  | `third_party/glam/common/glam_translation.rs` |
 | impl `Into<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
 
 #### Translation4 (third_party)
 
-Cairo: Translation4 · ported 0, partial 0, missing 2, excluded 2.
+Cairo: Translation4 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
-| impl `From<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_translation.rs` |
+| impl `From<Vec4>` | ported | Translation4 (impl `From<Vec4>`) |  | `third_party/glam/common/glam_translation.rs` |
 | impl `Into<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_translation.rs` |
-| impl `Into<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_translation.rs` |
+| impl `Into<Vec4>` | ported | Translation4 (impl `Into<Vec4>`) |  | `third_party/glam/common/glam_translation.rs` |
 
 #### UnitComplex (third_party)
 
-Cairo: UnitComplex · ported 0, partial 0, missing 2, excluded 2.
+Cairo: UnitComplex · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DMat2>` | excluded |  | interop | `third_party/glam/common/glam_unit_complex.rs` |
-| impl `From<Mat2>` | missing |  | P19 | `third_party/glam/common/glam_unit_complex.rs` |
+| impl `From<Mat2>` | ported | UnitComplex (impl `From<Mat2>`) |  | `third_party/glam/common/glam_unit_complex.rs` |
 | impl `Into<DMat2>` | excluded |  | interop | `third_party/glam/common/glam_unit_complex.rs` |
-| impl `Into<Mat2>` | missing |  | P19 | `third_party/glam/common/glam_unit_complex.rs` |
+| impl `Into<Mat2>` | ported | UnitComplex (impl `Into<Mat2>`) |  | `third_party/glam/common/glam_unit_complex.rs` |
 
 #### UnitQuaternion (third_party)
 
-Cairo: UnitQuaternion · ported 0, partial 0, missing 2, excluded 2.
+Cairo: UnitQuaternion · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `From<DQuat>` | excluded |  | interop | `third_party/glam/common/glam_quaternion.rs` |
-| impl `From<Quat>` | missing |  | P19 | `third_party/glam/common/glam_quaternion.rs` |
+| impl `From<Quat>` | ported | UnitQuaternion (impl `From<Quat>`) |  | `third_party/glam/common/glam_quaternion.rs` |
 | impl `Into<DQuat>` | excluded |  | interop | `third_party/glam/common/glam_quaternion.rs` |
-| impl `Into<Quat>` | missing |  | P19 | `third_party/glam/common/glam_quaternion.rs` |
+| impl `Into<Quat>` | ported | UnitQuaternion (impl `Into<Quat>`) |  | `third_party/glam/common/glam_quaternion.rs` |
 
 #### UnitVector2 (third_party)
 
-Cairo: none · ported 0, partial 0, missing 2, excluded 2.
+Cairo: UnitVector2 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Into<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Vec2>` | ported | UnitVector2 (impl `Into<Vec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `TryFrom<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `TryFrom<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `TryFrom<Vec2>` | ported | UnitVector2 (impl `TryFrom<Vec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
 
 #### UnitVector3 (third_party)
 
-Cairo: none · ported 0, partial 0, missing 2, excluded 4.
+Cairo: UnitVector3 · ported 2, partial 0, missing 0, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Into<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Vec3>` | ported | UnitVector3 (impl `Into<Vec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
 | impl `TryFrom<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `TryFrom<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `TryFrom<Vec3>` | ported | UnitVector3 (impl `TryFrom<Vec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `TryFrom<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
 
 #### UnitVector4 (third_party)
 
-Cairo: none · ported 0, partial 0, missing 2, excluded 2.
+Cairo: UnitVector4 · ported 2, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Into<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Vec4>` | ported | UnitVector4 (impl `Into<Vec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `TryFrom<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `TryFrom<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `TryFrom<Vec4>` | ported | UnitVector4 (impl `TryFrom<Vec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
 
 #### Vector (third_party)
 
@@ -3805,56 +3781,56 @@ Cairo: Matrix1, Vector2/3/4/5/6 · ported 0, partial 0, missing 0, excluded 3.
 
 #### Vector2 (third_party)
 
-Cairo: Vector2 · ported 0, partial 0, missing 8, excluded 2.
+Cairo: Vector2 · ported 8, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<BVec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<BVec2>` | ported | Vector2 (impl `From<BVec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `From<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<IVec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<UVec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<BVec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<IVec2>` | ported | Vector2 (impl `From<IVec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<UVec2>` | ported | Vector2 (impl `From<UVec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<Vec2>` | ported | Vector2 (impl `From<Vec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<BVec2>` | ported | Vector2 (impl `Into<BVec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<DVec2>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<IVec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<UVec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Vec2>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<IVec2>` | ported | Vector2 (impl `Into<IVec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<UVec2>` | ported | Vector2 (impl `Into<UVec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Vec2>` | ported | Vector2 (impl `Into<Vec2>`) |  | `third_party/glam/common/glam_matrix.rs` |
 
 #### Vector3 (third_party)
 
-Cairo: Vector3 · ported 0, partial 0, missing 8, excluded 4.
+Cairo: Vector3 · ported 8, partial 0, missing 0, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<BVec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<BVec3>` | ported | Vector3 (impl `From<BVec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `From<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<IVec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<UVec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<IVec3>` | ported | Vector3 (impl `From<IVec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<UVec3>` | ported | Vector3 (impl `From<UVec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<Vec3>` | ported | Vector3 (impl `From<Vec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `From<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<BVec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<BVec3>` | ported | Vector3 (impl `Into<BVec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<DVec3>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<IVec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<UVec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Vec3>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<IVec3>` | ported | Vector3 (impl `Into<IVec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<UVec3>` | ported | Vector3 (impl `Into<UVec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Vec3>` | ported | Vector3 (impl `Into<Vec3>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<Vec3A>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
 
 #### Vector4 (third_party)
 
-Cairo: Vector4 · ported 0, partial 0, missing 8, excluded 2.
+Cairo: Vector4 · ported 8, partial 0, missing 0, excluded 2.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<BVec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<BVec4>` | ported | Vector4 (impl `From<BVec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `From<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<IVec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<UVec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `From<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<BVec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<IVec4>` | ported | Vector4 (impl `From<IVec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<UVec4>` | ported | Vector4 (impl `From<UVec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `From<Vec4>` | ported | Vector4 (impl `From<Vec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<BVec4>` | ported | Vector4 (impl `Into<BVec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
 | impl `Into<DVec4>` | excluded |  | interop | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<IVec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<UVec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
-| impl `Into<Vec4>` | missing |  | P19 | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<IVec4>` | ported | Vector4 (impl `Into<IVec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<UVec4>` | ported | Vector4 (impl `Into<UVec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
+| impl `Into<Vec4>` | ported | Vector4 (impl `Into<Vec4>`) |  | `third_party/glam/common/glam_matrix.rs` |
 
 ### Module `root`
 

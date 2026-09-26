@@ -1,0 +1,25 @@
+[package]
+name = "nalgebra_glam"
+description = "Conversions between nalgebra-cairo and glam-cairo types: the glam interop of the Rust nalgebra crate (its `convert-glam` features) as a separate package."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+readme = "README.md"
+
+[dependencies]
+nalgebra = { path = "../nalgebra", version = "0.1.0", default-features = false }
+glam = "0.4.0"
+fixed.workspace = true
+
+[dev-dependencies]
+snforge_std.workspace = true
+assert_macros.workspace = true
+nalgebra_testing = { path = "../testing" }
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
