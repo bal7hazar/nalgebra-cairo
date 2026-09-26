@@ -1,11 +1,16 @@
 //! Linear algebra for provable game physics: a Cairo port of the Rust `nalgebra` crate.
 //!
 //! Modules mirror upstream: `base` (vectors, matrices), `geometry` (rotations, isometries),
-//! `linalg` (decompositions). See `docs/DESIGN.md` and `docs/ROADMAP.md`.
+//! `linalg` (decompositions), and behind their features `sparse` (compressed sparse column
+//! matrices) and `io` (Matrix Market parsing). See `docs/DESIGN.md` and `docs/ROADMAP.md`.
 
 pub mod base;
 pub mod geometry;
+#[cfg(feature: 'io')]
+pub mod io;
 pub mod linalg;
+#[cfg(feature: 'sparse')]
+pub mod sparse;
 
 // shapegen: begin
 pub use base::{
@@ -41,7 +46,7 @@ pub use base::{
 };
 #[cfg(feature: 'dynamic')]
 pub use base::{
-    DMatrix, DMatrixTrait, DVector, DVectorTrait, InsertFixedColumns, InsertFixedRows,
+    Convolution, DMatrix, DMatrixTrait, DVector, DVectorTrait, InsertFixedColumns, InsertFixedRows,
     Matrix1DynamicTrait, Matrix1xX, Matrix2DynamicTrait, Matrix2x3DynamicTrait,
     Matrix2x4DynamicTrait, Matrix2x5DynamicTrait, Matrix2x6DynamicTrait, Matrix2xX,
     Matrix3DynamicTrait, Matrix3x2DynamicTrait, Matrix3x4DynamicTrait, Matrix3x5DynamicTrait,

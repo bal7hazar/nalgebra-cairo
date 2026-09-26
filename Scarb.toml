@@ -47,6 +47,7 @@ members = [
     "crates/tests_linalg_svd_wide6",
     "crates/tests_linalg_svd_wide6b",
     "crates/tests_dynamic",
+    "crates/tests_sparse",
 ]
 
 [workspace.package]

@@ -14,14 +14,19 @@ keywords.workspace = true
 # dependent that does not need them writes `default-features = false` (plus `features = [..]`).
 # `statistics`: base/statistics.cairo; `blas`: base/blas.cairo; `closures`: the methods of the
 # shapes that take a closure (`map`, `fold`, `apply`, `zip_*`...). `dynamic` (WP 8.5-P13, DESIGN
-# D5): `DMatrix` / `DVector` / `RowDVector`, the partially dynamic aliases and the edition forms
-# of the static shapes that return them (base/dynamic*.cairo).
+# D5): `DMatrix` / `DVector` / `RowDVector`, the partially dynamic aliases, the edition forms
+# of the static shapes that return them and the vector convolutions (base/dynamic*.cairo).
+# `sparse` (WP 8.6-P20): upstream's legacy `nalgebra::sparse` (`CsMatrix`, `CsCholesky`,
+# sparse/**), on top of `dynamic`; `io` (WP 8.6-P20): `nalgebra::io`, the Matrix Market parser
+# (io/**), on top of `sparse`.
 [features]
-default = ["statistics", "blas", "closures", "dynamic"]
+default = ["statistics", "blas", "closures", "dynamic", "sparse", "io"]
 statistics = []
 blas = []
 closures = []
 dynamic = []
+sparse = ["dynamic"]
+io = ["sparse"]
 
 [dependencies]
 simba.workspace = true

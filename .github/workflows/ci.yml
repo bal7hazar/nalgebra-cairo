@@ -29,6 +29,7 @@ jobs:
           scarb fmt --check
           python3 scripts/api_parity.py --check
           python3 tools/shapegen/shapegen.py --check
+          python3 crates/nalgebra/src/linalg/generate.py --check
       - name: Lint (default features, then the lightest `nalgebra`)
         run: |
           scarb lint --deny-warnings
@@ -84,6 +85,7 @@ jobs:
           - { name: tests_linalg_svd_wide6, package: nalgebra_tests_linalg_svd_wide6, filters: "nalgebra_tests_linalg_svd_wide6" }
           - { name: tests_linalg_svd_wide6b, package: nalgebra_tests_linalg_svd_wide6b, filters: "nalgebra_tests_linalg_svd_wide6b" }
           - { name: tests_dynamic, package: nalgebra_tests_dynamic, filters: "nalgebra_tests_dynamic" }
+          - { name: tests_sparse, package: nalgebra_tests_sparse, filters: "nalgebra_tests_sparse" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
           - { name: "shapes norms", package: nalgebra_shapes_tests_norms, filters: "nalgebra_shapes_tests_norms" }
           - { name: "shapes componentwise", package: nalgebra_shapes_tests_componentwise, filters: "nalgebra_shapes_tests_componentwise" }

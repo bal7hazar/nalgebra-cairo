@@ -19,16 +19,16 @@ How to read it:
 |---|---:|---:|---:|---:|---:|---:|
 | base | 480 | 0 | 6 | 318 | 804 | 98.8% |
 | geometry | 932 | 3 | 0 | 113 | 1048 | 99.7% |
-| linalg | 174 | 0 | 121 | 9 | 304 | 59.0% |
-| sparse | 0 | 0 | 31 | 16 | 47 | 0.0% |
-| io | 0 | 0 | 2 | 0 | 2 | 0.0% |
+| linalg | 177 | 0 | 118 | 9 | 304 | 60.0% |
+| sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
+| io | 1 | 0 | 1 | 0 | 2 | 50.0% |
 | third_party | 0 | 0 | 91 | 72 | 163 | 0.0% |
 | root | 0 | 0 | 34 | 1 | 35 | 0.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1586** | **3** | **285** | **562** | **2436** | **84.6%** |
+| **total** | **1624** | **3** | **250** | **559** | **2436** | **86.5%** |
 
-nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **96** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
+nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **97** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
 ## Proposed work packages
 
@@ -55,9 +55,9 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 48 | standard numerics | P14 | `linalg/col_piv_qr.rs` (18), `linalg/full_piv_lu.rs` (17), `linalg/lblt.rs` (10), `linalg/decomposition.rs` (3) |
 | [P16](#p16-schur-hessenberg-bidiagonal-tridiagonal-general-eigen) | Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen | 64 | hard numerics | P14 | `linalg/bidiagonal.rs` (14), `linalg/symmetric_tridiagonal.rs` (13), `linalg/hessenberg.rs` (12), `linalg/schur.rs` (12), `linalg/eigen.rs` (6) |
 | [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 3 | hard numerics | P14, P16 | `linalg/pow.rs` (2), `linalg/exp.rs` (1) |
-| [P18](#p18-convolution) | Convolution | 3 | mechanical | P13 | `linalg/convolution.rs` (3) |
+| [P18](#p18-convolution) | Convolution | 0 | mechanical | P13 |  |
 | [P19](#p19-glam-cairo-conversions) | glam-cairo conversions | 91 | mechanical | WP 6.2 (glam-cairo pin) | `third_party/glam/common/glam_matrix.rs` (36), `third_party/glam/common/glam_point.rs` (24), `third_party/glam/common/glam_isometry.rs` (11), `third_party/glam/common/glam_translation.rs` (6), `third_party/glam/common/glam_quaternion.rs` (4) |
-| [P20](#p20-sparse-matrices-and-matrix-market-i-o) | Sparse matrices and Matrix Market I/O | 33 | standard numerics | P13 | `sparse/cs_matrix.rs` (11), `sparse/cs_matrix_cholesky.rs` (7), `sparse/cs_matrix_solve.rs` (5), `sparse/cs_matrix_ops.rs` (4), `sparse/cs_matrix_conversion.rs` (3) |
+| [P20](#p20-sparse-matrices-and-matrix-market-i-o) | Sparse matrices and Matrix Market I/O | 1 | standard numerics | P13 | `io/matrix_market.rs` (1) |
 | [P21](#p21-crate-root-functions-and-construction-macros) | Crate-root functions and construction macros | 32 | mechanical | P01, P13 | `lib.rs` (32) |
 
 ### P01 Rectangular and remaining static shapes
@@ -180,9 +180,8 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P18 Convolution
 
-`convolve_full` / `convolve_same` / `convolve_valid` on vectors. Tier: mechanical. Depends on: P13. 3 items (`*` = partial):
+`convolve_full` / `convolve_same` / `convolve_valid` on vectors. Tier: mechanical. Depends on: P13. 0 items (`*` = partial):
 
-- **Vector**: `convolve_full`, `convolve_same`, `convolve_valid`
 
 ### P19 glam-cairo conversions
 
@@ -215,14 +214,9 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P20 Sparse matrices and Matrix Market I/O
 
-legacy `nalgebra::sparse` (`CsMatrix`, `CsVector`, `CsCholesky`, triangular solves) and `nalgebra::io` Matrix Market parsing. Tier: standard numerics. Depends on: P13. 33 items (`*` = partial):
+legacy `nalgebra::sparse` (`CsMatrix`, `CsVector`, `CsCholesky`, triangular solves) and `nalgebra::io` Matrix Market parsing. Tier: standard numerics. Depends on: P13. 1 items (`*` = partial):
 
-- **CsCholesky**: `decompose_left_looking`, `decompose_up_looking`, `l`, `new`, `new_symbolic`, `unwrap_l`, `type:CsCholesky`
-- **CsMatrix**: `impl:Add<CsMatrix>`, `impl:Clone`, `impl:From<Matrix>`, `impl:Mul<CsMatrix>`, `impl:Mul<T>`, `impl:PartialEq`, `from_triplet`, `is_sorted`, `is_square`, `len`, `ncols`, `nrows`, `shape`, `solve_lower_triangular`, `solve_lower_triangular_cs`, `solve_lower_triangular_mut`, `tr_solve_lower_triangular`, `tr_solve_lower_triangular_mut`, `transpose`, `values_mut`, `type:CsMatrix`
-- **Matrix**: `impl:From<CsMatrix>`
-- **Vector**: `axpy_cs`
-- **nalgebra::io**: `cs_matrix_from_matrix_market`, `cs_matrix_from_matrix_market_str`
-- **nalgebra::sparse**: `cumsum`
+- **nalgebra::io**: `cs_matrix_from_matrix_market`
 
 ### P21 Crate-root functions and construction macros
 
@@ -264,12 +258,12 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | `simd` | 15 | SIMD lanes (`SimdValue`, `simd_*`, AoSoA types): Cairo has no SIMD; the scalar path is the only path. |
 | `rayon` | 4 | `rayon` parallel iterators: a Cairo program is sequential. |
 | `unsafe` | 38 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
-| `borrow` | 47 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
-| `fmt` | 36 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
+| `borrow` | 48 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
+| `fmt` | 35 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
 | `glue` | 44 | Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, `encase`, the `serde` visitor types). |
 | `random` | 65 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
 | `interop` | 68 | Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` scalar, and the `glam` types glam-cairo does not have: f64 `D*`, aligned `*A`, `i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam-cairo has are in scope. |
-| `generic-dim` | 245 | Generic-dimension machinery subsumed by concrete types: `Dim`, `DimName`, `Const`, `Dyn`, typenum `U*`, `Storage` / `RawStorage` / `ArrayStorage` / `VecStorage`, `Allocator`, `DefaultAllocator`, `ShapeConstraint`, views / slices / iterators as types, `*_generic` constructors, `into_owned` / `clone_owned` (identity on owned types). |
+| `generic-dim` | 242 | Generic-dimension machinery subsumed by concrete types: `Dim`, `DimName`, `Const`, `Dyn`, typenum `U*`, `Storage` / `RawStorage` / `ArrayStorage` / `VecStorage`, `Allocator`, `DefaultAllocator`, `ShapeConstraint`, views / slices / iterators as types, `*_generic` constructors, `into_owned` / `clone_owned` (identity on owned types). |
 
 `docs/PLAN.md` "Out of scope" also lists sparse, macros, complex numbers, Schur, Hessenberg, matrix exponential and convolution. They are NOT excluded here: they belong to nalgebra-rs's API, hence to the 0.1.0 target, until the owner decides otherwise (packages P16, P17, P18, P20, P21).
 
@@ -284,6 +278,7 @@ Public Cairo items that spell an upstream operator, field or `Deref` access Cair
 | Affine2 | `impl:TryFrom<Matrix>`, `impl:TryFrom<Projective2>`, `impl:TryFrom<Transform2>` | `try_convert(m)` | the checked side of upstream's `SubsetOf<Matrix>` / `SubsetOf<Transform>` (`is_in_subset`, `check_homogeneous_invariants`) |
 | Affine3 | `impl:Div<Affine3>`, `impl:Mul<Affine3>` | `a * b`, `a / b` | the same-category instances of upstream's `Mul<Transform>` / `Div<Transform>` (`RENAMES` maps the items to `mul_transform` / `div_transform`, every pair of categories) |
 | Affine3 | `impl:TryFrom<Matrix>`, `impl:TryFrom<Projective3>`, `impl:TryFrom<Transform3>` | `try_convert(m)` | the checked side of upstream's `SubsetOf<Matrix>` / `SubsetOf<Transform>` (`is_in_subset`, `check_homogeneous_invariants`) |
+| CsVector | `type:CsVector` | `CsVector<T>` | upstream's alias `CsVector<T, R, S> = CsMatrix<T, R, U1, S>` (its default type parameters keep it out of the inventory); a `CsMatrix` with one column here |
 | Isometry2 | `impl:From<Isometry>` | `convert(iso)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Isometry>` (`RENAMES` maps its scalar side to `cast`) |
 | Isometry2 | `impl:From<Rotation>` | `convert(r)` / `convert(t)` | the 2D side of upstream's `SubsetOf<Isometry \| Similarity>` (`RENAMES` points at the 3D impls) |
 | Isometry3 | `impl:From<Isometry>` | `convert(iso)` | the change of rotation representation (unit complex / quaternion <-> matrix) of upstream's `SubsetOf<Isometry>` (`RENAMES` maps its scalar side to `cast`) |
@@ -3349,13 +3344,13 @@ Cairo: Udu2/3/4/6 · ported 8, partial 0, missing 0, excluded 0.
 
 #### Vector (linalg)
 
-Cairo: Matrix1, Vector2/3/4/5/6 · ported 0, partial 0, missing 3, excluded 0.
+Cairo: Matrix1, Vector2/3/4/5/6 · ported 3, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `convolve_full` | missing |  | P18 | `linalg/convolution.rs` |
-| method `convolve_same` | missing |  | P18 | `linalg/convolution.rs` |
-| method `convolve_valid` | missing |  | P18 | `linalg/convolution.rs` |
+| method `convolve_full` | ported | Matrix1, Vector2/3/4/5/6, DVector::convolve_full |  | `linalg/convolution.rs` |
+| method `convolve_same` | ported | Matrix1, Vector2/3/4/5/6, DVector::convolve_same |  | `linalg/convolution.rs` |
+| method `convolve_valid` | ported | Matrix1, Vector2/3/4/5/6, DVector::convolve_valid |  | `linalg/convolution.rs` |
 
 #### nalgebra::linalg (linalg)
 
@@ -3389,48 +3384,48 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 2.
 
 #### CsCholesky (sparse)
 
-Cairo: none · ported 0, partial 0, missing 7, excluded 0.
+Cairo: CsCholesky · ported 7, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `decompose_left_looking` | missing |  | P20 | `sparse/cs_matrix_cholesky.rs` |
-| method `decompose_up_looking` | missing |  | P20 | `sparse/cs_matrix_cholesky.rs` |
-| method `l` | missing |  | P20 | `sparse/cs_matrix_cholesky.rs` |
-| method `new` | missing |  | P20 | `sparse/cs_matrix_cholesky.rs` |
-| method `new_symbolic` | missing |  | P20 | `sparse/cs_matrix_cholesky.rs` |
-| method `unwrap_l` | missing |  | P20 | `sparse/cs_matrix_cholesky.rs` |
-| type `CsCholesky` | missing |  | P20 | `sparse/cs_matrix_cholesky.rs` |
+| method `decompose_left_looking` | ported | CsCholesky::decompose_left_looking |  | `sparse/cs_matrix_cholesky.rs` |
+| method `decompose_up_looking` | ported | CsCholesky::decompose_up_looking |  | `sparse/cs_matrix_cholesky.rs` |
+| method `l` | ported | CsCholesky::l |  | `sparse/cs_matrix_cholesky.rs` |
+| method `new` | ported | CsCholesky::new |  | `sparse/cs_matrix_cholesky.rs` |
+| method `new_symbolic` | ported | CsCholesky::new_symbolic |  | `sparse/cs_matrix_cholesky.rs` |
+| method `unwrap_l` | ported | CsCholesky::unwrap_l |  | `sparse/cs_matrix_cholesky.rs` |
+| type `CsCholesky` | ported | CsCholesky |  | `sparse/cs_matrix_cholesky.rs` |
 
 #### CsMatrix (sparse)
 
-Cairo: none · ported 0, partial 0, missing 21, excluded 3.
+Cairo: CsMatrix · ported 21, partial 0, missing 0, excluded 3.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Add<CsMatrix>` | missing |  | P20 | `sparse/cs_matrix_ops.rs` |
-| impl `Clone` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| impl `Debug` | excluded |  | fmt | `sparse/cs_matrix.rs` |
-| impl `From<Matrix>` | missing |  | P20 | `sparse/cs_matrix_conversion.rs` |
-| impl `Mul<CsMatrix>` | missing |  | P20 | `sparse/cs_matrix_ops.rs` |
-| impl `Mul<T>` | missing |  | P20 | `sparse/cs_matrix_ops.rs` |
-| impl `PartialEq` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| method `from_triplet` | missing |  | P20 | `sparse/cs_matrix_conversion.rs` |
+| impl `Add<CsMatrix>` | ported | CsMatrix (impl `Add<CsMatrix>`) |  | `sparse/cs_matrix_ops.rs` |
+| impl `Clone` | ported | CsMatrix (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `sparse/cs_matrix.rs` |
+| impl `Debug` | ported | CsMatrix (impl `Debug`) |  | `sparse/cs_matrix.rs` |
+| impl `From<Matrix>` | ported | CsMatrix (impl `From<Matrix>`) |  | `sparse/cs_matrix_conversion.rs` |
+| impl `Mul<CsMatrix>` | ported | CsMatrix (impl `Mul<CsMatrix>`) |  | `sparse/cs_matrix_ops.rs` |
+| impl `Mul<T>` | ported | CsMatrix::scale | renamed `scale`: heterogeneous operators are named methods (DESIGN D4) | `sparse/cs_matrix_ops.rs` |
+| impl `PartialEq` | ported | CsMatrix (impl `PartialEq`) |  | `sparse/cs_matrix.rs` |
+| method `from_triplet` | ported | CsMatrix::from_triplet |  | `sparse/cs_matrix_conversion.rs` |
 | method `from_triplet_generic` | excluded |  | generic-dim | `sparse/cs_matrix_conversion.rs` |
-| method `is_sorted` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| method `is_square` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| method `len` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| method `ncols` | missing |  | P20 | `sparse/cs_matrix.rs` |
+| method `is_sorted` | ported | CsMatrix::is_sorted |  | `sparse/cs_matrix.rs` |
+| method `is_square` | ported | CsMatrix::is_square |  | `sparse/cs_matrix.rs` |
+| method `len` | ported | CsMatrix::len |  | `sparse/cs_matrix.rs` |
+| method `ncols` | ported | CsMatrix::ncols |  | `sparse/cs_matrix.rs` |
 | method `new_uninitialized_generic` | excluded |  | generic-dim | `sparse/cs_matrix.rs` |
-| method `nrows` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| method `shape` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| method `solve_lower_triangular` | missing |  | P20 | `sparse/cs_matrix_solve.rs` |
-| method `solve_lower_triangular_cs` | missing |  | P20 | `sparse/cs_matrix_solve.rs` |
-| method `solve_lower_triangular_mut` | missing |  | P20 | `sparse/cs_matrix_solve.rs` |
-| method `tr_solve_lower_triangular` | missing |  | P20 | `sparse/cs_matrix_solve.rs` |
-| method `tr_solve_lower_triangular_mut` | missing |  | P20 | `sparse/cs_matrix_solve.rs` |
-| method `transpose` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| method `values_mut` | missing |  | P20 | `sparse/cs_matrix.rs` |
-| type `CsMatrix` | missing |  | P20 | `sparse/cs_matrix.rs` |
+| method `nrows` | ported | CsMatrix::nrows |  | `sparse/cs_matrix.rs` |
+| method `shape` | ported | CsMatrix::shape |  | `sparse/cs_matrix.rs` |
+| method `solve_lower_triangular` | ported | CsMatrix::solve_lower_triangular |  | `sparse/cs_matrix_solve.rs` |
+| method `solve_lower_triangular_cs` | ported | CsMatrix::solve_lower_triangular_cs |  | `sparse/cs_matrix_solve.rs` |
+| method `solve_lower_triangular_mut` | ported | CsMatrix::solve_lower_triangular_mut |  | `sparse/cs_matrix_solve.rs` |
+| method `tr_solve_lower_triangular` | ported | CsMatrix::tr_solve_lower_triangular |  | `sparse/cs_matrix_solve.rs` |
+| method `tr_solve_lower_triangular_mut` | ported | CsMatrix::tr_solve_lower_triangular_mut |  | `sparse/cs_matrix_solve.rs` |
+| method `transpose` | ported | CsMatrix::transpose |  | `sparse/cs_matrix.rs` |
+| method `values_mut` | excluded |  | borrow | `sparse/cs_matrix.rs` |
+| type `CsMatrix` | ported | CsMatrix |  | `sparse/cs_matrix.rs` |
 
 #### CsStorage (sparse)
 
@@ -3466,52 +3461,52 @@ Cairo: none · ported 0, partial 0, missing 0, excluded 1.
 
 #### CsVecStorage (sparse)
 
-Cairo: none · ported 0, partial 0, missing 0, excluded 7.
+Cairo: none · ported 3, partial 0, missing 0, excluded 4.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | impl `Clone` | excluded |  | generic-dim | `sparse/cs_matrix.rs` |
 | impl `Debug` | excluded |  | fmt | `sparse/cs_matrix.rs` |
 | impl `PartialEq` | excluded |  | generic-dim | `sparse/cs_matrix.rs` |
-| method `i` | excluded |  | generic-dim | `sparse/cs_matrix.rs` |
-| method `p` | excluded |  | generic-dim | `sparse/cs_matrix.rs` |
-| method `values` | excluded |  | generic-dim | `sparse/cs_matrix.rs` |
+| method `i` | ported | CsMatrix::i | the storage accessors of `m.data` are methods of the matrix (`p()`: the `ncols` column pointers) | `sparse/cs_matrix.rs` |
+| method `p` | ported | CsMatrix::p | the storage accessors of `m.data` are methods of the matrix (`p()`: the `ncols` column pointers) | `sparse/cs_matrix.rs` |
+| method `values` | ported | CsMatrix::values | the storage accessors of `m.data` are methods of the matrix (`p()`: the `ncols` column pointers) | `sparse/cs_matrix.rs` |
 | type `CsVecStorage` | excluded |  | generic-dim | `sparse/cs_matrix.rs` |
 
 #### Matrix (sparse)
 
-Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 0, partial 0, missing 1, excluded 0.
+Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 1, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `From<CsMatrix>` | missing |  | P20 | `sparse/cs_matrix_conversion.rs` |
+| impl `From<CsMatrix>` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5, DMatrix, DVector (impl `From<CsMatrix>`) |  | `sparse/cs_matrix_conversion.rs` |
 
 #### Vector (sparse)
 
-Cairo: Matrix1, Vector2/3/4/5/6 · ported 0, partial 0, missing 1, excluded 0.
+Cairo: Matrix1, Vector2/3/4/5/6 · ported 1, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| method `axpy_cs` | missing |  | P20 | `sparse/cs_matrix_ops.rs` |
+| method `axpy_cs` | ported | Matrix1, Vector2/3/4/5/6, DVector::axpy_cs |  | `sparse/cs_matrix_ops.rs` |
 
 #### nalgebra::sparse (sparse)
 
-Cairo: none · ported 0, partial 0, missing 1, excluded 0.
+Cairo: nalgebra::sparse · ported 1, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| function `cumsum` | missing |  | P20 | `sparse/cs_utils.rs` |
+| function `cumsum` | ported | nalgebra::sparse (function `cumsum`) |  | `sparse/cs_utils.rs` |
 
 ### Module `io`
 
 #### nalgebra::io (io)
 
-Cairo: none · ported 0, partial 0, missing 2, excluded 0.
+Cairo: nalgebra::io · ported 1, partial 0, missing 1, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | function `cs_matrix_from_matrix_market` | missing |  | P20 | `io/matrix_market.rs` |
-| function `cs_matrix_from_matrix_market_str` | missing |  | P20 | `io/matrix_market.rs` |
+| function `cs_matrix_from_matrix_market_str` | ported | nalgebra::io (function `cs_matrix_from_matrix_market_str`) |  | `io/matrix_market.rs` |
 
 ### Module `third_party`
 

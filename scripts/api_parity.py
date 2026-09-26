@@ -1200,6 +1200,11 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "DMatrix": ["DMatrix"],
     "DVector": ["DVector"],
     "RowDVector": ["RowDVector"],
+    # WP 8.6-P20: the legacy sparse module and the Matrix Market parser.
+    "CsMatrix": ["CsMatrix"],
+    "CsCholesky": ["CsCholesky"],
+    "nalgebra::sparse": ["nalgebra::sparse"],
+    "nalgebra::io": ["nalgebra::io"],
 }
 
 # WP 8.5-P13: Cairo types that stand for an upstream owner WITHOUT being required by it. Upstream's
@@ -1422,6 +1427,13 @@ RENAMES = (
     rule(r".*", r"impl:Clone", "impl:Copy", "Cairo values are `Copy`"),
     rule(r"DVector|RowDVector", r"impl:From<Vec>", "impl:From<Array>",
          "Cairo's `Array<T>` is `Vec<T>` (WP 8.5-P13)"),
+    # WP 8.6-P20: `CsMatrix * k` is a heterogeneous operator (DESIGN D4); the storage accessors
+    # (`m.data.p()`...) are the matrix's own (Cairo's `CsMatrix` is its storage).
+    rule(r"CsMatrix", r"impl:Mul<T>", "scale",
+         "heterogeneous operators are named methods (DESIGN D4)"),
+    rule(r"CsVecStorage", r"(p|i|values)", r"CsMatrix::\1",
+         "the storage accessors of `m.data` are methods of the matrix (`p()`: the `ncols` column "
+         "pointers)"),
     rule(r".*", r"impl:Eq", "impl:PartialEq", "Cairo has no separate `Eq`"),
     rule(r".*", r"impl:AbsDiffEq", "abs_diff_eq", "tolerance in ulp (DESIGN D3)"),
     rule(r".*", r"impl:Zero", "is_zero", "`zeros()` + `is_zero()`"),
@@ -1742,6 +1754,10 @@ CAIRO_FORMS = (
     (r"Matrix[34]", r"impl:From<(?:Affine|Projective|Transform)[23]>", "`t.into()`",
      "the instances of upstream's `From<Transform> for OMatrix` (`RENAMES` points at "
      "`Matrix4::From<Affine3>`)"),
+    # WP 8.6-P20.
+    (r"CsVector", r"type:CsVector", "`CsVector<T>`",
+     "upstream's alias `CsVector<T, R, S> = CsMatrix<T, R, U1, S>` (its default type parameters "
+     "keep it out of the inventory); a `CsMatrix` with one column here"),
 )
 
 
@@ -1867,6 +1883,9 @@ EXCLUDE = (
     exclude(r".*", r"(?:iter|column_iter|row_iter|into_iter)", "generic-dim"),
     exclude(r"CsVecStorage|CsStorage|CsStorageMut|CsStorageIter|CsStorageIterMut|"
             r"ColumnEntries", r".*", "generic-dim"),
+    # WP 8.6-P20: an iterator of `&mut T` over the stored values (Cairo: `scale`, or a new matrix
+    # through `from_triplet`).
+    exclude(r"CsMatrix", r"values_mut", "borrow"),
     exclude(r".*", r"(?:type|trait):(?:DVec\d|DMat\d|DQuat|DAffine\d|Vec3A|Mat3A|Affine3A|"
             r"I64Vec\d|U64Vec\d)", "interop"),
     exclude(r".*", r"impl:.*\b(?:DVec\d|DMat\d|DQuat|DAffine\d|Vec3A|Mat3A|Affine3A|BVec\dA|"
