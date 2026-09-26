@@ -49,7 +49,12 @@ pub impl Qr4x5Impl<
     /// The QR factorisation of `matrix` by modified Gram-Schmidt, fully unrolled: for each of
     /// the 4 leading columns, `r_ii = |a_i|` (floored norm of the exact sum of squares), `q_i =
     /// a_i / r_ii` (one prepared divisor), then `r_ij = <q_i, a_j>` (fused) and `a_j -= r_ij q_i`
-    /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
+    /// (one `mul_add` per component) for the later columns. When `q` is square, its last column is
+    /// projected once more against the others and renormalised: it is their unit complement, which
+    /// Householder gets right however small the last residual is, while Gram-Schmidt reads it off
+    /// that residual (measured on the `Qr3x5` oracle: a leading block with `r_33 = 0.0009` gave 2
+    /// 481 ulp on `q` and 2 228 on `QᵀQ = I` without the second projection). Panics on overflow
+    /// of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: Matrix4x5<T>) -> Qr4x5<T> {
         revoke_ap_tracking();
@@ -154,6 +159,55 @@ pub impl Qr4x5Impl<
         } else {
             {
                 let (q0, q1, q2, q3) = R::div4(a3.x, a3.y, a3.z, a3.w, r3_3);
+                Vector4 { x: q0, y: q1, z: q2, w: q3 }
+            }
+        };
+        let q3 = if r3_3 == R::zero() {
+            q3
+        } else {
+            let t0 = R::sum_prod4(q0.x, q3.x, q0.y, q3.y, q0.z, q3.z, q0.w, q3.w);
+            let t1 = R::sum_prod4(q1.x, q3.x, q1.y, q3.y, q1.z, q3.z, q1.w, q3.w);
+            let t2 = R::sum_prod4(q2.x, q3.x, q2.y, q3.y, q2.z, q3.z, q2.w, q3.w);
+            let h = Vector4 {
+                x: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q3.x), t0, q0.x), t1, q1.x,
+                        ),
+                        t2,
+                        q2.x,
+                    ),
+                ),
+                y: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q3.y), t0, q0.y), t1, q1.y,
+                        ),
+                        t2,
+                        q2.y,
+                    ),
+                ),
+                z: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q3.z), t0, q0.z), t1, q1.z,
+                        ),
+                        t2,
+                        q2.z,
+                    ),
+                ),
+                w: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), q3.w), t0, q0.w), t1, q1.w,
+                        ),
+                        t2,
+                        q2.w,
+                    ),
+                ),
+            };
+            {
+                let (q0, q1, q2, q3) = R::div4(h.x, h.y, h.z, h.w, R::norm4(h.x, h.y, h.z, h.w));
                 Vector4 { x: q0, y: q1, z: q2, w: q3 }
             }
         };

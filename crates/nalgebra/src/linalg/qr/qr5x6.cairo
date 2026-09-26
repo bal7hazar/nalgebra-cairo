@@ -49,7 +49,12 @@ pub impl Qr5x6Impl<
     /// The QR factorisation of `matrix` by modified Gram-Schmidt, fully unrolled: for each of
     /// the 5 leading columns, `r_ii = |a_i|` (floored norm of the exact sum of squares), `q_i =
     /// a_i / r_ii` (one prepared divisor), then `r_ij = <q_i, a_j>` (fused) and `a_j -= r_ij q_i`
-    /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
+    /// (one `mul_add` per component) for the later columns. When `q` is square, its last column is
+    /// projected once more against the others and renormalised: it is their unit complement, which
+    /// Householder gets right however small the last residual is, while Gram-Schmidt reads it off
+    /// that residual (measured on the `Qr3x5` oracle: a leading block with `r_33 = 0.0009` gave 2
+    /// 481 ulp on `q` and 2 228 on `QᵀQ = I` without the second projection). Panics on overflow
+    /// of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: Matrix5x6<T>) -> Qr5x6<T> {
         revoke_ap_tracking();
@@ -491,6 +496,182 @@ pub impl Qr5x6Impl<
         } else {
             {
                 let (q0, q1, q2, q3, q4) = R::div5(a4.x, a4.y, a4.z, a4.w, a4.a, r4_4);
+                Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
+            }
+        };
+        let q4 = if r4_4 == R::zero() {
+            q4
+        } else {
+            let t0 = R::wide_rescale(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), q0.x, q4.x), q0.y, q4.y,
+                            ),
+                            q0.z,
+                            q4.z,
+                        ),
+                        q0.w,
+                        q4.w,
+                    ),
+                    q0.a,
+                    q4.a,
+                ),
+            );
+            let t1 = R::wide_rescale(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), q1.x, q4.x), q1.y, q4.y,
+                            ),
+                            q1.z,
+                            q4.z,
+                        ),
+                        q1.w,
+                        q4.w,
+                    ),
+                    q1.a,
+                    q4.a,
+                ),
+            );
+            let t2 = R::wide_rescale(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), q2.x, q4.x), q2.y, q4.y,
+                            ),
+                            q2.z,
+                            q4.z,
+                        ),
+                        q2.w,
+                        q4.w,
+                    ),
+                    q2.a,
+                    q4.a,
+                ),
+            );
+            let t3 = R::wide_rescale(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), q3.x, q4.x), q3.y, q4.y,
+                            ),
+                            q3.z,
+                            q4.z,
+                        ),
+                        q3.w,
+                        q4.w,
+                    ),
+                    q3.a,
+                    q4.a,
+                ),
+            );
+            let h = Vector5 {
+                x: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q4.x), t0, q0.x),
+                                t1,
+                                q1.x,
+                            ),
+                            t2,
+                            q2.x,
+                        ),
+                        t3,
+                        q3.x,
+                    ),
+                ),
+                y: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q4.y), t0, q0.y),
+                                t1,
+                                q1.y,
+                            ),
+                            t2,
+                            q2.y,
+                        ),
+                        t3,
+                        q3.y,
+                    ),
+                ),
+                z: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q4.z), t0, q0.z),
+                                t1,
+                                q1.z,
+                            ),
+                            t2,
+                            q2.z,
+                        ),
+                        t3,
+                        q3.z,
+                    ),
+                ),
+                w: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q4.w), t0, q0.w),
+                                t1,
+                                q1.w,
+                            ),
+                            t2,
+                            q2.w,
+                        ),
+                        t3,
+                        q3.w,
+                    ),
+                ),
+                a: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), q4.a), t0, q0.a),
+                                t1,
+                                q1.a,
+                            ),
+                            t2,
+                            q2.a,
+                        ),
+                        t3,
+                        q3.a,
+                    ),
+                ),
+            };
+            {
+                let (q0, q1, q2, q3, q4) = R::div5(
+                    h.x,
+                    h.y,
+                    h.z,
+                    h.w,
+                    h.a,
+                    R::wide_sqrt(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(
+                                        R::wide_add_prod(R::wide_zero(), h.x, h.x), h.y, h.y,
+                                    ),
+                                    h.z,
+                                    h.z,
+                                ),
+                                h.w,
+                                h.w,
+                            ),
+                            h.a,
+                            h.a,
+                        ),
+                    ),
+                );
                 Vector5 { x: q0, y: q1, z: q2, w: q3, a: q4 }
             }
         };

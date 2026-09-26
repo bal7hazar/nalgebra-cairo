@@ -591,6 +591,7 @@ def outputs() -> dict[str, str]:
     out[lin + "cholesky_update.cairo"] = render_cholesky_update()
     out.update(eigen_package())
     out.update(svd_packages())
+    out.update(qr_package())
     return out
 
 
@@ -951,11 +952,16 @@ def eigen_package() -> dict[str, str]:
     out[base + "src/builders.cairo"] = render_builders({(n, n) for n in (4, 5, 6)}, {4, 5, 6})
     for n in (4, 5, 6):
         out[base + f"src/eigen{n}.cairo"] = render_eigen_tests(n)
+    out[base + "src/extras.cairo"] = EIGEN_EXTRAS
     out[base + "src/lib.cairo"] = (
         HEADER + "//! Package `nalgebra_tests_linalg_eigen` (WP 8.5-P14b): tests and gas benchmarks of\n"
-        "//! the symmetric eigen decompositions of the sizes 4, 5 and 6 through the public API.\n\n"
+        "//! the symmetric eigen decompositions of the sizes 1, 4, 5 and 6, the `try` forms of 2 and\n"
+        "//! 3 and `wilkinson_shift`, through the public API. Oracle vectors: `tools/oracle` suite\n"
+        "//! `spectral` (`oracle emit-cairo spectral --from vectors --max-per-dist 3 --ops\n"
+        "//! <symmetric_eigen{4,5,6}_eigenvalues{,_spd,_clustered,_deficient}>,wilkinson_shift --out\n"
+        "//! src/oracle_eigen.cairo`).\n\n"
         "#[cfg(test)]\nmod builders;\n#[cfg(test)]\nmod eigen4;\n#[cfg(test)]\nmod eigen5;\n"
-        "#[cfg(test)]\nmod eigen6;\n#[cfg(test)]\nmod oracle_eigen;\n")
+        "#[cfg(test)]\nmod eigen6;\n#[cfg(test)]\nmod extras;\n#[cfg(test)]\nmod oracle_eigen;\n")
     return out
 
 
@@ -1716,6 +1722,14 @@ def render_qr(r: int, c: int) -> str:
         n = norm(cols(r, f"a{i}"))
         st.append(f"let r{i}_{i} = {n};")
         st.append(f"let q{i} = if r{i}_{i} == R::zero() {{ {zero_v} }} else {{ {div_into(r, f'a{i}', f'r{i}_{i}')} }};")
+        if i == r - 1 and r <= c and i >= 1:
+            # The last column of a SQUARE `q` is the unit complement of the others: re-project
+            # it once (see the doc of `new`).
+            ps = " ".join(f"let t{l} = {dot(cols(r, f'q{l}'), cols(r, f'q{i}'))};" for l in range(i))
+            res = vec_lit(r, lambda t: fused([(1, col(r, f'q{i}', t), None)]
+                                             + [(-1, f"t{l}", col(r, f'q{l}', t)) for l in range(i)]))
+            st.append(f"let q{i} = if r{i}_{i} == R::zero() {{ q{i} }} else {{ {ps} let h = {res}; "
+                      f"{div_into(r, 'h', norm(cols(r, 'h')))} }};")
         for j in range(i + 1, c):
             st.append(f"let r{i}_{j} = {dot(cols(r, f'q{i}'), cols(r, f'a{j}'))};")
         for j in range(i + 1, c):
@@ -1849,7 +1863,7 @@ pub impl {Q}Impl<
     /// The QR factorisation of `matrix` by modified Gram-Schmidt, fully unrolled: for each of
     /// the {k} leading columns, `r_ii = |a_i|` (floored norm of the exact sum of squares), `q_i =
     /// a_i / r_ii` (one prepared divisor), then `r_ij = <q_i, a_j>` (fused) and `a_j -= r_ij q_i`
-    /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
+    /// (one `mul_add` per component) for the later columns. {'When `q` is square, its last column is projected once more against the others and renormalised: it is their unit complement, which Householder gets right however small the last residual is, while Gram-Schmidt reads it off that residual (measured on the `Qr3x5` oracle: a leading block with `r_33 = 0.0009` gave 2 481 ulp on `q` and 2 228 on `QᵀQ = I` without the second projection). ' if r <= c and r >= 2 else ''}Panics on overflow of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: {M}<T>) -> {Q}<T> {{
         revoke_ap_tracking();
@@ -1931,7 +1945,7 @@ def rank1_code(n: int, L, X, sigma: str) -> list[str]:
         xj = X[j]
         sx = {"+1": xj, "-1": f"-{xj}"}.get(sigma, f"{sigma} * {xj}")
         ks = list(range(j + 1, n))
-        body = [f"let d = {L[(j, j)]};", f"let sx = {sx};",
+        body = [f"let d = {L[(j, j)]};",
                 f"let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, {xj}));",
                 "if rr == R::zero() { core::panic_with_felt252(NOT_POSITIVE_DEFINITE); }"]
         if ks:
@@ -1957,7 +1971,7 @@ def rank1_code(n: int, L, X, sigma: str) -> list[str]:
                     body.append(f"let ({', '.join(tmp)}) = {divs(mnames, 'd')};")
                     body.append(" ".join(f"{a} = {b};" for a, b in zip(xt, tmp)))
         body.append(f"{L[(j, j)]} = rr;")
-        out.append(f"if {xj} != R::zero() {{ {' '.join(body)} }}")
+        out.append(f"let sx = {sx}; if sx != R::zero() {{ {' '.join(body)} }}")
     return out
 
 
@@ -1985,9 +1999,10 @@ def render_cholesky_update() -> str:
 //!
 //! — the same factor in exact arithmetic (`sigma > 0` is the rotation of `[l_j, sqrt(sigma) x]`,
 //! `sigma < 0` its hyperbolic counterpart), two roundings per entry plus the one of `sigma x_j`
-//! (exact when `sigma = ±1`, the case of `insert_column` / `remove_column`). A column whose `x_j`
-//! is exactly zero is left untouched (bit-exact no-op). The quotients of one column share a
-//! prepared divisor.
+//! (exact when `sigma = ±1`, the case of `insert_column` / `remove_column`). A column whose
+//! `sigma x_j` is exactly zero (`x_j = 0`, `sigma = 0`, or a product below one raw unit) is left
+//! untouched: a bit-exact no-op, where the formulas would floor `d l_kj` and divide it back. The
+//! quotients of one column share a prepared divisor.
 //!
 //! Panics: `nalgebra: not positive definite` when an updated diagonal entry is exactly zero,
 //! and the scalar's square-root error when a downdate makes the matrix indefinite (upstream
@@ -2568,6 +2583,9 @@ def svd_packages() -> dict[str, str]:
               if (r, c) not in SVD_EXISTING]
         out[base + "src/builders.cairo"] = render_builders(need, vecs, eq)
         mods = ["builders", "oracle_svd"]
+        if pkg == "tests_linalg_svd":
+            mods.append("ordered")
+            out[base + "src/ordered.cairo"] = SVD_ORDERED
         for r, c in shapes:
             m = f"svd{svd_suffix(r, c)}"
             mods.append(m)
@@ -2579,6 +2597,492 @@ def svd_packages() -> dict[str, str]:
             f"//! shapes> --out src/oracle_svd.cairo`).\n\n"
             + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
     return out
+
+
+
+# Measured bounds of the QR oracle tests: {(r, c): (reconstruction per unit, orthonormality)}.
+QR_BOUNDS: dict = {
+    (2, 1): (1, 1),
+    (2, 3): (2, 7),
+    (2, 4): (4, 18),
+    (2, 5): (2, 11),
+    (2, 6): (46, 305),
+    (3, 1): (1, 12),
+    (3, 2): (2, 26),
+    (3, 4): (4, 19),
+    (3, 5): (4, 43),
+    (3, 6): (3, 8),
+    (4, 1): (1, 1),
+    (4, 2): (1, 14),
+    (4, 3): (2, 16),
+    (4, 5): (5, 14),
+    (4, 6): (9, 166),
+    (5, 1): (1, 13),
+    (5, 2): (2, 32),
+    (5, 3): (2, 8),
+    (5, 4): (3, 14),
+    (5, 5): (4, 22),
+    (5, 6): (5, 24),
+    (6, 1): (1, 10),
+    (6, 2): (2, 8),
+    (6, 3): (2, 21),
+    (6, 4): (3, 51),
+    (6, 5): (4, 86),
+    (6, 6): (4, 38),
+}
+
+
+def cmp_lines(r: int, c: int, got: str, exp: str) -> str:
+    return " ".join(
+        f"ex = max(ex, excess(ulp_diff({got}.{fld(r, c, i, j)}, {exp}.{fld(r, c, i, j)}), oracle_tol(abs_raw({exp}.{fld(r, c, i, j)}), tol)));"
+        for i in range(r) for j in range(c))
+
+
+def render_qr_tests(r: int, c: int) -> str:
+    Q, M, k = qr_name(r, c), tname(r, c), min(r, c)
+    sfx = svd_suffix(r, c)
+    rb, ob = QR_BOUNDS.get((r, c), (0, 0))
+    extra = ""
+    uses = {tname(r, c), tname(r, 1), "MatrixMul"}
+    if r <= c:
+        ones = vec_lit(r, lambda i: f"fx({i + 1} * ONE)")
+        extra += f"""
+#[test]
+fn test_qr{sfx}_q_tr_mul() {{
+    let (a, _, _, _) = *oracle::qr{sfx}_q_r_cases().at(0);
+    let f = black_box(mat{r}x{c}(a)).qr();
+    let mut b = {ones};
+    f.q_tr_mul(ref b);
+    assert!(b == f.q.tr_mul({ones}));
+}}
+"""
+        uses.add("MatrixTrMul")
+    if r == c:
+        n = r
+        tup = tup_type(n)
+        xcmp = " ".join(
+            f"ex = max(ex, excess(ulp_diff(x.{fld(n, 1, i, 0)}, e.{fld(n, 1, i, 0)}), oracle_tol(abs_raw(e.{fld(n, 1, i, 0)}), tol)));"
+            for i in range(n))
+        extra += f"""
+/// `qr{sfx}_solve` (oracle): every component within the oracle tolerance; `solve_mut` agrees.
+#[test]
+fn test_oracle_qr{sfx}_solve() {{
+    let mut cases = oracle::qr{sfx}_solve_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let f = black_box(mat{n}x{n}(a)).qr();
+        assert!(f.is_invertible());
+        let x = f.solve(vec{n}(b)).unwrap();
+        let e = vec{n}(e);
+        {xcmp}
+        let mut y = vec{n}(b);
+        assert!(f.solve_mut(ref y));
+        ex = max(ex, excess(max_ulp_{n}x1(y, x), 2));
+        assert!(f.try_inverse().is_some());
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+#[test]
+fn test_qr{sfx}_singular() {{
+    let z = black_box(mat{n}x{n}({int_rows([[0] * n for _ in range(n)])}));
+    let f = z.qr();
+    assert!(!f.is_invertible());
+    assert!(f.try_inverse().is_none());
+    assert!(f.solve({vec_lit(n, lambda i: 'fx(ONE)')}).is_none());
+}}
+"""
+    tup_r = rows_type(r, c)
+    return f"""{HEADER}//! `{Q}` / `{M}QrTrait` through the public API (WP 8.5-P14b): oracle vectors (`tools/oracle` suite
+//! `spectral`), the factor identities, gas benchmarks.
+
+use core::cmp::max;
+use nalgebra::linalg::{{{M}QrTrait, {Q}Trait}};
+use nalgebra::{{{', '.join(sorted(uses))}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{r}x{k}', f'mat{k}x{c}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}', f'vec{r}', f'max_ulp_{r}x1'}))}}};
+use crate::oracle_qr as oracle;
+
+const ONE: i64 = 0x100000000;
+
+/// `qr{sfx}_q_r` (oracle): `q` and `r` entry by entry within the oracle tolerance (upstream's
+/// unpacked factors: `diag(r) >= 0`), `q r = A` and the orthonormality of `q` within the
+/// measured bounds.
+#[test]
+fn test_oracle_qr{sfx}_q_r() {{
+    let mut cases = oracle::qr{sfx}_q_r_cases();
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, eq, er, tol) = *case;
+        let a = black_box(mat{r}x{c}(a));
+        let f = a.qr();
+        let (q, r) = f.unpack();
+        let (q2, r2) = f.qr_internal();
+        assert!(q2 == q && r2 == r && f.q() == q && f.r() == r && f.unpack_r() == r);
+        let (eq, er) = (mat{r}x{k}(eq), mat{k}x{c}(er));
+        {cmp_lines(r, k, 'q', 'eq')}
+        {cmp_lines(k, c, 'r', 'er')}
+        rec = max(rec, max_ulp_{r}x{c}(q.mul_mat(r), a) / amax_{r}x{c}(a));
+        orth = max(orth, orth_{r}x{k}(q));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {rb} && orth <= {ob}, "measured {{}} {{}}", rec, orth);
+}}
+{extra}
+#[test]
+#[inline(never)]
+fn bench_qr{sfx}_new__baseline() {{
+    let (a, _, _, _) = *oracle::qr{sfx}_q_r_cases().at(3);
+    let _a = black_box(mat{r}x{c}(a));
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// Modified Gram-Schmidt, unrolled.
+#[test]
+#[inline(never)]
+fn bench_qr{sfx}_new__mgs() {{
+    let (a, _, _, _) = *oracle::qr{sfx}_q_r_cases().at(3);
+    let a = black_box(mat{r}x{c}(a));
+    let e = black_box(true);
+    let f = {Q}Trait::new(a);
+    assert!((f.r.{fld(k, c, 0, 0)} >= fx(0)) == e);
+}}
+"""
+
+
+def render_cholesky_update_tests() -> str:
+    parts = [f"""{HEADER}//! `Cholesky{{2,3,4,6}}UpdateTrait` through the public API (WP 8.5-P14b): the rank-one update
+//! and downdate, the column insertion and removal against the oracle (`tools/oracle` suite
+//! `spectral`), the exact no-op, the panics, gas benchmarks.
+
+use core::cmp::max;
+use nalgebra::linalg::{{
+    Cholesky2UpdateTrait, Cholesky3UpdateTrait, Cholesky4UpdateTrait, Cholesky6UpdateTrait,
+    Matrix2CholeskyTrait, Matrix3CholeskyTrait, Matrix4CholeskyTrait, Matrix6CholeskyTrait,
+    Cholesky2Trait, Cholesky3Trait, Cholesky4Trait, Cholesky6Trait,
+}};
+use nalgebra::{{Vector2, Vector3, Vector4, Vector6}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{
+    Cholesky2PartialEq, Cholesky3PartialEq, Cholesky4PartialEq, Cholesky6PartialEq, abs_raw,
+    excess, fx, oracle_tol, ulp_diff,
+}};
+use crate::builders::{{mat2x2, mat3x3, mat4x4, mat6x6, vec2, vec3, vec4, vec6}};
+use crate::oracle_qr as oracle;
+
+const ONE: i64 = 0x100000000;
+"""]
+    for n in (2, 3, 4, 6):
+        for kind in ("update", "downdate"):
+            parts.append(f"""/// `cholesky{n}_rank_one_{kind}` (oracle): the updated factor within the oracle tolerance.
+#[test]
+fn test_oracle_cholesky{n}_rank_one_{kind}() {{
+    let mut cases = oracle::cholesky{n}_rank_one_{kind}_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, x, sigma, e, tol) = *case;
+        let mut f = black_box(mat{n}x{n}(a)).cholesky().unwrap();
+        f.rank_one_update(vec{n}(x), fx(sigma));
+        let (l, e) = (f.l(), mat{n}x{n}(e));
+        {cmp_lines(n, n, 'l', 'e')}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+""")
+        zero = vec_lit(n, lambda i: "fx(0)")
+        parts.append(f"""#[test]
+fn test_cholesky{n}_rank_one_update_zero_is_exact() {{
+    let (a, _, _, _, _) = *oracle::cholesky{n}_rank_one_update_cases().at(0);
+    let f = black_box(mat{n}x{n}(a)).cholesky().unwrap();
+    let mut g = f;
+    g.rank_one_update({zero}, fx(ONE));
+    assert!(g == f);
+    let mut g = f;
+    g.rank_one_update({vec_lit(n, lambda i: 'fx(ONE)')}, fx(0));
+    assert!(g == f);
+}}
+
+#[test]
+#[inline(never)]
+fn bench_cholesky{n}_rank_one_update__baseline() {{
+    let (a, x, s, _, _) = *oracle::cholesky{n}_rank_one_update_cases().at(3);
+    let _f = black_box(mat{n}x{n}(a).cholesky().unwrap());
+    let _x = black_box(vec{n}(x));
+    let _s = black_box(fx(s));
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// One scale-free rotation per column.
+#[test]
+#[inline(never)]
+fn bench_cholesky{n}_rank_one_update__rotations() {{
+    let (a, x, s, _, _) = *oracle::cholesky{n}_rank_one_update_cases().at(3);
+    let mut f = black_box(mat{n}x{n}(a).cholesky().unwrap());
+    let x = black_box(vec{n}(x));
+    let s = black_box(fx(s));
+    let e = black_box(true);
+    f.rank_one_update(x, s);
+    assert!((f.l11 > fx(0)) == e);
+}}
+""")
+    for n in (2, 3):
+        m = n + 1
+        for j in range(m):
+            keep = [i for i in range(m) if i != j]
+            rows = ", ".join(f"r{i}" for i in range(m))
+            elems = "; ".join(
+                f"let [{', '.join(f'a{i}{t}' if (i != j or t == j) else '_' for t in range(m))}] = r{i}"
+                for i in range(m))
+            sub = "[" + ", ".join("[" + ", ".join(f"a{i}{t}" for t in keep) + "]" for i in keep) + "]"
+            colv = "(" + ", ".join(f"a{i}{j}" for i in range(m)) + ")"
+            parts.append(f"""/// `cholesky{n}_insert_column_j{j}` (oracle): the factor of the {m}x{m} matrix rebuilt by inserting
+/// its column {j} into the factor of the rest.
+#[test]
+fn test_oracle_cholesky{n}_insert_column_j{j}() {{
+    let mut cases = oracle::cholesky{n}_insert_column_j{j}_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let [{rows}] = a;
+        {elems};
+        let f = black_box(mat{n}x{n}({sub})).cholesky().unwrap();
+        let l = f.insert_column({j}, vec{m}({colv})).l();
+        let e = mat{m}x{m}(e);
+        {cmp_lines(m, m, 'l', 'e')}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+""")
+        parts.append(f"""#[test]
+#[should_panic(expected: 'nalgebra: index out of bounds')]
+fn test_cholesky{n}_insert_column_out_of_bounds() {{
+    let (a, _, _, _, _) = *oracle::cholesky{n}_rank_one_update_cases().at(0);
+    let f = black_box(mat{n}x{n}(a)).cholesky().unwrap();
+    let _ = f.insert_column({m}, {vec_lit(m, lambda i: 'fx(ONE)')});
+}}
+
+#[test]
+#[inline(never)]
+fn bench_cholesky{n}_insert_column__baseline() {{
+    let (a, _, _, _, _) = *oracle::cholesky{n}_rank_one_update_cases().at(3);
+    let _f = black_box(mat{n}x{n}(a).cholesky().unwrap());
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// Column 0: the longest path (full forward substitution is empty, the whole trailing block is
+/// downdated).
+#[test]
+#[inline(never)]
+fn bench_cholesky{n}_insert_column__j0() {{
+    let (a, _, _, _, _) = *oracle::cholesky{n}_rank_one_update_cases().at(3);
+    let f = black_box(mat{n}x{n}(a).cholesky().unwrap());
+    let c = black_box({vec_lit(m, lambda i: 'fx(ONE)' if i else 'fx(64 * ONE)')});
+    let e = black_box(true);
+    let g = f.insert_column(0, c);
+    assert!((g.l11 > fx(0)) == e);
+}}
+""")
+    for n in (3, 4):
+        m = n - 1
+        for j in range(n):
+            parts.append(f"""/// `cholesky{n}_remove_column_j{j}` (oracle): the factor with row and column {j} removed.
+#[test]
+fn test_oracle_cholesky{n}_remove_column_j{j}() {{
+    let mut cases = oracle::cholesky{n}_remove_column_j{j}_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let l = black_box(mat{n}x{n}(a)).cholesky().unwrap().remove_column({j}).l();
+        let e = mat{m}x{m}(e);
+        {cmp_lines(m, m, 'l', 'e')}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+""")
+        parts.append(f"""#[test]
+#[should_panic(expected: 'nalgebra: index out of bounds')]
+fn test_cholesky{n}_remove_column_out_of_bounds() {{
+    let (a, _, _) = *oracle::cholesky{n}_remove_column_j0_cases().at(0);
+    let f = black_box(mat{n}x{n}(a)).cholesky().unwrap();
+    let _ = f.remove_column({n});
+}}
+
+#[test]
+#[inline(never)]
+fn bench_cholesky{n}_remove_column__baseline() {{
+    let (a, _, _) = *oracle::cholesky{n}_remove_column_j0_cases().at(3);
+    let _f = black_box(mat{n}x{n}(a).cholesky().unwrap());
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// Column 0: the whole trailing block is updated.
+#[test]
+#[inline(never)]
+fn bench_cholesky{n}_remove_column__j0() {{
+    let (a, _, _) = *oracle::cholesky{n}_remove_column_j0_cases().at(3);
+    let f = black_box(mat{n}x{n}(a).cholesky().unwrap());
+    let e = black_box(true);
+    let g = f.remove_column(0);
+    assert!((g.l11 > fx(0)) == e);
+}}
+""")
+    return "\n".join(parts)
+
+
+def qr_package() -> dict[str, str]:
+    base = "crates/tests_linalg_qr/"
+    out = {base + "Scarb.toml": TEST_MANIFEST.format(
+        name="tests_linalg_qr",
+        description="Tests and gas benchmarks of the QR factorisation of the shapes 1, 5, 6 and "
+                    "every rectangle, and of the Cholesky updates (WP 8.5-P14b; not published).")}
+    need, vecs = set(), {2, 3, 4, 6}
+    for r, c in qr_shapes():
+        k = min(r, c)
+        need |= {(r, c), (r, k), (k, c), (r, 1)}
+        vecs.add(r)
+    need |= {(n, n) for n in (2, 3, 4, 6)}
+    out[base + "src/builders.cairo"] = render_builders(need, vecs)
+    mods = ["builders", "oracle_qr", "cholesky_update"]
+    for r, c in qr_shapes():
+        m = f"qr{svd_suffix(r, c)}"
+        mods.append(m)
+        out[base + f"src/{m}.cairo"] = render_qr_tests(r, c)
+    out[base + "src/cholesky_update.cairo"] = render_cholesky_update_tests()
+    out[base + "src/lib.cairo"] = (
+        HEADER + "//! Package `nalgebra_tests_linalg_qr` (WP 8.5-P14b): tests and gas benchmarks of the QR\n"
+        "//! factorisation of the shapes P14a did not cover and of the Cholesky updates, through the\n"
+        "//! public API. Oracle vectors: `tools/oracle` suite `spectral` (`oracle emit-cairo spectral\n"
+        "//! --from vectors --max-per-dist 2 --ops <the qr and cholesky ops> --out src/oracle_qr.cairo`).\n\n"
+        + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
+    return out
+
+
+
+EIGEN_EXTRAS = f"""{HEADER}//! `SymmetricEigen1`, the `try` forms of `SymmetricEigen2` / `SymmetricEigen3` and
+//! `nalgebra::linalg::wilkinson_shift` through the public API (WP 8.5-P14b).
+
+use core::cmp::max;
+use nalgebra::linalg::{{
+    Matrix1SymmetricEigenTrait, Matrix2SymmetricEigenTrait, Matrix3SymmetricEigenTrait,
+    SymmetricEigen1Trait, SymmetricEigen2Trait, SymmetricEigen3Trait, wilkinson_shift,
+}};
+use nalgebra::{{Matrix1, Matrix2Trait, Matrix3Trait}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, fx, int, oracle_tol, ulp_diff}};
+use crate::oracle_eigen as oracle;
+
+#[test]
+fn test_symmetric_eigen1_is_exact() {{
+    let m = black_box(Matrix1 {{ x: int(-3) }});
+    let e = SymmetricEigen1Trait::new(m);
+    assert!(e.eigenvalues == m && e.eigenvectors == Matrix1 {{ x: int(1) }});
+    assert!(e.recompose() == m);
+    assert!(m.symmetric_eigen().eigenvalues == m && m.symmetric_eigenvalues() == m);
+    let t = m.try_symmetric_eigen(fx(0), 0).unwrap();
+    assert!(t.eigenvalues == m);
+    assert!(SymmetricEigen1Trait::try_new(m, fx(0), 0).is_some());
+}}
+
+#[test]
+fn test_symmetric_eigen2_try_new() {{
+    let m = black_box(Matrix2Trait::new(int(2), int(1), int(1), int(2)));
+    let e = SymmetricEigen2Trait::new(m);
+    let t = SymmetricEigen2Trait::try_new(m, fx(0), 0).unwrap();
+    assert!(t.eigenvalues == e.eigenvalues && t.eigenvectors == e.eigenvectors);
+    assert!(m.try_symmetric_eigen(fx(-1), 10).is_some());
+}}
+
+#[test]
+fn test_symmetric_eigen3_try_new() {{
+    let m = black_box(
+        Matrix3Trait::new(int(5), int(2), int(0), int(2), int(2), int(0), int(0), int(0), int(4)),
+    );
+    let e = SymmetricEigen3Trait::new(m);
+    // Converged within the four sweeps: bit-identical to `new`.
+    let t = SymmetricEigen3Trait::try_new(m, fx(1), 0).unwrap();
+    assert!(t.eigenvalues == e.eigenvalues && t.eigenvectors == e.eigenvectors);
+    assert!(m.try_symmetric_eigen(fx(1), 100).is_some());
+    // A negative `eps` can never be met.
+    assert!(SymmetricEigen3Trait::try_new(m, fx(-1), 0).is_none());
+}}
+
+/// `wilkinson_shift` (oracle): within the oracle tolerance.
+#[test]
+fn test_oracle_wilkinson_shift() {{
+    let mut cases = oracle::wilkinson_shift_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (tmm, tnn, tmn, e, tol) = *case;
+        let s = wilkinson_shift(black_box(fx(tmm)), fx(tnn), fx(tmn));
+        ex = max(ex, excess(ulp_diff(s, fx(e)), oracle_tol(abs_raw(fx(e)), tol)));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+#[test]
+fn test_wilkinson_shift_exact_cases() {{
+    // No coupling: the shift is `tnn`.
+    assert!(wilkinson_shift(int(42), int(64), int(0)) == int(64));
+    // [[2, 4], [4, 8]]: eigenvalues 0 and 10, the one closest to 8 is 10.
+    assert!(wilkinson_shift(int(2), int(8), int(4)) == int(10));
+    // [[42, 20], [20, -42]]: eigenvalues ±sqrt(42² + 20²) = ±46.52.., closest to -42 is the
+    // negative one.
+    let s = wilkinson_shift(int(42), int(-42), int(20));
+    // Four roundings: measured 4 ulp from the floored exact value.
+    assert!(ulp_diff(s, fx(-199796782196)) <= 4, "{{}}", s.raw);
+    // Equal diagonal (d = 0, sgn(0) = +1): [[42, 1], [1, 42]] gives 42 - 1.
+    assert!(wilkinson_shift(int(42), int(42), int(1)) == int(41));
+}}
+
+#[test]
+#[inline(never)]
+fn bench_wilkinson_shift__baseline() {{
+    let _a = black_box(fx(0x300000000));
+    let e = black_box(true);
+    assert!(e == e);
+}}
+
+/// The scale-free form: one halving, one `norm2`, one division, one product.
+#[test]
+#[inline(never)]
+fn bench_wilkinson_shift__scale_free() {{
+    let a = black_box(fx(0x300000000));
+    let e = black_box(true);
+    let s = wilkinson_shift(a, fx(0x100000000), fx(0x80000000));
+    assert!((s != fx(0)) == e);
+}}
+"""
+
+SVD_ORDERED = f"""{HEADER}//! `nalgebra::linalg::svd_ordered2` / `svd_ordered3` through the public API (WP 8.5-P14b).
+
+use nalgebra::linalg::{{Svd2Trait, Svd3Trait, svd_ordered2, svd_ordered3}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{Svd2PartialEq, Svd3PartialEq, fx}};
+use crate::builders::{{mat2x2, mat3x3}};
+use crate::oracle_svd as oracle;
+
+#[test]
+fn test_svd_ordered2_is_svd2() {{
+    let (a, _, _) = *oracle::svd2_singular_values_cases().at(3);
+    let a = black_box(mat2x2(a));
+    assert!(svd_ordered2(a, true, true) == Svd2Trait::new(a));
+    assert!(svd_ordered2(a, false, false) == Svd2Trait::new(a));
+}}
+
+#[test]
+fn test_svd_ordered3_is_svd3_try_new() {{
+    let (a, _, _) = *oracle::svd3_singular_values_cases().at(3);
+    let a = black_box(mat3x3(a));
+    assert!(svd_ordered3(a, true, true, fx(0x100000000), 0).unwrap() == Svd3Trait::new(a));
+    assert!(svd_ordered3(a, true, true, fx(-1), 0).is_none());
+}}
+"""
 
 
 if __name__ == "__main__":

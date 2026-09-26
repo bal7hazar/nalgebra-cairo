@@ -9,6 +9,8 @@ mod builders;
 #[cfg(test)]
 mod oracle_svd;
 #[cfg(test)]
+mod ordered;
+#[cfg(test)]
 mod svd1;
 #[cfg(test)]
 mod svd2;

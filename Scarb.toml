@@ -31,6 +31,7 @@ members = [
     "crates/tests_linalg_solve_rhs",
     "crates/tests_linalg_factor",
     "crates/tests_linalg_eigen",
+    "crates/tests_linalg_qr",
     "crates/tests_linalg_svd",
     "crates/tests_linalg_svd5",
     "crates/tests_linalg_svd6",

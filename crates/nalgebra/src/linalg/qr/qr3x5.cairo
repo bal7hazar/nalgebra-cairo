@@ -49,7 +49,12 @@ pub impl Qr3x5Impl<
     /// The QR factorisation of `matrix` by modified Gram-Schmidt, fully unrolled: for each of
     /// the 3 leading columns, `r_ii = |a_i|` (floored norm of the exact sum of squares), `q_i =
     /// a_i / r_ii` (one prepared divisor), then `r_ij = <q_i, a_j>` (fused) and `a_j -= r_ij q_i`
-    /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
+    /// (one `mul_add` per component) for the later columns. When `q` is square, its last column is
+    /// projected once more against the others and renormalised: it is their unit complement, which
+    /// Householder gets right however small the last residual is, while Gram-Schmidt reads it off
+    /// that residual (measured on the `Qr3x5` oracle: a leading block with `r_33 = 0.0009` gave 2
+    /// 481 ulp on `q` and 2 228 on `QᵀQ = I` without the second projection). Panics on overflow
+    /// of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: Matrix3x5<T>) -> Qr3x5<T> {
         revoke_ap_tracking();
@@ -124,6 +129,33 @@ pub impl Qr3x5Impl<
         } else {
             {
                 let (q0, q1, q2) = R::div3(a2.x, a2.y, a2.z, r2_2);
+                Vector3 { x: q0, y: q1, z: q2 }
+            }
+        };
+        let q2 = if r2_2 == R::zero() {
+            q2
+        } else {
+            let t0 = R::sum_prod3(q0.x, q2.x, q0.y, q2.y, q0.z, q2.z);
+            let t1 = R::sum_prod3(q1.x, q2.x, q1.y, q2.y, q1.z, q2.z);
+            let h = Vector3 {
+                x: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q2.x), t0, q0.x), t1, q1.x,
+                    ),
+                ),
+                y: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q2.y), t0, q0.y), t1, q1.y,
+                    ),
+                ),
+                z: R::wide_rescale(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), q2.z), t0, q0.z), t1, q1.z,
+                    ),
+                ),
+            };
+            {
+                let (q0, q1, q2) = R::div3(h.x, h.y, h.z, R::norm3(h.x, h.y, h.z));
                 Vector3 { x: q0, y: q1, z: q2 }
             }
         };

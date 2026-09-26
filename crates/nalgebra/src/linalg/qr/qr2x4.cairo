@@ -49,7 +49,12 @@ pub impl Qr2x4Impl<
     /// The QR factorisation of `matrix` by modified Gram-Schmidt, fully unrolled: for each of
     /// the 2 leading columns, `r_ii = |a_i|` (floored norm of the exact sum of squares), `q_i =
     /// a_i / r_ii` (one prepared divisor), then `r_ij = <q_i, a_j>` (fused) and `a_j -= r_ij q_i`
-    /// (one `mul_add` per component) for the later columns. Panics on overflow of a norm.
+    /// (one `mul_add` per component) for the later columns. When `q` is square, its last column is
+    /// projected once more against the others and renormalised: it is their unit complement, which
+    /// Householder gets right however small the last residual is, while Gram-Schmidt reads it off
+    /// that residual (measured on the `Qr3x5` oracle: a leading block with `r_33 = 0.0009` gave 2
+    /// 481 ulp on `q` and 2 228 on `QᵀQ = I` without the second projection). Panics on overflow
+    /// of a norm.
     /// Upstream: `matrix.qr()` / `QR::new(matrix)` (Householder, same unpacked factors).
     fn new(matrix: Matrix2x4<T>) -> Qr2x4<T> {
         revoke_ap_tracking();
@@ -78,6 +83,16 @@ pub impl Qr2x4Impl<
         } else {
             {
                 let (q0, q1) = (R::div(a1.x, r1_1), R::div(a1.y, r1_1));
+                Vector2 { x: q0, y: q1 }
+            }
+        };
+        let q1 = if r1_1 == R::zero() {
+            q1
+        } else {
+            let t0 = R::sum_prod2(q0.x, q1.x, q0.y, q1.y);
+            let h = Vector2 { x: R::mul_add(-t0, q0.x, q1.x), y: R::mul_add(-t0, q0.y, q1.y) };
+            {
+                let (q0, q1) = (R::div(h.x, R::norm2(h.x, h.y)), R::div(h.y, R::norm2(h.x, h.y)));
                 Vector2 { x: q0, y: q1 }
             }
         };

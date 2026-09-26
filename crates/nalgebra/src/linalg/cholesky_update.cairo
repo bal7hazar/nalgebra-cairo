@@ -16,9 +16,10 @@
 //!
 //! — the same factor in exact arithmetic (`sigma > 0` is the rotation of `[l_j, sqrt(sigma) x]`,
 //! `sigma < 0` its hyperbolic counterpart), two roundings per entry plus the one of `sigma x_j`
-//! (exact when `sigma = ±1`, the case of `insert_column` / `remove_column`). A column whose `x_j`
-//! is exactly zero is left untouched (bit-exact no-op). The quotients of one column share a
-//! prepared divisor.
+//! (exact when `sigma = ±1`, the case of `insert_column` / `remove_column`). A column whose
+//! `sigma x_j` is exactly zero (`x_j = 0`, `sigma = 0`, or a product below one raw unit) is left
+//! untouched: a bit-exact no-op, where the formulas would floor `d l_kj` and divide it back. The
+//! quotients of one column share a prepared divisor.
 //!
 //! Panics: `nalgebra: not positive definite` when an updated diagonal entry is exactly zero,
 //! and the scalar's square-root error when a downdate makes the matrix indefinite (upstream
@@ -58,9 +59,9 @@ pub impl Cholesky2UpdateImpl<
         let mut l1_1 = self.l22;
         let mut x0 = x.x;
         let mut x1 = x.y;
-        if x0 != R::zero() {
+        let sx = sigma * x0;
+        if sx != R::zero() {
             let d = l0_0;
-            let sx = sigma * x0;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x0));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -71,9 +72,9 @@ pub impl Cholesky2UpdateImpl<
             x1 = R::div(m1, d);
             l0_0 = rr;
         }
-        if x1 != R::zero() {
+        let sx = sigma * x1;
+        if sx != R::zero() {
             let d = l1_1;
-            let sx = sigma * x1;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x1));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -107,9 +108,9 @@ pub impl Cholesky2UpdateImpl<
                 let mut z1_1 = self.l22;
                 let mut u0 = v1;
                 let mut u1 = v2;
-                if u0 != R::zero() {
+                let sx = -u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = -u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -122,9 +123,9 @@ pub impl Cholesky2UpdateImpl<
                     u1 = R::div(m1, d);
                     z0_0 = rr;
                 }
-                if u1 != R::zero() {
+                let sx = -u1;
+                if sx != R::zero() {
                     let d = z1_1;
-                    let sx = -u1;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u1),
                     );
@@ -145,9 +146,9 @@ pub impl Cholesky2UpdateImpl<
                 let v2 = R::div(g2, cc);
                 let mut z0_0 = self.l22;
                 let mut u0 = v2;
-                if u0 != R::zero() {
+                let sx = -u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = -u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -205,9 +206,9 @@ pub impl Cholesky3UpdateImpl<
         let mut x0 = x.x;
         let mut x1 = x.y;
         let mut x2 = x.z;
-        if x0 != R::zero() {
+        let sx = sigma * x0;
+        if sx != R::zero() {
             let d = l0_0;
-            let sx = sigma * x0;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x0));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -224,9 +225,9 @@ pub impl Cholesky3UpdateImpl<
             x2 = y2;
             l0_0 = rr;
         }
-        if x1 != R::zero() {
+        let sx = sigma * x1;
+        if sx != R::zero() {
             let d = l1_1;
-            let sx = sigma * x1;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x1));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -237,9 +238,9 @@ pub impl Cholesky3UpdateImpl<
             x2 = R::div(m2, d);
             l1_1 = rr;
         }
-        if x2 != R::zero() {
+        let sx = sigma * x2;
+        if sx != R::zero() {
             let d = l2_2;
-            let sx = sigma * x2;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x2));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -278,9 +279,9 @@ pub impl Cholesky3UpdateImpl<
                 let mut u0 = v1;
                 let mut u1 = v2;
                 let mut u2 = v3;
-                if u0 != R::zero() {
+                let sx = -u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = -u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -299,9 +300,9 @@ pub impl Cholesky3UpdateImpl<
                     u2 = y2;
                     z0_0 = rr;
                 }
-                if u1 != R::zero() {
+                let sx = -u1;
+                if sx != R::zero() {
                     let d = z1_1;
-                    let sx = -u1;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u1),
                     );
@@ -314,9 +315,9 @@ pub impl Cholesky3UpdateImpl<
                     u2 = R::div(m2, d);
                     z1_1 = rr;
                 }
-                if u2 != R::zero() {
+                let sx = -u2;
+                if sx != R::zero() {
                     let d = z2_2;
-                    let sx = -u2;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u2),
                     );
@@ -352,9 +353,9 @@ pub impl Cholesky3UpdateImpl<
                 let mut z1_1 = self.l33;
                 let mut u0 = v2;
                 let mut u1 = v3;
-                if u0 != R::zero() {
+                let sx = -u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = -u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -367,9 +368,9 @@ pub impl Cholesky3UpdateImpl<
                     u1 = R::div(m1, d);
                     z0_0 = rr;
                 }
-                if u1 != R::zero() {
+                let sx = -u1;
+                if sx != R::zero() {
                     let d = z1_1;
-                    let sx = -u1;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u1),
                     );
@@ -412,9 +413,9 @@ pub impl Cholesky3UpdateImpl<
                 let v3 = R::div(g3, cc);
                 let mut z0_0 = self.l33;
                 let mut u0 = v3;
-                if u0 != R::zero() {
+                let sx = -u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = -u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -490,9 +491,9 @@ pub impl Cholesky3UpdateImpl<
                 let mut z1_1 = self.l33;
                 let mut u0 = self.l21;
                 let mut u1 = self.l31;
-                if u0 != R::zero() {
+                let sx = u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -505,9 +506,9 @@ pub impl Cholesky3UpdateImpl<
                     u1 = R::div(m1, d);
                     z0_0 = rr;
                 }
-                if u1 != R::zero() {
+                let sx = u1;
+                if sx != R::zero() {
                     let d = z1_1;
-                    let sx = u1;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u1),
                     );
@@ -521,9 +522,9 @@ pub impl Cholesky3UpdateImpl<
             1 => {
                 let mut z0_0 = self.l33;
                 let mut u0 = self.l32;
-                if u0 != R::zero() {
+                let sx = u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -574,9 +575,9 @@ pub impl Cholesky4UpdateImpl<
         let mut x1 = x.y;
         let mut x2 = x.z;
         let mut x3 = x.w;
-        if x0 != R::zero() {
+        let sx = sigma * x0;
+        if sx != R::zero() {
             let d = l0_0;
-            let sx = sigma * x0;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x0));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -597,9 +598,9 @@ pub impl Cholesky4UpdateImpl<
             x3 = y3;
             l0_0 = rr;
         }
-        if x1 != R::zero() {
+        let sx = sigma * x1;
+        if sx != R::zero() {
             let d = l1_1;
-            let sx = sigma * x1;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x1));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -616,9 +617,9 @@ pub impl Cholesky4UpdateImpl<
             x3 = y3;
             l1_1 = rr;
         }
-        if x2 != R::zero() {
+        let sx = sigma * x2;
+        if sx != R::zero() {
             let d = l2_2;
-            let sx = sigma * x2;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x2));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -629,9 +630,9 @@ pub impl Cholesky4UpdateImpl<
             x3 = R::div(m3, d);
             l2_2 = rr;
         }
-        if x3 != R::zero() {
+        let sx = sigma * x3;
+        if sx != R::zero() {
             let d = l3_3;
-            let sx = sigma * x3;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x3));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -669,9 +670,9 @@ pub impl Cholesky4UpdateImpl<
                 let mut u0 = self.l21;
                 let mut u1 = self.l31;
                 let mut u2 = self.l41;
-                if u0 != R::zero() {
+                let sx = u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -690,9 +691,9 @@ pub impl Cholesky4UpdateImpl<
                     u2 = y2;
                     z0_0 = rr;
                 }
-                if u1 != R::zero() {
+                let sx = u1;
+                if sx != R::zero() {
                     let d = z1_1;
-                    let sx = u1;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u1),
                     );
@@ -705,9 +706,9 @@ pub impl Cholesky4UpdateImpl<
                     u2 = R::div(m2, d);
                     z1_1 = rr;
                 }
-                if u2 != R::zero() {
+                let sx = u2;
+                if sx != R::zero() {
                     let d = z2_2;
-                    let sx = u2;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u2),
                     );
@@ -724,9 +725,9 @@ pub impl Cholesky4UpdateImpl<
                 let mut z1_1 = self.l44;
                 let mut u0 = self.l32;
                 let mut u1 = self.l42;
-                if u0 != R::zero() {
+                let sx = u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -739,9 +740,9 @@ pub impl Cholesky4UpdateImpl<
                     u1 = R::div(m1, d);
                     z0_0 = rr;
                 }
-                if u1 != R::zero() {
+                let sx = u1;
+                if sx != R::zero() {
                     let d = z1_1;
-                    let sx = u1;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u1),
                     );
@@ -757,9 +758,9 @@ pub impl Cholesky4UpdateImpl<
             2 => {
                 let mut z0_0 = self.l44;
                 let mut u0 = self.l43;
-                if u0 != R::zero() {
+                let sx = u0;
+                if sx != R::zero() {
                     let d = z0_0;
-                    let sx = u0;
                     let rr = R::wide_sqrt(
                         R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, u0),
                     );
@@ -839,9 +840,9 @@ pub impl Cholesky6UpdateImpl<
         let mut x3 = x.w;
         let mut x4 = x.a;
         let mut x5 = x.b;
-        if x0 != R::zero() {
+        let sx = sigma * x0;
+        if sx != R::zero() {
             let d = l0_0;
-            let sx = sigma * x0;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x0));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -870,9 +871,9 @@ pub impl Cholesky6UpdateImpl<
             x5 = y5;
             l0_0 = rr;
         }
-        if x1 != R::zero() {
+        let sx = sigma * x1;
+        if sx != R::zero() {
             let d = l1_1;
-            let sx = sigma * x1;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x1));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -897,9 +898,9 @@ pub impl Cholesky6UpdateImpl<
             x5 = y5;
             l1_1 = rr;
         }
-        if x2 != R::zero() {
+        let sx = sigma * x2;
+        if sx != R::zero() {
             let d = l2_2;
-            let sx = sigma * x2;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x2));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -920,9 +921,9 @@ pub impl Cholesky6UpdateImpl<
             x5 = y5;
             l2_2 = rr;
         }
-        if x3 != R::zero() {
+        let sx = sigma * x3;
+        if sx != R::zero() {
             let d = l3_3;
-            let sx = sigma * x3;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x3));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -939,9 +940,9 @@ pub impl Cholesky6UpdateImpl<
             x5 = y5;
             l3_3 = rr;
         }
-        if x4 != R::zero() {
+        let sx = sigma * x4;
+        if sx != R::zero() {
             let d = l4_4;
-            let sx = sigma * x4;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x4));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
@@ -952,9 +953,9 @@ pub impl Cholesky6UpdateImpl<
             x5 = R::div(m5, d);
             l4_4 = rr;
         }
-        if x5 != R::zero() {
+        let sx = sigma * x5;
+        if sx != R::zero() {
             let d = l5_5;
-            let sx = sigma * x5;
             let rr = R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), d, d), sx, x5));
             if rr == R::zero() {
                 core::panic_with_felt252(NOT_POSITIVE_DEFINITE);
