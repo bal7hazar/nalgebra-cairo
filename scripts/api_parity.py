@@ -1394,6 +1394,10 @@ for _name in ("solve", "solve_mut", "is_invertible", "try_inverse", "determinant
     DIM_ONLY[_name] = (DIM_ONLY.get(_name, _EVERY) | {f"{t}{n}" for t in ("FullPivLu", "ColPivQr")
                                                       for n in DIMS}
                        | {f"Lblt{n}" for n in DIMS}) - _PIVOT_RECT
+# WP 8.5-P17: `nalgebra::convert` of a `Point<D>` / `Scale<D>` / `Translation<D>` into its
+# homogeneous `(D + 1)x(D + 1)` matrix: the 6-dimensional ones have no 7x7 target (upstream's
+# aliases, hence the Cairo shapes, stop at 6; owner ruling, issue #41).
+DIM_ONLY["SubsetOf<Matrix>"] = _EVERY - {"Point6", "Scale6", "Translation6"}
 DIM_ONLY["insert_column"] = DIM_ONLY["insert_column"] | {"Cholesky2", "Cholesky3"}
 DIM_ONLY["remove_column"] = DIM_ONLY["remove_column"] | {"Cholesky3", "Cholesky4"}
 

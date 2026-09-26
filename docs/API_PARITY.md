@@ -18,7 +18,7 @@ How to read it:
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
 | base | 486 | 0 | 0 | 318 | 804 | 100.0% |
-| geometry | 932 | 3 | 0 | 113 | 1048 | 99.7% |
+| geometry | 935 | 0 | 0 | 113 | 1048 | 100.0% |
 | linalg | 300 | 0 | 3 | 1 | 304 | 99.0% |
 | sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
 | io | 1 | 0 | 1 | 0 | 2 | 50.0% |
@@ -26,7 +26,7 @@ How to read it:
 | root | 35 | 0 | 0 | 0 | 35 | 100.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1879** | **3** | **4** | **550** | **2436** | **99.6%** |
+| **total** | **1882** | **0** | **4** | **550** | **2436** | **99.8%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -44,9 +44,9 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 0 | standard numerics | P01, P05 |  |
 | [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 0 | standard numerics | P01 |  |
 | [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 0 | standard numerics | — |  |
-| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 2 | mechanical | P08 | `geometry/point_conversion.rs` (1), `geometry/translation_conversion.rs` (1) |
+| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 0 | mechanical | P08 |  |
 | [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 0 | mechanical | P09a |  |
-| [P10](#p10-scale-and-reflection) | Scale and Reflection | 1 | mechanical | P09a | `geometry/scale_conversion.rs` (1) |
+| [P10](#p10-scale-and-reflection) | Scale and Reflection | 0 | mechanical | P09a |  |
 | [P11a](#p11a-transform-affine-projective) | Transform, Affine, Projective | 0 | standard numerics | P07, P09b |  |
 | [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 0 | standard numerics | P07 |  |
 | [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 0 | standard numerics | P08, P09b |  |
@@ -102,10 +102,8 @@ quaternion transcendental functions (`exp`, `ln`, `powf`, `sqrt`, trig), polar d
 
 ### P09a Rotation, Translation, Point completion
 
-cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 2 items (`*` = partial):
+cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 0 items (`*` = partial):
 
-- **Point**: `impl:SubsetOf<Matrix>`*
-- **Translation**: `impl:SubsetOf<Matrix>`*
 
 ### P09b Isometry, Similarity completion (incl. rotation-matrix variants)
 
@@ -114,9 +112,8 @@ cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`..
 
 ### P10 Scale and Reflection
 
-`Scale1..6` (non-uniform scaling, inverse, homogeneous form, operators) and `Reflection1..6` (`reflect`, `reflect_rows`...). Tier: mechanical. Depends on: P09a. 1 items (`*` = partial):
+`Scale1..6` (non-uniform scaling, inverse, homogeneous form, operators) and `Reflection1..6` (`reflect`, `reflect_rows`...). Tier: mechanical. Depends on: P09a. 0 items (`*` = partial):
 
-- **Scale**: `impl:SubsetOf<Matrix>`*
 
 ### P11a Transform, Affine, Projective
 
@@ -1906,7 +1903,7 @@ Cairo: Perspective3 · ported 28, partial 0, missing 0, excluded 5.
 
 #### Point (geometry)
 
-Cairo: Point1/2/3/4/5/6 · ported 90, partial 1, missing 0, excluded 15.
+Cairo: Point1/2/3/4/5/6 · ported 91, partial 0, missing 0, excluded 15.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -1947,7 +1944,7 @@ Cairo: Point1/2/3/4/5/6 · ported 90, partial 1, missing 0, excluded 15.
 | impl `Sub<Matrix>` | ported | Point1/2/3/4/5/6::sub_vector | renamed `sub_vector`: `p - v`: Cairo's `Sub` is homogeneous, the heterogeneous operator is a named method | `geometry/point_ops.rs` |
 | impl `Sub<Point>` | ported | Point1/2/3/4/5/6::sub_point | renamed `sub_point`: `p - q` (a vector): Cairo's `Sub` is homogeneous, the heterogeneous operator is a named method | `geometry/point_ops.rs` |
 | impl `SubAssign<Matrix>` | ported | Point1/2/3/4/5/6 (impl `SubAssign<Matrix>`) |  | `geometry/point_ops.rs` |
-| impl `SubsetOf<Matrix>` | partial | Point1/2/3/4/5::to_homogeneous | not on Point6; renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`; P09a | `geometry/point_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | Point1/2/3/4/5::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous` | `geometry/point_conversion.rs` |
 | impl `SubsetOf<Point>` | ported | Point1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/point_conversion.rs` |
 | impl `UlpsEq` | ported | Point1/2/3/4/5/6::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/point.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/point.rs` |
@@ -2287,7 +2284,7 @@ Cairo: Rotation3 · ported 31, partial 0, missing 0, excluded 2.
 
 #### Scale (geometry)
 
-Cairo: Scale1/2/3/4/5/6 · ported 41, partial 1, missing 0, excluded 9.
+Cairo: Scale1/2/3/4/5/6 · ported 42, partial 0, missing 0, excluded 9.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2320,7 +2317,7 @@ Cairo: Scale1/2/3/4/5/6 · ported 41, partial 1, missing 0, excluded 9.
 | impl `Pod` | excluded |  | glue | `geometry/scale.rs` |
 | impl `RelativeEq` | ported | Scale1/2/3/4/5/6::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/scale.rs` |
 | impl `Serialize` | ported | Scale1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/scale.rs` |
-| impl `SubsetOf<Matrix>` | partial | Scale1/2/3/4/5::to_homogeneous | not on Scale6; renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`; P10 | `geometry/scale_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | Scale1/2/3/4/5::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous` | `geometry/scale_conversion.rs` |
 | impl `SubsetOf<Scale>` | ported | Scale1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/scale_conversion.rs` |
 | impl `SubsetOf<Transform>` | ported | Affine3 (impl `From<Scale>`) | renamed `From<Scale>`: Cairo-imposed: `nalgebra::convert` is `Into` (into the three categories) | `geometry/scale_conversion.rs` |
 | impl `UlpsEq` | ported | Scale1/2/3/4/5/6::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/scale.rs` |
@@ -2576,7 +2573,7 @@ Cairo: Transform2/3, Projective2/3, Affine2/3 · ported 51, partial 0, missing 0
 
 #### Translation (geometry)
 
-Cairo: Translation1/2/3/4/5/6 · ported 52, partial 1, missing 0, excluded 9.
+Cairo: Translation1/2/3/4/5/6 · ported 53, partial 0, missing 0, excluded 9.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2619,7 +2616,7 @@ Cairo: Translation1/2/3/4/5/6 · ported 52, partial 1, missing 0, excluded 9.
 | impl `RelativeEq` | ported | Translation1/2/3/4/5/6::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/translation.rs` |
 | impl `Serialize` | ported | Translation1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/translation.rs` |
 | impl `SubsetOf<Isometry>` | ported | Isometry3 (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (`Isometry2` likewise) | `geometry/translation_conversion.rs` |
-| impl `SubsetOf<Matrix>` | partial | Translation1/2/3/4/5::to_homogeneous | not on Translation6; renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`; P09a | `geometry/translation_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | Translation1/2/3/4/5::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous` | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Similarity>` | ported | Similarity3 (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (`Similarity2` likewise) | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Transform>` | ported | Affine3 (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (into the three categories) | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Translation>` | ported | Translation1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/translation_conversion.rs` |
