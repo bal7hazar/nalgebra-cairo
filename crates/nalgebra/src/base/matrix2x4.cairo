@@ -3464,3 +3464,90 @@ pub(crate) impl Matrix2x4ShapeDims<T> of ShapeDims<Matrix2x4<T>> {
         (2, 4)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `Matrix2x4`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 2x4 matrix when empty. Upstream: `Sum for Matrix` (a fold
+/// from `zero()`: the same result, one addition more).
+pub impl Matrix2x4Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<Matrix2x4<T>> {
+    fn sum<I, +Iterator<I>[Item: Matrix2x4<T>], +Destruct<I>, +Destruct<Matrix2x4<T>>>(
+        mut iter: I,
+    ) -> Matrix2x4<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return Matrix2x4 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+            };
+        };
+        while let Option::Some(x) = iter.next() {
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@Matrix2x4` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<Matrix2x4>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl Matrix2x4SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@Matrix2x4<T>> {
+    fn sum<I, +Iterator<I>[Item: @Matrix2x4<T>], +Destruct<I>, +Destruct<@Matrix2x4<T>>>(
+        mut iter: I,
+    ) -> @Matrix2x4<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Matrix2x4 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+            };
+        };
+        let mut acc = *first;
+        while let Option::Some(x) = iter.next() {
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix2x4`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix2x4InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix2x4<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix2x4<T>, b: Matrix2x4<T>) -> Matrix2x4<T> {
+        Matrix2x4Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix2x4<T>, b: Matrix2x4<T>) -> Matrix2x4<T> {
+        Matrix2x4Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix2x4<T>, b: Matrix2x4<T>) -> (Matrix2x4<T>, Matrix2x4<T>) {
+        Matrix2x4Trait::inf_sup(a, b)
+    }
+}

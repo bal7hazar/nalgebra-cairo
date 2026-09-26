@@ -8,6 +8,11 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true
+# DESIGN D10 (owner, 2026-09-26): `associated_item_constraints` for the `core::iter::Sum` /
+# `Product` impls (`+Iterator<I>[Item: A]`), `user_defined_inline_macros` for the construction
+# macros (`matrix!`, `vector!`, `point!`, `dmatrix!`, `dvector!`, `stack!`, src/macros.cairo). A
+# dependent calls the macros without enabling either feature (measured, WP 8.6-P21, README).
+experimental-features = ["associated_item_constraints", "user_defined_inline_macros"]
 
 # Families that cost compile memory to every dependent and that nothing else in the crate uses
 # (WP 8.1d, tools/shapegen/DESIGN.md §2.11): all on by default, so the public API is upstream's; a
@@ -18,15 +23,18 @@ keywords.workspace = true
 # of the static shapes that return them and the vector convolutions (base/dynamic*.cairo).
 # `sparse` (WP 8.6-P20): upstream's legacy `nalgebra::sparse` (`CsMatrix`, `CsCholesky`,
 # sparse/**), on top of `dynamic`; `io` (WP 8.6-P20): `nalgebra::io`, the Matrix Market parser
-# (io/**), on top of `sparse`.
+# (io/**), on top of `sparse`. `macros` (WP 8.6-P21): upstream's feature of the same name, the
+# construction macros and the block traits `stack!` expands to (src/macros.cairo); `dmatrix!` /
+# `dvector!` also need `dynamic`.
 [features]
-default = ["statistics", "blas", "closures", "dynamic", "sparse", "io"]
+default = ["statistics", "blas", "closures", "dynamic", "sparse", "io", "macros"]
 statistics = []
 blas = []
 closures = []
 dynamic = []
 sparse = ["dynamic"]
 io = ["sparse"]
+macros = []
 
 [dependencies]
 simba.workspace = true

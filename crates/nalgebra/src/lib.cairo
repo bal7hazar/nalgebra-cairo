@@ -2,13 +2,19 @@
 //!
 //! Modules mirror upstream: `base` (vectors, matrices), `geometry` (rotations, isometries),
 //! `linalg` (decompositions), and behind their features `sparse` (compressed sparse column
-//! matrices) and `io` (Matrix Market parsing). See `docs/DESIGN.md` and `docs/ROADMAP.md`.
+//! matrices) and `io` (Matrix Market parsing). The free functions of upstream's crate root
+//! (`nalgebra::distance`, `convert`...) are in `root` and the construction macros
+//! (`nalgebra::matrix!`...) in `macros` (feature `macros`), both re-exported here. See
+//! `docs/DESIGN.md` and `docs/ROADMAP.md`.
 
 pub mod base;
 pub mod geometry;
 #[cfg(feature: 'io')]
 pub mod io;
 pub mod linalg;
+#[cfg(feature: 'macros')]
+pub mod macros;
+pub mod root;
 #[cfg(feature: 'sparse')]
 pub mod sparse;
 
@@ -130,4 +136,14 @@ pub use linalg::{
     Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4, Perm4Trait, Perm6, Perm6Trait, PermuteColumns,
     PermuteRows, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait, Svd2, Svd2Trait, Svd3, Svd3Trait,
     SymmetricEigen2, SymmetricEigen2Trait, SymmetricEigen3, SymmetricEigen3Trait,
+};
+#[cfg(and(feature: 'macros', feature: 'dynamic'))]
+pub use macros::{dmatrix, dvector};
+#[cfg(feature: 'macros')]
+pub use macros::{matrix, point, stack, vector};
+pub use root::{
+    abs, center, clamp, convert, convert_ref, convert_ref_unchecked, convert_unchecked, distance,
+    distance_squared, inf, inf_sup, is_convertible, max, min, one, partial_clamp, partial_cmp,
+    partial_ge, partial_gt, partial_le, partial_lt, partial_max, partial_min, partial_sort2, sup,
+    try_convert, try_convert_ref, wrap, zero,
 };

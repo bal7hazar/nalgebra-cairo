@@ -350,6 +350,40 @@ pub impl DVectorAdd<
     }
 }
 
+/// `iter.sum()` of an iterator of `DVector`s: the first item plus the others, in order (exact;
+/// panics on overflow, and with `nalgebra: dimension mismatch` on a size that differs from the
+/// first). Panics with `nalgebra: sum of empty iterator` when empty (the size is unknown).
+/// Upstream: `Sum for OMatrix<T, Dyn, C>`.
+pub impl DVectorSum<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>,
+> of core::iter::Sum<DVector<T>> {
+    fn sum<I, +Iterator<I>[Item: DVector<T>], +Destruct<I>, +Destruct<DVector<T>>>(
+        mut iter: I,
+    ) -> DVector<T> {
+        let mut acc = iter.next().expect(errors::EMPTY_SUM);
+        while let Option::Some(x) = iter.next() {
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@DVector` (`span.into_iter()`): a snapshot of the
+/// sum, like `Sum<DVector>` (same panics). Upstream: `Sum<&OMatrix<T, Dyn, C>>` (references).
+pub impl DVectorSumSnapshot<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>,
+> of core::iter::Sum<@DVector<T>> {
+    fn sum<I, +Iterator<I>[Item: @DVector<T>], +Destruct<I>, +Destruct<@DVector<T>>>(
+        mut iter: I,
+    ) -> @DVector<T> {
+        let mut acc = *iter.next().expect(errors::EMPTY_SUM);
+        while let Option::Some(x) = iter.next() {
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
 /// `a - b` component-wise. Upstream: `Sub<Matrix> for Matrix`.
 pub impl DVectorSub<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>,

@@ -3819,3 +3819,76 @@ pub(crate) impl Vector6ShapeDims<T> of ShapeDims<Vector6<T>> {
         (6, 1)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `Vector6`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 6-dimensional column vector when empty. Upstream: `Sum for Matrix`
+/// (a fold from `zero()`: the same result, one addition more).
+pub impl Vector6Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<Vector6<T>> {
+    fn sum<I, +Iterator<I>[Item: Vector6<T>], +Destruct<I>, +Destruct<Vector6<T>>>(
+        mut iter: I,
+    ) -> Vector6<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            };
+        };
+        while let Option::Some(x) = iter.next() {
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@Vector6` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<Vector6>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl Vector6SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@Vector6<T>> {
+    fn sum<I, +Iterator<I>[Item: @Vector6<T>], +Destruct<I>, +Destruct<@Vector6<T>>>(
+        mut iter: I,
+    ) -> @Vector6<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Vector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            };
+        };
+        let mut acc = *first;
+        while let Option::Some(x) = iter.next() {
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Vector6`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Vector6InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Vector6<T>> {
+    #[inline(always)]
+    fn inf(a: Vector6<T>, b: Vector6<T>) -> Vector6<T> {
+        Vector6Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Vector6<T>, b: Vector6<T>) -> Vector6<T> {
+        Vector6Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Vector6<T>, b: Vector6<T>) -> (Vector6<T>, Vector6<T>) {
+        Vector6Trait::inf_sup(a, b)
+    }
+}

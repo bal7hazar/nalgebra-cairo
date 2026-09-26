@@ -3274,3 +3274,72 @@ pub(crate) impl Vector3ShapeDims<T> of ShapeDims<Vector3<T>> {
         (3, 1)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `Vector3`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 3-dimensional column vector when empty. Upstream: `Sum for Matrix`
+/// (a fold from `zero()`: the same result, one addition more).
+pub impl Vector3Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<Vector3<T>> {
+    fn sum<I, +Iterator<I>[Item: Vector3<T>], +Destruct<I>, +Destruct<Vector3<T>>>(
+        mut iter: I,
+    ) -> Vector3<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return Vector3 { x: R::zero(), y: R::zero(), z: R::zero() };
+        };
+        while let Option::Some(x) = iter.next() {
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@Vector3` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<Vector3>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl Vector3SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@Vector3<T>> {
+    fn sum<I, +Iterator<I>[Item: @Vector3<T>], +Destruct<I>, +Destruct<@Vector3<T>>>(
+        mut iter: I,
+    ) -> @Vector3<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Vector3 { x: R::zero(), y: R::zero(), z: R::zero() };
+        };
+        let mut acc = *first;
+        while let Option::Some(x) = iter.next() {
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Vector3`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Vector3InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Vector3<T>> {
+    #[inline(always)]
+    fn inf(a: Vector3<T>, b: Vector3<T>) -> Vector3<T> {
+        Vector3Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Vector3<T>, b: Vector3<T>) -> Vector3<T> {
+        Vector3Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Vector3<T>, b: Vector3<T>) -> (Vector3<T>, Vector3<T>) {
+        Vector3Trait::inf_sup(a, b)
+    }
+}

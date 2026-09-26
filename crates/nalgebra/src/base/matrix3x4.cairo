@@ -4619,3 +4619,98 @@ pub(crate) impl Matrix3x4ShapeDims<T> of ShapeDims<Matrix3x4<T>> {
         (3, 4)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `Matrix3x4`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 3x4 matrix when empty. Upstream: `Sum for Matrix` (a fold
+/// from `zero()`: the same result, one addition more).
+pub impl Matrix3x4Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<Matrix3x4<T>> {
+    fn sum<I, +Iterator<I>[Item: Matrix3x4<T>], +Destruct<I>, +Destruct<Matrix3x4<T>>>(
+        mut iter: I,
+    ) -> Matrix3x4<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return Matrix3x4 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+            };
+        };
+        while let Option::Some(x) = iter.next() {
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@Matrix3x4` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<Matrix3x4>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl Matrix3x4SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@Matrix3x4<T>> {
+    fn sum<I, +Iterator<I>[Item: @Matrix3x4<T>], +Destruct<I>, +Destruct<@Matrix3x4<T>>>(
+        mut iter: I,
+    ) -> @Matrix3x4<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Matrix3x4 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+            };
+        };
+        let mut acc = *first;
+        while let Option::Some(x) = iter.next() {
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix3x4`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix3x4InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix3x4<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix3x4<T>, b: Matrix3x4<T>) -> Matrix3x4<T> {
+        Matrix3x4Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix3x4<T>, b: Matrix3x4<T>) -> Matrix3x4<T> {
+        Matrix3x4Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix3x4<T>, b: Matrix3x4<T>) -> (Matrix3x4<T>, Matrix3x4<T>) {
+        Matrix3x4Trait::inf_sup(a, b)
+    }
+}

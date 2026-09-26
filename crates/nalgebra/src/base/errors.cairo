@@ -30,3 +30,6 @@ pub const PERMUTATION_ORDER: felt252 = 'nalgebra: permutation order';
 /// (upstream takes the square root of a negative number or divides by zero: NaN / infinities,
 /// which a fixed-point scalar does not have).
 pub const NOT_POSITIVE_DEFINITE: felt252 = 'nalgebra: not positive definite';
+/// `iter.sum()` of an empty iterator of dynamic matrices, whose size is unknown (upstream:
+/// "Cannot compute `sum` of empty iterator.").
+pub const EMPTY_SUM: felt252 = 'nalgebra: sum of empty iterator';

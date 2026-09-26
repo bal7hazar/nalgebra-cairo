@@ -12826,3 +12826,134 @@ pub(crate) impl Matrix6x5ShapeDims<T> of ShapeDims<Matrix6x5<T>> {
         (6, 5)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `Matrix6x5`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 6x5 matrix when empty. Upstream: `Sum for Matrix` (a fold
+/// from `zero()`: the same result, one addition more).
+pub impl Matrix6x5Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<Matrix6x5<T>> {
+    fn sum<I, +Iterator<I>[Item: Matrix6x5<T>], +Destruct<I>, +Destruct<Matrix6x5<T>>>(
+        mut iter: I,
+    ) -> Matrix6x5<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return Matrix6x5 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m61: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m62: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m43: R::zero(),
+                m53: R::zero(),
+                m63: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+                m44: R::zero(),
+                m54: R::zero(),
+                m64: R::zero(),
+                m15: R::zero(),
+                m25: R::zero(),
+                m35: R::zero(),
+                m45: R::zero(),
+                m55: R::zero(),
+                m65: R::zero(),
+            };
+        };
+        while let Option::Some(x) = iter.next() {
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@Matrix6x5` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<Matrix6x5>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl Matrix6x5SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@Matrix6x5<T>> {
+    fn sum<I, +Iterator<I>[Item: @Matrix6x5<T>], +Destruct<I>, +Destruct<@Matrix6x5<T>>>(
+        mut iter: I,
+    ) -> @Matrix6x5<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Matrix6x5 {
+                m11: R::zero(),
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m61: R::zero(),
+                m12: R::zero(),
+                m22: R::zero(),
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m62: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: R::zero(),
+                m43: R::zero(),
+                m53: R::zero(),
+                m63: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+                m44: R::zero(),
+                m54: R::zero(),
+                m64: R::zero(),
+                m15: R::zero(),
+                m25: R::zero(),
+                m35: R::zero(),
+                m45: R::zero(),
+                m55: R::zero(),
+                m65: R::zero(),
+            };
+        };
+        let mut acc = *first;
+        while let Option::Some(x) = iter.next() {
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix6x5`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix6x5InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix6x5<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix6x5<T>, b: Matrix6x5<T>) -> Matrix6x5<T> {
+        Matrix6x5Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix6x5<T>, b: Matrix6x5<T>) -> Matrix6x5<T> {
+        Matrix6x5Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix6x5<T>, b: Matrix6x5<T>) -> (Matrix6x5<T>, Matrix6x5<T>) {
+        Matrix6x5Trait::inf_sup(a, b)
+    }
+}
