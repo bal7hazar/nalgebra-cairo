@@ -76,32 +76,30 @@ fn sq_tol(n: usize) -> Tol {
 
 fn full_piv_lu_ops(r: usize, c: usize) -> Vec<Op> {
     let s = name(r, c);
-    let mut ops = vec![
-        Op::new(
-            format!("full_piv_lu{s}"),
-            format!(
-                "a.full_piv_lu(): (lu {r}x{c} packed, p = P [0..{r}), q = Q [0..{c}) as permuted \
+    let mut ops = vec![Op::new(
+        format!("full_piv_lu{s}"),
+        format!(
+            "a.full_piv_lu(): (lu {r}x{c} packed, p = P [0..{r}), q = Q [0..{c}) as permuted \
                  index vectors), well-conditioned a"
-            ),
-        )
-        .input(with(fm("a", r, c), Gen::WellCondRect(r, c)))
-        .out(fm("lu", r, c))
-        .out(fv("p", r))
-        .out(fv("q", c))
-        .dists(&Dist::NO_LARGE)
-        .tol(lu_tol(r, c))
-        .eval(move |x| {
-            let f = mat_at(x, 0, r, c).full_piv_lu();
-            let mut p = indices(r);
-            f.p().permute_rows(&mut p);
-            let mut q = indices(c);
-            f.q().permute_rows(&mut q);
-            let mut out = flat(f.lu_internal());
-            out.extend(flat(&p));
-            out.extend(flat(&q));
-            Some(out)
-        }),
-    ];
+        ),
+    )
+    .input(with(fm("a", r, c), Gen::WellCondRect(r, c)))
+    .out(fm("lu", r, c))
+    .out(fv("p", r))
+    .out(fv("q", c))
+    .dists(&Dist::NO_LARGE)
+    .tol(lu_tol(r, c))
+    .eval(move |x| {
+        let f = mat_at(x, 0, r, c).full_piv_lu();
+        let mut p = indices(r);
+        f.p().permute_rows(&mut p);
+        let mut q = indices(c);
+        f.q().permute_rows(&mut q);
+        let mut out = flat(f.lu_internal());
+        out.extend(flat(&p));
+        out.extend(flat(&q));
+        Some(out)
+    })];
     if r.min(c) >= 2 {
         ops.push(
             Op::new(
@@ -121,18 +119,21 @@ fn full_piv_lu_ops(r: usize, c: usize) -> Vec<Op> {
     if r == c {
         let n = r;
         ops.push(
-            Op::new(format!("full_piv_lu{n}_solve"), "a.full_piv_lu().solve(&b).unwrap()")
-                .input(with(fm("a", n, n), Gen::WellCond(n)))
-                .input(iv("b", n))
-                .out(fv("x", n))
-                .dists(&Dist::NO_LARGE)
-                .tol(sq_tol(n))
-                .eval(move |x| {
-                    mat_at(x, 0, n, n)
-                        .full_piv_lu()
-                        .solve(&vec_at(x, n * n, n))
-                        .map(|x| flat(&x))
-                }),
+            Op::new(
+                format!("full_piv_lu{n}_solve"),
+                "a.full_piv_lu().solve(&b).unwrap()",
+            )
+            .input(with(fm("a", n, n), Gen::WellCond(n)))
+            .input(iv("b", n))
+            .out(fv("x", n))
+            .dists(&Dist::NO_LARGE)
+            .tol(sq_tol(n))
+            .eval(move |x| {
+                mat_at(x, 0, n, n)
+                    .full_piv_lu()
+                    .solve(&vec_at(x, n * n, n))
+                    .map(|x| flat(&x))
+            }),
         );
         ops.push(
             Op::new(
@@ -230,18 +231,21 @@ fn col_piv_qr_ops(r: usize, c: usize) -> Vec<Op> {
     if r == c {
         let n = r;
         ops.push(
-            Op::new(format!("col_piv_qr{n}_solve"), "a.col_piv_qr().solve(&b).unwrap()")
-                .input(with(fm("a", n, n), Gen::WellCond(n)))
-                .input(iv("b", n))
-                .out(fv("x", n))
-                .dists(&Dist::NO_LARGE)
-                .tol(sq_tol(n))
-                .eval(move |x| {
-                    mat_at(x, 0, n, n)
-                        .col_piv_qr()
-                        .solve(&vec_at(x, n * n, n))
-                        .map(|x| flat(&x))
-                }),
+            Op::new(
+                format!("col_piv_qr{n}_solve"),
+                "a.col_piv_qr().solve(&b).unwrap()",
+            )
+            .input(with(fm("a", n, n), Gen::WellCond(n)))
+            .input(iv("b", n))
+            .out(fv("x", n))
+            .dists(&Dist::NO_LARGE)
+            .tol(sq_tol(n))
+            .eval(move |x| {
+                mat_at(x, 0, n, n)
+                    .col_piv_qr()
+                    .solve(&vec_at(x, n * n, n))
+                    .map(|x| flat(&x))
+            }),
         );
         ops.push(
             Op::new(
@@ -346,11 +350,7 @@ pub fn suites() -> Vec<Suite> {
         .into_iter()
         .flat_map(|(r, c)| full_piv_lu_ops(r, c))
         .collect();
-    ops.extend(
-        shapes()
-            .into_iter()
-            .flat_map(|(r, c)| col_piv_qr_ops(r, c)),
-    );
+    ops.extend(shapes().into_iter().flat_map(|(r, c)| col_piv_qr_ops(r, c)));
     ops.extend((1..=6).flat_map(lblt_ops));
     vec![Suite {
         name: "pivot",
