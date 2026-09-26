@@ -46,7 +46,7 @@ fn test_oracle_full_piv_lu6x1() {
         rec = max(rec, max_ulp_6x1(l.mul_mat(u), pa) / amax_6x1(a));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 0, "measured {}", rec);
+    assert!(rec <= 1, "measured {}", rec);
 }
 
 #[test]

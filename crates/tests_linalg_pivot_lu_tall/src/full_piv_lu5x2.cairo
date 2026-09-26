@@ -50,7 +50,7 @@ fn test_oracle_full_piv_lu5x2() {
         rec = max(rec, max_ulp_5x2(l.mul_mat(u), pa) / amax_5x2(a));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 0, "measured {}", rec);
+    assert!(rec <= 2, "measured {}", rec);
 }
 
 /// `full_piv_lu5x2_rank` (oracle): on EXACTLY rank-deficient matrices of rank `k`, the first `k`

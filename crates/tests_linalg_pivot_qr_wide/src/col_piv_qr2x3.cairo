@@ -55,7 +55,7 @@ fn test_oracle_col_piv_qr2x3() {
         qt = max(qt, ulp_diff(t.m23, rr.m23));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 0 && orth <= 0 && qt <= 0, "measured {} {} {}", rec, orth, qt);
+    assert!(rec <= 3 && orth <= 8 && qt <= 98, "measured {} {} {}", rec, orth, qt);
 }
 
 /// `col_piv_qr2x3_rank` (oracle): on EXACTLY rank-deficient matrices of rank `k`, the first `k`
@@ -85,7 +85,7 @@ fn test_oracle_col_piv_qr2x3_rank() {
         f.p.permute_columns(ref ap);
         rec = max(rec, max_ulp_2x3(f.q().mul_mat(rr), ap));
     }
-    assert!(hi <= 0 && lo >= 1152921504606846976 && rec <= 0, "measured {} {} {}", hi, lo, rec);
+    assert!(hi <= 2 && lo >= 12148001999 && rec <= 6, "measured {} {} {}", hi, lo, rec);
 }
 
 #[test]

@@ -1,0 +1,92 @@
+{
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x2": {
+    "full_piv_lu1x2_new": {
+      "baseline": 17520,
+      "unrolled": 21930
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x3": {
+    "full_piv_lu1x3_new": {
+      "baseline": 17720,
+      "unrolled": 25870
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x4": {
+    "full_piv_lu1x4_new": {
+      "baseline": 17920,
+      "unrolled": 28910
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x5": {
+    "full_piv_lu1x5_new": {
+      "baseline": 18120,
+      "unrolled": 32050
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x6": {
+    "full_piv_lu1x6_new": {
+      "baseline": 18320,
+      "unrolled": 35290
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x3": {
+    "full_piv_lu2x3_new": {
+      "baseline": 18320,
+      "unrolled": 46610
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x4": {
+    "full_piv_lu2x4_new": {
+      "baseline": 18720,
+      "unrolled": 57820
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x5": {
+    "full_piv_lu2x5_new": {
+      "baseline": 19120,
+      "unrolled": 69030
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x6": {
+    "full_piv_lu2x6_new": {
+      "baseline": 19520,
+      "unrolled": 80640
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x4": {
+    "full_piv_lu3x4_new": {
+      "baseline": 19520,
+      "unrolled": 100130
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x5": {
+    "full_piv_lu3x5_new": {
+      "baseline": 20120,
+      "unrolled": 124740
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x6": {
+    "full_piv_lu3x6_new": {
+      "baseline": 20720,
+      "unrolled": 149650
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu4x5": {
+    "full_piv_lu4x5_new": {
+      "baseline": 21120,
+      "unrolled": 193540
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu4x6": {
+    "full_piv_lu4x6_new": {
+      "baseline": 21920,
+      "unrolled": 237280
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu5x6": {
+    "full_piv_lu5x6_new": {
+      "baseline": 23120,
+      "unrolled": 338550
+    }
+  }
+}

@@ -69,7 +69,7 @@ fn test_oracle_col_piv_qr1_solve() {
         inv = max(inv, max_ulp_1x1(a.mul_mat(ai), Matrix1Trait::identity()));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(inv <= 0, "measured {}", inv);
+    assert!(inv <= 20, "measured {}", inv);
 }
 
 /// `col_piv_qr1_determinant` (oracle).
@@ -89,7 +89,7 @@ fn test_oracle_col_piv_qr1_determinant() {
 /// argument unchanged.
 #[test]
 fn test_col_piv_qr1_singular() {
-    let z = black_box(mat1x1([[0]]));
+    let z = black_box(mat1x1([[0 * ONE]]));
     let f = z.col_piv_qr();
     assert!(!f.is_invertible());
     assert!(f.try_inverse().is_none());

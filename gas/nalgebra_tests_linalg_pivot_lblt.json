@@ -1,0 +1,110 @@
+{
+  "nalgebra_tests_linalg_pivot_lblt::lblt1": {
+    "lblt1_determinant": {
+      "baseline": 21300,
+      "product": 21800
+    },
+    "lblt1_l_permuted": {
+      "baseline": 21300,
+      "moves": 21190
+    },
+    "lblt1_new": {
+      "baseline": 17320,
+      "unrolled": 20600
+    },
+    "lblt1_solve": {
+      "baseline": 21800,
+      "substitution": 31310
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lblt::lblt2": {
+    "lblt2_determinant": {
+      "baseline": 55650,
+      "product": 63540
+    },
+    "lblt2_l_permuted": {
+      "baseline": 55650,
+      "moves": 60970
+    },
+    "lblt2_new": {
+      "baseline": 17920,
+      "unrolled": 53950
+    },
+    "lblt2_solve": {
+      "baseline": 56450,
+      "substitution": 87740
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lblt::lblt3": {
+    "lblt3_determinant": {
+      "baseline": 127380,
+      "product": 141030
+    },
+    "lblt3_l_permuted": {
+      "baseline": 127380,
+      "moves": 141870
+    },
+    "lblt3_new": {
+      "baseline": 18920,
+      "unrolled": 124280
+    },
+    "lblt3_solve": {
+      "baseline": 128480,
+      "substitution": 187130
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lblt::lblt4": {
+    "lblt4_determinant": {
+      "baseline": 253270,
+      "product": 272880
+    },
+    "lblt4_l_permuted": {
+      "baseline": 253270,
+      "moves": 282860
+    },
+    "lblt4_new": {
+      "baseline": 20320,
+      "unrolled": 248370
+    },
+    "lblt4_solve": {
+      "baseline": 254670,
+      "substitution": 344460
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lblt::lblt5": {
+    "lblt5_determinant": {
+      "baseline": 444010,
+      "product": 469780
+    },
+    "lblt5_l_permuted": {
+      "baseline": 444010,
+      "moves": 504100
+    },
+    "lblt5_new": {
+      "baseline": 22120,
+      "unrolled": 436910
+    },
+    "lblt5_solve": {
+      "baseline": 445710,
+      "substitution": 579870
+    }
+  },
+  "nalgebra_tests_linalg_pivot_lblt::lblt6": {
+    "lblt6_determinant": {
+      "baseline": 713850,
+      "product": 745980
+    },
+    "lblt6_l_permuted": {
+      "baseline": 713850,
+      "moves": 808640
+    },
+    "lblt6_new": {
+      "baseline": 24320,
+      "unrolled": 704150
+    },
+    "lblt6_solve": {
+      "baseline": 715850,
+      "substitution": 896050
+    }
+  }
+}

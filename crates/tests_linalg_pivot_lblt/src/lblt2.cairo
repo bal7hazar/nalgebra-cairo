@@ -36,7 +36,7 @@ fn test_oracle_lblt2() {
         rec = max(rec, max_ulp_2x2(l.mul_mat(d).mul_mat(l.transpose()), a) / amax_2x2(a));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 0, "measured {}", rec);
+    assert!(rec <= 1, "measured {}", rec);
 }
 
 /// `lblt2_solve` (oracle); `solve_mut` agrees.

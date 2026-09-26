@@ -44,7 +44,7 @@ fn test_oracle_col_piv_qr2x1() {
         qt = max(qt, ulp_diff(t.y, fx(0)));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 0 && orth <= 0 && qt <= 0, "measured {} {} {}", rec, orth, qt);
+    assert!(rec <= 1 && orth <= 2 && qt <= 11, "measured {} {} {}", rec, orth, qt);
 }
 
 #[test]

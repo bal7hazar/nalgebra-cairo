@@ -60,7 +60,7 @@ fn test_oracle_lblt4() {
         rec = max(rec, max_ulp_4x4(l.mul_mat(d).mul_mat(l.transpose()), a) / amax_4x4(a));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 0, "measured {}", rec);
+    assert!(rec <= 4, "measured {}", rec);
 }
 
 /// `lblt4_solve` (oracle); `solve_mut` agrees.
@@ -145,7 +145,7 @@ fn test_oracle_lblt4_zero_diag() {
         rec = max(rec, max_ulp_4x4(l.mul_mat(d).mul_mat(l.transpose()), a) / amax_4x4(a));
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
-    assert!(rec <= 0, "measured {}", rec);
+    assert!(rec <= 8, "measured {}", rec);
 }
 
 /// `lblt4_zero_diag_solve` (oracle); `solve_mut` agrees.

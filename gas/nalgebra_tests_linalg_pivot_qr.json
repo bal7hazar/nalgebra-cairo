@@ -1,0 +1,86 @@
+{
+  "nalgebra_tests_linalg_pivot_qr::col_piv_qr1": {
+    "col_piv_qr1_new": {
+      "baseline": 17320,
+      "householder": 20460
+    },
+    "col_piv_qr1_q": {
+      "baseline": 20360,
+      "reflections": 26980
+    },
+    "col_piv_qr1_solve": {
+      "baseline": 20860,
+      "substitution": 37460
+    }
+  },
+  "nalgebra_tests_linalg_pivot_qr::col_piv_qr2": {
+    "col_piv_qr2_new": {
+      "baseline": 17920,
+      "householder": 52580
+    },
+    "col_piv_qr2_q": {
+      "baseline": 53480,
+      "reflections": 73870
+    },
+    "col_piv_qr2_solve": {
+      "baseline": 54280,
+      "substitution": 95220
+    }
+  },
+  "nalgebra_tests_linalg_pivot_qr::col_piv_qr3": {
+    "col_piv_qr3_new": {
+      "baseline": 18920,
+      "householder": 114100
+    },
+    "col_piv_qr3_q": {
+      "baseline": 116400,
+      "reflections": 165270
+    },
+    "col_piv_qr3_solve": {
+      "baseline": 117500,
+      "substitution": 198600
+    }
+  },
+  "nalgebra_tests_linalg_pivot_qr::col_piv_qr4": {
+    "col_piv_qr4_new": {
+      "baseline": 20320,
+      "householder": 215630
+    },
+    "col_piv_qr4_q": {
+      "baseline": 219730,
+      "reflections": 316860
+    },
+    "col_piv_qr4_solve": {
+      "baseline": 221130,
+      "substitution": 363760
+    }
+  },
+  "nalgebra_tests_linalg_pivot_qr::col_piv_qr5": {
+    "col_piv_qr5_new": {
+      "baseline": 22120,
+      "householder": 374230
+    },
+    "col_piv_qr5_q": {
+      "baseline": 380530,
+      "reflections": 550860
+    },
+    "col_piv_qr5_solve": {
+      "baseline": 382230,
+      "substitution": 618560
+    }
+  },
+  "nalgebra_tests_linalg_pivot_qr::col_piv_qr6": {
+    "col_piv_qr6_new": {
+      "baseline": 24320,
+      "householder": 595160
+    },
+    "col_piv_qr6_q": {
+      "baseline": 604060,
+      "reflections": 877690
+    },
+    "col_piv_qr6_solve": {
+      "baseline": 606060,
+      "substitution": 963460
+    }
+  }
+}
