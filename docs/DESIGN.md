@@ -229,8 +229,10 @@ Two experimental features of the Cairo compiler, both enabled by corelib itself,
   constraints) and simpler generic bounds (e.g. the generic QR methods);
 - `user_defined_inline_macros`: the construction macros `matrix!`, `vector!`, `point!`,
   `dmatrix!`, `dvector!` (and the other macros of nalgebra-rs) as declarative Cairo macros,
-  without a Rust procedural-macro plugin. Whether a consumer must enable the feature to use them
-  is measured by WP P21 and documented in the README.
+  without a Rust procedural-macro plugin (feature `macros`, in `default`). Measured by WP P21: a
+  consumer needs NO experimental feature to call the macros or `iter.sum()` / `iter.product()`.
+  Cairo 2.19 facts: a macro body resolves prelude names only through `$defsite::`, which also
+  reaches private items of the defining crate.
 
 A toolchain bump that changes either feature is handled in its dedicated PR (`benchmarks/`
 re-run, as every toolchain bump).
