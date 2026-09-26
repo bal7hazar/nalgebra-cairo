@@ -398,15 +398,9 @@ pub impl Lblt4Impl<
             }
         }
         // position 4
-        if skip {
-            skip = false;
-        } else {
-            if a33 == R::zero() && zero_pivot.is_none() {
-                zero_pivot = Some(3);
-            }
+        if !skip && a33 == R::zero() && zero_pivot.is_none() {
+            zero_pivot = Some(3);
         }
-        let _ = skip;
-        let _ = alpha;
         Lblt4 {
             matrix: Matrix4 {
                 m11: a00,

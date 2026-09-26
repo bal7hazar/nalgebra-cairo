@@ -296,18 +296,16 @@ pub impl FullPivLu3x4Impl<
             piv = x;
             cp2 = 4;
         }
-        if piv != R::zero() {
-            if cp2 == 4 {
-                let t = a02;
-                a02 = a03;
-                a03 = t;
-                let t = a12;
-                a12 = a13;
-                a13 = t;
-                let t = a22;
-                a22 = a23;
-                a23 = t;
-            }
+        if cp2 == 4 {
+            let t = a02;
+            a02 = a03;
+            a03 = t;
+            let t = a12;
+            a12 = a13;
+            a13 = t;
+            let t = a22;
+            a22 = a23;
+            a23 = t;
         }
         FullPivLu3x4 {
             lu: Matrix3x4 {

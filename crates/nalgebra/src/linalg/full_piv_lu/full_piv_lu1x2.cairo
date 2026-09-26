@@ -69,12 +69,10 @@ pub impl FullPivLu1x2Impl<
             piv = x;
             cp0 = 2;
         }
-        if piv != R::zero() {
-            if cp0 == 2 {
-                let t = a00;
-                a00 = a01;
-                a01 = t;
-            }
+        if cp0 == 2 {
+            let t = a00;
+            a00 = a01;
+            a01 = t;
         }
         FullPivLu1x2 { lu: RowVector2 { x: a00, y: a01 }, p: Perm1 {}, q: Perm2 { p1: cp0 } }
     }

@@ -999,7 +999,9 @@ def cairo_files() -> list[Path]:
 # Generic traits implemented in other files than their own: `Norm<N, M, T>` (`base/norm.cairo`),
 # implemented in each shape's module for the four norm markers (`Matrix3EuclideanNorm`), so its
 # `norm` / `metric_distance` are the shapes' methods of the same names (WP 8.2b).
-CROSS_FILE_TRAITS = {"Norm"}
+# WP 8.5-P15: the `PermuteRows` / `PermuteColumns` impls of `Perm1` / `Perm5` live next to those
+# types (`linalg/lu/perm1_5.cairo`), not in `linalg/permutation_sequence.cairo`.
+CROSS_FILE_TRAITS = {"Norm", "PermuteRows", "PermuteColumns"}
 
 
 def parse_cairo() -> list[Item]:
@@ -1190,7 +1192,13 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "QR": [f"Qr{r}" if r == c else f"Qr{r}x{c}" for r in DIMS for c in DIMS],
     "SVD": [f"Svd{r}" if r == c else f"Svd{r}x{c}" for r in DIMS for c in DIMS],
     "SymmetricEigen": [f"SymmetricEigen{n}" for n in DIMS],
-    "PermutationSequence": ["Perm2", "Perm3", "Perm4", "Perm6"],
+    # WP 8.5-P15: `Perm1` / `Perm5` complete the sequences (the pivoted factorisations of every
+    # shape permute 1..6 rows / columns).
+    "PermutationSequence": [f"Perm{n}" for n in DIMS],
+    # WP 8.5-P15: one type per static shape (`FullPivLu3x2`, `ColPivQr6`...), `Lblt1..6`.
+    "FullPivLU": [f"FullPivLu{r}" if r == c else f"FullPivLu{r}x{c}" for r in DIMS for c in DIMS],
+    "ColPivQR": [f"ColPivQr{r}" if r == c else f"ColPivQr{r}x{c}" for r in DIMS for c in DIMS],
+    "LBLT": [f"Lblt{n}" for n in DIMS],
     # WP 8.5-P14a.
     "GivensRotation": ["GivensRotation"],
     "nalgebra::linalg": ["nalgebra::linalg"],
@@ -1338,6 +1346,13 @@ _QR_TALL = {f"Qr{r}x{c}" for r in DIMS for c in DIMS if r > c}
 for _name in ("solve", "solve_mut", "is_invertible", "try_inverse"):
     DIM_ONLY[_name] = (DIM_ONLY.get(_name, _EVERY) | {f"Qr{n}" for n in DIMS}) - _QR_RECT
 DIM_ONLY["q_tr_mul"] = _EVERY - _QR_TALL
+# WP 8.5-P15: the square-only methods of `FullPivLU` / `ColPivQR` (upstream's `impl<.., D, D>`).
+_PIVOT_RECT = {f"{t}{r}x{c}" for t in ("FullPivLu", "ColPivQr") for r in DIMS for c in DIMS
+               if r != c}
+for _name in ("solve", "solve_mut", "is_invertible", "try_inverse", "determinant"):
+    DIM_ONLY[_name] = (DIM_ONLY.get(_name, _EVERY) | {f"{t}{n}" for t in ("FullPivLu", "ColPivQr")
+                                                      for n in DIMS}
+                       | {f"Lblt{n}" for n in DIMS}) - _PIVOT_RECT
 DIM_ONLY["insert_column"] = DIM_ONLY["insert_column"] | {"Cholesky2", "Cholesky3"}
 DIM_ONLY["remove_column"] = DIM_ONLY["remove_column"] | {"Cholesky3", "Cholesky4"}
 

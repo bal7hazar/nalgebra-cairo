@@ -658,15 +658,9 @@ pub impl Lblt5Impl<
             }
         }
         // position 5
-        if skip {
-            skip = false;
-        } else {
-            if a44 == R::zero() && zero_pivot.is_none() {
-                zero_pivot = Some(4);
-            }
+        if !skip && a44 == R::zero() && zero_pivot.is_none() {
+            zero_pivot = Some(4);
         }
-        let _ = skip;
-        let _ = alpha;
         Lblt5 {
             matrix: Matrix5 {
                 m11: a00,

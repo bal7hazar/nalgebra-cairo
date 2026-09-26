@@ -140,15 +140,13 @@ pub impl FullPivLu2x3Impl<
             piv = x;
             cp1 = 3;
         }
-        if piv != R::zero() {
-            if cp1 == 3 {
-                let t = a01;
-                a01 = a02;
-                a02 = t;
-                let t = a11;
-                a11 = a12;
-                a12 = t;
-            }
+        if cp1 == 3 {
+            let t = a01;
+            a01 = a02;
+            a02 = t;
+            let t = a11;
+            a11 = a12;
+            a12 = t;
         }
         FullPivLu2x3 {
             lu: Matrix2x3 { m11: a00, m21: a10, m12: a01, m22: a11, m13: a02, m23: a12 },

@@ -569,21 +569,19 @@ pub impl FullPivLu4x5Impl<
             piv = x;
             cp3 = 5;
         }
-        if piv != R::zero() {
-            if cp3 == 5 {
-                let t = a03;
-                a03 = a04;
-                a04 = t;
-                let t = a13;
-                a13 = a14;
-                a14 = t;
-                let t = a23;
-                a23 = a24;
-                a24 = t;
-                let t = a33;
-                a33 = a34;
-                a34 = t;
-            }
+        if cp3 == 5 {
+            let t = a03;
+            a03 = a04;
+            a04 = t;
+            let t = a13;
+            a13 = a14;
+            a14 = t;
+            let t = a23;
+            a23 = a24;
+            a24 = t;
+            let t = a33;
+            a33 = a34;
+            a34 = t;
         }
         FullPivLu4x5 {
             lu: Matrix4x5 {

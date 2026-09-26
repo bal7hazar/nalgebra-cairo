@@ -1,28 +1,38 @@
-//! Matrix decompositions (upstream `nalgebra::linalg`), unrolled for the static sizes of
-//! `base` — 2, 3, 4 and the 6 of spatial algebra (DESIGN D4, D6).
+//! Matrix decompositions (upstream `nalgebra::linalg`), unrolled for the static shapes of `base`
+//! (DESIGN D4, D6).
 //!
 //! Every decomposition here is **closed form or fixed cost**: no convergence loop, no iteration
 //! count, no tolerance parameter. Gas is therefore a constant of the type, which is what a proof
 //! system needs; accuracy is a measured property, reported in the doc comment of each
 //! decomposition and checked against `tools/oracle` in the tests.
 //!
-//! - `cholesky`: `A = L·Lᵀ` for a symmetric POSITIVE-DEFINITE matrix (upstream `Cholesky`);
-//! - `udu`: `A = U·D·Uᵀ` with `U` unit upper triangular, for any symmetric matrix whose
-//! trailing
-//!   principal minors are non-zero (upstream `UDU`: the fields `u`, `d`, `new`, `d_matrix`). Its
-//!   kernel is the crate-internal `ldlt` (`A = L·D·Lᵀ`, no square root, indefinite matrices
-//!   accepted, DESIGN D6) applied to the reversed matrix;
-//! - `symmetric_eigen2` / `symmetric_eigen3`: eigen decomposition of symmetric matrices (closed
-//!   form in 2D, fixed-sweep Jacobi in 3D).
+//! - `cholesky`: `A = L·Lᵀ` for a symmetric POSITIVE-DEFINITE matrix (upstream `Cholesky`), 2,
+//! 3,
+//!   4, 6; `cholesky_update`: its rank-one update and column insertion / removal;
+//! - `udu`: `A = U·D·Uᵀ` with `U` unit upper triangular (upstream `UDU`), on the crate-internal
+//!   `ldlt` kernel (`A = L·D·Lᵀ`, no square root, indefinite matrices accepted) of the reversed
+//!   matrix;
+//! - `lu`: `P·A = L·U` with partial pivoting (upstream `LU`), 2, 3, 4, 6, and the permutation
+//!   sequences `Perm1..6` (upstream `PermutationSequence`); `full_piv_lu`: `P·A·Q = L·U` with
+//!   full pivoting of every shape (upstream `FullPivLU`);
+//! - `qr`: `A = Q·R` of every shape by modified Gram-Schmidt (upstream `QR`, unpacked
+//!   convention); `col_piv_qr`: `A·P = Q·R` with column pivoting of every shape by Householder
+//!   reflections, upstream's storage (upstream `ColPivQR`);
+//! - `lblt`: the Bunch-Kaufman `P·A·Pᵀ = L·B·Lᵀ` of the symmetric squares (upstream
+//! `LBLT`);
+//! - `symmetric_eigen1..6`: eigen decomposition of symmetric matrices (closed form in 2D,
+//!   fixed-sweep Jacobi beyond); `svd*`: `M = U·Σ·Vᵀ` of every shape, pseudo-inverse, rank,
+//!   polar decomposition (upstream `SVD`), on the symmetric eigen decomposition of `MᵀM`;
+//! - `givens`, `householder`, `lu_steps`, `inverse`, `permutation_sequence`: upstream's building
+//!   blocks and free functions.
 //!
 //! Like upstream, the symmetric factorisations take a full `MatrixN` and read ONE triangle: the
-//! LOWER one for `Cholesky` and `SymmetricEigen`, the UPPER one for `UDU`.
-//! - `lu`: `P·A = L·U` with partial pivoting for any square matrix (upstream `LU`).
-//! - `qr`: `A = Q·R` with `Q` orthonormal and `R` upper triangular with a non-negative diagonal
-//!   (upstream `QR`, unpacked convention), sizes 2, 3 and 4, by modified Gram-Schmidt;
-//! - `svd2` / `svd3`: `M = U·Σ·Vᵀ`, the pseudo-inverse, the least-squares solve and the left
-//!   polar decomposition `M = P·U` (upstream `SVD`), built on the symmetric eigen decomposition
-//!   of `MᵀM` (DESIGN D6).
+//! LOWER one for `Cholesky`, `SymmetricEigen` and `LBLT`, the UPPER one for `UDU`.
+//!
+//! Scarb features (DESIGN D9, all in `default`): `eigen` (`symmetric_eigen*`), `svd` (`svd*`, on
+//! `eigen`), `qr`, `cholesky_update`, `full_piv_lu`, `col_piv_qr`, `lblt`. Nothing ungated uses
+//! them: the only item of `linalg` the rest of the crate uses is `Lu6` (`Matrix6::determinant` /
+//! `try_inverse`), and `lu` / `cholesky` / `udu` stay ungated.
 
 pub mod cholesky;
 #[cfg(feature: 'cholesky_update')]

@@ -200,29 +200,27 @@ pub impl FullPivLu2x5Impl<
             piv = x;
             cp1 = 5;
         }
-        if piv != R::zero() {
-            if cp1 == 3 {
-                let t = a01;
-                a01 = a02;
-                a02 = t;
-                let t = a11;
-                a11 = a12;
-                a12 = t;
-            } else if cp1 == 4 {
-                let t = a01;
-                a01 = a03;
-                a03 = t;
-                let t = a11;
-                a11 = a13;
-                a13 = t;
-            } else if cp1 == 5 {
-                let t = a01;
-                a01 = a04;
-                a04 = t;
-                let t = a11;
-                a11 = a14;
-                a14 = t;
-            }
+        if cp1 == 3 {
+            let t = a01;
+            a01 = a02;
+            a02 = t;
+            let t = a11;
+            a11 = a12;
+            a12 = t;
+        } else if cp1 == 4 {
+            let t = a01;
+            a01 = a03;
+            a03 = t;
+            let t = a11;
+            a11 = a13;
+            a13 = t;
+        } else if cp1 == 5 {
+            let t = a01;
+            a01 = a04;
+            a04 = t;
+            let t = a11;
+            a11 = a14;
+            a14 = t;
         }
         FullPivLu2x5 {
             lu: Matrix2x5 {

@@ -303,7 +303,11 @@ def fplu_new(r: int, c: int) -> str:
                 for k in range(i + 1, c):
                     body.append(f"{v(t, k)} = R::mul_add(nl, {v(i, k)}, {v(t, k)});")
                 body.append(f"{v(t, i)} = l{t};")
-        st.append(f"if piv != R::zero() {{\n{chr(10).join(body)}\n}}")
+        if nr > 1:
+            st.append(f"if piv != R::zero() {{\n{chr(10).join(body)}\n}}")
+        else:
+            # a zero block leaves `cp` at `k` (nothing is larger than 0): the chain swaps nothing
+            st.append("\n".join(body))
     lu = struct_lit(r, c, lambda i, j: v(i, j))
     p = perm_lit(r, lambda k: f"rp{k}" if k < m and r - k > 1 else None)
     q = perm_lit(c, lambda k: f"cp{k}" if k < m and c - k > 1 else None)
@@ -876,7 +880,8 @@ def interchange(n: int, k: int, target: int, piv: int, two: bool) -> str:
 def lblt_step(n: int, k: int) -> str:
     """The body of the factorisation at position `k` (a 1x1 or a 2x2 block starts here)."""
     if k == n - 1:
-        return (f"if {v(k, k)} == R::zero() && zero_pivot.is_none() {{ zero_pivot = Some({k}); }}")
+        cond = f"{v(k, k)} == R::zero() && zero_pivot.is_none()"
+        return f"if {'' if k == 0 else '!skip && '}{cond} {{ zero_pivot = Some({k}); }}"
     st = [f"let dabs = R::abs({v(k, k)});",
           f"let mut imax = {k + 1}_u8;",
           f"let mut colmax = R::abs({v(k + 1, k)});"]
@@ -1007,8 +1012,8 @@ def render_lblt(n: int) -> str:
     steps = []
     for k in range(n):
         body = lblt_step(n, k)
-        if k == 0:
-            steps.append(f"// position 1\n{body}")
+        if k == 0 or k == n - 1:
+            steps.append(f"// position {k + 1}\n{body}")
         else:
             steps.append(f"// position {k + 1}\nif skip {{ skip = false; }} else {{ {body} }}")
     stored = struct_lit(n, n, lambda i, j: v(i, j) if i >= j else f"matrix.{fld(n, n, i, j)}")
@@ -1118,14 +1123,12 @@ pub struct {B}<T> {{
     /// on a pivot that rounding made exactly zero.
     fn new(matrix: {M}<T>) -> {B}<T> {{
         revoke_ap_tracking();
-        let alpha = R::from_ratio({ALPHA_RAW}, 0x100000000);
+        {f"let alpha = R::from_ratio({ALPHA_RAW}, 0x100000000);" if n > 1 else ""}
         {chr(10).join(init)}
         {chr(10).join(pivs)}
         let mut zero_pivot: Option<usize> = None;
-        let mut skip = false;
+        {"let mut skip = false;" if n > 1 else ""}
         {chr(10).join(steps)}
-        let _ = skip;
-        let _ = alpha;
         {B} {{ matrix: {stored}, {pv}, zero_pivot }}
     }}
 

@@ -18,7 +18,12 @@ keywords.workspace = true
 # of the static shapes that return them and the vector convolutions (base/dynamic*.cairo).
 # `sparse` (WP 8.6-P20): upstream's legacy `nalgebra::sparse` (`CsMatrix`, `CsCholesky`,
 # sparse/**), on top of `dynamic`; `io` (WP 8.6-P20): `nalgebra::io`, the Matrix Market parser
-# (io/**), on top of `sparse`.
+# (io/**), on top of `sparse`. The linalg families (WP 8.5-P15; measured saving on a cold build
+# without the defaults): `eigen` (linalg/symmetric_eigen*, 0.11 GB), `svd` (linalg/svd*, on top of
+# `eigen`, 0.52 GB more), `qr` (linalg/qr*, 0.23 GB), `cholesky_update` (0.02 GB: its own test
+# package is its only user, grouping it would make another package compile it), `full_piv_lu`
+# (0.29 GB), `col_piv_qr` (0.43 GB), `lblt` (0.09 GB). Nothing ungated uses them (`Lu6`, used by
+# `Matrix6`, stays ungated with `lu`, `cholesky`, `udu`).
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",

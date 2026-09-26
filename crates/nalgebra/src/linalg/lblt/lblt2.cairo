@@ -125,15 +125,9 @@ pub impl Lblt2Impl<
             }
         }
         // position 2
-        if skip {
-            skip = false;
-        } else {
-            if a11 == R::zero() && zero_pivot.is_none() {
-                zero_pivot = Some(1);
-            }
+        if !skip && a11 == R::zero() && zero_pivot.is_none() {
+            zero_pivot = Some(1);
         }
-        let _ = skip;
-        let _ = alpha;
         Lblt2 {
             matrix: Matrix2 { m11: a00, m21: a10, m12: matrix.m12, m22: a11 },
             p1: (pi0, ps0),

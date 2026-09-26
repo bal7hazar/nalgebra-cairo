@@ -68,18 +68,16 @@ pub impl Lblt1Impl<
     /// only on a pivot that rounding made exactly zero.
     fn new(matrix: Matrix1<T>) -> Lblt1<T> {
         revoke_ap_tracking();
-        let alpha = R::from_ratio(2750446389, 0x100000000);
+
         let mut a00 = matrix.x;
         let mut pi0 = 0_u8;
         let mut ps0 = 1_u8;
         let mut zero_pivot: Option<usize> = None;
-        let mut skip = false;
+
         // position 1
         if a00 == R::zero() && zero_pivot.is_none() {
             zero_pivot = Some(0);
         }
-        let _ = skip;
-        let _ = alpha;
         Lblt1 { matrix: Matrix1 { x: a00 }, p1: (pi0, ps0), zero_pivot }
     }
 

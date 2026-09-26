@@ -81,20 +81,18 @@ pub impl FullPivLu1x4Impl<
             piv = x;
             cp0 = 4;
         }
-        if piv != R::zero() {
-            if cp0 == 2 {
-                let t = a00;
-                a00 = a01;
-                a01 = t;
-            } else if cp0 == 3 {
-                let t = a00;
-                a00 = a02;
-                a02 = t;
-            } else if cp0 == 4 {
-                let t = a00;
-                a00 = a03;
-                a03 = t;
-            }
+        if cp0 == 2 {
+            let t = a00;
+            a00 = a01;
+            a01 = t;
+        } else if cp0 == 3 {
+            let t = a00;
+            a00 = a02;
+            a02 = t;
+        } else if cp0 == 4 {
+            let t = a00;
+            a00 = a03;
+            a03 = t;
         }
         FullPivLu1x4 {
             lu: RowVector4 { x: a00, y: a01, z: a02, w: a03 },

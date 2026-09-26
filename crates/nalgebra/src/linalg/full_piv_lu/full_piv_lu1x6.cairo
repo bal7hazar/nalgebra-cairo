@@ -93,28 +93,26 @@ pub impl FullPivLu1x6Impl<
             piv = x;
             cp0 = 6;
         }
-        if piv != R::zero() {
-            if cp0 == 2 {
-                let t = a00;
-                a00 = a01;
-                a01 = t;
-            } else if cp0 == 3 {
-                let t = a00;
-                a00 = a02;
-                a02 = t;
-            } else if cp0 == 4 {
-                let t = a00;
-                a00 = a03;
-                a03 = t;
-            } else if cp0 == 5 {
-                let t = a00;
-                a00 = a04;
-                a04 = t;
-            } else if cp0 == 6 {
-                let t = a00;
-                a00 = a05;
-                a05 = t;
-            }
+        if cp0 == 2 {
+            let t = a00;
+            a00 = a01;
+            a01 = t;
+        } else if cp0 == 3 {
+            let t = a00;
+            a00 = a02;
+            a02 = t;
+        } else if cp0 == 4 {
+            let t = a00;
+            a00 = a03;
+            a03 = t;
+        } else if cp0 == 5 {
+            let t = a00;
+            a00 = a04;
+            a04 = t;
+        } else if cp0 == 6 {
+            let t = a00;
+            a00 = a05;
+            a05 = t;
         }
         FullPivLu1x6 {
             lu: RowVector6 { x: a00, y: a01, z: a02, w: a03, a: a04, b: a05 },

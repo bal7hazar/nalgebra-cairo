@@ -230,15 +230,9 @@ pub impl Lblt3Impl<
             }
         }
         // position 3
-        if skip {
-            skip = false;
-        } else {
-            if a22 == R::zero() && zero_pivot.is_none() {
-                zero_pivot = Some(2);
-            }
+        if !skip && a22 == R::zero() && zero_pivot.is_none() {
+            zero_pivot = Some(2);
         }
-        let _ = skip;
-        let _ = alpha;
         Lblt3 {
             matrix: Matrix3 {
                 m11: a00,

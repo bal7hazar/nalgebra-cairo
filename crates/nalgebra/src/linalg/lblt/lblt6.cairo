@@ -1047,15 +1047,9 @@ pub impl Lblt6Impl<
             }
         }
         // position 6
-        if skip {
-            skip = false;
-        } else {
-            if a55 == R::zero() && zero_pivot.is_none() {
-                zero_pivot = Some(5);
-            }
+        if !skip && a55 == R::zero() && zero_pivot.is_none() {
+            zero_pivot = Some(5);
         }
-        let _ = skip;
-        let _ = alpha;
         Lblt6 {
             matrix: Matrix6 {
                 m11: a00,

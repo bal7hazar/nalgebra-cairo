@@ -75,16 +75,14 @@ pub impl FullPivLu1x3Impl<
             piv = x;
             cp0 = 3;
         }
-        if piv != R::zero() {
-            if cp0 == 2 {
-                let t = a00;
-                a00 = a01;
-                a01 = t;
-            } else if cp0 == 3 {
-                let t = a00;
-                a00 = a02;
-                a02 = t;
-            }
+        if cp0 == 2 {
+            let t = a00;
+            a00 = a01;
+            a01 = t;
+        } else if cp0 == 3 {
+            let t = a00;
+            a00 = a02;
+            a02 = t;
         }
         FullPivLu1x3 {
             lu: RowVector3 { x: a00, y: a01, z: a02 }, p: Perm1 {}, q: Perm3 { p1: cp0, p2: 2 },
