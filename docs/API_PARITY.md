@@ -19,14 +19,14 @@ How to read it:
 |---|---:|---:|---:|---:|---:|---:|
 | base | 486 | 0 | 0 | 318 | 804 | 100.0% |
 | geometry | 932 | 3 | 0 | 113 | 1048 | 99.7% |
-| linalg | 177 | 0 | 118 | 9 | 304 | 60.0% |
+| linalg | 228 | 0 | 70 | 6 | 304 | 76.5% |
 | sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
 | io | 1 | 0 | 1 | 0 | 2 | 50.0% |
 | third_party | 0 | 0 | 91 | 72 | 163 | 0.0% |
 | root | 35 | 0 | 0 | 0 | 35 | 100.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1665** | **3** | **210** | **558** | **2436** | **88.7%** |
+| **total** | **1716** | **3** | **162** | **555** | **2436** | **91.2%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -52,7 +52,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 0 | standard numerics | P08, P09b |  |
 | [P13](#p13-dmatrix-dvector-core) | DMatrix / DVector core | 0 | standard numerics | P01-P05 (API to mirror) |  |
 | [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 3 | standard numerics | P01, P05 | `linalg/householder.rs` (3) |
-| [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 48 | standard numerics | P14 | `linalg/col_piv_qr.rs` (18), `linalg/full_piv_lu.rs` (17), `linalg/lblt.rs` (10), `linalg/decomposition.rs` (3) |
+| [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 0 | standard numerics | P14 |  |
 | [P16](#p16-schur-hessenberg-bidiagonal-tridiagonal-general-eigen) | Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen | 64 | hard numerics | P14 | `linalg/bidiagonal.rs` (14), `linalg/symmetric_tridiagonal.rs` (13), `linalg/hessenberg.rs` (12), `linalg/schur.rs` (12), `linalg/eigen.rs` (6) |
 | [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 3 | hard numerics | P14, P16 | `linalg/pow.rs` (2), `linalg/exp.rs` (1) |
 | [P18](#p18-convolution) | Convolution | 0 | mechanical | P13 |  |
@@ -146,13 +146,8 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P15 Full-pivot LU, column-pivot QR, LBLᵀ
 
-`FullPivLU`, `ColPivQR`, `LBLT` (pivoted factorizations, static sizes first). Tier: standard numerics. Depends on: P14. 48 items (`*` = partial):
+`FullPivLU`, `ColPivQR`, `LBLT` (pivoted factorizations, static sizes first). Tier: standard numerics. Depends on: P14. 0 items (`*` = partial):
 
-- **ColPivQR**: `impl:Clone`, `impl:Copy`, `impl:Deserialize`, `impl:Serialize`, `col_piv_qr_internal`, `determinant`, `is_invertible`, `new`, `p`, `q`, `q_tr_mul`, `r`, `solve`, `solve_mut`, `try_inverse`, `unpack`, `unpack_r`, `type:ColPivQR`
-- **FullPivLU**: `impl:Clone`, `impl:Copy`, `impl:Deserialize`, `impl:Serialize`, `determinant`, `is_invertible`, `l`, `lu_internal`, `new`, `p`, `q`, `solve`, `solve_mut`, `try_inverse`, `u`, `unpack`, `type:FullPivLU`
-- **LBLT**: `impl:Clone`, `impl:Deserialize`, `impl:Serialize`, `d`, `determinant`, `l_permuted`, `new`, `solve`, `solve_mut`, `type:LBLT`
-- **Matrix**: `col_piv_qr`, `full_piv_lu`
-- **SquareMatrix**: `lblt`
 
 ### P16 Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen
 
@@ -253,7 +248,7 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | `rayon` | 4 | `rayon` parallel iterators: a Cairo program is sequential. |
 | `unsafe` | 38 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
 | `borrow` | 48 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
-| `fmt` | 35 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
+| `fmt` | 32 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
 | `glue` | 44 | Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, `encase`, the `serde` visitor types). |
 | `random` | 65 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
 | `interop` | 68 | Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` scalar, and the `glam` types glam-cairo does not have: f64 `D*`, aligned `*A`, `i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam-cairo has are in scope. |
@@ -2979,29 +2974,29 @@ Cairo: Cholesky2/3/4/6 · ported 22, partial 0, missing 0, excluded 0.
 
 #### ColPivQR (linalg)
 
-Cairo: none · ported 0, partial 0, missing 18, excluded 1.
+Cairo: ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5 · ported 19, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Clone` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| impl `Copy` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| impl `Debug` | excluded |  | fmt | `linalg/col_piv_qr.rs` |
-| impl `Deserialize` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| impl `Serialize` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `col_piv_qr_internal` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `determinant` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `is_invertible` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `new` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `p` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `q` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `q_tr_mul` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `r` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `solve` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `solve_mut` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `try_inverse` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `unpack` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| method `unpack_r` | missing |  | P15 | `linalg/col_piv_qr.rs` |
-| type `ColPivQR` | missing |  | P15 | `linalg/col_piv_qr.rs` |
+| impl `Clone` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/col_piv_qr.rs` |
+| impl `Copy` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5 (impl `Copy`) |  | `linalg/col_piv_qr.rs` |
+| impl `Debug` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5 (impl `Debug`) |  | `linalg/col_piv_qr.rs` |
+| impl `Deserialize` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/col_piv_qr.rs` |
+| impl `Serialize` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/col_piv_qr.rs` |
+| method `col_piv_qr_internal` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::col_piv_qr_internal |  | `linalg/col_piv_qr.rs` |
+| method `determinant` | ported | ColPivQr1/2/3/4/5/6::determinant |  | `linalg/col_piv_qr.rs` |
+| method `is_invertible` | ported | ColPivQr1/2/3/4/5/6::is_invertible |  | `linalg/col_piv_qr.rs` |
+| method `new` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::new |  | `linalg/col_piv_qr.rs` |
+| method `p` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::p |  | `linalg/col_piv_qr.rs` |
+| method `q` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::q |  | `linalg/col_piv_qr.rs` |
+| method `q_tr_mul` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::q_tr_mul |  | `linalg/col_piv_qr.rs` |
+| method `r` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::r |  | `linalg/col_piv_qr.rs` |
+| method `solve` | ported | ColPivQr1/2/3/4/5/6::solve |  | `linalg/col_piv_qr.rs` |
+| method `solve_mut` | ported | ColPivQr1/2/3/4/5/6::solve_mut |  | `linalg/col_piv_qr.rs` |
+| method `try_inverse` | ported | ColPivQr1/2/3/4/5/6::try_inverse |  | `linalg/col_piv_qr.rs` |
+| method `unpack` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::unpack |  | `linalg/col_piv_qr.rs` |
+| method `unpack_r` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5::unpack_r |  | `linalg/col_piv_qr.rs` |
+| type `ColPivQR` | ported | ColPivQr1/2/3/4/5/6, ColPivQr1x2/3/4/5/6, ColPivQr2x1/3/4/5/6, ColPivQr3x1/2/4/5/6, ColPivQr4x1/2/3/5/6, ColPivQr5x1/2/3/4/6, ColPivQr6x1/2/3/4/5 | generic upstream type, concrete Cairo types | `linalg/col_piv_qr.rs` |
 
 #### Eigen (linalg)
 
@@ -3019,28 +3014,28 @@ Cairo: none · ported 0, partial 0, missing 6, excluded 1.
 
 #### FullPivLU (linalg)
 
-Cairo: none · ported 0, partial 0, missing 17, excluded 1.
+Cairo: FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5 · ported 18, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Clone` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| impl `Copy` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| impl `Debug` | excluded |  | fmt | `linalg/full_piv_lu.rs` |
-| impl `Deserialize` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| impl `Serialize` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `determinant` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `is_invertible` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `l` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `lu_internal` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `new` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `p` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `q` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `solve` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `solve_mut` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `try_inverse` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `u` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| method `unpack` | missing |  | P15 | `linalg/full_piv_lu.rs` |
-| type `FullPivLU` | missing |  | P15 | `linalg/full_piv_lu.rs` |
+| impl `Clone` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/full_piv_lu.rs` |
+| impl `Copy` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5 (impl `Copy`) |  | `linalg/full_piv_lu.rs` |
+| impl `Debug` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5 (impl `Debug`) |  | `linalg/full_piv_lu.rs` |
+| impl `Deserialize` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/full_piv_lu.rs` |
+| impl `Serialize` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/full_piv_lu.rs` |
+| method `determinant` | ported | FullPivLu1/2/3/4/5/6::determinant |  | `linalg/full_piv_lu.rs` |
+| method `is_invertible` | ported | FullPivLu1/2/3/4/5/6::is_invertible |  | `linalg/full_piv_lu.rs` |
+| method `l` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5::l |  | `linalg/full_piv_lu.rs` |
+| method `lu_internal` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5::lu_internal |  | `linalg/full_piv_lu.rs` |
+| method `new` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5::new |  | `linalg/full_piv_lu.rs` |
+| method `p` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5::p |  | `linalg/full_piv_lu.rs` |
+| method `q` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5::q |  | `linalg/full_piv_lu.rs` |
+| method `solve` | ported | FullPivLu1/2/3/4/5/6::solve |  | `linalg/full_piv_lu.rs` |
+| method `solve_mut` | ported | FullPivLu1/2/3/4/5/6::solve_mut |  | `linalg/full_piv_lu.rs` |
+| method `try_inverse` | ported | FullPivLu1/2/3/4/5/6::try_inverse |  | `linalg/full_piv_lu.rs` |
+| method `u` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5::u |  | `linalg/full_piv_lu.rs` |
+| method `unpack` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5::unpack |  | `linalg/full_piv_lu.rs` |
+| type `FullPivLU` | ported | FullPivLu1/2/3/4/5/6, FullPivLu1x2/3/4/5/6, FullPivLu2x1/3/4/5/6, FullPivLu3x1/2/4/5/6, FullPivLu4x1/2/3/5/6, FullPivLu5x1/2/3/4/6, FullPivLu6x1/2/3/4/5 | generic upstream type, concrete Cairo types | `linalg/full_piv_lu.rs` |
 
 #### GivensRotation (linalg)
 
@@ -3086,21 +3081,21 @@ Cairo: none · ported 0, partial 0, missing 12, excluded 1.
 
 #### LBLT (linalg)
 
-Cairo: none · ported 0, partial 0, missing 10, excluded 1.
+Cairo: Lblt1/2/3/4/5/6 · ported 11, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Clone` | missing |  | P15 | `linalg/lblt.rs` |
-| impl `Debug` | excluded |  | fmt | `linalg/lblt.rs` |
-| impl `Deserialize` | missing |  | P15 | `linalg/lblt.rs` |
-| impl `Serialize` | missing |  | P15 | `linalg/lblt.rs` |
-| method `d` | missing |  | P15 | `linalg/lblt.rs` |
-| method `determinant` | missing |  | P15 | `linalg/lblt.rs` |
-| method `l_permuted` | missing |  | P15 | `linalg/lblt.rs` |
-| method `new` | missing |  | P15 | `linalg/lblt.rs` |
-| method `solve` | missing |  | P15 | `linalg/lblt.rs` |
-| method `solve_mut` | missing |  | P15 | `linalg/lblt.rs` |
-| type `LBLT` | missing |  | P15 | `linalg/lblt.rs` |
+| impl `Clone` | ported | Lblt1/2/3/4/5/6 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/lblt.rs` |
+| impl `Debug` | ported | Lblt1/2/3/4/5/6 (impl `Debug`) |  | `linalg/lblt.rs` |
+| impl `Deserialize` | ported | Lblt1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/lblt.rs` |
+| impl `Serialize` | ported | Lblt1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/lblt.rs` |
+| method `d` | ported | Lblt1/2/3/4/5/6::d |  | `linalg/lblt.rs` |
+| method `determinant` | ported | Lblt1/2/3/4/5/6::determinant |  | `linalg/lblt.rs` |
+| method `l_permuted` | ported | Lblt1/2/3/4/5/6::l_permuted |  | `linalg/lblt.rs` |
+| method `new` | ported | Lblt1/2/3/4/5/6::new |  | `linalg/lblt.rs` |
+| method `solve` | ported | Lblt1/2/3/4/5/6::solve |  | `linalg/lblt.rs` |
+| method `solve_mut` | ported | Lblt1/2/3/4/5/6::solve_mut |  | `linalg/lblt.rs` |
+| type `LBLT` | ported | Lblt1/2/3/4/5/6 | generic upstream type, concrete Cairo types | `linalg/lblt.rs` |
 
 #### LU (linalg)
 
@@ -3130,13 +3125,13 @@ Cairo: Lu2/3/4/6 · ported 19, partial 0, missing 0, excluded 0.
 
 #### Matrix (linalg)
 
-Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 12, partial 0, missing 3, excluded 0.
+Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 14, partial 0, missing 1, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
 | method `bidiagonalize` | missing |  | P16 | `linalg/decomposition.rs` |
-| method `col_piv_qr` | missing |  | P15 | `linalg/decomposition.rs` |
-| method `full_piv_lu` | missing |  | P15 | `linalg/decomposition.rs` |
+| method `col_piv_qr` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::col_piv_qr |  | `linalg/decomposition.rs` |
+| method `full_piv_lu` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::full_piv_lu |  | `linalg/decomposition.rs` |
 | method `lu` | ported | Matrix2/3/4/6::lu |  | `linalg/decomposition.rs` |
 | method `polar` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::polar |  | `linalg/decomposition.rs` |
 | method `pseudo_inverse` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::pseudo_inverse |  | `linalg/svd.rs` |
@@ -3152,26 +3147,26 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 
 #### PermutationSequence (linalg)
 
-Cairo: Perm2/3/4/6 · ported 15, partial 0, missing 0, excluded 1.
+Cairo: Perm1/2/3/4/5/6 · ported 15, partial 0, missing 0, excluded 1.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Clone` | ported | Perm2/3/4/6 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/permutation_sequence.rs` |
-| impl `Copy` | ported | Perm2/3/4/6 (impl `Copy`) |  | `linalg/permutation_sequence.rs` |
-| impl `Debug` | ported | Perm2/3/4/6 (impl `Debug`) |  | `linalg/permutation_sequence.rs` |
-| impl `Deserialize` | ported | Perm2/3/4/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/permutation_sequence.rs` |
-| impl `Serialize` | ported | Perm2/3/4/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/permutation_sequence.rs` |
-| method `append_permutation` | ported | Perm2/3/4/6::append_permutation |  | `linalg/permutation_sequence.rs` |
-| method `determinant` | ported | Perm2/3/4/6::determinant |  | `linalg/permutation_sequence.rs` |
-| method `identity` | ported | Perm2/3/4/6::identity |  | `linalg/permutation_sequence.rs` |
+| impl `Clone` | ported | Perm1/2/3/4/5/6 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/permutation_sequence.rs` |
+| impl `Copy` | ported | Perm1/2/3/4/5/6 (impl `Copy`) |  | `linalg/permutation_sequence.rs` |
+| impl `Debug` | ported | Perm1/2/3/4/5/6 (impl `Debug`) |  | `linalg/permutation_sequence.rs` |
+| impl `Deserialize` | ported | Perm1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/permutation_sequence.rs` |
+| impl `Serialize` | ported | Perm1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/permutation_sequence.rs` |
+| method `append_permutation` | ported | Perm1/2/3/4/5/6::append_permutation |  | `linalg/permutation_sequence.rs` |
+| method `determinant` | ported | Perm1/2/3/4/5/6::determinant |  | `linalg/permutation_sequence.rs` |
+| method `identity` | ported | Perm1/2/3/4/5/6::identity |  | `linalg/permutation_sequence.rs` |
 | method `identity_generic` | excluded |  | generic-dim | `linalg/permutation_sequence.rs` |
-| method `inv_permute_columns` | ported | Perm2/3/4/6::inv_permute_columns |  | `linalg/permutation_sequence.rs` |
-| method `inv_permute_rows` | ported | Perm2/3/4/6::inv_permute_rows |  | `linalg/permutation_sequence.rs` |
-| method `is_empty` | ported | Perm2/3/4/6::is_empty |  | `linalg/permutation_sequence.rs` |
-| method `len` | ported | Perm2/3/4/6::len |  | `linalg/permutation_sequence.rs` |
-| method `permute_columns` | ported | Perm2/3/4/6::permute_columns |  | `linalg/permutation_sequence.rs` |
-| method `permute_rows` | ported | Perm2/3/4/6::permute_rows |  | `linalg/permutation_sequence.rs` |
-| type `PermutationSequence` | ported | Perm2/3/4/6 | generic upstream type, concrete Cairo types | `linalg/permutation_sequence.rs` |
+| method `inv_permute_columns` | ported | Perm1/2/3/4/5/6::inv_permute_columns |  | `linalg/permutation_sequence.rs` |
+| method `inv_permute_rows` | ported | Perm1/2/3/4/5/6::inv_permute_rows |  | `linalg/permutation_sequence.rs` |
+| method `is_empty` | ported | Perm1/2/3/4/5/6::is_empty |  | `linalg/permutation_sequence.rs` |
+| method `len` | ported | Perm1/2/3/4/5/6::len |  | `linalg/permutation_sequence.rs` |
+| method `permute_columns` | ported | Perm1/2/3/4/5/6::permute_columns |  | `linalg/permutation_sequence.rs` |
+| method `permute_rows` | ported | Perm1/2/3/4/5/6::permute_rows |  | `linalg/permutation_sequence.rs` |
+| type `PermutationSequence` | ported | Perm1/2/3/4/5/6 | generic upstream type, concrete Cairo types | `linalg/permutation_sequence.rs` |
 
 #### QR (linalg)
 
@@ -3240,7 +3235,7 @@ Cairo: none · ported 0, partial 0, missing 10, excluded 1.
 
 #### SquareMatrix (linalg)
 
-Cairo: Matrix1/2/3/4/5/6 · ported 34, partial 0, missing 10, excluded 0.
+Cairo: Matrix1/2/3/4/5/6 · ported 35, partial 0, missing 9, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -3258,7 +3253,7 @@ Cairo: Matrix1/2/3/4/5/6 · ported 34, partial 0, missing 10, excluded 0.
 | method `eigenvalues` | missing |  | P16 | `linalg/schur.rs` |
 | method `exp` | missing |  | P17 | `linalg/exp.rs` |
 | method `hessenberg` | missing |  | P16 | `linalg/decomposition.rs` |
-| method `lblt` | missing |  | P15 | `linalg/decomposition.rs` |
+| method `lblt` | ported | Matrix1/2/3/4/5/6::lblt |  | `linalg/decomposition.rs` |
 | method `pow` | missing |  | P17 | `linalg/pow.rs` |
 | method `pow_mut` | missing |  | P17 | `linalg/pow.rs` |
 | method `schur` | missing |  | P16 | `linalg/decomposition.rs` |

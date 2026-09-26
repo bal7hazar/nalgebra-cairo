@@ -203,6 +203,9 @@ pub enum Gen {
     /// WP 8.5-P14b: symmetric positive-definite with CLUSTERED eigenvalues: `scale * base * (1 +
     /// e_i)`, `e_i` in {0, 1e-6, 1e-3, 0.5}, the hard case of Jacobi and QR alike.
     Clustered(usize),
+    /// WP 8.5-P15: symmetric matrix with entries of the case's magnitude class and an EXACTLY zero
+    /// diagonal (exactly symmetric in raw): Bunch-Kaufman must start with a 2x2 pivot.
+    SymZeroDiag(usize),
 }
 
 fn quantize_all(values: &[f64]) -> Option<Vec<i64>> {
@@ -260,6 +263,15 @@ impl Gen {
                 let m: Vec<f64> = (0..n * n).map(|_| rng.scalar(dist)).collect();
                 let mut raw = quantize_all(&m)?;
                 mirror_lower(*n, &mut raw);
+                Some(raw)
+            }
+            Gen::SymZeroDiag(n) => {
+                let m: Vec<f64> = (0..n * n).map(|_| rng.scalar(dist)).collect();
+                let mut raw = quantize_all(&m)?;
+                mirror_lower(*n, &mut raw);
+                for i in 0..*n {
+                    raw[i * n + i] = 0;
+                }
                 Some(raw)
             }
             Gen::WellCond(n) => {

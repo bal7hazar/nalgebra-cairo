@@ -10,6 +10,13 @@ repository.workspace = true
 keywords.workspace = true
 publish = false
 
+# The comparisons of the decompositions behind a `nalgebra` feature (DESIGN D9) are behind the
+# feature of the same name here: a test package that enables `nalgebra`'s `qr` / `svd` enables
+# them on this helper too (`nalgebra_tests_utils = { .., features = ["qr"] }`).
+[features]
+qr = []
+svd = []
+
 [dependencies]
 nalgebra = { path = "../nalgebra", default-features = false }
 simba.workspace = true

@@ -539,6 +539,7 @@ fn gen_len(gen: &Gen) -> usize {
         | Gen::NearSingularRect(r, c)
         | Gen::RankDeficient(r, c) => r * c,
         Gen::Sym(n)
+        | Gen::SymZeroDiag(n)
         | Gen::SymDeficient(n)
         | Gen::Clustered(n)
         | Gen::WellCond(n)
