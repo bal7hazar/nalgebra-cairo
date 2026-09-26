@@ -9883,7 +9883,14 @@ pub impl Matrix4x6Sum<
                 m46: R::zero(),
             };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -9927,7 +9934,14 @@ pub impl Matrix4x6SumSnapshot<
             };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc

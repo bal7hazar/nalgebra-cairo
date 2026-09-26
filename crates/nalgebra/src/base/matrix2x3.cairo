@@ -3015,7 +3015,14 @@ pub impl Matrix2x3Sum<
                 m23: R::zero(),
             };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -3041,7 +3048,14 @@ pub impl Matrix2x3SumSnapshot<
             };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc

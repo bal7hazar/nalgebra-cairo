@@ -4448,7 +4448,14 @@ pub impl Matrix3Sum<
                 m33: R::zero(),
             };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -4477,7 +4484,14 @@ pub impl Matrix3SumSnapshot<
             };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc
@@ -4509,7 +4523,14 @@ pub impl Matrix3ProductSnapshot<
             };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc * *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc * *x;
         }
         @acc

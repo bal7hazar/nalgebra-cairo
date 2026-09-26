@@ -361,7 +361,15 @@ pub impl DVectorSum<
         mut iter: I,
     ) -> DVector<T> {
         let mut acc = iter.next().expect(errors::EMPTY_SUM);
-        while let Option::Some(x) = iter.next() {
+        // Unrolled twice, like the static shapes' (`tools/shapegen/root_ops.py`).
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -377,7 +385,15 @@ pub impl DVectorSumSnapshot<
         mut iter: I,
     ) -> @DVector<T> {
         let mut acc = *iter.next().expect(errors::EMPTY_SUM);
-        while let Option::Some(x) = iter.next() {
+        // Unrolled twice, like the static shapes' (`tools/shapegen/root_ops.py`).
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc

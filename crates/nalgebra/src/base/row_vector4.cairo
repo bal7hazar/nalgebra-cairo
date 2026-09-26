@@ -2318,7 +2318,14 @@ pub impl RowVector4Sum<
         let Option::Some(mut acc) = iter.next() else {
             return RowVector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -2337,7 +2344,14 @@ pub impl RowVector4SumSnapshot<
             return @RowVector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc

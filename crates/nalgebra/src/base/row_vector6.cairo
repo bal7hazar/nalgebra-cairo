@@ -3102,7 +3102,14 @@ pub impl RowVector6Sum<
                 x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
             };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -3123,7 +3130,14 @@ pub impl RowVector6SumSnapshot<
             };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc

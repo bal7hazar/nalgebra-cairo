@@ -45,10 +45,41 @@ nalgebra = { version = "x.y", default-features = false, features = ["statistics"
 | `dynamic` | `DMatrix`, `DVector`, `RowDVector`, `Matrix3xX`...; the static `insert_columns`, `remove_fixed_rows`, `from_vec`...; `convolve_full` / `convolve_same` / `convolve_valid` (`base::dynamic`, [DESIGN D5](docs/DESIGN.md)) |
 | `sparse` | `CsMatrix`, `CsVector`, `CsCholesky`, the sparse triangular solves, `axpy_cs`, `cumsum` (`nalgebra::sparse`; enables `dynamic`) |
 | `io` | `cs_matrix_from_matrix_market_str` (`nalgebra::io`, Matrix Market; enables `sparse`) |
+| `macros` | `matrix!`, `vector!`, `point!`, `stack!`, and with `dynamic` `dmatrix!` / `dvector!` (`nalgebra::macros`, upstream's feature of the same name) |
 
 Turning the first three off cuts a cold build of the library by about 16 % of the memory and 32 % of the
 CPU time ([measurements](tools/shapegen/DESIGN.md)); the test packages of this repository do it. `dynamic` adds about 0.55 GB to a cold build,
 `sparse` and `io` about 0.14 GB more, and nothing when they are off.
+
+### Macros, crate-root functions, `Sum` / `Product`
+
+The construction macros are Cairo declarative macros with upstream's MATLAB-like syntax (`,`
+between the columns, `;` between the rows), and they compile to the constructor they stand for
+(same gas):
+
+```cairo
+use nalgebra::{matrix, point, stack, vector};
+
+let m = matrix![1, 2, 3; 4, 5, 6];       // Matrix2x3 (row-major, like Matrix2x3Trait::new)
+let v = vector![x, y, z];                // Vector3
+let p = point![x, y];                    // Point2
+let b = stack![m, m; m, m];              // Matrix4x6 from static blocks
+let d = nalgebra::dmatrix![1, 2; 3, 4];  // DMatrix (feature `dynamic`)
+```
+
+nalgebra-cairo enables the experimental Cairo features `user_defined_inline_macros` (the macros)
+and `associated_item_constraints` (the `Sum` / `Product` impls) in its own manifest ([DESIGN
+D10](docs/DESIGN.md)). **A dependent needs neither**: calling the macros, `iter.sum()` or
+`iter.product()` compiles without any `experimental-features` entry in the dependent's
+`Scarb.toml` (measured by the test package `crates/tests_root`, which enables none). Cairo forms:
+`stack!` takes static blocks only (write a zero block out, `Matrix2x3Trait::zeros()`, instead of
+upstream's `0`); `dmatrix!` takes up to 16 rows and panics on rows of different lengths (a compile
+error upstream); there are no 0-sized forms and no `const` use.
+
+The free functions of upstream's crate root are there too (`nalgebra::distance(p, q)`, `center`,
+`convert`, `try_convert`, `partial_cmp`, `wrap`, `clamp`...), each as cheap as the method or kernel
+it wraps. `Sum` / `Product` are corelib's `core::iter` traits: `array.into_iter().sum()` for owned
+matrices, `*span.into_iter().sum()` for snapshots (upstream's `Sum<&Matrix>`).
 
 ## Why it is fast
 

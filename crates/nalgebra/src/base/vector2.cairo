@@ -3019,7 +3019,14 @@ pub impl Vector2Sum<
         let Option::Some(mut acc) = iter.next() else {
             return Vector2 { x: R::zero(), y: R::zero() };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -3038,7 +3045,14 @@ pub impl Vector2SumSnapshot<
             return @Vector2 { x: R::zero(), y: R::zero() };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc

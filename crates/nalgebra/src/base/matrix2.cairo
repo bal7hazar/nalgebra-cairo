@@ -2814,7 +2814,14 @@ pub impl Matrix2Sum<
         let Option::Some(mut acc) = iter.next() else {
             return Matrix2 { m11: R::zero(), m21: R::zero(), m12: R::zero(), m22: R::zero() };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -2833,7 +2840,14 @@ pub impl Matrix2SumSnapshot<
             return @Matrix2 { m11: R::zero(), m21: R::zero(), m12: R::zero(), m22: R::zero() };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc
@@ -2855,7 +2869,14 @@ pub impl Matrix2ProductSnapshot<
             return @Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc * *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc * *x;
         }
         @acc

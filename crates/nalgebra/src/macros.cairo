@@ -23,6 +23,10 @@
 //!   implicit zero blocks (`0`) and dynamic blocks are not supported: write the zero block
 //!   (`Matrix2x3Trait::zeros()`), and use the dynamic edition methods for dynamic blocks.
 //!
+//! A trailing `;` (`matrix!`, `dmatrix!`, `stack!`) or `,` (`vector!`, `point!`, `dvector!`) is
+//! accepted like upstream. Upstream's 0-sized forms (`matrix![]`, `vector![]`, `point![]`) have
+//! no Cairo shape, and the macros are not `const` (they call the constructors).
+//!
 //! Every macro argument is evaluated exactly once, in order.
 
 use crate::base::{
@@ -32,6 +36,14 @@ use crate::base::{
     RowVector2, RowVector3, RowVector4, RowVector5, RowVector6, Vector2, Vector3, Vector4, Vector5,
     Vector6,
 };
+
+/// Panics with `nalgebra: dimension mismatch` (a `dmatrix!` row whose length is not the first's).
+/// A function of this module: a macro body resolves names at its definition site only through
+/// `$defsite::` (the prelude's `core::` / `usize` are not in scope there).
+#[cfg(feature: 'dynamic')]
+fn dimension_mismatch() {
+    core::panic_with_felt252(crate::base::errors::DIMENSION_MISMATCH)
+}
 
 /// `[a, b]`: the blocks `a` (left) and `b` (right) side by side, `stack!`'s kernel. Moves only.
 pub trait HStack<L, R, Out> {
@@ -43,11 +55,42 @@ pub trait VStack<L, R, Out> {
     fn vstack(l: L, r: R) -> Out;
 }
 
-/// The number of the given expressions, a constant (`dmatrix!`'s column count).
+/// The number of the given expressions (`dmatrix!`'s column count): a literal up to 16
+/// expressions, then `N + count![rest]` (literal arithmetic, folded at compile time).
 macro count {
-    [$x:expr] => { 1 };
+    [$x0:expr] => { 1 };
 
-    [$x:expr, $($rest:expr),+] => { 1 + $defsite::count![$($rest),+] };
+    [$x0:expr, $x1:expr] => { 2 };
+
+    [$x0:expr, $x1:expr, $x2:expr] => { 3 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr] => { 4 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr] => { 5 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr] => { 6 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr] => { 7 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr] => { 8 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr] => { 9 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr] => { 10 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr, $x10:expr] => { 11 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr, $x10:expr, $x11:expr] => { 12 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr, $x10:expr, $x11:expr, $x12:expr] => { 13 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr, $x10:expr, $x11:expr, $x12:expr, $x13:expr] => { 14 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr, $x10:expr, $x11:expr, $x12:expr, $x13:expr, $x14:expr] => { 15 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr, $x10:expr, $x11:expr, $x12:expr, $x13:expr, $x14:expr, $x15:expr] => { 16 };
+
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr, $x6:expr, $x7:expr, $x8:expr, $x9:expr, $x10:expr, $x11:expr, $x12:expr, $x13:expr, $x14:expr, $x15:expr, $($rest:expr),+] => { 16 + $defsite::count![$($rest),+] };
 }
 
 /// A statically sized matrix of the given components, `,` between the columns and `;` between
@@ -55,108 +98,108 @@ macro count {
 /// 2]`
 /// a `RowVector2`, `matrix![1; 2]` a `Vector2`. Upstream: `nalgebra::matrix!`.
 pub macro matrix {
-    [$m00:expr] => { $defsite::super::Matrix1Trait::new($m00) };
+    [$m00:expr $(;)?] => { $defsite::super::Matrix1Trait::new($m00) };
 
-    [$m00:expr, $m01:expr] => { $defsite::super::RowVector2Trait::new($m00, $m01) };
+    [$m00:expr, $m01:expr $(;)?] => { $defsite::super::RowVector2Trait::new($m00, $m01) };
 
-    [$m00:expr, $m01:expr, $m02:expr] => { $defsite::super::RowVector3Trait::new($m00, $m01, $m02) };
+    [$m00:expr, $m01:expr, $m02:expr $(;)?] => { $defsite::super::RowVector3Trait::new($m00, $m01, $m02) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr] => { $defsite::super::RowVector4Trait::new($m00, $m01, $m02, $m03) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr $(;)?] => { $defsite::super::RowVector4Trait::new($m00, $m01, $m02, $m03) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr] => { $defsite::super::RowVector5Trait::new($m00, $m01, $m02, $m03, $m04) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr $(;)?] => { $defsite::super::RowVector5Trait::new($m00, $m01, $m02, $m03, $m04) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr] => { $defsite::super::RowVector6Trait::new($m00, $m01, $m02, $m03, $m04, $m05) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr $(;)?] => { $defsite::super::RowVector6Trait::new($m00, $m01, $m02, $m03, $m04, $m05) };
 
-    [$m00:expr; $m10:expr] => { $defsite::super::Vector2Trait::new($m00, $m10) };
+    [$m00:expr; $m10:expr $(;)?] => { $defsite::super::Vector2Trait::new($m00, $m10) };
 
-    [$m00:expr, $m01:expr; $m10:expr, $m11:expr] => { $defsite::super::Matrix2Trait::new($m00, $m01, $m10, $m11) };
+    [$m00:expr, $m01:expr; $m10:expr, $m11:expr $(;)?] => { $defsite::super::Matrix2Trait::new($m00, $m01, $m10, $m11) };
 
-    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr] => { $defsite::super::Matrix2x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12) };
+    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr $(;)?] => { $defsite::super::Matrix2x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr] => { $defsite::super::Matrix2x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr $(;)?] => { $defsite::super::Matrix2x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr] => { $defsite::super::Matrix2x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr $(;)?] => { $defsite::super::Matrix2x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr] => { $defsite::super::Matrix2x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr $(;)?] => { $defsite::super::Matrix2x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15) };
 
-    [$m00:expr; $m10:expr; $m20:expr] => { $defsite::super::Vector3Trait::new($m00, $m10, $m20) };
+    [$m00:expr; $m10:expr; $m20:expr $(;)?] => { $defsite::super::Vector3Trait::new($m00, $m10, $m20) };
 
-    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr] => { $defsite::super::Matrix3x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21) };
+    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr $(;)?] => { $defsite::super::Matrix3x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21) };
 
-    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr] => { $defsite::super::Matrix3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22) };
+    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr $(;)?] => { $defsite::super::Matrix3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr] => { $defsite::super::Matrix3x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr $(;)?] => { $defsite::super::Matrix3x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr] => { $defsite::super::Matrix3x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr $(;)?] => { $defsite::super::Matrix3x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr] => { $defsite::super::Matrix3x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr $(;)?] => { $defsite::super::Matrix3x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25) };
 
-    [$m00:expr; $m10:expr; $m20:expr; $m30:expr] => { $defsite::super::Vector4Trait::new($m00, $m10, $m20, $m30) };
+    [$m00:expr; $m10:expr; $m20:expr; $m30:expr $(;)?] => { $defsite::super::Vector4Trait::new($m00, $m10, $m20, $m30) };
 
-    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr; $m30:expr, $m31:expr] => { $defsite::super::Matrix4x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21, $m30, $m31) };
+    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr; $m30:expr, $m31:expr $(;)?] => { $defsite::super::Matrix4x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21, $m30, $m31) };
 
-    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr; $m30:expr, $m31:expr, $m32:expr] => { $defsite::super::Matrix4x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22, $m30, $m31, $m32) };
+    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr; $m30:expr, $m31:expr, $m32:expr $(;)?] => { $defsite::super::Matrix4x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22, $m30, $m31, $m32) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr] => { $defsite::super::Matrix4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23, $m30, $m31, $m32, $m33) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr $(;)?] => { $defsite::super::Matrix4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23, $m30, $m31, $m32, $m33) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr] => { $defsite::super::Matrix4x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24, $m30, $m31, $m32, $m33, $m34) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr $(;)?] => { $defsite::super::Matrix4x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24, $m30, $m31, $m32, $m33, $m34) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr, $m35:expr] => { $defsite::super::Matrix4x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25, $m30, $m31, $m32, $m33, $m34, $m35) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr, $m35:expr $(;)?] => { $defsite::super::Matrix4x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25, $m30, $m31, $m32, $m33, $m34, $m35) };
 
-    [$m00:expr; $m10:expr; $m20:expr; $m30:expr; $m40:expr] => { $defsite::super::Vector5Trait::new($m00, $m10, $m20, $m30, $m40) };
+    [$m00:expr; $m10:expr; $m20:expr; $m30:expr; $m40:expr $(;)?] => { $defsite::super::Vector5Trait::new($m00, $m10, $m20, $m30, $m40) };
 
-    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr; $m30:expr, $m31:expr; $m40:expr, $m41:expr] => { $defsite::super::Matrix5x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21, $m30, $m31, $m40, $m41) };
+    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr; $m30:expr, $m31:expr; $m40:expr, $m41:expr $(;)?] => { $defsite::super::Matrix5x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21, $m30, $m31, $m40, $m41) };
 
-    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr; $m30:expr, $m31:expr, $m32:expr; $m40:expr, $m41:expr, $m42:expr] => { $defsite::super::Matrix5x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22, $m30, $m31, $m32, $m40, $m41, $m42) };
+    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr; $m30:expr, $m31:expr, $m32:expr; $m40:expr, $m41:expr, $m42:expr $(;)?] => { $defsite::super::Matrix5x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22, $m30, $m31, $m32, $m40, $m41, $m42) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr] => { $defsite::super::Matrix5x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23, $m30, $m31, $m32, $m33, $m40, $m41, $m42, $m43) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr $(;)?] => { $defsite::super::Matrix5x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23, $m30, $m31, $m32, $m33, $m40, $m41, $m42, $m43) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr] => { $defsite::super::Matrix5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24, $m30, $m31, $m32, $m33, $m34, $m40, $m41, $m42, $m43, $m44) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr $(;)?] => { $defsite::super::Matrix5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24, $m30, $m31, $m32, $m33, $m34, $m40, $m41, $m42, $m43, $m44) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr, $m35:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr, $m45:expr] => { $defsite::super::Matrix5x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25, $m30, $m31, $m32, $m33, $m34, $m35, $m40, $m41, $m42, $m43, $m44, $m45) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr, $m35:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr, $m45:expr $(;)?] => { $defsite::super::Matrix5x6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25, $m30, $m31, $m32, $m33, $m34, $m35, $m40, $m41, $m42, $m43, $m44, $m45) };
 
-    [$m00:expr; $m10:expr; $m20:expr; $m30:expr; $m40:expr; $m50:expr] => { $defsite::super::Vector6Trait::new($m00, $m10, $m20, $m30, $m40, $m50) };
+    [$m00:expr; $m10:expr; $m20:expr; $m30:expr; $m40:expr; $m50:expr $(;)?] => { $defsite::super::Vector6Trait::new($m00, $m10, $m20, $m30, $m40, $m50) };
 
-    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr; $m30:expr, $m31:expr; $m40:expr, $m41:expr; $m50:expr, $m51:expr] => { $defsite::super::Matrix6x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21, $m30, $m31, $m40, $m41, $m50, $m51) };
+    [$m00:expr, $m01:expr; $m10:expr, $m11:expr; $m20:expr, $m21:expr; $m30:expr, $m31:expr; $m40:expr, $m41:expr; $m50:expr, $m51:expr $(;)?] => { $defsite::super::Matrix6x2Trait::new($m00, $m01, $m10, $m11, $m20, $m21, $m30, $m31, $m40, $m41, $m50, $m51) };
 
-    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr; $m30:expr, $m31:expr, $m32:expr; $m40:expr, $m41:expr, $m42:expr; $m50:expr, $m51:expr, $m52:expr] => { $defsite::super::Matrix6x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22, $m30, $m31, $m32, $m40, $m41, $m42, $m50, $m51, $m52) };
+    [$m00:expr, $m01:expr, $m02:expr; $m10:expr, $m11:expr, $m12:expr; $m20:expr, $m21:expr, $m22:expr; $m30:expr, $m31:expr, $m32:expr; $m40:expr, $m41:expr, $m42:expr; $m50:expr, $m51:expr, $m52:expr $(;)?] => { $defsite::super::Matrix6x3Trait::new($m00, $m01, $m02, $m10, $m11, $m12, $m20, $m21, $m22, $m30, $m31, $m32, $m40, $m41, $m42, $m50, $m51, $m52) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr; $m50:expr, $m51:expr, $m52:expr, $m53:expr] => { $defsite::super::Matrix6x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23, $m30, $m31, $m32, $m33, $m40, $m41, $m42, $m43, $m50, $m51, $m52, $m53) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr; $m50:expr, $m51:expr, $m52:expr, $m53:expr $(;)?] => { $defsite::super::Matrix6x4Trait::new($m00, $m01, $m02, $m03, $m10, $m11, $m12, $m13, $m20, $m21, $m22, $m23, $m30, $m31, $m32, $m33, $m40, $m41, $m42, $m43, $m50, $m51, $m52, $m53) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr; $m50:expr, $m51:expr, $m52:expr, $m53:expr, $m54:expr] => { $defsite::super::Matrix6x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24, $m30, $m31, $m32, $m33, $m34, $m40, $m41, $m42, $m43, $m44, $m50, $m51, $m52, $m53, $m54) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr; $m50:expr, $m51:expr, $m52:expr, $m53:expr, $m54:expr $(;)?] => { $defsite::super::Matrix6x5Trait::new($m00, $m01, $m02, $m03, $m04, $m10, $m11, $m12, $m13, $m14, $m20, $m21, $m22, $m23, $m24, $m30, $m31, $m32, $m33, $m34, $m40, $m41, $m42, $m43, $m44, $m50, $m51, $m52, $m53, $m54) };
 
-    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr, $m35:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr, $m45:expr; $m50:expr, $m51:expr, $m52:expr, $m53:expr, $m54:expr, $m55:expr] => { $defsite::super::Matrix6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25, $m30, $m31, $m32, $m33, $m34, $m35, $m40, $m41, $m42, $m43, $m44, $m45, $m50, $m51, $m52, $m53, $m54, $m55) };
+    [$m00:expr, $m01:expr, $m02:expr, $m03:expr, $m04:expr, $m05:expr; $m10:expr, $m11:expr, $m12:expr, $m13:expr, $m14:expr, $m15:expr; $m20:expr, $m21:expr, $m22:expr, $m23:expr, $m24:expr, $m25:expr; $m30:expr, $m31:expr, $m32:expr, $m33:expr, $m34:expr, $m35:expr; $m40:expr, $m41:expr, $m42:expr, $m43:expr, $m44:expr, $m45:expr; $m50:expr, $m51:expr, $m52:expr, $m53:expr, $m54:expr, $m55:expr $(;)?] => { $defsite::super::Matrix6Trait::new($m00, $m01, $m02, $m03, $m04, $m05, $m10, $m11, $m12, $m13, $m14, $m15, $m20, $m21, $m22, $m23, $m24, $m25, $m30, $m31, $m32, $m33, $m34, $m35, $m40, $m41, $m42, $m43, $m44, $m45, $m50, $m51, $m52, $m53, $m54, $m55) };
 }
 
 /// A statically sized column vector of the given components: `vector![1, 2, 3]` is a `Vector3`
 /// (`vector![x]` a `Matrix1`, upstream's `Vector1`). Upstream: `nalgebra::vector!`.
 pub macro vector {
-    [$x0:expr] => { $defsite::super::Matrix1Trait::new($x0) };
+    [$x0:expr $(,)?] => { $defsite::super::Matrix1Trait::new($x0) };
 
-    [$x0:expr, $x1:expr] => { $defsite::super::Vector2Trait::new($x0, $x1) };
+    [$x0:expr, $x1:expr $(,)?] => { $defsite::super::Vector2Trait::new($x0, $x1) };
 
-    [$x0:expr, $x1:expr, $x2:expr] => { $defsite::super::Vector3Trait::new($x0, $x1, $x2) };
+    [$x0:expr, $x1:expr, $x2:expr $(,)?] => { $defsite::super::Vector3Trait::new($x0, $x1, $x2) };
 
-    [$x0:expr, $x1:expr, $x2:expr, $x3:expr] => { $defsite::super::Vector4Trait::new($x0, $x1, $x2, $x3) };
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr $(,)?] => { $defsite::super::Vector4Trait::new($x0, $x1, $x2, $x3) };
 
-    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr] => { $defsite::super::Vector5Trait::new($x0, $x1, $x2, $x3, $x4) };
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr $(,)?] => { $defsite::super::Vector5Trait::new($x0, $x1, $x2, $x3, $x4) };
 
-    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr] => { $defsite::super::Vector6Trait::new($x0, $x1, $x2, $x3, $x4, $x5) };
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr $(,)?] => { $defsite::super::Vector6Trait::new($x0, $x1, $x2, $x3, $x4, $x5) };
 }
 
 /// A point of the given coordinates: `point![1, 2, 3]` is a `Point3`. Upstream: `nalgebra::point!`.
 pub macro point {
-    [$x0:expr] => { $defsite::super::Point1Trait::new($x0) };
+    [$x0:expr $(,)?] => { $defsite::super::Point1Trait::new($x0) };
 
-    [$x0:expr, $x1:expr] => { $defsite::super::base::point2::Point2Trait::new($x0, $x1) };
+    [$x0:expr, $x1:expr $(,)?] => { $defsite::super::base::point2::Point2Trait::new($x0, $x1) };
 
-    [$x0:expr, $x1:expr, $x2:expr] => { $defsite::super::base::point3::Point3Trait::new($x0, $x1, $x2) };
+    [$x0:expr, $x1:expr, $x2:expr $(,)?] => { $defsite::super::base::point3::Point3Trait::new($x0, $x1, $x2) };
 
-    [$x0:expr, $x1:expr, $x2:expr, $x3:expr] => { $defsite::super::Point4Trait::new($x0, $x1, $x2, $x3) };
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr $(,)?] => { $defsite::super::Point4Trait::new($x0, $x1, $x2, $x3) };
 
-    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr] => { $defsite::super::Point5Trait::new($x0, $x1, $x2, $x3, $x4) };
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr $(,)?] => { $defsite::super::Point5Trait::new($x0, $x1, $x2, $x3, $x4) };
 
-    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr] => { $defsite::super::Point6Trait::new($x0, $x1, $x2, $x3, $x4, $x5) };
+    [$x0:expr, $x1:expr, $x2:expr, $x3:expr, $x4:expr, $x5:expr $(,)?] => { $defsite::super::Point6Trait::new($x0, $x1, $x2, $x3, $x4, $x5) };
 }
 
 /// A `DMatrix` of the given components, `,` between the columns and `;` between the rows
@@ -167,130 +210,146 @@ pub macro point {
 pub macro dmatrix {
     [] => { $defsite::super::DMatrixTrait::from_row_slice(0, 0, array![].span()) };
 
-    [$($r0:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-$defsite::super::DMatrixTrait::from_row_slice(1, ncols, array![$($r0),+].span())
-};
+    [$($r0:expr),+ $(;)?] => {
+        {
+            $defsite::super::DMatrixTrait::from_row_slice(1, $defsite::count![$($r0),+], array![$($r0),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(2, ncols, array![$($r0),+, $($r1),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(2, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(3, ncols, array![$($r0),+, $($r1),+, $($r2),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(3, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(4, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(4, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(5, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(5, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(6, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(6, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(7, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(7, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(8, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(8, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(9, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(9, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols || $defsite::count![$($r9),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(10, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(10, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols || $defsite::count![$($r9),+] != ncols || $defsite::count![$($r10),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(11, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(11, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols || $defsite::count![$($r9),+] != ncols || $defsite::count![$($r10),+] != ncols || $defsite::count![$($r11),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(12, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(12, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols || $defsite::count![$($r9),+] != ncols || $defsite::count![$($r10),+] != ncols || $defsite::count![$($r11),+] != ncols || $defsite::count![$($r12),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(13, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(13, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+ ; $($r13:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols || $defsite::count![$($r9),+] != ncols || $defsite::count![$($r10),+] != ncols || $defsite::count![$($r11),+] != ncols || $defsite::count![$($r12),+] != ncols || $defsite::count![$($r13),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(14, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+, $($r13),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+ ; $($r13:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r13),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r13),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(14, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+, $($r13),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+ ; $($r13:expr),+ ; $($r14:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols || $defsite::count![$($r9),+] != ncols || $defsite::count![$($r10),+] != ncols || $defsite::count![$($r11),+] != ncols || $defsite::count![$($r12),+] != ncols || $defsite::count![$($r13),+] != ncols || $defsite::count![$($r14),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(15, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+, $($r13),+, $($r14),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+ ; $($r13:expr),+ ; $($r14:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r13),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r13),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r14),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r14),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(15, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+, $($r13),+, $($r14),+].span())
+        }
+    };
 
-    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+ ; $($r13:expr),+ ; $($r14:expr),+ ; $($r15:expr),+] => {
-let ncols: usize = $defsite::count![$($r0),+];
-if $defsite::count![$($r1),+] != ncols || $defsite::count![$($r2),+] != ncols || $defsite::count![$($r3),+] != ncols || $defsite::count![$($r4),+] != ncols || $defsite::count![$($r5),+] != ncols || $defsite::count![$($r6),+] != ncols || $defsite::count![$($r7),+] != ncols || $defsite::count![$($r8),+] != ncols || $defsite::count![$($r9),+] != ncols || $defsite::count![$($r10),+] != ncols || $defsite::count![$($r11),+] != ncols || $defsite::count![$($r12),+] != ncols || $defsite::count![$($r13),+] != ncols || $defsite::count![$($r14),+] != ncols || $defsite::count![$($r15),+] != ncols {
-core::panic_with_felt252($defsite::super::base::errors::DIMENSION_MISMATCH);
-}
-$defsite::super::DMatrixTrait::from_row_slice(16, ncols, array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+, $($r13),+, $($r14),+, $($r15),+].span())
-};
+    [$($r0:expr),+ ; $($r1:expr),+ ; $($r2:expr),+ ; $($r3:expr),+ ; $($r4:expr),+ ; $($r5:expr),+ ; $($r6:expr),+ ; $($r7:expr),+ ; $($r8:expr),+ ; $($r9:expr),+ ; $($r10:expr),+ ; $($r11:expr),+ ; $($r12:expr),+ ; $($r13:expr),+ ; $($r14:expr),+ ; $($r15:expr),+ $(;)?] => {
+        {
+            if ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r1),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r2),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r3),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r4),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r5),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r6),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r7),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r8),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r9),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r10),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r11),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r12),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r13),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r13),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r14),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r14),+] - $defsite::count![$($r0),+]) + ($defsite::count![$($r15),+] - $defsite::count![$($r0),+]) * ($defsite::count![$($r15),+] - $defsite::count![$($r0),+]) != 0 {
+                $defsite::dimension_mismatch();
+            }
+            $defsite::super::DMatrixTrait::from_row_slice(16, $defsite::count![$($r0),+], array![$($r0),+, $($r1),+, $($r2),+, $($r3),+, $($r4),+, $($r5),+, $($r6),+, $($r7),+, $($r8),+, $($r9),+, $($r10),+, $($r11),+, $($r12),+, $($r13),+, $($r14),+, $($r15),+].span())
+        }
+    };
 }
 
 /// A `DVector` of the given components (`dvector![1, 2, 3]`; `dvector![]` is empty). Upstream:
@@ -306,77 +365,77 @@ pub macro dvector {
 /// (otherwise no `HStack` / `VStack` impl matches: a compile error, like upstream's). Upstream:
 /// `nalgebra::stack!` (whose `0` zero blocks and dynamic blocks are not supported).
 pub macro stack {
-    [$b00:expr] => { $b00 };
+    [$b00:expr $(;)?] => { $b00 };
 
-    [$b00:expr, $b01:expr] => { $defsite::HStack::hstack($b00, $b01) };
+    [$b00:expr, $b01:expr $(;)?] => { $defsite::HStack::hstack($b00, $b01) };
 
-    [$b00:expr, $b01:expr, $b02:expr] => { $defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02) };
+    [$b00:expr, $b01:expr, $b02:expr $(;)?] => { $defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr] => { $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr $(;)?] => { $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr] => { $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr $(;)?] => { $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr] => { $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr $(;)?] => { $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05) };
 
-    [$b00:expr; $b10:expr] => { $defsite::VStack::vstack($b00, $b10) };
+    [$b00:expr; $b10:expr $(;)?] => { $defsite::VStack::vstack($b00, $b10) };
 
-    [$b00:expr, $b01:expr; $b10:expr, $b11:expr] => { $defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)) };
+    [$b00:expr, $b01:expr; $b10:expr, $b11:expr $(;)?] => { $defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)) };
 
-    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)) };
+    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr $(;)?] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr $(;)?] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr $(;)?] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr $(;)?] => { $defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)) };
 
-    [$b00:expr; $b10:expr; $b20:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20) };
+    [$b00:expr; $b10:expr; $b20:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20) };
 
-    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)) };
+    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)) };
 
-    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)) };
+    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)) };
 
-    [$b00:expr; $b10:expr; $b20:expr; $b30:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20), $b30) };
+    [$b00:expr; $b10:expr; $b20:expr; $b30:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20), $b30) };
 
-    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr; $b30:expr, $b31:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)), $defsite::HStack::hstack($b30, $b31)) };
+    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr; $b30:expr, $b31:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)), $defsite::HStack::hstack($b30, $b31)) };
 
-    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr; $b30:expr, $b31:expr, $b32:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)), $defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32)) };
+    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr; $b30:expr, $b31:expr, $b32:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)), $defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr, $b35:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34), $b35)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr, $b35:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34), $b35)) };
 
-    [$b00:expr; $b10:expr; $b20:expr; $b30:expr; $b40:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20), $b30), $b40) };
+    [$b00:expr; $b10:expr; $b20:expr; $b30:expr; $b40:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20), $b30), $b40) };
 
-    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr; $b30:expr, $b31:expr; $b40:expr, $b41:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)), $defsite::HStack::hstack($b30, $b31)), $defsite::HStack::hstack($b40, $b41)) };
+    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr; $b30:expr, $b31:expr; $b40:expr, $b41:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)), $defsite::HStack::hstack($b30, $b31)), $defsite::HStack::hstack($b40, $b41)) };
 
-    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr; $b30:expr, $b31:expr, $b32:expr; $b40:expr, $b41:expr, $b42:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)), $defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32)), $defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42)) };
+    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr; $b30:expr, $b31:expr, $b32:expr; $b40:expr, $b41:expr, $b42:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)), $defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32)), $defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr, $b35:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr, $b45:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34), $b35)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44), $b45)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr, $b35:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr, $b45:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34), $b35)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44), $b45)) };
 
-    [$b00:expr; $b10:expr; $b20:expr; $b30:expr; $b40:expr; $b50:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20), $b30), $b40), $b50) };
+    [$b00:expr; $b10:expr; $b20:expr; $b30:expr; $b40:expr; $b50:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($b00, $b10), $b20), $b30), $b40), $b50) };
 
-    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr; $b30:expr, $b31:expr; $b40:expr, $b41:expr; $b50:expr, $b51:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)), $defsite::HStack::hstack($b30, $b31)), $defsite::HStack::hstack($b40, $b41)), $defsite::HStack::hstack($b50, $b51)) };
+    [$b00:expr, $b01:expr; $b10:expr, $b11:expr; $b20:expr, $b21:expr; $b30:expr, $b31:expr; $b40:expr, $b41:expr; $b50:expr, $b51:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($b00, $b01), $defsite::HStack::hstack($b10, $b11)), $defsite::HStack::hstack($b20, $b21)), $defsite::HStack::hstack($b30, $b31)), $defsite::HStack::hstack($b40, $b41)), $defsite::HStack::hstack($b50, $b51)) };
 
-    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr; $b30:expr, $b31:expr, $b32:expr; $b40:expr, $b41:expr, $b42:expr; $b50:expr, $b51:expr, $b52:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)), $defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32)), $defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42)), $defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52)) };
+    [$b00:expr, $b01:expr, $b02:expr; $b10:expr, $b11:expr, $b12:expr; $b20:expr, $b21:expr, $b22:expr; $b30:expr, $b31:expr, $b32:expr; $b40:expr, $b41:expr, $b42:expr; $b50:expr, $b51:expr, $b52:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12)), $defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22)), $defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32)), $defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42)), $defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr; $b50:expr, $b51:expr, $b52:expr, $b53:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52), $b53)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr; $b50:expr, $b51:expr, $b52:expr, $b53:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52), $b53)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr; $b50:expr, $b51:expr, $b52:expr, $b53:expr, $b54:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52), $b53), $b54)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr; $b50:expr, $b51:expr, $b52:expr, $b53:expr, $b54:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52), $b53), $b54)) };
 
-    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr, $b35:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr, $b45:expr; $b50:expr, $b51:expr, $b52:expr, $b53:expr, $b54:expr, $b55:expr] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34), $b35)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44), $b45)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52), $b53), $b54), $b55)) };
+    [$b00:expr, $b01:expr, $b02:expr, $b03:expr, $b04:expr, $b05:expr; $b10:expr, $b11:expr, $b12:expr, $b13:expr, $b14:expr, $b15:expr; $b20:expr, $b21:expr, $b22:expr, $b23:expr, $b24:expr, $b25:expr; $b30:expr, $b31:expr, $b32:expr, $b33:expr, $b34:expr, $b35:expr; $b40:expr, $b41:expr, $b42:expr, $b43:expr, $b44:expr, $b45:expr; $b50:expr, $b51:expr, $b52:expr, $b53:expr, $b54:expr, $b55:expr $(;)?] => { $defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::VStack::vstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b00, $b01), $b02), $b03), $b04), $b05), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b10, $b11), $b12), $b13), $b14), $b15)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b20, $b21), $b22), $b23), $b24), $b25)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b30, $b31), $b32), $b33), $b34), $b35)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b40, $b41), $b42), $b43), $b44), $b45)), $defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($defsite::HStack::hstack($b50, $b51), $b52), $b53), $b54), $b55)) };
 }
 
 // --- HStack --------------------------------------------------------------------------------------

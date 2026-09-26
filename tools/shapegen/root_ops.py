@@ -28,6 +28,16 @@ from model import ALL_SHAPES, COORDS, Shape
 
 # `dmatrix!` literals: one arm per row count, up to this many rows (any number of columns).
 DMATRIX_MAX_ROWS = 16
+# `count!` returns a literal up to this many expressions (`dmatrix!` column counts).
+COUNT_LITERALS = 16
+
+
+# The accumulation loop of the iterator impls, unrolled twice: one loop iteration (~1 100 gas of
+# overhead, AGENTS.md rule 1) per two items. Measured on 4 `Matrix3` (`bench_sum_matrix3_4`):
+# 34 320 gas net against 37 660 for one item per iteration, 34 050 unrolled 4 times (twice the
+# code for 1 %) and 47 750 for `Iterator::fold` with a closure (candidates kept as benchmarks).
+UNROLLED2 = ("loop {{\nlet Option::Some(x) = iter.next() else {{\nbreak;\n}};\nacc = acc {op} {deref}x;\n"
+             "let Option::Some(x) = iter.next() else {{\nbreak;\n}};\nacc = acc {op} {deref}x;\n}}")
 
 
 def _bounds(extra: list[str]) -> str:
@@ -46,7 +56,7 @@ def items(s: Shape) -> list[str]:
         f"pub impl {S}Sum<{add_bounds}> of core::iter::Sum<{T}> {{\n"
         f"fn sum<I, +Iterator<I>[Item: {T}], +Destruct<I>, +Destruct<{T}>>(mut iter: I) -> {T} {{\n"
         f"let Option::Some(mut acc) = iter.next() else {{\nreturn {zero};\n}};\n"
-        f"while let Option::Some(x) = iter.next() {{\nacc = acc + x;\n}}\nacc\n}}\n}}")
+        f"{UNROLLED2.format(op='+', deref='')}\nacc\n}}\n}}")
     out.append(
         f"/// `*iter.sum()` of an iterator of snapshots `@{S}` (`span.into_iter()`): a snapshot "
         f"of the\n/// sum of the items, like `Sum<{S}>`. Upstream: `Sum<&Matrix> for Matrix` "
@@ -55,7 +65,7 @@ def items(s: Shape) -> list[str]:
         f"fn sum<I, +Iterator<I>[Item: @{T}], +Destruct<I>, +Destruct<@{T}>>(mut iter: I) -> @{T} "
         f"{{\nlet Option::Some(first) = iter.next() else {{\nreturn @{zero};\n}};\n"
         f"let mut acc = *first;\n"
-        f"while let Option::Some(x) = iter.next() {{\nacc = acc + *x;\n}}\n@acc\n}}\n}}")
+        f"{UNROLLED2.format(op='+', deref='*')}\n@acc\n}}\n}}")
     if s.is_square:
         ident = L.lit(S, [(s.f(i, j), "R::one()" if i == j else "R::zero()")
                           for j in range(s.c) for i in range(s.r)])
@@ -72,7 +82,7 @@ def items(s: Shape) -> list[str]:
             f"fn product<I, +Iterator<I>[Item: @{T}], +Destruct<I>, +Destruct<@{T}>>(\n"
             f"mut iter: I,\n) -> @{T} {{\nlet Option::Some(first) = iter.next() else {{\n"
             f"return @{ident};\n}};\nlet mut acc = *first;\n"
-            f"while let Option::Some(x) = iter.next() {{\nacc = acc * *x;\n}}\n@acc\n}}\n}}")
+            f"{UNROLLED2.format(op='*', deref='*')}\n@acc\n}}\n}}")
     out.append(
         f"/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `{S}`: the "
         f"shape's\n/// `inf` / `sup` / `inf_sup`.\n"
@@ -103,27 +113,33 @@ def _matrix_arm(s: Shape) -> str:
     rows = [[f"$m{i}{j}" for j in range(s.c)] for i in range(s.r)]
     pattern = "; ".join(", ".join(f"{v}:expr" for v in row) for row in rows)
     args = ", ".join(v for row in rows for v in row)
-    return f"[{pattern}] => {{ $defsite::super::{s.name}Trait::new({args}) }};"
+    return f"[{pattern} $(;)?] => {{ $defsite::super::{s.name}Trait::new({args}) }};"
 
 
 def _list_arm(n: int, target: str) -> str:
     xs = _args("x", n)
-    return (f"[{', '.join(f'{x}:expr' for x in xs)}] => {{ $defsite::super::{target}::new("
+    return (f"[{', '.join(f'{x}:expr' for x in xs)} $(,)?] => {{ $defsite::super::{target}::new("
             f"{', '.join(xs)}) }};")
 
 
 def _dmatrix_arm(nrows: int) -> str:
+    """The row-length check is felt252 arithmetic on the literal counts (`count!`), which the
+    compiler folds: zero gas when the rows agree (a `usize` `!=` chain costs 300 gas on 3 rows,
+    `bench_dmatrix_macro3__alt_usize_check`). Squares of small differences cannot cancel."""
     rows = [f"$r{i}" for i in range(nrows)]
     pattern = " ; ".join(f"$({r}:expr),+" for r in rows)
     count = lambda r: f"$defsite::count![$({r}),+]"  # noqa: E731
-    check = " || ".join(f"{count(r)} != ncols" for r in rows[1:])
     data = ", ".join(f"$({r}),+" for r in rows)
-    body = (f"{{\nlet ncols: usize = {count(rows[0])};\n"
-            + (f"if {check} {{\ncore::panic_with_felt252("
-               f"$defsite::super::base::errors::DIMENSION_MISMATCH);\n}}\n" if nrows > 1 else "")
-            + f"$defsite::super::DMatrixTrait::from_row_slice({nrows}, ncols, "
-              f"array![{data}].span())\n}}")
-    return f"[{pattern}] => {body};"
+    lines = []
+    if nrows > 1:
+        diffs = [f"({count(r)} - {count(rows[0])})" for r in rows[1:]]
+        lines.append("if " + " + ".join(f"{d} * {d}" for d in diffs) + " != 0 {")
+        lines.append("    $defsite::dimension_mismatch();")
+        lines.append("}")
+    lines.append(f"$defsite::super::DMatrixTrait::from_row_slice({nrows}, {count(rows[0])}, "
+                 f"array![{data}].span())")
+    body = "\n".join(" " * 12 + line for line in lines)
+    return f"[{pattern} $(;)?] => {{\n        {{\n{body}\n        }}\n    }};"
 
 
 def _stack_arm(br: int, bc: int) -> str:
@@ -136,7 +152,7 @@ def _stack_arm(br: int, bc: int) -> str:
             acc = f"$defsite::{trait}::{fn}({acc}, {x})"
         return acc
     rows = [fold("HStack", "hstack", row) for row in blocks]
-    return f"[{pattern}] => {{ {fold('VStack', 'vstack', rows)} }};"
+    return f"[{pattern} $(;)?] => {{ {fold('VStack', 'vstack', rows)} }};"
 
 
 def _block_impl(trait: str, fn: str, a: Shape, b: Shape) -> str:
@@ -179,18 +195,33 @@ def render_macros() -> str:
 //!   implicit zero blocks (`0`) and dynamic blocks are not supported: write the zero block
 //!   (`Matrix2x3Trait::zeros()`), and use the dynamic edition methods for dynamic blocks.
 //!
+//! A trailing `;` (`matrix!`, `dmatrix!`, `stack!`) or `,` (`vector!`, `point!`, `dvector!`) is
+//! accepted like upstream. Upstream's 0-sized forms (`matrix![]`, `vector![]`, `point![]`) have
+//! no Cairo shape, and the macros are not `const` (they call the constructors).
+//!
 //! Every macro argument is evaluated exactly once, in order."""
     out = [HEADER + doc, "\n".join(uses)]
+    out.append(
+        "/// Panics with `nalgebra: dimension mismatch` (a `dmatrix!` row whose length is not the "
+        "first's).\n/// A function of this module: a macro body resolves names at its definition "
+        "site only through\n/// `$defsite::` (the prelude's `core::` / `usize` are not in "
+        "scope there).\n#[cfg(feature: 'dynamic')]\nfn dimension_mismatch() {\n"
+        "core::panic_with_felt252(crate::base::errors::DIMENSION_MISMATCH)\n}")
     out.append(
         "/// `[a, b]`: the blocks `a` (left) and `b` (right) side by side, `stack!`'s kernel. Moves "
         "only.\npub trait HStack<L, R, Out> {\n    fn hstack(l: L, r: R) -> Out;\n}")
     out.append(
         "/// `[a; b]`: the block `a` above the block `b`, `stack!`'s kernel. Moves only.\n"
         "pub trait VStack<L, R, Out> {\n    fn vstack(l: L, r: R) -> Out;\n}")
+    arms = [f"[{', '.join(f'$x{k}:expr' for k in range(n))}] => {{ {n} }};"
+            for n in range(1, COUNT_LITERALS + 1)]
     out.append(
-        "/// The number of the given expressions, a constant (`dmatrix!`'s column count).\n"
-        "macro count {\n[$x:expr] => { 1 };\n"
-        "[$x:expr, $($rest:expr),+] => { 1 + $defsite::count![$($rest),+] };\n}")
+        "/// The number of the given expressions (`dmatrix!`'s column count): a literal up to "
+        f"{COUNT_LITERALS}\n/// expressions, then `N + count![rest]` (literal arithmetic, folded "
+        "at compile time).\n"
+        "macro count {\n" + "\n".join(arms) + "\n"
+        f"[{', '.join(f'$x{k}:expr' for k in range(COUNT_LITERALS))}, $($rest:expr),+] => "
+        f"{{ {COUNT_LITERALS} + $defsite::count![$($rest),+] }};\n}}")
     out.append(
         "/// A statically sized matrix of the given components, `,` between the columns and `;` "
         "between\n/// the rows (row-major, like upstream): `matrix![1, 2, 3; 4, 5, 6]` is a "

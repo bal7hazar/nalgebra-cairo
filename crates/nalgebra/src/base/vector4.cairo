@@ -3189,7 +3189,14 @@ pub impl Vector4Sum<
         let Option::Some(mut acc) = iter.next() else {
             return Vector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() };
         };
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + x;
         }
         acc
@@ -3208,7 +3215,14 @@ pub impl Vector4SumSnapshot<
             return @Vector4 { x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero() };
         };
         let mut acc = *first;
-        while let Option::Some(x) = iter.next() {
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
             acc = acc + *x;
         }
         @acc
