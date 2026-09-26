@@ -16,8 +16,19 @@ use super::dvector::DVector;
 use super::kernels::{DynKernels, at_linear, get_linear};
 use super::row_dvector::RowDVector;
 use super::super::errors;
+use super::super::matrix1::Matrix1Trait;
+use super::super::matrix2::Matrix2Trait;
+use super::super::matrix3::Matrix3Trait;
+use super::super::matrix4::Matrix4Trait;
+use super::super::matrix5::Matrix5Trait;
+use super::super::matrix6::Matrix6Trait;
 use super::super::matrix_index::MatrixIndex;
 use super::super::matrix_mul::MatrixMul;
+use super::super::vector2::Vector2Trait;
+use super::super::vector3::Vector3Trait;
+use super::super::vector4::Vector4Trait;
+use super::super::vector5::Vector5Trait;
+use super::super::vector6::Vector6Trait;
 
 /// A dynamically sized matrix (upstream `DMatrix<T>`): `nrows x ncols` components stored in
 /// column-major order. Built by the constructors of `DMatrixTrait` (`zeros(nrows, ncols)`,
@@ -614,17 +625,56 @@ pub impl DMatrixNeg<
 
 /// `nalgebra: dimension mismatch` unless `a.ncols == b.nrows`. Upstream: `Mul<Matrix> for Matrix`.
 pub impl DMatrixMul<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>,
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
 > of Mul<DMatrix<T>> {
     fn mul(lhs: DMatrix<T>, rhs: DMatrix<T>) -> DMatrix<T> {
         if lhs.ncols != rhs.nrows {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
         }
-        DMatrix {
-            data: DynKernels::mul(lhs.data, lhs.nrows, lhs.ncols, rhs.data, rhs.ncols),
-            nrows: lhs.nrows,
-            ncols: rhs.ncols,
+        let (m, n) = (lhs.nrows, rhs.ncols);
+        if m == lhs.ncols && m == n {
+            // Square up to 6x6: the static product (bit-identical, measured cheaper).
+            let (a, b) = (lhs.data, rhs.data);
+            match m {
+                0 => {},
+                1 => {
+                    return (Matrix1Trait::from_column_slice(a) * Matrix1Trait::from_column_slice(b))
+                        .into();
+                },
+                2 => {
+                    return (Matrix2Trait::from_column_slice(a) * Matrix2Trait::from_column_slice(b))
+                        .into();
+                },
+                3 => {
+                    return (Matrix3Trait::from_column_slice(a) * Matrix3Trait::from_column_slice(b))
+                        .into();
+                },
+                4 => {
+                    return (Matrix4Trait::from_column_slice(a) * Matrix4Trait::from_column_slice(b))
+                        .into();
+                },
+                5 => {
+                    return (Matrix5Trait::from_column_slice(a) * Matrix5Trait::from_column_slice(b))
+                        .into();
+                },
+                6 => {
+                    return (Matrix6Trait::from_column_slice(a) * Matrix6Trait::from_column_slice(b))
+                        .into();
+                },
+                _ => {},
+            }
         }
+        DMatrix { data: DynKernels::mul(lhs.data, m, lhs.ncols, rhs.data, n), nrows: m, ncols: n }
     }
 }
 
@@ -686,7 +736,17 @@ pub impl DMatrixMatrixIndexPair<T, +Copy<T>, +Drop<T>> of MatrixIndex<DMatrix<T>
 
 /// `a * b` for conformable dynamic matrices (`a * b`). Upstream: `Mul<Matrix> for Matrix`.
 pub impl DMatrixMulDMatrix<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>,
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
 > of MatrixMul<DMatrix<T>, DMatrix<T>> {
     type Output = DMatrix<T>;
     #[inline]
@@ -697,13 +757,60 @@ pub impl DMatrixMulDMatrix<
 
 /// mismatch` unless `v.len() == m.ncols`. Upstream: `Mul<Vector> for Matrix`.
 pub impl DMatrixMulDVector<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Add<T>, +Sub<T>, +Mul<T>, +Neg<T>,
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
 > of MatrixMul<DMatrix<T>, DVector<T>> {
     type Output = DVector<T>;
-    #[inline]
     fn mul_mat(self: DMatrix<T>, rhs: DVector<T>) -> DVector<T> {
         if self.ncols != rhs.data.len() {
             core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        if self.nrows == self.ncols {
+            // Square up to 6x6: the static product (bit-identical, measured cheaper).
+            let (a, v) = (self.data, rhs.data);
+            match self.nrows {
+                0 => {},
+                1 => {
+                    return Matrix1Trait::from_column_slice(a)
+                        .mul_mat(Matrix1Trait::from_column_slice(v))
+                        .into();
+                },
+                2 => {
+                    return Matrix2Trait::from_column_slice(a)
+                        .mul_mat(Vector2Trait::from_column_slice(v))
+                        .into();
+                },
+                3 => {
+                    return Matrix3Trait::from_column_slice(a)
+                        .mul_mat(Vector3Trait::from_column_slice(v))
+                        .into();
+                },
+                4 => {
+                    return Matrix4Trait::from_column_slice(a)
+                        .mul_mat(Vector4Trait::from_column_slice(v))
+                        .into();
+                },
+                5 => {
+                    return Matrix5Trait::from_column_slice(a)
+                        .mul_mat(Vector5Trait::from_column_slice(v))
+                        .into();
+                },
+                6 => {
+                    return Matrix6Trait::from_column_slice(a)
+                        .mul_mat(Vector6Trait::from_column_slice(v))
+                        .into();
+                },
+                _ => {},
+            }
         }
         DVector { data: DynKernels::mul(self.data, self.nrows, self.ncols, rhs.data, 1) }
     }

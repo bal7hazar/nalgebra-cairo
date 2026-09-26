@@ -200,6 +200,54 @@ fn transpose_col(a: Span<Fixed>, m: usize, n: usize) -> Span<Fixed> {
     out.span()
 }
 
+/// The transpose through the column runs: each output column (an input row) pops the head of
+/// every input column.
+fn transpose_runs(a: Span<Fixed>, m: usize, n: usize) -> Span<Fixed> {
+    let mut cols: Array<Span<Fixed>> = array![];
+    let mut rest = a;
+    while let Some(c) = rest.multi_pop_front_dyn(m) {
+        cols.append(c);
+    }
+    let mut cur = cols.span();
+    let mut out: Array<Fixed> = array![];
+    let mut i: usize = 0;
+    while i != m {
+        let mut next: Array<Span<Fixed>> = array![];
+        while let Some(c) = cur.pop_front() {
+            let mut c = *c;
+            out.append(*c.pop_front().unwrap());
+            next.append(c);
+        }
+        cur = next.span();
+        i += 1;
+    }
+    out.span()
+}
+
+/// The strided transpose, 4 reads per iteration.
+fn transpose_col4(a: Span<Fixed>, m: usize, n: usize) -> Span<Fixed> {
+    let mut out: Array<Fixed> = array![];
+    let len = m * n;
+    let mut i: usize = 0;
+    while i != m {
+        let mut k = i;
+        let m4 = 4 * m;
+        while k + 3 * m < len {
+            out.append(*a[k]);
+            out.append(*a[k + m]);
+            out.append(*a[k + 2 * m]);
+            out.append(*a[k + 3 * m]);
+            k += m4;
+        }
+        while k < len {
+            out.append(*a[k]);
+            k += m;
+        }
+        i += 1;
+    }
+    out.span()
+}
+
 /// Column-major product, `a` transposed once, each output the `pop_front` dot product of a row
 /// of `a` and a column of `b` (two contiguous runs).
 fn mul_colseq(a: Span<Fixed>, b: Span<Fixed>, m: usize, kk: usize, n: usize) -> Span<Fixed> {
@@ -309,9 +357,7 @@ impl SpanDynImpl<T> of SpanDyn<T> {
 
 // --- resize (keep the top-left block, fill with `val`) --------------------------------------
 
-fn resize_col(
-    a: Span<Fixed>, m: usize, n: usize, m2: usize, n2: usize, val: Fixed,
-) -> Span<Fixed> {
+fn resize_col(a: Span<Fixed>, m: usize, n: usize, m2: usize, n2: usize, val: Fixed) -> Span<Fixed> {
     let mut out: Array<Fixed> = array![];
     let keep_r = if m < m2 {
         m
@@ -342,7 +388,9 @@ fn resize_col(
     out.span()
 }
 
-fn resize_dict(ref d: Felt252Dict<Nullable<Fixed>>, m: usize, n: usize, m2: usize, n2: usize, val: Fixed) {
+fn resize_dict(
+    ref d: Felt252Dict<Nullable<Fixed>>, m: usize, n: usize, m2: usize, n2: usize, val: Fixed,
+) {
     // Keys are `i * 64 + j` here (row, column): growing writes the new cells only.
     let mut j: usize = 0;
     while j != n2 {
@@ -357,7 +405,8 @@ fn resize_dict(ref d: Felt252Dict<Nullable<Fixed>>, m: usize, n: usize, m2: usiz
     }
 }
 
-// --- benchmarks ------------------------------------------------------------------------------------
+// --- benchmarks
+// ------------------------------------------------------------------------------------
 
 #[test]
 #[inline(never)]
@@ -628,6 +677,44 @@ fn bench_dyn_layout_mul16__dict() {
     let mut db = dict_of(b);
     let mut c = mul_dict(ref da, ref db, 16, 16, 16);
     assert!(dict_get(ref c, 255) != int(123456));
+}
+
+#[test]
+#[inline(never)]
+fn bench_dyn_layout_transpose16__baseline() {
+    let a = ramp(256);
+    assert!(a.len() == 256);
+}
+
+#[test]
+#[inline(never)]
+fn bench_dyn_layout_transpose16__strided() {
+    let a = ramp(256);
+    assert!(transpose_col(a, 16, 16).len() == 256);
+}
+
+#[test]
+#[inline(never)]
+fn bench_dyn_layout_transpose16__strided4() {
+    let a = ramp(256);
+    assert!(transpose_col4(a, 16, 16).len() == 256);
+}
+
+#[test]
+#[inline(never)]
+fn bench_dyn_layout_transpose16__runs() {
+    let a = ramp(256);
+    assert!(transpose_runs(a, 16, 16).len() == 256);
+}
+
+#[test]
+fn test_dyn_layout_transposes_agree() {
+    let a = ramp(30);
+    let t = transpose_col(a, 5, 6);
+    assert!(t == transpose_col4(a, 5, 6) && t == transpose_runs(a, 5, 6));
+    let a = ramp(256);
+    assert!(transpose_col(a, 16, 16) == transpose_runs(a, 16, 16));
+    assert!(transpose_col(a, 16, 16) == transpose_col4(a, 16, 16));
 }
 
 #[test]

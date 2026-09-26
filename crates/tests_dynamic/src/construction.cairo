@@ -3,10 +3,9 @@
 
 use fixed::Fixed;
 use nalgebra::{
-    MatrixIndex,
     DMatrix, DMatrixTrait, DVector, DVectorTrait, Matrix1, Matrix2x3, Matrix2x3Trait, Matrix3xX,
-    Matrix6, Matrix6Trait, MatrixXx1, RowDVector, RowDVectorTrait, RowVector3, RowVector3Trait,
-    Vector3, Vector3Trait,
+    Matrix6, Matrix6Trait, MatrixIndex, MatrixXx1, RowDVector, RowDVectorTrait, RowVector3,
+    RowVector3Trait, Vector3, Vector3Trait,
 };
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::int;
