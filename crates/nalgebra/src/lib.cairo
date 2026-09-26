@@ -39,6 +39,22 @@ pub use base::{
     Vector4AngleTrait, Vector4Trait, Vector5, Vector5AngleTrait, Vector5Trait, Vector6,
     Vector6AngleTrait, Vector6Trait,
 };
+#[cfg(feature: 'dynamic')]
+pub use base::{
+    DMatrix, DMatrixTrait, DVector, DVectorTrait, InsertFixedColumns, InsertFixedRows,
+    Matrix1DynamicTrait, Matrix1xX, Matrix2DynamicTrait, Matrix2x3DynamicTrait,
+    Matrix2x4DynamicTrait, Matrix2x5DynamicTrait, Matrix2x6DynamicTrait, Matrix2xX,
+    Matrix3DynamicTrait, Matrix3x2DynamicTrait, Matrix3x4DynamicTrait, Matrix3x5DynamicTrait,
+    Matrix3x6DynamicTrait, Matrix3xX, Matrix4DynamicTrait, Matrix4x2DynamicTrait,
+    Matrix4x3DynamicTrait, Matrix4x5DynamicTrait, Matrix4x6DynamicTrait, Matrix4xX,
+    Matrix5DynamicTrait, Matrix5x2DynamicTrait, Matrix5x3DynamicTrait, Matrix5x4DynamicTrait,
+    Matrix5x6DynamicTrait, Matrix5xX, Matrix6DynamicTrait, Matrix6x2DynamicTrait,
+    Matrix6x3DynamicTrait, Matrix6x4DynamicTrait, Matrix6x5DynamicTrait, Matrix6xX, MatrixXx1,
+    MatrixXx2, MatrixXx3, MatrixXx4, MatrixXx5, MatrixXx6, RemoveFixedColumns, RemoveFixedRows,
+    RowDVector, RowDVectorTrait, RowVector2DynamicTrait, RowVector3DynamicTrait,
+    RowVector4DynamicTrait, RowVector5DynamicTrait, RowVector6DynamicTrait, Vector2DynamicTrait,
+    Vector3DynamicTrait, Vector4DynamicTrait, Vector5DynamicTrait, Vector6DynamicTrait,
+};
 #[cfg(feature: 'blas')]
 pub use base::{
     Matrix1BlasTrait, Matrix2BlasTrait, Matrix2x3BlasTrait, Matrix2x4BlasTrait, Matrix2x5BlasTrait,
@@ -68,12 +84,6 @@ pub use base::{
     Vector4StatisticsTrait, Vector5StatisticsTrait, Vector6StatisticsTrait,
 };
 // shapegen: end
-#[cfg(feature: 'dynamic')]
-pub use base::{
-    DMatrix, DMatrixTrait, DVector, DVectorTrait, Matrix1xX, Matrix2xX, Matrix3xX, Matrix4xX,
-    Matrix5xX, Matrix6xX, MatrixXx1, MatrixXx2, MatrixXx3, MatrixXx4, MatrixXx5, MatrixXx6,
-    RowDVector, RowDVectorTrait,
-};
 pub use base::{Normed, Point2, Point3, Unit, UnitTrait};
 pub use geometry::{
     AbstractRotation, Affine2, Affine2Trait, Affine3, Affine3Trait, DualQuaternion,

@@ -18,20 +18,12 @@ mod oracle_matrix3_inverse;
 mod oracle_matrix4;
 #[cfg(test)]
 mod oracle_matrix4_inverse;
-#[cfg(feature: 'dynamic')]
-pub mod dynamic;
 pub mod point2;
 pub mod point3;
 pub(crate) mod sym_matrix2;
 pub(crate) mod sym_matrix3;
 pub mod unit;
 
-#[cfg(feature: 'dynamic')]
-pub use dynamic::{
-    DMatrix, DMatrixTrait, DVector, DVectorTrait, Matrix1xX, Matrix2xX, Matrix3xX, Matrix4xX,
-    Matrix5xX, Matrix6xX, MatrixXx1, MatrixXx2, MatrixXx3, MatrixXx4, MatrixXx5, MatrixXx6,
-    RowDVector, RowDVectorTrait,
-};
 pub use point2::Point2;
 pub use point3::Point3;
 pub use unit::{Normed, Unit, UnitTrait};
@@ -40,6 +32,8 @@ pub use unit::{Normed, Unit, UnitTrait};
 #[cfg(feature: 'blas')]
 pub mod blas;
 pub mod cg;
+#[cfg(feature: 'dynamic')]
+pub mod dynamic;
 pub mod errors;
 mod kernels;
 pub mod matrix1;
@@ -105,6 +99,22 @@ pub use blas::{
 pub use cg::{
     Matrix1CgTrait, Matrix2CgTrait, Matrix3CgAngleTrait, Matrix3CgTrait, Matrix4CgAngleTrait,
     Matrix4CgTrait, Matrix5CgTrait, Matrix6CgTrait,
+};
+#[cfg(feature: 'dynamic')]
+pub use dynamic::{
+    DMatrix, DMatrixTrait, DVector, DVectorTrait, InsertFixedColumns, InsertFixedRows,
+    Matrix1DynamicTrait, Matrix1xX, Matrix2DynamicTrait, Matrix2x3DynamicTrait,
+    Matrix2x4DynamicTrait, Matrix2x5DynamicTrait, Matrix2x6DynamicTrait, Matrix2xX,
+    Matrix3DynamicTrait, Matrix3x2DynamicTrait, Matrix3x4DynamicTrait, Matrix3x5DynamicTrait,
+    Matrix3x6DynamicTrait, Matrix3xX, Matrix4DynamicTrait, Matrix4x2DynamicTrait,
+    Matrix4x3DynamicTrait, Matrix4x5DynamicTrait, Matrix4x6DynamicTrait, Matrix4xX,
+    Matrix5DynamicTrait, Matrix5x2DynamicTrait, Matrix5x3DynamicTrait, Matrix5x4DynamicTrait,
+    Matrix5x6DynamicTrait, Matrix5xX, Matrix6DynamicTrait, Matrix6x2DynamicTrait,
+    Matrix6x3DynamicTrait, Matrix6x4DynamicTrait, Matrix6x5DynamicTrait, Matrix6xX, MatrixXx1,
+    MatrixXx2, MatrixXx3, MatrixXx4, MatrixXx5, MatrixXx6, RemoveFixedColumns, RemoveFixedRows,
+    RowDVector, RowDVectorTrait, RowVector2DynamicTrait, RowVector3DynamicTrait,
+    RowVector4DynamicTrait, RowVector5DynamicTrait, RowVector6DynamicTrait, Vector2DynamicTrait,
+    Vector3DynamicTrait, Vector4DynamicTrait, Vector5DynamicTrait, Vector6DynamicTrait,
 };
 pub use matrix1::{
     Matrix1, Matrix1AngleTrait, Matrix1Trait, RowVector1, UnitVector1, UnitVector1AngleTrait,
