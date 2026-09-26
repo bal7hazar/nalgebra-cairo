@@ -68,6 +68,22 @@ pub(crate) trait DynKernels<T> {
     fn from_row_major(a: Span<T>, nrows: usize, ncols: usize) -> Span<T>;
 }
 
+/// The component at the linear (column-major) index `k`, `None` out of bounds.
+pub(crate) fn get_linear<T, +Copy<T>>(data: Span<T>, k: usize) -> Option<T> {
+    match data.get(k) {
+        Some(x) => Some(*x.unbox()),
+        None => None,
+    }
+}
+
+/// The component at the linear index `k`; panics with `nalgebra: index out of bounds`.
+pub(crate) fn at_linear<T, +Copy<T>>(data: Span<T>, k: usize) -> T {
+    match data.get(k) {
+        Some(x) => *x.unbox(),
+        None => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+    }
+}
+
 /// Whether `indices` contains `k`.
 fn contains(mut indices: Span<usize>, k: usize) -> bool {
     loop {

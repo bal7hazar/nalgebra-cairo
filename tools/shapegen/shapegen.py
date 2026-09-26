@@ -1178,6 +1178,11 @@ def library_outputs(pkg: Path) -> dict[Path, Path]:
     (src / "dynamic").mkdir()
     (src / "dynamic" / "shapes.cairo").write_text(dynamic.render())
     out[library.BASE / "dynamic" / "shapes.cairo"] = src / "dynamic" / "shapes.cairo"
+    for target, module in dynamic.TYPE_MODULES.items():
+        committed = library.BASE / "dynamic" / f"{module}.cairo"
+        (src / "dynamic" / f"{module}.cairo").write_text(
+            shapes.splice(committed.read_text(), dynamic.conversion_block(target)))
+        out[committed] = src / "dynamic" / f"{module}.cairo"
     base_rs, lib_rs = library.BASE.parent / "base.cairo", library.BASE.parent / "lib.cairo"
     (src / "base.cairo").write_text(shapes.splice(base_rs.read_text(), shapes.base_block()))
     (src / "crate_root.cairo").write_text(shapes.splice(lib_rs.read_text(), shapes.lib_block()))

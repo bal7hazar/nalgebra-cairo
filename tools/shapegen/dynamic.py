@@ -1,10 +1,12 @@
-"""Template of `crates/nalgebra/src/base/dynamic/shapes.cairo` (WP 8.5-P13, API_PARITY package
-P13): what the 36 static shapes gain from the dynamic matrices (DESIGN D5), behind the `dynamic`
-feature with the rest of `base/dynamic*.cairo`.
+"""Template of `crates/nalgebra/src/base/dynamic/shapes.cairo` and of the generated blocks of
+`dmatrix.cairo` / `dvector.cairo` / `row_dvector.cairo` (WP 8.5-P13, API_PARITY package P13): what
+the 36 static shapes gain from the dynamic matrices (DESIGN D5), behind the `dynamic` feature with
+the rest of `base/dynamic*.cairo`.
 
 * conversions `Into<S, DMatrix>` for every shape, `Into<VectorN, DVector>` and `Into<RowVectorN,
   RowDVector>` (upstream `From<Matrix> for DMatrix`, a change of storage): one column-major
-  array literal each;
+  array literal each, spliced between the `shapegen` markers of the target's module (Cairo looks
+  an impl up in the module of its trait or of one of its generic arguments);
 * `<S>DynamicTrait` per shape (upstream `edition.rs`, `construction.rs`, `properties.rs`,
   `statistics.rs`): the edition forms whose result has a dynamic dimension (`insert_columns`,
   `insert_rows`, `remove_columns`, `remove_rows`, `remove_columns_at`, `remove_rows_at`,
@@ -52,23 +54,31 @@ def data_literal(s: Shape) -> str:
     return "array![" + ", ".join(f"self.{f}" for f in s.fields) + "].span()"
 
 
-def conversions(s: Shape) -> list[str]:
-    out = [doc(f"The `{s.r}x{s.c}` `DMatrix` of the components of a `{s.name}` (column-major "
+def path(s: Shape) -> str:
+    return f"{PATH}::{s.module}::{s.name}"
+
+
+def conversions(s: Shape) -> dict[str, list[str]]:
+    """The `Into` impls of `s`, by target type: they must live in the module of the target
+    (Cairo looks an impl up in the module of its trait or of one of its generic arguments)."""
+    P = path(s)
+    out = {"DMatrix": [doc(f"The `{s.r}x{s.c}` `DMatrix` of the components of a `{s.name}` (column-major "
                "copy). Upstream: `From<Matrix> for DMatrix`.") +
-           f"pub impl {s.name}IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<{s.name}<T>, "
-           f"DMatrix<T>> {{\n#[inline]\nfn into(self: {s.name}<T>) -> DMatrix<T> {{\n"
-           f"DMatrix {{ data: {data_literal(s)}, nrows: {s.r}, ncols: {s.c} }}\n}}\n}}\n"]
+           f"pub impl {s.name}IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<{P}<T>, "
+           f"DMatrix<T>> {{\n#[inline]\nfn into(self: {P}<T>) -> DMatrix<T> {{\n"
+           f"DMatrix {{ data: {data_literal(s)}, nrows: {s.r}, ncols: {s.c} }}\n}}\n}}\n"],
+           "DVector": [], "RowDVector": []}
     if s.is_column:
-        out.append(doc(f"The `DVector` of the {s.r} components of a `{s.name}`. Upstream: "
+        out["DVector"].append(doc(f"The `DVector` of the {s.r} components of a `{s.name}`. Upstream: "
                        "`From<Matrix> for DVector`.") +
-                   f"pub impl {s.name}IntoDVector<T, +Copy<T>, +Drop<T>> of Into<{s.name}<T>, "
-                   f"DVector<T>> {{\n#[inline]\nfn into(self: {s.name}<T>) -> DVector<T> {{\n"
+                   f"pub impl {s.name}IntoDVector<T, +Copy<T>, +Drop<T>> of Into<{P}<T>, "
+                   f"DVector<T>> {{\n#[inline]\nfn into(self: {P}<T>) -> DVector<T> {{\n"
                    f"DVector {{ data: {data_literal(s)} }}\n}}\n}}\n")
     if s.is_row:
-        out.append(doc(f"The `RowDVector` of the {s.c} components of a `{s.name}`. Upstream: "
+        out["RowDVector"].append(doc(f"The `RowDVector` of the {s.c} components of a `{s.name}`. Upstream: "
                        "`From<Matrix> for RowDVector`.") +
-                   f"pub impl {s.name}IntoRowDVector<T, +Copy<T>, +Drop<T>> of Into<{s.name}<T>, "
-                   f"RowDVector<T>> {{\n#[inline]\nfn into(self: {s.name}<T>) -> RowDVector<T> {{\n"
+                   f"pub impl {s.name}IntoRowDVector<T, +Copy<T>, +Drop<T>> of Into<{P}<T>, "
+                   f"RowDVector<T>> {{\n#[inline]\nfn into(self: {P}<T>) -> RowDVector<T> {{\n"
                    f"RowDVector {{ data: {data_literal(s)} }}\n}}\n}}\n")
     return out
 
@@ -294,9 +304,9 @@ def fixed_traits() -> list[str]:
 
 
 def render() -> str:
-    parts = [HEADER + """//! What the 36 static shapes gain from the dynamic matrices (DESIGN D5, feature `dynamic`):
-//! the conversions to `DMatrix` / `DVector` / `RowDVector`, the edition forms with a dynamic
-//! result, `from_vec` / `from_iterator` / `from_row_iterator`, `len`, `is_empty`, `compress_*`
+    parts = [HEADER + """//! What the 36 static shapes gain from the dynamic matrices (DESIGN D5, feature `dynamic`; their
+//! conversions to `DMatrix` / `DVector` / `RowDVector` are in the modules of those types): the
+//! edition forms with a dynamic result, `from_vec` / `from_iterator` / `from_row_iterator`, `len`, `is_empty`, `compress_*`
 //! (`<S>DynamicTrait`), and the fixed-size edition forms whose result is another static shape
 //! (`InsertFixedColumns`, `InsertFixedRows`, `RemoveFixedColumns`, `RemoveFixedRows`: the output
 //! type selects upstream's const generic `D`, one impl per (shape, D) pair, on the `Matrix6`
@@ -326,13 +336,21 @@ use simba::scalar::Real;
                  "}\n\nimpl Canvas6EditImpl<T, +Copy<T>, +Drop<T>> of Canvas6Edit<T> {\n" +
                  "\n".join(kernels) + "}\n")
     for s in ALL_SHAPES:
-        parts.extend(conversions(s))
         parts.append(dynamic_trait(s))
         for trait in FIXED:
             for (src, o, d) in fixed_pairs(trait):
                 if src == s:
                     parts.append(fixed_impl(trait, s, o, d))
     return "\n".join(parts)
+
+
+TYPE_MODULES = {"DMatrix": "dmatrix", "DVector": "dvector", "RowDVector": "row_dvector"}
+
+
+def conversion_block(target: str) -> list[str]:
+    """The generated block of `base/dynamic/<target module>.cairo`: the conversions of the static
+    shapes into `target`."""
+    return [c for s in ALL_SHAPES for c in conversions(s)[target]]
 
 
 # The re-exports of `base/dynamic.cairo` (hand-written types and this module's traits), in
