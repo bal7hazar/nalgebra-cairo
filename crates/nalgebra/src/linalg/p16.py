@@ -24,6 +24,9 @@ SCHUR_NOISE_LOG2 = 6
 # (reset when it changes), up to 2^-STUCK_CAP_LOG2: see `schur_doc`.
 STUCK_PASSES = 8
 STUCK_CAP_LOG2 = 16
+# Pass (counted like `STUCK_PASSES`, i.e. then every 8 passes) at which a stalled window gets
+# LAPACK's exceptional shift: see `schur_doc`.
+EXCEPTIONAL_AT = 5
 
 
 def shp(r: int, c: int) -> str:
@@ -126,6 +129,41 @@ def axis_fn(n: int) -> str:
 
 
 DISC_FNS = """
+    /// `a b + c` rounded to NEAREST (ties up): the exact sum plus the exact product `hf ep` (half
+    /// an ulp: `hf = 1 / 2`, `ep = default_epsilon()`), floored once (see `SchurN::try_new`).
+    #[inline(always)]
+    fn rmul_add(a: T, b: T, c: T, hf: T, ep: T) -> T {
+        R::wide_rescale(R::wide_add_prod(R::wide_add_prod(R::wide_add(R::wide_zero(), c), a, b), hf, ep))
+    }
+
+    /// `a0 b0 + a1 b1` rounded to nearest (see `rmul_add`).
+    #[inline(always)]
+    fn rsum2(a0: T, b0: T, a1: T, b1: T, hf: T, ep: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a0, b0), a1, b1), hf, ep),
+        )
+    }
+
+    /// `a0 b0 - a1 b1` rounded to nearest (see `rmul_add`).
+    #[inline(always)]
+    fn rdiff2(a0: T, b0: T, a1: T, b1: T, hf: T, ep: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(R::wide_sub_prod(R::wide_add_prod(R::wide_zero(), a0, b0), a1, b1), hf, ep),
+        )
+    }
+
+    /// `a0 b0 + a1 b1 + a2 b2` rounded to nearest (see `rmul_add`).
+    #[inline(always)]
+    fn rsum3(a0: T, b0: T, a1: T, b1: T, a2: T, b2: T, hf: T, ep: T) -> T {
+        R::wide_rescale(
+            R::wide_add_prod(
+                R::wide_add_prod(R::wide_add_prod(R::wide_add_prod(R::wide_zero(), a0, b0), a1, b1), a2, b2),
+                hf,
+                ep,
+            ),
+        )
+    }
+
     /// Upstream's `GivensRotation::new(x, y)` components `(c, s)` (`c = |x| / r`, `s = y / (sign(x)
     /// r)`, `r = |(x, y)|`; the identity for `(0, 0)`), NORMALISED AGAIN like the Householder axes:
     /// a floored `r` of a small `(x, y)` (a 2x2 block of close eigenvalues: `x`, `y` ~ 1e-4) is
@@ -217,18 +255,30 @@ def prep(us: list[str], signed: bool) -> list[str]:
     return st
 
 
-def reflect_cols(A, us: list[str], rows: list[int], cols, neg: str | None) -> list[str]:
+def rdot(pairs) -> str:
+    """Nearest-rounded dot product of 2 or 3 pairs (`HouseholderKernelTrait::rsum2/3`)."""
+    args = ", ".join(f"{a}, {b}" for a, b in pairs)
+    return f"HouseholderKernelTrait::<T>::rsum{len(pairs)}({args}, hf, ep)"
+
+
+def reflect_cols(A, us: list[str], rows: list[int], cols, neg: str | None,
+                 rnd: bool = False) -> list[str]:
     """Left reflection `x -> s (x - 2 (u·x) u)` of the columns `cols` restricted to `rows`
     (upstream `Reflection::reflect_with_sign`; `neg` = the name of the `sign < 0` flag, or `None`
     for the unsigned `reflect`). `A[(i, j)]` = the variable of entry (i, j); in place. Expects
     `prep(us, neg is not None)` in scope."""
     st = []
     for j in cols:
-        h = fsum([(1, us[k], A[(r, j)]) for k, r in enumerate(rows)])
+        if rnd:
+            h = rdot([(us[k], A[(r, j)]) for k, r in enumerate(rows)])
+        else:
+            h = fsum([(1, us[k], A[(r, j)]) for k, r in enumerate(rows)])
         st.append(f"let h = {h};")
         for k, r in enumerate(rows):
             x = A[(r, j)]
-            if neg is None:
+            if rnd:
+                st.append(f"{x} = HouseholderKernelTrait::<T>::rmul_add(h, nv_{us[k]}, {x}, hf, ep);")
+            elif neg is None:
                 st.append(f"{x} = R::mul_add(h, nv_{us[k]}, {x});")
             else:
                 st.append(f"{x} = if {neg} {{ R::mul_add(h, v_{us[k]}, -{x}) }} "
@@ -236,17 +286,23 @@ def reflect_cols(A, us: list[str], rows: list[int], cols, neg: str | None) -> li
     return st
 
 
-def reflect_rows(A, us: list[str], cols: list[int], rows, neg: str | None) -> list[str]:
+def reflect_rows(A, us: list[str], cols: list[int], rows, neg: str | None,
+                 rnd: bool = False) -> list[str]:
     """Right reflection of the rows `rows` restricted to `cols` (upstream
     `Reflection::reflect_rows_with_sign` / `reflect_rows`): `h = row · u` per row. Expects
     `prep(us, neg is not None)` in scope."""
     st = []
     for i in rows:
-        h = fsum([(1, A[(i, c)], us[k]) for k, c in enumerate(cols)])
+        if rnd:
+            h = rdot([(A[(i, c)], us[k]) for k, c in enumerate(cols)])
+        else:
+            h = fsum([(1, A[(i, c)], us[k]) for k, c in enumerate(cols)])
         st.append(f"let h = {h};")
         for k, c in enumerate(cols):
             x = A[(i, c)]
-            if neg is None:
+            if rnd:
+                st.append(f"{x} = HouseholderKernelTrait::<T>::rmul_add(h, nv_{us[k]}, {x}, hf, ep);")
+            elif neg is None:
                 st.append(f"{x} = R::mul_add(h, nv_{us[k]}, {x});")
             else:
                 st.append(f"{x} = if {neg} {{ R::mul_add(h, v_{us[k]}, -{x}) }} "
@@ -998,27 +1054,37 @@ def block_fn(n: int, s: int) -> str:
     body.append("let x = if R::abs(x1) > R::abs(x2) { x1 } else { x2 };")
     body.append("let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);")
     rot = []
-    # inv_rot.rotate(t[s..s+2, s..n]): a' = a c + s b, b' = -s a + c b
-    for j in range(s, n):
+    outside = []
+    # inv_rot.rotate(t[s..s+2, s..n]): a' = a c + s b, b' = -s a + c b (the columns past the
+    # block only when `compute_q`: see `try_new`)
+    for j in range(e + 1, n):
         a, b = tv(s, j), tv(e, j)
-        rot.append(f"let a = {a}; let b = {b}; {a} = R::sum_prod2(a, c, sn, b); "
-                   f"{b} = R::diff_prod(c, b, sn, a);")
-    # rot.rotate_rows(t[0..e+1, s..s+2]): a' = a c + s b, b' = -s a + c b
-    for i in range(0, e + 1):
+        outside.append(f"let a = {a}; let b = {b}; {a} = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep); "
+                       f"{b} = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);")
+    for i in range(0, s):
         a, b = tv(i, s), tv(i, e)
-        rot.append(f"let a = {a}; let b = {b}; {a} = R::sum_prod2(a, c, sn, b); "
-                   f"{b} = R::diff_prod(c, b, sn, a);")
+        outside.append(f"let a = {a}; let b = {b}; {a} = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep); "
+                       f"{b} = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);")
+    for j in range(s, e + 1):
+        a, b = tv(s, j), tv(e, j)
+        rot.append(f"let a = {a}; let b = {b}; {a} = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep); "
+                   f"{b} = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);")
+    # rot.rotate_rows(t[0..e+1, s..s+2]): a' = a c + s b, b' = -s a + c b
+    for i in range(s, e + 1):
+        a, b = tv(i, s), tv(i, e)
+        rot.append(f"let a = {a}; let b = {b}; {a} = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep); "
+                   f"{b} = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);")
     rot.append(f"{tv(e, s)} = R::zero();")
     rot.append(f"{tv(s, s)} = h11 + x; {tv(e, e)} = h00 - x;")
     qrot = []
     for i in range(n):
         a, b = qv(i, s), qv(i, e)
-        qrot.append(f"let a = {a}; let b = {b}; {a} = R::sum_prod2(a, c, sn, b); "
-                    f"{b} = R::diff_prod(c, b, sn, a);")
+        qrot.append(f"let a = {a}; let b = {b}; {a} = HouseholderKernelTrait::<T>::rsum2(a, c, sn, b, hf, ep); "
+                    f"{b} = HouseholderKernelTrait::<T>::rdiff2(c, b, sn, a, hf, ep);")
     body += rot
-    body.append("if compute_q {\n" + "\n".join(qrot) + "\n}")
+    body.append("if compute_q {\n" + "\n".join(outside + qrot) + "\n}")
     body.append("}")
-    st.append(f"if h10 != R::zero() {{\nlet half = R::from_ratio(1, 2);\n"
+    st.append(f"if h10 != R::zero() {{\nlet half = R::from_ratio(1, 2);\nlet hf = half; let ep = R::default_epsilon();\n"
               + "\n".join(body) + "\n}")
     st.append(f"t = {struct_lit(n, n, tv)};")
     st.append(f"q = {struct_lit(n, n, qv)};")
@@ -1034,20 +1100,25 @@ def block_fn(n: int, s: int) -> str:
 
 def francis_fn(n: int, s: int, e: int) -> str:
     """One implicit double-shift QR step on the active window `s..=e` (`e - s >= 2`)."""
-    st = ["revoke_ap_tracking();"] + load(n, "t", tv) + load(n, "q", qv)
+    st = ["revoke_ap_tracking();"] + load(n, "t", tv)
     m = e - 1
     T = {(i, j): tv(i, j) for i in range(n) for j in range(n)}
     Q = {(i, j): qv(i, j) for i in range(n) for j in range(n)}
     st.append(f"let h11 = {tv(s, s)}; let h12 = {tv(s, s + 1)}; let h21 = {tv(s + 1, s)}; "
               f"let h22 = {tv(s + 1, s + 1)}; let h32 = {tv(s + 2, s + 1)};")
-    st.append(f"let hnn = {tv(e, e)}; let hmm = {tv(m, m)}; let hnm = {tv(e, m)}; "
-              f"let hmn = {tv(m, e)};")
+    st.append(f"let (hnn, hmm, hnm, hmn) = if exceptional {{\n"
+              f"let sx = R::abs({tv(e, m)}) + R::abs({tv(m, m - 1)});\n"
+              f"let d = sx * R::from_ratio(3, 4) + {tv(e, e)};\n"
+              f"(d, d, sx, -(sx * R::from_ratio(7, 16)))\n"
+              f"}} else {{\n({tv(e, e)}, {tv(m, m)}, {tv(e, m)}, {tv(m, e)})\n}};")
     st.append("let tra = hnn + hmm;")
     # Scaled first column of (H - σ1)(H - σ2): see the doc of `try_new`.
     st.append("let d1 = h11 - hmm; let d2 = h11 - hnn;")
     st.append("let sc = R::abs(h21) + R::abs(d1) + R::abs(d2) + R::abs(hnm);")
     st.append("let (p, r, g) = R::div3(d1, hnm, h21, sc);")
-    st.append(f"let mut ax = {fused([(1, 'p', 'd2'), (-1, 'hmn', 'r'), (1, 'h12', 'g')])};")
+    st.append("let hf = R::from_ratio(1, 2); let ep = R::default_epsilon();")
+    st.append("let nhmn = -hmn;")
+    st.append("let mut ax = HouseholderKernelTrait::<T>::rsum3(p, d2, nhmn, r, h12, g, hf, ep);")
     st.append("let mut ay = g * (h11 + h22 - tra);")
     st.append("let mut az = g * h32;")
     for k in range(s, e - 1):
@@ -1062,10 +1133,13 @@ def francis_fn(n: int, s: int, e: int) -> str:
         else:
             body.append("let _ = nrm;")
         body += prep(us, False)
-        body += reflect_cols(T, us, rows, range(k, n), None)
-        body += reflect_rows(T, us, rows, range(0, min(k + 4, e + 1)), None)
-        qb = reflect_rows(Q, us, rows, range(n), None)
-        body.append("if compute_q {\n" + "\n".join(qb) + "\n}")
+        body += reflect_cols(T, us, rows, range(k, e + 1), None, True)
+        body += reflect_rows(T, us, rows, range(s, min(k + 4, e + 1)), None, True)
+        qb = reflect_cols(T, us, rows, range(e + 1, n), None, True)
+        qb += reflect_rows(T, us, rows, range(0, s), None, True)
+        if qb:
+            body.append("if compute_q {\n" + "\n".join(qb) + "\n}")
+        body.append(f"if compute_q {{\nSelf::q_reflect3_{k}(ref q, u0, u1, u2);\n}}")
         st.append("if nz {\n" + "\n".join(body) + "\n}")
         st.append(f"ax = {tv(k + 1, k)}; ay = {tv(k + 2, k)};")
         if k < e - 2:
@@ -1075,19 +1149,43 @@ def francis_fn(n: int, s: int, e: int) -> str:
     rows = [m, e]
     st.append(axis_call(2, ["ax", "ay"], "nrm", "nz", us))
     body = [f"{tv(m, m - 1)} = nrm; {tv(e, m - 1)} = R::zero();"] + prep(us, False)
-    body += reflect_cols(T, us, rows, range(m, n), None)
-    body += reflect_rows(T, us, rows, range(0, e + 1), None)
-    qb = reflect_rows(Q, us, rows, range(n), None)
-    body.append("if compute_q {\n" + "\n".join(qb) + "\n}")
+    body += reflect_cols(T, us, rows, range(m, e + 1), None, True)
+    body += reflect_rows(T, us, rows, range(s, e + 1), None, True)
+    qb = reflect_cols(T, us, rows, range(e + 1, n), None, True)
+    qb += reflect_rows(T, us, rows, range(0, s), None, True)
+    if qb:
+        body.append("if compute_q {\n" + "\n".join(qb) + "\n}")
+    body.append(f"if compute_q {{\nSelf::q_reflect2_{m}(ref q, u0, u1);\n}}")
     st.append("if nz {\n" + "\n".join(body) + "\n}")
     st.append(f"t = {struct_lit(n, n, tv)};")
-    st.append(f"q = {struct_lit(n, n, qv)};")
     return f"""    /// One implicit double-shift (Francis) QR step on the active window {s}..={e}, upstream's
     /// `subdim > 2` branch: the bulge made by the first column of `(H - σ1)(H - σ2)` (`σ` the
     /// eigenvalues of the trailing 2x2 block) is chased down by 3-reflections, then a 2-reflection
     /// on the rows {m}, {e}; each reflection is applied to `t` from both sides (the whole rows /
-    /// columns of the quasi-triangular form) and to the columns of `q`.
-    fn francis{s}_{e}(ref t: {tname(n, n)}<T>, ref q: {tname(n, n)}<T>, compute_q: bool) {{
+    /// columns of the quasi-triangular form) and to the columns of `q`. `exceptional`: the shifts
+    /// are those of LAPACK `dlahqr`'s exceptional 2x2 block instead (see `try_new`).
+    fn francis{s}_{e}(
+        ref t: {tname(n, n)}<T>, ref q: {tname(n, n)}<T>, compute_q: bool, exceptional: bool,
+    ) {{
+        {chr(10).join(st)}
+    }}
+"""
+
+
+def q_reflect_fn(n: int, size: int, k: int) -> str:
+    """`q = q (I - 2 u uᵀ)` on the columns `k..k + size` (the `Q` part of a Francis step)."""
+    us = [f"u{i}" for i in range(size)]
+    Q = {(i, j): qv(i, j) for i in range(n) for j in range(n)}
+    st = [f"let {qv(i, j)} = q.{fld(n, n, i, j)};" for j in range(n) for i in range(n)
+          if not (k <= j < k + size)]
+    st += [f"let mut {qv(i, j)} = q.{fld(n, n, i, j)};" for j in range(k, k + size) for i in range(n)]
+    st.append("let hf = R::from_ratio(1, 2); let ep = R::default_epsilon();")
+    st += prep(us, False)
+    st += reflect_rows(Q, us, list(range(k, k + size)), range(n), None, True)
+    st.append(f"q = {struct_lit(n, n, qv)};")
+    params = ", ".join(f"{u}: T" for u in us)
+    return f"""    /// `Q ← Q (I - 2 u uᵀ)` on the columns {k}..{k + size - 1} (nearest-rounded, see `try_new`).
+    fn q_reflect{size}_{k}(ref q: {tname(n, n)}<T>, {params}) {{
         {chr(10).join(st)}
     }}
 """
@@ -1162,10 +1260,14 @@ def schur_doc(n: int) -> str:
     ///   (defective and clustered spectra, tiny subdiagonal entries) would otherwise keep the loop
     ///   running (a defective 4x4 of the oracle never converged); the eigenvalue error then grows
     ///   with the threshold reached, which the oracle's scaled tolerance of those families covers.
-    ///   Below the cap nothing changes for a window that converges; above it, like upstream, a
-    ///   matrix on which the iteration cycles without converging (e.g. the cyclic permutation of
-    ///   size 6: upstream's `f64` code loops forever on it too, there are no exceptional shifts)
-    ///   never returns with `max_niter = 0`.
+    ///   Nothing changes for a window that converges.
+    /// - Exceptional shifts (a deviation: upstream has none): at the {EXCEPTIONAL_AT}th consecutive pass on the
+    ///   same window (then every {STUCK_PASSES} passes), the Francis step uses LAPACK `dlahqr`'s exceptional
+    ///   shifts, those of the 2x2 block `[[d, -0.4375 s], [s, d]]` with `s = |t_n,n-1| +
+    ///   |t_n-1,n-2|` and `d = 0.75 s + t_nn`. Without them the rounded iteration cycles forever on
+    ///   the cyclic permutations of size 3 to 6 (upstream's `f64` code cycles on the one of size 6,
+    ///   and escapes the smaller ones only through its rounding noise), and stalls longer on
+    ///   defective spectra (model: 474 passes over 15 defective 3x3 inputs without them, 186 with).
     ///
     /// Shift vector: upstream's first column of `(H - σ1)(H - σ2)`, `(h11² + h12 h21 - tra h11 +
     /// det, h21 (h11 + h22 - tra), h21 h32)`, DIVIDED by `sc = |h21| + |h11 - hmm| + |h11 - hnn| +
@@ -1183,9 +1285,19 @@ def schur_doc(n: int) -> str:
     /// (what the rotation gives in exact arithmetic; the rotated entries lose `ulp / |x|`, hundreds
     /// of ulp on clustered eigenvalues, measured).
     ///
-    /// Reflections: axes by `linalg::householder_kernels` (upstream's two normalisations), one
-    /// fused dot product (doubled exactly) and one `Real::mul_add` per updated entry. Panics on
-    /// overflow."""
+    /// Without `Q` (the matrix methods `eigenvalues` / `complex_eigenvalues`), the steps only
+    /// update the entries of the active window (LAPACK `dlahqr`'s `wantt = false`): the window
+    /// never reads the others, so the eigenvalues are bit-identical to those of the full
+    /// decomposition (upstream updates the whole `T` and discards it).
+    ///
+    /// Rounding: the reflection axes by `linalg::householder_kernels` (upstream's two
+    /// normalisations); every dot product, updated entry (one exact `h (-2 u_k) + x`), rotated
+    /// entry and the shift vector is ROUNDED TO NEAREST (the exact sum plus half an ulp, floored
+    /// once: `HouseholderKernelTrait::rmul_add` / `rsum2` / `rsum3` / `rdiff2`): the floor's bias
+    /// keeps entries in the noise longer (model and Cairo, same inputs: a real-spectrum 4x4 of the
+    /// oracle takes 31 passes floored, 5 rounded to nearest; over the oracle's inputs of sizes 3 to
+    /// 6 the passes drop by 11 % overall, 30 % on general 6x6), for a few percent more gas per
+    /// operation. Panics on overflow."""
 
 
 def render_schur(n: int) -> str:
@@ -1249,11 +1361,14 @@ def render_schur(n: int) -> str:
         fns = [delimit_fn(n, e) for e in range(1, n)]
         fns += [block_fn(n, s) for s in range(0, n - 1)]
         fns += [francis_fn(n, s, e) for e in range(2, n) for s in range(0, e - 1)]
+        fns += [q_reflect_fn(n, 3, k) for k in range(0, n - 2)]
+        fns += [q_reflect_fn(n, 2, m) for m in range(1, n - 1)]
         dl = " else ".join(f"if end == {e} {{\nSelf::delimit{e}(ref t, eps, thr)\n}}"
                            for e in range(1, n - 1)) + (
             f" else {{\nSelf::delimit{n - 1}(ref t, eps, thr)\n}}" if n > 2 else "")
         fr = " else ".join(
-            f"if end == {e} && start == {s} {{\nSelf::francis{s}_{e}(ref t, ref q, compute_q);\n}}"
+            f"if end == {e} && start == {s} {{\nSelf::francis{s}_{e}(ref t, ref q, compute_q, "
+            f"stuck == {EXCEPTIONAL_AT});\n}}"
             for e in range(2, n) for s in range(0, e - 1))
         bl = " else ".join(f"if start == {s} {{\nSelf::block{s}(ref t, ref q, compute_q);\n}}"
                            for s in range(0, n - 1))
@@ -2225,73 +2340,73 @@ MEASURED: dict = {
     ('tri_rec', 6): 29,
     # tests_linalg_schur: A = Q T Qᵀ (per unit of max |a|), QᵀQ = I; Eigen residual, unit norm
     ('eigen_res', 2): 1,
-    ('eigen_res', 3): 18,
-    ('eigen_res', 4): 240,
-    ('eigen_res', 5): 121,
-    ('eigen_res', 6): 332,
+    ('eigen_res', 3): 15,
+    ('eigen_res', 4): 42,
+    ('eigen_res', 5): 127,
+    ('eigen_res', 6): 78,
     ('eigen_unit', 2): 2,
     ('eigen_unit', 3): 2,
     ('eigen_unit', 4): 2,
     ('eigen_unit', 5): 3,
     ('eigen_unit', 6): 3,
     ('schur_orth', 2): 1,
-    ('schur_orth', 3): 34,
-    ('schur_orth', 4): 39,
-    ('schur_orth', 5): 107,
-    ('schur_orth', 6): 96,
+    ('schur_orth', 3): 44,
+    ('schur_orth', 4): 35,
+    ('schur_orth', 5): 58,
+    ('schur_orth', 6): 80,
     ('schur_orth_clustered', 2): 2,
     ('schur_orth_clustered', 3): 17,
-    ('schur_orth_clustered', 4): 39,
-    ('schur_orth_clustered', 5): 48,
-    ('schur_orth_clustered', 6): 121,
-    ('schur_orth_complex', 3): 31,
-    ('schur_orth_complex', 4): 44,
-    ('schur_orth_complex', 5): 55,
-    ('schur_orth_complex', 6): 89,
+    ('schur_orth_clustered', 4): 41,
+    ('schur_orth_clustered', 5): 42,
+    ('schur_orth_clustered', 6): 96,
+    ('schur_orth_complex', 3): 42,
+    ('schur_orth_complex', 4): 43,
+    ('schur_orth_complex', 5): 43,
+    ('schur_orth_complex', 6): 47,
     ('schur_orth_defective', 2): 2,
-    ('schur_orth_defective', 3): 164,
-    ('schur_orth_defective', 4): 305,
-    ('schur_orth_defective', 5): 178,
-    ('schur_orth_defective', 6): 200,
+    ('schur_orth_defective', 3): 60,
+    ('schur_orth_defective', 4): 241,
+    ('schur_orth_defective', 5): 150,
+    ('schur_orth_defective', 6): 108,
     ('schur_orth_near_triangular', 2): 0,
-    ('schur_orth_near_triangular', 3): 4,
-    ('schur_orth_near_triangular', 4): 69,
-    ('schur_orth_near_triangular', 5): 55,
-    ('schur_orth_near_triangular', 6): 255,
+    ('schur_orth_near_triangular', 3): 1,
+    ('schur_orth_near_triangular', 4): 48,
+    ('schur_orth_near_triangular', 5): 58,
+    ('schur_orth_near_triangular', 6): 104,
     ('schur_orth_nonnormal', 2): 1,
-    ('schur_orth_nonnormal', 3): 39,
-    ('schur_orth_nonnormal', 4): 157,
-    ('schur_orth_nonnormal', 5): 139,
-    ('schur_orth_nonnormal', 6): 221,
+    ('schur_orth_nonnormal', 3): 47,
+    ('schur_orth_nonnormal', 4): 96,
+    ('schur_orth_nonnormal', 5): 107,
+    ('schur_orth_nonnormal', 6): 103,
     ('schur_rec', 2): 6,
-    ('schur_rec', 3): 74,
-    ('schur_rec', 4): 98,
-    ('schur_rec', 5): 239,
-    ('schur_rec', 6): 383,
+    ('schur_rec', 3): 84,
+    ('schur_rec', 4): 106,
+    ('schur_rec', 5): 192,
+    ('schur_rec', 6): 170,
     ('schur_rec_clustered', 2): 4,
-    ('schur_rec_clustered', 3): 65,
-    ('schur_rec_clustered', 4): 76,
-    ('schur_rec_clustered', 5): 77,
-    ('schur_rec_clustered', 6): 456,
-    ('schur_rec_complex', 3): 61,
-    ('schur_rec_complex', 4): 52,
-    ('schur_rec_complex', 5): 67,
-    ('schur_rec_complex', 6): 216,
+    ('schur_rec_clustered', 3): 66,
+    ('schur_rec_clustered', 4): 46,
+    ('schur_rec_clustered', 5): 103,
+    ('schur_rec_clustered', 6): 140,
+    ('schur_rec_complex', 3): 63,
+    ('schur_rec_complex', 4): 48,
+    ('schur_rec_complex', 5): 62,
+    ('schur_rec_complex', 6): 78,
     ('schur_rec_defective', 2): 3,
-    ('schur_rec_defective', 3): 1447,
-    ('schur_rec_defective', 4): 11216,
-    ('schur_rec_defective', 5): 424,
-    ('schur_rec_defective', 6): 213,
+    ('schur_rec_defective', 3): 81,
+    ('schur_rec_defective', 4): 2920,
+    ('schur_rec_defective', 5): 247,
+    ('schur_rec_defective', 6): 155,
     ('schur_rec_near_triangular', 2): 4,
     ('schur_rec_near_triangular', 3): 27,
-    ('schur_rec_near_triangular', 4): 153,
-    ('schur_rec_near_triangular', 5): 114,
-    ('schur_rec_near_triangular', 6): 8063,
+    ('schur_rec_near_triangular', 4): 152,
+    ('schur_rec_near_triangular', 5): 279,
+    ('schur_rec_near_triangular', 6): 522,
     ('schur_rec_nonnormal', 2): 2,
-    ('schur_rec_nonnormal', 3): 71,
-    ('schur_rec_nonnormal', 4): 1275,
-    ('schur_rec_nonnormal', 5): 294,
-    ('schur_rec_nonnormal', 6): 566,
+    ('schur_rec_nonnormal', 3): 85,
+    ('schur_rec_nonnormal', 4): 140,
+    ('schur_rec_nonnormal', 5): 265,
+    ('schur_rec_nonnormal', 6): 224,
 }
 
 
@@ -2629,15 +2744,16 @@ fn test_schur{n}_rotation_block() {{
     if n >= 3:
         # cyclic permutation: n = 6 does not converge (upstream f64 neither), smaller converge
         perm = struct_lit(n, n, lambda i, j: "fx(ONE)" if i == (j + 1) % n else "fx(0)")
-        if n == 6:
-            body = """assert!(a.try_schur(fx(1), 200).is_none(), "the cyclic permutation of size 6 cycles");"""
+        if False:
+            body = ""
         else:
             body = f"""let s = a.try_schur(fx(1), 200).unwrap();
     let (re, im) = s.complex_eigenvalues();
     // the {n}-th roots of unity: |λ| = 1
     {" ".join(f"assert!(ulp_diff(fixed::FixedTrait::sqrt(re.{fld(n, 1, k, 0)} * re.{fld(n, 1, k, 0)} + im.{fld(n, 1, k, 0)} * im.{fld(n, 1, k, 0)}), fx(ONE)) <= 4096, \"root of unity\");" for k in range(n))}"""
         parts.append(f"""/// The cyclic permutation matrix (eigenvalues: the {n}-th roots of unity), the classic hard case
-/// of the Francis iteration without exceptional shifts (upstream has none).
+/// of the Francis iteration: it converges thanks to the exceptional shifts (upstream has none, and
+/// cycles forever on the size 6).
 #[test]
 fn test_schur{n}_cyclic_permutation() {{
     let a = black_box({perm});
