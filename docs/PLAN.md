@@ -1,5 +1,8 @@
 # Execution plan
 
+> **State (2026-09-26): `nalgebra` 0.1.0 and `nalgebra_glam` 0.1.0 are published** (M8 done, parity
+> 99.9 %). Paused until a consumer asks or the owner directs otherwise; see [HANDOFF.md](HANDOFF.md).
+
 Execution model: one **orchestrator** session owns the plan, the workspace manifests, CI, the gas
 snapshot and the merges. Work packages are delegated to **sub-agents running in parallel**, each
 owning a disjoint set of files (one module directory per agent) and delivering through a PR that
@@ -56,7 +59,7 @@ Research reports, four benchmark suites, design decisions, CI, agent conventions
 | 4.3 | `SymmetricEigen` 2x2 (closed form) and 3x3 (fixed-sweep Jacobi) | 2.3 |
 | 4.4 | `SVD` 2x2/3x3, polar decomposition, `pseudo_inverse`; `QR` 2/3/4 | 4.3 |
 
-## M5 — Dynamic algebra (scoped by multibody needs) — deferred
+## M5 — Dynamic algebra (scoped by multibody needs) — superseded by M8 (P13 `dynamic`, P14-P17)
 
 | WP | Content | Depends on |
 |---|---|---|
@@ -148,7 +151,7 @@ programme's first game (programme management, 2026-09-25; machine rules in
 `/home/claude/projects/pm/OPERATIONS.md` §3). Opus 5.5 for numerics and generator design, Sonnet
 for mechanical template work; one PR per WP; parity figures reported per PR.
 
-## M6 — Interop and release
+## M6 — Interop and release — superseded by M8 (P19 `nalgebra_glam`, 8.7 release)
 
 | WP | Content | Depends on |
 |---|---|---|
