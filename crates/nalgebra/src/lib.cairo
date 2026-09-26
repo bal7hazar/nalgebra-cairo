@@ -247,6 +247,16 @@ pub use linalg::{
     Lblt6, Lblt6Trait, Matrix1LbltTrait, Matrix2LbltTrait, Matrix3LbltTrait, Matrix4LbltTrait,
     Matrix5LbltTrait, Matrix6LbltTrait,
 };
+#[cfg(feature: 'exp')]
+pub use linalg::{
+    Matrix1ExpTrait, Matrix2ExpTrait, Matrix3ExpTrait, Matrix4ExpTrait, Matrix5ExpTrait,
+    Matrix6ExpTrait,
+};
+#[cfg(feature: 'pow')]
+pub use linalg::{
+    Matrix1PowTrait, Matrix2PowTrait, Matrix3PowTrait, Matrix4PowTrait, Matrix5PowTrait,
+    Matrix6PowTrait,
+};
 #[cfg(feature: 'qr')]
 pub use linalg::{
     Matrix1QrTrait, Matrix2QrTrait, Matrix2x3QrTrait, Matrix2x4QrTrait, Matrix2x5QrTrait,

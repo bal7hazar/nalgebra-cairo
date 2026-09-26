@@ -19,14 +19,14 @@ How to read it:
 |---|---:|---:|---:|---:|---:|---:|
 | base | 486 | 0 | 0 | 318 | 804 | 100.0% |
 | geometry | 935 | 0 | 0 | 113 | 1048 | 100.0% |
-| linalg | 300 | 0 | 3 | 1 | 304 | 99.0% |
+| linalg | 303 | 0 | 0 | 1 | 304 | 100.0% |
 | sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
 | io | 1 | 0 | 1 | 0 | 2 | 50.0% |
 | third_party | 91 | 0 | 0 | 72 | 163 | 100.0% |
 | root | 35 | 0 | 0 | 0 | 35 | 100.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1882** | **0** | **4** | **550** | **2436** | **99.8%** |
+| **total** | **1885** | **0** | **1** | **550** | **2436** | **99.9%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -54,7 +54,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 0 | standard numerics | P01, P05 |  |
 | [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 0 | standard numerics | P14 |  |
 | [P16](#p16-schur-hessenberg-bidiagonal-tridiagonal-general-eigen) | Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen | 0 | hard numerics | P14 |  |
-| [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 3 | hard numerics | P14, P16 | `linalg/pow.rs` (2), `linalg/exp.rs` (1) |
+| [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 0 | hard numerics | P14, P16 |  |
 | [P18](#p18-convolution) | Convolution | 0 | mechanical | P13 |  |
 | [P19](#p19-glam-cairo-conversions) | glam-cairo conversions | 0 | mechanical | WP 6.2 (glam-cairo pin) |  |
 | [P20](#p20-sparse-matrices-and-matrix-market-i-o) | Sparse matrices and Matrix Market I/O | 1 | standard numerics | P13 | `io/matrix_market.rs` (1) |
@@ -152,9 +152,8 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P17 Matrix exponential and power
 
-`exp` (Padé approximant with scaling and squaring) and `pow` / `pow_mut`. Tier: hard numerics. Depends on: P14, P16. 3 items (`*` = partial):
+`exp` (Padé approximant with scaling and squaring) and `pow` / `pow_mut`. Tier: hard numerics. Depends on: P14, P16. 0 items (`*` = partial):
 
-- **SquareMatrix**: `exp`, `pow`, `pow_mut`
 
 ### P18 Convolution
 
@@ -3199,7 +3198,7 @@ Cairo: Schur1/2/3/4/5/6 · ported 11, partial 0, missing 0, excluded 0.
 
 #### SquareMatrix (linalg)
 
-Cairo: Matrix1/2/3/4/5/6 · ported 41, partial 0, missing 3, excluded 0.
+Cairo: Matrix1/2/3/4/5/6 · ported 44, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -3215,11 +3214,11 @@ Cairo: Matrix1/2/3/4/5/6 · ported 41, partial 0, missing 3, excluded 0.
 | method `complex_eigenvalues` | ported | Matrix1/2/3/4/5/6::complex_eigenvalues |  | `linalg/schur.rs` |
 | method `determinant` | ported | Matrix2/3/4/6::determinant |  | `linalg/determinant.rs` |
 | method `eigenvalues` | ported | Matrix1/2/3/4/5/6::eigenvalues |  | `linalg/schur.rs` |
-| method `exp` | missing |  | P17 | `linalg/exp.rs` |
+| method `exp` | ported | Matrix1/2/3/4/5/6::exp |  | `linalg/exp.rs` |
 | method `hessenberg` | ported | Matrix1/2/3/4/5/6::hessenberg |  | `linalg/decomposition.rs` |
 | method `lblt` | ported | Matrix1/2/3/4/5/6::lblt |  | `linalg/decomposition.rs` |
-| method `pow` | missing |  | P17 | `linalg/pow.rs` |
-| method `pow_mut` | missing |  | P17 | `linalg/pow.rs` |
+| method `pow` | ported | Matrix1/2/3/4/5/6::pow |  | `linalg/pow.rs` |
+| method `pow_mut` | ported | Matrix1/2/3/4/5/6::pow_mut |  | `linalg/pow.rs` |
 | method `schur` | ported | Matrix1/2/3/4/5/6::schur |  | `linalg/decomposition.rs` |
 | method `solve_lower_triangular` | ported | MatrixSolve::solve_lower_triangular | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
 | method `solve_lower_triangular_mut` | ported | MatrixSolve::solve_lower_triangular_mut | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
