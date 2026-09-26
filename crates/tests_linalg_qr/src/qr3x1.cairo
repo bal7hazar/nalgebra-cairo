@@ -3,11 +3,11 @@
 //! suite `spectral`), the factor identities, gas benchmarks.
 
 use core::cmp::max;
-use nalgebra::MatrixMul;
 use nalgebra::linalg::{Qr3x1Trait, Vector3QrTrait};
+use nalgebra::{MatrixMul, MatrixTrMul, Vector3};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
-use crate::builders::{amax_3x1, mat1x1, mat3x1, max_ulp_3x1, orth_3x1};
+use crate::builders::{amax_3x1, mat1x1, mat3x1, mat3x3, max_ulp_3x1, orth_3x1, orth_3x3};
 use crate::oracle_qr as oracle;
 
 const ONE: i64 = 0x100000000;
@@ -36,6 +36,49 @@ fn test_oracle_qr3x1_q_r() {
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
     assert!(rec <= 1 && orth <= 12, "measured {} {}", rec, orth);
+}
+
+/// `q_tr_mul` (tall: the full orthogonal `Q`): its first 1 row is `qᵀ b` bit for bit, and
+/// `Qᵀ` (`q_tr_mul` on the identity) is orthogonal within the measured bound on every oracle
+/// case.
+#[test]
+fn test_qr3x1_q_tr_mul() {
+    let mut cases = oracle::qr3x1_q_r_cases();
+    let mut orth = 0;
+    while let Some(case) = cases.pop_front() {
+        let (a, _, _, _) = *case;
+        let f = black_box(mat3x1(a)).qr();
+        let mut b = Vector3 { x: fx(1 * ONE), y: fx(2 * ONE), z: fx(3 * ONE) };
+        f.q_tr_mul(ref b);
+        let t = f.q.tr_mul(Vector3 { x: fx(1 * ONE), y: fx(2 * ONE), z: fx(3 * ONE) });
+        assert!(b.x == t.x);
+        let mut qt = mat3x3([[ONE, 0, 0], [0, ONE, 0], [0, 0, ONE]]);
+        f.q_tr_mul(ref qt);
+        orth = max(orth, orth_3x3(qt));
+    }
+    assert!(orth <= 17, "measured {}", orth);
+}
+
+#[test]
+#[inline(never)]
+fn bench_qr3x1_q_tr_mul__baseline() {
+    let (a, _, _, _) = *oracle::qr3x1_q_r_cases().at(3);
+    let f = black_box(mat3x1(a)).qr();
+    let _b = black_box(Vector3 { x: fx(1 * ONE), y: fx(2 * ONE), z: fx(3 * ONE) });
+    let e = black_box(true);
+    assert!((f.r.x >= fx(0)) == e);
+}
+
+/// The full `Q` (completion) then one fused `tr_mul`.
+#[test]
+#[inline(never)]
+fn bench_qr3x1_q_tr_mul__full_q() {
+    let (a, _, _, _) = *oracle::qr3x1_q_r_cases().at(3);
+    let f = black_box(mat3x1(a)).qr();
+    let mut b = black_box(Vector3 { x: fx(1 * ONE), y: fx(2 * ONE), z: fx(3 * ONE) });
+    let e = black_box(true);
+    f.q_tr_mul(ref b);
+    assert!((b.x == b.x) == e);
 }
 
 #[test]

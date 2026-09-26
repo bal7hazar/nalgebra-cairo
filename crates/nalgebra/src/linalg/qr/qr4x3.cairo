@@ -6,8 +6,11 @@
 use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
+use crate::base::matrix4::Matrix4;
 use crate::base::matrix4x3::Matrix4x3;
+use crate::base::solve::SolveKernel;
 use crate::base::vector4::Vector4;
+use super::kernels::QrComplete4Impl;
 
 /// The QR factorisation `A = q * r` of a `Matrix4x3<T>`: `q` is 4x3 (thin: 4x3, orthonormal
 /// COLUMNS), `r` is 3x3 upper triangular (trapezoidal) with a non-negative diagonal and an exactly
@@ -161,6 +164,62 @@ pub impl Qr4x3Impl<
     #[inline(always)]
     fn qr_internal(self: Qr4x3<T>) -> (Matrix4x3<T>, Matrix3<T>) {
         (self.q, self.r)
+    }
+
+    /// `rhs = Qᵀ * rhs` in place, for any `rhs` with 4 rows (a vector or a matrix), `Q` the
+    /// FULL 4x4 orthogonal factor: the thin `q` completed by 1 unit vector, each the
+    /// axis least represented in the span of the previous columns, stripped of its projection
+    /// and normalised (`full_q`). The first 3 rows of the result are `qᵀ rhs` bit for bit; the
+    /// last 1 is its component along the orthogonal complement of the columns of
+    /// `A`. ONE fused sum of products per entry, floored once. Upstream: `QR::q_tr_mul` (the
+    /// 3 Householder reflections, a rounding each: a different basis of the complement, and
+    /// upstream's signs on the first rows).
+    fn q_tr_mul<B, impl K: SolveKernel<Matrix4<T>, B>, +Drop<B>>(self: Qr4x3<T>, ref rhs: B) {
+        rhs = K::tr_mul_rhs(Qr4x3InternalTrait::full_q(self), rhs);
+    }
+}
+
+/// Crate-internal kernel of `Qr4x3<T>`: the full orthogonal factor of `q_tr_mul`.
+#[generate_trait]
+pub(crate) impl Qr4x3InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Qr4x3InternalTrait<T> {
+    /// The full 4x4 orthogonal factor whose first 3 columns are `q`, see `q_tr_mul`
+    /// (upstream exposes the full `Q` only through `q_tr_mul`).
+    fn full_q(self: Qr4x3<T>) -> Matrix4<T> {
+        revoke_ap_tracking();
+        let u0 = Vector4 { x: self.q.m11, y: self.q.m21, z: self.q.m31, w: self.q.m41 };
+        let u1 = Vector4 { x: self.q.m12, y: self.q.m22, z: self.q.m32, w: self.q.m42 };
+        let u2 = Vector4 { x: self.q.m13, y: self.q.m23, z: self.q.m33, w: self.q.m43 };
+        let u3 = QrComplete4Impl::<T>::complete3(u0, u1, u2);
+        Matrix4 {
+            m11: u0.x,
+            m21: u0.y,
+            m31: u0.z,
+            m41: u0.w,
+            m12: u1.x,
+            m22: u1.y,
+            m32: u1.z,
+            m42: u1.w,
+            m13: u2.x,
+            m23: u2.y,
+            m33: u2.z,
+            m43: u2.w,
+            m14: u3.x,
+            m24: u3.y,
+            m34: u3.z,
+            m44: u3.w,
+        }
     }
 }
 

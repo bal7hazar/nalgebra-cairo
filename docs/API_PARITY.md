@@ -3146,7 +3146,7 @@ Cairo: Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6
 | method `is_invertible` | ported | Qr1/2/3/4/5/6::is_invertible |  | `linalg/qr.rs` |
 | method `new` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::new |  | `linalg/qr.rs` |
 | method `q` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::q |  | `linalg/qr.rs` |
-| method `q_tr_mul` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x3/4/5/6, Qr3x4/5/6, Qr4x5/6, Qr5x6::q_tr_mul |  | `linalg/qr.rs` |
+| method `q_tr_mul` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::q_tr_mul |  | `linalg/qr.rs` |
 | method `qr_internal` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::qr_internal |  | `linalg/qr.rs` |
 | method `r` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::r |  | `linalg/qr.rs` |
 | method `solve` | ported | Qr1/2/3/4/5/6::solve |  | `linalg/qr.rs` |

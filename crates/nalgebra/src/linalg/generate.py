@@ -589,6 +589,7 @@ def outputs() -> dict[str, str]:
         out[lin + f"svd/{svd_mod(r, c)}.cairo"] = render_svd(r, c)
     for r, c in qr_shapes():
         out[lin + f"qr/{qr_name(r, c).lower()}.cairo"] = render_qr(r, c)
+    out[lin + "qr/kernels.cairo"] = render_qr_kernels()
     out[lin + "cholesky_update.cairo"] = render_cholesky_update()
     out.update(eigen_package())
     out.update(svd_packages())
@@ -1123,24 +1124,41 @@ pub(crate) impl SvdRightImpl<
         }}
     }}"""]
         fns += [gs_kernel(r, k) for k in range(1, r)]
-        for k in range(1, r):
-            args = ", ".join(f"u{l}: {V}<T>" for l in range(k))
-            cands = []
-            for i in range(r):
-                cands.append(f"let c{i} = {fused([(1, col(r, f'u{l}', i), col(r, f'u{l}', i)) for l in range(k)])};")
-            pick = ["let mut best: usize = 0;", "let mut cb = c0;"]
-            for i in range(1, r):
-                pick.append(f"if c{i} < cb {{ best = {i}; cb = c{i}; }}")
-            sel = []
-            for l in range(k):
-                chain = " else ".join(f"if best == {i} {{ {col(r, f'u{l}', i)} }}" for i in range(r - 1))
-                sel.append(f"let a{l} = {chain} else {{ {col(r, f'u{l}', r - 1)} }};")
-            comps = []
-            for i in range(r):
-                terms = [(1, f"if best == {i} {{ R::one() }} else {{ R::zero() }}", None)]
-                terms += [(-1, f"a{l}", col(r, f"u{l}", i)) for l in range(k)]
-                comps.append(fused(terms))
-            fns.append(f"""    /// A unit {r}-vector orthogonal to the {k} orthonormal `u*`: the axis `e_i` whose squared
+        fns += [complete_kernel(r, k) for k in range(1, r)]
+        parts.append(f"""/// The left singular vectors of the SVDs with {r} rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of {r}-vectors.
+#[generate_trait]
+pub(crate) impl SvdComplete{r}Impl<
+{BOUNDS}
+> of SvdComplete{r}Trait<T> {{
+{chr(10).join(fns)}
+}}
+""")
+    return "\n".join(parts)
+
+
+def complete_kernel(r: int, k: int) -> str:
+    """`complete{k}`: a unit `r`-vector orthogonal to `k` orthonormal ones (the axis least
+    represented in their span, stripped of its projection). Shared by the SVD left vectors and the
+    full `Q` of the tall QR factorisations."""
+    V = tname(r, 1)
+    args = ", ".join(f"u{l}: {V}<T>" for l in range(k))
+    cands = []
+    for i in range(r):
+        cands.append(f"let c{i} = {fused([(1, col(r, f'u{l}', i), col(r, f'u{l}', i)) for l in range(k)])};")
+    pick = ["let mut best: usize = 0;", "let mut cb = c0;"]
+    for i in range(1, r):
+        pick.append(f"if c{i} < cb {{ best = {i}; cb = c{i}; }}")
+    sel = []
+    for l in range(k):
+        chain = " else ".join(f"if best == {i} {{ {col(r, f'u{l}', i)} }}" for i in range(r - 1))
+        sel.append(f"let a{l} = {chain} else {{ {col(r, f'u{l}', r - 1)} }};")
+    comps = []
+    for i in range(r):
+        terms = [(1, f"if best == {i} {{ R::one() }} else {{ R::zero() }}", None)]
+        terms += [(-1, f"a{l}", col(r, f"u{l}", i)) for l in range(k)]
+        comps.append(fused(terms))
+    return f"""    /// A unit {r}-vector orthogonal to the {k} orthonormal `u*`: the axis `e_i` whose squared
     /// projection `Σ u_l[i]²` onto their span is the SMALLEST (ties to the earlier axis; it is at
     /// most {k}/{r}, so the residual has a squared norm of at least {r - k}/{r}), stripped of that
     /// projection in one fused sum per component and normalised.
@@ -1153,17 +1171,7 @@ pub(crate) impl SvdRightImpl<
         {' '.join(sel)}
         let r = {vec_lit(r, lambda i: comps[i])};
         {div_into(r, 'r', norm(cols(r, 'r')))}
-    }}""")
-        parts.append(f"""/// The left singular vectors of the SVDs with {r} rows (crate-internal): the first one, the
-/// Gram-Schmidt steps, the completions of orthonormal families of {r}-vectors.
-#[generate_trait]
-pub(crate) impl SvdComplete{r}Impl<
-{BOUNDS}
-> of SvdComplete{r}Trait<T> {{
-{chr(10).join(fns)}
-}}
-""")
-    return "\n".join(parts)
+    }}"""
 
 
 def svd_left(r: int, c: int) -> list[str]:
@@ -1759,6 +1767,46 @@ def render_qr(r: int, c: int) -> str:
         rhs = K::tr_mul_rhs(self.q, rhs);
     }}
 """
+    else:
+        # WP 8.5-P17: the tall shapes apply the FULL orthogonal `Q` ({r}x{r}): the thin factor
+        # completed by `QrComplete{r}` (the SVD's axis completion).
+        uses.add("use crate::base::solve::SolveKernel;")
+        uses.add(use_shape(r, r))
+        uses.add(use_shape(r, 1))
+        uses.add(f"use super::kernels::QrComplete{r}Impl;")
+        qcols = [f"let u{j} = {vec_lit(r, lambda i, j=j: f'self.q.{fld(r, c, i, j)}')};" for j in range(c)]
+        for j in range(c, r):
+            us = ", ".join(f"u{l}" for l in range(j))
+            qcols.append(f"let u{j} = QrComplete{r}Impl::<T>::complete{j}({us});")
+        full = struct_lit(r, r, lambda i, j: col(r, f"u{j}", i))
+        extra += f"""
+    /// `rhs = Qᵀ * rhs` in place, for any `rhs` with {r} rows (a vector or a matrix), `Q` the
+    /// FULL {r}x{r} orthogonal factor: the thin `q` completed by {r - c} unit vector{'s' if r - c > 1 else ''}, each the
+    /// axis least represented in the span of the previous columns, stripped of its projection
+    /// and normalised (`full_q`). The first {c} row{'s' if c > 1 else ''} of the result {'are' if c > 1 else 'is'} `qᵀ rhs` bit for bit; the
+    /// last {r - c} {'are' if r - c > 1 else 'is'} its component{'s' if r - c > 1 else ''} along the orthogonal complement of the columns of
+    /// `A`. ONE fused sum of products per entry, floored once. Upstream: `QR::q_tr_mul` (the
+    /// {c} Householder reflection{'s' if c > 1 else ''}, a rounding each: a different basis of the complement, and
+    /// upstream's signs on the first rows).
+    fn q_tr_mul<B, impl K: SolveKernel<{tname(r, r)}<T>, B>, +Drop<B>>(self: {Q}<T>, ref rhs: B) {{
+        rhs = K::tr_mul_rhs({Q}InternalTrait::full_q(self), rhs);
+    }}
+"""
+        internal = f"""
+/// Crate-internal kernel of `{Q}<T>`: the full orthogonal factor of `q_tr_mul`.
+#[generate_trait]
+pub(crate) impl {Q}InternalImpl<
+{BOUNDS}
+> of {Q}InternalTrait<T> {{
+    /// The full {r}x{r} orthogonal factor whose first {c} column{'s' if c > 1 else ''} {'are' if c > 1 else 'is'} `q`, see `q_tr_mul`
+    /// (upstream exposes the full `Q` only through `q_tr_mul`).
+    fn full_q(self: {Q}<T>) -> {tname(r, r)}<T> {{
+        revoke_ap_tracking();
+        {' '.join(qcols)}
+        {full}
+    }}
+}}
+"""
     if square:
         n = r
         nz = " && ".join(f"self.r.{fld(n, n, i, i)} != R::zero()" for i in range(n))
@@ -1922,6 +1970,29 @@ pub impl {M}QrImpl<
 }}
 """
 
+
+
+def render_qr_kernels() -> str:
+    """`linalg/qr/kernels.cairo`: the basis completions of the tall QR factorisations."""
+    parts = [f"""{HEADER}//! Crate-internal kernels of the tall QR factorisations (WP 8.5-P17): the completion of `k`
+//! orthonormal `R`-vectors by one more (`complete{{k}}`, the SVD's completion), which builds the
+//! full orthogonal `Q` that `q_tr_mul` applies.
+
+use core::internal::revoke_ap_tracking;
+use simba::scalar::Real;
+{chr(10).join(use_shape(n, 1) for n in range(2, 7))}
+"""]
+    for r in range(2, 7):
+        fns = [complete_kernel(r, k) for k in range(1, r)]
+        parts.append(f"""/// The completions of orthonormal families of {r}-vectors (crate-internal).
+#[generate_trait]
+pub(crate) impl QrComplete{r}Impl<
+{BOUNDS}
+> of QrComplete{r}Trait<T> {{
+{chr(10).join(fns)}
+}}
+""")
+    return "\n".join(parts)
 
 
 # --- Cholesky updates --------------------------------------------------------------------------
@@ -2652,6 +2723,26 @@ QR_BOUNDS: dict = {
 }
 
 
+# Measured orthonormality of the full `Q` of the tall QR factorisations (`q_tr_mul`), raw units.
+QR_FULL_BOUNDS: dict = {
+    (2, 1): 2,
+    (3, 1): 17,
+    (3, 2): 43,
+    (4, 1): 4,
+    (4, 2): 22,
+    (4, 3): 18,
+    (5, 1): 15,
+    (5, 2): 39,
+    (5, 3): 16,
+    (5, 4): 15,
+    (6, 1): 12,
+    (6, 2): 13,
+    (6, 3): 70,
+    (6, 4): 74,
+    (6, 5): 97,
+}
+
+
 def cmp_lines(r: int, c: int, got: str, exp: str) -> str:
     return " ".join(
         f"ex = max(ex, excess(ulp_diff({got}.{fld(r, c, i, j)}, {exp}.{fld(r, c, i, j)}), oracle_tol(abs_raw({exp}.{fld(r, c, i, j)}), tol)));"
@@ -2674,6 +2765,56 @@ fn test_qr{sfx}_q_tr_mul() {{
     let mut b = {ones};
     f.q_tr_mul(ref b);
     assert!(b == f.q.tr_mul({ones}));
+}}
+"""
+        uses.add("MatrixTrMul")
+        uses.add(tname(r, 1))
+    else:
+        ones = vec_lit(r, lambda i: f"fx({i + 1} * ONE)")
+        same = " && ".join(f"b.{fld(r, 1, i, 0)} == t.{fld(c, 1, i, 0)}" for i in range(c))
+        ident = int_rows([[1 if i == j else 0 for j in range(r)] for i in range(r)]).replace("1", "ONE").replace("0", "0")
+        extra += f"""
+/// `q_tr_mul` (tall: the full orthogonal `Q`): its first {c} row{'s' if c > 1 else ''} {'are' if c > 1 else 'is'} `qᵀ b` bit for bit, and
+/// `Qᵀ` (`q_tr_mul` on the identity) is orthogonal within the measured bound on every oracle
+/// case.
+#[test]
+fn test_qr{sfx}_q_tr_mul() {{
+    let mut cases = oracle::qr{sfx}_q_r_cases();
+    let mut orth = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, _, _, _) = *case;
+        let f = black_box(mat{r}x{c}(a)).qr();
+        let mut b = {ones};
+        f.q_tr_mul(ref b);
+        let t = f.q.tr_mul({ones});
+        assert!({same});
+        let mut qt = mat{r}x{r}({ident});
+        f.q_tr_mul(ref qt);
+        orth = max(orth, orth_{r}x{r}(qt));
+    }}
+    assert!(orth <= {QR_FULL_BOUNDS.get((r, c), 0)}, "measured {{}}", orth);
+}}
+
+#[test]
+#[inline(never)]
+fn bench_qr{sfx}_q_tr_mul__baseline() {{
+    let (a, _, _, _) = *oracle::qr{sfx}_q_r_cases().at(3);
+    let f = black_box(mat{r}x{c}(a)).qr();
+    let _b = black_box({ones});
+    let e = black_box(true);
+    assert!((f.r.{fld(k, c, 0, 0)} >= fx(0)) == e);
+}}
+
+/// The full `Q` (completion) then one fused `tr_mul`.
+#[test]
+#[inline(never)]
+fn bench_qr{sfx}_q_tr_mul__full_q() {{
+    let (a, _, _, _) = *oracle::qr{sfx}_q_r_cases().at(3);
+    let f = black_box(mat{r}x{c}(a)).qr();
+    let mut b = black_box({ones});
+    let e = black_box(true);
+    f.q_tr_mul(ref b);
+    assert!((b.{fld(r, 1, 0, 0)} == b.{fld(r, 1, 0, 0)}) == e);
 }}
 """
         uses.add("MatrixTrMul")
@@ -2723,7 +2864,7 @@ use nalgebra::linalg::{{{M}QrTrait, {Q}Trait}};
 use nalgebra::{{{', '.join(sorted(uses))}}};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
-use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{r}x{k}', f'mat{k}x{c}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}'} | ({f'vec{r}', f'max_ulp_{r}x1'} if r == c else set())))}}};
+use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{r}x{k}', f'mat{k}x{c}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}'} | ({f'vec{r}', f'max_ulp_{r}x1'} if r == c else set()) | ({f'mat{r}x{r}', f'orth_{r}x{r}'} if r > c else set())))}}};
 use crate::oracle_qr as oracle;
 
 const ONE: i64 = 0x100000000;
@@ -2976,6 +3117,8 @@ def qr_package() -> dict[str, str]:
         for r, c in shapes:
             k = min(r, c)
             need |= {(r, c), (r, k), (k, c), (r, 1)}
+            if r > c:
+                need.add((r, r))
             vecs.add(r)
         out[base + "src/builders.cairo"] = render_builders(need, vecs)
         mods = ["builders", "oracle_qr"]
