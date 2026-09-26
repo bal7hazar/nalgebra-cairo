@@ -244,7 +244,9 @@ has no optional dependencies (`optional = true` is rejected), and depending on `
 costs every consumer +0.46 GB / +4 s CPU of cold compile (measured on an empty package). The
 conversions therefore live in the package `nalgebra_glam` (`crates/nalgebra_glam`), published
 together with `nalgebra` 0.1.0 and counted in `docs/API_PARITY.md`: a project that wants them
-adds `nalgebra_glam` next to `nalgebra` and `glam`, the Cairo counterpart of enabling the feature.
+adds `nalgebra_glam` next to `nalgebra` and `glam`, the Cairo counterpart of enabling the feature,
+and brings the impls into scope with `use nalgebra_glam::prelude::*;` (Cairo finds an `Into` impl
+only when it is in scope). Publication order: `nalgebra` before `nalgebra_glam`.
 
 ## D8 — Interop with glam-cairo / rapier-cairo
 
