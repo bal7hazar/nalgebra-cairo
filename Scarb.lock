@@ -33,7 +33,6 @@ dependencies = [
  "fixed",
  "glam",
  "nalgebra",
- "nalgebra_testing",
  "snforge_std",
 ]
 

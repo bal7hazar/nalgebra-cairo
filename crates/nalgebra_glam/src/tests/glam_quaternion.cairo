@@ -1,7 +1,7 @@
 use fixed::Fixed;
 use glam::Quat;
 use nalgebra::{Quaternion, UnitQuaternion};
-use nalgebra_testing::black_box;
+use crate::black_box;
 use crate::glam_quaternion::*;
 use super::{int, near};
 

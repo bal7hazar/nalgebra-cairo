@@ -4,7 +4,7 @@ use nalgebra::{
     Isometry2, Isometry3, Quaternion, Translation2, Translation3, UnitComplex, UnitQuaternion,
     Vector2, Vector3,
 };
-use nalgebra_testing::black_box;
+use crate::black_box;
 use crate::glam_isometry::*;
 use super::{FRAC_1_SQRT_2_RAW, int, near};
 

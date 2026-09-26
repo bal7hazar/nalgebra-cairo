@@ -21,6 +21,8 @@
 //! `f64` (`DVec*`, `DMat*`, `DQuat`), no aligned `Vec3A` and no integer vectors other than `IVec*`
 //! (`i32`) and `UVec*` (`u32`): the impls of those upstream types are excluded (`interop`).
 
+#[cfg(test)]
+mod benches;
 pub mod glam_isometry;
 pub mod glam_matrix;
 pub mod glam_point;
@@ -42,4 +44,14 @@ pub mod prelude {
     pub use super::glam_similarity::*;
     pub use super::glam_translation::*;
     pub use super::glam_unit_complex::*;
+}
+
+/// Opaque identity: prevents the compiler from const-folding the operands of a test or a
+/// benchmark, and from specializing a function per constant argument (compile budget; the same
+/// helper as `nalgebra_testing::black_box`, local so that the published package has no path
+/// dependency).
+#[cfg(test)]
+#[inline(never)]
+fn black_box<T>(value: T) -> T {
+    value
 }

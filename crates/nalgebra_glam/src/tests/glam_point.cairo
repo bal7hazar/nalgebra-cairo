@@ -1,7 +1,7 @@
 use fixed::Fixed;
 use glam::{BVec2, BVec3, BVec4, IVec2, IVec3, IVec4, UVec2, UVec3, UVec4, Vec2, Vec3, Vec4};
 use nalgebra::{Point2, Point3, Point4};
-use nalgebra_testing::black_box;
+use crate::black_box;
 use crate::glam_point::*;
 use super::int;
 

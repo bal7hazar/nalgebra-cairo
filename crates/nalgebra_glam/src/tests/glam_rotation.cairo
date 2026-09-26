@@ -1,7 +1,7 @@
 use fixed::Fixed;
 use glam::{Mat2, Quat, Vec2};
 use nalgebra::{Matrix2, Matrix3, Rotation2, Rotation3};
-use nalgebra_testing::black_box;
+use crate::black_box;
 use crate::glam_rotation::*;
 use super::{FRAC_1_SQRT_2_RAW, int, near};
 

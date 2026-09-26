@@ -6,7 +6,7 @@ use glam::{
 use nalgebra::{
     Matrix2, Matrix3, Matrix4, UnitVector2, UnitVector3, UnitVector4, Vector2, Vector3, Vector4,
 };
-use nalgebra_testing::black_box;
+use crate::black_box;
 use crate::glam_matrix::*;
 use super::{int, near};
 

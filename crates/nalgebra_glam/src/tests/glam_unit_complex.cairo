@@ -1,7 +1,7 @@
 use fixed::Fixed;
 use glam::{Mat2, Vec2};
 use nalgebra::UnitComplex;
-use nalgebra_testing::black_box;
+use crate::black_box;
 use crate::glam_unit_complex::*;
 use super::int;
 

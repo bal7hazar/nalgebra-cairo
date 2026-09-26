@@ -17,8 +17,10 @@
 //!   `default_epsilon() * 100` with `default_epsilon` = 1 ulp). Otherwise the isometry is read
 //!   without further work: the translation is the last column and the rotation is taken from the
 //!   linear block unchecked (`UnitComplex { re: m11, im: m21 }`, or Shepperd's
-//!   `UnitQuaternion::from_rotation_matrix` in 3D). The checks run cheapest first (comparisons,
-//!   then the orthogonality test), which changes nothing to the result.
+//!   `UnitQuaternion::from_rotation_matrix` in 3D). The bottom row is tested first and the rest
+//!   runs in a function of its own: Cairo charges the most expensive path of the straight-line
+//!   code of a function, so a matrix rejected by its bottom row costs the comparisons only
+//!   (`bench_mat4_to_isometry3_reject`), and the result is the same in any order.
 //!
 //! glam-cairo has no `f64` types (`DVec*`, `DQuat`, `DMat*`): those impls stay excluded
 //! (`interop`). The `Result<_, ()>` of upstream is an `Option` (Cairo form of `TryFrom`).
@@ -27,7 +29,7 @@
 //! nalgebra_glam::glam_isometry::Isometry3FromVec3;` (or `use nalgebra_glam::prelude::*;`).
 
 use fixed::{Fixed, ONE, ZERO};
-use glam::{Mat3, Mat4, Quat, Vec2, Vec3};
+use glam::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
 use nalgebra::{
     Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3, Isometry3Trait, Matrix2,
     Matrix2Trait, Matrix3, Matrix3Trait, Quaternion, Rotation3, Translation2, Translation3,
@@ -142,26 +144,53 @@ pub impl Isometry2FromVec2 of Into<Vec2, Isometry2<Fixed>> {
     }
 }
 
+/// The rigid part of `Isometry2TryFromMat3`, run once the bottom row is known to be `(0, 0, 1)`:
+/// kept out of line so that a rejected matrix costs the comparisons only (Cairo charges the most
+/// expensive path of the straight-line code of a function, measured in `benches`).
+#[inline(never)]
+fn isometry2_of_rigid(x: Vec3, y: Vec3, z: Vec3) -> Option<Isometry2<Fixed>> {
+    let rot = Matrix2 { m11: x.x, m21: x.y, m12: y.x, m22: y.y };
+    if !Matrix2Trait::is_special_orthogonal(rot, ORTHOGONALITY_ULPS) {
+        return Option::None;
+    }
+    Option::Some(
+        Isometry2 {
+            rotation: UnitComplex { re: x.x, im: x.y },
+            translation: Translation2 { vector: Vector2 { x: z.x, y: z.y } },
+        },
+    )
+}
+
+/// The rigid part of `Isometry3TryFromMat4`, run once the bottom row is known to be `(0, 0, 0, 1)`
+/// (out of line, see `isometry2_of_rigid`).
+#[inline(never)]
+fn isometry3_of_rigid(x: Vec4, y: Vec4, z: Vec4, w: Vec4) -> Option<Isometry3<Fixed>> {
+    let rot = Matrix3 {
+        m11: x.x, m21: x.y, m31: x.z, m12: y.x, m22: y.y, m32: y.z, m13: z.x, m23: z.y, m33: z.z,
+    };
+    if !Matrix3Trait::is_special_orthogonal(rot, ORTHOGONALITY_ULPS) {
+        return Option::None;
+    }
+    Option::Some(
+        Isometry3 {
+            rotation: UnitQuaternionTrait::from_rotation_matrix(Rotation3 { matrix: rot }),
+            translation: Translation3 { vector: Vector3 { x: w.x, y: w.y, z: w.z } },
+        },
+    )
+}
+
 /// `Some(isometry)` when `self` is a rigid transform (bottom row exactly `(0, 0, 1)`, linear
 /// block special orthogonal within 100 ulp, see the module documentation), `None` otherwise
 /// (upstream: `Err(())`). Upstream: `TryFrom<Mat3> for Isometry2<f32>`
 /// (`nalgebra::try_convert`).
 pub impl Isometry2TryFromMat3 of TryInto<Mat3, Isometry2<Fixed>> {
+    #[inline(always)]
     fn try_into(self: Mat3) -> Option<Isometry2<Fixed>> {
         let (x, y, z) = (self.x_axis, self.y_axis, self.z_axis);
         if x.z != ZERO || y.z != ZERO || z.z != ONE {
             return Option::None;
         }
-        let rot = Matrix2 { m11: x.x, m21: x.y, m12: y.x, m22: y.y };
-        if !Matrix2Trait::is_special_orthogonal(rot, ORTHOGONALITY_ULPS) {
-            return Option::None;
-        }
-        Option::Some(
-            Isometry2 {
-                rotation: UnitComplex { re: x.x, im: x.y },
-                translation: Translation2 { vector: Vector2 { x: z.x, y: z.y } },
-            },
-        )
+        isometry2_of_rigid(x, y, z)
     }
 }
 
@@ -170,30 +199,12 @@ pub impl Isometry2TryFromMat3 of TryInto<Mat3, Isometry2<Fixed>> {
 /// (upstream: `Err(())`). Upstream: `TryFrom<Mat4> for Isometry3<f32>`
 /// (`nalgebra::try_convert`).
 pub impl Isometry3TryFromMat4 of TryInto<Mat4, Isometry3<Fixed>> {
+    #[inline(always)]
     fn try_into(self: Mat4) -> Option<Isometry3<Fixed>> {
         let (x, y, z, w) = (self.x_axis, self.y_axis, self.z_axis, self.w_axis);
         if x.w != ZERO || y.w != ZERO || z.w != ZERO || w.w != ONE {
             return Option::None;
         }
-        let rot = Matrix3 {
-            m11: x.x,
-            m21: x.y,
-            m31: x.z,
-            m12: y.x,
-            m22: y.y,
-            m32: y.z,
-            m13: z.x,
-            m23: z.y,
-            m33: z.z,
-        };
-        if !Matrix3Trait::is_special_orthogonal(rot, ORTHOGONALITY_ULPS) {
-            return Option::None;
-        }
-        Option::Some(
-            Isometry3 {
-                rotation: UnitQuaternionTrait::from_rotation_matrix(Rotation3 { matrix: rot }),
-                translation: Translation3 { vector: Vector3 { x: w.x, y: w.y, z: w.z } },
-            },
-        )
+        isometry3_of_rigid(x, y, z, w)
     }
 }

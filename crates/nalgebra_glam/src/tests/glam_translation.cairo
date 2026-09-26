@@ -1,7 +1,7 @@
 use fixed::Fixed;
 use glam::{Vec2, Vec3, Vec4};
 use nalgebra::{Translation2, Translation3, Translation4, Vector2, Vector3, Vector4};
-use nalgebra_testing::black_box;
+use crate::black_box;
 use crate::glam_translation::*;
 use super::int;
 
