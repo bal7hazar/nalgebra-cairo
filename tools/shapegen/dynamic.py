@@ -55,7 +55,9 @@ def data_literal(s: Shape) -> str:
 
 
 def path(s: Shape) -> str:
-    return f"{PATH}::{s.module}::{s.name}"
+    """The shape's name: imported by the hand-written `use` lines of the target module (a module
+    path would hide the type family from `scripts/api_parity.py`)."""
+    return s.name
 
 
 def conversions(s: Shape) -> dict[str, list[str]]:

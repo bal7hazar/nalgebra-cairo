@@ -16,19 +16,44 @@ use super::dvector::DVector;
 use super::kernels::{DynKernels, at_linear, get_linear};
 use super::row_dvector::RowDVector;
 use super::super::errors;
-use super::super::matrix1::Matrix1Trait;
-use super::super::matrix2::Matrix2Trait;
-use super::super::matrix3::Matrix3Trait;
-use super::super::matrix4::Matrix4Trait;
-use super::super::matrix5::Matrix5Trait;
-use super::super::matrix6::Matrix6Trait;
+use super::super::matrix1::{Matrix1, Matrix1Trait};
+use super::super::matrix2::{Matrix2, Matrix2Trait};
+use super::super::matrix2x3::Matrix2x3;
+use super::super::matrix2x4::Matrix2x4;
+use super::super::matrix2x5::Matrix2x5;
+use super::super::matrix2x6::Matrix2x6;
+use super::super::matrix3::{Matrix3, Matrix3Trait};
+use super::super::matrix3x2::Matrix3x2;
+use super::super::matrix3x4::Matrix3x4;
+use super::super::matrix3x5::Matrix3x5;
+use super::super::matrix3x6::Matrix3x6;
+use super::super::matrix4::{Matrix4, Matrix4Trait};
+use super::super::matrix4x2::Matrix4x2;
+use super::super::matrix4x3::Matrix4x3;
+use super::super::matrix4x5::Matrix4x5;
+use super::super::matrix4x6::Matrix4x6;
+use super::super::matrix5::{Matrix5, Matrix5Trait};
+use super::super::matrix5x2::Matrix5x2;
+use super::super::matrix5x3::Matrix5x3;
+use super::super::matrix5x4::Matrix5x4;
+use super::super::matrix5x6::Matrix5x6;
+use super::super::matrix6::{Matrix6, Matrix6Trait};
+use super::super::matrix6x2::Matrix6x2;
+use super::super::matrix6x3::Matrix6x3;
+use super::super::matrix6x4::Matrix6x4;
+use super::super::matrix6x5::Matrix6x5;
 use super::super::matrix_index::MatrixIndex;
 use super::super::matrix_mul::MatrixMul;
-use super::super::vector2::Vector2Trait;
-use super::super::vector3::Vector3Trait;
-use super::super::vector4::Vector4Trait;
-use super::super::vector5::Vector5Trait;
-use super::super::vector6::Vector6Trait;
+use super::super::row_vector2::RowVector2;
+use super::super::row_vector3::RowVector3;
+use super::super::row_vector4::RowVector4;
+use super::super::row_vector5::RowVector5;
+use super::super::row_vector6::RowVector6;
+use super::super::vector2::{Vector2, Vector2Trait};
+use super::super::vector3::{Vector3, Vector3Trait};
+use super::super::vector4::{Vector4, Vector4Trait};
+use super::super::vector5::{Vector5, Vector5Trait};
+use super::super::vector6::{Vector6, Vector6Trait};
 
 /// A dynamically sized matrix (upstream `DMatrix<T>`): `nrows x ncols` components stored in
 /// column-major order. Built by the constructors of `DMatrixTrait` (`zeros(nrows, ncols)`,
@@ -820,66 +845,54 @@ pub impl DMatrixMulDVector<
 // shapegen: begin
 /// The `1x1` `DMatrix` of the components of a `Matrix1` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix1IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix1::Matrix1<T>, DMatrix<T>> {
+pub impl Matrix1IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix1<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix1::Matrix1<T>) -> DMatrix<T> {
+    fn into(self: Matrix1<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x].span(), nrows: 1, ncols: 1 }
     }
 }
 
 /// The `1x2` `DMatrix` of the components of a `RowVector2` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl RowVector2IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::row_vector2::RowVector2<T>, DMatrix<T>> {
+pub impl RowVector2IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<RowVector2<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::row_vector2::RowVector2<T>) -> DMatrix<T> {
+    fn into(self: RowVector2<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y].span(), nrows: 1, ncols: 2 }
     }
 }
 
 /// The `1x3` `DMatrix` of the components of a `RowVector3` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl RowVector3IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::row_vector3::RowVector3<T>, DMatrix<T>> {
+pub impl RowVector3IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<RowVector3<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::row_vector3::RowVector3<T>) -> DMatrix<T> {
+    fn into(self: RowVector3<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y, self.z].span(), nrows: 1, ncols: 3 }
     }
 }
 
 /// The `1x4` `DMatrix` of the components of a `RowVector4` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl RowVector4IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::row_vector4::RowVector4<T>, DMatrix<T>> {
+pub impl RowVector4IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<RowVector4<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::row_vector4::RowVector4<T>) -> DMatrix<T> {
+    fn into(self: RowVector4<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y, self.z, self.w].span(), nrows: 1, ncols: 4 }
     }
 }
 
 /// The `1x5` `DMatrix` of the components of a `RowVector5` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl RowVector5IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::row_vector5::RowVector5<T>, DMatrix<T>> {
+pub impl RowVector5IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<RowVector5<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::row_vector5::RowVector5<T>) -> DMatrix<T> {
+    fn into(self: RowVector5<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y, self.z, self.w, self.a].span(), nrows: 1, ncols: 5 }
     }
 }
 
 /// The `1x6` `DMatrix` of the components of a `RowVector6` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl RowVector6IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::row_vector6::RowVector6<T>, DMatrix<T>> {
+pub impl RowVector6IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<RowVector6<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::row_vector6::RowVector6<T>) -> DMatrix<T> {
+    fn into(self: RowVector6<T>) -> DMatrix<T> {
         DMatrix {
             data: array![self.x, self.y, self.z, self.w, self.a, self.b].span(), nrows: 1, ncols: 6,
         }
@@ -888,33 +901,27 @@ pub impl RowVector6IntoDMatrix<
 
 /// The `2x1` `DMatrix` of the components of a `Vector2` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Vector2IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::vector2::Vector2<T>, DMatrix<T>> {
+pub impl Vector2IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Vector2<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::vector2::Vector2<T>) -> DMatrix<T> {
+    fn into(self: Vector2<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y].span(), nrows: 2, ncols: 1 }
     }
 }
 
 /// The `2x2` `DMatrix` of the components of a `Matrix2` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix2IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix2::Matrix2<T>, DMatrix<T>> {
+pub impl Matrix2IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix2<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix2::Matrix2<T>) -> DMatrix<T> {
+    fn into(self: Matrix2<T>) -> DMatrix<T> {
         DMatrix { data: array![self.m11, self.m21, self.m12, self.m22].span(), nrows: 2, ncols: 2 }
     }
 }
 
 /// The `2x3` `DMatrix` of the components of a `Matrix2x3` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix2x3IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix2x3::Matrix2x3<T>, DMatrix<T>> {
+pub impl Matrix2x3IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix2x3<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix2x3::Matrix2x3<T>) -> DMatrix<T> {
+    fn into(self: Matrix2x3<T>) -> DMatrix<T> {
         DMatrix {
             data: array![self.m11, self.m21, self.m12, self.m22, self.m13, self.m23].span(),
             nrows: 2,
@@ -925,11 +932,9 @@ pub impl Matrix2x3IntoDMatrix<
 
 /// The `2x4` `DMatrix` of the components of a `Matrix2x4` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix2x4IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix2x4::Matrix2x4<T>, DMatrix<T>> {
+pub impl Matrix2x4IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix2x4<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix2x4::Matrix2x4<T>) -> DMatrix<T> {
+    fn into(self: Matrix2x4<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m12, self.m22, self.m13, self.m23, self.m14, self.m24,
@@ -943,11 +948,9 @@ pub impl Matrix2x4IntoDMatrix<
 
 /// The `2x5` `DMatrix` of the components of a `Matrix2x5` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix2x5IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix2x5::Matrix2x5<T>, DMatrix<T>> {
+pub impl Matrix2x5IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix2x5<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix2x5::Matrix2x5<T>) -> DMatrix<T> {
+    fn into(self: Matrix2x5<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m12, self.m22, self.m13, self.m23, self.m14, self.m24,
@@ -962,11 +965,9 @@ pub impl Matrix2x5IntoDMatrix<
 
 /// The `2x6` `DMatrix` of the components of a `Matrix2x6` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix2x6IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix2x6::Matrix2x6<T>, DMatrix<T>> {
+pub impl Matrix2x6IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix2x6<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix2x6::Matrix2x6<T>) -> DMatrix<T> {
+    fn into(self: Matrix2x6<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m12, self.m22, self.m13, self.m23, self.m14, self.m24,
@@ -981,22 +982,18 @@ pub impl Matrix2x6IntoDMatrix<
 
 /// The `3x1` `DMatrix` of the components of a `Vector3` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Vector3IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::vector3::Vector3<T>, DMatrix<T>> {
+pub impl Vector3IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Vector3<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::vector3::Vector3<T>) -> DMatrix<T> {
+    fn into(self: Vector3<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y, self.z].span(), nrows: 3, ncols: 1 }
     }
 }
 
 /// The `3x2` `DMatrix` of the components of a `Matrix3x2` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix3x2IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix3x2::Matrix3x2<T>, DMatrix<T>> {
+pub impl Matrix3x2IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix3x2<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix3x2::Matrix3x2<T>) -> DMatrix<T> {
+    fn into(self: Matrix3x2<T>) -> DMatrix<T> {
         DMatrix {
             data: array![self.m11, self.m21, self.m31, self.m12, self.m22, self.m32].span(),
             nrows: 3,
@@ -1007,11 +1004,9 @@ pub impl Matrix3x2IntoDMatrix<
 
 /// The `3x3` `DMatrix` of the components of a `Matrix3` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix3IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix3::Matrix3<T>, DMatrix<T>> {
+pub impl Matrix3IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix3<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix3::Matrix3<T>) -> DMatrix<T> {
+    fn into(self: Matrix3<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m12, self.m22, self.m32, self.m13, self.m23,
@@ -1026,11 +1021,9 @@ pub impl Matrix3IntoDMatrix<
 
 /// The `3x4` `DMatrix` of the components of a `Matrix3x4` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix3x4IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix3x4::Matrix3x4<T>, DMatrix<T>> {
+pub impl Matrix3x4IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix3x4<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix3x4::Matrix3x4<T>) -> DMatrix<T> {
+    fn into(self: Matrix3x4<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m12, self.m22, self.m32, self.m13, self.m23,
@@ -1045,11 +1038,9 @@ pub impl Matrix3x4IntoDMatrix<
 
 /// The `3x5` `DMatrix` of the components of a `Matrix3x5` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix3x5IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix3x5::Matrix3x5<T>, DMatrix<T>> {
+pub impl Matrix3x5IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix3x5<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix3x5::Matrix3x5<T>) -> DMatrix<T> {
+    fn into(self: Matrix3x5<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m12, self.m22, self.m32, self.m13, self.m23,
@@ -1064,11 +1055,9 @@ pub impl Matrix3x5IntoDMatrix<
 
 /// The `3x6` `DMatrix` of the components of a `Matrix3x6` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix3x6IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix3x6::Matrix3x6<T>, DMatrix<T>> {
+pub impl Matrix3x6IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix3x6<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix3x6::Matrix3x6<T>) -> DMatrix<T> {
+    fn into(self: Matrix3x6<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m12, self.m22, self.m32, self.m13, self.m23,
@@ -1084,22 +1073,18 @@ pub impl Matrix3x6IntoDMatrix<
 
 /// The `4x1` `DMatrix` of the components of a `Vector4` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Vector4IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::vector4::Vector4<T>, DMatrix<T>> {
+pub impl Vector4IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Vector4<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::vector4::Vector4<T>) -> DMatrix<T> {
+    fn into(self: Vector4<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y, self.z, self.w].span(), nrows: 4, ncols: 1 }
     }
 }
 
 /// The `4x2` `DMatrix` of the components of a `Matrix4x2` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix4x2IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix4x2::Matrix4x2<T>, DMatrix<T>> {
+pub impl Matrix4x2IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix4x2<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix4x2::Matrix4x2<T>) -> DMatrix<T> {
+    fn into(self: Matrix4x2<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m12, self.m22, self.m32, self.m42,
@@ -1113,11 +1098,9 @@ pub impl Matrix4x2IntoDMatrix<
 
 /// The `4x3` `DMatrix` of the components of a `Matrix4x3` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix4x3IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix4x3::Matrix4x3<T>, DMatrix<T>> {
+pub impl Matrix4x3IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix4x3<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix4x3::Matrix4x3<T>) -> DMatrix<T> {
+    fn into(self: Matrix4x3<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m12, self.m22, self.m32, self.m42,
@@ -1132,11 +1115,9 @@ pub impl Matrix4x3IntoDMatrix<
 
 /// The `4x4` `DMatrix` of the components of a `Matrix4` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix4IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix4::Matrix4<T>, DMatrix<T>> {
+pub impl Matrix4IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix4<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix4::Matrix4<T>) -> DMatrix<T> {
+    fn into(self: Matrix4<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m12, self.m22, self.m32, self.m42,
@@ -1151,11 +1132,9 @@ pub impl Matrix4IntoDMatrix<
 
 /// The `4x5` `DMatrix` of the components of a `Matrix4x5` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix4x5IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix4x5::Matrix4x5<T>, DMatrix<T>> {
+pub impl Matrix4x5IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix4x5<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix4x5::Matrix4x5<T>) -> DMatrix<T> {
+    fn into(self: Matrix4x5<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m12, self.m22, self.m32, self.m42,
@@ -1171,11 +1150,9 @@ pub impl Matrix4x5IntoDMatrix<
 
 /// The `4x6` `DMatrix` of the components of a `Matrix4x6` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix4x6IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix4x6::Matrix4x6<T>, DMatrix<T>> {
+pub impl Matrix4x6IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix4x6<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix4x6::Matrix4x6<T>) -> DMatrix<T> {
+    fn into(self: Matrix4x6<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m12, self.m22, self.m32, self.m42,
@@ -1191,22 +1168,18 @@ pub impl Matrix4x6IntoDMatrix<
 
 /// The `5x1` `DMatrix` of the components of a `Vector5` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Vector5IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::vector5::Vector5<T>, DMatrix<T>> {
+pub impl Vector5IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Vector5<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::vector5::Vector5<T>) -> DMatrix<T> {
+    fn into(self: Vector5<T>) -> DMatrix<T> {
         DMatrix { data: array![self.x, self.y, self.z, self.w, self.a].span(), nrows: 5, ncols: 1 }
     }
 }
 
 /// The `5x2` `DMatrix` of the components of a `Matrix5x2` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix5x2IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix5x2::Matrix5x2<T>, DMatrix<T>> {
+pub impl Matrix5x2IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix5x2<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix5x2::Matrix5x2<T>) -> DMatrix<T> {
+    fn into(self: Matrix5x2<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
@@ -1221,11 +1194,9 @@ pub impl Matrix5x2IntoDMatrix<
 
 /// The `5x3` `DMatrix` of the components of a `Matrix5x3` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix5x3IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix5x3::Matrix5x3<T>, DMatrix<T>> {
+pub impl Matrix5x3IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix5x3<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix5x3::Matrix5x3<T>) -> DMatrix<T> {
+    fn into(self: Matrix5x3<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
@@ -1240,11 +1211,9 @@ pub impl Matrix5x3IntoDMatrix<
 
 /// The `5x4` `DMatrix` of the components of a `Matrix5x4` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix5x4IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix5x4::Matrix5x4<T>, DMatrix<T>> {
+pub impl Matrix5x4IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix5x4<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix5x4::Matrix5x4<T>) -> DMatrix<T> {
+    fn into(self: Matrix5x4<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
@@ -1260,11 +1229,9 @@ pub impl Matrix5x4IntoDMatrix<
 
 /// The `5x5` `DMatrix` of the components of a `Matrix5` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix5IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix5::Matrix5<T>, DMatrix<T>> {
+pub impl Matrix5IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix5<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix5::Matrix5<T>) -> DMatrix<T> {
+    fn into(self: Matrix5<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
@@ -1281,11 +1248,9 @@ pub impl Matrix5IntoDMatrix<
 
 /// The `5x6` `DMatrix` of the components of a `Matrix5x6` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix5x6IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix5x6::Matrix5x6<T>, DMatrix<T>> {
+pub impl Matrix5x6IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix5x6<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix5x6::Matrix5x6<T>) -> DMatrix<T> {
+    fn into(self: Matrix5x6<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
@@ -1302,11 +1267,9 @@ pub impl Matrix5x6IntoDMatrix<
 
 /// The `6x1` `DMatrix` of the components of a `Vector6` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Vector6IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::vector6::Vector6<T>, DMatrix<T>> {
+pub impl Vector6IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Vector6<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::vector6::Vector6<T>) -> DMatrix<T> {
+    fn into(self: Vector6<T>) -> DMatrix<T> {
         DMatrix {
             data: array![self.x, self.y, self.z, self.w, self.a, self.b].span(), nrows: 6, ncols: 1,
         }
@@ -1315,11 +1278,9 @@ pub impl Vector6IntoDMatrix<
 
 /// The `6x2` `DMatrix` of the components of a `Matrix6x2` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix6x2IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix6x2::Matrix6x2<T>, DMatrix<T>> {
+pub impl Matrix6x2IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix6x2<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix6x2::Matrix6x2<T>) -> DMatrix<T> {
+    fn into(self: Matrix6x2<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m61, self.m12, self.m22,
@@ -1334,11 +1295,9 @@ pub impl Matrix6x2IntoDMatrix<
 
 /// The `6x3` `DMatrix` of the components of a `Matrix6x3` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix6x3IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix6x3::Matrix6x3<T>, DMatrix<T>> {
+pub impl Matrix6x3IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix6x3<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix6x3::Matrix6x3<T>) -> DMatrix<T> {
+    fn into(self: Matrix6x3<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m61, self.m12, self.m22,
@@ -1354,11 +1313,9 @@ pub impl Matrix6x3IntoDMatrix<
 
 /// The `6x4` `DMatrix` of the components of a `Matrix6x4` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix6x4IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix6x4::Matrix6x4<T>, DMatrix<T>> {
+pub impl Matrix6x4IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix6x4<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix6x4::Matrix6x4<T>) -> DMatrix<T> {
+    fn into(self: Matrix6x4<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m61, self.m12, self.m22,
@@ -1374,11 +1331,9 @@ pub impl Matrix6x4IntoDMatrix<
 
 /// The `6x5` `DMatrix` of the components of a `Matrix6x5` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix6x5IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix6x5::Matrix6x5<T>, DMatrix<T>> {
+pub impl Matrix6x5IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix6x5<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix6x5::Matrix6x5<T>) -> DMatrix<T> {
+    fn into(self: Matrix6x5<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m61, self.m12, self.m22,
@@ -1395,11 +1350,9 @@ pub impl Matrix6x5IntoDMatrix<
 
 /// The `6x6` `DMatrix` of the components of a `Matrix6` (column-major copy). Upstream:
 /// `From<Matrix> for DMatrix`.
-pub impl Matrix6IntoDMatrix<
-    T, +Copy<T>, +Drop<T>,
-> of Into<super::super::matrix6::Matrix6<T>, DMatrix<T>> {
+pub impl Matrix6IntoDMatrix<T, +Copy<T>, +Drop<T>> of Into<Matrix6<T>, DMatrix<T>> {
     #[inline]
-    fn into(self: super::super::matrix6::Matrix6<T>) -> DMatrix<T> {
+    fn into(self: Matrix6<T>) -> DMatrix<T> {
         DMatrix {
             data: array![
                 self.m11, self.m21, self.m31, self.m41, self.m51, self.m61, self.m12, self.m22,
