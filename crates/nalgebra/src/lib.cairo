@@ -68,6 +68,12 @@ pub use base::{
     Vector4StatisticsTrait, Vector5StatisticsTrait, Vector6StatisticsTrait,
 };
 // shapegen: end
+#[cfg(feature: 'dynamic')]
+pub use base::{
+    DMatrix, DMatrixTrait, DVector, DVectorTrait, Matrix1xX, Matrix2xX, Matrix3xX, Matrix4xX,
+    Matrix5xX, Matrix6xX, MatrixXx1, MatrixXx2, MatrixXx3, MatrixXx4, MatrixXx5, MatrixXx6,
+    RowDVector, RowDVectorTrait,
+};
 pub use base::{Normed, Point2, Point3, Unit, UnitTrait};
 pub use geometry::{
     AbstractRotation, Affine2, Affine2Trait, Affine3, Affine3Trait, DualQuaternion,

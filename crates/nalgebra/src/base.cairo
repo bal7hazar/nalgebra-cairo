@@ -18,12 +18,20 @@ mod oracle_matrix3_inverse;
 mod oracle_matrix4;
 #[cfg(test)]
 mod oracle_matrix4_inverse;
+#[cfg(feature: 'dynamic')]
+pub mod dynamic;
 pub mod point2;
 pub mod point3;
 pub(crate) mod sym_matrix2;
 pub(crate) mod sym_matrix3;
 pub mod unit;
 
+#[cfg(feature: 'dynamic')]
+pub use dynamic::{
+    DMatrix, DMatrixTrait, DVector, DVectorTrait, Matrix1xX, Matrix2xX, Matrix3xX, Matrix4xX,
+    Matrix5xX, Matrix6xX, MatrixXx1, MatrixXx2, MatrixXx3, MatrixXx4, MatrixXx5, MatrixXx6,
+    RowDVector, RowDVectorTrait,
+};
 pub use point2::Point2;
 pub use point3::Point3;
 pub use unit::{Normed, Unit, UnitTrait};
