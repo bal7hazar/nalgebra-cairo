@@ -1,0 +1,74 @@
+{
+  "nalgebra_tests_linalg_svd_tall5::svd5x1": {
+    "svd5x1_new": {
+      "baseline": 18120,
+      "eigen_of_gram": 61740
+    },
+    "svd5x1_pseudo_inverse": {
+      "baseline": 61170,
+      "scaled_product": 80980
+    },
+    "svd5x1_singular_values": {
+      "baseline": 18120,
+      "eigen_of_gram": 38890
+    },
+    "svd5x1_to_polar": {
+      "baseline": 61170,
+      "products": 110200
+    }
+  },
+  "nalgebra_tests_linalg_svd_tall5::svd5x2": {
+    "svd5x2_new": {
+      "baseline": 19120,
+      "eigen_of_gram": 314800
+    },
+    "svd5x2_pseudo_inverse": {
+      "baseline": 315030,
+      "scaled_product": 356510
+    },
+    "svd5x2_singular_values": {
+      "baseline": 19120,
+      "eigen_of_gram": 175760
+    },
+    "svd5x2_to_polar": {
+      "baseline": 315030,
+      "products": 388060
+    }
+  },
+  "nalgebra_tests_linalg_svd_tall5::svd5x3": {
+    "svd5x3_new": {
+      "baseline": 20120,
+      "eigen_of_gram": 1096110
+    },
+    "svd5x3_pseudo_inverse": {
+      "baseline": 1097540,
+      "scaled_product": 1166250
+    },
+    "svd5x3_singular_values": {
+      "baseline": 20120,
+      "eigen_of_gram": 832140
+    },
+    "svd5x3_to_polar": {
+      "baseline": 1097540,
+      "products": 1196970
+    }
+  },
+  "nalgebra_tests_linalg_svd_tall5::svd5x4": {
+    "svd5x4_new": {
+      "baseline": 21120,
+      "eigen_of_gram": 2291170
+    },
+    "svd5x4_pseudo_inverse": {
+      "baseline": 2294200,
+      "scaled_product": 2395700
+    },
+    "svd5x4_singular_values": {
+      "baseline": 21120,
+      "eigen_of_gram": 1891110
+    },
+    "svd5x4_to_polar": {
+      "baseline": 2294200,
+      "products": 2422430
+    }
+  }
+}

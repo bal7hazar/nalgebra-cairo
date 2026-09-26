@@ -1185,9 +1185,11 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "Cholesky": ["Cholesky2", "Cholesky3", "Cholesky4", "Cholesky6"],
     "UDU": ["Udu2", "Udu3", "Udu4", "Udu6"],
     "LU": ["Lu2", "Lu3", "Lu4", "Lu6"],
-    "QR": ["Qr2", "Qr3", "Qr4"],
-    "SVD": ["Svd2", "Svd3"],
-    "SymmetricEigen": ["SymmetricEigen2", "SymmetricEigen3"],
+    # WP 8.5-P14b: one QR / SVD type per static shape (`Qr5`, `Qr3x2`, `Svd4x6`...), the
+    # symmetric eigen decomposition on the six squares.
+    "QR": [f"Qr{r}" if r == c else f"Qr{r}x{c}" for r in DIMS for c in DIMS],
+    "SVD": [f"Svd{r}" if r == c else f"Svd{r}x{c}" for r in DIMS for c in DIMS],
+    "SymmetricEigen": [f"SymmetricEigen{n}" for n in DIMS],
     "PermutationSequence": ["Perm2", "Perm3", "Perm4", "Perm6"],
     # WP 8.5-P14a.
     "GivensRotation": ["GivensRotation"],
@@ -1262,8 +1264,7 @@ DIM_ONLY: dict[str, set[str]] = {
     # `Matrix5` come with the LU / QR / SVD completion (P14, WP 8.5); `is_invertible` /
     # `is_special_orthogonal` are `try_inverse` / `determinant` (WP 8.2c).
     **{name: set(M) for name in (
-        "determinant", "try_inverse", "lu", "qr", "svd", "pseudo_inverse", "singular_values",
-        "is_invertible", "is_special_orthogonal")},
+        "determinant", "try_inverse", "lu", "is_invertible", "is_special_orthogonal")},
     # WP 8.5-P14a: the decomposition entry points and the in-place inverse exist where the
     # decomposition / inverse does (`Cholesky2/3/4/6`, `Udu2/3/4/6`, `try_inverse`).
     **{name: set(M) for name in ("cholesky", "udu", "try_inverse_mut")},
@@ -1325,6 +1326,21 @@ DIM_ONLY: dict[str, set[str]] = {
        - {"Translation1", "Translation4", "Translation5", "Translation6"}
        for name in ("Mul<Transform>", "Div<Transform>")},
 }
+# WP 8.5-P14b: the QR of a non-square shape has no `solve` / `solve_mut` / `try_inverse` /
+# `is_invertible` (upstream's `impl QR<T, D, D>`), and its `q_tr_mul` needs the square `Q` of the
+# shapes with at most as many rows as columns (the thin `Q` of a tall shape cannot be applied in
+# place: upstream applies the full Householder product, which modified Gram-Schmidt never forms).
+# The column insertion / removal of a Cholesky factor exists where the neighbouring size does
+# (`Cholesky2 -> 3`, `3 -> 4`; `3 -> 2`, `4 -> 3`).
+_EVERY = {t for ts in OWNER_CANDIDATES.values() for t in ts}
+_QR_RECT = {f"Qr{r}x{c}" for r in DIMS for c in DIMS if r != c}
+_QR_TALL = {f"Qr{r}x{c}" for r in DIMS for c in DIMS if r > c}
+for _name in ("solve", "solve_mut", "is_invertible", "try_inverse"):
+    DIM_ONLY[_name] = (DIM_ONLY.get(_name, _EVERY) | {f"Qr{n}" for n in DIMS}) - _QR_RECT
+DIM_ONLY["q_tr_mul"] = _EVERY - _QR_TALL
+DIM_ONLY["insert_column"] = DIM_ONLY["insert_column"] | {"Cholesky2", "Cholesky3"}
+DIM_ONLY["remove_column"] = DIM_ONLY["remove_column"] | {"Cholesky3", "Cholesky4"}
+
 # WP 8.4-P11a: the transforms have the square-matrix and pose items named above too.
 for _name in ("identity", "try_inverse", "to_homogeneous", "Mul<Rotation>", "Div<Rotation>",
               "Mul<Isometry>", "Mul<Similarity>"):

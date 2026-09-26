@@ -23,6 +23,7 @@
 //! measured over the oracle suite and 2 800 random / degenerate matrices (see `new`). The sweep
 //! count is a constant, so the gas of the decomposition is a constant.
 
+use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
@@ -432,6 +433,20 @@ pub impl SymmetricEigen3Impl<
         )
     }
 
+    /// `new`, or `None` when the four sweeps did not reach upstream's convergence criterion
+    /// `|s_ij| <= eps * (|s_ii| + |s_jj|)` on every off-diagonal entry of the final state (one
+    /// fused product pair each, floored: with `eps = 0` a leftover raw unit returns `None`).
+    /// `max_niter` is accepted for signature parity and ignored: the iteration count is the
+    /// constant budget of the type (upstream's `0 = unlimited` maps onto it too). Bit-identical
+    /// to `new` when `Some`. Upstream: `SymmetricEigen::try_new`.
+    fn try_new(m: Matrix3<T>, eps: T, max_niter: usize) -> Option<SymmetricEigen3<T>> {
+        let _ = max_niter;
+        SymmetricEigen3InternalTrait::try_new_sym(
+            SymMatrix3 { m11: m.m11, m12: m.m21, m13: m.m31, m22: m.m22, m23: m.m32, m33: m.m33 },
+            eps,
+        )
+    }
+
     /// `V * diag(eigenvalues) * Vᵀ`, the symmetric matrix the decomposition came from, up to the
     /// rounding of the decomposition. Only the 6 independent components are computed (a
     /// structured quadratic form), then mirrored. Panics on overflow. Upstream:
@@ -462,7 +477,26 @@ pub(crate) impl SymmetricEigen3InternalImpl<
     /// The kernel of `SymmetricEigen3Trait::new` on the 6 independent components of `s`, the
     /// form the SVD builds its Gram matrix in. Documented (cost, accuracy) on `new`.
     fn new_sym(s: SymMatrix3<T>) -> SymmetricEigen3<T> {
+        // WP 8.5-P14b: the four sweeps push enough cells that a caller chaining a few
+        // decompositions overflows the CASM offset of its live values (Sierra -> CASM "Offset
+        // overflow"); an unknown ap change makes the callers spill them to locals first.
+        revoke_ap_tracking();
         Jacobi3Impl::<T>::start(s).sweep().sweep().sweep().sweep().finish()
+    }
+    /// The kernel of `try_new` (WP 8.5-P14b): the same four sweeps, then upstream's convergence
+    /// test on the final state — every off-diagonal entry within `eps * (|s_ii| + |s_jj|)` (one
+    /// fused product pair, floored) — before `finish`. Bit-identical to `new_sym` when `Some`.
+    fn try_new_sym(s: SymMatrix3<T>, eps: T) -> Option<SymmetricEigen3<T>> {
+        revoke_ap_tracking();
+        let j = Jacobi3Impl::<T>::start(s).sweep().sweep().sweep().sweep();
+        let s = j.s;
+        if s.m12.abs() <= R::sum_prod2(eps, s.m11.abs(), eps, s.m22.abs())
+            && s.m13.abs() <= R::sum_prod2(eps, s.m11.abs(), eps, s.m33.abs())
+            && s.m23.abs() <= R::sum_prod2(eps, s.m22.abs(), eps, s.m33.abs()) {
+            Some(j.finish())
+        } else {
+            None
+        }
     }
     /// The eigenvalues of `s` alone, ascending: the same four sweeps as `new`, with the
     /// accumulation of the rotation dropped. Bit-identical to `new(s).eigenvalues` (the rotation
@@ -471,6 +505,7 @@ pub(crate) impl SymmetricEigen3InternalImpl<
     /// rotation and the two final `norm3` / six divisions disappear.
     /// The kernel of `Matrix3SymmetricEigenTrait::symmetric_eigenvalues`.
     fn eigenvalues(s: SymMatrix3<T>) -> Vector3<T> {
+        revoke_ap_tracking();
         let s = Jacobi3Impl::<T>::sweep_s(s);
         let s = Jacobi3Impl::<T>::sweep_s(s);
         let s = Jacobi3Impl::<T>::sweep_s(s);
@@ -508,6 +543,14 @@ pub impl Matrix3SymmetricEigenImpl<
     #[inline(always)]
     fn symmetric_eigen(self: Matrix3<T>) -> SymmetricEigen3<T> {
         SymmetricEigen3Trait::new(self)
+    }
+
+    /// See `SymmetricEigen3Trait::try_new`. Upstream: `Matrix::try_symmetric_eigen`.
+    #[inline(always)]
+    fn try_symmetric_eigen(
+        self: Matrix3<T>, eps: T, max_niter: usize,
+    ) -> Option<SymmetricEigen3<T>> {
+        SymmetricEigen3Trait::try_new(self, eps, max_niter)
     }
 
     /// The eigenvalues of the symmetric `self` alone (lower triangle read), ascending, without the

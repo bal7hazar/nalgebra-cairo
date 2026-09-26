@@ -1,0 +1,68 @@
+{
+  "nalgebra_tests_linalg_qr_tall::qr4x1": {
+    "qr4x1_new": {
+      "baseline": 17920,
+      "mgs": 40380
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr4x2": {
+    "qr4x2_new": {
+      "baseline": 18720,
+      "mgs": 72590
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr4x3": {
+    "qr4x3_new": {
+      "baseline": 19520,
+      "mgs": 116000
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr4x5": {
+    "qr4x5_new": {
+      "baseline": 21120,
+      "mgs": 243410
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr4x6": {
+    "qr4x6_new": {
+      "baseline": 21920,
+      "mgs": 280190
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr5": {
+    "qr5_new": {
+      "baseline": 22120,
+      "mgs": 346530
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr5x1": {
+    "qr5x1_new": {
+      "baseline": 18120,
+      "mgs": 47810
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr5x2": {
+    "qr5x2_new": {
+      "baseline": 19120,
+      "mgs": 89930
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr5x3": {
+    "qr5x3_new": {
+      "baseline": 20120,
+      "mgs": 145630
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr5x4": {
+    "qr5x4_new": {
+      "baseline": 21120,
+      "mgs": 214910
+    }
+  },
+  "nalgebra_tests_linalg_qr_tall::qr5x6": {
+    "qr5x6_new": {
+      "baseline": 23120,
+      "mgs": 405280
+    }
+  }
+}

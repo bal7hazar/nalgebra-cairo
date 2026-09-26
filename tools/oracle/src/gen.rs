@@ -129,6 +129,18 @@ impl Rng {
         DMatrix::from_vec(n, n, data).qr().q()
     }
 
+    /// `Q1 * Sigma * Q2^T` for a `rows x cols` `Sigma` with `sigma` on its diagonal
+    /// (WP 8.5-P14b).
+    fn with_rect_singular_values(&mut self, r: usize, c: usize, sigma: &[f64]) -> DMatrix<f64> {
+        let q1 = self.orthogonal(r);
+        let q2 = self.orthogonal(c);
+        let mut s = DMatrix::zeros(r, c);
+        for (i, v) in sigma.iter().enumerate() {
+            s[(i, i)] = *v;
+        }
+        q1 * s * q2.transpose()
+    }
+
     /// `Q1 * diag(sigma) * Q2^T`.
     fn with_singular_values(&mut self, sigma: &[f64]) -> DMatrix<f64> {
         let n = sigma.len();
@@ -175,6 +187,22 @@ pub enum Gen {
     /// `UnitDualQuaternion::from_parts(t, r)` evaluated in f64 on those raws and its dual part
     /// quantised, so `real · dual* + dual · real*` vanishes within a few ulp, not exactly.
     UnitDual,
+    /// WP 8.5-P14b: `rows x cols` well-conditioned matrix, `Q1 * Sigma * Q2^T` with the
+    /// `min(rows, cols)` singular values log-uniform in [0.25, 2] x scale.
+    WellCondRect(usize, usize),
+    /// WP 8.5-P14b: `rows x cols` near-rank-deficient matrix: one singular value log-uniform in
+    /// [1e-4, 1e-2], the others in [0.5, 2] (FLAGGED ops, loose tolerance by construction).
+    NearSingularRect(usize, usize),
+    /// WP 8.5-P14b: `rows x cols` EXACTLY rank-deficient matrix with small integer entries: the
+    /// product of integer `rows x k` and `k x cols` factors (entries in [-2, 2]), `k` uniform in
+    /// `0 .. min(rows, cols) - 1`. Every fixed-point product of it is exact.
+    RankDeficient(usize, usize),
+    /// WP 8.5-P14b: symmetric positive-SEMI-definite `B^T B` of an integer `k x n` factor
+    /// (entries in [-2, 2], `k < n`): exact zero eigenvalues.
+    SymDeficient(usize),
+    /// WP 8.5-P14b: symmetric positive-definite with CLUSTERED eigenvalues: `scale * base * (1 +
+    /// e_i)`, `e_i` in {0, 1e-6, 1e-3, 0.5}, the hard case of Jacobi and QR alike.
+    Clustered(usize),
 }
 
 fn quantize_all(values: &[f64]) -> Option<Vec<i64>> {
@@ -294,6 +322,59 @@ impl Gen {
                 let mut out = r;
                 out.extend(quantize_all(&[d.w, d.i, d.j, d.k])?);
                 Some(out)
+            }
+            Gen::WellCondRect(r, c) => {
+                let scale = rng.matrix_scale(dist);
+                let sigma: Vec<f64> = (0..*r.min(c))
+                    .map(|_| scale * rng.log_uniform(0.25, 2.0))
+                    .collect();
+                quantize_all(&rows(&rng.with_rect_singular_values(*r, *c, &sigma)))
+            }
+            Gen::NearSingularRect(r, c) => {
+                let k = *r.min(c);
+                let mut sigma: Vec<f64> = (0..k).map(|_| rng.range(0.5, 2.0)).collect();
+                sigma[k - 1] = rng.log_uniform(1.0e-4, 1.0e-2);
+                quantize_all(&rows(&rng.with_rect_singular_values(*r, *c, &sigma)))
+            }
+            Gen::RankDeficient(r, c) => {
+                let k = rng.int(0, (*r.min(c) as i64) - 1) as usize;
+                let a: Vec<i64> = (0..r * k).map(|_| rng.int(-2, 2)).collect();
+                let b: Vec<i64> = (0..k * c).map(|_| rng.int(-2, 2)).collect();
+                let mut m = vec![0i64; r * c];
+                for i in 0..*r {
+                    for j in 0..*c {
+                        m[i * c + j] =
+                            (0..k).map(|l| a[i * k + l] * b[l * c + j]).sum::<i64>() << 32;
+                    }
+                }
+                Some(m)
+            }
+            Gen::SymDeficient(n) => {
+                let k = rng.int(1, (*n as i64) - 1) as usize;
+                let b: Vec<i64> = (0..k * n).map(|_| rng.int(-2, 2)).collect();
+                let mut m = vec![0i64; n * n];
+                for i in 0..*n {
+                    for j in 0..*n {
+                        m[i * n + j] =
+                            (0..k).map(|l| b[l * n + i] * b[l * n + j]).sum::<i64>() << 32;
+                    }
+                }
+                Some(m)
+            }
+            Gen::Clustered(n) => {
+                let scale = rng.matrix_scale(dist);
+                let base = scale * rng.log_uniform(0.5, 2.0);
+                let lambda: Vec<f64> = (0..*n)
+                    .map(|_| {
+                        let e = [0.0, 1.0e-6, 1.0e-3, 0.5][rng.int(0, 3) as usize];
+                        base * (1.0 + e)
+                    })
+                    .collect();
+                let q = rng.orthogonal(*n);
+                let d = DMatrix::from_diagonal(&nalgebra::DVector::from_column_slice(&lambda));
+                let mut raw = quantize_all(&rows(&(&q * d * q.transpose())))?;
+                mirror_lower(*n, &mut raw);
+                Some(raw)
             }
             Gen::Group(parts) => {
                 let mut out = Vec::new();

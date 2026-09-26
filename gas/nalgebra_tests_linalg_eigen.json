@@ -1,0 +1,50 @@
+{
+  "nalgebra_tests_linalg_eigen::eigen4": {
+    "symmetric_eigen4_eigenvalues": {
+      "baseline": 20320,
+      "jacobi5": 1019310
+    },
+    "symmetric_eigen4_new": {
+      "baseline": 20320,
+      "jacobi5": 1631340
+    },
+    "symmetric_eigen4_recompose": {
+      "baseline": 1631170,
+      "fused": 1741690
+    }
+  },
+  "nalgebra_tests_linalg_eigen::eigen5": {
+    "symmetric_eigen5_eigenvalues": {
+      "baseline": 22120,
+      "jacobi6": 2246760
+    },
+    "symmetric_eigen5_new": {
+      "baseline": 22120,
+      "jacobi6": 3673070
+    },
+    "symmetric_eigen5_recompose": {
+      "baseline": 3673100,
+      "fused": 3846160
+    }
+  },
+  "nalgebra_tests_linalg_eigen::eigen6": {
+    "symmetric_eigen6_eigenvalues": {
+      "baseline": 29320,
+      "jacobi6": 3716460
+    },
+    "symmetric_eigen6_new": {
+      "baseline": 29320,
+      "jacobi6": 6197930
+    },
+    "symmetric_eigen6_recompose": {
+      "baseline": 6198160,
+      "fused": 6468840
+    }
+  },
+  "nalgebra_tests_linalg_eigen::extras": {
+    "wilkinson_shift": {
+      "baseline": 15950,
+      "scale_free": 30640
+    }
+  }
+}
