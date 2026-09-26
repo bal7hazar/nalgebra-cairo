@@ -29,11 +29,13 @@ pub trait Balancing<M, V> {
 /// Upstream's data-dependent loop: until a sweep changes nothing, for each index `i` with a
 /// nonzero column and row, the column norm `c` and row norm `r` (floored square roots of the exact
 /// sums of squares) are moved by factors of 2 until `r / 2 <= c < 2 r` (the factor `f` a power of
-/// two), and when `c² + r² < 0.95 (|col|² + |row|²)` (`0.95` = `from_ratio(95, 100)`, the sums
-/// of squares floored once each) the column `i` is multiplied by `f`, the row `i` by `1 / f`
-/// (tracked as a power of two too: upstream divides by `f`) and `d_i` by `f`. Products by powers
-/// of two are exact while no bit falls below one ulp (`f < 1`: floored); `r / 2` is a floored
-/// product by `1 / 2`. Panics on overflow.
+/// two), and when `c² + r² < 0.95 (|col|² + |row|²)` (`0.95` = `from_ratio(95, 100)`) the
+/// column `i` is multiplied by `f`, the row `i` by `1 / f` (tracked as a power of two too: upstream
+/// divides by `f`) and `d_i` by `f`. Deviation: the test runs on `c` and `r` divided by the larger
+/// of the two (correctly rounded; the test is scale-invariant) — upstream squares the norms of
+/// the input, which overflows Q32.32 for entries above ~4.6e4. Products by powers of two are exact
+/// while no bit falls below one ulp (`f < 1`: floored); `r / 2` is a floored product by `1 / 2`.
+/// Panics on overflow (a column or row norm beyond the Q32.32 range).
 pub fn balance_parlett_reinsch<M, V, impl B: Balancing<M, V>>(ref matrix: M) -> V {
     B::balance_parlett_reinsch(ref matrix)
 }
@@ -70,12 +72,16 @@ pub impl Matrix1Balancing<
         while !converged {
             converged = true;
             {
-                let c2 = a00 * a00;
-                let r2 = a00 * a00;
-                let s = c2 + r2;
-                let mut n_col = R::abs(a00);
-                let mut n_row = R::abs(a00);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::abs(a00);
+                let r0 = R::abs(a00);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -137,12 +143,16 @@ pub impl Matrix2Balancing<
         while !converged {
             converged = true;
             {
-                let c2 = R::sum_prod2(a00, a00, a10, a10);
-                let r2 = R::sum_prod2(a00, a00, a01, a01);
-                let s = c2 + r2;
-                let mut n_col = R::norm2(a00, a10);
-                let mut n_row = R::norm2(a00, a01);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm2(a00, a10);
+                let r0 = R::norm2(a00, a01);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -168,12 +178,16 @@ pub impl Matrix2Balancing<
                 }
             }
             {
-                let c2 = R::sum_prod2(a01, a01, a11, a11);
-                let r2 = R::sum_prod2(a10, a10, a11, a11);
-                let s = c2 + r2;
-                let mut n_col = R::norm2(a01, a11);
-                let mut n_row = R::norm2(a10, a11);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm2(a01, a11);
+                let r0 = R::norm2(a10, a11);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -250,12 +264,16 @@ pub impl Matrix3Balancing<
         while !converged {
             converged = true;
             {
-                let c2 = R::sum_prod3(a00, a00, a10, a10, a20, a20);
-                let r2 = R::sum_prod3(a00, a00, a01, a01, a02, a02);
-                let s = c2 + r2;
-                let mut n_col = R::norm3(a00, a10, a20);
-                let mut n_row = R::norm3(a00, a01, a02);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm3(a00, a10, a20);
+                let r0 = R::norm3(a00, a01, a02);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -283,12 +301,16 @@ pub impl Matrix3Balancing<
                 }
             }
             {
-                let c2 = R::sum_prod3(a01, a01, a11, a11, a21, a21);
-                let r2 = R::sum_prod3(a10, a10, a11, a11, a12, a12);
-                let s = c2 + r2;
-                let mut n_col = R::norm3(a01, a11, a21);
-                let mut n_row = R::norm3(a10, a11, a12);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm3(a01, a11, a21);
+                let r0 = R::norm3(a10, a11, a12);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -316,12 +338,16 @@ pub impl Matrix3Balancing<
                 }
             }
             {
-                let c2 = R::sum_prod3(a02, a02, a12, a12, a22, a22);
-                let r2 = R::sum_prod3(a20, a20, a21, a21, a22, a22);
-                let s = c2 + r2;
-                let mut n_col = R::norm3(a02, a12, a22);
-                let mut n_row = R::norm3(a20, a21, a22);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm3(a02, a12, a22);
+                let r0 = R::norm3(a20, a21, a22);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -425,12 +451,16 @@ pub impl Matrix4Balancing<
         while !converged {
             converged = true;
             {
-                let c2 = R::sum_prod4(a00, a00, a10, a10, a20, a20, a30, a30);
-                let r2 = R::sum_prod4(a00, a00, a01, a01, a02, a02, a03, a03);
-                let s = c2 + r2;
-                let mut n_col = R::norm4(a00, a10, a20, a30);
-                let mut n_row = R::norm4(a00, a01, a02, a03);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm4(a00, a10, a20, a30);
+                let r0 = R::norm4(a00, a01, a02, a03);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -460,12 +490,16 @@ pub impl Matrix4Balancing<
                 }
             }
             {
-                let c2 = R::sum_prod4(a01, a01, a11, a11, a21, a21, a31, a31);
-                let r2 = R::sum_prod4(a10, a10, a11, a11, a12, a12, a13, a13);
-                let s = c2 + r2;
-                let mut n_col = R::norm4(a01, a11, a21, a31);
-                let mut n_row = R::norm4(a10, a11, a12, a13);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm4(a01, a11, a21, a31);
+                let r0 = R::norm4(a10, a11, a12, a13);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -495,12 +529,16 @@ pub impl Matrix4Balancing<
                 }
             }
             {
-                let c2 = R::sum_prod4(a02, a02, a12, a12, a22, a22, a32, a32);
-                let r2 = R::sum_prod4(a20, a20, a21, a21, a22, a22, a23, a23);
-                let s = c2 + r2;
-                let mut n_col = R::norm4(a02, a12, a22, a32);
-                let mut n_row = R::norm4(a20, a21, a22, a23);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm4(a02, a12, a22, a32);
+                let r0 = R::norm4(a20, a21, a22, a23);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -530,12 +568,16 @@ pub impl Matrix4Balancing<
                 }
             }
             {
-                let c2 = R::sum_prod4(a03, a03, a13, a13, a23, a23, a33, a33);
-                let r2 = R::sum_prod4(a30, a30, a31, a31, a32, a32, a33, a33);
-                let s = c2 + r2;
-                let mut n_col = R::norm4(a03, a13, a23, a33);
-                let mut n_row = R::norm4(a30, a31, a32, a33);
-                if n_col != R::zero() && n_row != R::zero() {
+                let c0 = R::norm4(a03, a13, a23, a33);
+                let r0 = R::norm4(a30, a31, a32, a33);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -666,7 +708,7 @@ pub impl Matrix5Balancing<
         while !converged {
             converged = true;
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -683,7 +725,7 @@ pub impl Matrix5Balancing<
                         a40,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -700,42 +742,14 @@ pub impl Matrix5Balancing<
                         a04,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a00, a00), a10, a10,
-                                ),
-                                a20,
-                                a20,
-                            ),
-                            a30,
-                            a30,
-                        ),
-                        a40,
-                        a40,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a00, a00), a01, a01,
-                                ),
-                                a02,
-                                a02,
-                            ),
-                            a03,
-                            a03,
-                        ),
-                        a04,
-                        a04,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -767,7 +781,7 @@ pub impl Matrix5Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -784,7 +798,7 @@ pub impl Matrix5Balancing<
                         a41,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -801,42 +815,14 @@ pub impl Matrix5Balancing<
                         a14,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a01, a01), a11, a11,
-                                ),
-                                a21,
-                                a21,
-                            ),
-                            a31,
-                            a31,
-                        ),
-                        a41,
-                        a41,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a10, a10), a11, a11,
-                                ),
-                                a12,
-                                a12,
-                            ),
-                            a13,
-                            a13,
-                        ),
-                        a14,
-                        a14,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -868,7 +854,7 @@ pub impl Matrix5Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -885,7 +871,7 @@ pub impl Matrix5Balancing<
                         a42,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -902,42 +888,14 @@ pub impl Matrix5Balancing<
                         a24,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a02, a02), a12, a12,
-                                ),
-                                a22,
-                                a22,
-                            ),
-                            a32,
-                            a32,
-                        ),
-                        a42,
-                        a42,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a20, a20), a21, a21,
-                                ),
-                                a22,
-                                a22,
-                            ),
-                            a23,
-                            a23,
-                        ),
-                        a24,
-                        a24,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -969,7 +927,7 @@ pub impl Matrix5Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -986,7 +944,7 @@ pub impl Matrix5Balancing<
                         a43,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1003,42 +961,14 @@ pub impl Matrix5Balancing<
                         a34,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a03, a03), a13, a13,
-                                ),
-                                a23,
-                                a23,
-                            ),
-                            a33,
-                            a33,
-                        ),
-                        a43,
-                        a43,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a30, a30), a31, a31,
-                                ),
-                                a32,
-                                a32,
-                            ),
-                            a33,
-                            a33,
-                        ),
-                        a34,
-                        a34,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -1070,7 +1000,7 @@ pub impl Matrix5Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1087,7 +1017,7 @@ pub impl Matrix5Balancing<
                         a44,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1104,42 +1034,14 @@ pub impl Matrix5Balancing<
                         a44,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a04, a04), a14, a14,
-                                ),
-                                a24,
-                                a24,
-                            ),
-                            a34,
-                            a34,
-                        ),
-                        a44,
-                        a44,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(R::wide_zero(), a40, a40), a41, a41,
-                                ),
-                                a42,
-                                a42,
-                            ),
-                            a43,
-                            a43,
-                        ),
-                        a44,
-                        a44,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -1303,7 +1205,7 @@ pub impl Matrix6Balancing<
         while !converged {
             converged = true;
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1324,7 +1226,7 @@ pub impl Matrix6Balancing<
                         a50,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1345,50 +1247,14 @@ pub impl Matrix6Balancing<
                         a05,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a00, a00), a10, a10,
-                                    ),
-                                    a20,
-                                    a20,
-                                ),
-                                a30,
-                                a30,
-                            ),
-                            a40,
-                            a40,
-                        ),
-                        a50,
-                        a50,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a00, a00), a01, a01,
-                                    ),
-                                    a02,
-                                    a02,
-                                ),
-                                a03,
-                                a03,
-                            ),
-                            a04,
-                            a04,
-                        ),
-                        a05,
-                        a05,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -1422,7 +1288,7 @@ pub impl Matrix6Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1443,7 +1309,7 @@ pub impl Matrix6Balancing<
                         a51,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1464,50 +1330,14 @@ pub impl Matrix6Balancing<
                         a15,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a01, a01), a11, a11,
-                                    ),
-                                    a21,
-                                    a21,
-                                ),
-                                a31,
-                                a31,
-                            ),
-                            a41,
-                            a41,
-                        ),
-                        a51,
-                        a51,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a10, a10), a11, a11,
-                                    ),
-                                    a12,
-                                    a12,
-                                ),
-                                a13,
-                                a13,
-                            ),
-                            a14,
-                            a14,
-                        ),
-                        a15,
-                        a15,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -1541,7 +1371,7 @@ pub impl Matrix6Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1562,7 +1392,7 @@ pub impl Matrix6Balancing<
                         a52,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1583,50 +1413,14 @@ pub impl Matrix6Balancing<
                         a25,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a02, a02), a12, a12,
-                                    ),
-                                    a22,
-                                    a22,
-                                ),
-                                a32,
-                                a32,
-                            ),
-                            a42,
-                            a42,
-                        ),
-                        a52,
-                        a52,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a20, a20), a21, a21,
-                                    ),
-                                    a22,
-                                    a22,
-                                ),
-                                a23,
-                                a23,
-                            ),
-                            a24,
-                            a24,
-                        ),
-                        a25,
-                        a25,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -1660,7 +1454,7 @@ pub impl Matrix6Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1681,7 +1475,7 @@ pub impl Matrix6Balancing<
                         a53,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1702,50 +1496,14 @@ pub impl Matrix6Balancing<
                         a35,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a03, a03), a13, a13,
-                                    ),
-                                    a23,
-                                    a23,
-                                ),
-                                a33,
-                                a33,
-                            ),
-                            a43,
-                            a43,
-                        ),
-                        a53,
-                        a53,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a30, a30), a31, a31,
-                                    ),
-                                    a32,
-                                    a32,
-                                ),
-                                a33,
-                                a33,
-                            ),
-                            a34,
-                            a34,
-                        ),
-                        a35,
-                        a35,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -1779,7 +1537,7 @@ pub impl Matrix6Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1800,7 +1558,7 @@ pub impl Matrix6Balancing<
                         a54,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1821,50 +1579,14 @@ pub impl Matrix6Balancing<
                         a45,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a04, a04), a14, a14,
-                                    ),
-                                    a24,
-                                    a24,
-                                ),
-                                a34,
-                                a34,
-                            ),
-                            a44,
-                            a44,
-                        ),
-                        a54,
-                        a54,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a40, a40), a41, a41,
-                                    ),
-                                    a42,
-                                    a42,
-                                ),
-                                a43,
-                                a43,
-                            ),
-                            a44,
-                            a44,
-                        ),
-                        a45,
-                        a45,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {
@@ -1898,7 +1620,7 @@ pub impl Matrix6Balancing<
                 }
             }
             {
-                let c2 = R::wide_rescale(
+                let c0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1919,7 +1641,7 @@ pub impl Matrix6Balancing<
                         a55,
                     ),
                 );
-                let r2 = R::wide_rescale(
+                let r0 = R::wide_sqrt(
                     R::wide_add_prod(
                         R::wide_add_prod(
                             R::wide_add_prod(
@@ -1940,50 +1662,14 @@ pub impl Matrix6Balancing<
                         a55,
                     ),
                 );
-                let s = c2 + r2;
-                let mut n_col = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a05, a05), a15, a15,
-                                    ),
-                                    a25,
-                                    a25,
-                                ),
-                                a35,
-                                a35,
-                            ),
-                            a45,
-                            a45,
-                        ),
-                        a55,
-                        a55,
-                    ),
-                );
-                let mut n_row = R::wide_sqrt(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(
-                                    R::wide_add_prod(
-                                        R::wide_add_prod(R::wide_zero(), a50, a50), a51, a51,
-                                    ),
-                                    a52,
-                                    a52,
-                                ),
-                                a53,
-                                a53,
-                            ),
-                            a54,
-                            a54,
-                        ),
-                        a55,
-                        a55,
-                    ),
-                );
-                if n_col != R::zero() && n_row != R::zero() {
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
                     let mut f = R::one();
                     let mut finv = R::one();
                     while n_col < n_row * half {

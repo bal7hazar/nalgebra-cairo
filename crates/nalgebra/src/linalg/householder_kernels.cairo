@@ -20,6 +20,7 @@
 //! one-component axis is `sign(x0)`, exactly. Panics on overflow (`|x0| + |x|` must fit).
 
 use simba::scalar::Real;
+use crate::linalg::givens::GivensRotationTrait;
 
 /// The Householder axis kernels (methods of a generic impl, not free functions: AGENTS.md).
 #[generate_trait]
@@ -238,5 +239,44 @@ pub(crate) impl HouseholderKernelImpl<
         );
         let (u0, u1, u2, u3, u4, u5) = R::div6(v0, v1, v2, v3, v4, v5, d2);
         (-signed, true, u0, u1, u2, u3, u4, u5)
+    }
+
+    /// Upstream's `GivensRotation::new(x, y)` components `(c, s)` (`c = |x| / r`, `s = y / (sign(x)
+    /// r)`, `r = |(x, y)|`; the identity for `(0, 0)`), NORMALISED AGAIN like the Householder axes:
+    /// a floored `r` of a small `(x, y)` (a 2x2 block of close eigenvalues: `x`, `y` ~ 1e-4) is
+    /// off by a relative `1 / r` and the rotation by thousands of ulp from orthogonal.
+    fn givens(x: T, y: T) -> (T, T) {
+        let (rot, _) = GivensRotationTrait::new(x, y);
+        let (c, s) = (rot.c(), rot.s());
+        let d = R::norm2(c, s);
+        (R::div(c, d), R::div(s, d))
+    }
+
+    /// `4 discr = 4 h10 h01 + (h00 - h11)²` of the 2x2 block `[[h00, h01], [h10, h11]]`
+    /// (upstream's `compute_2x2_eigvals` discriminant times 4), exact then floored once: its sign
+    /// is exact.
+    fn disc4(h00: T, h01: T, h10: T, h11: T) -> T {
+        let d = h00 - h11;
+        let w = R::wide_add_prod(R::wide_zero(), d, d);
+        let w = R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01);
+        R::wide_rescale(R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01))
+    }
+
+    /// `√(4 discr)` for a non-negative `4 discr` (see `disc4`): the floored square root of the
+    /// EXACT sum (a floored `4 discr` then `Real::sqrt` would lose `ulp / (2 √(4 discr))`:
+    /// hundreds of ulp for close eigenvalues).
+    fn sqrt_disc4(h00: T, h01: T, h10: T, h11: T) -> T {
+        let d = h00 - h11;
+        let w = R::wide_add_prod(R::wide_zero(), d, d);
+        let w = R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01);
+        R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01))
+    }
+
+    /// `√(-4 discr)` for a negative `4 discr`: the floored square root of the exact sum.
+    fn sqrt_neg_disc4(h00: T, h01: T, h10: T, h11: T) -> T {
+        let d = h00 - h11;
+        let w = R::wide_sub_prod(R::wide_zero(), d, d);
+        let w = R::wide_sub_prod(R::wide_sub_prod(w, h10, h01), h10, h01);
+        R::wide_sqrt(R::wide_sub_prod(R::wide_sub_prod(w, h10, h01), h10, h01))
     }
 }

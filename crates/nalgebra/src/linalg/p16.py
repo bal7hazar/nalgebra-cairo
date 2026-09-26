@@ -20,6 +20,10 @@ DIMS = range(1, 7)
 # Absolute deflation threshold of the Schur iteration, in raw units of the matrix normalised by
 # its largest entry (see `schur_doc`): the rounding noise floor of a Francis step in Q32.32.
 SCHUR_NOISE_LOG2 = 6
+# The absolute threshold doubles after this many consecutive passes on the same active window
+# (reset when it changes), up to 2^-STUCK_CAP_LOG2: see `schur_doc`.
+STUCK_PASSES = 8
+STUCK_CAP_LOG2 = 16
 
 
 def shp(r: int, c: int) -> str:
@@ -121,8 +125,49 @@ def axis_fn(n: int) -> str:
 """
 
 
+DISC_FNS = """
+    /// Upstream's `GivensRotation::new(x, y)` components `(c, s)` (`c = |x| / r`, `s = y / (sign(x)
+    /// r)`, `r = |(x, y)|`; the identity for `(0, 0)`), NORMALISED AGAIN like the Householder axes:
+    /// a floored `r` of a small `(x, y)` (a 2x2 block of close eigenvalues: `x`, `y` ~ 1e-4) is
+    /// off by a relative `1 / r` and the rotation by thousands of ulp from orthogonal.
+    fn givens(x: T, y: T) -> (T, T) {
+        let (rot, _) = GivensRotationTrait::new(x, y);
+        let (c, s) = (rot.c(), rot.s());
+        let d = R::norm2(c, s);
+        (R::div(c, d), R::div(s, d))
+    }
+
+    /// `4 discr = 4 h10 h01 + (h00 - h11)²` of the 2x2 block `[[h00, h01], [h10, h11]]` (upstream's
+    /// `compute_2x2_eigvals` discriminant times 4), exact then floored once: its sign is exact.
+    fn disc4(h00: T, h01: T, h10: T, h11: T) -> T {
+        let d = h00 - h11;
+        let w = R::wide_add_prod(R::wide_zero(), d, d);
+        let w = R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01);
+        R::wide_rescale(R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01))
+    }
+
+    /// `√(4 discr)` for a non-negative `4 discr` (see `disc4`): the floored square root of the
+    /// EXACT sum (a floored `4 discr` then `Real::sqrt` would lose `ulp / (2 √(4 discr))`: hundreds
+    /// of ulp for close eigenvalues).
+    fn sqrt_disc4(h00: T, h01: T, h10: T, h11: T) -> T {
+        let d = h00 - h11;
+        let w = R::wide_add_prod(R::wide_zero(), d, d);
+        let w = R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01);
+        R::wide_sqrt(R::wide_add_prod(R::wide_add_prod(w, h10, h01), h10, h01))
+    }
+
+    /// `√(-4 discr)` for a negative `4 discr`: the floored square root of the exact sum.
+    fn sqrt_neg_disc4(h00: T, h01: T, h10: T, h11: T) -> T {
+        let d = h00 - h11;
+        let w = R::wide_sub_prod(R::wide_zero(), d, d);
+        let w = R::wide_sub_prod(R::wide_sub_prod(w, h10, h01), h10, h01);
+        R::wide_sqrt(R::wide_sub_prod(R::wide_sub_prod(w, h10, h01), h10, h01))
+    }
+"""
+
+
 def render_kernels() -> str:
-    fns = "\n".join(axis_fn(n) for n in DIMS)
+    fns = "\n".join(axis_fn(n) for n in DIMS) + DISC_FNS
     return f"""{HEADER}//! Crate-private kernels of the WP 8.5-P16 Householder reductions (`Hessenberg`,
 //! `SymmetricTridiagonal`, `Bidiagonal`, `Schur` and the building blocks of
 //! `linalg::householder_steps`): the Householder axis of a vector of length 1..6, upstream's
@@ -144,6 +189,7 @@ def render_kernels() -> str:
 //! one-component axis is `sign(x0)`, exactly. Panics on overflow (`|x0| + |x|` must fit).
 
 use simba::scalar::Real;
+use crate::linalg::givens::GivensRotationTrait;
 
 /// The Householder axis kernels (methods of a generic impl, not free functions: AGENTS.md).
 {bounds_impl("HouseholderKernelImpl", "HouseholderKernelTrait", "pub(crate)")}
@@ -891,6 +937,7 @@ def outputs() -> dict[str, str]:
         "schur")
     out[lin + "balancing.cairo"] = render_balancing()
     out[lin + "householder_steps.cairo"] = render_householder_steps()
+    out.update(test_packages())
     return out
 
 
@@ -916,9 +963,12 @@ def load(n: int, var: str, pre) -> list[str]:
 def eig2_code(h00: str, h01: str, h10: str, h11: str) -> list[str]:
     """`d4 = 4 discr` of the 2x2 block, exact then floored once (its sign is exact)."""
     return [f"let dd = {h00} - {h11};",
-            f"let d4 = R::wide_rescale(R::wide_add_prod(R::wide_add_prod(R::wide_add_prod("
-            f"R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), {h10}, {h01}), {h10}, "
-            f"{h01}), {h10}, {h01}), {h10}, {h01}));"]
+            f"let d4 = HouseholderKernelTrait::<T>::disc4({h00}, {h01}, {h10}, {h11});"]
+
+
+def sqrt_d4(h00: str, h01: str, h10: str, h11: str, neg: bool = False) -> str:
+    return (f"HouseholderKernelTrait::<T>::sqrt_{'neg_' if neg else ''}disc4({h00}, {h01}, "
+            f"{h10}, {h11})")
 
 
 def block_fn(n: int, s: int) -> str:
@@ -929,11 +979,10 @@ def block_fn(n: int, s: int) -> str:
            f"let h11 = {tv(e, e)};"]
     body = eig2_code("h00", "h01", "h10", "h11")
     body.append("if d4 >= R::zero() {")
-    body.append("let sq = R::sqrt(d4);")
+    body.append(f"let sq = {sqrt_d4('h00', 'h01', 'h10', 'h11')};")
     body.append("let x1 = (dd + sq) * half; let x2 = (dd - sq) * half;")
     body.append("let x = if R::abs(x1) > R::abs(x2) { x1 } else { x2 };")
-    body.append("let (rot, _) = GivensRotationTrait::new(x, h10);")
-    body.append("let c = rot.c(); let sn = rot.s();")
+    body.append("let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);")
     rot = []
     # inv_rot.rotate(t[s..s+2, s..n]): a' = a c + s b, b' = -s a + c b
     for j in range(s, n):
@@ -946,6 +995,7 @@ def block_fn(n: int, s: int) -> str:
         rot.append(f"let a = {a}; let b = {b}; {a} = R::sum_prod2(a, c, sn, b); "
                    f"{b} = R::diff_prod(c, b, sn, a);")
     rot.append(f"{tv(e, s)} = R::zero();")
+    rot.append(f"{tv(s, s)} = h11 + x; {tv(e, e)} = h00 - x;")
     qrot = []
     for i in range(n):
         a, b = qv(i, s), qv(i, e)
@@ -1114,13 +1164,15 @@ def schur_doc(n: int) -> str:
 def render_schur(n: int) -> str:
     S, M, V = scname(n), tname(n, n), tname(n, 1)
     uses = {"use simba::scalar::Real;", use_shape(n, n), use_shape(n, 1)}
+    if n >= 2:
+        uses.add("use crate::linalg::householder_kernels::HouseholderKernelTrait;")
     kernel = ""
     if n == 1:
         decompose = f"""        let _ = (eps, max_niter);
         Option::Some({S} {{ q: Matrix1 {{ x: R::one() }}, t: m }})"""
         decompose_raw = ""
     elif n == 2:
-        uses.add("use crate::linalg::givens::GivensRotationTrait;")
+        uses.add("use crate::linalg::householder_kernels::HouseholderKernelTrait;")
         body = eig2_code("m.m11", "m.m12", "m.m21", "m.m22")
         decompose = f"""        let _ = (eps, max_niter);
         let (q, t) = {S}KernelTrait::decompose(m);
@@ -1142,7 +1194,7 @@ def render_schur(n: int) -> str:
             return (Matrix2 {{ m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() }}, m);
         }}
         let half = R::from_ratio(1, 2);
-        let sq = R::sqrt(d4);
+        let sq = {sqrt_d4('m.m11', 'm.m12', 'm.m21', 'm.m22')};
         let x1 = (dd + sq) * half;
         let x2 = (dd - sq) * half;
         let x = if R::abs(x1) > R::abs(x2) {{
@@ -1150,28 +1202,21 @@ def render_schur(n: int) -> str:
         }} else {{
             x2
         }};
-        let (rot, _) = GivensRotationTrait::new(x, m.m21);
-        let c = rot.c();
-        let sn = rot.s();
+        let (c, sn) = HouseholderKernelTrait::<T>::givens(x, m.m21);
         // inv_rot.rotate(m), then rot.rotate_rows(m)
+        // (the rotated diagonal is replaced by the closed-form eigenvalues: see `try_new`)
         let a11 = R::sum_prod2(m.m11, c, sn, m.m21);
-        let a21 = R::diff_prod(c, m.m21, sn, m.m11);
         let a12 = R::sum_prod2(m.m12, c, sn, m.m22);
-        let a22 = R::diff_prod(c, m.m22, sn, m.m12);
-        let b11 = R::sum_prod2(a11, c, sn, a12);
         let b12 = R::diff_prod(c, a12, sn, a11);
-        let b22 = R::diff_prod(c, a22, sn, a21);
-        let _ = R::sum_prod2(a21, c, sn, a22);
         (
             Matrix2 {{ m11: c, m21: sn, m12: -sn, m22: c }},
-            Matrix2 {{ m11: b11, m21: R::zero(), m12: b12, m22: b22 }},
+            Matrix2 {{ m11: m.m22 + x, m21: R::zero(), m12: b12, m22: m.m11 - x }},
         )
     }}
 }}
 """
     else:
-        uses |= {"use crate::linalg::givens::GivensRotationTrait;",
-                 f"use crate::linalg::hessenberg::hessenberg{n}::{hname(n)}Trait;",
+        uses |= {f"use crate::linalg::hessenberg::hessenberg{n}::{hname(n)}Trait;",
                  "use crate::linalg::householder_kernels::HouseholderKernelTrait;",
                  "use core::internal::revoke_ap_tracking;"}
         fns = [delimit_fn(n, e) for e in range(1, n)]
@@ -1229,15 +1274,19 @@ def render_schur(n: int) -> str:
         }};
         let noise = R::from_ratio(1, {1 << (32 - SCHUR_NOISE_LOG2)});
         let e2 = eps * eps;
-        let thr = if e2 > noise {{
+        let base = if e2 > noise {{
             e2
         }} else {{
             noise
         }};
+        let cap = R::from_ratio(1, {1 << STUCK_CAP_LOG2});
+        let mut thr = base;
+        let mut stuck: usize = 0;
         let (mut start, mut end) = Self::delimit{n - 1}(ref t, eps, thr);
         let mut niter: usize = 0;
         let mut failed = false;
         while end != start {{
+            let (old_start, old_end) = (start, end);
             if end - start >= 2 {{
                 {fr}
             }} else {{
@@ -1251,6 +1300,18 @@ def render_schur(n: int) -> str:
             let (s, e) = {dl};
             start = s;
             end = e;
+            if start == old_start && end == old_end {{
+                stuck += 1;
+                if stuck == {STUCK_PASSES} {{
+                    stuck = 0;
+                    if thr < cap {{
+                        thr = thr + thr;
+                    }}
+                }}
+            }} else {{
+                stuck = 0;
+                thr = base;
+            }}
             niter += 1;
             if niter == max_niter {{
                 failed = true;
@@ -1290,7 +1351,8 @@ def render_schur(n: int) -> str:
         hmm, hnm, hmn, hnn = (f"self.t.{fld(n, n, mm, mm)}", f"self.t.{fld(n, n, nn, mm)}",
                               f"self.t.{fld(n, n, mm, nn)}", f"self.t.{fld(n, n, nn, nn)}")
         blk = eig2_code(hmm, hmn, hnm, hnn)
-        blk += ["let im = if d4 < R::zero() { R::sqrt(-d4) * half } else { R::zero() };",
+        blk += [f"let im = if d4 < R::zero() {{ {sqrt_d4(hmm, hmn, hnm, hnn, True)} * half }} "
+                "else { R::zero() };",
                 f"let re = ({hmm} + {hnn}) * half;",
                 f"re{mm} = re; im{mm} = im; re{nn} = re; im{nn} = -im;",
                 "second = true;"]
@@ -1305,14 +1367,11 @@ def render_schur(n: int) -> str:
         m_cplx = "(Matrix1 { x: self.x }, Matrix1 { x: R::zero() })"
     elif n == 2:
         m_eig = """let half = R::from_ratio(1, 2);
-        let dd = self.m11 - self.m22;
-        let d4 = R::wide_rescale(R::wide_add_prod(R::wide_add_prod(R::wide_add_prod(
-            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), self.m21, self.m12),
-            self.m21, self.m12), self.m21, self.m12), self.m21, self.m12));
+        let d4 = HouseholderKernelTrait::<T>::disc4(self.m11, self.m12, self.m21, self.m22);
         if d4 < R::zero() {
             return Option::None;
         }
-        let sq = R::sqrt(d4);
+        let sq = HouseholderKernelTrait::<T>::sqrt_disc4(self.m11, self.m12, self.m21, self.m22);
         let tra = self.m11 + self.m22;
         Option::Some(Vector2 { x: (tra + sq) * half, y: (tra - sq) * half })"""
         m_cplx = f"""let (q, t) = {S}KernelTrait::decompose(self);
@@ -1507,12 +1566,12 @@ def balance_impl(n: int) -> str:
     for i in range(n):
         col = [v(r, i) for r in range(n)]
         row = [v(i, c) for c in range(n)]
-        body = [f"let c2 = {fsum([(1, x, x) for x in col])};",
-                f"let r2 = {fsum([(1, x, x) for x in row])};",
-                "let s = c2 + r2;",
-                f"let mut n_col = {norm_expr(col) if n > 1 else f'R::abs({col[0]})'};",
-                f"let mut n_row = {norm_expr(row) if n > 1 else f'R::abs({row[0]})'};",
-                "if n_col != R::zero() && n_row != R::zero() {",
+        body = [f"let c0 = {norm_expr(col) if n > 1 else f'R::abs({col[0]})'};",
+                f"let r0 = {norm_expr(row) if n > 1 else f'R::abs({row[0]})'};",
+                "if c0 != R::zero() && r0 != R::zero() {",
+                "let big = if c0 > r0 { c0 } else { r0 };",
+                "let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));",
+                "let s = R::sum_prod2(n_col, n_col, n_row, n_row);",
                 "let mut f = R::one();",
                 "let mut finv = R::one();",
                 "while n_col < n_row * half {",
@@ -1521,7 +1580,7 @@ def balance_impl(n: int) -> str:
                 "while n_col >= n_row * two {",
                 "n_col = n_col * half; n_row = n_row * two; f = f * half; finv = finv * two;",
                 "}",
-                f"if {fsum([(1, 'n_col', 'n_col'), (1, 'n_row', 'n_row')])} < tol * s {{",
+                "if R::sum_prod2(n_col, n_col, n_row, n_row) < tol * s {",
                 "converged = false;",
                 f"d{i} = d{i} * f;"]
         body += [f"{v(r, i)} = {v(r, i)} * f;" for r in range(n)]
@@ -1573,11 +1632,13 @@ pub trait Balancing<M, V> {{
 /// Upstream's data-dependent loop: until a sweep changes nothing, for each index `i` with a
 /// nonzero column and row, the column norm `c` and row norm `r` (floored square roots of the exact
 /// sums of squares) are moved by factors of 2 until `r / 2 <= c < 2 r` (the factor `f` a power of
-/// two), and when `c² + r² < 0.95 (|col|² + |row|²)` (`0.95` = `from_ratio(95, 100)`, the sums
-/// of squares floored once each) the column `i` is multiplied by `f`, the row `i` by `1 / f`
-/// (tracked as a power of two too: upstream divides by `f`) and `d_i` by `f`. Products by powers
-/// of two are exact while no bit falls below one ulp (`f < 1`: floored); `r / 2` is a floored
-/// product by `1 / 2`. Panics on overflow.
+/// two), and when `c² + r² < 0.95 (|col|² + |row|²)` (`0.95` = `from_ratio(95, 100)`) the column
+/// `i` is multiplied by `f`, the row `i` by `1 / f` (tracked as a power of two too: upstream
+/// divides by `f`) and `d_i` by `f`. Deviation: the test runs on `c` and `r` divided by the larger
+/// of the two (correctly rounded; the test is scale-invariant) — upstream squares the norms of
+/// the input, which overflows Q32.32 for entries above ~4.6e4. Products by powers of two are exact
+/// while no bit falls below one ulp (`f < 1`: floored); `r / 2` is a floored product by `1 / 2`.
+/// Panics on overflow (a column or row norm beyond the Q32.32 range).
 pub fn balance_parlett_reinsch<M, V, impl B: Balancing<M, V>>(ref matrix: M) -> V {{
     B::balance_parlett_reinsch(ref matrix)
 }}
@@ -2039,3 +2100,923 @@ def render_householder_steps() -> str:
 {chr(10).join(sorted(uses))}
 {STEPS_BODY}
 {impls}"""
+
+
+# === test packages =============================================================================
+
+# Measured bounds of the tests (raw units; per unit of max |a_ij| where stated), pinned from the
+# runs of the test packages: `(what, n)` or `(what, r, c)`.
+MEASURED: dict = {
+    # tests_linalg_hessenberg / tests_linalg_bidiagonal*: reconstruction (per unit of max |a|),
+    # orthonormality, balancing round trip
+    ('balance_back', 4): 1,
+    ('balance_back', 5): 2,
+    ('balance_back', 6): 1,
+    ('bid_orth', 1, 2): 5,
+    ('bid_orth', 1, 3): 8,
+    ('bid_orth', 1, 4): 5,
+    ('bid_orth', 1, 5): 5,
+    ('bid_orth', 1, 6): 4,
+    ('bid_orth', 2, 1): 6,
+    ('bid_orth', 2, 2): 7,
+    ('bid_orth', 2, 3): 8,
+    ('bid_orth', 2, 4): 7,
+    ('bid_orth', 2, 5): 6,
+    ('bid_orth', 2, 6): 6,
+    ('bid_orth', 3, 1): 7,
+    ('bid_orth', 3, 2): 10,
+    ('bid_orth', 3, 3): 7,
+    ('bid_orth', 3, 4): 8,
+    ('bid_orth', 3, 5): 7,
+    ('bid_orth', 3, 6): 9,
+    ('bid_orth', 4, 1): 3,
+    ('bid_orth', 4, 2): 7,
+    ('bid_orth', 4, 3): 6,
+    ('bid_orth', 4, 4): 10,
+    ('bid_orth', 4, 5): 9,
+    ('bid_orth', 4, 6): 6,
+    ('bid_orth', 5, 1): 5,
+    ('bid_orth', 5, 2): 7,
+    ('bid_orth', 5, 3): 11,
+    ('bid_orth', 5, 4): 9,
+    ('bid_orth', 5, 5): 9,
+    ('bid_orth', 5, 6): 9,
+    ('bid_orth', 6, 1): 5,
+    ('bid_orth', 6, 2): 9,
+    ('bid_orth', 6, 3): 7,
+    ('bid_orth', 6, 4): 8,
+    ('bid_orth', 6, 5): 12,
+    ('bid_orth', 6, 6): 11,
+    ('bid_rec', 1, 2): 4,
+    ('bid_rec', 1, 3): 4,
+    ('bid_rec', 1, 4): 5,
+    ('bid_rec', 1, 5): 4,
+    ('bid_rec', 1, 6): 2,
+    ('bid_rec', 2, 1): 3,
+    ('bid_rec', 2, 2): 3,
+    ('bid_rec', 2, 3): 4,
+    ('bid_rec', 2, 4): 7,
+    ('bid_rec', 2, 5): 4,
+    ('bid_rec', 2, 6): 8,
+    ('bid_rec', 3, 1): 2,
+    ('bid_rec', 3, 2): 5,
+    ('bid_rec', 3, 3): 10,
+    ('bid_rec', 3, 4): 5,
+    ('bid_rec', 3, 5): 10,
+    ('bid_rec', 3, 6): 6,
+    ('bid_rec', 4, 1): 2,
+    ('bid_rec', 4, 2): 6,
+    ('bid_rec', 4, 3): 7,
+    ('bid_rec', 4, 4): 10,
+    ('bid_rec', 4, 5): 13,
+    ('bid_rec', 4, 6): 10,
+    ('bid_rec', 5, 1): 2,
+    ('bid_rec', 5, 2): 4,
+    ('bid_rec', 5, 3): 7,
+    ('bid_rec', 5, 4): 11,
+    ('bid_rec', 5, 5): 7,
+    ('bid_rec', 5, 6): 11,
+    ('bid_rec', 6, 1): 3,
+    ('bid_rec', 6, 2): 7,
+    ('bid_rec', 6, 3): 6,
+    ('bid_rec', 6, 4): 8,
+    ('bid_rec', 6, 5): 14,
+    ('bid_rec', 6, 6): 19,
+    ('hess_orth', 3): 8,
+    ('hess_orth', 4): 9,
+    ('hess_orth', 5): 8,
+    ('hess_orth', 6): 10,
+    ('hess_rec', 3): 13,
+    ('hess_rec', 4): 14,
+    ('hess_rec', 5): 26,
+    ('hess_rec', 6): 23,
+    ('tri_orth', 3): 7,
+    ('tri_orth', 4): 9,
+    ('tri_orth', 5): 11,
+    ('tri_orth', 6): 11,
+    ('tri_rec', 3): 24,
+    ('tri_rec', 4): 21,
+    ('tri_rec', 5): 30,
+    ('tri_rec', 6): 29,
+    # tests_linalg_schur: A = Q T Qᵀ (per unit of max |a|), QᵀQ = I; Eigen residual, unit norm
+    ('eigen_res', 2): 1,
+    ('eigen_res', 3): 18,
+    ('eigen_res', 4): 240,
+    ('eigen_res', 5): 121,
+    ('eigen_res', 6): 332,
+    ('eigen_unit', 2): 2,
+    ('eigen_unit', 3): 2,
+    ('eigen_unit', 4): 2,
+    ('eigen_unit', 5): 3,
+    ('eigen_unit', 6): 3,
+    ('schur_orth', 2): 1,
+    ('schur_orth', 3): 34,
+    ('schur_orth', 4): 39,
+    ('schur_orth', 5): 107,
+    ('schur_orth', 6): 96,
+    ('schur_orth_clustered', 2): 2,
+    ('schur_orth_clustered', 3): 17,
+    ('schur_orth_clustered', 4): 39,
+    ('schur_orth_clustered', 5): 48,
+    ('schur_orth_clustered', 6): 121,
+    ('schur_orth_complex', 3): 31,
+    ('schur_orth_complex', 4): 44,
+    ('schur_orth_complex', 5): 55,
+    ('schur_orth_complex', 6): 89,
+    ('schur_orth_defective', 2): 2,
+    ('schur_orth_defective', 3): 164,
+    ('schur_orth_defective', 4): 305,
+    ('schur_orth_defective', 5): 178,
+    ('schur_orth_defective', 6): 200,
+    ('schur_orth_near_triangular', 2): 0,
+    ('schur_orth_near_triangular', 3): 4,
+    ('schur_orth_near_triangular', 4): 69,
+    ('schur_orth_near_triangular', 5): 55,
+    ('schur_orth_near_triangular', 6): 255,
+    ('schur_orth_nonnormal', 2): 1,
+    ('schur_orth_nonnormal', 3): 39,
+    ('schur_orth_nonnormal', 4): 157,
+    ('schur_orth_nonnormal', 5): 139,
+    ('schur_orth_nonnormal', 6): 221,
+    ('schur_rec', 2): 6,
+    ('schur_rec', 3): 74,
+    ('schur_rec', 4): 98,
+    ('schur_rec', 5): 239,
+    ('schur_rec', 6): 383,
+    ('schur_rec_clustered', 2): 4,
+    ('schur_rec_clustered', 3): 65,
+    ('schur_rec_clustered', 4): 76,
+    ('schur_rec_clustered', 5): 77,
+    ('schur_rec_clustered', 6): 456,
+    ('schur_rec_complex', 3): 61,
+    ('schur_rec_complex', 4): 52,
+    ('schur_rec_complex', 5): 67,
+    ('schur_rec_complex', 6): 216,
+    ('schur_rec_defective', 2): 3,
+    ('schur_rec_defective', 3): 1447,
+    ('schur_rec_defective', 4): 11216,
+    ('schur_rec_defective', 5): 424,
+    ('schur_rec_defective', 6): 213,
+    ('schur_rec_near_triangular', 2): 4,
+    ('schur_rec_near_triangular', 3): 27,
+    ('schur_rec_near_triangular', 4): 153,
+    ('schur_rec_near_triangular', 5): 114,
+    ('schur_rec_near_triangular', 6): 8063,
+    ('schur_rec_nonnormal', 2): 2,
+    ('schur_rec_nonnormal', 3): 71,
+    ('schur_rec_nonnormal', 4): 1275,
+    ('schur_rec_nonnormal', 5): 294,
+    ('schur_rec_nonnormal', 6): 566,
+}
+
+
+def mb(what: str, *shape) -> int:
+    return MEASURED.get((what,) + shape, 0)
+
+
+def cmp(r: int, c: int, got: str, exp: str) -> str:
+    return " ".join(
+        f"ex = max(ex, excess(ulp_diff({got}.{fld(r, c, i, j)}, {exp}.{fld(r, c, i, j)}), "
+        f"oracle_tol(abs_raw({exp}.{fld(r, c, i, j)}), tol)));"
+        for i in range(r) for j in range(c))
+
+
+def transpose_lit(r: int, c: int, var: str) -> str:
+    return struct_lit(c, r, lambda i, j: f"{var}.{fld(r, c, j, i)}")
+
+
+def bench(group: str, variant: str, setup: str, body: str, check: str, doc: str) -> str:
+    return f"""#[test]
+#[inline(never)]
+fn bench_{group}__baseline() {{
+    {setup}
+    let e = black_box(true);
+    let _ = a;
+    assert!(e == e);
+}}
+
+/// {doc}
+#[test]
+#[inline(never)]
+fn bench_{group}__{variant}() {{
+    {setup}
+    let e = black_box(true);
+    {body}
+    assert!(({check}) == e);
+}}
+"""
+
+
+UTIL = HEADER + """//! Test helpers of the WP 8.5-P16 packages: sorting of the eigenvalues (the oracle emits them
+//! sorted), the iteration count of a Schur decomposition.
+
+use fixed::Fixed;
+
+/// `(re, im)` raw pairs sorted by `re` then `im` (insertion sort).
+pub fn sorted_pairs(re: Array<Fixed>, im: Array<Fixed>) -> Array<(i64, i64)> {
+    let mut out: Array<(i64, i64)> = array![];
+    let mut k = 0;
+    let n = re.len();
+    while k < n {
+        // the smallest remaining pair not yet emitted: selection by rank
+        let mut best: Option<(i64, i64)> = Option::None;
+        let mut i = 0;
+        while i < n {
+            let p = ((*re[i]).raw, (*im[i]).raw);
+            // rank of p = number of pairs strictly smaller + equal pairs before i
+            let mut rank = 0;
+            let mut j = 0;
+            while j < n {
+                let o = ((*re[j]).raw, (*im[j]).raw);
+                let (o0, o1) = o;
+                let (p0, p1) = p;
+                if o0 < p0 || (o0 == p0 && o1 < p1) || (o0 == p0 && o1 == p1 && j < i) {
+                    rank += 1;
+                }
+                j += 1;
+            }
+            if rank == k {
+                best = Option::Some(p);
+            }
+            i += 1;
+        }
+        out.append(best.unwrap());
+        k += 1;
+    }
+    out
+}
+
+/// Raw values sorted ascending.
+pub fn sorted(xs: Array<Fixed>) -> Array<i64> {
+    let mut im: Array<Fixed> = array![];
+    for _ in xs.span() {
+        im.append(Fixed { raw: 0 });
+    }
+    let mut out: Array<i64> = array![];
+    for p in sorted_pairs(xs, im) {
+        let (a, _) = p;
+        out.append(a);
+    }
+    out
+}
+"""
+
+
+def vec_arr(n: int, var: str) -> str:
+    return "array![" + ", ".join(f"{var}.{fld(n, 1, i, 0)}" for i in range(n)) + "]"
+
+
+def tuple_arr(n: int, var: str) -> str:
+    """`array![..]` of a raw oracle tuple `var` (length n)."""
+    names = [f"{var}_{i}" for i in range(n)]
+    pat = f"({names[0]},)" if n == 1 else f"({', '.join(names)})"
+    return f"{{ let {pat} = {var}; array![{', '.join(names)}] }}"
+
+
+SCHUR_FAMILIES = ["", "_complex", "_nonnormal", "_clustered", "_defective", "_near_triangular"]
+
+
+def schur_ops(n: int) -> list[str]:
+    ops = [f"schur{n}_eigenvalues", f"schur{n}_eigenvalues_real"]
+    if n >= 2:
+        ops += [f"schur{n}_eigenvalues{s}" for s in SCHUR_FAMILIES[1:]]
+    return ops
+
+
+def quasi_check(n: int, t: str) -> str:
+    """Asserts that `t` is upper quasi-triangular: zeros below the subdiagonal, no two
+    consecutive nonzero subdiagonal entries."""
+    st = [f"assert!({t}.{fld(n, n, i, j)} == fx(0), \"below the subdiagonal\");"
+          for j in range(n) for i in range(j + 2, n)]
+    st += [f"assert!({t}.{fld(n, n, i + 1, i)} == fx(0) || {t}.{fld(n, n, i + 2, i + 1)} == fx(0), "
+           f"\"two consecutive subdiagonal entries\");" for i in range(n - 2)]
+    return "\n        ".join(st)
+
+
+import os
+DEBUG_PRINT = ('println!("OPNAME err {} tol {} amax {}", cerr, tol, amax_%s(a));'
+               if os.environ.get("P16_DEBUG") else "let _ = cerr;")
+
+
+def render_schur_tests(n: int) -> str:
+    S, M, V, E = scname(n), tname(n, n), tname(n, 1), egname(n)
+    mat = f"mat{n}x{n}"
+    b = {mat, f"amax_{n}x{n}", f"max_ulp_{n}x{n}", f"orth_{n}x{n}"}
+    parts = []
+    tr = transpose_lit(n, n, "q")
+    for fam in SCHUR_FAMILIES if n >= 2 else [""]:
+        op = f"schur{n}_eigenvalues{fam}"
+        parts.append(f"""/// `{op}` (oracle): `A = Q T Qᵀ` and `QᵀQ = I` within the measured bounds, `T` upper
+/// quasi-triangular, the complex eigenvalues (of the decomposition and of the matrix: equal) sorted
+/// and compared with upstream's within the oracle tolerance.
+#[test]
+fn test_oracle_{op}() {{
+    let mut cases = oracle::{op}_cases();
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, ere, eim, tol) = *case;
+        let a = black_box({mat}(a));
+        let s = a.schur();
+        let (q, t) = s.unpack();
+        {quasi_check(n, 't')}
+        let qt = {tr};
+        rec = max(rec, max_ulp_{n}x{n}(q.mul_mat(t).mul_mat(qt), a) / amax_{n}x{n}(a));
+        orth = max(orth, orth_{n}x{n}(q));
+        let (re, im) = s.complex_eigenvalues();
+        let (re2, im2) = a.complex_eigenvalues();
+        assert!(re == re2 && im == im2, "complex_eigenvalues without Q");
+        let got = sorted_pairs({vec_arr(n, 're')}, {vec_arr(n, 'im')});
+        let ere = {tuple_arr(n, 'ere')};
+        let eim = {tuple_arr(n, 'eim')};
+        let mut k = 0;
+        let mut cerr = 0;
+        while k < {n} {{
+            let (gr, gi) = *got[k];
+            let (er, ei) = (fx(*ere[k]), fx(*eim[k]));
+            ex = max(ex, excess(ulp_diff(fx(gr), er), oracle_tol(abs_raw(er), tol)));
+            ex = max(ex, excess(ulp_diff(fx(gi), ei), oracle_tol(abs_raw(ei), tol)));
+            cerr = max(cerr, max(ulp_diff(fx(gr), er), ulp_diff(fx(gi), ei)));
+            k += 1;
+        }}
+        {DEBUG_PRINT.replace('%s', f'{n}x{n}').replace('OPNAME', op)}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {mb('schur_rec' + fam, n)} && orth <= {mb('schur_orth' + fam, n)}, "measured {{}} {{}}", rec, orth);
+}}
+""")
+    ev = transpose_lit(n, n, "q")
+    parts.append(f"""/// `schur{n}_eigenvalues_real` (oracle): `eigenvalues()` of the matrix and of the decomposition
+/// (equal) sorted and compared with upstream's; `Eigen{n}`: the same eigenvalues in the order of the
+/// diagonal of `T`, unit eigenvectors with `|A v - λ v|` within the measured bound (per unit of
+/// max |a_ij|).
+#[test]
+fn test_oracle_schur{n}_eigenvalues_real() {{
+    let mut cases = oracle::schur{n}_eigenvalues_real_cases();
+    let (mut ex, mut res, mut unit) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, ev, tol) = *case;
+        let a = black_box({mat}(a));
+        let vals = a.eigenvalues().unwrap();
+        let s = a.schur();
+        let svals = s.eigenvalues().unwrap();
+        {"assert!(svals == vals, " + chr(34) + "eigenvalues without Q" + chr(34) + ");" if n != 2 else "// n = 2: the matrix method is upstream's closed form, not the diagonal of `T`"}
+        let got = sorted({vec_arr(n, 'vals')});
+        let ev = {tuple_arr(n, 'ev')};
+        let mut k = 0;
+        while k < {n} {{
+            let e = fx(*ev[k]);
+            ex = max(ex, excess(ulp_diff(fx(*got[k]), e), oracle_tol(abs_raw(e), tol)));
+            k += 1;
+        }}
+        let eig = {E}Trait::new(a).unwrap();
+        assert!(eig.eigenvalues == svals, "Eigen order");
+        let v = eig.eigenvectors;
+        let av = a.mul_mat(v);
+        {" ".join(f"res = max(res, ulp_diff(av.{fld(n, n, i, j)}, v.{fld(n, n, i, j)} * svals.{fld(n, 1, j, 0)}) / amax_{n}x{n}(a));" for i in range(n) for j in range(n))}
+        {" ".join(f"unit = max(unit, ulp_diff(fixed::FixedTrait::sqrt({' + '.join(f'v.{fld(n, n, i, j)} * v.{fld(n, n, i, j)}' for i in range(n))}), fx(ONE)));" for j in range(n))}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(res <= {mb('eigen_res', n)} && unit <= {mb('eigen_unit', n)}, "measured {{}} {{}}", res, unit);
+}}
+
+/// The Schur iteration count (the smallest `max_niter` for which `try_schur` succeeds, minus
+/// one) over the oracle's general, complex and non-normal inputs, printed for the report; `None`
+/// below it, `Some` and the same decomposition as `schur()` from it on.
+#[test]
+fn test_schur{n}_iterations() {{
+    let mut cases = oracle::schur{n}_eigenvalues_cases();
+    let (mut total, mut worst, mut count) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, _, _, _) = *case;
+        let a = black_box({mat}(a));
+        let k = iterations{n}(a);
+        total += k;
+        count += 1;
+        if k > worst {{
+            worst = k;
+        }}
+        if k > 0 {{
+            assert!(a.try_schur(fx(1), k).is_none(), "max_niter = iterations");
+        }}
+        let s = a.try_schur(fx(1), k + 1).unwrap();
+        let s2 = a.schur();
+        assert!(s.q == s2.q && s.t == s2.t, "try_schur = schur");
+    }}
+    println!("schur{n}: {{}} cases, {{}} iterations in total, at most {{}}", count, total, worst);
+}}
+
+/// The number of passes of the Schur loop on `a` (exponential then binary search on `max_niter`).
+fn iterations{n}(a: {M}<Fixed>) -> usize {{
+    let mut hi: usize = 1;
+    while a.try_schur(fx(1), hi).is_none() {{
+        hi *= 2;
+    }}
+    let mut lo: usize = hi / 2;
+    // try_schur(lo) is None (or lo = 0), try_schur(hi) is Some
+    while hi - lo > 1 {{
+        let mid = (lo + hi) / 2;
+        if a.try_schur(fx(1), mid).is_none() {{
+            lo = mid;
+        }} else {{
+            hi = mid;
+        }}
+    }}
+    hi - 1
+}}
+""")
+    # structured cases
+    eye = struct_lit(n, n, lambda i, j: "fx(ONE)" if i == j else "fx(0)")
+    parts.append(f"""/// The identity and the zero matrix are already in Schur form (no iteration, `Q = I`), their
+/// eigenvalues exact; `try_schur(eps, 1)` succeeds on them.
+#[test]
+fn test_schur{n}_trivial() {{
+    let i = black_box({eye});
+    let s = i.try_schur(fx(1), 1).unwrap();
+    assert!(s.t == i && s.q == i);
+    assert!(i.eigenvalues().unwrap() == {vec_lit(n, lambda k: 'fx(ONE)')});
+    let z = black_box({struct_lit(n, n, lambda i, j: 'fx(0)')});
+    let s = z.try_schur(fx(1), 1).unwrap();
+    assert!(s.t == z && s.q == i);
+    let (re, im) = z.complex_eigenvalues();
+    assert!(re == {vec_lit(n, lambda k: 'fx(0)')} && im == re);
+    let e = {E}Trait::new(i).unwrap();
+    assert!(e.eigenvectors == i && e.eigenvalues == {vec_lit(n, lambda k: 'fx(ONE)')});
+}}
+""")
+    if n >= 2:
+        # upper triangular: already converged, eigenvalues exact
+        ut = struct_lit(n, n, lambda i, j: f"fx({(i + 1) * ONE_RAW})" if i == j else (
+            f"fx({(i + j + 1) * ONE_RAW // 2})" if j > i else "fx(0)"))
+        parts.append(f"""/// An upper triangular matrix is its own Schur form: `T = A` exactly (the scaling by the
+/// largest entry and back is exact on these integers... up to one floor), the eigenvalues are the
+/// diagonal.
+#[test]
+fn test_schur{n}_triangular() {{
+    let a = black_box({ut});
+    let s = a.try_schur(fx(1), 1).unwrap();
+    let vals = s.eigenvalues().unwrap();
+    let got = sorted({vec_arr(n, 'vals')});
+    let mut k = 0;
+    while k < {n} {{
+        let kk: i64 = k.into();
+        assert!(ulp_diff(fx(*got[k]), fx((kk + 1) * ONE)) <= 64, "diagonal");
+        k += 1;
+    }}
+}}
+
+/// A 2x2 rotation block `[[c, -s], [s, c]]` has the eigenvalues `c ± i s`: `eigenvalues()` is
+/// `None`, `complex_eigenvalues()` gives the pair.
+#[test]
+fn test_schur{n}_rotation_block() {{
+    let a = black_box({struct_lit(n, n, lambda i, j: {(0, 0): "fx(3 * ONE)", (1, 1): "fx(3 * ONE)", (0, 1): "fx(-4 * ONE)", (1, 0): "fx(4 * ONE)"}.get((i, j), f"fx({(i + 1) * ONE_RAW * 10})" if i == j else "fx(0)"))});
+    assert!(a.eigenvalues().is_none());
+    let (re, im) = a.complex_eigenvalues();
+    let got = sorted_pairs({vec_arr(n, 're')}, {vec_arr(n, 'im')});
+    let (r0, i0) = *got[0];
+    let (r1, i1) = *got[1];
+    assert!(ulp_diff(fx(r0), fx(3 * ONE)) <= 256 && ulp_diff(fx(i0), fx(-4 * ONE)) <= 256, "pair");
+    assert!(ulp_diff(fx(r1), fx(3 * ONE)) <= 256 && ulp_diff(fx(i1), fx(4 * ONE)) <= 256, "pair");
+    assert!({E}Trait::new(a).is_none(), "Eigen of complex eigenvalues");
+}}
+""")
+    if n >= 3:
+        # cyclic permutation: n = 6 does not converge (upstream f64 neither), smaller converge
+        perm = struct_lit(n, n, lambda i, j: "fx(ONE)" if i == (j + 1) % n else "fx(0)")
+        if n == 6:
+            body = """assert!(a.try_schur(fx(1), 200).is_none(), "the cyclic permutation of size 6 cycles");"""
+        else:
+            body = f"""let s = a.try_schur(fx(1), 200).unwrap();
+    let (re, im) = s.complex_eigenvalues();
+    // the {n}-th roots of unity: |λ| = 1
+    {" ".join(f"assert!(ulp_diff(fixed::FixedTrait::sqrt(re.{fld(n, 1, k, 0)} * re.{fld(n, 1, k, 0)} + im.{fld(n, 1, k, 0)} * im.{fld(n, 1, k, 0)}), fx(ONE)) <= 4096, \"root of unity\");" for k in range(n))}"""
+        parts.append(f"""/// The cyclic permutation matrix (eigenvalues: the {n}-th roots of unity), the classic hard case
+/// of the Francis iteration without exceptional shifts (upstream has none).
+#[test]
+fn test_schur{n}_cyclic_permutation() {{
+    let a = black_box({perm});
+    {body}
+}}
+""")
+    # benches
+    setup = f"let (a, _, _, _) = *oracle::schur{n}_eigenvalues_cases().at(3);\n    let a = black_box({mat}(a));"
+    setup_r = f"let (a, _, _) = *oracle::schur{n}_eigenvalues_real_cases().at(3);\n    let a = black_box({mat}(a));"
+    parts.append(bench(f"schur{n}_new", "francis", setup, "let s = a.schur();",
+                       f"s.t.{fld(n, n, 0, 0)} == s.t.{fld(n, n, 0, 0)}",
+                       "`schur()` on the general case 3 (unit distribution) of the oracle."))
+    parts.append(bench(f"schur{n}_complex_eigenvalues", "without_q", setup,
+                       "let (re, _) = a.complex_eigenvalues();",
+                       f"re.{fld(n, 1, 0, 0)} == re.{fld(n, 1, 0, 0)}",
+                       "`complex_eigenvalues()` of the matrix (Schur iteration without `Q`)."))
+    parts.append(bench(f"schur{n}_eigenvalues", "without_q", setup_r,
+                       "let v = a.eigenvalues();", "v.is_some()",
+                       "`eigenvalues()` of the matrix on the real-spectrum case 3."))
+    parts.append(bench(f"eigen{n}_new", "schur", setup_r, f"let v = {E}Trait::new(a);",
+                       "v.is_some()", "`Eigen::new` on the real-spectrum case 3."))
+    uses_n = {"MatrixMul"}
+    head = f"""{HEADER}//! `{S}`, `{M}SchurTrait`, `{E}` through the public API (WP 8.5-P16): oracle vectors
+//! (`tools/oracle` suite `schur`), the factor identities, the iteration counts, gas benchmarks.
+
+use core::cmp::max;
+use fixed::Fixed;
+use nalgebra::linalg::{{{E}Trait, {M}SchurTrait, {S}Trait}};
+use nalgebra::{{{', '.join(sorted(uses_n))}}};
+use nalgebra::{{{', '.join(sorted({M, V}))}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_schur as oracle;
+use crate::util::{{sorted, sorted_pairs}};
+
+const ONE: i64 = 0x100000000;
+"""
+    return head + "\n" + "\n".join(parts)
+
+
+ONE_RAW = 0x100000000
+
+
+PACKAGES = {
+    # package: (features, description, modules)
+    "tests_linalg_schur": (["schur"], "the Schur and general eigen decompositions",
+                           [("schur", n) for n in DIMS]),
+    "tests_linalg_hessenberg": (["hessenberg", "symmetric_tridiagonal", "balancing"],
+                                "the Hessenberg decomposition, the symmetric tridiagonalisation, "
+                                "the balancing",
+                                [("hessenberg", n) for n in DIMS]
+                                + [("symmetric_tridiagonal", n) for n in DIMS]
+                                + [("balancing",)]),
+    "tests_linalg_bidiagonal": (["bidiagonal", "hessenberg"],
+                                "the bidiagonalisation of the squares",
+                                [("bidiagonal", n, n) for n in DIMS]),
+    "tests_linalg_bidiagonal_wide": (["bidiagonal", "hessenberg"],
+                                     "the bidiagonalisation of the wide shapes",
+                                     [("bidiagonal", r, c) for r in DIMS for c in DIMS if r < c]),
+    "tests_linalg_bidiagonal_tall": (["bidiagonal", "hessenberg"],
+                                     "the bidiagonalisation of the tall shapes",
+                                     [("bidiagonal", r, c) for r in DIMS for c in DIMS if r > c]),
+}
+
+
+def package_ops() -> dict[str, list[str]]:
+    """{package: oracle ops of the suite `schur`} (for the `emit-cairo` step)."""
+    res = {}
+    for pkg, (_, _, mods) in PACKAGES.items():
+        ops = []
+        for kind, *shape in mods:
+            if kind == "schur":
+                ops += schur_ops(shape[0])
+            elif kind == "balancing":
+                ops += [f"balance{n}" for n in DIMS]
+            elif kind == "bidiagonal":
+                ops.append(f"bidiagonal{shp(*shape)}")
+            else:
+                ops.append(f"{kind}{shape[0]}")
+        res[pkg] = ops
+    return res
+
+
+def test_packages() -> dict[str, str]:
+    from generate import TEST_MANIFEST, render_builders
+    out = {}
+    ops_of = package_ops()
+    for pkg, (features, what, mods) in PACKAGES.items():
+        base = f"crates/{pkg}/"
+        out[base + "Scarb.toml"] = TEST_MANIFEST.format(
+            name=pkg, features=", ".join(f'"{f}"' for f in features),
+            description=f"Tests and gas benchmarks of {what} (WP 8.5-P16; not published).")
+        names = ["builders", "oracle_schur"] + (["util"] if pkg == "tests_linalg_schur" else [])
+        need, vecs = set(), set()
+        for kind, *shape in mods:
+            if kind == "balancing":
+                need |= {(n, n) for n in DIMS}
+                vecs |= set(DIMS)
+                names.append("balancing")
+                out[base + "src/balancing.cairo"] = render_balancing_tests()
+                continue
+            if kind == "bidiagonal":
+                r, c = shape
+                k = min(r, c)
+                need |= {(r, c), (r, k), (k, k), (k, c)}
+                mod = f"bidiagonal{shp(r, c)}"
+                names.append(mod)
+                out[base + f"src/{mod}.cairo"] = render_bidiagonal_tests(r, c)
+                continue
+            n = shape[0]
+            need.add((n, n))
+            vecs.add(n)
+            if kind == "symmetric_tridiagonal" and n >= 2:
+                vecs.add(n - 1)
+            names.append(f"{kind}{n}")
+            render = {"schur": render_schur_tests, "hessenberg": render_hessenberg_tests,
+                      "symmetric_tridiagonal": render_tridiagonal_tests}[kind]
+            out[base + f"src/{kind}{n}.cairo"] = render(n)
+        out[base + "src/builders.cairo"] = render_builders(need, vecs)
+        if pkg == "tests_linalg_schur":
+            out[base + "src/util.cairo"] = UTIL
+        out[base + "src/lib.cairo"] = (
+            HEADER + f"//! Package `nalgebra_{pkg}` (WP 8.5-P16): tests and gas benchmarks of {what},\n"
+            "//! through the public API. Oracle vectors: `tools/oracle` suite `schur` (`oracle\n"
+            "//! emit-cairo schur --from vectors --max-per-dist 2 --ops <the ops below> --out\n"
+            "//! src/oracle_schur.cairo`):\n//!\n"
+            + "".join(f"//! - `{o}`\n" for o in ops_of[pkg]) + "\n"
+            + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(names)))
+    return out
+
+
+def mat_mul3(r: int, k: int, c: int, a: str, b: str) -> str:
+    """`a.mul_mat(b)` for base shapes (the generic `MatrixMul`)."""
+    return f"{a}.mul_mat({b})"
+
+
+def render_hessenberg_tests(n: int) -> str:
+    H, M, V = hname(n), tname(n, n), tname(n, 1)
+    mat = f"mat{n}x{n}"
+    b = {mat, f"amax_{n}x{n}", f"max_ulp_{n}x{n}", f"orth_{n}x{n}"}
+    tr = transpose_lit(n, n, "q")
+    zero_v = vec_lit(n, lambda i: "fx(0)")
+    below = " && ".join(f"hh.{fld(n, n, i, j)} == fx(0)" for j in range(n) for i in range(j + 2, n)) or "true"
+    steps = ""
+    if n >= 2:
+        calls = "\n        ".join(
+            f"let s{i} = clear_column_unchecked(ref m, {i}, 1, ref work);" for i in range(n - 1))
+        sub = vec_lit(n - 1, lambda i: f"s{i}")
+        signs = "array![" + ", ".join(f"s{i}" for i in range(n - 1)) + "].span()"
+        steps = f"""
+/// The building blocks reproduce the unrolled decomposition bit for bit: `clear_column_unchecked(m,
+/// i, 1, Some(work))` for `i` = 0..{n - 2} gives `hess` and `subdiag`, `assemble_q` gives `q()`.
+#[test]
+fn test_hessenberg{n}_householder_steps() {{
+    let mut cases = oracle::hessenberg{n}_cases();
+    while let Some(case) = cases.pop_front() {{
+        let (a, _, _, _) = *case;
+        let a = black_box({mat}(a));
+        let h = a.hessenberg();
+        let mut m = a;
+        let mut work: Option<{V}<Fixed>> = Option::Some({zero_v});
+        {calls}
+        assert!(m == h.hess && {sub} == h.subdiag, "clear_column_unchecked");
+        assert!(assemble_q(m, {signs}) == h.q(), "assemble_q");
+        assert!(work.is_some());
+    }}
+}}
+"""
+    parts = [f"""/// `hessenberg{n}` (oracle): `q` and `h` entry by entry within the oracle tolerance (upstream's
+/// signs), `H` zero below the subdiagonal, `A = Q H Qᵀ` and `QᵀQ = I` within the measured bounds,
+/// the accessors consistent.
+#[test]
+fn test_oracle_hessenberg{n}() {{
+    let mut cases = oracle::hessenberg{n}_cases();
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, eq, eh, tol) = *case;
+        let a = black_box({mat}(a));
+        let h = a.hessenberg();
+        let (q, hh) = h.unpack();
+        assert!(hh == h.h() && hh == h.unpack_h() && q == h.q() && h.hess_internal() == h.hess);
+        let mut work = {zero_v};
+        let h2 = {H}Trait::new_with_workspace(a, ref work);
+        assert!(h2.hess == h.hess, "new_with_workspace");
+        assert!({below}, "Hessenberg form");
+        let (eq, eh) = ({mat}(eq), {mat}(eh));
+        {cmp(n, n, 'q', 'eq')}
+        {cmp(n, n, 'hh', 'eh')}
+        let qt = {tr};
+        rec = max(rec, max_ulp_{n}x{n}(q.mul_mat(hh).mul_mat(qt), a) / amax_{n}x{n}(a));
+        orth = max(orth, orth_{n}x{n}(q));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {mb('hess_rec', n)} && orth <= {mb('hess_orth', n)}, "measured {{}} {{}}", rec, orth);
+}}
+{steps}"""]
+    setup = f"let (a, _, _, _) = *oracle::hessenberg{n}_cases().at(3);\n    let a = black_box({mat}(a));"
+    parts.append(bench(f"hessenberg{n}_new", "householder", setup, "let h = a.hessenberg();",
+                       f"h.hess.{fld(n, n, 0, 0)} == h.hess.{fld(n, n, 0, 0)}",
+                       "Householder reflections from both sides, unrolled."))
+    setup_q = (f"let (a, _, _, _) = *oracle::hessenberg{n}_cases().at(3);\n"
+               f"    let a = black_box(black_box({mat}(a)).hessenberg());")
+    parts.append(bench(f"hessenberg{n}_q", "assemble", setup_q, "let q = a.q();",
+                       f"q.{fld(n, n, 0, 0)} == q.{fld(n, n, 0, 0)}",
+                       "`assemble_q` on symbolic identity entries."))
+    uses = [f"{H}Trait", f"{M}HessenbergTrait"]
+    if n >= 2:
+        uses += ["assemble_q", "clear_column_unchecked"]
+    head = f"""{HEADER}//! `{H}` / `{M}HessenbergTrait` through the public API (WP 8.5-P16): oracle vectors
+//! (`tools/oracle` suite `schur`), the factor identities, the Householder building blocks, gas
+//! benchmarks.
+
+use core::cmp::max;
+use fixed::Fixed;
+use nalgebra::linalg::{{{', '.join(sorted(uses))}}};
+use nalgebra::{{{', '.join(sorted({M, V, 'MatrixMul'} | ({tname(n - 1, 1)} if n >= 2 else set())))}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_schur as oracle;
+"""
+    if n == 1:
+        head = head.replace("use fixed::Fixed;\n", "")
+    return head + "\n" + "\n".join(parts)
+
+
+def render_tridiagonal_tests(n: int) -> str:
+    S, M, V = stname(n), tname(n, n), tname(n, 1)
+    mat = f"mat{n}x{n}"
+    b = {mat, f"vec{n}", f"amax_{n}x{n}", f"max_ulp_{n}x{n}", f"orth_{n}x{n}"}
+    if n >= 2:
+        b.add(f"vec{n - 1}")
+        pat = "(a, eq, ed, ee, tol)"
+        cmp_e = f"let ee = vec{n - 1}(ee);\n        {cmp(n - 1, 1, 'e', 'ee')}"
+        get = "let (q, d, e) = t.unpack();"
+        cons = "assert!(t.unpack_tridiagonal() == (d, e) && t.off_diagonal() == e);"
+    else:
+        pat = "(a, eq, ed, tol)"
+        cmp_e = ""
+        get = "let (q, d, _) = t.unpack();"
+        cons = ""
+    parts = [f"""/// `symmetric_tridiagonal{n}` (oracle): `q`, the diagonal and the off-diagonal within the oracle
+/// tolerance (upstream's signs), `recompose()` = `A` and `QᵀQ = I` within the measured bounds, the
+/// accessors consistent.
+#[test]
+fn test_oracle_symmetric_tridiagonal{n}() {{
+    let mut cases = oracle::symmetric_tridiagonal{n}_cases();
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let {pat} = *case;
+        let a = black_box({mat}(a));
+        let t = a.symmetric_tridiagonalize();
+        {get}
+        assert!(q == t.q() && d == t.diagonal() && t.internal_tri() == t.tri);
+        {cons}
+        let (eq, ed) = ({mat}(eq), vec{n}(ed));
+        {cmp(n, n, 'q', 'eq')}
+        {cmp(n, 1, 'd', 'ed')}
+        {cmp_e}
+        rec = max(rec, max_ulp_{n}x{n}(t.recompose(), a) / amax_{n}x{n}(a));
+        orth = max(orth, orth_{n}x{n}(q));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {mb('tri_rec', n)} && orth <= {mb('tri_orth', n)}, "measured {{}} {{}}", rec, orth);
+}}
+"""]
+    tail = ", _" if n >= 2 else ""
+    setup = (f"let (a, _, _{tail}, _) = *oracle::symmetric_tridiagonal{n}_cases().at(3);\n"
+             f"    let a = black_box({mat}(a));")
+    parts.append(bench(f"symmetric_tridiagonal{n}_new", "householder", setup,
+                       "let t = a.symmetric_tridiagonalize();",
+                       f"t.tri.{fld(n, n, 0, 0)} == t.tri.{fld(n, n, 0, 0)}",
+                       "Householder reflections on the lower triangle (`dsytd2` form), unrolled."))
+    setup_q = (f"let (a, _, _{tail}, _) = *oracle::symmetric_tridiagonal{n}_cases().at(3);\n"
+               f"    let a = black_box(black_box({mat}(a)).symmetric_tridiagonalize());")
+    parts.append(bench(f"symmetric_tridiagonal{n}_q", "assemble", setup_q, "let q = a.q();",
+                       f"q.{fld(n, n, 0, 0)} == q.{fld(n, n, 0, 0)}",
+                       "`assemble_q` on symbolic identity entries."))
+    parts.append(bench(f"symmetric_tridiagonal{n}_recompose", "two_products", setup_q,
+                       "let m = a.recompose();", f"m.{fld(n, n, 0, 0)} == m.{fld(n, n, 0, 0)}",
+                       "`Q T Qᵀ`: `Q T` (tridiagonal) then `(Q T) Qᵀ`, fused sums."))
+    head = f"""{HEADER}//! `{S}` / `{M}SymmetricTridiagonalTrait` through the public API (WP 8.5-P16): oracle
+//! vectors (`tools/oracle` suite `schur`), the factor identities, gas benchmarks.
+
+use core::cmp::max;
+use nalgebra::linalg::{{{M}SymmetricTridiagonalTrait, {S}Trait}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_schur as oracle;
+"""
+    return head + "\n" + "\n".join(parts)
+
+
+def render_balancing_tests() -> str:
+    parts = []
+    b = set()
+    for n in DIMS:
+        mat = f"mat{n}x{n}"
+        b |= {mat, f"vec{n}", f"amax_{n}x{n}", f"max_ulp_{n}x{n}"}
+        parts.append(f"""/// `balance{n}` (oracle): the balanced matrix and `d` within the oracle tolerance; `unbalance`
+/// restores the input within the measured bound (per unit of max |a|).
+#[test]
+fn test_oracle_balance{n}() {{
+    let mut cases = oracle::balance{n}_cases();
+    let (mut ex, mut back) = (0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, eb, ed, tol) = *case;
+        let a = black_box({mat}(a));
+        let mut m = a;
+        let d = balance_parlett_reinsch(ref m);
+        let (eb, ed) = ({mat}(eb), vec{n}(ed));
+        {cmp(n, n, 'm', 'eb')}
+        {cmp(n, 1, 'd', 'ed')}
+        unbalance(ref m, d);
+        back = max(back, max_ulp_{n}x{n}(m, a) / amax_{n}x{n}(a));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(back <= {mb('balance_back', n)}, "measured {{}}", back);
+}}
+""")
+        setup = f"let (a, _, _, _) = *oracle::balance{n}_cases().at(3);\n    let a = black_box({mat}(a));"
+        parts.append(bench(f"balance{n}", "parlett_reinsch", setup,
+                           "let mut m = a;\n    let d = balance_parlett_reinsch(ref m);",
+                           f"d.{fld(n, 1, 0, 0)} == d.{fld(n, 1, 0, 0)}",
+                           "Upstream's data-dependent loop, the sweeps unrolled."))
+    head = f"""{HEADER}//! `balance_parlett_reinsch` / `unbalance` through the public API (WP 8.5-P16): oracle vectors
+//! (`tools/oracle` suite `schur`), the round trip, gas benchmarks.
+
+use core::cmp::max;
+use nalgebra::linalg::{{balance_parlett_reinsch, unbalance}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_schur as oracle;
+"""
+    return head + "\n" + "\n".join(parts)
+
+
+def render_bidiagonal_tests(r: int, c: int) -> str:
+    B, M = bname(r, c), tname(r, c)
+    k = min(r, c)
+    s = shp(r, c)
+    mat = f"mat{r}x{c}"
+    upper = r >= c
+    b = {mat, f"mat{r}x{k}", f"mat{k}x{k}", f"mat{k}x{c}", f"amax_{r}x{c}", f"max_ulp_{r}x{c}",
+         f"orth_{r}x{k}", f"orth_{k}x{c}"}
+    # D from diagonal / off_diagonal
+    dcheck = [f"assert!(bd.diagonal() == {vec_lit(k, lambda i: f'd.{fld(k, k, i, i)}')}, \"diagonal\");"]
+    if k >= 2:
+        dcheck.append(f"assert!(bd.off_diagonal() == {vec_lit(k - 1, lambda i: f'd.{fld(k, k, i, i + 1) if upper else fld(k, k, i + 1, i)}')}, \"off_diagonal\");")
+    # helper replay
+    V_R, V_C = tname(r, 1), tname(c, 1)
+    replay = [f"let mut m = a;", f"let mut packed = {vec_lit(c, lambda i: 'fx(0)')};",
+              f"let mut work = {vec_lit(r, lambda i: 'fx(0)')};",
+              f"let mut none: Option<{V_R}<Fixed>> = Option::None;"]
+    if upper:
+        for ite in range(k - 1):
+            replay.append(f"let d{ite} = clear_column_unchecked(ref m, {ite}, 0, ref none);")
+            replay.append(f"let e{ite} = clear_row_unchecked(ref m, ref packed, ref work, {ite}, 1);")
+        replay.append(f"let d{k - 1} = clear_column_unchecked(ref m, {k - 1}, 0, ref none);")
+    else:
+        for ite in range(k - 1):
+            replay.append(f"let d{ite} = clear_row_unchecked(ref m, ref packed, ref work, {ite}, 0);")
+            replay.append(f"let e{ite} = clear_column_unchecked(ref m, {ite}, 1, ref none);")
+        replay.append(f"let d{k - 1} = clear_row_unchecked(ref m, ref packed, ref work, {k - 1}, 0);")
+    conds = [f"m == bd.uv", f"{vec_lit(k, lambda i: f'd{i}')} == bd.diagonal"]
+    if k >= 2:
+        conds.append(f"{vec_lit(k - 1, lambda i: f'e{i}')} == bd.off_diagonal")
+    replay.append(f"assert!({' && '.join(conds)}, \"householder steps\");")
+    replay.append("assert!(none.is_none());")
+    parts = [f"""/// `bidiagonal{s}` (oracle): `u`, `d` and `v_t` entry by entry within the oracle tolerance
+/// (upstream's signs), `A = U D Vᵀ`, orthonormal columns of `U` and rows of `Vᵀ` within the
+/// measured bounds, the accessors consistent, and the Householder building blocks
+/// (`clear_column_unchecked` / `clear_row_unchecked`) reproducing the packed storage bit for bit.
+#[test]
+fn test_oracle_bidiagonal{s}() {{
+    let mut cases = oracle::bidiagonal{s}_cases();
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, eu, ed, evt, tol) = *case;
+        let a = black_box({mat}(a));
+        let bd = a.bidiagonalize();
+        let (u, d, vt) = bd.unpack();
+        assert!(u == bd.u() && d == bd.d() && vt == bd.v_t() && bd.uv_internal() == bd.uv);
+        assert!(bd.is_upper_diagonal() == {'true' if upper else 'false'});
+        {chr(10).join(dcheck)}
+        let (eu, ed, evt) = (mat{r}x{k}(eu), mat{k}x{k}(ed), mat{k}x{c}(evt));
+        {cmp(r, k, 'u', 'eu')}
+        {cmp(k, k, 'd', 'ed')}
+        {cmp(k, c, 'vt', 'evt')}
+        rec = max(rec, max_ulp_{r}x{c}(u.mul_mat(d).mul_mat(vt), a) / amax_{r}x{c}(a));
+        orth = max(orth, max(orth_{r}x{k}(u), orth_{k}x{c}(vt)));
+        {chr(10).join(replay)}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {mb('bid_rec', r, c)} && orth <= {mb('bid_orth', r, c)}, "measured {{}} {{}}", rec, orth);
+}}
+"""]
+    setup = f"let (a, _, _, _, _) = *oracle::bidiagonal{s}_cases().at(3);\n    let a = black_box({mat}(a));"
+    parts.append(bench(f"bidiagonal{s}_new", "householder", setup, "let bd = a.bidiagonalize();",
+                       f"bd.uv.{fld(r, c, 0, 0)} == bd.uv.{fld(r, c, 0, 0)}",
+                       "Householder reflections alternately from the left and the right, unrolled."))
+    setup_u = (f"let (a, _, _, _, _) = *oracle::bidiagonal{s}_cases().at(3);\n"
+               f"    let a = black_box(black_box({mat}(a)).bidiagonalize());")
+    parts.append(bench(f"bidiagonal{s}_unpack", "symbolic", setup_u, "let (u, _, vt) = a.unpack();",
+                       f"u.{fld(r, k, 0, 0)} == vt.{fld(k, c, 0, 0)} || true",
+                       "`(U, D, Vᵀ)`: the reflections applied to symbolic identity entries."))
+    uses = [f"{B}Trait", f"{M}BidiagonalTrait", "clear_column_unchecked", "clear_row_unchecked"]
+    shapes = {M, V_R, "MatrixMul"}
+    if k >= 2:
+        shapes.add(tname(k - 1, 1))
+    shapes.add(tname(k, 1))
+    shapes.add(V_C)
+    head = f"""{HEADER}//! `{B}` / `{M}BidiagonalTrait` through the public API (WP 8.5-P16): oracle vectors
+//! (`tools/oracle` suite `schur`), the factor identities, the Householder building blocks, gas
+//! benchmarks.
+
+use core::cmp::max;
+use fixed::Fixed;
+use nalgebra::linalg::{{{', '.join(sorted(uses))}}};
+use nalgebra::{{{', '.join(sorted(shapes))}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_schur as oracle;
+"""
+    return head + "\n" + "\n".join(parts)

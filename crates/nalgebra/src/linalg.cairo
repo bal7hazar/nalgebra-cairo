@@ -94,6 +94,37 @@ pub mod symmetric_eigen6;
 #[cfg(feature: 'symmetric_tridiagonal')]
 pub mod symmetric_tridiagonal;
 pub mod udu;
+#[cfg(feature: 'balancing')]
+pub use balancing::{Balancing, balance_parlett_reinsch, unbalance};
+#[cfg(feature: 'bidiagonal')]
+pub use bidiagonal::{
+    Bidiagonal1, Bidiagonal1Trait, Bidiagonal1x2, Bidiagonal1x2Trait, Bidiagonal1x3,
+    Bidiagonal1x3Trait, Bidiagonal1x4, Bidiagonal1x4Trait, Bidiagonal1x5, Bidiagonal1x5Trait,
+    Bidiagonal1x6, Bidiagonal1x6Trait, Bidiagonal2, Bidiagonal2Trait, Bidiagonal2x1,
+    Bidiagonal2x1Trait, Bidiagonal2x3, Bidiagonal2x3Trait, Bidiagonal2x4, Bidiagonal2x4Trait,
+    Bidiagonal2x5, Bidiagonal2x5Trait, Bidiagonal2x6, Bidiagonal2x6Trait, Bidiagonal3,
+    Bidiagonal3Trait, Bidiagonal3x1, Bidiagonal3x1Trait, Bidiagonal3x2, Bidiagonal3x2Trait,
+    Bidiagonal3x4, Bidiagonal3x4Trait, Bidiagonal3x5, Bidiagonal3x5Trait, Bidiagonal3x6,
+    Bidiagonal3x6Trait, Bidiagonal4, Bidiagonal4Trait, Bidiagonal4x1, Bidiagonal4x1Trait,
+    Bidiagonal4x2, Bidiagonal4x2Trait, Bidiagonal4x3, Bidiagonal4x3Trait, Bidiagonal4x5,
+    Bidiagonal4x5Trait, Bidiagonal4x6, Bidiagonal4x6Trait, Bidiagonal5, Bidiagonal5Trait,
+    Bidiagonal5x1, Bidiagonal5x1Trait, Bidiagonal5x2, Bidiagonal5x2Trait, Bidiagonal5x3,
+    Bidiagonal5x3Trait, Bidiagonal5x4, Bidiagonal5x4Trait, Bidiagonal5x6, Bidiagonal5x6Trait,
+    Bidiagonal6, Bidiagonal6Trait, Bidiagonal6x1, Bidiagonal6x1Trait, Bidiagonal6x2,
+    Bidiagonal6x2Trait, Bidiagonal6x3, Bidiagonal6x3Trait, Bidiagonal6x4, Bidiagonal6x4Trait,
+    Bidiagonal6x5, Bidiagonal6x5Trait, Matrix1BidiagonalTrait, Matrix2BidiagonalTrait,
+    Matrix2x3BidiagonalTrait, Matrix2x4BidiagonalTrait, Matrix2x5BidiagonalTrait,
+    Matrix2x6BidiagonalTrait, Matrix3BidiagonalTrait, Matrix3x2BidiagonalTrait,
+    Matrix3x4BidiagonalTrait, Matrix3x5BidiagonalTrait, Matrix3x6BidiagonalTrait,
+    Matrix4BidiagonalTrait, Matrix4x2BidiagonalTrait, Matrix4x3BidiagonalTrait,
+    Matrix4x5BidiagonalTrait, Matrix4x6BidiagonalTrait, Matrix5BidiagonalTrait,
+    Matrix5x2BidiagonalTrait, Matrix5x3BidiagonalTrait, Matrix5x4BidiagonalTrait,
+    Matrix5x6BidiagonalTrait, Matrix6BidiagonalTrait, Matrix6x2BidiagonalTrait,
+    Matrix6x3BidiagonalTrait, Matrix6x4BidiagonalTrait, Matrix6x5BidiagonalTrait,
+    RowVector2BidiagonalTrait, RowVector3BidiagonalTrait, RowVector4BidiagonalTrait,
+    RowVector5BidiagonalTrait, RowVector6BidiagonalTrait, Vector2BidiagonalTrait,
+    Vector3BidiagonalTrait, Vector4BidiagonalTrait, Vector5BidiagonalTrait, Vector6BidiagonalTrait,
+};
 
 pub use cholesky::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
@@ -129,6 +160,11 @@ pub use col_piv_qr::{
     RowVector6ColPivQrTrait, Vector2ColPivQrTrait, Vector3ColPivQrTrait, Vector4ColPivQrTrait,
     Vector5ColPivQrTrait, Vector6ColPivQrTrait,
 };
+#[cfg(feature: 'schur')]
+pub use eigen::{
+    Eigen1, Eigen1Trait, Eigen2, Eigen2Trait, Eigen3, Eigen3Trait, Eigen4, Eigen4Trait, Eigen5,
+    Eigen5Trait, Eigen6, Eigen6Trait,
+};
 #[cfg(feature: 'full_piv_lu')]
 pub use full_piv_lu::{
     FullPivLu1, FullPivLu1Trait, FullPivLu1x2, FullPivLu1x2Trait, FullPivLu1x3, FullPivLu1x3Trait,
@@ -158,7 +194,16 @@ pub use full_piv_lu::{
     Vector6FullPivLuTrait,
 };
 pub use givens::{GivensRotate, GivensRotateRows, GivensRotation, GivensRotationTrait};
+#[cfg(feature: 'hessenberg')]
+pub use hessenberg::{
+    Hessenberg1, Hessenberg1Trait, Hessenberg2, Hessenberg2Trait, Hessenberg3, Hessenberg3Trait,
+    Hessenberg4, Hessenberg4Trait, Hessenberg5, Hessenberg5Trait, Hessenberg6, Hessenberg6Trait,
+    Matrix1HessenbergTrait, Matrix2HessenbergTrait, Matrix3HessenbergTrait, Matrix4HessenbergTrait,
+    Matrix5HessenbergTrait, Matrix6HessenbergTrait,
+};
 pub use householder::reflection_axis_mut;
+#[cfg(feature: 'hessenberg')]
+pub use householder_steps::{ColumnMajor, assemble_q, clear_column_unchecked, clear_row_unchecked};
 pub use inverse::{
     Matrix2InverseTrait, Matrix3InverseTrait, Matrix4InverseTrait, Matrix6InverseTrait,
 };
@@ -192,6 +237,12 @@ pub use qr::{
     Qr6x4Trait, Qr6x5, Qr6x5Trait, RowVector2QrTrait, RowVector3QrTrait, RowVector4QrTrait,
     RowVector5QrTrait, RowVector6QrTrait, Vector2QrTrait, Vector3QrTrait, Vector4QrTrait,
     Vector5QrTrait, Vector6QrTrait,
+};
+#[cfg(feature: 'schur')]
+pub use schur::{
+    Matrix1SchurTrait, Matrix2SchurTrait, Matrix3SchurTrait, Matrix4SchurTrait, Matrix5SchurTrait,
+    Matrix6SchurTrait, Schur1, Schur1Trait, Schur2, Schur2Trait, Schur3, Schur3Trait, Schur4,
+    Schur4Trait, Schur5, Schur5Trait, Schur6, Schur6Trait,
 };
 #[cfg(feature: 'svd')]
 pub use svd::{
@@ -229,6 +280,16 @@ pub use symmetric_eigen4::{Matrix4SymmetricEigenTrait, SymmetricEigen4, Symmetri
 pub use symmetric_eigen5::{Matrix5SymmetricEigenTrait, SymmetricEigen5, SymmetricEigen5Trait};
 #[cfg(feature: 'eigen')]
 pub use symmetric_eigen6::{Matrix6SymmetricEigenTrait, SymmetricEigen6, SymmetricEigen6Trait};
+#[cfg(feature: 'symmetric_tridiagonal')]
+pub use symmetric_tridiagonal::{
+    Matrix1SymmetricTridiagonalTrait, Matrix2SymmetricTridiagonalTrait,
+    Matrix3SymmetricTridiagonalTrait, Matrix4SymmetricTridiagonalTrait,
+    Matrix5SymmetricTridiagonalTrait, Matrix6SymmetricTridiagonalTrait, SymmetricTridiagonal1,
+    SymmetricTridiagonal1Trait, SymmetricTridiagonal2, SymmetricTridiagonal2Trait,
+    SymmetricTridiagonal3, SymmetricTridiagonal3Trait, SymmetricTridiagonal4,
+    SymmetricTridiagonal4Trait, SymmetricTridiagonal5, SymmetricTridiagonal5Trait,
+    SymmetricTridiagonal6, SymmetricTridiagonal6Trait,
+};
 pub use udu::{
     Matrix2UduTrait, Matrix3UduTrait, Matrix4UduTrait, Matrix6UduTrait, Udu2, Udu2Trait, Udu3,
     Udu3Trait, Udu4, Udu4Trait, Udu6, Udu6Trait,

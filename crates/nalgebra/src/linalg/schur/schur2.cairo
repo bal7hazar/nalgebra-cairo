@@ -5,7 +5,7 @@
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::vector2::Vector2;
-use crate::linalg::givens::GivensRotationTrait;
+use crate::linalg::householder_kernels::HouseholderKernelTrait;
 
 /// The real Schur decomposition `A = Q T Qᵀ` of a `Matrix2<T>`: `Q` orthogonal, `T` upper
 /// quasi-triangular (1x1 blocks for the real eigenvalues, 2x2 blocks with complex-conjugate
@@ -85,25 +85,14 @@ pub impl Schur2Impl<
         let mut second = false;
         if !second && self.t.m21 != R::zero() {
             let dd = self.t.m11 - self.t.m22;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), dd, dd), self.t.m21, self.t.m12,
-                            ),
-                            self.t.m21,
-                            self.t.m12,
-                        ),
-                        self.t.m21,
-                        self.t.m12,
-                    ),
-                    self.t.m21,
-                    self.t.m12,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<
+                T,
+            >::disc4(self.t.m11, self.t.m12, self.t.m21, self.t.m22);
             let im = if d4 < R::zero() {
-                R::sqrt(-d4) * half
+                HouseholderKernelTrait::<
+                    T,
+                >::sqrt_neg_disc4(self.t.m11, self.t.m12, self.t.m21, self.t.m22)
+                    * half
             } else {
                 R::zero()
             };
@@ -146,26 +135,12 @@ pub(crate) impl Schur2KernelImpl<
             return (Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() }, m);
         }
         let dd = m.m11 - m.m22;
-        let d4 = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), m.m21, m.m12),
-                        m.m21,
-                        m.m12,
-                    ),
-                    m.m21,
-                    m.m12,
-                ),
-                m.m21,
-                m.m12,
-            ),
-        );
+        let d4 = HouseholderKernelTrait::<T>::disc4(m.m11, m.m12, m.m21, m.m22);
         if d4 < R::zero() {
             return (Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() }, m);
         }
         let half = R::from_ratio(1, 2);
-        let sq = R::sqrt(d4);
+        let sq = HouseholderKernelTrait::<T>::sqrt_disc4(m.m11, m.m12, m.m21, m.m22);
         let x1 = (dd + sq) * half;
         let x2 = (dd - sq) * half;
         let x = if R::abs(x1) > R::abs(x2) {
@@ -173,21 +148,15 @@ pub(crate) impl Schur2KernelImpl<
         } else {
             x2
         };
-        let (rot, _) = GivensRotationTrait::new(x, m.m21);
-        let c = rot.c();
-        let sn = rot.s();
+        let (c, sn) = HouseholderKernelTrait::<T>::givens(x, m.m21);
         // inv_rot.rotate(m), then rot.rotate_rows(m)
+        // (the rotated diagonal is replaced by the closed-form eigenvalues: see `try_new`)
         let a11 = R::sum_prod2(m.m11, c, sn, m.m21);
-        let a21 = R::diff_prod(c, m.m21, sn, m.m11);
         let a12 = R::sum_prod2(m.m12, c, sn, m.m22);
-        let a22 = R::diff_prod(c, m.m22, sn, m.m12);
-        let b11 = R::sum_prod2(a11, c, sn, a12);
         let b12 = R::diff_prod(c, a12, sn, a11);
-        let b22 = R::diff_prod(c, a22, sn, a21);
-        let _ = R::sum_prod2(a21, c, sn, a22);
         (
             Matrix2 { m11: c, m21: sn, m12: -sn, m22: c },
-            Matrix2 { m11: b11, m21: R::zero(), m12: b12, m22: b22 },
+            Matrix2 { m11: m.m22 + x, m21: R::zero(), m12: b12, m22: m.m11 - x },
         )
     }
 }
@@ -226,28 +195,11 @@ pub impl Matrix2SchurImpl<
     /// `SquareMatrix::eigenvalues`.
     fn eigenvalues(self: Matrix2<T>) -> Option<Vector2<T>> {
         let half = R::from_ratio(1, 2);
-        let dd = self.m11 - self.m22;
-        let d4 = R::wide_rescale(
-            R::wide_add_prod(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_zero(), dd, dd), self.m21, self.m12,
-                        ),
-                        self.m21,
-                        self.m12,
-                    ),
-                    self.m21,
-                    self.m12,
-                ),
-                self.m21,
-                self.m12,
-            ),
-        );
+        let d4 = HouseholderKernelTrait::<T>::disc4(self.m11, self.m12, self.m21, self.m22);
         if d4 < R::zero() {
             return Option::None;
         }
-        let sq = R::sqrt(d4);
+        let sq = HouseholderKernelTrait::<T>::sqrt_disc4(self.m11, self.m12, self.m21, self.m22);
         let tra = self.m11 + self.m22;
         Option::Some(Vector2 { x: (tra + sq) * half, y: (tra - sq) * half })
     }

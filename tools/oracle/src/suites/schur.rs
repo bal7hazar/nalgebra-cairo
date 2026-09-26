@@ -24,9 +24,29 @@ use nalgebra::DMatrix;
 
 /// Schur eigenvalues: an iterative algorithm with a data-dependent number of shifted QR sweeps,
 /// i.e. of rounded unit-scale reflections applied to the input in Q32.32 (the error grows with
-/// the iteration count, not only with the size).
-const SCHUR: Tol = Tol::SensMag {
+/// the iteration count, not only with the size). The Q32.32 iteration normalises the input by its
+/// largest entry, so its backward error is relative to `max |input|` (`SensScaled`).
+const SCHUR: Tol = Tol::SensScaled {
     k: 32.0,
+    base: 64.0,
+    mag: 256.0,
+};
+
+/// Schur eigenvalues of ILL-CONDITIONED spectra (non-normal, defective, near-triangular with a
+/// non-normal upper triangle): the Q32.32 Schur iteration normalises the input by its largest
+/// entry, so its backward error (rounding of the reflections, deflation at the Q32.32 noise
+/// floor) is relative to `max |input|`, and the eigenvalue sensitivity `A` amplifies it (WP
+/// 8.5-P16: measured `k` up to 95 on defective, 37 on near-triangular inputs).
+const SCHUR_ILL: Tol = Tol::SensScaled {
+    k: 128.0,
+    base: 64.0,
+    mag: 256.0,
+};
+
+/// `SCHUR_ILL` for the non-normal spectra (measured `k` up to 6: their sensitivity is large
+/// already, a larger `k` would put most cases above the default cap).
+const SCHUR_NONNORMAL: Tol = Tol::SensScaled {
+    k: 16.0,
     base: 64.0,
     mag: 256.0,
 };
@@ -166,7 +186,7 @@ fn symmetric_tridiagonal_op(n: usize) -> Op {
 }
 
 /// Eigenvalue op emitting `(re, im)`: complex eigenvalues of `try_schur`, sorted.
-fn complex_eigenvalue_op(n: usize, suffix: &str, doc: &str, gen: Gen) -> Op {
+fn complex_eigenvalue_op(n: usize, suffix: &str, doc: &str, gen: Gen, tol: Tol) -> Op {
     Op::new(
         format!("schur{n}_eigenvalues{suffix}"),
         format!(
@@ -179,7 +199,7 @@ fn complex_eigenvalue_op(n: usize, suffix: &str, doc: &str, gen: Gen) -> Op {
     .out(fv("re", n))
     .out(fv("im", n))
     .dists(&Dist::NO_LARGE)
-    .tol(SCHUR)
+    .tol(tol)
     .eval(move |x| complex_eigenvalues(mat_at(x, 0, n, n)))
 }
 
@@ -189,6 +209,7 @@ fn schur_ops(n: usize) -> Vec<Op> {
         "",
         "general a (independent entries)",
         Gen::M(n, n),
+        SCHUR,
     )];
     ops.push(
         Op::new(
@@ -218,6 +239,7 @@ fn schur_ops(n: usize) -> Vec<Op> {
         "a = P B P^-1 (P well-conditioned), B block-diagonal with 2x2 blocks [[a, b], [-b, a]] \
          (|b| >= 0.25 scale: complex-conjugate pairs a +- ib) plus a 1x1 real block when n is odd",
         Gen::SpectrumComplex(n),
+        SCHUR,
     ));
     ops.push(complex_eigenvalue_op(
         n,
@@ -225,6 +247,7 @@ fn schur_ops(n: usize) -> Vec<Op> {
         "NON-NORMAL a = Q T Q^T (Q orthogonal), T upper triangular with a real separated \
          diagonal and strictly-upper entries up to 10x the diagonal spread",
         Gen::NonNormal(n),
+        SCHUR_NONNORMAL,
     ));
     ops.push(
         complex_eigenvalue_op(
@@ -233,6 +256,7 @@ fn schur_ops(n: usize) -> Vec<Op> {
             "a = P diag(l) P^-1 with CLUSTERED real eigenvalues (relative gaps 1e-3) (FLAGGED: \
              sensitive, loose tolerance)",
             Gen::SpectrumClustered(n),
+            SCHUR,
         )
         .cap(CLUSTERED_CAP),
     );
@@ -244,6 +268,7 @@ fn schur_ops(n: usize) -> Vec<Op> {
              quantised input splits the double eigenvalue by about sqrt(ulp), real or complex) \
              (FLAGGED: square-root sensitivity, loose tolerance)",
             Gen::Defective(n),
+            SCHUR_ILL,
         )
         .cap(DEFECTIVE_CAP),
     );
@@ -253,6 +278,7 @@ fn schur_ops(n: usize) -> Vec<Op> {
         "upper quasi-triangular a (entries of the magnitude class, separated real diagonal) with \
          every subdiagonal entry tiny (|x| in [1e-7, 1e-5]): the near-convergence case",
         Gen::NearTriangular(n),
+        SCHUR_ILL,
     ));
     ops
 }

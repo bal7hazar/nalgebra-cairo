@@ -6,7 +6,6 @@ use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::vector6::Vector6;
-use crate::linalg::givens::GivensRotationTrait;
 use crate::linalg::hessenberg::hessenberg6::Hessenberg6Trait;
 use crate::linalg::householder_kernels::HouseholderKernelTrait;
 
@@ -154,25 +153,14 @@ pub impl Schur6Impl<
         let mut second = false;
         if !second && self.t.m21 != R::zero() {
             let dd = self.t.m11 - self.t.m22;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), dd, dd), self.t.m21, self.t.m12,
-                            ),
-                            self.t.m21,
-                            self.t.m12,
-                        ),
-                        self.t.m21,
-                        self.t.m12,
-                    ),
-                    self.t.m21,
-                    self.t.m12,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<
+                T,
+            >::disc4(self.t.m11, self.t.m12, self.t.m21, self.t.m22);
             let im = if d4 < R::zero() {
-                R::sqrt(-d4) * half
+                HouseholderKernelTrait::<
+                    T,
+                >::sqrt_neg_disc4(self.t.m11, self.t.m12, self.t.m21, self.t.m22)
+                    * half
             } else {
                 R::zero()
             };
@@ -187,25 +175,14 @@ pub impl Schur6Impl<
         }
         if !second && self.t.m32 != R::zero() {
             let dd = self.t.m22 - self.t.m33;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), dd, dd), self.t.m32, self.t.m23,
-                            ),
-                            self.t.m32,
-                            self.t.m23,
-                        ),
-                        self.t.m32,
-                        self.t.m23,
-                    ),
-                    self.t.m32,
-                    self.t.m23,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<
+                T,
+            >::disc4(self.t.m22, self.t.m23, self.t.m32, self.t.m33);
             let im = if d4 < R::zero() {
-                R::sqrt(-d4) * half
+                HouseholderKernelTrait::<
+                    T,
+                >::sqrt_neg_disc4(self.t.m22, self.t.m23, self.t.m32, self.t.m33)
+                    * half
             } else {
                 R::zero()
             };
@@ -220,25 +197,14 @@ pub impl Schur6Impl<
         }
         if !second && self.t.m43 != R::zero() {
             let dd = self.t.m33 - self.t.m44;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), dd, dd), self.t.m43, self.t.m34,
-                            ),
-                            self.t.m43,
-                            self.t.m34,
-                        ),
-                        self.t.m43,
-                        self.t.m34,
-                    ),
-                    self.t.m43,
-                    self.t.m34,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<
+                T,
+            >::disc4(self.t.m33, self.t.m34, self.t.m43, self.t.m44);
             let im = if d4 < R::zero() {
-                R::sqrt(-d4) * half
+                HouseholderKernelTrait::<
+                    T,
+                >::sqrt_neg_disc4(self.t.m33, self.t.m34, self.t.m43, self.t.m44)
+                    * half
             } else {
                 R::zero()
             };
@@ -253,25 +219,14 @@ pub impl Schur6Impl<
         }
         if !second && self.t.m54 != R::zero() {
             let dd = self.t.m44 - self.t.m55;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), dd, dd), self.t.m54, self.t.m45,
-                            ),
-                            self.t.m54,
-                            self.t.m45,
-                        ),
-                        self.t.m54,
-                        self.t.m45,
-                    ),
-                    self.t.m54,
-                    self.t.m45,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<
+                T,
+            >::disc4(self.t.m44, self.t.m45, self.t.m54, self.t.m55);
             let im = if d4 < R::zero() {
-                R::sqrt(-d4) * half
+                HouseholderKernelTrait::<
+                    T,
+                >::sqrt_neg_disc4(self.t.m44, self.t.m45, self.t.m54, self.t.m55)
+                    * half
             } else {
                 R::zero()
             };
@@ -286,25 +241,14 @@ pub impl Schur6Impl<
         }
         if !second && self.t.m65 != R::zero() {
             let dd = self.t.m55 - self.t.m66;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(
-                                R::wide_add_prod(R::wide_zero(), dd, dd), self.t.m65, self.t.m56,
-                            ),
-                            self.t.m65,
-                            self.t.m56,
-                        ),
-                        self.t.m65,
-                        self.t.m56,
-                    ),
-                    self.t.m65,
-                    self.t.m56,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<
+                T,
+            >::disc4(self.t.m55, self.t.m56, self.t.m65, self.t.m66);
             let im = if d4 < R::zero() {
-                R::sqrt(-d4) * half
+                HouseholderKernelTrait::<
+                    T,
+                >::sqrt_neg_disc4(self.t.m55, self.t.m56, self.t.m65, self.t.m66)
+                    * half
             } else {
                 R::zero()
             };
@@ -618,15 +562,19 @@ pub(crate) impl Schur6KernelImpl<
         };
         let noise = R::from_ratio(1, 67108864);
         let e2 = eps * eps;
-        let thr = if e2 > noise {
+        let base = if e2 > noise {
             e2
         } else {
             noise
         };
+        let cap = R::from_ratio(1, 65536);
+        let mut thr = base;
+        let mut stuck: usize = 0;
         let (mut start, mut end) = Self::delimit5(ref t, eps, thr);
         let mut niter: usize = 0;
         let mut failed = false;
         while end != start {
+            let (old_start, old_end) = (start, end);
             if end - start >= 2 {
                 if end == 2 {
                     if start == 0 {
@@ -688,6 +636,18 @@ pub(crate) impl Schur6KernelImpl<
             };
             start = s;
             end = e;
+            if start == old_start && end == old_end {
+                stuck += 1;
+                if stuck == 8 {
+                    stuck = 0;
+                    if thr < cap {
+                        thr = thr + thr;
+                    }
+                }
+            } else {
+                stuck = 0;
+                thr = base;
+            }
             niter += 1;
             if niter == max_niter {
                 failed = true;
@@ -1112,23 +1072,9 @@ pub(crate) impl Schur6KernelImpl<
         if h10 != R::zero() {
             let half = R::from_ratio(1, 2);
             let dd = h00 - h11;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), h10, h01),
-                            h10,
-                            h01,
-                        ),
-                        h10,
-                        h01,
-                    ),
-                    h10,
-                    h01,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<T>::disc4(h00, h01, h10, h11);
             if d4 >= R::zero() {
-                let sq = R::sqrt(d4);
+                let sq = HouseholderKernelTrait::<T>::sqrt_disc4(h00, h01, h10, h11);
                 let x1 = (dd + sq) * half;
                 let x2 = (dd - sq) * half;
                 let x = if R::abs(x1) > R::abs(x2) {
@@ -1136,9 +1082,7 @@ pub(crate) impl Schur6KernelImpl<
                 } else {
                     x2
                 };
-                let (rot, _) = GivensRotationTrait::new(x, h10);
-                let c = rot.c();
-                let sn = rot.s();
+                let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);
                 let a = t00;
                 let b = t10;
                 t00 = R::sum_prod2(a, c, sn, b);
@@ -1172,6 +1116,8 @@ pub(crate) impl Schur6KernelImpl<
                 t10 = R::sum_prod2(a, c, sn, b);
                 t11 = R::diff_prod(c, b, sn, a);
                 t10 = R::zero();
+                t00 = h11 + x;
+                t11 = h00 - x;
                 if compute_q {
                     let a = q00;
                     let b = q01;
@@ -1364,23 +1310,9 @@ pub(crate) impl Schur6KernelImpl<
         if h10 != R::zero() {
             let half = R::from_ratio(1, 2);
             let dd = h00 - h11;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), h10, h01),
-                            h10,
-                            h01,
-                        ),
-                        h10,
-                        h01,
-                    ),
-                    h10,
-                    h01,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<T>::disc4(h00, h01, h10, h11);
             if d4 >= R::zero() {
-                let sq = R::sqrt(d4);
+                let sq = HouseholderKernelTrait::<T>::sqrt_disc4(h00, h01, h10, h11);
                 let x1 = (dd + sq) * half;
                 let x2 = (dd - sq) * half;
                 let x = if R::abs(x1) > R::abs(x2) {
@@ -1388,9 +1320,7 @@ pub(crate) impl Schur6KernelImpl<
                 } else {
                     x2
                 };
-                let (rot, _) = GivensRotationTrait::new(x, h10);
-                let c = rot.c();
-                let sn = rot.s();
+                let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);
                 let a = t11;
                 let b = t21;
                 t11 = R::sum_prod2(a, c, sn, b);
@@ -1424,6 +1354,8 @@ pub(crate) impl Schur6KernelImpl<
                 t21 = R::sum_prod2(a, c, sn, b);
                 t22 = R::diff_prod(c, b, sn, a);
                 t21 = R::zero();
+                t11 = h11 + x;
+                t22 = h00 - x;
                 if compute_q {
                     let a = q01;
                     let b = q02;
@@ -1616,23 +1548,9 @@ pub(crate) impl Schur6KernelImpl<
         if h10 != R::zero() {
             let half = R::from_ratio(1, 2);
             let dd = h00 - h11;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), h10, h01),
-                            h10,
-                            h01,
-                        ),
-                        h10,
-                        h01,
-                    ),
-                    h10,
-                    h01,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<T>::disc4(h00, h01, h10, h11);
             if d4 >= R::zero() {
-                let sq = R::sqrt(d4);
+                let sq = HouseholderKernelTrait::<T>::sqrt_disc4(h00, h01, h10, h11);
                 let x1 = (dd + sq) * half;
                 let x2 = (dd - sq) * half;
                 let x = if R::abs(x1) > R::abs(x2) {
@@ -1640,9 +1558,7 @@ pub(crate) impl Schur6KernelImpl<
                 } else {
                     x2
                 };
-                let (rot, _) = GivensRotationTrait::new(x, h10);
-                let c = rot.c();
-                let sn = rot.s();
+                let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);
                 let a = t22;
                 let b = t32;
                 t22 = R::sum_prod2(a, c, sn, b);
@@ -1676,6 +1592,8 @@ pub(crate) impl Schur6KernelImpl<
                 t32 = R::sum_prod2(a, c, sn, b);
                 t33 = R::diff_prod(c, b, sn, a);
                 t32 = R::zero();
+                t22 = h11 + x;
+                t33 = h00 - x;
                 if compute_q {
                     let a = q02;
                     let b = q03;
@@ -1868,23 +1786,9 @@ pub(crate) impl Schur6KernelImpl<
         if h10 != R::zero() {
             let half = R::from_ratio(1, 2);
             let dd = h00 - h11;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), h10, h01),
-                            h10,
-                            h01,
-                        ),
-                        h10,
-                        h01,
-                    ),
-                    h10,
-                    h01,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<T>::disc4(h00, h01, h10, h11);
             if d4 >= R::zero() {
-                let sq = R::sqrt(d4);
+                let sq = HouseholderKernelTrait::<T>::sqrt_disc4(h00, h01, h10, h11);
                 let x1 = (dd + sq) * half;
                 let x2 = (dd - sq) * half;
                 let x = if R::abs(x1) > R::abs(x2) {
@@ -1892,9 +1796,7 @@ pub(crate) impl Schur6KernelImpl<
                 } else {
                     x2
                 };
-                let (rot, _) = GivensRotationTrait::new(x, h10);
-                let c = rot.c();
-                let sn = rot.s();
+                let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);
                 let a = t33;
                 let b = t43;
                 t33 = R::sum_prod2(a, c, sn, b);
@@ -1928,6 +1830,8 @@ pub(crate) impl Schur6KernelImpl<
                 t43 = R::sum_prod2(a, c, sn, b);
                 t44 = R::diff_prod(c, b, sn, a);
                 t43 = R::zero();
+                t33 = h11 + x;
+                t44 = h00 - x;
                 if compute_q {
                     let a = q03;
                     let b = q04;
@@ -2120,23 +2024,9 @@ pub(crate) impl Schur6KernelImpl<
         if h10 != R::zero() {
             let half = R::from_ratio(1, 2);
             let dd = h00 - h11;
-            let d4 = R::wide_rescale(
-                R::wide_add_prod(
-                    R::wide_add_prod(
-                        R::wide_add_prod(
-                            R::wide_add_prod(R::wide_add_prod(R::wide_zero(), dd, dd), h10, h01),
-                            h10,
-                            h01,
-                        ),
-                        h10,
-                        h01,
-                    ),
-                    h10,
-                    h01,
-                ),
-            );
+            let d4 = HouseholderKernelTrait::<T>::disc4(h00, h01, h10, h11);
             if d4 >= R::zero() {
-                let sq = R::sqrt(d4);
+                let sq = HouseholderKernelTrait::<T>::sqrt_disc4(h00, h01, h10, h11);
                 let x1 = (dd + sq) * half;
                 let x2 = (dd - sq) * half;
                 let x = if R::abs(x1) > R::abs(x2) {
@@ -2144,9 +2034,7 @@ pub(crate) impl Schur6KernelImpl<
                 } else {
                     x2
                 };
-                let (rot, _) = GivensRotationTrait::new(x, h10);
-                let c = rot.c();
-                let sn = rot.s();
+                let (c, sn) = HouseholderKernelTrait::<T>::givens(x, h10);
                 let a = t44;
                 let b = t54;
                 t44 = R::sum_prod2(a, c, sn, b);
@@ -2180,6 +2068,8 @@ pub(crate) impl Schur6KernelImpl<
                 t54 = R::sum_prod2(a, c, sn, b);
                 t55 = R::diff_prod(c, b, sn, a);
                 t54 = R::zero();
+                t44 = h11 + x;
+                t55 = h00 - x;
                 if compute_q {
                     let a = q04;
                     let b = q05;
