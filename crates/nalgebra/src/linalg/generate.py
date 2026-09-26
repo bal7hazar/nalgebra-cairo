@@ -2233,6 +2233,8 @@ def svd_suffix(r: int, c: int) -> str:
 def render_svd_tests(r: int, c: int, bounds: dict, oracle_mod: str) -> str:
     """Tests of `SvdRxC` / `MatrixRxCSvdTrait` (and `Svd2` / `Svd3`'s P14b API)."""
     S, M, k = svd_name(r, c), tname(r, c), min(r, c)
+    # The well-conditioned 2x2 / 3x3 vectors are the `symmetric_eigen_svd` suite's.
+    wc = "crate::oracle_svd23" if (r, c) in SVD_EXISTING else "oracle"
     sfx = svd_suffix(r, c)
     b = bounds.get((r, c), {})
     sv = [f"d.singular_values.{fld(k, 1, i, 0)}" for i in range(k)]
@@ -2246,7 +2248,7 @@ def render_svd_tests(r: int, c: int, bounds: dict, oracle_mod: str) -> str:
 /// tolerance, `U Σ Vᵀ = M` and the orthonormality of `U` / `V` within the measured bounds.
 #[test]
 fn test_oracle_svd{sfx}_singular_values() {{
-    let (ex, rec, orth) = run(oracle::svd{sfx}_singular_values_cases());
+    let (ex, rec, orth) = run({wc}::svd{sfx}_singular_values_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
     assert!(rec <= {b.get('rec', 0)} && orth <= {b.get('orth', 0)}, "measured {{}} {{}}", rec, orth);
 }}"""]
@@ -2345,7 +2347,7 @@ fn test_svd{sfx}_diagonal_and_zero_are_exact() {{
 
 #[test]
 fn test_svd{sfx}_api() {{
-    let (a, _, _) = *oracle::svd{sfx}_singular_values_cases().at(0);
+    let (a, _, _) = *{wc}::svd{sfx}_singular_values_cases().at(0);
     let a = black_box(mat{r}x{c}(a));
     let d = {S}Trait::new(a);
     // The unordered and `try` forms, `sort_by_singular_values` on a sorted decomposition.
@@ -2370,7 +2372,7 @@ fn test_svd{sfx}_api() {{
     # benches
     tests.append(f"""/// A `unit` oracle case: the benchmark input.
 fn a_bench() -> {M}<Fixed> {{
-    let (a, _, _) = *oracle::svd{sfx}_singular_values_cases().at(3);
+    let (a, _, _) = *{wc}::svd{sfx}_singular_values_cases().at(3);
     mat{r}x{c}(a)
 }}
 
@@ -2588,7 +2590,7 @@ def svd_packages() -> dict[str, str]:
         out[base + "src/builders.cairo"] = render_builders(need, vecs, eq)
         mods = ["builders", "oracle_svd"]
         if pkg == "tests_linalg_svd":
-            mods += ["ordered", "alt"]
+            mods += ["ordered", "alt", "oracle_svd23"]
             out[base + "src/ordered.cairo"] = SVD_ORDERED
             out[base + "src/alt.cairo"] = render_alt_one_sided(4).replace(
                 "ALT_MEASURED", repr(ALT_MEASURED))
@@ -2942,31 +2944,54 @@ fn bench_cholesky{n}_remove_column__j0() {{
     return "\n".join(parts)
 
 
+QR_PACKAGES = {
+    "tests_linalg_qr": ("the shapes of 1 to 3 rows", lambda r, c: r <= 3),
+    "tests_linalg_qr_tall": ("the shapes of 4 and 5 rows", lambda r, c: r in (4, 5)),
+    "tests_linalg_qr6": ("the shapes of 6 rows", lambda r, c: r == 6),
+}
+
+
 def qr_package() -> dict[str, str]:
-    base = "crates/tests_linalg_qr/"
-    out = {base + "Scarb.toml": TEST_MANIFEST.format(
-        name="tests_linalg_qr",
-        description="Tests and gas benchmarks of the QR factorisation of the shapes 1, 5, 6 and "
-                    "every rectangle, and of the Cholesky updates (WP 8.5-P14b; not published).")}
-    need, vecs = set(), {2, 3, 4, 6}
-    for r, c in qr_shapes():
-        k = min(r, c)
-        need |= {(r, c), (r, k), (k, c), (r, 1)}
-        vecs.add(r)
-    need |= {(n, n) for n in (2, 3, 4, 6)}
-    out[base + "src/builders.cairo"] = render_builders(need, vecs)
-    mods = ["builders", "oracle_qr", "cholesky_update"]
-    for r, c in qr_shapes():
-        m = f"qr{svd_suffix(r, c)}"
-        mods.append(m)
-        out[base + f"src/{m}.cairo"] = render_qr_tests(r, c)
-    out[base + "src/cholesky_update.cairo"] = render_cholesky_update_tests()
+    out = {}
+    for pkg, (what, keep) in QR_PACKAGES.items():
+        base = f"crates/{pkg}/"
+        shapes = [(r, c) for r, c in qr_shapes() if keep(r, c)]
+        out[base + "Scarb.toml"] = TEST_MANIFEST.format(
+            name=pkg, description=f"Tests and gas benchmarks of the QR factorisation of {what} "
+                                  "that P14a did not cover (WP 8.5-P14b; not published).")
+        need, vecs = set(), set()
+        for r, c in shapes:
+            k = min(r, c)
+            need |= {(r, c), (r, k), (k, c), (r, 1)}
+            vecs.add(r)
+        out[base + "src/builders.cairo"] = render_builders(need, vecs)
+        mods = ["builders", "oracle_qr"]
+        for r, c in shapes:
+            m = f"qr{svd_suffix(r, c)}"
+            mods.append(m)
+            out[base + f"src/{m}.cairo"] = render_qr_tests(r, c)
+        out[base + "src/lib.cairo"] = (
+            HEADER + f"//! Package `nalgebra_{pkg}` (WP 8.5-P14b): tests and gas benchmarks of the QR\n"
+            f"//! factorisation of {what} that P14a did not cover, through the public API. Oracle\n"
+            "//! vectors: `tools/oracle` suite `spectral` (`oracle emit-cairo spectral --from vectors\n"
+            "//! --max-per-dist 2 --ops <the qr ops of these shapes> --out src/oracle_qr.cairo`).\n\n"
+            + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
+    base = "crates/tests_linalg_cholesky_update/"
+    out[base + "Scarb.toml"] = TEST_MANIFEST.format(
+        name="tests_linalg_cholesky_update",
+        description="Tests and gas benchmarks of the Cholesky rank-one update and column "
+                    "insertion / removal (WP 8.5-P14b; not published).")
+    out[base + "src/builders.cairo"] = render_builders({(n, n) for n in (2, 3, 4, 6)}, {2, 3, 4, 6})
+    out[base + "src/cholesky_update.cairo"] = render_cholesky_update_tests().replace(
+        "crate::oracle_qr as oracle", "crate::oracle_cholesky_update as oracle")
     out[base + "src/lib.cairo"] = (
-        HEADER + "//! Package `nalgebra_tests_linalg_qr` (WP 8.5-P14b): tests and gas benchmarks of the QR\n"
-        "//! factorisation of the shapes P14a did not cover and of the Cholesky updates, through the\n"
-        "//! public API. Oracle vectors: `tools/oracle` suite `spectral` (`oracle emit-cairo spectral\n"
-        "//! --from vectors --max-per-dist 2 --ops <the qr and cholesky ops> --out src/oracle_qr.cairo`).\n\n"
-        + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
+        HEADER + "//! Package `nalgebra_tests_linalg_cholesky_update` (WP 8.5-P14b): tests and gas\n"
+        "//! benchmarks of the Cholesky rank-one update / downdate and column insertion / removal,\n"
+        "//! through the public API. Oracle vectors: `tools/oracle` suite `spectral` (`oracle\n"
+        "//! emit-cairo spectral --from vectors --max-per-dist 2 --ops <the cholesky ops> --out\n"
+        "//! src/oracle_cholesky_update.cairo`).\n\n"
+        "#[cfg(test)]\nmod builders;\n#[cfg(test)]\nmod cholesky_update;\n"
+        "#[cfg(test)]\nmod oracle_cholesky_update;\n")
     return out
 
 
@@ -3072,11 +3097,11 @@ use nalgebra::linalg::{{Svd2Trait, Svd3Trait, svd_ordered2, svd_ordered3}};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{{Svd2PartialEq, Svd3PartialEq, fx}};
 use crate::builders::{{mat2x2, mat3x3}};
-use crate::oracle_svd as oracle;
+use crate::oracle_svd23;
 
 #[test]
 fn test_svd_ordered2_is_svd2() {{
-    let (a, _, _) = *oracle::svd2_singular_values_cases().at(3);
+    let (a, _, _) = *oracle_svd23::svd2_singular_values_cases().at(3);
     let a = black_box(mat2x2(a));
     assert!(svd_ordered2(a, true, true) == Svd2Trait::new(a));
     assert!(svd_ordered2(a, false, false) == Svd2Trait::new(a));
@@ -3084,7 +3109,7 @@ fn test_svd_ordered2_is_svd2() {{
 
 #[test]
 fn test_svd_ordered3_is_svd3_try_new() {{
-    let (a, _, _) = *oracle::svd3_singular_values_cases().at(3);
+    let (a, _, _) = *oracle_svd23::svd3_singular_values_cases().at(3);
     let a = black_box(mat3x3(a));
     assert!(svd_ordered3(a, true, true, fx(0x100000000), 0).unwrap() == Svd3Trait::new(a));
     assert!(svd_ordered3(a, true, true, fx(-1), 0).is_none());

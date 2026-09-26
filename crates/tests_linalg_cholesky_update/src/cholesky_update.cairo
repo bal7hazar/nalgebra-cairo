@@ -16,7 +16,7 @@ use nalgebra_tests_utils::{
     fx, oracle_tol, ulp_diff,
 };
 use crate::builders::{mat2x2, mat3x3, mat4x4, mat6x6, vec2, vec3, vec4, vec6};
-use crate::oracle_qr as oracle;
+use crate::oracle_cholesky_update as oracle;
 
 const ONE: i64 = 0x100000000;
 

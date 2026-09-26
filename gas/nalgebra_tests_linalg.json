@@ -404,31 +404,31 @@
     },
     "svd3_new": {
       "baseline": 17550,
-      "eigen_of_gram": 743440
+      "eigen_of_gram": 742820
     },
     "svd3_pseudo_inverse": {
-      "baseline": 744960,
-      "reciprocals": 798990
+      "baseline": 744250,
+      "reciprocals": 798280
     },
     "svd3_rank": {
-      "baseline": 744960,
-      "comparisons": 748770
+      "baseline": 744250,
+      "comparisons": 748060
     },
     "svd3_recompose": {
-      "baseline": 744960,
-      "scaled_product": 784330
+      "baseline": 744250,
+      "scaled_product": 783620
     },
     "svd3_singular_values": {
       "baseline": 17550,
-      "from_left_vectors": 743440
+      "from_left_vectors": 742820
     },
     "svd3_solve": {
-      "baseline": 745760,
-      "divisions": 778070
+      "baseline": 745050,
+      "divisions": 777360
     },
     "svd3_to_polar": {
-      "baseline": 744960,
-      "quadform": 798440
+      "baseline": 744250,
+      "quadform": 797730
     }
   },
   "nalgebra_tests_linalg::udu::benches": {

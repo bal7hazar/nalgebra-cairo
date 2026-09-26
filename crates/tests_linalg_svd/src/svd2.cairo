@@ -53,7 +53,7 @@ fn run(cases: Span<([[i64; 2]; 2], (i64, i64), u64)>) -> (u128, u128, u128) {
 /// tolerance, `U Σ Vᵀ = M` and the orthonormality of `U` / `V` within the measured bounds.
 #[test]
 fn test_oracle_svd2_singular_values() {
-    let (ex, rec, orth) = run(oracle::svd2_singular_values_cases());
+    let (ex, rec, orth) = run(crate::oracle_svd23::svd2_singular_values_cases());
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
     assert!(rec <= 3 && orth <= 5, "measured {} {}", rec, orth);
 }
@@ -145,7 +145,7 @@ fn test_svd2_diagonal_and_zero_are_exact() {
 
 #[test]
 fn test_svd2_api() {
-    let (a, _, _) = *oracle::svd2_singular_values_cases().at(0);
+    let (a, _, _) = *crate::oracle_svd23::svd2_singular_values_cases().at(0);
     let a = black_box(mat2x2(a));
     let d = Svd2Trait::new(a);
     // The unordered and `try` forms, `sort_by_singular_values` on a sorted decomposition.
@@ -169,7 +169,7 @@ fn test_svd2_api() {
 }
 /// A `unit` oracle case: the benchmark input.
 fn a_bench() -> Matrix2<Fixed> {
-    let (a, _, _) = *oracle::svd2_singular_values_cases().at(3);
+    let (a, _, _) = *crate::oracle_svd23::svd2_singular_values_cases().at(3);
     mat2x2(a)
 }
 

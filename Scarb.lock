@@ -298,6 +298,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_tests_linalg_cholesky_update"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_tests_linalg_eigen"
 version = "0.1.0"
 dependencies = [
@@ -323,6 +335,30 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_qr"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_qr6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_qr_tall"
 version = "0.1.0"
 dependencies = [
  "fixed",

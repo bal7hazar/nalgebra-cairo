@@ -343,7 +343,8 @@ impl Gen {
                 let mut m = vec![0i64; r * c];
                 for i in 0..*r {
                     for j in 0..*c {
-                        m[i * c + j] = (0..k).map(|l| a[i * k + l] * b[l * c + j]).sum::<i64>() << 32;
+                        m[i * c + j] =
+                            (0..k).map(|l| a[i * k + l] * b[l * c + j]).sum::<i64>() << 32;
                     }
                 }
                 Some(m)
@@ -354,7 +355,8 @@ impl Gen {
                 let mut m = vec![0i64; n * n];
                 for i in 0..*n {
                     for j in 0..*n {
-                        m[i * n + j] = (0..k).map(|l| b[l * n + i] * b[l * n + j]).sum::<i64>() << 32;
+                        m[i * n + j] =
+                            (0..k).map(|l| b[l * n + i] * b[l * n + j]).sum::<i64>() << 32;
                     }
                 }
                 Some(m)

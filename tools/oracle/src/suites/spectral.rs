@@ -32,9 +32,7 @@ pub const EPS: f64 = 1.0e-4;
 
 /// Every static shape (rows, cols), 1..6 x 1..6.
 fn shapes() -> Vec<(usize, usize)> {
-    (1..=6)
-        .flat_map(|r| (1..=6).map(move |c| (r, c)))
-        .collect()
+    (1..=6).flat_map(|r| (1..=6).map(move |c| (r, c))).collect()
 }
 
 fn name(r: usize, c: usize) -> String {
@@ -59,7 +57,11 @@ fn sorted(mut values: Vec<f64>, descending: bool) -> Vec<f64> {
 
 fn eigen_ops(n: usize) -> Vec<Op> {
     let kinds: [(&str, &str, Gen); 4] = [
-        ("", "symmetric matrices, independent entries mirrored", Gen::Sym(n)),
+        (
+            "",
+            "symmetric matrices, independent entries mirrored",
+            Gen::Sym(n),
+        ),
         ("_spd", "symmetric positive-definite matrices", Gen::Spd(n)),
         (
             "_clustered",
@@ -104,22 +106,25 @@ fn eigen_ops(n: usize) -> Vec<Op> {
 fn svd_ops(r: usize, c: usize) -> Vec<Op> {
     let k = r.min(c);
     let s = name(r, c);
-    let singular_values = move |x: &[f64]| {
-        Some(sorted(
-            flat(&mat_at(x, 0, r, c).singular_values()),
-            true,
-        ))
-    };
-    let mut ops = vec![Op::new(
-        format!("svd{s}_singular_values"),
-        "a.singular_values() sorted DESCENDING (well-conditioned a; check U, V by \
+    let singular_values =
+        move |x: &[f64]| Some(sorted(flat(&mat_at(x, 0, r, c).singular_values()), true));
+    // The well-conditioned 2x2 / 3x3 singular values are the `symmetric_eigen_svd` suite's (op
+    // names are unique across suites).
+    let mut ops = Vec::new();
+    if !(r == c && (r == 2 || r == 3)) {
+        ops.push(
+            Op::new(
+                format!("svd{s}_singular_values"),
+                "a.singular_values() sorted DESCENDING (well-conditioned a; check U, V by \
          reconstruction)",
-    )
-    .input(with(fm("a", r, c), Gen::WellCondRect(r, c)))
-    .out(fv("singular_values", k))
-    .dists(&Dist::NO_LARGE)
-    .tol(SPECTRAL)
-    .eval(singular_values)];
+            )
+            .input(with(fm("a", r, c), Gen::WellCondRect(r, c)))
+            .out(fv("singular_values", k))
+            .dists(&Dist::NO_LARGE)
+            .tol(SPECTRAL)
+            .eval(singular_values),
+        );
+    }
     if k >= 2 {
         ops.push(
             Op::new(
@@ -257,7 +262,8 @@ fn chol_tol(n: usize) -> Tol {
 }
 
 fn cholesky_ops(n: usize) -> Vec<Op> {
-    let mut ops = vec![
+    let mut ops =
+        vec![
         Op::new(
             format!("cholesky{n}_rank_one_update"),
             "l of a.cholesky().rank_one_update(&x, sigma), sigma in [0.25, 2] (the factor of a \

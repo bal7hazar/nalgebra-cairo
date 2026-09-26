@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_tests_linalg_qr"
-description = "Tests and gas benchmarks of the QR factorisation of the shapes 1, 5, 6 and every rectangle, and of the Cholesky updates (WP 8.5-P14b; not published)."
+description = "Tests and gas benchmarks of the QR factorisation of the shapes of 1 to 3 rows that P14a did not cover (WP 8.5-P14b; not published)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

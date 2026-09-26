@@ -1,0 +1,38 @@
+{
+  "nalgebra_tests_linalg_qr6::qr6": {
+    "qr6_new": {
+      "baseline": 24320,
+      "mgs": 516690
+    }
+  },
+  "nalgebra_tests_linalg_qr6::qr6x1": {
+    "qr6x1_new": {
+      "baseline": 18320,
+      "mgs": 52190
+    }
+  },
+  "nalgebra_tests_linalg_qr6::qr6x2": {
+    "qr6x2_new": {
+      "baseline": 19520,
+      "mgs": 101170
+    }
+  },
+  "nalgebra_tests_linalg_qr6::qr6x3": {
+    "qr6x3_new": {
+      "baseline": 20720,
+      "mgs": 166110
+    }
+  },
+  "nalgebra_tests_linalg_qr6::qr6x4": {
+    "qr6x4_new": {
+      "baseline": 21920,
+      "mgs": 247010
+    }
+  },
+  "nalgebra_tests_linalg_qr6::qr6x5": {
+    "qr6x5_new": {
+      "baseline": 23120,
+      "mgs": 343870
+    }
+  }
+}

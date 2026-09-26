@@ -5,11 +5,11 @@ use nalgebra::linalg::{Svd2Trait, Svd3Trait, svd_ordered2, svd_ordered3};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{Svd2PartialEq, Svd3PartialEq, fx};
 use crate::builders::{mat2x2, mat3x3};
-use crate::oracle_svd as oracle;
+use crate::oracle_svd23;
 
 #[test]
 fn test_svd_ordered2_is_svd2() {
-    let (a, _, _) = *oracle::svd2_singular_values_cases().at(3);
+    let (a, _, _) = *oracle_svd23::svd2_singular_values_cases().at(3);
     let a = black_box(mat2x2(a));
     assert!(svd_ordered2(a, true, true) == Svd2Trait::new(a));
     assert!(svd_ordered2(a, false, false) == Svd2Trait::new(a));
@@ -17,7 +17,7 @@ fn test_svd_ordered2_is_svd2() {
 
 #[test]
 fn test_svd_ordered3_is_svd3_try_new() {
-    let (a, _, _) = *oracle::svd3_singular_values_cases().at(3);
+    let (a, _, _) = *oracle_svd23::svd3_singular_values_cases().at(3);
     let a = black_box(mat3x3(a));
     assert!(svd_ordered3(a, true, true, fx(0x100000000), 0).unwrap() == Svd3Trait::new(a));
     assert!(svd_ordered3(a, true, true, fx(-1), 0).is_none());

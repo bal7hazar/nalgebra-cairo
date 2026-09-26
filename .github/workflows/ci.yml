@@ -46,6 +46,9 @@ jobs:
           - { name: tests_linalg_factor, package: nalgebra_tests_linalg_factor, filters: "nalgebra_tests_linalg_factor" }
           - { name: tests_linalg_eigen, package: nalgebra_tests_linalg_eigen, filters: "nalgebra_tests_linalg_eigen" }
           - { name: tests_linalg_qr, package: nalgebra_tests_linalg_qr, filters: "nalgebra_tests_linalg_qr" }
+          - { name: tests_linalg_qr_tall, package: nalgebra_tests_linalg_qr_tall, filters: "nalgebra_tests_linalg_qr_tall" }
+          - { name: tests_linalg_qr6, package: nalgebra_tests_linalg_qr6, filters: "nalgebra_tests_linalg_qr6" }
+          - { name: tests_linalg_cholesky_update, package: nalgebra_tests_linalg_cholesky_update, filters: "nalgebra_tests_linalg_cholesky_update" }
           - { name: tests_linalg_svd, package: nalgebra_tests_linalg_svd, filters: "nalgebra_tests_linalg_svd" }
           - { name: tests_linalg_svd5, package: nalgebra_tests_linalg_svd5, filters: "nalgebra_tests_linalg_svd5" }
           - { name: tests_linalg_svd6, package: nalgebra_tests_linalg_svd6, filters: "nalgebra_tests_linalg_svd6" }
