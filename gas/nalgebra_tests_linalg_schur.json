@@ -1,0 +1,110 @@
+{
+  "nalgebra_tests_linalg_schur::schur1": {
+    "eigen1_new": {
+      "baseline": 17320,
+      "schur": 20170
+    },
+    "schur1_complex_eigenvalues": {
+      "baseline": 17320,
+      "without_q": 17820
+    },
+    "schur1_eigenvalues": {
+      "baseline": 17320,
+      "without_q": 16910
+    },
+    "schur1_new": {
+      "baseline": 17320,
+      "francis": 17820
+    }
+  },
+  "nalgebra_tests_linalg_schur::schur2": {
+    "eigen2_new": {
+      "baseline": 17920,
+      "schur": 114340
+    },
+    "schur2_complex_eigenvalues": {
+      "baseline": 17920,
+      "without_q": 104230
+    },
+    "schur2_eigenvalues": {
+      "baseline": 17920,
+      "without_q": 41920
+    },
+    "schur2_new": {
+      "baseline": 17920,
+      "francis": 80300
+    }
+  },
+  "nalgebra_tests_linalg_schur::schur3": {
+    "eigen3_new": {
+      "baseline": 18920,
+      "schur": 1702820
+    },
+    "schur3_complex_eigenvalues": {
+      "baseline": 18920,
+      "without_q": 1908920
+    },
+    "schur3_eigenvalues": {
+      "baseline": 18920,
+      "without_q": 1605520
+    },
+    "schur3_new": {
+      "baseline": 18920,
+      "francis": 1889400
+    }
+  },
+  "nalgebra_tests_linalg_schur::schur4": {
+    "eigen4_new": {
+      "baseline": 20320,
+      "schur": 13873400
+    },
+    "schur4_complex_eigenvalues": {
+      "baseline": 20320,
+      "without_q": 2804910
+    },
+    "schur4_eigenvalues": {
+      "baseline": 20320,
+      "without_q": 13671710
+    },
+    "schur4_new": {
+      "baseline": 20320,
+      "francis": 2795970
+    }
+  },
+  "nalgebra_tests_linalg_schur::schur5": {
+    "eigen5_new": {
+      "baseline": 22120,
+      "schur": 17183030
+    },
+    "schur5_complex_eigenvalues": {
+      "baseline": 22120,
+      "without_q": 5409360
+    },
+    "schur5_eigenvalues": {
+      "baseline": 22120,
+      "without_q": 16805970
+    },
+    "schur5_new": {
+      "baseline": 22120,
+      "francis": 5426750
+    }
+  },
+  "nalgebra_tests_linalg_schur::schur6": {
+    "eigen6_new": {
+      "baseline": 24320,
+      "schur": 24495550
+    },
+    "schur6_complex_eigenvalues": {
+      "baseline": 24320,
+      "without_q": 18605130
+    },
+    "schur6_eigenvalues": {
+      "baseline": 24320,
+      "without_q": 23883890
+    },
+    "schur6_new": {
+      "baseline": 24320,
+      "francis": 18676920
+    }
+  }
+}

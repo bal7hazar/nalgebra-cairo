@@ -295,10 +295,8 @@ pub(crate) impl Schur3KernelImpl<
         while end != start {
             let (old_start, old_end) = (start, end);
             if end - start >= 2 {
-                if end == 2 {
-                    if start == 0 {
-                        Self::francis0_2(ref t, ref q, compute_q);
-                    }
+                if end == 2 && start == 0 {
+                    Self::francis0_2(ref t, ref q, compute_q);
                 }
             } else {
                 if start == 0 {

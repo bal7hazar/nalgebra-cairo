@@ -87,9 +87,8 @@ pub impl SymmetricTridiagonal1Impl<
     /// Upstream:
     /// `SymmetricTridiagonal::off_diagonal`.
     #[inline(always)]
-    fn off_diagonal(self: SymmetricTridiagonal1<T>) -> () {
+    fn off_diagonal(self: SymmetricTridiagonal1<T>) {
         let _ = self;
-        ()
     }
 
     /// The orthogonal factor `Q`: upstream's `householder::assemble_q` on symbolic identity

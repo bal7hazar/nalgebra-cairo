@@ -132,9 +132,8 @@ pub impl Bidiagonal1x2Impl<
     /// The off-diagonal of `D` (`|off_diagonal|`), the empty `()` here. Exact. Upstream:
     /// `Bidiagonal::off_diagonal`.
     #[inline(always)]
-    fn off_diagonal(self: Bidiagonal1x2<T>) -> () {
+    fn off_diagonal(self: Bidiagonal1x2<T>) {
         let _ = self;
-        ()
     }
 
     /// The packed storage (the Householder axes). Exact. Upstream: `Bidiagonal::uv_internal`

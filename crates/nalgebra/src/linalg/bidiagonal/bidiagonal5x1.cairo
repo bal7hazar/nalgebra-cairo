@@ -163,9 +163,8 @@ pub impl Bidiagonal5x1Impl<
     /// The off-diagonal of `D` (`|off_diagonal|`), the empty `()` here. Exact. Upstream:
     /// `Bidiagonal::off_diagonal`.
     #[inline(always)]
-    fn off_diagonal(self: Bidiagonal5x1<T>) -> () {
+    fn off_diagonal(self: Bidiagonal5x1<T>) {
         let _ = self;
-        ()
     }
 
     /// The packed storage (the Householder axes). Exact. Upstream: `Bidiagonal::uv_internal`

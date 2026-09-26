@@ -92,6 +92,11 @@ jobs:
           - { name: tests_linalg_pivot_qr_wide, package: nalgebra_tests_linalg_pivot_qr_wide, filters: "nalgebra_tests_linalg_pivot_qr_wide" }
           - { name: tests_linalg_pivot_qr_tall, package: nalgebra_tests_linalg_pivot_qr_tall, filters: "nalgebra_tests_linalg_pivot_qr_tall" }
           - { name: tests_linalg_pivot_lblt, package: nalgebra_tests_linalg_pivot_lblt, filters: "nalgebra_tests_linalg_pivot_lblt" }
+          - { name: tests_linalg_schur, package: nalgebra_tests_linalg_schur, filters: "nalgebra_tests_linalg_schur" }
+          - { name: tests_linalg_hessenberg, package: nalgebra_tests_linalg_hessenberg, filters: "nalgebra_tests_linalg_hessenberg" }
+          - { name: tests_linalg_bidiagonal, package: nalgebra_tests_linalg_bidiagonal, filters: "nalgebra_tests_linalg_bidiagonal" }
+          - { name: tests_linalg_bidiagonal_wide, package: nalgebra_tests_linalg_bidiagonal_wide, filters: "nalgebra_tests_linalg_bidiagonal_wide" }
+          - { name: tests_linalg_bidiagonal_tall, package: nalgebra_tests_linalg_bidiagonal_tall, filters: "nalgebra_tests_linalg_bidiagonal_tall" }
           - { name: tests_dynamic, package: nalgebra_tests_dynamic, filters: "nalgebra_tests_dynamic" }
           - { name: tests_sparse, package: nalgebra_tests_sparse, filters: "nalgebra_tests_sparse" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }

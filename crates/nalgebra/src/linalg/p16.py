@@ -619,9 +619,8 @@ pub struct {S}<T> {{
     /// The off-diagonal of `T` (`|off_diagonal|`){", the empty `()` for a 1x1 matrix" if n == 1 else ""}. Exact. Upstream:
     /// `SymmetricTridiagonal::off_diagonal`.
     #[inline(always)]
-    fn off_diagonal(self: {S}<T>) -> {vtype(n - 1)} {{
-        {"let _ = self;" if n == 1 else ""}
-        {off_abs}
+    fn off_diagonal(self: {S}<T>){"" if n == 1 else " -> " + vtype(n - 1)} {{
+        {"let _ = self;" if n == 1 else off_abs}
     }}
 
     /// The orthogonal factor `Q`: upstream's `householder::assemble_q` on symbolic identity
@@ -861,9 +860,8 @@ pub struct {B}<T> {{
     /// The off-diagonal of `D` (`|off_diagonal|`){", the empty `()` here" if k == 1 else ""}. Exact. Upstream:
     /// `Bidiagonal::off_diagonal`.
     #[inline(always)]
-    fn off_diagonal(self: {B}<T>) -> {vtype(k - 1)} {{
-        {"let _ = self;" if k == 1 else ""}
-        {off_abs}
+    fn off_diagonal(self: {B}<T>){"" if k == 1 else " -> " + vtype(k - 1)} {{
+        {"let _ = self;" if k == 1 else off_abs}
     }}
 
     /// The packed storage (the Householder axes). Exact. Upstream: `Bidiagonal::uv_internal`
@@ -1116,8 +1114,8 @@ def delimit_fn(n: int, end: int) -> str:
         for ns in range(1, nn):
             x = f"t.{fld(n, n, ns, ns - 1)}"
             a, b = f"t.{fld(n, n, ns, ns)}", f"t.{fld(n, n, ns - 1, ns - 1)}"
-            code = (f"if {small_expr(x, a, b)} {{\n{x} = R::zero();\nstart = {ns};\n}} "
-                    f"else {{\n{code}\n}}")
+            tail = f"{code}" if code.startswith("if ") else f"{{\n{code}\n}}"
+            code = f"if {small_expr(x, a, b)} {{\n{x} = R::zero();\nstart = {ns};\n}} else {tail}"
         arms.append((nn, code))
     chain = " else ".join(f"if nn == {nn} {{\n{code}\n}}" for nn, code in arms)
     st.append("let mut start: usize = 0;")
@@ -1254,12 +1252,9 @@ def render_schur(n: int) -> str:
         dl = " else ".join(f"if end == {e} {{\nSelf::delimit{e}(ref t, eps, thr)\n}}"
                            for e in range(1, n - 1)) + (
             f" else {{\nSelf::delimit{n - 1}(ref t, eps, thr)\n}}" if n > 2 else "")
-        fr_arms = []
-        for e in range(2, n):
-            inner = " else ".join(f"if start == {s} {{\nSelf::francis{s}_{e}(ref t, ref q, compute_q);\n}}"
-                                  for s in range(0, e - 1))
-            fr_arms.append(f"if end == {e} {{\n{inner}\n}}")
-        fr = " else ".join(fr_arms)
+        fr = " else ".join(
+            f"if end == {e} && start == {s} {{\nSelf::francis{s}_{e}(ref t, ref q, compute_q);\n}}"
+            for e in range(2, n) for s in range(0, e - 1))
         bl = " else ".join(f"if start == {s} {{\nSelf::block{s}(ref t, ref q, compute_q);\n}}"
                            for s in range(0, n - 1))
         amax = "let mut amax = R::abs(m.m11);\n" + "\n".join(

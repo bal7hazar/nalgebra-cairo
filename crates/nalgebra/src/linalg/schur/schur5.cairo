@@ -467,24 +467,18 @@ pub(crate) impl Schur5KernelImpl<
         while end != start {
             let (old_start, old_end) = (start, end);
             if end - start >= 2 {
-                if end == 2 {
-                    if start == 0 {
-                        Self::francis0_2(ref t, ref q, compute_q);
-                    }
-                } else if end == 3 {
-                    if start == 0 {
-                        Self::francis0_3(ref t, ref q, compute_q);
-                    } else if start == 1 {
-                        Self::francis1_3(ref t, ref q, compute_q);
-                    }
-                } else if end == 4 {
-                    if start == 0 {
-                        Self::francis0_4(ref t, ref q, compute_q);
-                    } else if start == 1 {
-                        Self::francis1_4(ref t, ref q, compute_q);
-                    } else if start == 2 {
-                        Self::francis2_4(ref t, ref q, compute_q);
-                    }
+                if end == 2 && start == 0 {
+                    Self::francis0_2(ref t, ref q, compute_q);
+                } else if end == 3 && start == 0 {
+                    Self::francis0_3(ref t, ref q, compute_q);
+                } else if end == 3 && start == 1 {
+                    Self::francis1_3(ref t, ref q, compute_q);
+                } else if end == 4 && start == 0 {
+                    Self::francis0_4(ref t, ref q, compute_q);
+                } else if end == 4 && start == 1 {
+                    Self::francis1_4(ref t, ref q, compute_q);
+                } else if end == 4 && start == 2 {
+                    Self::francis2_4(ref t, ref q, compute_q);
                 }
             } else {
                 if start == 0 {
@@ -658,14 +652,12 @@ pub(crate) impl Schur5KernelImpl<
             if (R::abs(t.m32) <= thr || R::abs(t.m32) <= eps * (R::abs(t.m33) + R::abs(t.m22))) {
                 t.m32 = R::zero();
                 start = 2;
+            } else if (R::abs(t.m21) <= thr || R::abs(t.m21) <= eps
+                * (R::abs(t.m22) + R::abs(t.m11))) {
+                t.m21 = R::zero();
+                start = 1;
             } else {
-                if (R::abs(t.m21) <= thr || R::abs(t.m21) <= eps
-                    * (R::abs(t.m22) + R::abs(t.m11))) {
-                    t.m21 = R::zero();
-                    start = 1;
-                } else {
-                    start = 0;
-                }
+                start = 0;
             }
         }
         (start, nn)
@@ -715,33 +707,27 @@ pub(crate) impl Schur5KernelImpl<
             if (R::abs(t.m32) <= thr || R::abs(t.m32) <= eps * (R::abs(t.m33) + R::abs(t.m22))) {
                 t.m32 = R::zero();
                 start = 2;
+            } else if (R::abs(t.m21) <= thr || R::abs(t.m21) <= eps
+                * (R::abs(t.m22) + R::abs(t.m11))) {
+                t.m21 = R::zero();
+                start = 1;
             } else {
-                if (R::abs(t.m21) <= thr || R::abs(t.m21) <= eps
-                    * (R::abs(t.m22) + R::abs(t.m11))) {
-                    t.m21 = R::zero();
-                    start = 1;
-                } else {
-                    start = 0;
-                }
+                start = 0;
             }
         } else if nn == 4 {
             if (R::abs(t.m43) <= thr || R::abs(t.m43) <= eps * (R::abs(t.m44) + R::abs(t.m33))) {
                 t.m43 = R::zero();
                 start = 3;
+            } else if (R::abs(t.m32) <= thr || R::abs(t.m32) <= eps
+                * (R::abs(t.m33) + R::abs(t.m22))) {
+                t.m32 = R::zero();
+                start = 2;
+            } else if (R::abs(t.m21) <= thr || R::abs(t.m21) <= eps
+                * (R::abs(t.m22) + R::abs(t.m11))) {
+                t.m21 = R::zero();
+                start = 1;
             } else {
-                if (R::abs(t.m32) <= thr || R::abs(t.m32) <= eps
-                    * (R::abs(t.m33) + R::abs(t.m22))) {
-                    t.m32 = R::zero();
-                    start = 2;
-                } else {
-                    if (R::abs(t.m21) <= thr || R::abs(t.m21) <= eps
-                        * (R::abs(t.m22) + R::abs(t.m11))) {
-                        t.m21 = R::zero();
-                        start = 1;
-                    } else {
-                        start = 0;
-                    }
-                }
+                start = 0;
             }
         }
         (start, nn)
