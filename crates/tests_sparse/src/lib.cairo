@@ -18,4 +18,8 @@ mod matrix_market;
 #[cfg(test)]
 mod ops;
 #[cfg(test)]
+mod oracle;
+#[cfg(test)]
+mod oracle_sparse;
+#[cfg(test)]
 mod solve;
