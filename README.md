@@ -43,7 +43,7 @@ nalgebra = { version = "x.y", default-features = false, features = ["statistics"
 | `blas` | `gemm`, `gemv`, `axpy`, `ger`, `quadform`... (`base::blas`) |
 | `closures` | the methods that take a closure: `map`, `fold`, `apply`, `zip_map`, `fill_with`... |
 
-Turning all three off cuts a cold build of the library by about 19 % of the memory and 39 % of the
+Turning all three off cuts a cold build of the library by about 16 % of the memory and 32 % of the
 CPU time ([measurements](tools/shapegen/DESIGN.md)); the test packages of this repository do it.
 
 ## Why it is fast

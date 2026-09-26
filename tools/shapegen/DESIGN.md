@@ -550,8 +550,7 @@ lock taken before the timer); raw results in `budget-results.jsonl`. Library bui
   P14a** (`budget.py full`, cold, peak RSS / CPU): library 6,443 MB / 92.5 s with the defaults,
   5,388 MB / 62.5 s with `--no-default-features` (−16 % / −32 %); `shapes_tests_core` 10,733 →
   9,718 MB (CPU 244 → 202 s); `tests_geometry` 10,989 → 9,945 MB (187 → 161 s); `tests_base`
-  10,812 → 9,784 MB (189 → 145 s); the `nalgebra` shard (`snforge test -p nalgebra
-  --no-default-features`) peaks at 2.9 GB.
+  10,812 → 9,784 MB (189 → 145 s).
 - **`#[inline(always)]`** costs little in the library but a lot in the units that instantiate it:
   without it in the generated modules, `shapes_tests_core` 9.80 → 9.08 GB and 441 → 323 s CPU
   (snforge), at +1.7 % total gas (median 0, benches unchanged, worst test +15 %); `tests_geometry`
