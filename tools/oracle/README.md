@@ -140,6 +140,16 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   by 8), dot product and norms of 16 components, on the exact `i128` path except the norm. Vectors
   are emitted as `n x 1` matrices (`[[i64; 1]; n]`) so that one Cairo flattening helper serves
   every size; `crates/tests_dynamic/src/oracle_dynamic.cairo` is emitted with `--max-per-dist 2`.
+- Suite `sparse` (WP 8.6-P20 / P18): upstream's `sparse` feature needs `std`, which the oracle
+  build leaves out, so the sparse ops are evaluated on the DENSE matrices with the same entries:
+  products and sums exactly (`i128`), the triangular solves with the dense
+  `solve_lower_triangular` / `tr_solve_lower_triangular`, `CsCholesky` with the dense `Cholesky`
+  (the sparse factor has the same entries). Sparsity is a fixed pattern (1D / 2D Laplacian
+  stencils, a rectangular pattern) applied to dense random inputs on both sides; the SPD matrices
+  are weighted graph Laplacians plus a positive diagonal, assembled from triplets (the Cairo side
+  sums the duplicates). The convolutions use a hand-written exact `i128` kernel cross-checked
+  against upstream's `convolve_*` in f64. `crates/tests_sparse/src/oracle_sparse.cairo` is emitted
+  with `--max-per-dist 2`.
 - Suite `dual_quaternion` (WP 8.4-P12): dual quaternions are `(real (w, i, j, k), dual (w, i, j,
   k))`. A unit dual quaternion input (`Gen::UnitDual`) is a quantised unit quaternion `r` and a
   translation `t` of the case's magnitude class, then upstream's `from_parts(t, r)` in f64 with its

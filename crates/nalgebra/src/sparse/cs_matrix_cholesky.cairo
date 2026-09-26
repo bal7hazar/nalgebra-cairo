@@ -161,10 +161,8 @@ pub impl CsCholeskyImpl<
                 }
                 let mut chain: Array<usize> = array![];
                 let mut j = i;
-                loop {
-                    if mark.get(j.into()) == k + 1 {
-                        break;
-                    }
+                // Up the tree until a node already reached for row k (parents are below k).
+                while mark.get(j.into()) != k + 1 {
                     mark.insert(j.into(), k + 1);
                     chain.append(j);
                     let pj = parent.get(j.into());
@@ -173,9 +171,6 @@ pub impl CsCholeskyImpl<
                         break;
                     }
                     j = pj - 1;
-                    if j >= k {
-                        break;
-                    }
                 }
                 pattern = union_sorted(pattern, chain.span());
                 q += 1;

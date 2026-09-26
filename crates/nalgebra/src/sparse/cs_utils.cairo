@@ -104,29 +104,21 @@ pub(crate) fn sort_runs(mut entries: Span<Entry>, mut ends: Span<usize>) -> Span
         let mut out: Array<Entry> = array![];
         let mut new_ends: Array<usize> = array![];
         let mut start = 0;
-        loop {
+        while let Some(e1) = ends.pop_front() {
+            let e1 = *e1;
             match ends.pop_front() {
-                Some(e1) => {
-                    let e1 = *e1;
-                    match ends.pop_front() {
-                        Some(e2) => {
-                            let e2 = *e2;
-                            merge_runs(
-                                ref out,
-                                entries.slice(start, e1 - start),
-                                entries.slice(e1, e2 - e1),
-                            );
-                            new_ends.append(e2);
-                            start = e2;
-                        },
-                        None => {
-                            append_all(ref out, entries.slice(start, e1 - start));
-                            new_ends.append(e1);
-                            break;
-                        },
-                    }
+                Some(e2) => {
+                    let e2 = *e2;
+                    merge_runs(
+                        ref out, entries.slice(start, e1 - start), entries.slice(e1, e2 - e1),
+                    );
+                    new_ends.append(e2);
+                    start = e2;
                 },
-                None => { break; },
+                None => {
+                    append_all(ref out, entries.slice(start, e1 - start));
+                    new_ends.append(e1);
+                },
             }
         }
         entries = out.span();
@@ -217,10 +209,10 @@ pub(crate) fn gather<T, +Copy<T>, +Drop<T>>(data: Span<T>, mut idx: Span<usize>)
 
 /// The ascending union of two ascending index lists (common indices kept once).
 pub(crate) fn union_sorted(mut a: Span<usize>, mut b: Span<usize>) -> Span<usize> {
-    if a.len() == 0 {
+    if a.is_empty() {
         return b;
     }
-    if b.len() == 0 {
+    if b.is_empty() {
         return a;
     }
     let mut out: Array<usize> = array![];

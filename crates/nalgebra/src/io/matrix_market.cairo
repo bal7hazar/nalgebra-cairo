@@ -258,6 +258,18 @@ fn value<T, impl R: Real<T>, +Drop<T>, +Add<T>>(
     Some((decimal(neg, digits.span(), point), pos))
 }
 
+/// An `Entry` at `pos` (`Dimension Dimension Value`, spaces between): the two indices (`None`
+/// when one does not fit `usize`), the value and the position after it; `None` when the text
+/// there is not an entry.
+fn entry<T, impl R: Real<T>, +Drop<T>, +Add<T>>(
+    data: @ByteArray, pos: usize,
+) -> Option<(Option<usize>, Option<usize>, T, usize)> {
+    let (r, q) = dimension(data, pos)?;
+    let (c, q) = dimension(data, skip_spaces(data, q))?;
+    let (v, q) = value(data, skip_spaces(data, q))?;
+    Some((r, c, v, q))
+}
+
 /// The sparse matrix described by the Matrix Market text `data` (coordinate format, real values,
 /// 1-based indices; see the module doc for the accepted syntax). Returns `None` when a shape
 /// number or an index does not fit `usize` (upstream: a failed `parse::<usize>()`); panics with
@@ -330,43 +342,27 @@ pub fn cs_matrix_from_matrix_market_str<
     let mut cols: Array<usize> = array![];
     let mut vals: Array<T> = array![];
     let mut overflow = false;
-    loop {
-        let p = skip_spaces(data, pos);
-        let q = match newline(data, p) {
-            Some(q) => q,
-            None => { break; },
-        };
+    while let Some(q) = newline(data, skip_spaces(data, pos)) {
         pos = q;
-        let q = skip_spaces(data, q);
-        // Entry = Dimension Dimension Value, or nothing.
-        let (r, q) = match dimension(data, q) {
-            Some(x) => x,
-            None => { continue; },
-        };
-        let (c, q) = match dimension(data, skip_spaces(data, q)) {
-            Some(x) => x,
-            None => { continue; },
-        };
-        let (v, q) = match value(data, skip_spaces(data, q)) {
-            Some(x) => x,
-            None => { continue; },
-        };
-        pos = q;
-        match (r, c) {
-            (
-                Some(r), Some(c),
-            ) => {
-                if r == 0 || c == 0 {
-                    core::panic_with_felt252(base_errors::INDEX_OUT_OF_BOUNDS);
-                }
-                rows.append(r - 1);
-                cols.append(c - 1);
-                vals.append(v);
-            },
-            _ => {
-                overflow = true;
-                break;
-            },
+        // Entry = Dimension Dimension Value, or nothing (then the next NEWLINE is expected).
+        if let Some((r, c, v, end)) = entry(data, skip_spaces(data, q)) {
+            pos = end;
+            match (r, c) {
+                (
+                    Some(r), Some(c),
+                ) => {
+                    if r == 0 || c == 0 {
+                        core::panic_with_felt252(base_errors::INDEX_OUT_OF_BOUNDS);
+                    }
+                    rows.append(r - 1);
+                    cols.append(c - 1);
+                    vals.append(v);
+                },
+                _ => {
+                    overflow = true;
+                    break;
+                },
+            }
         }
     }
     if overflow {
