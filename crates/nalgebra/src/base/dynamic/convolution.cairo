@@ -82,7 +82,7 @@ impl ConvKernelsImpl<
                 n - 1
             };
             let len = u1 + 1 - u0;
-            out.append(DynKernels::dot(x.slice(u0, len), kr.slice(m - 1 - i + u0, len)));
+            out.append(DynKernels::dot(x.slice(u0, len), kr.slice(m - 1 + u0 - i, len)));
             i += 1;
         }
         out.span()
