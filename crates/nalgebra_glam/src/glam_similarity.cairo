@@ -11,7 +11,8 @@
 //!   checking that it is orthogonal (upstream comments that check out: a sheared matrix is
 //!   accepted, with the rotation of the Shepperd's method / first column), and when the block
 //!   has a negative determinant the columns are negated and the scaling is negative, like
-//!   upstream. The translation is the last column, unchanged.
+//!   upstream (3D: negating three columns flips the determinant, so `-s * R` is the reflection).
+//!   The translation is the last column, unchanged.
 //!
 //! Deviations from upstream (documented, identical results wherever upstream terminates):
 //!
@@ -58,9 +59,10 @@ pub impl Similarity3IntoMat4 of Into<Similarity3<Fixed>, Mat4> {
     }
 }
 
-/// `Some(similarity)` when no column of the linear block of `self` is zero and its bottom row is
-/// exactly `(0, 0, 1)`, `None` otherwise (upstream: `Err(())`); see the module documentation for
-/// the scaling and the rotation. Upstream: `TryFrom<Mat3> for Similarity2<f32>`
+/// `Some(similarity)` when no column of the linear block of `self` is zero, its determinant is not
+/// negative and its bottom row is exactly `(0, 0, 1)`, `None` otherwise (upstream: `Err(())`); see
+/// the module documentation for the scaling and the rotation. Upstream: `TryFrom<Mat3> for
+/// Similarity2<f32>`
 /// (`nalgebra::try_convert`).
 pub impl Similarity2TryFromMat3 of TryInto<Mat3, Similarity2<Fixed>> {
     fn try_into(self: Mat3) -> Option<Similarity2<Fixed>> {
@@ -76,12 +78,11 @@ pub impl Similarity2TryFromMat3 of TryInto<Mat3, Similarity2<Fixed>> {
         let Option::Some(nb) = Vector2Trait::try_normalize_mut(ref b, ZERO) else {
             return Option::None;
         };
-        let mut m = Matrix2 { m11: a.x, m21: a.y, m12: b.x, m22: b.y };
-        let mut scaling = (na + nb) / TWO;
+        let m = Matrix2 { m11: a.x, m21: a.y, m12: b.x, m22: b.y };
         if Matrix2Trait::determinant(m) < ZERO {
-            m = -m;
-            scaling = -scaling;
+            return Option::None;
         }
+        let scaling = (na + nb) / TWO;
         Option::Some(
             Similarity2 {
                 isometry: Isometry2 {
