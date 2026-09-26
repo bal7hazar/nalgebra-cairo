@@ -1,0 +1,29 @@
+[package]
+name = "nalgebra_tests_root"
+description = "Tests and gas benchmarks of the crate-root functions, the construction macros and the Sum / Product impls (WP 8.6-P21; not published)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+publish = false
+# No `experimental-features`: this package is the measurement that a dependent calls the
+# macros (`user_defined_inline_macros`) and `iter.sum()` / `iter.product()` without enabling any
+# experimental feature itself (WP 8.6-P21, README).
+
+[dependencies]
+nalgebra = { path = "../nalgebra", default-features = false, features = ["macros", "dynamic"] }
+simba.workspace = true
+fixed.workspace = true
+
+[dev-dependencies]
+nalgebra_tests_utils = { path = "../tests_utils" }
+nalgebra_testing = { path = "../testing" }
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

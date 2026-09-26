@@ -69,6 +69,7 @@ jobs:
           - { name: tests_linalg_factor, package: nalgebra_tests_linalg_factor, filters: "nalgebra_tests_linalg_factor" }
           - { name: tests_dynamic, package: nalgebra_tests_dynamic, filters: "nalgebra_tests_dynamic" }
           - { name: tests_sparse, package: nalgebra_tests_sparse, filters: "nalgebra_tests_sparse" }
+          - { name: tests_root, package: nalgebra_tests_root, filters: "nalgebra_tests_root" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
           - { name: "shapes norms", package: nalgebra_shapes_tests_norms, filters: "nalgebra_shapes_tests_norms" }
           - { name: "shapes componentwise", package: nalgebra_shapes_tests_componentwise, filters: "nalgebra_shapes_tests_componentwise" }

@@ -32,6 +32,7 @@ members = [
     "crates/tests_linalg_factor",
     "crates/tests_dynamic",
     "crates/tests_sparse",
+    "crates/tests_root",
 ]
 
 [workspace.package]

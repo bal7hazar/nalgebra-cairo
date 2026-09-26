@@ -1,0 +1,61 @@
+{
+  "nalgebra_tests_root::benches": {
+    "center_point3": {
+      "baseline": 17260,
+      "coords": 24890,
+      "root": 23270
+    },
+    "distance_point3": {
+      "baseline": 17260,
+      "coords": 22370,
+      "root": 22370
+    },
+    "distance_point5": {
+      "baseline": 18280,
+      "coords": 27390,
+      "root": 27390
+    },
+    "dmatrix_macro3": {
+      "alt_usize_check": 81520,
+      "baseline": 17740,
+      "from_row_slice": 81220,
+      "macro": 81220
+    },
+    "inf_matrix3": {
+      "baseline": 23920,
+      "method": 31040,
+      "root": 31040
+    },
+    "matrix_macro3": {
+      "baseline": 17740,
+      "macro": 26300,
+      "new": 26300
+    },
+    "product_matrix3_4": {
+      "baseline": 22040,
+      "chain": 89690,
+      "owned_corelib": 127390,
+      "snapshots": 102930
+    },
+    "stack_2x2_blocks": {
+      "baseline": 20000,
+      "macro": 23700,
+      "new": 23700
+    },
+    "sum_dmatrix3_4": {
+      "baseline": 28240,
+      "chain": 95220,
+      "library": 102280
+    },
+    "sum_matrix3_4": {
+      "alt_fold": 69790,
+      "alt_unrolled2": 56360,
+      "alt_unrolled4": 56090,
+      "baseline": 22040,
+      "chain": 42420,
+      "library": 56360,
+      "snapshots": 57160,
+      "upstream_from_zero": 60070
+    }
+  }
+}
