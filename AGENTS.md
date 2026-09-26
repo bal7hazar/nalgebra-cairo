@@ -62,7 +62,11 @@ machine is CPU-capped (programme rule, 2026-09-25).
   package per PR, plus a `REPORT.md` (git-ignored) at the worktree root: summary, API, gas table,
   deviations, deferred items, requested re-exports, escalations, PR URL.
 - Compile budget: keep generated test files small (a few hundred cases per op at most); oversized
-  test crates are the first cause of CI failures.
+  test crates are the first cause of CI failures. Pass test operands through `black_box` too: the
+  compiler specialises a function per set of constant arguments (WP 8.5-P14a: 16.9 GB for one test
+  package with constant operands). Test packages depend on `nalgebra` with `default-features =
+  false` and the features they test (DESIGN D9); `scarb build -p nalgebra --no-default-features`
+  must pass.
 
 ## Conventions
 

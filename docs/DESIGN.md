@@ -135,6 +135,28 @@ Every public function ships with:
 
 Scalar kernels additionally have a bit-exact Python integer model used to generate expectations.
 
+## D9 — Families are Scarb features, all in `default` (owner, 2026-09-26)
+
+Compiling `nalgebra` costs every consumer and every test package the whole library (6.1 GB peak,
+92 s CPU cold after WP 8.3-P06; heaviest test packages ~10.4 GB against 16 GB CI runners), and
+~350 parity items remain. Measured in spike WP 8.1d (`tools/shapegen/DESIGN.md` §2.11, raw data in
+`tools/shapegen/budget-results.jsonl`): Scarb 2.19.4 features resolve per compilation unit, and
+gating `statistics`, `blas` and the closure methods alone cuts the library by 19 % (memory) and
+39 % (CPU), about 1 GB per test package that opts out.
+
+- Every **leaf family** (nothing ungated in the crate uses it) is a Scarb feature, and **every
+  feature is in `default`**: `nalgebra = "x.y"` exposes the full nalgebra-rs surface (parity holds
+  by default). A feature may be added to `default`, never removed from it.
+- New families are gated from day one: dynamic matrices, sparse, glam conversions, macros; the
+  completion / views / geometry surfaces follow once their internal uses are cut (spike plan §6).
+- Test packages depend on `nalgebra` with `default-features = false` plus the features they test
+  (helper crates such as `tests_utils` too: features are unified per compilation unit).
+- `scarb build -p nalgebra --no-default-features` must pass: part of the local checks of any WP
+  that touches a gated family.
+- Structural deviation from nalgebra-rs (which has no such features), documented here and in the
+  README: a consumer may write `nalgebra = { version = "x.y", default-features = false, features
+  = [...] }` for a lighter build.
+
 ## D8 — Interop with glam-cairo / rapier-cairo
 
 One scalar across the three repositories: fixed-cairo's `fixed::Fixed`, a registry dependency pinned
