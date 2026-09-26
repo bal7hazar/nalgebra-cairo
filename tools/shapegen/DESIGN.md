@@ -527,7 +527,7 @@ lock taken before the timer); raw results in `budget-results.jsonl`. Library bui
   `features = [..]` on a workspace path dependency. Features are resolved per compilation unit:
   building two packages together does not unify them, while one unit that reaches the library
   through two paths (a dev-dependency with the defaults) gets the union. `FEATURES` (`shapes.py`)
-  gates `statistics` and `blas` (shared modules and their re-exports), `functional.FEATURE` the
+  gates `statistics` and `blas` (shared modules and their re-exports), `functional.FEATURE` (`closures`) the
   closure methods (per method); all three are in `default`, so the API and `api_parity.py` are
   unchanged. `cg` cannot be gated while the P11a transforms use it.
 - **Measured with the three features off**: library 6.08 → 4.94 GB (CPU 92 → 56 s); the library's

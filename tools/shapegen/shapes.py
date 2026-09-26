@@ -625,7 +625,7 @@ SHARED_EXPORTS = {"matrix_mul": ["MatrixMul"], "matrix_tr_mul": ["MatrixTrMul"],
                   "norm": ["EuclideanNorm", "LpNorm", "Norm", "OneNorm", "UniformNorm"],
                   **P05.SHARED_EXPORTS, **P06.SHARED_EXPORTS, **P06B.SHARED_EXPORTS, **P07.SHARED_EXPORTS,
                   **P14.SHARED_EXPORTS}
-PRIVATE_MODULES = {"kernels"}
+PRIVATE_MODULES = {"kernels", "transpose"}
 # WP 8.5-P14a: generated modules of `linalg` (`shapegen.library_outputs`).
 LINALG_MODULES = {**P14L.LINALG_MODULES}
 

@@ -11,7 +11,7 @@ keywords.workspace = true
 publish = false
 
 [dependencies]
-nalgebra = { path = "../nalgebra", default-features = false, features = ["functional"] }
+nalgebra = { path = "../nalgebra", default-features = false, features = ["closures"] }
 simba.workspace = true
 fixed.workspace = true
 

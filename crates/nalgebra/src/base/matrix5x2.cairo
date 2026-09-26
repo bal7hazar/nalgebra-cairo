@@ -986,7 +986,7 @@ pub impl Matrix5x2Impl<
     /// The 5x2 matrix of `f(x)` for every component `x` (called in column-major order). `f` is any
     /// closure or `Fn` value; Cairo closures take their arguments by value and cannot mutate their
     /// captures. Upstream: `map`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
         self: Matrix5x2<T>, f: F,
@@ -1008,7 +1008,7 @@ pub impl Matrix5x2Impl<
     /// The 5x2 matrix of `f(i, j, x)` for every component `x` at row `i`, column `j` (0-based,
     /// column-major order). `f` is any closure or `Fn` value; Cairo closures take their arguments
     /// by value and cannot mutate their captures. Upstream: `map_with_location`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn map_with_location<
         F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
@@ -1032,7 +1032,7 @@ pub impl Matrix5x2Impl<
     /// The 5x2 matrix of `f(a, b)` for the components `a` of `self` and `b` of `rhs` at the same
     /// position. `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
     /// cannot mutate their captures. Upstream: `zip_map`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_map<
         T2,
@@ -1062,7 +1062,7 @@ pub impl Matrix5x2Impl<
     /// The 5x2 matrix of `f(a, b, c)` for the components of `self`, `b` and `c` at the same
     /// position. `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
     /// cannot mutate their captures. Upstream: `zip_zip_map`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_zip_map<
         T2,
@@ -1097,7 +1097,7 @@ pub impl Matrix5x2Impl<
     /// without the `associated_item_constraints` experimental feature. `f` is any closure or `Fn`
     /// value; Cairo closures take their arguments by value and cannot mutate their captures.
     /// Upstream: `fold`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
         self: Matrix5x2<T>, init: Acc, f: F,
@@ -1119,7 +1119,7 @@ pub impl Matrix5x2Impl<
     /// matrix, which a static shape never is). The accumulator has the type of `init_f`'s output;
     /// `f`'s output converts `Into` it. The closures receive values instead of upstream's `&T`.
     /// Upstream: `fold_with`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fold_with<
         G,
@@ -1148,7 +1148,7 @@ pub impl Matrix5x2Impl<
     /// `fold` over the pairs of components of `self` and `rhs` at the same position: `f(acc, a,
     /// b)`, column-major. `f` is any closure or `Fn` value; Cairo closures take their arguments by
     /// value and cannot mutate their captures. Upstream: `zip_fold`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_fold<
         T2,
@@ -1177,7 +1177,7 @@ pub impl Matrix5x2Impl<
     /// Replaces every component `x` by `f(x)` (column-major order). Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         ref self: Matrix5x2<T>, f: F,
@@ -1200,7 +1200,7 @@ pub impl Matrix5x2Impl<
     /// `self` with every component `x` replaced by `f(x)`: `apply` by value. Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply_into`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         self: Matrix5x2<T>, f: F,
@@ -1223,7 +1223,7 @@ pub impl Matrix5x2Impl<
     /// Upstream's closure is `FnMut(&mut T)`, writing through the reference; a Cairo closure
     /// cannot, so it RETURNS the new component (its output converts `Into<T>`). Upstream:
     /// `zip_apply`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_apply<
         T2,
@@ -1255,7 +1255,7 @@ pub impl Matrix5x2Impl<
     /// the same position. Upstream's closure is `FnMut(&mut T)`, writing through the reference; a
     /// Cairo closure cannot, so it RETURNS the new component (its output converts `Into<T>`).
     /// Upstream: `zip_zip_apply`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_zip_apply<
         T2,
@@ -1288,7 +1288,7 @@ pub impl Matrix5x2Impl<
 
     /// Sets every component to `f()` (one call per component, column-major). The closure's output
     /// converts `Into<T>`. Upstream: `fill_with` (`impl Fn() -> T`).
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
         ref self: Matrix5x2<T>, f: F,

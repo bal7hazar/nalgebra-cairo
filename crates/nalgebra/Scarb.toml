@@ -12,13 +12,13 @@ keywords.workspace = true
 # Families that cost compile memory to every dependent and that nothing else in the crate uses
 # (WP 8.1d, tools/shapegen/DESIGN.md §2.11): all on by default, so the public API is upstream's; a
 # dependent that does not need them writes `default-features = false` (plus `features = [..]`).
-# `statistics`: base/statistics.cairo; `blas`: base/blas.cairo; `functional`: the methods of the
+# `statistics`: base/statistics.cairo; `blas`: base/blas.cairo; `closures`: the methods of the
 # shapes that take a closure (`map`, `fold`, `apply`, `zip_*`...).
 [features]
-default = ["statistics", "blas", "functional"]
+default = ["statistics", "blas", "closures"]
 statistics = []
 blas = []
-functional = []
+closures = []
 
 [dependencies]
 simba.workspace = true

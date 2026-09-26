@@ -29,6 +29,7 @@ pub use point3::Point3;
 pub use unit::{Normed, Unit, UnitTrait};
 
 // shapegen: begin
+#[cfg(feature: 'blas')]
 pub mod blas;
 pub mod cg;
 pub mod errors;
@@ -72,12 +73,15 @@ pub mod row_vector4;
 pub mod row_vector5;
 pub mod row_vector6;
 pub mod solve;
+#[cfg(feature: 'statistics')]
 pub mod statistics;
+mod transpose;
 pub mod vector2;
 pub mod vector3;
 pub mod vector4;
 pub mod vector5;
 pub mod vector6;
+#[cfg(feature: 'blas')]
 pub use blas::{
     Matrix1BlasTrait, Matrix2BlasTrait, Matrix2x3BlasTrait, Matrix2x4BlasTrait, Matrix2x5BlasTrait,
     Matrix2x6BlasTrait, Matrix3BlasTrait, Matrix3x2BlasTrait, Matrix3x4BlasTrait,
@@ -139,6 +143,7 @@ pub use row_vector4::{Matrix1x4, RowVector4, RowVector4AngleTrait, RowVector4Tra
 pub use row_vector5::{Matrix1x5, RowVector5, RowVector5AngleTrait, RowVector5Trait};
 pub use row_vector6::{Matrix1x6, RowVector6, RowVector6AngleTrait, RowVector6Trait};
 pub use solve::MatrixSolve;
+#[cfg(feature: 'statistics')]
 pub use statistics::{
     Matrix1StatisticsTrait, Matrix2StatisticsTrait, Matrix2x3StatisticsTrait,
     Matrix2x4StatisticsTrait, Matrix2x5StatisticsTrait, Matrix2x6StatisticsTrait,

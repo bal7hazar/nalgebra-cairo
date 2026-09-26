@@ -347,15 +347,23 @@ def gemm_impls(form: str = GEMM_FORM) -> list[str]:
     return out
 
 
-def helper_impls() -> list[str]:
-    """The crate-private `BlasTranspose` / `BlasLastColumn` impls (36 each): struct moves only."""
+def transpose_impls() -> list[str]:
+    """The crate-private `BlasTranspose` impls (36): struct moves only."""
     out = []
     for s in ALL_SHAPES:
-        t, v = s.transposed(), vec(s.r)
+        t = s.transposed()
         out.append(f"impl {s.name}BlasTranspose<T> of BlasTranspose<{s.name}<T>> {{\n"
                    f"type Output = {t.name}<T>;\n#[inline(always)]\n"
                    f"fn tr(self: {s.name}<T>) -> {t.name}<T> {{\n"
                    + lit(t, lambda i, j: f"self.{s.f(j, i)}") + "\n}\n}")
+    return out
+
+
+def helper_impls() -> list[str]:
+    """The crate-private `BlasLastColumn` impls (36): struct moves only."""
+    out = []
+    for s in ALL_SHAPES:
+        v = vec(s.r)
         out.append(f"impl {s.name}BlasLastColumn<T, +Drop<T>> of BlasLastColumn<{s.name}<T>> {{\n"
                    f"type Output = {v.name}<T>;\n#[inline(always)]\n"
                    f"fn last_column(self: {s.name}<T>) -> {v.name}<T> {{\n"
@@ -363,14 +371,15 @@ def helper_impls() -> list[str]:
     return out
 
 
-BLANKETS = """/// The transpose of a shape (the operand of the `_tr` forms): struct moves only, free once
-/// inlined.
+TRANSPOSE_TRAIT = """/// The transpose of a shape (the operand of the `_tr` forms of `blas`, and of the `tr_` / `ad_`
+/// forms of `solve`): struct moves only, free once inlined.
 pub(crate) trait BlasTranspose<M> {
     type Output;
     fn tr(self: M) -> Self::Output;
-}
+}"""
 
-/// The last column of a shape (the workspace left by upstream's `quadform*_with_workspace`).
+
+BLANKETS = """/// The last column of a shape (the workspace left by upstream's `quadform*_with_workspace`).
 pub(crate) trait BlasLastColumn<M> {
     type Output;
     fn last_column(self: M) -> Self::Output;
@@ -512,7 +521,7 @@ def trait_name(s: Shape) -> str:
 
 def render_blas() -> str:
     uses = ["simba::scalar::Real", "super::matrix_mul::MatrixMul",
-            "super::matrix_view::ColumnVectorLen"] + [
+            "super::matrix_view::ColumnVectorLen", "super::transpose::BlasTranspose"] + [
         f"super::{s.module}::{s.name}" for s in ALL_SHAPES]
     blocks = [TRAITS, render_kernels()]
     for s in ALL_SHAPES:
@@ -538,5 +547,16 @@ def render_blas() -> str:
             + "\n\n".join(blocks) + "\n")
 
 
-SHARED_MODULES = {"blas": render_blas}
+def render_transpose() -> str:
+    """`transpose`: the `BlasTranspose` trait and its 36 impls, in a module of their own because
+    `blas` is a Scarb feature and `solve` (always compiled) needs the transposes too."""
+    uses = [f"super::{s.module}::{s.name}" for s in ALL_SHAPES]
+    doc = ("//! Transposes of the static shapes as struct moves (crate-private): the operand of the "
+           "`_tr` forms of\n//! `blas` and `solve`. Not part of `blas` because that module is a "
+           "Scarb feature.\n")
+    return (HEADER + doc + "\n" + "".join(f"use {u};\n" for u in uses) + "\n"
+            + "\n\n".join([TRANSPOSE_TRAIT] + transpose_impls()) + "\n")
+
+
+SHARED_MODULES = {"blas": render_blas, "transpose": render_transpose}
 SHARED_EXPORTS = {"blas": sorted([trait_name(s) for s in ALL_SHAPES] + GENERIC_TRAITS)}

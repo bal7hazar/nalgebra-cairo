@@ -11,7 +11,6 @@
 //! the checked forms test the diagonal once, up front, and leave `b` unchanged on failure.
 
 use simba::scalar::Real;
-use super::blas::BlasTranspose;
 use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
 use super::matrix2x3::Matrix2x3;
@@ -44,6 +43,7 @@ use super::row_vector3::RowVector3;
 use super::row_vector4::RowVector4;
 use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
+use super::transpose::BlasTranspose;
 use super::vector2::Vector2;
 use super::vector3::Vector3;
 use super::vector4::Vector4;

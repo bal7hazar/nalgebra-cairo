@@ -331,14 +331,14 @@ pub trait Vector3Trait<T> {
     /// The 3-dimensional column vector of `f(x)` for every component `x` (called in column-major
     /// order). `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
     /// cannot mutate their captures. Upstream: `map`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
         self: Vector3<T>, f: F,
     ) -> Vector3<Func::Output>;
     /// The 3-dimensional column vector of `f(i, j, x)` for every component `x` at row `i`, column
     /// `j` (0-based, column-major order). `f` is any closure or `Fn` value; Cairo closures take
     /// their arguments by value and cannot mutate their captures. Upstream: `map_with_location`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn map_with_location<
         F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
     >(
@@ -347,7 +347,7 @@ pub trait Vector3Trait<T> {
     /// The 3-dimensional column vector of `f(a, b)` for the components `a` of `self` and `b` of
     /// `rhs` at the same position. `f` is any closure or `Fn` value; Cairo closures take their
     /// arguments by value and cannot mutate their captures. Upstream: `zip_map`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn zip_map<
         T2,
         +Copy<T2>,
@@ -362,7 +362,7 @@ pub trait Vector3Trait<T> {
     /// The 3-dimensional column vector of `f(a, b, c)` for the components of `self`, `b` and `c` at
     /// the same position. `f` is any closure or `Fn` value; Cairo closures take their arguments by
     /// value and cannot mutate their captures. Upstream: `zip_zip_map`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn zip_zip_map<
         T2,
         T3,
@@ -382,7 +382,7 @@ pub trait Vector3Trait<T> {
     /// without the `associated_item_constraints` experimental feature. `f` is any closure or `Fn`
     /// value; Cairo closures take their arguments by value and cannot mutate their captures.
     /// Upstream: `fold`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
         self: Vector3<T>, init: Acc, f: F,
     ) -> Acc;
@@ -391,7 +391,7 @@ pub trait Vector3Trait<T> {
     /// matrix, which a static shape never is). The accumulator has the type of `init_f`'s output;
     /// `f`'s output converts `Into` it. The closures receive values instead of upstream's `&T`.
     /// Upstream: `fold_with`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn fold_with<
         G,
         +Drop<G>,
@@ -407,7 +407,7 @@ pub trait Vector3Trait<T> {
     /// `fold` over the pairs of components of `self` and `rhs` at the same position: `f(acc, a,
     /// b)`, column-major. `f` is any closure or `Fn` value; Cairo closures take their arguments by
     /// value and cannot mutate their captures. Upstream: `zip_fold`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn zip_fold<
         T2,
         +Copy<T2>,
@@ -423,14 +423,14 @@ pub trait Vector3Trait<T> {
     /// Replaces every component `x` by `f(x)` (column-major order). Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         ref self: Vector3<T>, f: F,
     );
     /// `self` with every component `x` replaced by `f(x)`: `apply` by value. Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply_into`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         self: Vector3<T>, f: F,
     ) -> Vector3<T>;
@@ -438,7 +438,7 @@ pub trait Vector3Trait<T> {
     /// Upstream's closure is `FnMut(&mut T)`, writing through the reference; a Cairo closure
     /// cannot, so it RETURNS the new component (its output converts `Into<T>`). Upstream:
     /// `zip_apply`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn zip_apply<
         T2,
         +Copy<T2>,
@@ -454,7 +454,7 @@ pub trait Vector3Trait<T> {
     /// the same position. Upstream's closure is `FnMut(&mut T)`, writing through the reference; a
     /// Cairo closure cannot, so it RETURNS the new component (its output converts `Into<T>`).
     /// Upstream: `zip_zip_apply`.
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn zip_zip_apply<
         T2,
         T3,
@@ -471,7 +471,7 @@ pub trait Vector3Trait<T> {
     );
     /// Sets every component to `f()` (one call per component, column-major). The closure's output
     /// converts `Into<T>`. Upstream: `fill_with` (`impl Fn() -> T`).
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
         ref self: Vector3<T>, f: F,
     );
@@ -1276,7 +1276,7 @@ pub impl Vector3Impl<
             && ApproxEqTrait::ulps_eq(self.z, other.z, epsilon, max_ulps)
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
         self: Vector3<T>, f: F,
@@ -1284,7 +1284,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(self.x), y: f(self.y), z: f(self.z) }
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn map_with_location<
         F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
@@ -1294,7 +1294,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(0, 0, self.x), y: f(1, 0, self.y), z: f(2, 0, self.z) }
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_map<
         T2,
@@ -1310,7 +1310,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(self.x, rhs.x), y: f(self.y, rhs.y), z: f(self.z, rhs.z) }
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_zip_map<
         T2,
@@ -1329,7 +1329,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(self.x, b.x, c.x), y: f(self.y, b.y, c.y), z: f(self.z, b.z, c.z) }
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
         self: Vector3<T>, init: Acc, f: F,
@@ -1339,7 +1339,7 @@ pub impl Vector3Impl<
         f(acc, self.z).into()
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fold_with<
         G,
@@ -1358,7 +1358,7 @@ pub impl Vector3Impl<
         f(acc, self.z).into()
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_fold<
         T2,
@@ -1377,7 +1377,7 @@ pub impl Vector3Impl<
         f(acc, self.z, rhs.z).into()
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         ref self: Vector3<T>, f: F,
@@ -1385,7 +1385,7 @@ pub impl Vector3Impl<
         self = Vector3 { x: f(self.x).into(), y: f(self.y).into(), z: f(self.z).into() };
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         self: Vector3<T>, f: F,
@@ -1393,7 +1393,7 @@ pub impl Vector3Impl<
         Vector3 { x: f(self.x).into(), y: f(self.y).into(), z: f(self.z).into() }
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_apply<
         T2,
@@ -1412,7 +1412,7 @@ pub impl Vector3Impl<
             };
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_zip_apply<
         T2,
@@ -1436,7 +1436,7 @@ pub impl Vector3Impl<
             };
     }
 
-    #[cfg(feature: 'functional')]
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
         ref self: Vector3<T>, f: F,
