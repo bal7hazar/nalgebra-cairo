@@ -237,6 +237,15 @@ Two experimental features of the Cairo compiler, both enabled by corelib itself,
 A toolchain bump that changes either feature is handled in its dedicated PR (`benchmarks/`
 re-run, as every toolchain bump).
 
+## D11 — glam conversions in a separate package `nalgebra_glam` (owner, 2026-09-26)
+
+nalgebra-rs puts its glam conversions in the crate behind a `convert-glam0XX` feature. Scarb 2.19.4
+has no optional dependencies (`optional = true` is rejected), and depending on `glam = "0.4.0"`
+costs every consumer +0.46 GB / +4 s CPU of cold compile (measured on an empty package). The
+conversions therefore live in the package `nalgebra_glam` (`crates/nalgebra_glam`), published
+together with `nalgebra` 0.1.0 and counted in `docs/API_PARITY.md`: a project that wants them
+adds `nalgebra_glam` next to `nalgebra` and `glam`, the Cairo counterpart of enabling the feature.
+
 ## D8 — Interop with glam-cairo / rapier-cairo
 
 One scalar across the three repositories: fixed-cairo's `fixed::Fixed`, a registry dependency pinned

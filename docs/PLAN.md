@@ -116,6 +116,10 @@ imposes (its operator traits are homogeneous: `mul_vec` for `M * v`, …). Progr
 | 8.6 (P18 + P20 ✅ #53 `sparse` / `io`, P21 ✅ #55 `macros`) | P19 (glam-cairo conversions, `glam = "0.3.0"`), P20 (sparse `CsMatrix`, Matrix Market from strings), P21 (crate-root functions and macros) | 8.5 |
 | 8.7 | Release: parity 100 %, `scarb doc`, CHANGELOG, versioning policy (numeric change = MINOR), tag-driven publication of `nalgebra` 0.1.0 (`scarb package` refuses path-only dependencies, dev ones included: `nalgebra_testing` must become a test-only module or get a registry version first, as simba-cairo #1 did) | all |
 
+Owner rulings of 2026-09-26: `nalgebra::io::cs_matrix_from_matrix_market(path)` (reads a file; Cairo
+has no file system; the `_str` form is ported) stays a **missing** item: the 0.1.0 target is every
+other item. glam conversions (P19) go to the separate package `nalgebra_glam` (DESIGN D11).
+
 Owner rulings for the shapes (2026-09-24): one heterogeneous-product name, `mul_mat` (every
 conformable product, `M * v` included; `mul_vec` / `tr_mul_vec` removed; `*` stays on square
 shapes); `Vector6` / `Matrix6` flat like upstream (the 3D-block layout goes). 8.1b sequence:
