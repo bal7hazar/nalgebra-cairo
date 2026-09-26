@@ -29,8 +29,11 @@ pub use point3::Point3;
 pub use unit::{Normed, Unit, UnitTrait};
 
 // shapegen: begin
+#[cfg(feature: 'blas')]
 pub mod blas;
 pub mod cg;
+#[cfg(feature: 'dynamic')]
+pub mod dynamic;
 pub mod errors;
 mod kernels;
 pub mod matrix1;
@@ -72,12 +75,15 @@ pub mod row_vector4;
 pub mod row_vector5;
 pub mod row_vector6;
 pub mod solve;
+#[cfg(feature: 'statistics')]
 pub mod statistics;
+mod transpose;
 pub mod vector2;
 pub mod vector3;
 pub mod vector4;
 pub mod vector5;
 pub mod vector6;
+#[cfg(feature: 'blas')]
 pub use blas::{
     Matrix1BlasTrait, Matrix2BlasTrait, Matrix2x3BlasTrait, Matrix2x4BlasTrait, Matrix2x5BlasTrait,
     Matrix2x6BlasTrait, Matrix3BlasTrait, Matrix3x2BlasTrait, Matrix3x4BlasTrait,
@@ -93,6 +99,22 @@ pub use blas::{
 pub use cg::{
     Matrix1CgTrait, Matrix2CgTrait, Matrix3CgAngleTrait, Matrix3CgTrait, Matrix4CgAngleTrait,
     Matrix4CgTrait, Matrix5CgTrait, Matrix6CgTrait,
+};
+#[cfg(feature: 'dynamic')]
+pub use dynamic::{
+    DMatrix, DMatrixTrait, DVector, DVectorTrait, InsertFixedColumns, InsertFixedRows,
+    Matrix1DynamicTrait, Matrix1xX, Matrix2DynamicTrait, Matrix2x3DynamicTrait,
+    Matrix2x4DynamicTrait, Matrix2x5DynamicTrait, Matrix2x6DynamicTrait, Matrix2xX,
+    Matrix3DynamicTrait, Matrix3x2DynamicTrait, Matrix3x4DynamicTrait, Matrix3x5DynamicTrait,
+    Matrix3x6DynamicTrait, Matrix3xX, Matrix4DynamicTrait, Matrix4x2DynamicTrait,
+    Matrix4x3DynamicTrait, Matrix4x5DynamicTrait, Matrix4x6DynamicTrait, Matrix4xX,
+    Matrix5DynamicTrait, Matrix5x2DynamicTrait, Matrix5x3DynamicTrait, Matrix5x4DynamicTrait,
+    Matrix5x6DynamicTrait, Matrix5xX, Matrix6DynamicTrait, Matrix6x2DynamicTrait,
+    Matrix6x3DynamicTrait, Matrix6x4DynamicTrait, Matrix6x5DynamicTrait, Matrix6xX, MatrixXx1,
+    MatrixXx2, MatrixXx3, MatrixXx4, MatrixXx5, MatrixXx6, RemoveFixedColumns, RemoveFixedRows,
+    RowDVector, RowDVectorTrait, RowVector2DynamicTrait, RowVector3DynamicTrait,
+    RowVector4DynamicTrait, RowVector5DynamicTrait, RowVector6DynamicTrait, Vector2DynamicTrait,
+    Vector3DynamicTrait, Vector4DynamicTrait, Vector5DynamicTrait, Vector6DynamicTrait,
 };
 pub use matrix1::{
     Matrix1, Matrix1AngleTrait, Matrix1Trait, RowVector1, UnitVector1, UnitVector1AngleTrait,
@@ -139,6 +161,7 @@ pub use row_vector4::{Matrix1x4, RowVector4, RowVector4AngleTrait, RowVector4Tra
 pub use row_vector5::{Matrix1x5, RowVector5, RowVector5AngleTrait, RowVector5Trait};
 pub use row_vector6::{Matrix1x6, RowVector6, RowVector6AngleTrait, RowVector6Trait};
 pub use solve::MatrixSolve;
+#[cfg(feature: 'statistics')]
 pub use statistics::{
     Matrix1StatisticsTrait, Matrix2StatisticsTrait, Matrix2x3StatisticsTrait,
     Matrix2x4StatisticsTrait, Matrix2x5StatisticsTrait, Matrix2x6StatisticsTrait,

@@ -3197,6 +3197,7 @@ pub impl Matrix6Impl<
     /// The 6x6 matrix of `f(x)` for every component `x` (called in column-major order). `f` is any
     /// closure or `Fn` value; Cairo closures take their arguments by value and cannot mutate their
     /// captures. Upstream: `map`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn map<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
         self: Matrix6<T>, f: F,
@@ -3244,6 +3245,7 @@ pub impl Matrix6Impl<
     /// The 6x6 matrix of `f(i, j, x)` for every component `x` at row `i`, column `j` (0-based,
     /// column-major order). `f` is any closure or `Fn` value; Cairo closures take their arguments
     /// by value and cannot mutate their captures. Upstream: `map_with_location`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn map_with_location<
         F, +Drop<F>, impl Func: core::ops::Fn<F, (usize, usize, T)>, +Drop<Func::Output>,
@@ -3293,6 +3295,7 @@ pub impl Matrix6Impl<
     /// The 6x6 matrix of `f(a, b)` for the components `a` of `self` and `b` of `rhs` at the same
     /// position. `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
     /// cannot mutate their captures. Upstream: `zip_map`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_map<
         T2,
@@ -3348,6 +3351,7 @@ pub impl Matrix6Impl<
     /// The 6x6 matrix of `f(a, b, c)` for the components of `self`, `b` and `c` at the same
     /// position. `f` is any closure or `Fn` value; Cairo closures take their arguments by value and
     /// cannot mutate their captures. Upstream: `zip_zip_map`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_zip_map<
         T2,
@@ -3408,6 +3412,7 @@ pub impl Matrix6Impl<
     /// without the `associated_item_constraints` experimental feature. `f` is any closure or `Fn`
     /// value; Cairo closures take their arguments by value and cannot mutate their captures.
     /// Upstream: `fold`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fold<Acc, F, +Drop<F>, impl Func: core::ops::Fn<F, (Acc, T)>, +Into<Func::Output, Acc>>(
         self: Matrix6<T>, init: Acc, f: F,
@@ -3455,6 +3460,7 @@ pub impl Matrix6Impl<
     /// matrix, which a static shape never is). The accumulator has the type of `init_f`'s output;
     /// `f`'s output converts `Into` it. The closures receive values instead of upstream's `&T`.
     /// Upstream: `fold_with`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fold_with<
         G,
@@ -3509,6 +3515,7 @@ pub impl Matrix6Impl<
     /// `fold` over the pairs of components of `self` and `rhs` at the same position: `f(acc, a,
     /// b)`, column-major. `f` is any closure or `Fn` value; Cairo closures take their arguments by
     /// value and cannot mutate their captures. Upstream: `zip_fold`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_fold<
         T2,
@@ -3563,6 +3570,7 @@ pub impl Matrix6Impl<
     /// Replaces every component `x` by `f(x)` (column-major order). Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn apply<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         ref self: Matrix6<T>, f: F,
@@ -3611,6 +3619,7 @@ pub impl Matrix6Impl<
     /// `self` with every component `x` replaced by `f(x)`: `apply` by value. Upstream's closure is
     /// `FnMut(&mut T)`, writing through the reference; a Cairo closure cannot, so it RETURNS the
     /// new component (its output converts `Into<T>`). Upstream: `apply_into`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn apply_into<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Into<Func::Output, T>>(
         self: Matrix6<T>, f: F,
@@ -3659,6 +3668,7 @@ pub impl Matrix6Impl<
     /// Upstream's closure is `FnMut(&mut T)`, writing through the reference; a Cairo closure
     /// cannot, so it RETURNS the new component (its output converts `Into<T>`). Upstream:
     /// `zip_apply`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_apply<
         T2,
@@ -3716,6 +3726,7 @@ pub impl Matrix6Impl<
     /// the same position. Upstream's closure is `FnMut(&mut T)`, writing through the reference; a
     /// Cairo closure cannot, so it RETURNS the new component (its output converts `Into<T>`).
     /// Upstream: `zip_zip_apply`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn zip_zip_apply<
         T2,
@@ -3774,6 +3785,7 @@ pub impl Matrix6Impl<
 
     /// Sets every component to `f()` (one call per component, column-major). The closure's output
     /// converts `Into<T>`. Upstream: `fill_with` (`impl Fn() -> T`).
+    #[cfg(feature: 'closures')]
     #[inline]
     fn fill_with<F, +Drop<F>, impl Func: core::ops::Fn<F, ()>, +Into<Func::Output, T>>(
         ref self: Matrix6<T>, f: F,
@@ -3822,6 +3834,7 @@ pub impl Matrix6Impl<
     /// The `Vector6` of `f(d)` for every diagonal component `d` (top to bottom):
     /// `self.diagonal().map(f)`. `f` is any closure or `Fn` value; Cairo closures take their
     /// arguments by value and cannot mutate their captures. Upstream: `map_diagonal`.
+    #[cfg(feature: 'closures')]
     #[inline]
     fn map_diagonal<F, +Drop<F>, impl Func: core::ops::Fn<F, (T,)>, +Drop<Func::Output>>(
         self: Matrix6<T>, f: F,

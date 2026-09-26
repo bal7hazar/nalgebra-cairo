@@ -9,6 +9,20 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 
+# Families that cost compile memory to every dependent and that nothing else in the crate uses
+# (WP 8.1d, tools/shapegen/DESIGN.md §2.11): all on by default, so the public API is upstream's; a
+# dependent that does not need them writes `default-features = false` (plus `features = [..]`).
+# `statistics`: base/statistics.cairo; `blas`: base/blas.cairo; `closures`: the methods of the
+# shapes that take a closure (`map`, `fold`, `apply`, `zip_*`...). `dynamic` (WP 8.5-P13, DESIGN
+# D5): `DMatrix` / `DVector` / `RowDVector`, the partially dynamic aliases and the edition forms
+# of the static shapes that return them (base/dynamic*.cairo).
+[features]
+default = ["statistics", "blas", "closures", "dynamic"]
+statistics = []
+blas = []
+closures = []
+dynamic = []
+
 [dependencies]
 simba.workspace = true
 

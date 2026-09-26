@@ -1196,6 +1196,25 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "nalgebra::linalg": ["nalgebra::linalg"],
     # The norm markers of `base/norm.rs` (WP 8.2a).
     **{t: [t] for t in ("EuclideanNorm", "LpNorm", "OneNorm", "UniformNorm", "Normed")},
+    # WP 8.5-P13: the dynamic matrices (DESIGN D5).
+    "DMatrix": ["DMatrix"],
+    "DVector": ["DVector"],
+    "RowDVector": ["RowDVector"],
+}
+
+# WP 8.5-P13: Cairo types that stand for an upstream owner WITHOUT being required by it. Upstream's
+# generic `Matrix<T, R, C, S>` methods apply to its dynamic instances too; the dynamic types carry
+# the part of that surface D5 ports (construction, edition, arithmetic, indexing...), so an item
+# found on them is consumed (not an extra) but an item they lack stays ported on the 36 static
+# shapes. `DVector` / `RowDVector` are the column / row instances of `DMatrix`'s storage-generic
+# impls (`From<Matrix>`, `zeros`...).
+OPTIONAL_CANDIDATES: dict[str, list[str]] = {
+    "Matrix": ["DMatrix", "DVector", "RowDVector"],
+    "SquareMatrix": ["DMatrix"],
+    "Vector": ["DVector"],
+    "RowSVector": ["RowDVector"],
+    "RowVector": ["RowDVector"],
+    "DMatrix": ["DVector", "RowDVector"],
 }
 
 # Methods upstream declares on a generic family but that only make sense for some dimensions
@@ -1253,6 +1272,12 @@ DIM_ONLY: dict[str, set[str]] = {
     "remove_row": {shape_name(r, c) for r in range(2, 7) for c in DIMS},
     "insert_column": {shape_name(r, c) for r in DIMS for c in range(1, 6)},
     "remove_column": {shape_name(r, c) for r in DIMS for c in range(2, 7)},
+    # WP 8.5-P13: `D` rows / columns more or less, `D >= 1`: the static shapes with a neighbour at
+    # distance 1 at least (the result is another static shape; the dynamic types take any `D`).
+    "insert_fixed_rows": {shape_name(r, c) for r in range(1, 6) for c in DIMS},
+    "remove_fixed_rows": {shape_name(r, c) for r in range(2, 7) for c in DIMS},
+    "insert_fixed_columns": {shape_name(r, c) for r in DIMS for c in range(1, 6)},
+    "remove_fixed_columns": {shape_name(r, c) for r in DIMS for c in range(2, 7)},
     # 1x1 only (upstream `Matrix1` / `Vector1` impls).
     **{name: {"Matrix1"} for name in ("into_scalar", "as_scalar", "to_scalar", "as_scalar_mut")},
     # Upstream multiplies a translation by an isometry / similarity of the same dimension; the
@@ -1395,6 +1420,8 @@ RENAMES = (
          "heterogeneous operators are named methods (DESIGN D4)"),
     rule(r".*", r"impl:(?:Serialize|Deserialize)", "impl:Serde", "Cairo `Serde`"),
     rule(r".*", r"impl:Clone", "impl:Copy", "Cairo values are `Copy`"),
+    rule(r"DVector|RowDVector", r"impl:From<Vec>", "impl:From<Array>",
+         "Cairo's `Array<T>` is `Vec<T>` (WP 8.5-P13)"),
     rule(r".*", r"impl:Eq", "impl:PartialEq", "Cairo has no separate `Eq`"),
     rule(r".*", r"impl:AbsDiffEq", "abs_diff_eq", "tolerance in ulp (DESIGN D3)"),
     rule(r".*", r"impl:Zero", "is_zero", "`zeros()` + `is_zero()`"),
@@ -1892,7 +1919,8 @@ def classify(rust: list[Item], cairo: list[Item]) -> tuple[dict[Item, Result], l
         return found
 
     for item in rust:
-        candidates = OWNER_CANDIDATES.get(item.owner, [])
+        optional = OPTIONAL_CANDIDATES.get(item.owner, [])
+        candidates = OWNER_CANDIDATES.get(item.owner, []) + optional
         kind = "method" if item.kind == "unsafe-method" else item.kind
         cairo_name, cairo_kind, note, owners = item.name, kind, "", candidates
         if item.kind == "type":
@@ -1912,9 +1940,13 @@ def classify(rust: list[Item], cairo: list[Item]) -> tuple[dict[Item, Result], l
                     continue
         else:
             present = lookup(candidates, kind, item.name) if candidates else []
+            if all(o in optional for o in present):
+                # Found on optional candidates only: consumed, but the status is the required
+                # candidates' (a rename, an exclusion or missing).
+                present = []
             allowed = DIM_ONLY.get(item.name)
             if present and [o for o in candidates if (allowed is None or o in allowed)
-                            and o not in present] and find_rule(RENAMES, item):
+                            and o not in present and o not in optional] and find_rule(RENAMES, item):
                 # A partial direct match (`Mul<Matrix>`: the square `*`) gives way to a rename
                 # that covers every candidate (`MatrixMul::mul_mat`).
                 present = []
@@ -1933,9 +1965,12 @@ def classify(rust: list[Item], cairo: list[Item]) -> tuple[dict[Item, Result], l
                         present = [o for o in owners if (o, "type", o) in by_key]
                     else:
                         present = lookup(owners, cairo_kind, cairo_name)
+                        if all(o in optional for o in present):
+                            present = []
             if present:
                 allowed = DIM_ONLY.get(item.name)
-                required = [o for o in owners if allowed is None or o in allowed]
+                required = [o for o in owners if (allowed is None or o in allowed)
+                            and o not in optional]
                 lacking = [o for o in required if o not in present]
                 path = f"{compress(present)}::{cairo_name}" if cairo_kind == "method" else \
                     f"{compress(present)} ({cairo_kind} `{cairo_name}`)"

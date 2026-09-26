@@ -27,6 +27,27 @@ Its scalar layer is the registry package `simba = "0.2.0"`
 fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.4.0, the scalar
 shared by the whole stack), like nalgebra-rs depends on simba-rs.
 
+## Features
+
+`nalgebra = "x.y"` exposes the full nalgebra-rs surface: every Scarb feature is in `default`. The
+families that cost compile time and memory to every dependent, and that nothing else in the crate
+uses, can be turned off (a structural deviation from nalgebra-rs, [DESIGN D9](docs/DESIGN.md)):
+
+```toml
+nalgebra = { version = "x.y", default-features = false, features = ["statistics"] }
+```
+
+| Feature | Gates |
+|---|---|
+| `statistics` | `mean`, `variance`, `column_mean`... (`base::statistics`) |
+| `blas` | `gemm`, `gemv`, `axpy`, `ger`, `quadform`... (`base::blas`) |
+| `closures` | the methods that take a closure: `map`, `fold`, `apply`, `zip_map`, `fill_with`... |
+| `dynamic` | `DMatrix`, `DVector`, `RowDVector`, `Matrix3xX`...; the static `insert_columns`, `remove_fixed_rows`, `from_vec`... (`base::dynamic`, [DESIGN D5](docs/DESIGN.md)) |
+
+Turning the first three off cuts a cold build of the library by about 16 % of the memory and 32 % of the
+CPU time ([measurements](tools/shapegen/DESIGN.md)); the test packages of this repository do it. `dynamic` adds about 0.55 GB to a cold build
+and nothing when it is off.
+
 ## Why it is fast
 
 Measured on Cairo 2.19.4 ([full synthesis](docs/BENCHMARK.md)):

@@ -136,6 +136,10 @@ Degenerate configurations are rejected and resampled: nearly parallel vectors fo
   `transform_vector`). The transforms keep the normaliser away from zero (`|n| >= 1/4`).
   `transform_vector` divides BEFORE the product (upstream's `m * (v / n)`): its `SensMag` policy
   (`mag = 2`) covers the half-ulp quotient rounding multiplied by the entries of `m`.
+- Suite `dynamic` (WP 8.5-P13): `DMatrix` / `DVector` products at 3, 6, 16 (and 4x7 by 7x5, 3x8
+  by 8), dot product and norms of 16 components, on the exact `i128` path except the norm. Vectors
+  are emitted as `n x 1` matrices (`[[i64; 1]; n]`) so that one Cairo flattening helper serves
+  every size; `crates/tests_dynamic/src/oracle_dynamic.cairo` is emitted with `--max-per-dist 2`.
 - Suite `dual_quaternion` (WP 8.4-P12): dual quaternions are `(real (w, i, j, k), dual (w, i, j,
   k))`. A unit dual quaternion input (`Gen::UnitDual`) is a quantised unit quaternion `r` and a
   translation `t` of the case's magnitude class, then upstream's `from_parts(t, r)` in f64 with its

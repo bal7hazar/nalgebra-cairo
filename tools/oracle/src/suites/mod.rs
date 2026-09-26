@@ -12,6 +12,7 @@ mod base;
 mod blas_statistics;
 mod cg;
 mod dual_quaternion;
+mod dynamic;
 mod geometry;
 mod linalg;
 mod pose_completion;
@@ -39,6 +40,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(blas_statistics::suites());
     suites.extend(solve::suites());
     suites.extend(spectral::suites());
+    suites.extend(dynamic::suites());
     suites
 }
 

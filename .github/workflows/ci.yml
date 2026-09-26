@@ -17,6 +17,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Once for the whole workspace (the shards below only test their package).
+  workspace:
+    name: Workspace (fmt, parity, generated code, lint, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - name: Format, API parity and generated-code freshness
+        run: |
+          scarb fmt --check
+          python3 scripts/api_parity.py --check
+          python3 tools/shapegen/shapegen.py --check
+      - name: Lint (default features, then the lightest `nalgebra`)
+        run: |
+          scarb lint --deny-warnings
+          scarb lint -p nalgebra --no-default-features --deny-warnings
+      - name: Build (default features, then the lightest `nalgebra`, WP 8.1e / DESIGN D9)
+        run: |
+          scarb build
+          scarb build -p nalgebra --no-default-features
+
   library:
     name: Library (${{ matrix.name }})
     runs-on: ubuntu-latest
@@ -29,7 +50,9 @@ jobs:
           - { name: nalgebra_testing, package: nalgebra_testing, filters: "nalgebra_testing" }
           # `nalgebra`: only the tests of crate-internal items (and the integration tests); the
           # public-API tests live in the test-only packages `nalgebra_tests_*` (WP 8.1c).
-          - { name: nalgebra, package: nalgebra, filters: "nalgebra" }
+          # It runs without the Scarb features (`flags`): its in-crate tests use no gated item, and the
+          # unit needs 1 GB less.
+          - { name: nalgebra, package: nalgebra, filters: "nalgebra", flags: "--no-default-features" }
           - { name: "tests_base vectors", package: nalgebra_tests_base, filters: "nalgebra_tests_base::vector" }
           - { name: "tests_base matrices", package: nalgebra_tests_base, filters: "nalgebra_tests_base::matrix nalgebra_tests_base::point nalgebra_tests_base::unit nalgebra_tests_base::cg" }
           - { name: "tests_geometry quaternions", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::quaternion nalgebra_tests_geometry::unit_quaternion" }
@@ -60,6 +83,7 @@ jobs:
           - { name: tests_linalg_svd_wide5, package: nalgebra_tests_linalg_svd_wide5, filters: "nalgebra_tests_linalg_svd_wide5" }
           - { name: tests_linalg_svd_wide6, package: nalgebra_tests_linalg_svd_wide6, filters: "nalgebra_tests_linalg_svd_wide6" }
           - { name: tests_linalg_svd_wide6b, package: nalgebra_tests_linalg_svd_wide6b, filters: "nalgebra_tests_linalg_svd_wide6b" }
+          - { name: tests_dynamic, package: nalgebra_tests_dynamic, filters: "nalgebra_tests_dynamic" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
           - { name: "shapes norms", package: nalgebra_shapes_tests_norms, filters: "nalgebra_shapes_tests_norms" }
           - { name: "shapes componentwise", package: nalgebra_shapes_tests_componentwise, filters: "nalgebra_shapes_tests_componentwise" }
@@ -79,18 +103,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
       - uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
-      - name: Format, lint, build, generated-code and API parity freshness
-        run: |
-          scarb fmt --check
-          python3 scripts/api_parity.py --check
-          python3 tools/shapegen/shapegen.py --check
-          scarb lint --deny-warnings
-          scarb build
       - name: Test the shard and check the benchmarks it ran against the snapshot
         run: |
           : > snforge.out
           for filter in ${{ matrix.filters }}; do
-            snforge test -p "${{ matrix.package }}" "$filter" | tee -a snforge.out >&2
+            snforge test -p "${{ matrix.package }}" ${{ matrix.flags }} "$filter" | tee -a snforge.out >&2
           done
           python3 scripts/gas_report.py --check gas/ --partial < snforge.out
           grep -E "^\[PASS\].*::bench_" snforge.out > bench.out || true
