@@ -45,10 +45,19 @@ nalgebra = { version = "x.y", default-features = false, features = ["statistics"
 | `dynamic` | `DMatrix`, `DVector`, `RowDVector`, `Matrix3xX`...; the static `insert_columns`, `remove_fixed_rows`, `from_vec`...; `convolve_full` / `convolve_same` / `convolve_valid` (`base::dynamic`, [DESIGN D5](docs/DESIGN.md)) |
 | `sparse` | `CsMatrix`, `CsVector`, `CsCholesky`, the sparse triangular solves, `axpy_cs`, `cumsum` (`nalgebra::sparse`; enables `dynamic`) |
 | `io` | `cs_matrix_from_matrix_market_str` (`nalgebra::io`, Matrix Market; enables `sparse`) |
+| `eigen` | `SymmetricEigen1..6`, `symmetric_eigen`, `symmetric_eigenvalues`, `wilkinson_shift` (`linalg::symmetric_eigen*`) |
+| `svd` | `Svd1..Svd6x5`, `svd`, `singular_values`, `rank`, `pseudo_inverse`, `polar`, `svd_ordered2/3` (`linalg::svd*`; enables `eigen`) |
+| `qr` | `Qr1..Qr6x5`, `qr` (`linalg::qr`) |
+| `cholesky_update` | `rank_one_update`, `insert_column`, `remove_column` of the Cholesky factors (`linalg::cholesky_update`) |
+| `full_piv_lu` | `FullPivLu1..FullPivLu6x5`, `full_piv_lu` (`linalg::full_piv_lu`) |
+| `col_piv_qr` | `ColPivQr1..ColPivQr6x5`, `col_piv_qr` (`linalg::col_piv_qr`) |
+| `lblt` | `Lblt1..Lblt6`, `lblt` (`linalg::lblt`, Bunch-Kaufman) |
 
 Turning the first three off cuts a cold build of the library by about 16 % of the memory and 32 % of the
 CPU time ([measurements](tools/shapegen/DESIGN.md)); the test packages of this repository do it. `dynamic` adds about 0.55 GB to a cold build,
-`sparse` and `io` about 0.14 GB more, and nothing when they are off.
+`sparse` and `io` about 0.14 GB more, and nothing when they are off. The linalg families (WP 8.5-P15)
+add, to a cold build without the default features: `svd` + `eigen` 0.63 GB, `col_piv_qr` 0.43 GB,
+`full_piv_lu` 0.29 GB, `qr` 0.23 GB, `eigen` alone 0.11 GB, `lblt` 0.09 GB, `cholesky_update` 0.02 GB.
 
 ## Why it is fast
 

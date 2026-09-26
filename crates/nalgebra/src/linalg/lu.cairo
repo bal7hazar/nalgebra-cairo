@@ -36,10 +36,12 @@ mod oracle_lu3;
 mod oracle_lu4;
 #[cfg(test)]
 mod oracle_lu6;
+pub mod perm1_5;
 pub use lu2::{Lu2, Lu2Trait, Matrix2LuTrait};
 pub use lu3::{Lu3, Lu3Trait, Matrix3LuTrait};
 pub use lu4::{Lu4, Lu4Trait, Matrix4LuTrait};
 pub use lu6::{Lu6, Lu6Trait, Matrix6LuTrait};
+pub use perm1_5::{Perm1, Perm1Trait, Perm5, Perm5Trait};
 use simba::scalar::Real;
 use crate::base::errors::{INDEX_OUT_OF_BOUNDS, PERMUTATION_ORDER};
 

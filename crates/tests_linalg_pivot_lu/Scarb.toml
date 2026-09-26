@@ -1,0 +1,26 @@
+[package]
+name = "nalgebra_tests_linalg_pivot_lu"
+description = "Tests and gas benchmarks of the full-pivot LU of the squares (WP 8.5-P15; not published)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+publish = false
+
+[dependencies]
+nalgebra = { path = "../nalgebra", default-features = false, features = ["full_piv_lu"] }
+simba.workspace = true
+fixed.workspace = true
+
+[dev-dependencies]
+nalgebra_tests_utils = { path = "../tests_utils" }
+nalgebra_testing = { path = "../testing" }
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

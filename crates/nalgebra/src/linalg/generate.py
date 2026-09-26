@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generator of the WP 8.5-P14b `linalg` modules (symmetric eigen 1/4/5/6, SVD and QR of every
-static shape, Cholesky column updates).
+static shape, Cholesky column updates) and, through `p15.py`, of the WP 8.5-P15 ones (`FullPivLU`,
+`ColPivQR`, `LBLT`, `Perm1` / `Perm5`).
 
     python3 crates/nalgebra/src/linalg/generate.py            # write the outputs (runs `scarb fmt`)
     python3 crates/nalgebra/src/linalg/generate.py --check    # fail if a committed output is stale
@@ -592,6 +593,9 @@ def outputs() -> dict[str, str]:
     out.update(eigen_package())
     out.update(svd_packages())
     out.update(qr_package())
+    sys.dont_write_bytecode = True  # no __pycache__ next to the committed sources
+    import p15  # WP 8.5-P15 (FullPivLU, ColPivQR, LBLT)
+    out.update(p15.outputs())
     return out
 
 
@@ -645,7 +649,7 @@ keywords.workspace = true
 publish = false
 
 [dependencies]
-nalgebra = {{ path = "../nalgebra", default-features = false }}
+nalgebra = {{ path = "../nalgebra", default-features = false, features = [{features}] }}
 simba.workspace = true
 fixed.workspace = true
 
@@ -946,7 +950,7 @@ fn bench_symmetric_eigen{n}_recompose__fused() {{
 def eigen_package() -> dict[str, str]:
     base = "crates/tests_linalg_eigen/"
     out = {base + "Scarb.toml": TEST_MANIFEST.format(
-        name="tests_linalg_eigen",
+        name="tests_linalg_eigen", features='"eigen"',
         description="Tests and gas benchmarks of the symmetric eigen decompositions 1, 4, 5, 6, "
                     "the try_* forms and wilkinson_shift (WP 8.5-P14b; not published).")}
     out[base + "src/builders.cairo"] = render_builders({(n, n) for n in (4, 5, 6)}, {4, 5, 6})
@@ -2577,9 +2581,15 @@ def svd_packages() -> dict[str, str]:
         base = f"crates/{pkg}/"
         shapes = [(r, c) for r in range(1, 7) for c in range(1, 7) if keep(r, c)]
         out[base + "Scarb.toml"] = TEST_MANIFEST.format(
-            name=pkg, description=f"Tests and gas benchmarks of the SVD of the {what}: "
+            name=pkg, features='"eigen", "svd"',
+            description=f"Tests and gas benchmarks of the SVD of the {what}: "
                                   "singular values, rank, pseudo-inverse, polar decomposition "
                                   "(WP 8.5-P14b; not published).")
+        if pkg == "tests_linalg_svd":
+            # `Svd2PartialEq` / `Svd3PartialEq` (`ordered.cairo`) are behind the helper's `svd`.
+            out[base + "Scarb.toml"] = out[base + "Scarb.toml"].replace(
+                'nalgebra_tests_utils = { path = "../tests_utils" }',
+                'nalgebra_tests_utils = { path = "../tests_utils", features = ["svd"] }')
         need, vecs = set(), set()
         for r, c in shapes:
             k = min(r, c)
@@ -2957,7 +2967,8 @@ def qr_package() -> dict[str, str]:
         base = f"crates/{pkg}/"
         shapes = [(r, c) for r, c in qr_shapes() if keep(r, c)]
         out[base + "Scarb.toml"] = TEST_MANIFEST.format(
-            name=pkg, description=f"Tests and gas benchmarks of the QR factorisation of {what} "
+            name=pkg, features='"qr"',
+            description=f"Tests and gas benchmarks of the QR factorisation of {what} "
                                   "that P14a did not cover (WP 8.5-P14b; not published).")
         need, vecs = set(), set()
         for r, c in shapes:
@@ -2978,7 +2989,7 @@ def qr_package() -> dict[str, str]:
             + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
     base = "crates/tests_linalg_cholesky_update/"
     out[base + "Scarb.toml"] = TEST_MANIFEST.format(
-        name="tests_linalg_cholesky_update",
+        name="tests_linalg_cholesky_update", features='"cholesky_update"',
         description="Tests and gas benchmarks of the Cholesky rank-one update and column "
                     "insertion / removal (WP 8.5-P14b; not published).")
     out[base + "src/builders.cairo"] = render_builders({(n, n) for n in (2, 3, 4, 6)}, {2, 3, 4, 6})
