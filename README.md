@@ -21,11 +21,20 @@ provable.
 | Package | Content |
 |---|---|
 | [`nalgebra`](crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions), generic over `simba::scalar::Real` |
+| [`nalgebra_glam`](crates/nalgebra_glam) | conversions between nalgebra-cairo and [glam-cairo](https://github.com/bal7hazar/glam-cairo) types (`Vec3` <-> `Vector3`, `Mat4` <-> `Isometry3`...), the Cairo counterpart of nalgebra-rs's `convert-glam` features ([DESIGN D11](docs/DESIGN.md)) |
 
 Its scalar layer is the registry package `simba = "0.2.0"`
 ([simba-cairo](https://github.com/bal7hazar/simba-cairo): `Real` / `Transcendental` implemented for
 fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.4.0, the scalar
 shared by the whole stack), like nalgebra-rs depends on simba-rs.
+
+### glam conversions
+
+nalgebra-rs converts to and from glam behind its `convert-glam0XX` features. Scarb has no optional
+dependencies and `glam` costs every dependent +0.46 GB of cold compile, so the Cairo counterpart is
+a separate package: add `nalgebra_glam` next to `nalgebra` and `glam` and `use
+nalgebra_glam::prelude::*;` (upstream's `From` is `Into`, `TryFrom` is `TryInto` returning an
+`Option`; details in the [package README](crates/nalgebra_glam)).
 
 ## Features
 

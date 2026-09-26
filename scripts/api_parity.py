@@ -354,7 +354,7 @@ def impl_rhs_family(value: str) -> str:
         return "(" + ", ".join(impl_rhs_family(p) for p in split_top(value[1:-1])) + ")"
     base, args = type_head(value)
     base = base.lstrip("$")
-    if base in ("T", "N", "Self::Element", "T::Element") or re.fullmatch(
+    if base in ("T", "N", "Fixed", "Self::Element", "T::Element") or re.fullmatch(
             r"(?:f32|f64|u8|u16|u32|u64|u128|usize|i8|i16|i32|i64|i128|isize)", base):
         return "T"
     owner = rust_owner(value)
@@ -921,7 +921,9 @@ def parse_simba(simba_root: Path) -> list[str]:
 # Cairo side
 # --------------------------------------------------------------------------------------------
 
-CAIRO_CRATES = ("crates/nalgebra/src",)
+# WP 8.6-P19: `nalgebra_glam` (DESIGN D11) holds upstream's `third_party/glam` conversions; its
+# items are owned by the nalgebra types they convert.
+CAIRO_CRATES = ("crates/nalgebra/src", "crates/nalgebra_glam/src")
 
 
 @functools.cache
@@ -950,6 +952,9 @@ def cairo_rhs_family(value: str) -> str:
     return impl_rhs_family(value)
 
 
+GLAM_CAIRO_TYPE = re.compile(r"[IUB]?Vec[234]|Mat[234]|Quat")
+
+
 def cairo_owner(name: str, types: list[str], fallback: str) -> str:
     """Owner of a trait / impl from its name: the longest Cairo type name it starts with."""
     stem = re.sub(r"(?:Trait|Impl)$", "", name)
@@ -971,7 +976,9 @@ def cairo_impl_item(trait_expr: str, owner: str) -> tuple[str, str] | None:
         rust = "From" if base == "Into" else "TryFrom"
         # Like the Rust side: `From<Src>` on the target, unless the target is foreign (tuple,
         # array, scalar), then `Into<Dst>` on the source.
-        if dst.strip().startswith(("(", "[")) or cairo_rhs_family(dst) == "T":
+        # WP 8.6-P19: a glam-cairo type (`Vec3`, `Mat4`, `Quat`...) is foreign too.
+        if dst.strip().startswith(("(", "[")) or cairo_rhs_family(dst) == "T" or \
+                GLAM_CAIRO_TYPE.fullmatch(type_head(dst)[0]):
             return rust_owner(src), f"Into<{cairo_rhs_family(dst)}>"
         return rust_owner(dst), f"{rust}<{cairo_rhs_family(src)}>"
     if base.endswith("Assign") and len(args) >= 2:
@@ -1022,10 +1029,16 @@ def parse_cairo() -> list[Item]:
     for path, text in files:
         if path.is_relative_to(ROOT / "crates/nalgebra"):
             crate, source = "nalgebra", str(path.relative_to(ROOT))
+        elif path.is_relative_to(ROOT / "crates/nalgebra_glam"):
+            crate, source = "nalgebra_glam", str(path.relative_to(ROOT))
         else:
             crate, source = "simba", str(Path("simba") / path.relative_to(simba_root()))
-        module = "simba" if crate == "simba" else (
-            path.relative_to(ROOT / "crates/nalgebra/src").parts[0].removesuffix(".cairo"))
+        if crate == "nalgebra_glam":
+            module = "third_party"
+        elif crate == "simba":
+            module = "simba"
+        else:
+            module = path.relative_to(ROOT / "crates/nalgebra/src").parts[0].removesuffix(".cairo")
         test_spans = []
         for m in re.finditer(r"#\[cfg\(test\)\]\s*(?:pub(?:\(crate\))?\s+)?mod\s+\w+\s*\{", text):
             test_spans.append((m.start(), closing(text, m.end() - 1)))
@@ -1160,6 +1173,8 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     # WP 8.4-P12: `UnitDualQuaternion` is upstream's `Unit<DualQuaternion>`.
     "Unit": ["Unit", "UnitComplex", "UnitQuaternion", "UnitDualQuaternion"],
     "Unit<Vector>": ["Unit"],
+    # WP 8.6-P19: upstream's glam conversions are stated on the aliases `UnitVector2..4`.
+    **{f"UnitVector{d}": [f"UnitVector{d}"] for d in range(1, 7)},
     "Point": ["Point1", "Point2", "Point3", "Point4", "Point5", "Point6"],
     "Point1": ["Point1"],
     "Point2": ["Point2"],
@@ -2214,7 +2229,8 @@ WORK_PACKAGES = (
     wp("P19", "glam-cairo conversions", "mechanical", "WP 6.2 (glam-cairo pin)",
        "`third_party/glam`: `From` / `Into` between nalgebra-cairo and glam-cairo "
        "(`Vec2/3/4`, `IVec*`, `UVec*`, `BVec*`, `Mat2/3/4`, `Quat`, `Affine2/3` through "
-       "isometries); f64 / aligned variants are excluded (`interop`)",
+       "isometries), in the package `nalgebra_glam` (DESIGN D11); f64 / aligned variants are "
+       "excluded (`interop`)",
        (r".*", r".*", r"third_party/glam/.*")),
     wp("P20", "Sparse matrices and Matrix Market I/O", "standard numerics", "P13",
        "legacy `nalgebra::sparse` (`CsMatrix`, `CsVector`, `CsCholesky`, triangular solves) and "

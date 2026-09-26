@@ -55,6 +55,8 @@ jobs:
           # (`eigen`, `svd`, `qr`: the kernels of `SymmetricEigen2/3`, `Svd2/3`, `Qr2/3/4`, WP 8.5-P15):
           # the unit needs ~0.9 GB less than with the defaults.
           - { name: nalgebra, package: nalgebra, filters: "nalgebra", flags: "--no-default-features --features eigen,svd,qr" }
+          # `nalgebra_glam` (WP 8.6-P19, DESIGN D11): the conversions and their tests / benchmarks.
+          - { name: nalgebra_glam, package: nalgebra_glam, filters: "nalgebra_glam" }
           - { name: "tests_base vectors", package: nalgebra_tests_base, filters: "nalgebra_tests_base::vector" }
           - { name: "tests_base matrices", package: nalgebra_tests_base, filters: "nalgebra_tests_base::matrix nalgebra_tests_base::point nalgebra_tests_base::unit nalgebra_tests_base::cg" }
           - { name: "tests_geometry quaternions", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::quaternion nalgebra_tests_geometry::unit_quaternion" }

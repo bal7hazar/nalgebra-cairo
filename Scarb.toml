@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/nalgebra",
+    "crates/nalgebra_glam",
     "crates/testing",
     "crates/shapes_tests_core",
     "crates/shapes_tests_norms",
