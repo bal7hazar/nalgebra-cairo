@@ -25,6 +25,7 @@
 //!   of `MᵀM` (DESIGN D6).
 
 pub mod cholesky;
+#[cfg(feature: 'cholesky_update')]
 pub mod cholesky_update;
 pub mod givens;
 pub mod householder;
@@ -34,22 +35,32 @@ pub mod lu;
 pub mod lu_steps;
 #[cfg(test)]
 mod oracle_cholesky;
-#[cfg(test)]
+#[cfg(and(test, feature: 'svd'))]
 mod oracle_svd;
-#[cfg(test)]
+#[cfg(and(test, feature: 'eigen'))]
 mod oracle_symmetric_eigen;
 #[cfg(test)]
 mod oracle_udu;
 pub mod permutation_sequence;
+#[cfg(feature: 'qr')]
 pub mod qr;
+#[cfg(feature: 'svd')]
 pub mod svd;
+#[cfg(feature: 'svd')]
 pub mod svd2;
+#[cfg(feature: 'svd')]
 pub mod svd3;
+#[cfg(feature: 'eigen')]
 pub mod symmetric_eigen1;
+#[cfg(feature: 'eigen')]
 pub mod symmetric_eigen2;
+#[cfg(feature: 'eigen')]
 pub mod symmetric_eigen3;
+#[cfg(feature: 'eigen')]
 pub mod symmetric_eigen4;
+#[cfg(feature: 'eigen')]
 pub mod symmetric_eigen5;
+#[cfg(feature: 'eigen')]
 pub mod symmetric_eigen6;
 pub mod udu;
 
@@ -58,6 +69,7 @@ pub use cholesky::{
     Cholesky6Trait, Matrix2CholeskyTrait, Matrix3CholeskyTrait, Matrix4CholeskyTrait,
     Matrix6CholeskyTrait,
 };
+#[cfg(feature: 'cholesky_update')]
 pub use cholesky_update::{
     Cholesky2UpdateTrait, Cholesky3UpdateTrait, Cholesky4UpdateTrait, Cholesky6UpdateTrait,
 };
@@ -73,6 +85,7 @@ pub use lu::{
 };
 pub use lu_steps::{gauss_step, gauss_step_swap, try_invert_to};
 pub use permutation_sequence::{PermuteColumns, PermuteRows};
+#[cfg(feature: 'qr')]
 pub use qr::{
     Matrix1QrTrait, Matrix2QrTrait, Matrix2x3QrTrait, Matrix2x4QrTrait, Matrix2x5QrTrait,
     Matrix2x6QrTrait, Matrix3QrTrait, Matrix3x2QrTrait, Matrix3x4QrTrait, Matrix3x5QrTrait,
@@ -90,6 +103,7 @@ pub use qr::{
     RowVector5QrTrait, RowVector6QrTrait, Vector2QrTrait, Vector3QrTrait, Vector4QrTrait,
     Vector5QrTrait, Vector6QrTrait,
 };
+#[cfg(feature: 'svd')]
 pub use svd::{
     Matrix1SvdTrait, Matrix2x3SvdTrait, Matrix2x4SvdTrait, Matrix2x5SvdTrait, Matrix2x6SvdTrait,
     Matrix3x2SvdTrait, Matrix3x4SvdTrait, Matrix3x5SvdTrait, Matrix3x6SvdTrait, Matrix4SvdTrait,
@@ -107,15 +121,23 @@ pub use svd::{
     Svd6x4Trait, Svd6x5, Svd6x5Trait, Vector2SvdTrait, Vector3SvdTrait, Vector4SvdTrait,
     Vector5SvdTrait, Vector6SvdTrait,
 };
+#[cfg(feature: 'svd')]
 pub use svd2::{Matrix2SvdTrait, Svd2, Svd2Trait, svd_ordered2};
+#[cfg(feature: 'svd')]
 pub use svd3::{Matrix3SvdTrait, Svd3, Svd3Trait, svd_ordered3};
+#[cfg(feature: 'eigen')]
 pub use symmetric_eigen1::{Matrix1SymmetricEigenTrait, SymmetricEigen1, SymmetricEigen1Trait};
+#[cfg(feature: 'eigen')]
 pub use symmetric_eigen2::{
     Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2Trait, wilkinson_shift,
 };
+#[cfg(feature: 'eigen')]
 pub use symmetric_eigen3::{Matrix3SymmetricEigenTrait, SymmetricEigen3, SymmetricEigen3Trait};
+#[cfg(feature: 'eigen')]
 pub use symmetric_eigen4::{Matrix4SymmetricEigenTrait, SymmetricEigen4, SymmetricEigen4Trait};
+#[cfg(feature: 'eigen')]
 pub use symmetric_eigen5::{Matrix5SymmetricEigenTrait, SymmetricEigen5, SymmetricEigen5Trait};
+#[cfg(feature: 'eigen')]
 pub use symmetric_eigen6::{Matrix6SymmetricEigenTrait, SymmetricEigen6, SymmetricEigen6Trait};
 pub use udu::{
     Matrix2UduTrait, Matrix3UduTrait, Matrix4UduTrait, Matrix6UduTrait, Udu2, Udu2Trait, Udu3,

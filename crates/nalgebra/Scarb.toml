@@ -20,13 +20,20 @@ keywords.workspace = true
 # sparse/**), on top of `dynamic`; `io` (WP 8.6-P20): `nalgebra::io`, the Matrix Market parser
 # (io/**), on top of `sparse`.
 [features]
-default = ["statistics", "blas", "closures", "dynamic", "sparse", "io"]
+default = [
+    "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
+    "cholesky_update",
+]
 statistics = []
 blas = []
 closures = []
 dynamic = []
 sparse = ["dynamic"]
 io = ["sparse"]
+eigen = []
+svd = ["eigen"]
+qr = []
+cholesky_update = []
 
 [dependencies]
 simba.workspace = true

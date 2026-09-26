@@ -152,10 +152,15 @@ use nalgebra::linalg::lu::lu3::Lu3;
 use nalgebra::linalg::lu::lu4::Lu4;
 use nalgebra::linalg::lu::lu6::Lu6;
 use nalgebra::linalg::lu::{Perm2, Perm3, Perm4, Perm6};
+#[cfg(feature: 'qr')]
 use nalgebra::linalg::qr::qr2::Qr2;
+#[cfg(feature: 'qr')]
 use nalgebra::linalg::qr::qr3::Qr3;
+#[cfg(feature: 'qr')]
 use nalgebra::linalg::qr::qr4::Qr4;
+#[cfg(feature: 'svd')]
 use nalgebra::linalg::svd2::Svd2;
+#[cfg(feature: 'svd')]
 use nalgebra::linalg::svd3::Svd3;
 
 /// 2^32: the raw value of 1.
@@ -1201,6 +1206,7 @@ pub impl Lu6PartialEq<T, +PartialEq<T>> of PartialEq<Lu6<T>> {
 
 /// Test-only field-wise equality (upstream `Qr2` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.
+#[cfg(feature: 'qr')]
 pub impl Qr2PartialEq<T, +PartialEq<T>> of PartialEq<Qr2<T>> {
     fn eq(lhs: @Qr2<T>, rhs: @Qr2<T>) -> bool {
         lhs.q == rhs.q && lhs.r == rhs.r
@@ -1209,6 +1215,7 @@ pub impl Qr2PartialEq<T, +PartialEq<T>> of PartialEq<Qr2<T>> {
 
 /// Test-only field-wise equality (upstream `Qr3` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.
+#[cfg(feature: 'qr')]
 pub impl Qr3PartialEq<T, +PartialEq<T>> of PartialEq<Qr3<T>> {
     fn eq(lhs: @Qr3<T>, rhs: @Qr3<T>) -> bool {
         lhs.q == rhs.q && lhs.r == rhs.r
@@ -1217,6 +1224,7 @@ pub impl Qr3PartialEq<T, +PartialEq<T>> of PartialEq<Qr3<T>> {
 
 /// Test-only field-wise equality (upstream `Qr4` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.
+#[cfg(feature: 'qr')]
 pub impl Qr4PartialEq<T, +PartialEq<T>> of PartialEq<Qr4<T>> {
     fn eq(lhs: @Qr4<T>, rhs: @Qr4<T>) -> bool {
         lhs.q == rhs.q && lhs.r == rhs.r
@@ -1225,6 +1233,7 @@ pub impl Qr4PartialEq<T, +PartialEq<T>> of PartialEq<Qr4<T>> {
 
 /// Test-only field-wise equality (upstream `Svd2` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.
+#[cfg(feature: 'svd')]
 pub impl Svd2PartialEq<T, +PartialEq<T>> of PartialEq<Svd2<T>> {
     fn eq(lhs: @Svd2<T>, rhs: @Svd2<T>) -> bool {
         lhs.u == rhs.u && lhs.singular_values == rhs.singular_values && lhs.v_t == rhs.v_t
@@ -1233,6 +1242,7 @@ pub impl Svd2PartialEq<T, +PartialEq<T>> of PartialEq<Svd2<T>> {
 
 /// Test-only field-wise equality (upstream `Svd3` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.
+#[cfg(feature: 'svd')]
 pub impl Svd3PartialEq<T, +PartialEq<T>> of PartialEq<Svd3<T>> {
     fn eq(lhs: @Svd3<T>, rhs: @Svd3<T>) -> bool {
         lhs.u == rhs.u && lhs.singular_values == rhs.singular_values && lhs.v_t == rhs.v_t

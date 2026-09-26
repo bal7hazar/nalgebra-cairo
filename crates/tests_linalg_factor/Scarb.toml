@@ -11,12 +11,12 @@ keywords.workspace = true
 publish = false
 
 [dependencies]
-nalgebra = { path = "../nalgebra", default-features = false }
+nalgebra = { path = "../nalgebra", default-features = false, features = ["qr"] }
 simba.workspace = true
 fixed.workspace = true
 
 [dev-dependencies]
-nalgebra_tests_utils = { path = "../tests_utils" }
+nalgebra_tests_utils = { path = "../tests_utils", features = ["qr"] }
 nalgebra_testing = { path = "../testing" }
 snforge_std.workspace = true
 assert_macros.workspace = true
