@@ -8,7 +8,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 21930 | 4410 | x1.00 |
+| `unrolled` | 21730 | 4210 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x3
 
@@ -16,7 +16,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 25870 | 8150 | x1.00 |
+| `unrolled` | 25670 | 7950 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x4
 
@@ -24,7 +24,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 28910 | 10990 | x1.00 |
+| `unrolled` | 28710 | 10790 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x5
 
@@ -32,7 +32,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 32050 | 13930 | x1.00 |
+| `unrolled` | 31850 | 13730 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x6
 
@@ -40,7 +40,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 35290 | 16970 | x1.00 |
+| `unrolled` | 35090 | 16770 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x3
 
@@ -48,7 +48,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 46610 | 28290 | x1.00 |
+| `unrolled` | 46410 | 28090 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x4
 
@@ -56,7 +56,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 57820 | 39100 | x1.00 |
+| `unrolled` | 56520 | 37800 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x5
 
@@ -64,7 +64,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 69030 | 49910 | x1.00 |
+| `unrolled` | 68830 | 49710 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x6
 
@@ -72,7 +72,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 80640 | 61120 | x1.00 |
+| `unrolled` | 80440 | 60920 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x4
 
@@ -80,7 +80,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 100130 | 80610 | x1.00 |
+| `unrolled` | 99930 | 80410 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x5
 
@@ -88,7 +88,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 124740 | 104620 | x1.00 |
+| `unrolled` | 122940 | 102820 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x6
 
@@ -96,7 +96,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 149650 | 128930 | x1.00 |
+| `unrolled` | 149450 | 128730 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu4x5
 
@@ -104,7 +104,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 193540 | 172420 | x1.00 |
+| `unrolled` | 193340 | 172220 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu4x6
 
@@ -112,7 +112,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 237280 | 215360 | x1.00 |
+| `unrolled` | 234980 | 213060 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu5x6
 
@@ -120,5 +120,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 338550 | 315430 | x1.00 |
+| `unrolled` | 338350 | 315230 | x1.00 |
 

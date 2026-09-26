@@ -2,91 +2,91 @@
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x2": {
     "full_piv_lu1x2_new": {
       "baseline": 17520,
-      "unrolled": 21930
+      "unrolled": 21730
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x3": {
     "full_piv_lu1x3_new": {
       "baseline": 17720,
-      "unrolled": 25870
+      "unrolled": 25670
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x4": {
     "full_piv_lu1x4_new": {
       "baseline": 17920,
-      "unrolled": 28910
+      "unrolled": 28710
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x5": {
     "full_piv_lu1x5_new": {
       "baseline": 18120,
-      "unrolled": 32050
+      "unrolled": 31850
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu1x6": {
     "full_piv_lu1x6_new": {
       "baseline": 18320,
-      "unrolled": 35290
+      "unrolled": 35090
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x3": {
     "full_piv_lu2x3_new": {
       "baseline": 18320,
-      "unrolled": 46610
+      "unrolled": 46410
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x4": {
     "full_piv_lu2x4_new": {
       "baseline": 18720,
-      "unrolled": 57820
+      "unrolled": 56520
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x5": {
     "full_piv_lu2x5_new": {
       "baseline": 19120,
-      "unrolled": 69030
+      "unrolled": 68830
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu2x6": {
     "full_piv_lu2x6_new": {
       "baseline": 19520,
-      "unrolled": 80640
+      "unrolled": 80440
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x4": {
     "full_piv_lu3x4_new": {
       "baseline": 19520,
-      "unrolled": 100130
+      "unrolled": 99930
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x5": {
     "full_piv_lu3x5_new": {
       "baseline": 20120,
-      "unrolled": 124740
+      "unrolled": 122940
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu3x6": {
     "full_piv_lu3x6_new": {
       "baseline": 20720,
-      "unrolled": 149650
+      "unrolled": 149450
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu4x5": {
     "full_piv_lu4x5_new": {
       "baseline": 21120,
-      "unrolled": 193540
+      "unrolled": 193340
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu4x6": {
     "full_piv_lu4x6_new": {
       "baseline": 21920,
-      "unrolled": 237280
+      "unrolled": 234980
     }
   },
   "nalgebra_tests_linalg_pivot_lu_wide::full_piv_lu5x6": {
     "full_piv_lu5x6_new": {
       "baseline": 23120,
-      "unrolled": 338550
+      "unrolled": 338350
     }
   }
 }
