@@ -500,6 +500,63 @@ grow). Decisions:
   of 4-6 rows) 8.4 GB; one package for all the BLAS tests measured 11.4 GB. The library growth
   moves every other test package by about +0.65 GB (`shapes_tests_cg` 6.61 → 7.26 GB).
 
+### 2.11 WP 8.1d spike: where the compile memory goes, Scarb features
+
+`budget.py` copies the library (and a test package) into `/tmp`, applies one variant and measures a
+cold build (`SCARB_INCREMENTAL=false`, empty `target/`, peak RSS of `/usr/bin/time -v`, the build
+lock taken before the timer); raw results in `budget-results.jsonl`. Library builds repeat within
+±5 MB; test builds within ±0.35 GB (compare medians).
+
+- **Where the library's 6.07 GB go.** An empty library costs 0.75 GB (corelib, simba, plugins).
+  Leaves are measured by removal, the rest (used everywhere) by duplication: a second copy of the
+  code compiled next to the original, which the removals calibrate (`statistics` −221 / +229 MB,
+  `blas` −317 / +345 MB, `cg` −35 / +51 MB). Marginal costs: functional methods (P03) 862 MB, of
+  which the 13 closure methods (`map`, `fold`, `apply`, `zip_*`...) 609 MB for 12.4k lines (the
+  costliest code per line); `geometry` ≈ 840 MB (P11a transforms 155 MB); completion methods (P02)
+  ≈ 590 MB; `blas` 317 MB; derived `Debug` + `Hash` 257 MB; `statistics` 221 MB; `linalg` ≈ 200 MB;
+  view methods (P04/P05) ≈ 170 MB (swizzles 19 MB); `cg` 35-50 MB; the remaining ≈ 1.8 GB is the
+  shape core (structs, operators, the 432 products) and the per-shape items (index, views,
+  conversions). Not levers: `#[inline(always)]` in the library (−50 MB), one module per shape
+  (`statistics` split in 36 files: +60 MB).
+- **Every compilation unit that includes the library pays it again**: a test package reduced to
+  one trivial test builds in 6.17 GB. So the library's size is paid by every test package and
+  every consumer.
+- **Scarb features** (2.19.4) work as needed: `[features]` + `default` in the library,
+  `#[cfg(feature: '..')]` on modules, `use` items and individual methods (also inside a
+  `#[generate_trait]` impl and on trait declarations), `default-features = false` /
+  `features = [..]` on a workspace path dependency. Features are resolved per compilation unit:
+  building two packages together does not unify them, while one unit that reaches the library
+  through two paths (a dev-dependency with the defaults) gets the union (so `tests_utils` opts out
+  too).
+- **Final design (WP 8.1e, DESIGN D9).** `crates/nalgebra/Scarb.toml`:
+  `default = ["statistics", "blas", "closures"]`. `FEATURES` (`shapes.py`) gates the shared modules
+  `statistics` and `blas` (the `pub mod` in `base.cairo` and the re-exports in `base.cairo` and
+  `lib.cairo`); `functional.FEATURE` (`closures`) gates, per method, the P03 methods that take a
+  closure (`map`, `map_with_location`, `map_diagonal`, `fold`, `fold_with`, `apply`, `apply_into`,
+  `zip_*`, `fill_with`: definition and declaration). A feature is a leaf: nothing ungated may use
+  it, which is why `BlasTranspose` (needed by the always-compiled `solve`) lives in the private
+  module `transpose` (`blas.py: render_transpose`) and not in `blas`. `cg` cannot be gated while the
+  P11a transforms use it. All features are in `default`, so the API, `api_parity.py` and every
+  gas figure are unchanged; each test package depends on `nalgebra` with `default-features = false`
+  plus the features it tests (`shapes_tests_stats` `statistics`; `shapes_tests_blas`, `gemm`,
+  `gemm_large` `blas`; `shapes_tests_functional` `closures`); no other package needed one. CI:
+  the `Workspace` job builds and lints `nalgebra` with the defaults and with
+  `--no-default-features`, the `nalgebra` shard tests with `--no-default-features`.
+- **Measured with the features off** (spike, before WP 8.5-P14a): library 6.08 → 4.94 GB
+  (CPU 92 → 56 s); the library's own tests 9.12 → 8.08 GB; trivial test unit 6.17 → 5.07 GB;
+  `shapes_tests_core` 10.37-10.40 → 9.36-9.89 GB; `tests_geometry` 10.42 → 9.35 GB;
+  `shapes_tests_gemm_large` (`blas` on) 8.20 → 7.50 GB; `shapes_tests_stats` (`statistics` on)
+  7.42 → 7.08 GB; `shapes_tests_functional` (`closures` on) 9.85 → 9.02 GB. **Final, on main with
+  P14a** (`budget.py full`, cold, peak RSS / CPU): library 6,443 MB / 92.5 s with the defaults,
+  5,388 MB / 62.5 s with `--no-default-features` (−16 % / −32 %); `shapes_tests_core` 10,733 →
+  9,718 MB (CPU 244 → 202 s); `tests_geometry` 10,989 → 9,945 MB (187 → 161 s); `tests_base`
+  10,812 → 9,784 MB (189 → 145 s).
+- **`#[inline(always)]`** costs little in the library but a lot in the units that instantiate it:
+  without it in the generated modules, `shapes_tests_core` 9.80 → 9.08 GB and 441 → 323 s CPU
+  (snforge), at +1.7 % total gas (median 0, benches unchanged, worst test +15 %); `tests_geometry`
+  only −0.17 GB, at +2.9 % gas (some benches +12-16 %). Removing it only where a bench shows no
+  gas difference is a follow-up, not a blanket rule.
+
 ## 3. Generated tests under the compile budget
 
 ### 3.1 What the budget is

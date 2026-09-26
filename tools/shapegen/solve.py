@@ -272,7 +272,7 @@ GENERIC_TRAITS = ["MatrixSolve"]
 
 
 def render_solve() -> str:
-    uses = ["simba::scalar::Real", "super::blas::BlasTranspose",
+    uses = ["simba::scalar::Real", "super::transpose::BlasTranspose",
             "super::matrix_tr_mul::MatrixTrMul"] + sorted(
         {f"super::{s.module}::{s.name}" for p in pairs() for s in p})
     trait, blanket = trait_and_blanket()

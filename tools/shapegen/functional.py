@@ -434,8 +434,22 @@ HINTED = {"map", "map_with_location", "zip_map", "zip_zip_map", "fold", "fold_wi
           "swap", "swap_rows", "swap_columns", "apply_norm", "apply_metric_distance"}
 
 
+# The Scarb feature of the methods taking a closure (`map`, `fold`, `apply`, `zip_*`, `fill_with`,
+# `map_diagonal`...): the costliest code of the library per line (WP 8.1d: -0.6 GB on every
+# compilation unit for 12k lines), used by nothing else in the crate. In `default`.
+FEATURE = "closures"
+
+
+def takes_closure(f: L.Fn) -> bool:
+    return "core::ops::Fn<" in f.sig
+
+
 def missing(s: Shape, have: set[str]) -> list[L.Fn]:
-    return [f for f in methods(s) if f.name not in have]
+    out = [f for f in methods(s) if f.name not in have]
+    for f in out:
+        if takes_closure(f):
+            f.feature = FEATURE
+    return out
 
 
 # --------------------------------------------------------------------------------------------

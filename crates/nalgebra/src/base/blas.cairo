@@ -44,6 +44,7 @@ use super::row_vector3::RowVector3;
 use super::row_vector4::RowVector4;
 use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
+use super::transpose::BlasTranspose;
 use super::vector2::Vector2;
 use super::vector3::Vector3;
 use super::vector4::Vector4;
@@ -3616,13 +3617,6 @@ pub impl Matrix6BlasImpl<
     fn ger_symm(ref self: Matrix6<T>, alpha: T, x: Vector6<T>, y: Vector6<T>, beta: T) {
         Self::syger(ref self, alpha, x, y, beta);
     }
-}
-
-/// The transpose of a shape (the operand of the `_tr` forms): struct moves only, free once
-/// inlined.
-pub(crate) trait BlasTranspose<M> {
-    type Output;
-    fn tr(self: M) -> Self::Output;
 }
 
 /// The last column of a shape (the workspace left by upstream's `quadform*_with_workspace`).
@@ -11820,27 +11814,11 @@ pub impl Matrix6GemmMatrix6<
     }
 }
 
-impl Matrix1BlasTranspose<T> of BlasTranspose<Matrix1<T>> {
-    type Output = Matrix1<T>;
-    #[inline(always)]
-    fn tr(self: Matrix1<T>) -> Matrix1<T> {
-        Matrix1 { x: self.x }
-    }
-}
-
 impl Matrix1BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix1<T>> {
     type Output = Matrix1<T>;
     #[inline(always)]
     fn last_column(self: Matrix1<T>) -> Matrix1<T> {
         Matrix1 { x: self.x }
-    }
-}
-
-impl RowVector2BlasTranspose<T> of BlasTranspose<RowVector2<T>> {
-    type Output = Vector2<T>;
-    #[inline(always)]
-    fn tr(self: RowVector2<T>) -> Vector2<T> {
-        Vector2 { x: self.x, y: self.y }
     }
 }
 
@@ -11852,27 +11830,11 @@ impl RowVector2BlasLastColumn<T, +Drop<T>> of BlasLastColumn<RowVector2<T>> {
     }
 }
 
-impl RowVector3BlasTranspose<T> of BlasTranspose<RowVector3<T>> {
-    type Output = Vector3<T>;
-    #[inline(always)]
-    fn tr(self: RowVector3<T>) -> Vector3<T> {
-        Vector3 { x: self.x, y: self.y, z: self.z }
-    }
-}
-
 impl RowVector3BlasLastColumn<T, +Drop<T>> of BlasLastColumn<RowVector3<T>> {
     type Output = Matrix1<T>;
     #[inline(always)]
     fn last_column(self: RowVector3<T>) -> Matrix1<T> {
         Matrix1 { x: self.z }
-    }
-}
-
-impl RowVector4BlasTranspose<T> of BlasTranspose<RowVector4<T>> {
-    type Output = Vector4<T>;
-    #[inline(always)]
-    fn tr(self: RowVector4<T>) -> Vector4<T> {
-        Vector4 { x: self.x, y: self.y, z: self.z, w: self.w }
     }
 }
 
@@ -11884,27 +11846,11 @@ impl RowVector4BlasLastColumn<T, +Drop<T>> of BlasLastColumn<RowVector4<T>> {
     }
 }
 
-impl RowVector5BlasTranspose<T> of BlasTranspose<RowVector5<T>> {
-    type Output = Vector5<T>;
-    #[inline(always)]
-    fn tr(self: RowVector5<T>) -> Vector5<T> {
-        Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
-    }
-}
-
 impl RowVector5BlasLastColumn<T, +Drop<T>> of BlasLastColumn<RowVector5<T>> {
     type Output = Matrix1<T>;
     #[inline(always)]
     fn last_column(self: RowVector5<T>) -> Matrix1<T> {
         Matrix1 { x: self.a }
-    }
-}
-
-impl RowVector6BlasTranspose<T> of BlasTranspose<RowVector6<T>> {
-    type Output = Vector6<T>;
-    #[inline(always)]
-    fn tr(self: RowVector6<T>) -> Vector6<T> {
-        Vector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
     }
 }
 
@@ -11916,27 +11862,11 @@ impl RowVector6BlasLastColumn<T, +Drop<T>> of BlasLastColumn<RowVector6<T>> {
     }
 }
 
-impl Vector2BlasTranspose<T> of BlasTranspose<Vector2<T>> {
-    type Output = RowVector2<T>;
-    #[inline(always)]
-    fn tr(self: Vector2<T>) -> RowVector2<T> {
-        RowVector2 { x: self.x, y: self.y }
-    }
-}
-
 impl Vector2BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Vector2<T>> {
     type Output = Vector2<T>;
     #[inline(always)]
     fn last_column(self: Vector2<T>) -> Vector2<T> {
         Vector2 { x: self.x, y: self.y }
-    }
-}
-
-impl Matrix2BlasTranspose<T> of BlasTranspose<Matrix2<T>> {
-    type Output = Matrix2<T>;
-    #[inline(always)]
-    fn tr(self: Matrix2<T>) -> Matrix2<T> {
-        Matrix2 { m11: self.m11, m21: self.m12, m12: self.m21, m22: self.m22 }
     }
 }
 
@@ -11948,43 +11878,11 @@ impl Matrix2BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix2<T>> {
     }
 }
 
-impl Matrix2x3BlasTranspose<T> of BlasTranspose<Matrix2x3<T>> {
-    type Output = Matrix3x2<T>;
-    #[inline(always)]
-    fn tr(self: Matrix2x3<T>) -> Matrix3x2<T> {
-        Matrix3x2 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-        }
-    }
-}
-
 impl Matrix2x3BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix2x3<T>> {
     type Output = Vector2<T>;
     #[inline(always)]
     fn last_column(self: Matrix2x3<T>) -> Vector2<T> {
         Vector2 { x: self.m13, y: self.m23 }
-    }
-}
-
-impl Matrix2x4BlasTranspose<T> of BlasTranspose<Matrix2x4<T>> {
-    type Output = Matrix4x2<T>;
-    #[inline(always)]
-    fn tr(self: Matrix2x4<T>) -> Matrix4x2<T> {
-        Matrix4x2 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-        }
     }
 }
 
@@ -11996,51 +11894,11 @@ impl Matrix2x4BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix2x4<T>> {
     }
 }
 
-impl Matrix2x5BlasTranspose<T> of BlasTranspose<Matrix2x5<T>> {
-    type Output = Matrix5x2<T>;
-    #[inline(always)]
-    fn tr(self: Matrix2x5<T>) -> Matrix5x2<T> {
-        Matrix5x2 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-        }
-    }
-}
-
 impl Matrix2x5BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix2x5<T>> {
     type Output = Vector2<T>;
     #[inline(always)]
     fn last_column(self: Matrix2x5<T>) -> Vector2<T> {
         Vector2 { x: self.m15, y: self.m25 }
-    }
-}
-
-impl Matrix2x6BlasTranspose<T> of BlasTranspose<Matrix2x6<T>> {
-    type Output = Matrix6x2<T>;
-    #[inline(always)]
-    fn tr(self: Matrix2x6<T>) -> Matrix6x2<T> {
-        Matrix6x2 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m61: self.m16,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m62: self.m26,
-        }
     }
 }
 
@@ -12052,34 +11910,11 @@ impl Matrix2x6BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix2x6<T>> {
     }
 }
 
-impl Vector3BlasTranspose<T> of BlasTranspose<Vector3<T>> {
-    type Output = RowVector3<T>;
-    #[inline(always)]
-    fn tr(self: Vector3<T>) -> RowVector3<T> {
-        RowVector3 { x: self.x, y: self.y, z: self.z }
-    }
-}
-
 impl Vector3BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Vector3<T>> {
     type Output = Vector3<T>;
     #[inline(always)]
     fn last_column(self: Vector3<T>) -> Vector3<T> {
         Vector3 { x: self.x, y: self.y, z: self.z }
-    }
-}
-
-impl Matrix3x2BlasTranspose<T> of BlasTranspose<Matrix3x2<T>> {
-    type Output = Matrix2x3<T>;
-    #[inline(always)]
-    fn tr(self: Matrix3x2<T>) -> Matrix2x3<T> {
-        Matrix2x3 {
-            m11: self.m11,
-            m21: self.m12,
-            m12: self.m21,
-            m22: self.m22,
-            m13: self.m31,
-            m23: self.m32,
-        }
     }
 }
 
@@ -12091,50 +11926,11 @@ impl Matrix3x2BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix3x2<T>> {
     }
 }
 
-impl Matrix3BlasTranspose<T> of BlasTranspose<Matrix3<T>> {
-    type Output = Matrix3<T>;
-    #[inline(always)]
-    fn tr(self: Matrix3<T>) -> Matrix3<T> {
-        Matrix3 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-        }
-    }
-}
-
 impl Matrix3BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix3<T>> {
     type Output = Vector3<T>;
     #[inline(always)]
     fn last_column(self: Matrix3<T>) -> Vector3<T> {
         Vector3 { x: self.m13, y: self.m23, z: self.m33 }
-    }
-}
-
-impl Matrix3x4BlasTranspose<T> of BlasTranspose<Matrix3x4<T>> {
-    type Output = Matrix4x3<T>;
-    #[inline(always)]
-    fn tr(self: Matrix3x4<T>) -> Matrix4x3<T> {
-        Matrix4x3 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-        }
     }
 }
 
@@ -12146,62 +11942,11 @@ impl Matrix3x4BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix3x4<T>> {
     }
 }
 
-impl Matrix3x5BlasTranspose<T> of BlasTranspose<Matrix3x5<T>> {
-    type Output = Matrix5x3<T>;
-    #[inline(always)]
-    fn tr(self: Matrix3x5<T>) -> Matrix5x3<T> {
-        Matrix5x3 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-        }
-    }
-}
-
 impl Matrix3x5BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix3x5<T>> {
     type Output = Vector3<T>;
     #[inline(always)]
     fn last_column(self: Matrix3x5<T>) -> Vector3<T> {
         Vector3 { x: self.m15, y: self.m25, z: self.m35 }
-    }
-}
-
-impl Matrix3x6BlasTranspose<T> of BlasTranspose<Matrix3x6<T>> {
-    type Output = Matrix6x3<T>;
-    #[inline(always)]
-    fn tr(self: Matrix3x6<T>) -> Matrix6x3<T> {
-        Matrix6x3 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m61: self.m16,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m62: self.m26,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-            m63: self.m36,
-        }
     }
 }
 
@@ -12213,36 +11958,11 @@ impl Matrix3x6BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix3x6<T>> {
     }
 }
 
-impl Vector4BlasTranspose<T> of BlasTranspose<Vector4<T>> {
-    type Output = RowVector4<T>;
-    #[inline(always)]
-    fn tr(self: Vector4<T>) -> RowVector4<T> {
-        RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }
-    }
-}
-
 impl Vector4BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Vector4<T>> {
     type Output = Vector4<T>;
     #[inline(always)]
     fn last_column(self: Vector4<T>) -> Vector4<T> {
         Vector4 { x: self.x, y: self.y, z: self.z, w: self.w }
-    }
-}
-
-impl Matrix4x2BlasTranspose<T> of BlasTranspose<Matrix4x2<T>> {
-    type Output = Matrix2x4<T>;
-    #[inline(always)]
-    fn tr(self: Matrix4x2<T>) -> Matrix2x4<T> {
-        Matrix2x4 {
-            m11: self.m11,
-            m21: self.m12,
-            m12: self.m21,
-            m22: self.m22,
-            m13: self.m31,
-            m23: self.m32,
-            m14: self.m41,
-            m24: self.m42,
-        }
     }
 }
 
@@ -12254,57 +11974,11 @@ impl Matrix4x2BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix4x2<T>> {
     }
 }
 
-impl Matrix4x3BlasTranspose<T> of BlasTranspose<Matrix4x3<T>> {
-    type Output = Matrix3x4<T>;
-    #[inline(always)]
-    fn tr(self: Matrix4x3<T>) -> Matrix3x4<T> {
-        Matrix3x4 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-        }
-    }
-}
-
 impl Matrix4x3BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix4x3<T>> {
     type Output = Vector4<T>;
     #[inline(always)]
     fn last_column(self: Matrix4x3<T>) -> Vector4<T> {
         Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 }
-    }
-}
-
-impl Matrix4BlasTranspose<T> of BlasTranspose<Matrix4<T>> {
-    type Output = Matrix4<T>;
-    #[inline(always)]
-    fn tr(self: Matrix4<T>) -> Matrix4<T> {
-        Matrix4 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-        }
     }
 }
 
@@ -12316,73 +11990,11 @@ impl Matrix4BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix4<T>> {
     }
 }
 
-impl Matrix4x5BlasTranspose<T> of BlasTranspose<Matrix4x5<T>> {
-    type Output = Matrix5x4<T>;
-    #[inline(always)]
-    fn tr(self: Matrix4x5<T>) -> Matrix5x4<T> {
-        Matrix5x4 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m54: self.m45,
-        }
-    }
-}
-
 impl Matrix4x5BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix4x5<T>> {
     type Output = Vector4<T>;
     #[inline(always)]
     fn last_column(self: Matrix4x5<T>) -> Vector4<T> {
         Vector4 { x: self.m15, y: self.m25, z: self.m35, w: self.m45 }
-    }
-}
-
-impl Matrix4x6BlasTranspose<T> of BlasTranspose<Matrix4x6<T>> {
-    type Output = Matrix6x4<T>;
-    #[inline(always)]
-    fn tr(self: Matrix4x6<T>) -> Matrix6x4<T> {
-        Matrix6x4 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m61: self.m16,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m62: self.m26,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-            m63: self.m36,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m54: self.m45,
-            m64: self.m46,
-        }
     }
 }
 
@@ -12394,38 +12006,11 @@ impl Matrix4x6BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix4x6<T>> {
     }
 }
 
-impl Vector5BlasTranspose<T> of BlasTranspose<Vector5<T>> {
-    type Output = RowVector5<T>;
-    #[inline(always)]
-    fn tr(self: Vector5<T>) -> RowVector5<T> {
-        RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
-    }
-}
-
 impl Vector5BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Vector5<T>> {
     type Output = Vector5<T>;
     #[inline(always)]
     fn last_column(self: Vector5<T>) -> Vector5<T> {
         Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
-    }
-}
-
-impl Matrix5x2BlasTranspose<T> of BlasTranspose<Matrix5x2<T>> {
-    type Output = Matrix2x5<T>;
-    #[inline(always)]
-    fn tr(self: Matrix5x2<T>) -> Matrix2x5<T> {
-        Matrix2x5 {
-            m11: self.m11,
-            m21: self.m12,
-            m12: self.m21,
-            m22: self.m22,
-            m13: self.m31,
-            m23: self.m32,
-            m14: self.m41,
-            m24: self.m42,
-            m15: self.m51,
-            m25: self.m52,
-        }
     }
 }
 
@@ -12437,64 +12022,11 @@ impl Matrix5x2BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix5x2<T>> {
     }
 }
 
-impl Matrix5x3BlasTranspose<T> of BlasTranspose<Matrix5x3<T>> {
-    type Output = Matrix3x5<T>;
-    #[inline(always)]
-    fn tr(self: Matrix5x3<T>) -> Matrix3x5<T> {
-        Matrix3x5 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-        }
-    }
-}
-
 impl Matrix5x3BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix5x3<T>> {
     type Output = Vector5<T>;
     #[inline(always)]
     fn last_column(self: Matrix5x3<T>) -> Vector5<T> {
         Vector5 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53 }
-    }
-}
-
-impl Matrix5x4BlasTranspose<T> of BlasTranspose<Matrix5x4<T>> {
-    type Output = Matrix4x5<T>;
-    #[inline(always)]
-    fn tr(self: Matrix5x4<T>) -> Matrix4x5<T> {
-        Matrix4x5 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-            m45: self.m54,
-        }
     }
 }
 
@@ -12506,84 +12038,11 @@ impl Matrix5x4BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix5x4<T>> {
     }
 }
 
-impl Matrix5BlasTranspose<T> of BlasTranspose<Matrix5<T>> {
-    type Output = Matrix5<T>;
-    #[inline(always)]
-    fn tr(self: Matrix5<T>) -> Matrix5<T> {
-        Matrix5 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m54: self.m45,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-            m45: self.m54,
-            m55: self.m55,
-        }
-    }
-}
-
 impl Matrix5BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix5<T>> {
     type Output = Vector5<T>;
     #[inline(always)]
     fn last_column(self: Matrix5<T>) -> Vector5<T> {
         Vector5 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55 }
-    }
-}
-
-impl Matrix5x6BlasTranspose<T> of BlasTranspose<Matrix5x6<T>> {
-    type Output = Matrix6x5<T>;
-    #[inline(always)]
-    fn tr(self: Matrix5x6<T>) -> Matrix6x5<T> {
-        Matrix6x5 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m61: self.m16,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m62: self.m26,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-            m63: self.m36,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m54: self.m45,
-            m64: self.m46,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-            m45: self.m54,
-            m55: self.m55,
-            m65: self.m56,
-        }
     }
 }
 
@@ -12595,40 +12054,11 @@ impl Matrix5x6BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix5x6<T>> {
     }
 }
 
-impl Vector6BlasTranspose<T> of BlasTranspose<Vector6<T>> {
-    type Output = RowVector6<T>;
-    #[inline(always)]
-    fn tr(self: Vector6<T>) -> RowVector6<T> {
-        RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
-    }
-}
-
 impl Vector6BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Vector6<T>> {
     type Output = Vector6<T>;
     #[inline(always)]
     fn last_column(self: Vector6<T>) -> Vector6<T> {
         Vector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
-    }
-}
-
-impl Matrix6x2BlasTranspose<T> of BlasTranspose<Matrix6x2<T>> {
-    type Output = Matrix2x6<T>;
-    #[inline(always)]
-    fn tr(self: Matrix6x2<T>) -> Matrix2x6<T> {
-        Matrix2x6 {
-            m11: self.m11,
-            m21: self.m12,
-            m12: self.m21,
-            m22: self.m22,
-            m13: self.m31,
-            m23: self.m32,
-            m14: self.m41,
-            m24: self.m42,
-            m15: self.m51,
-            m25: self.m52,
-            m16: self.m61,
-            m26: self.m62,
-        }
     }
 }
 
@@ -12640,71 +12070,11 @@ impl Matrix6x2BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix6x2<T>> {
     }
 }
 
-impl Matrix6x3BlasTranspose<T> of BlasTranspose<Matrix6x3<T>> {
-    type Output = Matrix3x6<T>;
-    #[inline(always)]
-    fn tr(self: Matrix6x3<T>) -> Matrix3x6<T> {
-        Matrix3x6 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-            m16: self.m61,
-            m26: self.m62,
-            m36: self.m63,
-        }
-    }
-}
-
 impl Matrix6x3BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix6x3<T>> {
     type Output = Vector6<T>;
     #[inline(always)]
     fn last_column(self: Matrix6x3<T>) -> Vector6<T> {
         Vector6 { x: self.m13, y: self.m23, z: self.m33, w: self.m43, a: self.m53, b: self.m63 }
-    }
-}
-
-impl Matrix6x4BlasTranspose<T> of BlasTranspose<Matrix6x4<T>> {
-    type Output = Matrix4x6<T>;
-    #[inline(always)]
-    fn tr(self: Matrix6x4<T>) -> Matrix4x6<T> {
-        Matrix4x6 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-            m45: self.m54,
-            m16: self.m61,
-            m26: self.m62,
-            m36: self.m63,
-            m46: self.m64,
-        }
     }
 }
 
@@ -12716,95 +12086,11 @@ impl Matrix6x4BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix6x4<T>> {
     }
 }
 
-impl Matrix6x5BlasTranspose<T> of BlasTranspose<Matrix6x5<T>> {
-    type Output = Matrix5x6<T>;
-    #[inline(always)]
-    fn tr(self: Matrix6x5<T>) -> Matrix5x6<T> {
-        Matrix5x6 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m54: self.m45,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-            m45: self.m54,
-            m55: self.m55,
-            m16: self.m61,
-            m26: self.m62,
-            m36: self.m63,
-            m46: self.m64,
-            m56: self.m65,
-        }
-    }
-}
-
 impl Matrix6x5BlasLastColumn<T, +Drop<T>> of BlasLastColumn<Matrix6x5<T>> {
     type Output = Vector6<T>;
     #[inline(always)]
     fn last_column(self: Matrix6x5<T>) -> Vector6<T> {
         Vector6 { x: self.m15, y: self.m25, z: self.m35, w: self.m45, a: self.m55, b: self.m65 }
-    }
-}
-
-impl Matrix6BlasTranspose<T> of BlasTranspose<Matrix6<T>> {
-    type Output = Matrix6<T>;
-    #[inline(always)]
-    fn tr(self: Matrix6<T>) -> Matrix6<T> {
-        Matrix6 {
-            m11: self.m11,
-            m21: self.m12,
-            m31: self.m13,
-            m41: self.m14,
-            m51: self.m15,
-            m61: self.m16,
-            m12: self.m21,
-            m22: self.m22,
-            m32: self.m23,
-            m42: self.m24,
-            m52: self.m25,
-            m62: self.m26,
-            m13: self.m31,
-            m23: self.m32,
-            m33: self.m33,
-            m43: self.m34,
-            m53: self.m35,
-            m63: self.m36,
-            m14: self.m41,
-            m24: self.m42,
-            m34: self.m43,
-            m44: self.m44,
-            m54: self.m45,
-            m64: self.m46,
-            m15: self.m51,
-            m25: self.m52,
-            m35: self.m53,
-            m45: self.m54,
-            m55: self.m55,
-            m65: self.m56,
-            m16: self.m61,
-            m26: self.m62,
-            m36: self.m63,
-            m46: self.m64,
-            m56: self.m65,
-            m66: self.m66,
-        }
     }
 }
 
