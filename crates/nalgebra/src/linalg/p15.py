@@ -713,8 +713,8 @@ pub(crate) impl {C}InternalImpl<
     /// entry (upstream leaves `Qᵀ b` behind). `x = P (R⁻¹ (Qᵀ b))`: `Qᵀ b` as one fused sum per
     /// entry (upstream: the reflections one after the other), back substitution on `R` (upstream's
     /// `|diag|` on the diagonal: one fused numerator and one correctly rounded division per
-    /// component), then the inverse column permutation (moves). Panics on overflow. Upstream:
-    /// `ColPivQR::solve_mut`.
+    /// component), then the inverse column permutation (moves). `Q` is formed (see `q_tr_mul` for
+    /// the cost of that choice). Panics on overflow. Upstream: `ColPivQR::solve_mut`.
     fn solve_mut<B, impl P: PermuteRows<Perm{n}, B>, impl K: SolveKernel<{M}<T>, B>, +Drop<B>>(
         self: {C}<T>, ref b: B,
     ) -> bool {{
@@ -842,7 +842,11 @@ pub struct {C}<T> {{
 
     /// `rhs = Qᵀ rhs` in place, `Q` the FULL {r}x{r} product of the reflections (upstream applies
     /// them one after the other to `rhs`), for any `rhs` with {r} rows: the product is formed
-    /// once, then ONE fused sum per entry. Upstream: `ColPivQR::q_tr_mul`.
+    /// once, then ONE fused sum per entry. Applying the reflections to `rhs` directly is cheaper
+    /// for a few columns but needs one kernel per right-hand-side shape, which a method generic in
+    /// `rhs` cannot name without them (measured on `ColPivQr6::solve` with a `Vector6`: 135 150 gas
+    /// against 357 400, `bench_col_piv_qr6_solve__alt_reflections`; escalated in the WP 8.5-P15
+    /// report). Upstream: `ColPivQR::q_tr_mul`.
     fn q_tr_mul<B, impl K: SolveKernel<{tname(r, r)}<T>, B>, +Drop<B>>(self: {C}<T>, ref rhs: B) {{
         rhs = K::tr_mul_rhs({qfull}, rhs);
     }}
@@ -1801,7 +1805,6 @@ fn test_full_piv_lu{s}_singular() {{
             f"let f = black_box(mat{n}x{n}(a)).full_piv_lu();", "let x = f.try_inverse();",
             "x.is_some()", "Static unit columns, then the permutations (on a factorisation).",
             keep="f"))
-    uses_n.add(M)
     head = f"""{HEADER}//! `{F}` / `{M}FullPivLuTrait` through the public API (WP 8.5-P15): oracle vectors (`tools/oracle`
 //! suite `pivot`), the factor identities, the rank-revealing property, gas benchmarks.
 
@@ -1809,7 +1812,7 @@ use core::cmp::{{{'max, min' if m >= 2 else 'max'}}};
 use nalgebra::linalg::{{{F}Trait, {M}FullPivLuTrait, PermuteColumns, PermuteRows}};
 use nalgebra::{{{', '.join(sorted(uses_n))}}};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{{{', '.join(sorted(set(perm_eq_uses([r, c])) | {'abs_raw', 'excess', 'fx', 'oracle_tol', 'ulp_diff'}))}}};
+use nalgebra_tests_utils::{{{', '.join(sorted(set(perm_eq_uses([r, c])) | {'abs_raw', 'excess', 'oracle_tol', 'ulp_diff'} | ({'fx'} if r == c else set())))}}};
 use crate::builders::{{{', '.join(sorted(b))}}};
 use crate::oracle_pivot as oracle;
 
@@ -1868,7 +1871,7 @@ def render_cpqr_tests(r: int, c: int) -> str:
     rows = f"mat{r}x{c}"
     b = {rows, f"mat{r}x{m}", f"mat{m}x{c}", f"vec{c}", f"amax_{r}x{c}", f"max_ulp_{r}x{c}",
          f"orth_{r}x{m}"}
-    uses_n = {"MatrixMul", M}
+    uses_n = {"MatrixMul"}
     # q_tr_mul(A P) against R (rows < m) and zero (rows >= m), per unit of max |a|
     qt_terms = " ".join(
         f"qt = max(qt, ulp_diff(t.{fld(r, c, i, j)}, "
@@ -2034,14 +2037,17 @@ fn test_col_piv_qr{s}_singular() {{
             "let x = f.solve(b);", "x.is_some()",
             "`Q` formed, `Qᵀ b`, back substitution, permutation (on a factorisation).",
             keep="(f, b)"))
+    if (r, c) == (6, 6):
+        parts.append(alt_reflections6())
+        uses_n |= {"MatrixSolve", "Vector6"}
     head = f"""{HEADER}//! `{C}` / `{M}ColPivQrTrait` through the public API (WP 8.5-P15): oracle vectors (`tools/oracle`
 //! suite `pivot`), the factor identities, the rank-revealing property, gas benchmarks.
 
 use core::cmp::{{{'max, min' if m >= 2 else 'max'}}};
-use nalgebra::linalg::{{{C}Trait, {M}ColPivQrTrait, PermuteColumns, PermuteRows}};
+{"use fixed::Fixed;" + chr(10) + "use simba::scalar::FixedReal;" + chr(10) if (r, c) == (6, 6) else ""}use nalgebra::linalg::{{{C + ', ' if (r, c) == (6, 6) else ''}{C}Trait, {M}ColPivQrTrait, PermuteColumns, PermuteRows}};
 use nalgebra::{{{', '.join(sorted(uses_n))}}};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{{{', '.join(sorted(set(perm_eq_uses([c])) | {'abs_raw', 'excess', 'fx', 'oracle_tol', 'ulp_diff'}))}}};
+use nalgebra_tests_utils::{{{', '.join(sorted(set(perm_eq_uses([c])) | {'abs_raw', 'excess', 'oracle_tol', 'ulp_diff'} | ({'fx'} if r >= c else set())))}}};
 use crate::builders::{{{', '.join(sorted(b))}}};
 use crate::oracle_pivot as oracle;
 
@@ -2288,3 +2294,63 @@ def package_ops() -> dict[str, list[str]]:
         else:
             res[pkg] = pivot_ops(feature, [(r, c) for r in DIMS for c in DIMS if keep(r, c)])
     return res
+
+
+def alt_reflections6() -> str:
+    """The losing candidate of `ColPivQr6::solve` on a vector, kept for its measurement: upstream's
+    order (the reflections applied to `b` one after the other, from the packed axes) instead of
+    forming `Q`. It needs a kernel per right-hand-side shape, which the generic `solve` cannot
+    name (see the WP 8.5-P15 report); here on `Vector6` only."""
+    n = 6
+    st = []
+    for i in range(n):
+        u = [f"f.col_piv_qr.{fld(n, n, t, i)}" for t in range(i, n)]
+        vs = [f"b.{fld(n, 1, t, 0)}" for t in range(i, n)]
+        st.append(f"let neg = f.diag.{fld(n, 1, i, 0)} < fx(0);")
+        st.append(f"let h = {fsum([(1, a, b) for a, b in zip(u, vs)])}; let w = h + h; let nw = -w;")
+        comps = {t: f"b.{fld(n, 1, t, 0)}" for t in range(n)}
+        for k, t_ in enumerate(range(i, n)):
+            comps[t_] = (f"if neg {{ FixedReal::mul_add(w, {u[k]}, -{vs[k]}) }} "
+                         f"else {{ FixedReal::mul_add(nw, {u[k]}, {vs[k]}) }}")
+        st.append("let b = " + vec_lit(n, lambda t_: comps[t_]) + ";")
+    body = "\n    ".join(st).replace("R::", "FixedReal::")
+    return f"""/// The losing candidate of `ColPivQr6::solve` (vector): the 6 reflections applied to `b`
+/// one after the other (upstream's `q_tr_mul`), no `Q` formed.
+fn alt_solve6(f: ColPivQr6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {{
+    {body}
+    match f.r().solve_upper_triangular(b) {{
+        Some(x) => {{
+            let mut x = x;
+            f.p.inv_permute_rows(ref x);
+            Some(x)
+        }},
+        None => None,
+    }}
+}}
+
+/// The candidate is within the oracle tolerance too (its measured excess is pinned).
+#[test]
+fn test_alt_reflections6_candidate() {{
+    let mut cases = oracle::col_piv_qr6_solve_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let x = alt_solve6(black_box(mat6x6(a)).col_piv_qr(), vec6(b)).unwrap();
+        let e = vec6(e);
+        {cmp(6, 1, "x", "e")}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+/// The reflections applied to the vector (on a factorisation), no `Q` formed.
+#[test]
+#[inline(never)]
+fn bench_col_piv_qr6_solve__alt_reflections() {{
+    let (a, b, _, _) = *oracle::col_piv_qr6_solve_cases().at(3);
+    let f = black_box(black_box(mat6x6(a)).col_piv_qr());
+    let b = black_box(vec6(b));
+    let e = black_box(true);
+    let x = alt_solve6(f, b);
+    assert!((x.is_some()) == e);
+}}
+"""

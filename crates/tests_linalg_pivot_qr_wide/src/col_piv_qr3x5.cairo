@@ -4,10 +4,10 @@
 //! suite `pivot`), the factor identities, the rank-revealing property, gas benchmarks.
 
 use core::cmp::{max, min};
+use nalgebra::MatrixMul;
 use nalgebra::linalg::{ColPivQr3x5Trait, Matrix3x5ColPivQrTrait, PermuteColumns, PermuteRows};
-use nalgebra::{Matrix3x5, MatrixMul};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{Perm5PartialEq, abs_raw, excess, fx, oracle_tol, ulp_diff};
+use nalgebra_tests_utils::{Perm5PartialEq, abs_raw, excess, oracle_tol, ulp_diff};
 use crate::builders::{amax_3x5, mat3x3, mat3x5, max_ulp_3x5, orth_3x3, vec5};
 use crate::oracle_pivot as oracle;
 

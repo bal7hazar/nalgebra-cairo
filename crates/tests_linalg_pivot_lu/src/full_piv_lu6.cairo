@@ -5,7 +5,7 @@
 
 use core::cmp::{max, min};
 use nalgebra::linalg::{FullPivLu6Trait, Matrix6FullPivLuTrait, PermuteColumns, PermuteRows};
-use nalgebra::{Matrix6, Matrix6Trait, MatrixMul};
+use nalgebra::{Matrix6Trait, MatrixMul};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{Perm6PartialEq, abs_raw, excess, fx, oracle_tol, ulp_diff};
 use crate::builders::{amax_6x6, mat6x6, max_ulp_6x6, vec6};

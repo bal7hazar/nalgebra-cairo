@@ -124,7 +124,11 @@ pub impl ColPivQr1Impl<
 
     /// `rhs = Qᵀ rhs` in place, `Q` the FULL 1x1 product of the reflections (upstream applies
     /// them one after the other to `rhs`), for any `rhs` with 1 rows: the product is formed
-    /// once, then ONE fused sum per entry. Upstream: `ColPivQR::q_tr_mul`.
+    /// once, then ONE fused sum per entry. Applying the reflections to `rhs` directly is cheaper
+    /// for a few columns but needs one kernel per right-hand-side shape, which a method generic in
+    /// `rhs` cannot name without them (measured on `ColPivQr6::solve` with a `Vector6`: 135 150 gas
+    /// against 357 400, `bench_col_piv_qr6_solve__alt_reflections`; escalated in the WP 8.5-P15
+    /// report). Upstream: `ColPivQR::q_tr_mul`.
     fn q_tr_mul<B, impl K: SolveKernel<Matrix1<T>, B>, +Drop<B>>(self: ColPivQr1<T>, ref rhs: B) {
         rhs = K::tr_mul_rhs(Self::q(self), rhs);
     }
@@ -156,8 +160,8 @@ pub impl ColPivQr1Impl<
     /// entry (upstream leaves `Qᵀ b` behind). `x = P (R⁻¹ (Qᵀ b))`: `Qᵀ b` as one fused
     /// sum per entry (upstream: the reflections one after the other), back substitution on `R`
     /// (upstream's `|diag|` on the diagonal: one fused numerator and one correctly rounded division
-    /// per component), then the inverse column permutation (moves). Panics on overflow. Upstream:
-    /// `ColPivQR::solve_mut`.
+    /// per component), then the inverse column permutation (moves). `Q` is formed (see `q_tr_mul`
+    /// for the cost of that choice). Panics on overflow. Upstream: `ColPivQR::solve_mut`.
     fn solve_mut<B, impl P: PermuteRows<Perm1, B>, impl K: SolveKernel<Matrix1<T>, B>, +Drop<B>>(
         self: ColPivQr1<T>, ref b: B,
     ) -> bool {

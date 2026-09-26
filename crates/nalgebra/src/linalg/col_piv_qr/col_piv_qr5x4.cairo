@@ -1020,7 +1020,11 @@ pub impl ColPivQr5x4Impl<
 
     /// `rhs = Qᵀ rhs` in place, `Q` the FULL 5x5 product of the reflections (upstream applies
     /// them one after the other to `rhs`), for any `rhs` with 5 rows: the product is formed
-    /// once, then ONE fused sum per entry. Upstream: `ColPivQR::q_tr_mul`.
+    /// once, then ONE fused sum per entry. Applying the reflections to `rhs` directly is cheaper
+    /// for a few columns but needs one kernel per right-hand-side shape, which a method generic in
+    /// `rhs` cannot name without them (measured on `ColPivQr6::solve` with a `Vector6`: 135 150 gas
+    /// against 357 400, `bench_col_piv_qr6_solve__alt_reflections`; escalated in the WP 8.5-P15
+    /// report). Upstream: `ColPivQR::q_tr_mul`.
     fn q_tr_mul<B, impl K: SolveKernel<Matrix5<T>, B>, +Drop<B>>(self: ColPivQr5x4<T>, ref rhs: B) {
         rhs = K::tr_mul_rhs(ColPivQr5x4InternalTrait::q_full(self), rhs);
     }

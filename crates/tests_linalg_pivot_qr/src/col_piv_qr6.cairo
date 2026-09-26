@@ -4,10 +4,14 @@
 //! suite `pivot`), the factor identities, the rank-revealing property, gas benchmarks.
 
 use core::cmp::{max, min};
-use nalgebra::linalg::{ColPivQr6Trait, Matrix6ColPivQrTrait, PermuteColumns, PermuteRows};
-use nalgebra::{Matrix6, Matrix6Trait, MatrixMul};
+use fixed::Fixed;
+use nalgebra::linalg::{
+    ColPivQr6, ColPivQr6Trait, Matrix6ColPivQrTrait, PermuteColumns, PermuteRows,
+};
+use nalgebra::{Matrix6Trait, MatrixMul, MatrixSolve, Vector6};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{Perm6PartialEq, abs_raw, excess, fx, oracle_tol, ulp_diff};
+use simba::scalar::FixedReal;
 use crate::builders::{amax_6x6, mat6x6, max_ulp_6x6, orth_6x6, vec6};
 use crate::oracle_pivot as oracle;
 
@@ -330,5 +334,249 @@ fn bench_col_piv_qr6_solve__substitution() {
     let b = black_box(vec6(b));
     let e = black_box(true);
     let x = f.solve(b);
+    assert!((x.is_some()) == e);
+}
+
+/// The losing candidate of `ColPivQr6::solve` (vector): the 6 reflections applied to `b`
+/// one after the other (upstream's `q_tr_mul`), no `Q` formed.
+fn alt_solve6(f: ColPivQr6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
+    let neg = f.diag.x < fx(0);
+    let h = FixedReal::wide_rescale(
+        FixedReal::wide_add_prod(
+            FixedReal::wide_add_prod(
+                FixedReal::wide_add_prod(
+                    FixedReal::wide_add_prod(
+                        FixedReal::wide_add_prod(
+                            FixedReal::wide_add_prod(FixedReal::wide_zero(), f.col_piv_qr.m11, b.x),
+                            f.col_piv_qr.m21,
+                            b.y,
+                        ),
+                        f.col_piv_qr.m31,
+                        b.z,
+                    ),
+                    f.col_piv_qr.m41,
+                    b.w,
+                ),
+                f.col_piv_qr.m51,
+                b.a,
+            ),
+            f.col_piv_qr.m61,
+            b.b,
+        ),
+    );
+    let w = h + h;
+    let nw = -w;
+    let b = Vector6 {
+        x: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m11, -b.x)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m11, b.x)
+        },
+        y: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m21, -b.y)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m21, b.y)
+        },
+        z: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m31, -b.z)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m31, b.z)
+        },
+        w: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m41, -b.w)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m41, b.w)
+        },
+        a: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m51, -b.a)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m51, b.a)
+        },
+        b: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m61, -b.b)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m61, b.b)
+        },
+    };
+    let neg = f.diag.y < fx(0);
+    let h = FixedReal::wide_rescale(
+        FixedReal::wide_add_prod(
+            FixedReal::wide_add_prod(
+                FixedReal::wide_add_prod(
+                    FixedReal::wide_add_prod(
+                        FixedReal::wide_add_prod(FixedReal::wide_zero(), f.col_piv_qr.m22, b.y),
+                        f.col_piv_qr.m32,
+                        b.z,
+                    ),
+                    f.col_piv_qr.m42,
+                    b.w,
+                ),
+                f.col_piv_qr.m52,
+                b.a,
+            ),
+            f.col_piv_qr.m62,
+            b.b,
+        ),
+    );
+    let w = h + h;
+    let nw = -w;
+    let b = Vector6 {
+        x: b.x,
+        y: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m22, -b.y)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m22, b.y)
+        },
+        z: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m32, -b.z)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m32, b.z)
+        },
+        w: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m42, -b.w)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m42, b.w)
+        },
+        a: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m52, -b.a)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m52, b.a)
+        },
+        b: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m62, -b.b)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m62, b.b)
+        },
+    };
+    let neg = f.diag.z < fx(0);
+    let h = FixedReal::sum_prod4(
+        f.col_piv_qr.m33, b.z, f.col_piv_qr.m43, b.w, f.col_piv_qr.m53, b.a, f.col_piv_qr.m63, b.b,
+    );
+    let w = h + h;
+    let nw = -w;
+    let b = Vector6 {
+        x: b.x,
+        y: b.y,
+        z: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m33, -b.z)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m33, b.z)
+        },
+        w: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m43, -b.w)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m43, b.w)
+        },
+        a: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m53, -b.a)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m53, b.a)
+        },
+        b: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m63, -b.b)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m63, b.b)
+        },
+    };
+    let neg = f.diag.w < fx(0);
+    let h = FixedReal::sum_prod3(
+        f.col_piv_qr.m44, b.w, f.col_piv_qr.m54, b.a, f.col_piv_qr.m64, b.b,
+    );
+    let w = h + h;
+    let nw = -w;
+    let b = Vector6 {
+        x: b.x,
+        y: b.y,
+        z: b.z,
+        w: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m44, -b.w)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m44, b.w)
+        },
+        a: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m54, -b.a)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m54, b.a)
+        },
+        b: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m64, -b.b)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m64, b.b)
+        },
+    };
+    let neg = f.diag.a < fx(0);
+    let h = FixedReal::sum_prod2(f.col_piv_qr.m55, b.a, f.col_piv_qr.m65, b.b);
+    let w = h + h;
+    let nw = -w;
+    let b = Vector6 {
+        x: b.x,
+        y: b.y,
+        z: b.z,
+        w: b.w,
+        a: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m55, -b.a)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m55, b.a)
+        },
+        b: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m65, -b.b)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m65, b.b)
+        },
+    };
+    let neg = f.diag.b < fx(0);
+    let h = f.col_piv_qr.m66 * b.b;
+    let w = h + h;
+    let nw = -w;
+    let b = Vector6 {
+        x: b.x,
+        y: b.y,
+        z: b.z,
+        w: b.w,
+        a: b.a,
+        b: if neg {
+            FixedReal::mul_add(w, f.col_piv_qr.m66, -b.b)
+        } else {
+            FixedReal::mul_add(nw, f.col_piv_qr.m66, b.b)
+        },
+    };
+    match f.r().solve_upper_triangular(b) {
+        Some(x) => {
+            let mut x = x;
+            f.p.inv_permute_rows(ref x);
+            Some(x)
+        },
+        None => None,
+    }
+}
+
+/// The candidate is within the oracle tolerance too (its measured excess is pinned).
+#[test]
+fn test_alt_reflections6_candidate() {
+    let mut cases = oracle::col_piv_qr6_solve_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {
+        let (a, b, e, tol) = *case;
+        let x = alt_solve6(black_box(mat6x6(a)).col_piv_qr(), vec6(b)).unwrap();
+        let e = vec6(e);
+        ex = max(ex, excess(ulp_diff(x.x, e.x), oracle_tol(abs_raw(e.x), tol)));
+        ex = max(ex, excess(ulp_diff(x.y, e.y), oracle_tol(abs_raw(e.y), tol)));
+        ex = max(ex, excess(ulp_diff(x.z, e.z), oracle_tol(abs_raw(e.z), tol)));
+        ex = max(ex, excess(ulp_diff(x.w, e.w), oracle_tol(abs_raw(e.w), tol)));
+        ex = max(ex, excess(ulp_diff(x.a, e.a), oracle_tol(abs_raw(e.a), tol)));
+        ex = max(ex, excess(ulp_diff(x.b, e.b), oracle_tol(abs_raw(e.b), tol)));
+    }
+    assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
+}
+
+/// The reflections applied to the vector (on a factorisation), no `Q` formed.
+#[test]
+#[inline(never)]
+fn bench_col_piv_qr6_solve__alt_reflections() {
+    let (a, b, _, _) = *oracle::col_piv_qr6_solve_cases().at(3);
+    let f = black_box(black_box(mat6x6(a)).col_piv_qr());
+    let b = black_box(vec6(b));
+    let e = black_box(true);
+    let x = alt_solve6(f, b);
     assert!((x.is_some()) == e);
 }

@@ -5,7 +5,7 @@
 
 use core::cmp::max;
 use nalgebra::linalg::{FullPivLu1Trait, Matrix1FullPivLuTrait, PermuteColumns, PermuteRows};
-use nalgebra::{Matrix1, Matrix1Trait, MatrixMul};
+use nalgebra::{Matrix1Trait, MatrixMul};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{Perm1PartialEq, abs_raw, excess, fx, oracle_tol, ulp_diff};
 use crate::builders::{amax_1x1, mat1x1, max_ulp_1x1, vec1};
