@@ -619,3 +619,33 @@ fn bench_matrix_market__library() {
     let m: CsMatrix<Fixed> = cs_matrix_from_matrix_market_str(@text).unwrap();
     assert!(m.len() == 4);
 }
+
+// The extraction of the bytes alone (the first step of the parser), with `at` and with the
+// iterator; the parser peeking with `ByteArray::at` measured 2 761 160.
+#[test]
+#[inline(never)]
+fn bench_matrix_market__probe_bytes() {
+    let text: ByteArray = black_box(
+        "%%MatrixMarket matrix coordinate real general\n% 3x3\n3 3 4\n1 1 1.5\n2 1 -2\n3 3 .25\n1 3 2e1\n",
+    );
+    let mut out: Array<u8> = array![];
+    let mut k = 0;
+    while let Some(b) = text.at(k) {
+        out.append(b);
+        k += 1;
+    }
+    assert!(out.len() == 89);
+}
+
+#[test]
+#[inline(never)]
+fn bench_matrix_market__probe_iter() {
+    let text: ByteArray = black_box(
+        "%%MatrixMarket matrix coordinate real general\n% 3x3\n3 3 4\n1 1 1.5\n2 1 -2\n3 3 .25\n1 3 2e1\n",
+    );
+    let mut out: Array<u8> = array![];
+    for b in text {
+        out.append(b);
+    }
+    assert!(out.len() == 89);
+}

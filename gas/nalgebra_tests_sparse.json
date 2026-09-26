@@ -77,7 +77,9 @@
     },
     "matrix_market": {
       "baseline": 17210,
-      "library": 2778370
+      "library": 1863060,
+      "probe_bytes": 1256440,
+      "probe_iter": 1085550
     }
   }
 }

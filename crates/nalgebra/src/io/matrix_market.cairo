@@ -38,8 +38,24 @@ const EXP_CAP: u32 = 100000;
 
 /// The byte at `pos`, `None` past the end.
 #[inline(always)]
-fn peek(data: @ByteArray, pos: usize) -> Option<u8> {
-    data.at(pos)
+fn peek(data: Span<u8>, pos: usize) -> Option<u8> {
+    match data.get(pos) {
+        Some(b) => Some(*b.unbox()),
+        None => None,
+    }
+}
+
+/// The bytes of `text`, extracted once (its iterator): the parser peeks at most bytes several
+/// times, and one `ByteArray::at` costs about as much as the extraction of a byte. Measured on an
+/// 89-byte file (`bench_matrix_market__*`): 1 845 850 gas parsed from the extracted bytes (the
+/// extraction alone: 1 068 340 with the iterator, 1 239 230 with `at`), 2 761 160 with `at` at
+/// every peek.
+fn bytes_of(text: @ByteArray) -> Span<u8> {
+    let mut out: Array<u8> = array![];
+    for b in text.clone() {
+        out.append(b);
+    }
+    out.span()
 }
 
 /// Whether `b` is an ASCII digit.
@@ -52,7 +68,7 @@ fn is_digit(b: Option<u8>) -> bool {
 }
 
 /// The position after the spaces at `pos`.
-fn skip_spaces(data: @ByteArray, mut pos: usize) -> usize {
+fn skip_spaces(data: Span<u8>, mut pos: usize) -> usize {
     while peek(data, pos) == Some(SPACE) {
         pos += 1;
     }
@@ -60,7 +76,7 @@ fn skip_spaces(data: @ByteArray, mut pos: usize) -> usize {
 }
 
 /// The position after a `NEWLINE` at `pos`, `None` if there is none.
-fn newline(data: @ByteArray, pos: usize) -> Option<usize> {
+fn newline(data: Span<u8>, pos: usize) -> Option<usize> {
     match peek(data, pos) {
         Some(b) => {
             if b == LF {
@@ -80,7 +96,7 @@ fn newline(data: @ByteArray, pos: usize) -> Option<usize> {
 }
 
 /// The position of the end of the line at `pos` (the next `NEWLINE` or the end of the text).
-fn line_end(data: @ByteArray, mut pos: usize) -> usize {
+fn line_end(data: Span<u8>, mut pos: usize) -> usize {
     loop {
         match peek(data, pos) {
             Some(b) => { if b == LF || b == CR {
@@ -95,7 +111,7 @@ fn line_end(data: @ByteArray, mut pos: usize) -> usize {
 
 /// A `Dimension` at `pos`: `None` without a digit, else its value (`None` when it does not fit
 /// `usize`, upstream's `parse::<usize>()` failure) and the position after it.
-fn dimension(data: @ByteArray, mut pos: usize) -> Option<(Option<usize>, usize)> {
+fn dimension(data: Span<u8>, mut pos: usize) -> Option<(Option<usize>, usize)> {
     if !is_digit(peek(data, pos)) {
         return None;
     }
@@ -122,7 +138,7 @@ fn dimension(data: @ByteArray, mut pos: usize) -> Option<(Option<usize>, usize)>
 }
 
 /// The digits of a run at `pos` appended to `digits`; returns the position after them.
-fn digits_into(data: @ByteArray, mut pos: usize, ref digits: Array<u8>) -> usize {
+fn digits_into(data: Span<u8>, mut pos: usize, ref digits: Array<u8>) -> usize {
     while let Some(b) = peek(data, pos) {
         if b < ZERO || b > NINE {
             break;
@@ -195,9 +211,7 @@ fn decimal<T, impl R: Real<T>, +Drop<T>, +Add<T>>(neg: bool, digits: Span<u8>, p
 
 /// A `Value` at `pos` (the atomic rule: no inner spaces): the scalar and the position after
 /// it, `None` when the text there is not a value.
-fn value<T, impl R: Real<T>, +Drop<T>, +Add<T>>(
-    data: @ByteArray, pos: usize,
-) -> Option<(T, usize)> {
+fn value<T, impl R: Real<T>, +Drop<T>, +Add<T>>(data: Span<u8>, pos: usize) -> Option<(T, usize)> {
     let mut pos = pos;
     let mut neg = false;
     match peek(data, pos) {
@@ -262,7 +276,7 @@ fn value<T, impl R: Real<T>, +Drop<T>, +Add<T>>(
 /// when one does not fit `usize`), the value and the position after it; `None` when the text
 /// there is not an entry.
 fn entry<T, impl R: Real<T>, +Drop<T>, +Add<T>>(
-    data: @ByteArray, pos: usize,
+    data: Span<u8>, pos: usize,
 ) -> Option<(Option<usize>, Option<usize>, T, usize)> {
     let (r, q) = dimension(data, pos)?;
     let (c, q) = dimension(data, skip_spaces(data, q))?;
@@ -293,6 +307,7 @@ pub fn cs_matrix_from_matrix_market_str<
 >(
     data: @ByteArray,
 ) -> Option<CsMatrix<T>> {
+    let data = bytes_of(data);
     // SOI NEWLINE* (spaces allowed around).
     let mut pos: usize = 0;
     loop {
