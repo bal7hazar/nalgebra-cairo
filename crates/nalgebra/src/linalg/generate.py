@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generator of the WP 8.5-P14b `linalg` modules (symmetric eigen 1/4/5/6, SVD and QR of every
-static shape, Cholesky column updates).
+static shape, Cholesky column updates) and, through `p15.py`, of the WP 8.5-P15 ones (`FullPivLU`,
+`ColPivQR`, `LBLT`, `Perm1` / `Perm5`).
 
     python3 crates/nalgebra/src/linalg/generate.py            # write the outputs (runs `scarb fmt`)
     python3 crates/nalgebra/src/linalg/generate.py --check    # fail if a committed output is stale
@@ -592,6 +593,9 @@ def outputs() -> dict[str, str]:
     out.update(eigen_package())
     out.update(svd_packages())
     out.update(qr_package())
+    sys.dont_write_bytecode = True  # no __pycache__ next to the committed sources
+    import p15  # WP 8.5-P15 (FullPivLU, ColPivQR, LBLT)
+    out.update(p15.outputs())
     return out
 
 

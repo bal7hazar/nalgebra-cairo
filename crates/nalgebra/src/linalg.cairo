@@ -27,9 +27,15 @@
 pub mod cholesky;
 #[cfg(feature: 'cholesky_update')]
 pub mod cholesky_update;
+#[cfg(feature: 'col_piv_qr')]
+pub mod col_piv_qr;
+#[cfg(feature: 'full_piv_lu')]
+pub mod full_piv_lu;
 pub mod givens;
 pub mod householder;
 pub mod inverse;
+#[cfg(feature: 'lblt')]
+pub mod lblt;
 pub(crate) mod ldlt;
 pub mod lu;
 pub mod lu_steps;
@@ -73,15 +79,74 @@ pub use cholesky::{
 pub use cholesky_update::{
     Cholesky2UpdateTrait, Cholesky3UpdateTrait, Cholesky4UpdateTrait, Cholesky6UpdateTrait,
 };
+#[cfg(feature: 'col_piv_qr')]
+pub use col_piv_qr::{
+    ColPivQr1, ColPivQr1Trait, ColPivQr1x2, ColPivQr1x2Trait, ColPivQr1x3, ColPivQr1x3Trait,
+    ColPivQr1x4, ColPivQr1x4Trait, ColPivQr1x5, ColPivQr1x5Trait, ColPivQr1x6, ColPivQr1x6Trait,
+    ColPivQr2, ColPivQr2Trait, ColPivQr2x1, ColPivQr2x1Trait, ColPivQr2x3, ColPivQr2x3Trait,
+    ColPivQr2x4, ColPivQr2x4Trait, ColPivQr2x5, ColPivQr2x5Trait, ColPivQr2x6, ColPivQr2x6Trait,
+    ColPivQr3, ColPivQr3Trait, ColPivQr3x1, ColPivQr3x1Trait, ColPivQr3x2, ColPivQr3x2Trait,
+    ColPivQr3x4, ColPivQr3x4Trait, ColPivQr3x5, ColPivQr3x5Trait, ColPivQr3x6, ColPivQr3x6Trait,
+    ColPivQr4, ColPivQr4Trait, ColPivQr4x1, ColPivQr4x1Trait, ColPivQr4x2, ColPivQr4x2Trait,
+    ColPivQr4x3, ColPivQr4x3Trait, ColPivQr4x5, ColPivQr4x5Trait, ColPivQr4x6, ColPivQr4x6Trait,
+    ColPivQr5, ColPivQr5Trait, ColPivQr5x1, ColPivQr5x1Trait, ColPivQr5x2, ColPivQr5x2Trait,
+    ColPivQr5x3, ColPivQr5x3Trait, ColPivQr5x4, ColPivQr5x4Trait, ColPivQr5x6, ColPivQr5x6Trait,
+    ColPivQr6, ColPivQr6Trait, ColPivQr6x1, ColPivQr6x1Trait, ColPivQr6x2, ColPivQr6x2Trait,
+    ColPivQr6x3, ColPivQr6x3Trait, ColPivQr6x4, ColPivQr6x4Trait, ColPivQr6x5, ColPivQr6x5Trait,
+    Matrix1ColPivQrTrait, Matrix2ColPivQrTrait, Matrix2x3ColPivQrTrait, Matrix2x4ColPivQrTrait,
+    Matrix2x5ColPivQrTrait, Matrix2x6ColPivQrTrait, Matrix3ColPivQrTrait, Matrix3x2ColPivQrTrait,
+    Matrix3x4ColPivQrTrait, Matrix3x5ColPivQrTrait, Matrix3x6ColPivQrTrait, Matrix4ColPivQrTrait,
+    Matrix4x2ColPivQrTrait, Matrix4x3ColPivQrTrait, Matrix4x5ColPivQrTrait, Matrix4x6ColPivQrTrait,
+    Matrix5ColPivQrTrait, Matrix5x2ColPivQrTrait, Matrix5x3ColPivQrTrait, Matrix5x4ColPivQrTrait,
+    Matrix5x6ColPivQrTrait, Matrix6ColPivQrTrait, Matrix6x2ColPivQrTrait, Matrix6x3ColPivQrTrait,
+    Matrix6x4ColPivQrTrait, Matrix6x5ColPivQrTrait, RowVector2ColPivQrTrait,
+    RowVector3ColPivQrTrait, RowVector4ColPivQrTrait, RowVector5ColPivQrTrait,
+    RowVector6ColPivQrTrait, Vector2ColPivQrTrait, Vector3ColPivQrTrait, Vector4ColPivQrTrait,
+    Vector5ColPivQrTrait, Vector6ColPivQrTrait,
+};
+#[cfg(feature: 'full_piv_lu')]
+pub use full_piv_lu::{
+    FullPivLu1, FullPivLu1Trait, FullPivLu1x2, FullPivLu1x2Trait, FullPivLu1x3, FullPivLu1x3Trait,
+    FullPivLu1x4, FullPivLu1x4Trait, FullPivLu1x5, FullPivLu1x5Trait, FullPivLu1x6,
+    FullPivLu1x6Trait, FullPivLu2, FullPivLu2Trait, FullPivLu2x1, FullPivLu2x1Trait, FullPivLu2x3,
+    FullPivLu2x3Trait, FullPivLu2x4, FullPivLu2x4Trait, FullPivLu2x5, FullPivLu2x5Trait,
+    FullPivLu2x6, FullPivLu2x6Trait, FullPivLu3, FullPivLu3Trait, FullPivLu3x1, FullPivLu3x1Trait,
+    FullPivLu3x2, FullPivLu3x2Trait, FullPivLu3x4, FullPivLu3x4Trait, FullPivLu3x5,
+    FullPivLu3x5Trait, FullPivLu3x6, FullPivLu3x6Trait, FullPivLu4, FullPivLu4Trait, FullPivLu4x1,
+    FullPivLu4x1Trait, FullPivLu4x2, FullPivLu4x2Trait, FullPivLu4x3, FullPivLu4x3Trait,
+    FullPivLu4x5, FullPivLu4x5Trait, FullPivLu4x6, FullPivLu4x6Trait, FullPivLu5, FullPivLu5Trait,
+    FullPivLu5x1, FullPivLu5x1Trait, FullPivLu5x2, FullPivLu5x2Trait, FullPivLu5x3,
+    FullPivLu5x3Trait, FullPivLu5x4, FullPivLu5x4Trait, FullPivLu5x6, FullPivLu5x6Trait, FullPivLu6,
+    FullPivLu6Trait, FullPivLu6x1, FullPivLu6x1Trait, FullPivLu6x2, FullPivLu6x2Trait, FullPivLu6x3,
+    FullPivLu6x3Trait, FullPivLu6x4, FullPivLu6x4Trait, FullPivLu6x5, FullPivLu6x5Trait,
+    Matrix1FullPivLuTrait, Matrix2FullPivLuTrait, Matrix2x3FullPivLuTrait, Matrix2x4FullPivLuTrait,
+    Matrix2x5FullPivLuTrait, Matrix2x6FullPivLuTrait, Matrix3FullPivLuTrait,
+    Matrix3x2FullPivLuTrait, Matrix3x4FullPivLuTrait, Matrix3x5FullPivLuTrait,
+    Matrix3x6FullPivLuTrait, Matrix4FullPivLuTrait, Matrix4x2FullPivLuTrait,
+    Matrix4x3FullPivLuTrait, Matrix4x5FullPivLuTrait, Matrix4x6FullPivLuTrait,
+    Matrix5FullPivLuTrait, Matrix5x2FullPivLuTrait, Matrix5x3FullPivLuTrait,
+    Matrix5x4FullPivLuTrait, Matrix5x6FullPivLuTrait, Matrix6FullPivLuTrait,
+    Matrix6x2FullPivLuTrait, Matrix6x3FullPivLuTrait, Matrix6x4FullPivLuTrait,
+    Matrix6x5FullPivLuTrait, RowVector2FullPivLuTrait, RowVector3FullPivLuTrait,
+    RowVector4FullPivLuTrait, RowVector5FullPivLuTrait, RowVector6FullPivLuTrait,
+    Vector2FullPivLuTrait, Vector3FullPivLuTrait, Vector4FullPivLuTrait, Vector5FullPivLuTrait,
+    Vector6FullPivLuTrait,
+};
 pub use givens::{GivensRotate, GivensRotateRows, GivensRotation, GivensRotationTrait};
 pub use householder::reflection_axis_mut;
 pub use inverse::{
     Matrix2InverseTrait, Matrix3InverseTrait, Matrix4InverseTrait, Matrix6InverseTrait,
 };
+#[cfg(feature: 'lblt')]
+pub use lblt::{
+    Lblt1, Lblt1Trait, Lblt2, Lblt2Trait, Lblt3, Lblt3Trait, Lblt4, Lblt4Trait, Lblt5, Lblt5Trait,
+    Lblt6, Lblt6Trait, Matrix1LbltTrait, Matrix2LbltTrait, Matrix3LbltTrait, Matrix4LbltTrait,
+    Matrix5LbltTrait, Matrix6LbltTrait,
+};
 pub use lu::{
     Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix3LuTrait,
-    Matrix4LuTrait, Matrix6LuTrait, Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4, Perm4Trait, Perm6,
-    Perm6Trait,
+    Matrix4LuTrait, Matrix6LuTrait, Perm1, Perm1Trait, Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4,
+    Perm4Trait, Perm5, Perm5Trait, Perm6, Perm6Trait,
 };
 pub use lu_steps::{gauss_step, gauss_step_swap, try_invert_to};
 pub use permutation_sequence::{PermuteColumns, PermuteRows};

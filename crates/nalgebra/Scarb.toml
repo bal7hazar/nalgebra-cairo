@@ -22,7 +22,7 @@ keywords.workspace = true
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
-    "cholesky_update",
+    "cholesky_update", "full_piv_lu", "col_piv_qr", "lblt",
 ]
 statistics = []
 blas = []
@@ -34,6 +34,9 @@ eigen = []
 svd = ["eigen"]
 qr = []
 cholesky_update = []
+full_piv_lu = []
+col_piv_qr = []
+lblt = []
 
 [dependencies]
 simba.workspace = true
