@@ -220,6 +220,21 @@ gating `statistics`, `blas` and the closure methods alone cuts the library by 19
   README: a consumer may write `nalgebra = { version = "x.y", default-features = false, features
   = [...] }` for a lighter build.
 
+## D10 — Experimental Cairo features (owner, 2026-09-26)
+
+Two experimental features of the Cairo compiler, both enabled by corelib itself, are enabled in
+`crates/nalgebra/Scarb.toml` (`experimental-features`):
+
+- `associated_item_constraints`: the `Sum` / `Product` impls of upstream (`Iterator` item
+  constraints) and simpler generic bounds (e.g. the generic QR methods);
+- `user_defined_inline_macros`: the construction macros `matrix!`, `vector!`, `point!`,
+  `dmatrix!`, `dvector!` (and the other macros of nalgebra-rs) as declarative Cairo macros,
+  without a Rust procedural-macro plugin. Whether a consumer must enable the feature to use them
+  is measured by WP P21 and documented in the README.
+
+A toolchain bump that changes either feature is handled in its dedicated PR (`benchmarks/`
+re-run, as every toolchain bump).
+
 ## D8 — Interop with glam-cairo / rapier-cairo
 
 One scalar across the three repositories: fixed-cairo's `fixed::Fixed`, a registry dependency pinned
