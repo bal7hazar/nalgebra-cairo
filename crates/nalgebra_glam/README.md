@@ -33,7 +33,7 @@ let back: Option<Isometry3<Fixed>> = mat.try_into();    // None unless the matri
 
 Every conversion of upstream's `glam_matrix`, `glam_point`, `glam_translation`, `glam_quaternion`,
 `glam_rotation`, `glam_unit_complex`, `glam_isometry` and `glam_similarity` for the types glam-cairo
-has (91 items of [`docs/API_PARITY.md`](../../docs/API_PARITY.md)), one module per upstream file:
+has (91 items of [`docs/API_PARITY.md`](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/API_PARITY.md)), one module per upstream file:
 
 | glam-cairo | nalgebra-cairo |
 |---|---|

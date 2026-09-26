@@ -8,6 +8,7 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true
+readme = "../../README.md"
 # DESIGN D10 (owner, 2026-09-26): `associated_item_constraints` for the `core::iter::Sum` /
 # `Product` impls (`+Iterator<I>[Item: A]`), `user_defined_inline_macros` for the construction
 # macros (`matrix!`, `vector!`, `point!`, `dmatrix!`, `dvector!`, `stack!`, src/macros.cairo). A
