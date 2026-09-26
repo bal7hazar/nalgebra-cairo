@@ -18,13 +18,13 @@
 //! in `crates/tests_geometry/src/rotation3/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix3::{Matrix3InternalTrait, Matrix3Trait};
 use crate::base::matrix_test_utils::{ONE_RAW, fx, r3i, v3i};
 use crate::base::unit::Unit3Trait;
 use crate::base::vector3::Vector3Trait;
 use crate::geometry::rotation3::Rotation3InternalTrait;
+use crate::testing::black_box;
 use super::{Rotation3, Rotation3AngleTrait, Rotation3Trait};
 
 /// The half turn about `x`: `diag(1, -1, -1)`, exact.

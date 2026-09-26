@@ -12,10 +12,10 @@
 //! in `crates/tests_base/src/point3/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, p3, p3t};
 use crate::base::vector3::Vector3Trait;
+use crate::testing::black_box;
 use super::{Point3, Point3InternalTrait, Point3Trait, oracle};
 
 const MAX: i64 = 0x7fffffffffffffff;

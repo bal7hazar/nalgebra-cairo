@@ -13,10 +13,10 @@
 //! in `crates/tests_geometry/src/unit_complex/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, uct, ulp_diff};
 use crate::geometry::unit_complex::UnitComplexInternalTrait;
+use crate::testing::black_box;
 use super::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 
 /// The raw value of 1.

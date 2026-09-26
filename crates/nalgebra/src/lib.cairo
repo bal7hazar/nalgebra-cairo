@@ -17,6 +17,8 @@ pub mod macros;
 pub mod root;
 #[cfg(feature: 'sparse')]
 pub mod sparse;
+#[cfg(test)]
+mod testing;
 
 // shapegen: begin
 pub use base::{

@@ -644,7 +644,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/lu/lu3/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
@@ -652,6 +651,7 @@ mod tests {
     };
     use crate::base::vector3::Vector3;
     use crate::linalg::lu::{Perm3, Perm3Trait, oracle_lu3 as oracle};
+    use crate::testing::black_box;
     use super::{Lu3, Lu3InternalTrait, Lu3Trait};
 
     /// The oracle's first `unit` 3x3 case whose factorisation actually swaps rows, so every

@@ -11,11 +11,11 @@
 //! in `crates/tests_geometry/src/unit_quaternion/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::{uqt, v3t};
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use crate::geometry::unit_quaternion::UnitQuaternionInternalTrait;
+use crate::testing::black_box;
 use super::{UnitQuaternion, UnitQuaternionTrait};
 
 /// A unit quaternion of negative real part (so the sign conventions of `axis` and `angle` are

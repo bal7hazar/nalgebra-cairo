@@ -415,7 +415,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/lu/lu2/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
@@ -423,6 +422,7 @@ mod tests {
     };
     use crate::base::vector2::Vector2;
     use crate::linalg::lu::{Perm2, Perm2Trait, oracle_lu2 as oracle};
+    use crate::testing::black_box;
     use super::{Lu2, Lu2InternalTrait, Lu2Trait};
 
     /// The oracle's first `unit` 2x2 case whose factorisation actually swaps rows, so every

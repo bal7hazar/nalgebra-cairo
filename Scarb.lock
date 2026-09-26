@@ -21,7 +21,6 @@ name = "nalgebra"
 version = "0.1.0"
 dependencies = [
  "fixed",
- "nalgebra_testing",
  "simba",
  "snforge_std",
 ]

@@ -8,9 +8,9 @@
 //! in `crates/tests_base/src/point3/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, p3};
+use crate::testing::black_box;
 use super::{Point3, Point3InternalTrait, Point3Trait};
 
 /// `center` as `lerp(rhs, 1/2)`: an exact difference, then one fused product-sum per coordinate.

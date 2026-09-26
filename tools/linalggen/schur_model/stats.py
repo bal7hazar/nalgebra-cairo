@@ -1,12 +1,12 @@
 """Pass counts of the Schur iteration over every case of the oracle suite `schur` (the table of the
-WP 8.5-P16 report): `python3 crates/nalgebra/src/linalg/schur_model/stats.py`."""
+WP 8.5-P16 report): `python3 tools/linalggen/schur_model/stats.py`."""
 import sys, json, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 sys.dont_write_bytecode = True
 import model
 from model import *
 model.STUCK_K=8; model.NEAREST=True; model.HESS_NEAREST=False; model.EXC=True
 import model_f64 as F
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), *(['..'] * 5)))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), *(['..'] * 3)))
 d = json.load(open(os.path.join(ROOT, 'tools', 'oracle', 'vectors', 'schur.json')))
 ops={o['name']:o for o in d['ops']}
 print("| n | family | cases | passes median / p90 / max | f64 upstream median / max |")

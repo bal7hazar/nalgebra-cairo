@@ -8,11 +8,11 @@
 //! in `crates/tests_geometry/src/unit_complex/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{uc, v2};
 use crate::base::vector2::Vector2;
 use crate::geometry::unit_complex::UnitComplexInternalTrait;
+use crate::testing::black_box;
 use super::{UnitComplex, UnitComplexTrait};
 
 /// `new(0.4)`.

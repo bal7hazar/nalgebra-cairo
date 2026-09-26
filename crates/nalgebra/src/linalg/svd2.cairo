@@ -517,7 +517,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/svd2/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
     use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
@@ -527,6 +526,7 @@ mod tests {
     use crate::base::vector2::{Vector2, Vector2Trait};
     use crate::linalg::oracle_svd;
     use crate::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
+    use crate::testing::black_box;
     use super::{Svd2InternalTrait, Svd2Trait};
 
     /// An oracle `unit` 2x2 case: the benchmark input.

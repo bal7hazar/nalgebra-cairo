@@ -3,11 +3,11 @@
 //! in `crates/tests_base/src/matrix2/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix_test_utils::{fx, int, m2, m2i, max_ulp_diff2, s2, sym2_upper, v2i, v2t};
 use crate::base::sym_matrix2::SymMatrix2Trait;
 use crate::base::{oracle_matrix2, oracle_matrix2_inverse};
+use crate::testing::black_box;
 use super::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
 
 // --- losing candidates of the determinant / inverse study (kept as evidence) -----------------

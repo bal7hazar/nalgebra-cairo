@@ -13,9 +13,9 @@
 //! in `crates/tests_geometry/src/isometry3/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::{fx, iso3};
 use crate::geometry::isometry3::Isometry3InternalTrait;
+use crate::testing::black_box;
 use super::Isometry3;
 
 /// `new((1.5, -2.25, 3.75), (0.25, -0.1875, 0.125))`.

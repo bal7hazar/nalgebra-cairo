@@ -13,12 +13,12 @@
 //! in `crates/tests_geometry/src/rotation2/tests.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, r2};
 use crate::geometry::rotation2::Rotation2InternalTrait;
 use crate::geometry::unit_complex::{UnitComplexAngleTrait, UnitComplexTrait};
+use crate::testing::black_box;
 use super::{Rotation2, Rotation2Trait};
 
 /// The raw value of 1.

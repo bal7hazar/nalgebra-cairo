@@ -310,7 +310,6 @@ mod tests {
     //! are in `crates/tests_linalg/src/qr/qr4/tests.cairo`.
 
     use fixed::Fixed;
-    use nalgebra_testing::black_box;
     use simba::scalar::Real;
     use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
     use crate::base::matrix_test_utils::{
@@ -318,6 +317,7 @@ mod tests {
     };
     use crate::base::vector4::{Vector4, Vector4Trait};
     use crate::linalg::qr::oracle_qr4 as oracle;
+    use crate::testing::black_box;
     use super::{Qr4, Qr4InternalTrait, Qr4Trait};
 
     /// An oracle `unit` 4x4 case: the benchmark input.

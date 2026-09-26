@@ -12,9 +12,9 @@
 //! in `crates/tests_geometry/src/isometry2/benches.cairo`.
 
 use fixed::Fixed;
-use nalgebra_testing::black_box;
 use crate::base::matrix_test_utils::{fx, iso2};
 use crate::geometry::isometry2::Isometry2InternalTrait;
+use crate::testing::black_box;
 use super::Isometry2;
 
 /// `new((1.5, -2.25), 0.4 rad)`.
