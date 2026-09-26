@@ -3072,3 +3072,115 @@ pub(crate) impl Matrix1ShapeDims<T> of ShapeDims<Matrix1<T>> {
         (1, 1)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `Matrix1`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 1x1 matrix when empty. Upstream: `Sum for Matrix` (a fold
+/// from `zero()`: the same result, one addition more).
+pub impl Matrix1Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<Matrix1<T>> {
+    fn sum<I, +Iterator<I>[Item: Matrix1<T>], +Destruct<I>, +Destruct<Matrix1<T>>>(
+        mut iter: I,
+    ) -> Matrix1<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return Matrix1 { x: R::zero() };
+        };
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@Matrix1` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<Matrix1>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl Matrix1SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@Matrix1<T>> {
+    fn sum<I, +Iterator<I>[Item: @Matrix1<T>], +Destruct<I>, +Destruct<@Matrix1<T>>>(
+        mut iter: I,
+    ) -> @Matrix1<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Matrix1 { x: R::zero() };
+        };
+        let mut acc = *first;
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// `*iter.product()` of an iterator of snapshots `@Matrix1`: the ordered matrix product of the
+/// items (`a * b * ..`, each product floored once per component), the identity when empty.
+/// Folds from the first item: bit-identical to upstream's fold from `one()` (`I * x == x`
+/// exactly), one matrix product fewer. The owned form `Product<Matrix1>` is corelib's blanket
+/// impl over `One` + `Mul`. Upstream: `Product<&Matrix> for SquareMatrix` (references).
+pub impl Matrix1ProductSnapshot<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Product<@Matrix1<T>> {
+    fn product<I, +Iterator<I>[Item: @Matrix1<T>], +Destruct<I>, +Destruct<@Matrix1<T>>>(
+        mut iter: I,
+    ) -> @Matrix1<T> {
+        let Option::Some(first) = iter.next() else {
+            return @Matrix1 { x: R::one() };
+        };
+        let mut acc = *first;
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc * *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc * *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix1`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix1InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix1<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix1<T>, b: Matrix1<T>) -> Matrix1<T> {
+        Matrix1Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix1<T>, b: Matrix1<T>) -> Matrix1<T> {
+        Matrix1Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix1<T>, b: Matrix1<T>) -> (Matrix1<T>, Matrix1<T>) {
+        Matrix1Trait::inf_sup(a, b)
+    }
+}

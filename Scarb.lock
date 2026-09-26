@@ -8,12 +8,31 @@ source = "registry+https://scarbs.xyz/"
 checksum = "sha256:a8f7ec541b8cc85894688ae9008cddb87cccc55a024b04b35f7fd3716d715064"
 
 [[package]]
+name = "glam"
+version = "0.4.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:d3b4327f57b012dfa848e948ca7faee8dd10f475eaaa62e8456dcb640c4835fc"
+dependencies = [
+ "fixed",
+]
+
+[[package]]
 name = "nalgebra"
 version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_testing",
  "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_glam"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "glam",
+ "nalgebra",
  "snforge_std",
 ]
 
@@ -683,6 +702,18 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_wide6b"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_root"
 version = "0.1.0"
 dependencies = [
  "fixed",

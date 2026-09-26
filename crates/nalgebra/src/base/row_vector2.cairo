@@ -2387,3 +2387,86 @@ pub(crate) impl RowVector2ShapeDims<T> of ShapeDims<RowVector2<T>> {
         (1, 2)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `RowVector2`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 2-dimensional row vector when empty. Upstream: `Sum for Matrix` (a
+/// fold from `zero()`: the same result, one addition more).
+pub impl RowVector2Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<RowVector2<T>> {
+    fn sum<I, +Iterator<I>[Item: RowVector2<T>], +Destruct<I>, +Destruct<RowVector2<T>>>(
+        mut iter: I,
+    ) -> RowVector2<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return RowVector2 { x: R::zero(), y: R::zero() };
+        };
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@RowVector2` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<RowVector2>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl RowVector2SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@RowVector2<T>> {
+    fn sum<I, +Iterator<I>[Item: @RowVector2<T>], +Destruct<I>, +Destruct<@RowVector2<T>>>(
+        mut iter: I,
+    ) -> @RowVector2<T> {
+        let Option::Some(first) = iter.next() else {
+            return @RowVector2 { x: R::zero(), y: R::zero() };
+        };
+        let mut acc = *first;
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `RowVector2`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl RowVector2InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<RowVector2<T>> {
+    #[inline(always)]
+    fn inf(a: RowVector2<T>, b: RowVector2<T>) -> RowVector2<T> {
+        RowVector2Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: RowVector2<T>, b: RowVector2<T>) -> RowVector2<T> {
+        RowVector2Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: RowVector2<T>, b: RowVector2<T>) -> (RowVector2<T>, RowVector2<T>) {
+        RowVector2Trait::inf_sup(a, b)
+    }
+}

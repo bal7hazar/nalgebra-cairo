@@ -3085,3 +3085,90 @@ pub(crate) impl RowVector6ShapeDims<T> of ShapeDims<RowVector6<T>> {
         (1, 6)
     }
 }
+
+// --- iterator sums and products, crate-root functions (WP 8.6-P21) -------------------------------
+
+/// `iter.sum()` of an iterator of `RowVector6`s: the first item plus the others, in order (exact;
+/// panics on overflow); the zero 6-dimensional row vector when empty. Upstream: `Sum for Matrix` (a
+/// fold from `zero()`: the same result, one addition more).
+pub impl RowVector6Sum<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<RowVector6<T>> {
+    fn sum<I, +Iterator<I>[Item: RowVector6<T>], +Destruct<I>, +Destruct<RowVector6<T>>>(
+        mut iter: I,
+    ) -> RowVector6<T> {
+        let Option::Some(mut acc) = iter.next() else {
+            return RowVector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            };
+        };
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + x;
+        }
+        acc
+    }
+}
+
+/// `*iter.sum()` of an iterator of snapshots `@RowVector6` (`span.into_iter()`): a snapshot of the
+/// sum of the items, like `Sum<RowVector6>`. Upstream: `Sum<&Matrix> for Matrix` (references).
+pub impl RowVector6SumSnapshot<
+    T, impl R: Real<T>, +Add<T>, +Copy<T>, +Drop<T>,
+> of core::iter::Sum<@RowVector6<T>> {
+    fn sum<I, +Iterator<I>[Item: @RowVector6<T>], +Destruct<I>, +Destruct<@RowVector6<T>>>(
+        mut iter: I,
+    ) -> @RowVector6<T> {
+        let Option::Some(first) = iter.next() else {
+            return @RowVector6 {
+                x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+            };
+        };
+        let mut acc = *first;
+        loop {
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+            let Option::Some(x) = iter.next() else {
+                break;
+            };
+            acc = acc + *x;
+        }
+        @acc
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `RowVector6`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl RowVector6InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<RowVector6<T>> {
+    #[inline(always)]
+    fn inf(a: RowVector6<T>, b: RowVector6<T>) -> RowVector6<T> {
+        RowVector6Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: RowVector6<T>, b: RowVector6<T>) -> RowVector6<T> {
+        RowVector6Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: RowVector6<T>, b: RowVector6<T>) -> (RowVector6<T>, RowVector6<T>) {
+        RowVector6Trait::inf_sup(a, b)
+    }
+}

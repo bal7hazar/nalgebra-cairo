@@ -55,6 +55,8 @@ jobs:
           # (`eigen`, `svd`, `qr`: the kernels of `SymmetricEigen2/3`, `Svd2/3`, `Qr2/3/4`, WP 8.5-P15):
           # the unit needs ~0.9 GB less than with the defaults.
           - { name: nalgebra, package: nalgebra, filters: "nalgebra", flags: "--no-default-features --features eigen,svd,qr" }
+          # `nalgebra_glam` (WP 8.6-P19, DESIGN D11): the conversions and their tests / benchmarks.
+          - { name: nalgebra_glam, package: nalgebra_glam, filters: "nalgebra_glam" }
           - { name: "tests_base vectors", package: nalgebra_tests_base, filters: "nalgebra_tests_base::vector" }
           - { name: "tests_base matrices", package: nalgebra_tests_base, filters: "nalgebra_tests_base::matrix nalgebra_tests_base::point nalgebra_tests_base::unit nalgebra_tests_base::cg" }
           - { name: "tests_geometry quaternions", package: nalgebra_tests_geometry, filters: "nalgebra_tests_geometry::quaternion nalgebra_tests_geometry::unit_quaternion" }
@@ -100,6 +102,7 @@ jobs:
           - { name: tests_linalg_bidiagonal_tall, package: nalgebra_tests_linalg_bidiagonal_tall, filters: "nalgebra_tests_linalg_bidiagonal_tall" }
           - { name: tests_dynamic, package: nalgebra_tests_dynamic, filters: "nalgebra_tests_dynamic" }
           - { name: tests_sparse, package: nalgebra_tests_sparse, filters: "nalgebra_tests_sparse" }
+          - { name: tests_root, package: nalgebra_tests_root, filters: "nalgebra_tests_root" }
           - { name: "shapes core", package: nalgebra_shapes_tests_core, filters: "nalgebra_shapes_tests_core" }
           - { name: "shapes norms", package: nalgebra_shapes_tests_norms, filters: "nalgebra_shapes_tests_norms" }
           - { name: "shapes componentwise", package: nalgebra_shapes_tests_componentwise, filters: "nalgebra_shapes_tests_componentwise" }

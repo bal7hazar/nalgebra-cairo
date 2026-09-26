@@ -148,3 +148,9 @@ Every figure has a `bench_*` test and, where a design choice was made, the losin
   subtraction by ~1,020 gas at random.
 - Report first-use *and* marginal cost when ranking primitives.
 - `scripts/gas_report.py` produces the markdown report and the JSON snapshot; `--check` gates CI.
+- **Branches are charged at their costliest path.** In straight-line (loop-free) code an early
+  `return` or a non-taken `if` branch does not refund the gas of the code it skips: the function
+  is charged its most expensive path (WP 8.1b-2: a 36-term `&&` chain costs ~103k whatever the
+  input; WP 8.6-P19: `Mat4 -> Isometry3` rejected by its bottom row costs 79,200 in one function,
+  1,210 when the expensive checks sit behind an `#[inline(never)]` call). Put rarely taken
+  expensive work behind a non-inlined call.

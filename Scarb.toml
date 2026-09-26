@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/nalgebra",
+    "crates/nalgebra_glam",
     "crates/testing",
     "crates/shapes_tests_core",
     "crates/shapes_tests_norms",
@@ -61,6 +62,7 @@ members = [
     "crates/tests_linalg_bidiagonal_tall",
     "crates/tests_dynamic",
     "crates/tests_sparse",
+    "crates/tests_root",
 ]
 
 [workspace.package]

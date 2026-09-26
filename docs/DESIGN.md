@@ -229,11 +229,24 @@ Two experimental features of the Cairo compiler, both enabled by corelib itself,
   constraints) and simpler generic bounds (e.g. the generic QR methods);
 - `user_defined_inline_macros`: the construction macros `matrix!`, `vector!`, `point!`,
   `dmatrix!`, `dvector!` (and the other macros of nalgebra-rs) as declarative Cairo macros,
-  without a Rust procedural-macro plugin. Whether a consumer must enable the feature to use them
-  is measured by WP P21 and documented in the README.
+  without a Rust procedural-macro plugin (feature `macros`, in `default`). Measured by WP P21: a
+  consumer needs NO experimental feature to call the macros or `iter.sum()` / `iter.product()`.
+  Cairo 2.19 facts: a macro body resolves prelude names only through `$defsite::`, which also
+  reaches private items of the defining crate.
 
 A toolchain bump that changes either feature is handled in its dedicated PR (`benchmarks/`
 re-run, as every toolchain bump).
+
+## D11 — glam conversions in a separate package `nalgebra_glam` (owner, 2026-09-26)
+
+nalgebra-rs puts its glam conversions in the crate behind a `convert-glam0XX` feature. Scarb 2.19.4
+has no optional dependencies (`optional = true` is rejected), and depending on `glam = "0.4.0"`
+costs every consumer +0.46 GB / +4 s CPU of cold compile (measured on an empty package). The
+conversions therefore live in the package `nalgebra_glam` (`crates/nalgebra_glam`), published
+together with `nalgebra` 0.1.0 and counted in `docs/API_PARITY.md`: a project that wants them
+adds `nalgebra_glam` next to `nalgebra` and `glam`, the Cairo counterpart of enabling the feature,
+and brings the impls into scope with `use nalgebra_glam::prelude::*;` (Cairo finds an `Into` impl
+only when it is in scope). Publication order: `nalgebra` before `nalgebra_glam`.
 
 ## D8 — Interop with glam-cairo / rapier-cairo
 

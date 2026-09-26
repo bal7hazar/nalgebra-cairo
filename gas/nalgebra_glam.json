@@ -1,0 +1,100 @@
+{
+  "nalgebra_glam::benches": {
+    "isometry2_to_mat3": {
+      "baseline": 16140,
+      "into": 16340
+    },
+    "isometry2_to_vec2_angle": {
+      "baseline": 16140,
+      "into": 45940
+    },
+    "isometry3_to_mat4": {
+      "baseline": 16740,
+      "into": 39110
+    },
+    "isometry3_to_vec3_quat": {
+      "baseline": 16740,
+      "into": 16740
+    },
+    "mat2_to_rotation2": {
+      "baseline": 16140,
+      "into": 24310
+    },
+    "mat3_to_isometry2": {
+      "baseline": 17140,
+      "try_into": 39200
+    },
+    "mat3_to_similarity2": {
+      "baseline": 17140,
+      "try_into": 51130
+    },
+    "mat4_to_isometry3": {
+      "baseline": 18540,
+      "try_into": 97440
+    },
+    "mat4_to_isometry3_reject": {
+      "baseline": 21940,
+      "bottom_first": 23150,
+      "orthogonal_first": 101140,
+      "single_function": 101140
+    },
+    "mat4_to_matrix4": {
+      "baseline": 18540,
+      "into": 18540
+    },
+    "mat4_to_similarity3": {
+      "baseline": 18540,
+      "one_pass": 117880,
+      "two_pass": 163170
+    },
+    "matrix4_to_mat4": {
+      "baseline": 21940,
+      "into": 21940
+    },
+    "quat_to_rotation3": {
+      "baseline": 16410,
+      "into": 53090
+    },
+    "quat_to_unit_quaternion": {
+      "baseline": 16140,
+      "into": 30120
+    },
+    "rotation3_to_quat": {
+      "baseline": 55090,
+      "into": 83170
+    },
+    "similarity3_to_mat4": {
+      "baseline": 18540,
+      "into": 59260
+    },
+    "unit_quaternion_to_quat": {
+      "baseline": 16140,
+      "into": 16140
+    },
+    "vec2_angle_to_isometry2": {
+      "baseline": 16710,
+      "into": 47140
+    },
+    "vec2_to_isometry2": {
+      "angle_zero": 33050,
+      "baseline": 15740,
+      "identity": 15240
+    },
+    "vec3_quat_to_isometry3": {
+      "baseline": 17510,
+      "into": 30650
+    },
+    "vec3_to_unit_vector3": {
+      "baseline": 15940,
+      "try_into": 27770
+    },
+    "vec3_to_vector3": {
+      "baseline": 15940,
+      "into": 15940
+    },
+    "vector3_to_vec3": {
+      "baseline": 15940,
+      "into": 15940
+    }
+  }
+}

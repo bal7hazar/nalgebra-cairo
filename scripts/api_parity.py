@@ -243,7 +243,8 @@ def type_head(value: str) -> tuple[str, list[str]]:
     value = re.sub(r"^(?:mut\s+|dyn\s+)", "", value)
     value = re.sub(r"'\s*[A-Za-z_]\w*\s*,?\s*", "", value)
     value = value.strip().lstrip("&").strip()
-    value = re.sub(r"\b(?:crate|super|self|base|geometry|linalg|alias|core|std)::", "", value)
+    value = re.sub(r"\b(?:crate|super|self|base|geometry|linalg|alias|core|std|iter|root)::", "",
+                   value)
     value = re.sub(r"\b(?:na|nalgebra)::", "", value)
     m = re.match(r"([A-Za-z_$][\w$]*)\s*(<.*>)?\s*$", value, re.S)
     if not m:
@@ -353,7 +354,7 @@ def impl_rhs_family(value: str) -> str:
         return "(" + ", ".join(impl_rhs_family(p) for p in split_top(value[1:-1])) + ")"
     base, args = type_head(value)
     base = base.lstrip("$")
-    if base in ("T", "N", "Self::Element", "T::Element") or re.fullmatch(
+    if base in ("T", "N", "Fixed", "Self::Element", "T::Element") or re.fullmatch(
             r"(?:f32|f64|u8|u16|u32|u64|u128|usize|i8|i16|i32|i64|i128|isize)", base):
         return "T"
     owner = rust_owner(value)
@@ -920,7 +921,9 @@ def parse_simba(simba_root: Path) -> list[str]:
 # Cairo side
 # --------------------------------------------------------------------------------------------
 
-CAIRO_CRATES = ("crates/nalgebra/src",)
+# WP 8.6-P19: `nalgebra_glam` (DESIGN D11) holds upstream's `third_party/glam` conversions; its
+# items are owned by the nalgebra types they convert.
+CAIRO_CRATES = ("crates/nalgebra/src", "crates/nalgebra_glam/src")
 
 
 @functools.cache
@@ -937,7 +940,7 @@ TEST_FILE = re.compile(r"^(?:tests|testing|benches|oracle.*|matrix_test_utils)$"
 CAIRO_CORE_TRAITS = {
     "Add", "AddAssign", "Sub", "SubAssign", "Mul", "MulAssign", "Div", "DivAssign", "Neg",
     "Into", "TryInto", "Default", "PartialEq", "PartialOrd", "Hash", "Serde", "Debug", "Display",
-    "IndexView", "Index", "Zero", "One", "Bounded",
+    "IndexView", "Index", "Zero", "One", "Bounded", "Sum", "Product",
 }
 CAIRO_DERIVES = {"Copy", "PartialEq", "Serde", "Default", "Debug", "Hash", "Display"}
 
@@ -947,6 +950,9 @@ def cairo_rhs_family(value: str) -> str:
     if value in ("T", "Fixed"):
         return "T"
     return impl_rhs_family(value)
+
+
+GLAM_CAIRO_TYPE = re.compile(r"[IUB]?Vec[234]|Mat[234]|Quat")
 
 
 def cairo_owner(name: str, types: list[str], fallback: str) -> str:
@@ -970,7 +976,9 @@ def cairo_impl_item(trait_expr: str, owner: str) -> tuple[str, str] | None:
         rust = "From" if base == "Into" else "TryFrom"
         # Like the Rust side: `From<Src>` on the target, unless the target is foreign (tuple,
         # array, scalar), then `Into<Dst>` on the source.
-        if dst.strip().startswith(("(", "[")) or cairo_rhs_family(dst) == "T":
+        # WP 8.6-P19: a glam-cairo type (`Vec3`, `Mat4`, `Quat`...) is foreign too.
+        if dst.strip().startswith(("(", "[")) or cairo_rhs_family(dst) == "T" or \
+                GLAM_CAIRO_TYPE.fullmatch(type_head(dst)[0]):
             return rust_owner(src), f"Into<{cairo_rhs_family(dst)}>"
         return rust_owner(dst), f"{rust}<{cairo_rhs_family(src)}>"
     if base.endswith("Assign") and len(args) >= 2:
@@ -980,6 +988,11 @@ def cairo_impl_item(trait_expr: str, owner: str) -> tuple[str, str] | None:
         return target, f"{base}<{cairo_rhs_family(args[0]) if args else ''}>"
     if base in ("IndexView", "Index") and len(args) >= 2:
         return owner, f"Index<{squash(args[1])}>"
+    if base in ("Sum", "Product") and args and args[0].strip().startswith("@"):
+        # WP 8.6-P21: `Sum<@Matrix3<T>>`, the iterator of snapshots, is upstream's
+        # `Sum<&'a OMatrix>` (an iterator of references).
+        item = args[0].strip()[1:]
+        return rust_owner(item), f"{base}<{cairo_rhs_family(item)}>"
     if base == "Neg":
         return (rust_owner(args[0]) if args else owner), "Neg"
     return (rust_owner(args[0]) if args else owner), base
@@ -1001,7 +1014,9 @@ def cairo_files() -> list[Path]:
 # `norm` / `metric_distance` are the shapes' methods of the same names (WP 8.2b).
 # WP 8.5-P15: the `PermuteRows` / `PermuteColumns` impls of `Perm1` / `Perm5` live next to those
 # types (`linalg/lu/perm1_5.cairo`), not in `linalg/permutation_sequence.cairo`.
-CROSS_FILE_TRAITS = {"Norm", "PermuteRows", "PermuteColumns"}
+# WP 8.6-P21: `MatrixInfSup<M>` (`root.cairo`, the kernel of `nalgebra::inf` / `sup` /
+# `inf_sup`), implemented in each shape's module as its `inf` / `sup` / `inf_sup`.
+CROSS_FILE_TRAITS = {"Norm", "PermuteRows", "PermuteColumns", "MatrixInfSup"}
 
 
 def parse_cairo() -> list[Item]:
@@ -1014,10 +1029,16 @@ def parse_cairo() -> list[Item]:
     for path, text in files:
         if path.is_relative_to(ROOT / "crates/nalgebra"):
             crate, source = "nalgebra", str(path.relative_to(ROOT))
+        elif path.is_relative_to(ROOT / "crates/nalgebra_glam"):
+            crate, source = "nalgebra_glam", str(path.relative_to(ROOT))
         else:
             crate, source = "simba", str(Path("simba") / path.relative_to(simba_root()))
-        module = "simba" if crate == "simba" else (
-            path.relative_to(ROOT / "crates/nalgebra/src").parts[0].removesuffix(".cairo"))
+        if crate == "nalgebra_glam":
+            module = "third_party"
+        elif crate == "simba":
+            module = "simba"
+        else:
+            module = path.relative_to(ROOT / "crates/nalgebra/src").parts[0].removesuffix(".cairo")
         test_spans = []
         for m in re.finditer(r"#\[cfg\(test\)\]\s*(?:pub(?:\(crate\))?\s+)?mod\s+\w+\s*\{", text):
             test_spans.append((m.start(), closing(text, m.end() - 1)))
@@ -1040,7 +1061,7 @@ def parse_cairo() -> list[Item]:
                 # found in the trait's file, or in every file for `CROSS_FILE_TRAITS`.
                 scope = "\n".join(t for _, t in files) if name in CROSS_FILE_TRAITS else text
                 impls = re.findall(rf"\bpub\s+impl\s+([A-Za-z_]\w*)\s*(?:<[^{{]*?>)?\s*of\s+"
-                                   rf"{name}\b", mask_comments(scope))
+                                   rf"(?:[\w:]*::)?{name}\b", mask_comments(scope))
                 owners = sorted({cairo_owner(i, types, "") for i in impls} - {""}) or [
                     {"PermTrait": "Perm"}.get(name, name)]
             else:
@@ -1092,7 +1113,16 @@ def parse_cairo() -> list[Item]:
         for m in re.finditer(r"\bpub\s+fn\s+([A-Za-z_]\w*)", text):
             if inside(m.start(), spans + test_spans):
                 continue
-            items.add(Item(f"{crate}::{module}", "function", m.group(1), module, source))
+            # WP 8.6-P21: `root.cairo` holds upstream's crate-root functions (`lib.cairo`
+            # re-exports them), like `lib.rs` (the Rust module `root`).
+            owner = "nalgebra" if crate == "nalgebra" and module in ("lib", "root") else \
+                f"{crate}::{module}"
+            items.add(Item(owner, "function", m.group(1), module, source))
+        for m in re.finditer(r"\bpub\s+macro\s+([A-Za-z_]\w*)", text):
+            # WP 8.6-P21: the declarative macros (`macros.cairo`), re-exported at the crate root
+            # like upstream's `nalgebra_macros`.
+            if not inside(m.start(), test_spans):
+                items.add(Item("nalgebra", "macro", f"{m.group(1)}!", module, source))
     return unique_items(items)
 
 
@@ -1143,6 +1173,8 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     # WP 8.4-P12: `UnitDualQuaternion` is upstream's `Unit<DualQuaternion>`.
     "Unit": ["Unit", "UnitComplex", "UnitQuaternion", "UnitDualQuaternion"],
     "Unit<Vector>": ["Unit"],
+    # WP 8.6-P19: upstream's glam conversions are stated on the aliases `UnitVector2..4`.
+    **{f"UnitVector{d}": [f"UnitVector{d}"] for d in range(1, 7)},
     "Point": ["Point1", "Point2", "Point3", "Point4", "Point5", "Point6"],
     "Point1": ["Point1"],
     "Point2": ["Point2"],
@@ -1220,6 +1252,8 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "CsCholesky": ["CsCholesky"],
     "nalgebra::sparse": ["nalgebra::sparse"],
     "nalgebra::io": ["nalgebra::io"],
+    # WP 8.6-P21: the crate-root functions and macros.
+    "nalgebra": ["nalgebra"],
 }
 
 # WP 8.5-P13: Cairo types that stand for an upstream owner WITHOUT being required by it. Upstream's
@@ -1414,6 +1448,11 @@ def rendered(item: Item) -> str:
 # is a Cairo rendered name (`method` names are bare, other kinds prefixed); `\1` refers to the
 # item pattern's groups.  Owners may be redirected with `Owner::name`.
 RENAMES = (
+    # WP 8.6-P21: corelib's blanket `ProductMultiplicativeTypesImpl<A, +Mul<A>, +One<A>>` is the
+    # `Product` of every square (an explicit impl would be ambiguous with it, E2313).
+    rule(r"SquareMatrix", r"impl:Product", "impl:One",
+         "`iter.product()` is corelib's blanket `Product` over `One` + `Mul` (a fold from the "
+         "identity, like upstream's), which the squares' `One` impl enables"),
     # WP 8.5-P14a: upstream's triangular solves take any right-hand side with as many rows.
     rule(r"SquareMatrix", r"((?:tr_|ad_)?solve_(?:lower|upper)_triangular\w*)", r"MatrixSolve::\1",
          "method of the generic `MatrixSolve` (one kernel impl per square and right-hand side "
@@ -1776,6 +1815,20 @@ CAIRO_FORMS = (
     (r"Matrix[34]", r"impl:From<(?:Affine|Projective|Transform)[23]>", "`t.into()`",
      "the instances of upstream's `From<Transform> for OMatrix` (`RENAMES` points at "
      "`Matrix4::From<Affine3>`)"),
+    # WP 8.6-P21 (`root.cairo`, `macros.cairo`).
+    (r"Ordering", r"type:Ordering|impl:(?:Copy|Debug|PartialEq)", "`core::cmp::Ordering`",
+     "Rust's standard ordering (the result of `nalgebra::partial_cmp`), which Cairo's corelib "
+     "does not have: `nalgebra::root::Ordering`, with the standard derives"),
+    (r"PointMetric", r"center|distance|distance_squared",
+     "`nalgebra::center(&p, &q)`, `distance`, `distance_squared`",
+     "the kernel trait of the generic crate-root functions over `Point1..6` (Cairo has no "
+     "overloading: a generic free function dispatches through a trait); static functions"),
+    (r"ConvertUnchecked", r"convert_unchecked", "`nalgebra::convert_unchecked(t)`",
+     "the kernel trait of `convert_unchecked` / `convert_ref_unchecked` (upstream's "
+     "`SupersetOf::to_subset_unchecked`) over the checked conversions of the crate"),
+    (r"HStack|VStack", r"hstack|vstack", "`stack![a, b; c, d]`",
+     "the block traits `stack!` expands to (one impl per conformable pair of static shapes, "
+     "moves only): upstream's macro lays the blocks out with const generics"),
     # WP 8.6-P20.
     (r"CsVector", r"type:CsVector", "`CsVector<T>`",
      "upstream's alias `CsVector<T, R, S> = CsMatrix<T, R, U1, S>` (its default type parameters "
@@ -2184,7 +2237,8 @@ WORK_PACKAGES = (
     wp("P19", "glam-cairo conversions", "mechanical", "WP 6.2 (glam-cairo pin)",
        "`third_party/glam`: `From` / `Into` between nalgebra-cairo and glam-cairo "
        "(`Vec2/3/4`, `IVec*`, `UVec*`, `BVec*`, `Mat2/3/4`, `Quat`, `Affine2/3` through "
-       "isometries); f64 / aligned variants are excluded (`interop`)",
+       "isometries), in the package `nalgebra_glam` (DESIGN D11); f64 / aligned variants are "
+       "excluded (`interop`)",
        (r".*", r".*", r"third_party/glam/.*")),
     wp("P20", "Sparse matrices and Matrix Market I/O", "standard numerics", "P13",
        "legacy `nalgebra::sparse` (`CsMatrix`, `CsVector`, `CsCholesky`, triangular solves) and "

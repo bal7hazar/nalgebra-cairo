@@ -41,6 +41,7 @@ from pathlib import Path
 import compare
 import dynamic
 import library
+import root_ops
 import shapes
 import tests_blas
 import tests_cg
@@ -1183,6 +1184,9 @@ def library_outputs(pkg: Path) -> dict[Path, Path]:
         (src / "dynamic" / f"{module}.cairo").write_text(
             shapes.splice(committed.read_text(), dynamic.conversion_block(target)))
         out[committed] = src / "dynamic" / f"{module}.cairo"
+    # WP 8.6-P21: the construction macros (their `mod` line is hand-written in `lib.cairo`).
+    (src / "macros.cairo").write_text(root_ops.render_macros())
+    out[library.BASE.parent / "macros.cairo"] = src / "macros.cairo"
     base_rs, lib_rs = library.BASE.parent / "base.cairo", library.BASE.parent / "lib.cairo"
     (src / "base.cairo").write_text(shapes.splice(base_rs.read_text(), shapes.base_block()))
     (src / "crate_root.cairo").write_text(shapes.splice(lib_rs.read_text(), shapes.lib_block()))

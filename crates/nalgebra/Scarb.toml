@@ -8,6 +8,11 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true
+# DESIGN D10 (owner, 2026-09-26): `associated_item_constraints` for the `core::iter::Sum` /
+# `Product` impls (`+Iterator<I>[Item: A]`), `user_defined_inline_macros` for the construction
+# macros (`matrix!`, `vector!`, `point!`, `dmatrix!`, `dvector!`, `stack!`, src/macros.cairo). A
+# dependent calls the macros without enabling either feature (measured, WP 8.6-P21, README).
+experimental-features = ["associated_item_constraints", "user_defined_inline_macros"]
 
 # Families that cost compile memory to every dependent and that nothing else in the crate uses
 # (WP 8.1d, tools/shapegen/DESIGN.md §2.11): all on by default, so the public API is upstream's; a
@@ -23,15 +28,18 @@ keywords.workspace = true
 # `eigen`, 0.52 GB more), `qr` (linalg/qr*, 0.23 GB), `cholesky_update` (0.02 GB: its own test
 # package is its only user, grouping it would make another package compile it), `full_piv_lu`
 # (0.29 GB), `col_piv_qr` (0.43 GB), `lblt` (0.09 GB). Nothing ungated uses them (`Lu6`, used by
-# `Matrix6`, stays ungated with `lu`, `cholesky`, `udu`). WP 8.5-P16: `hessenberg`
-# (linalg/hessenberg*, the Householder building blocks, and, grouped with it because each saves
-# less than 0.1 GB, linalg/symmetric_tridiagonal* and linalg/balancing: 0.19 GB), `bidiagonal`
-# (linalg/bidiagonal*, 0.37 GB), `schur` (linalg/schur*, linalg/eigen*, on top of `hessenberg`,
-# 0.48 GB more).
+# `Matrix6`, stays ungated with `lu`, `cholesky`, `udu`). `macros` (WP 8.6-P21): upstream's
+# feature of the same name, the construction macros and the block traits `stack!` expands to
+# (src/macros.cairo, 0.3 GB); `dmatrix!` / `dvector!` also need `dynamic`. WP 8.5-P16:
+# `hessenberg` (linalg/hessenberg*, the Householder building blocks, and, grouped with it because
+# each saves less than 0.1 GB, linalg/symmetric_tridiagonal* and linalg/balancing: 0.19 GB),
+# `bidiagonal` (linalg/bidiagonal*, 0.37 GB), `schur` (linalg/schur*, linalg/eigen*, on top of
+# `hessenberg`, 0.40 GB more).
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
-    "cholesky_update", "full_piv_lu", "col_piv_qr", "lblt", "hessenberg", "bidiagonal", "schur",
+    "cholesky_update", "full_piv_lu", "col_piv_qr", "lblt", "macros", "hessenberg", "bidiagonal",
+    "schur",
 ]
 statistics = []
 blas = []
@@ -46,6 +54,7 @@ cholesky_update = []
 full_piv_lu = []
 col_piv_qr = []
 lblt = []
+macros = []
 hessenberg = []
 bidiagonal = []
 schur = ["hessenberg"]
