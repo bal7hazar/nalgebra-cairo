@@ -329,6 +329,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_tests_linalg_bidiagonal"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_bidiagonal_tall"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_bidiagonal_wide"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_tests_linalg_cholesky_update"
 version = "0.1.0"
 dependencies = [
@@ -354,6 +390,18 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_factor"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_hessenberg"
 version = "0.1.0"
 dependencies = [
  "fixed",
@@ -474,6 +522,30 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_qr_tall"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_schur"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra",
+ "nalgebra_testing",
+ "nalgebra_tests_utils",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_tests_linalg_schur56"
 version = "0.1.0"
 dependencies = [
  "fixed",

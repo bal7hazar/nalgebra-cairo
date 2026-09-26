@@ -34,6 +34,10 @@ pub enum Tol {
     /// `Sens` plus `mag * max |input|`: algorithms that apply rounded unit-scale factors
     /// (Givens / Jacobi rotations, Householder reflectors) to the input matrix.
     SensMag { k: f64, base: f64, mag: f64 },
+    /// `base + k * A * max(1, max |input|) + mag * max |input|`: iterative algorithms that
+    /// normalise the input by its largest entry, so that their rounding (backward) error is
+    /// relative to it, amplified to first order by the sensitivity `A` (WP 8.5-P16, Schur).
+    SensScaled { k: f64, base: f64, mag: f64 },
     /// Op-specific model, with its description.
     Model(ModelFn, &'static str),
 }
@@ -149,6 +153,10 @@ impl Op {
             Tol::SensMag { k, base, mag } => format!(
                 "ceil({base} + {k} * A + {mag} * max |input|), A = max over outputs of sum over \
                  inputs of |d out / d in| (central differences)"
+            ),
+            Tol::SensScaled { k, base, mag } => format!(
+                "ceil({base} + {k} * A * max(1, max |input|) + {mag} * max |input|), A = max over \
+                 outputs of sum over inputs of |d out / d in| (central differences)"
             ),
             Tol::Model(_, doc) => (*doc).into(),
         };
@@ -302,6 +310,10 @@ fn evaluate(op: &Op, raw: &[i64], forced_tol: Option<u64>) -> Option<Evaluated> 
         Tol::SensMag { k, base, mag } => {
             let xmax = x.iter().fold(0.0f64, |m, v| m.max(v.abs()));
             base + k * sensitivity(eval, &mask, &x, &y)? + mag * xmax
+        }
+        Tol::SensScaled { k, base, mag } => {
+            let xmax = x.iter().fold(0.0f64, |m, v| m.max(v.abs()));
+            base + k * sensitivity(eval, &mask, &x, &y)? * xmax.max(1.0) + mag * xmax
         }
         Tol::Model(model, _) => model(&x, &y),
     };
@@ -546,7 +558,14 @@ fn gen_len(gen: &Gen) -> usize {
         | Gen::Spd(n)
         | Gen::NearSingular(n)
         | Gen::Singular(n)
-        | Gen::Rot(n) => n * n,
+        | Gen::Rot(n)
+        | Gen::SpectrumReal(n)
+        | Gen::SpectrumComplex(n)
+        | Gen::NonNormal(n)
+        | Gen::SpectrumClustered(n)
+        | Gen::Defective(n)
+        | Gen::NearTriangular(n)
+        | Gen::BadlyScaled(n) => n * n,
         Gen::Group(parts) => parts.iter().map(gen_len).sum(),
         Gen::UnitDual => 8,
     }

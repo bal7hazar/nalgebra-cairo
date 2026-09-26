@@ -1,0 +1,62 @@
+{
+  "nalgebra_tests_linalg_bidiagonal::bidiagonal1": {
+    "bidiagonal1_new": {
+      "baseline": 17320,
+      "householder": 19990
+    },
+    "bidiagonal1_unpack": {
+      "baseline": 20290,
+      "symbolic": 27970
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal::bidiagonal2": {
+    "bidiagonal2_new": {
+      "baseline": 17920,
+      "householder": 68310
+    },
+    "bidiagonal2_unpack": {
+      "baseline": 69410,
+      "symbolic": 99720
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal::bidiagonal3": {
+    "bidiagonal3_new": {
+      "baseline": 18920,
+      "householder": 176010
+    },
+    "bidiagonal3_unpack": {
+      "baseline": 178510,
+      "symbolic": 254010
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal::bidiagonal4": {
+    "bidiagonal4_new": {
+      "baseline": 20320,
+      "householder": 336650
+    },
+    "bidiagonal4_unpack": {
+      "baseline": 340950,
+      "symbolic": 497130
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal::bidiagonal5": {
+    "bidiagonal5_new": {
+      "baseline": 22120,
+      "householder": 569800
+    },
+    "bidiagonal5_unpack": {
+      "baseline": 576300,
+      "symbolic": 858680
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal::bidiagonal6": {
+    "bidiagonal6_new": {
+      "baseline": 24320,
+      "householder": 886180
+    },
+    "bidiagonal6_unpack": {
+      "baseline": 895280,
+      "symbolic": 1356900
+    }
+  }
+}

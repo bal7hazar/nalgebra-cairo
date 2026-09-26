@@ -1,0 +1,172 @@
+{
+  "nalgebra_tests_linalg_hessenberg::balancing": {
+    "balance1": {
+      "baseline": 17320,
+      "parlett_reinsch": 52710
+    },
+    "balance2": {
+      "baseline": 17920,
+      "parlett_reinsch": 263290
+    },
+    "balance3": {
+      "baseline": 18920,
+      "parlett_reinsch": 470590
+    },
+    "balance4": {
+      "baseline": 20320,
+      "parlett_reinsch": 567740
+    },
+    "balance5": {
+      "baseline": 22120,
+      "parlett_reinsch": 833930
+    },
+    "balance6": {
+      "baseline": 24320,
+      "parlett_reinsch": 571740
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::hessenberg1": {
+    "hessenberg1_new": {
+      "baseline": 17320,
+      "householder": 18310
+    },
+    "hessenberg1_q": {
+      "assemble": 17810,
+      "baseline": 18010
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::hessenberg2": {
+    "hessenberg2_new": {
+      "baseline": 17920,
+      "householder": 37230
+    },
+    "hessenberg2_q": {
+      "assemble": 44750,
+      "baseline": 37730
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::hessenberg3": {
+    "hessenberg3_new": {
+      "baseline": 18920,
+      "householder": 108780
+    },
+    "hessenberg3_q": {
+      "assemble": 131770,
+      "baseline": 110480
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::hessenberg4": {
+    "hessenberg4_new": {
+      "baseline": 20320,
+      "householder": 229910
+    },
+    "hessenberg4_q": {
+      "assemble": 283280,
+      "baseline": 233210
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::hessenberg5": {
+    "hessenberg5_new": {
+      "baseline": 22120,
+      "householder": 413520
+    },
+    "hessenberg5_q": {
+      "assemble": 517450,
+      "baseline": 418820
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::hessenberg6": {
+    "hessenberg6_new": {
+      "baseline": 24320,
+      "householder": 681960
+    },
+    "hessenberg6_q": {
+      "assemble": 861790,
+      "baseline": 689660
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::symmetric_tridiagonal1": {
+    "symmetric_tridiagonal1_new": {
+      "baseline": 17320,
+      "householder": 18310
+    },
+    "symmetric_tridiagonal1_q": {
+      "assemble": 17810,
+      "baseline": 18010
+    },
+    "symmetric_tridiagonal1_recompose": {
+      "baseline": 18010,
+      "two_products": 22380
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::symmetric_tridiagonal2": {
+    "symmetric_tridiagonal2_new": {
+      "baseline": 17920,
+      "householder": 30980
+    },
+    "symmetric_tridiagonal2_q": {
+      "assemble": 38500,
+      "baseline": 31480
+    },
+    "symmetric_tridiagonal2_recompose": {
+      "baseline": 31480,
+      "two_products": 56740
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::symmetric_tridiagonal3": {
+    "symmetric_tridiagonal3_new": {
+      "baseline": 18920,
+      "householder": 78940
+    },
+    "symmetric_tridiagonal3_q": {
+      "assemble": 101930,
+      "baseline": 80640
+    },
+    "symmetric_tridiagonal3_recompose": {
+      "baseline": 80640,
+      "two_products": 142940
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::symmetric_tridiagonal4": {
+    "symmetric_tridiagonal4_new": {
+      "baseline": 20320,
+      "householder": 148190
+    },
+    "symmetric_tridiagonal4_q": {
+      "assemble": 201560,
+      "baseline": 151490
+    },
+    "symmetric_tridiagonal4_recompose": {
+      "baseline": 151490,
+      "two_products": 276260
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::symmetric_tridiagonal5": {
+    "symmetric_tridiagonal5_new": {
+      "baseline": 22120,
+      "householder": 240920
+    },
+    "symmetric_tridiagonal5_q": {
+      "assemble": 344850,
+      "baseline": 246220
+    },
+    "symmetric_tridiagonal5_recompose": {
+      "baseline": 246220,
+      "two_products": 465360
+    }
+  },
+  "nalgebra_tests_linalg_hessenberg::symmetric_tridiagonal6": {
+    "symmetric_tridiagonal6_new": {
+      "baseline": 24320,
+      "householder": 368760
+    },
+    "symmetric_tridiagonal6_q": {
+      "assemble": 548590,
+      "baseline": 376460
+    },
+    "symmetric_tridiagonal6_recompose": {
+      "baseline": 376460,
+      "two_products": 728230
+    }
+  }
+}
