@@ -3,11 +3,11 @@
 //! suite `spectral`), the factor identities, gas benchmarks.
 
 use core::cmp::max;
+use nalgebra::MatrixMul;
 use nalgebra::linalg::{Qr3x1Trait, Vector3QrTrait};
-use nalgebra::{MatrixMul, Vector3};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
-use crate::builders::{amax_3x1, mat1x1, mat3x1, max_ulp_3x1, orth_3x1, vec3};
+use crate::builders::{amax_3x1, mat1x1, mat3x1, max_ulp_3x1, orth_3x1};
 use crate::oracle_qr as oracle;
 
 const ONE: i64 = 0x100000000;

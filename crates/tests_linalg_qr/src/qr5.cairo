@@ -4,7 +4,7 @@
 
 use core::cmp::max;
 use nalgebra::linalg::{Matrix5QrTrait, Qr5Trait};
-use nalgebra::{Matrix5, MatrixMul, MatrixTrMul, Vector5};
+use nalgebra::{MatrixMul, MatrixTrMul, Vector5};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
 use crate::builders::{amax_5x5, mat5x5, max_ulp_5x1, max_ulp_5x5, orth_5x5, vec5};

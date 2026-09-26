@@ -4,10 +4,10 @@
 
 use core::cmp::max;
 use nalgebra::linalg::{Matrix3x5QrTrait, Qr3x5Trait};
-use nalgebra::{Matrix3x5, MatrixMul, MatrixTrMul, Vector3};
+use nalgebra::{MatrixMul, MatrixTrMul, Vector3};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
-use crate::builders::{amax_3x5, mat3x3, mat3x5, max_ulp_3x1, max_ulp_3x5, orth_3x3, vec3};
+use crate::builders::{amax_3x5, mat3x3, mat3x5, max_ulp_3x5, orth_3x3};
 use crate::oracle_qr as oracle;
 
 const ONE: i64 = 0x100000000;

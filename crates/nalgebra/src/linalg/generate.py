@@ -2494,6 +2494,10 @@ fn run(cases: Span<({rows_type(r, c)}, {tup}, u64)>) -> (u128, u128, u128) {{
 """
 
 
+# `test_one_sided_jacobi4_candidate`: (excess, reconstruction, orthonormality) of the candidate
+# then of the shipped `Svd4`.
+ALT_MEASURED = (0, 20, 627, 0, 4, 24)
+
 # Measured bounds of the eigen oracle tests: {(n, op suffix): (reconstruction, orthonormality)}.
 EIGEN_BOUNDS: dict = {
     (4, ''): (21, 3),
@@ -2584,8 +2588,10 @@ def svd_packages() -> dict[str, str]:
         out[base + "src/builders.cairo"] = render_builders(need, vecs, eq)
         mods = ["builders", "oracle_svd"]
         if pkg == "tests_linalg_svd":
-            mods.append("ordered")
+            mods += ["ordered", "alt"]
             out[base + "src/ordered.cairo"] = SVD_ORDERED
+            out[base + "src/alt.cairo"] = render_alt_one_sided(4).replace(
+                "ALT_MEASURED", repr(ALT_MEASURED))
         for r, c in shapes:
             m = f"svd{svd_suffix(r, c)}"
             mods.append(m)
@@ -2643,7 +2649,7 @@ def render_qr_tests(r: int, c: int) -> str:
     sfx = svd_suffix(r, c)
     rb, ob = QR_BOUNDS.get((r, c), (0, 0))
     extra = ""
-    uses = {tname(r, c), tname(r, 1), "MatrixMul"}
+    uses = {"MatrixMul"}
     if r <= c:
         ones = vec_lit(r, lambda i: f"fx({i + 1} * ONE)")
         extra += f"""
@@ -2657,6 +2663,7 @@ fn test_qr{sfx}_q_tr_mul() {{
 }}
 """
         uses.add("MatrixTrMul")
+        uses.add(tname(r, 1))
     if r == c:
         n = r
         tup = tup_type(n)
@@ -2702,7 +2709,7 @@ use nalgebra::linalg::{{{M}QrTrait, {Q}Trait}};
 use nalgebra::{{{', '.join(sorted(uses))}}};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
-use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{r}x{k}', f'mat{k}x{c}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}', f'vec{r}', f'max_ulp_{r}x1'}))}}};
+use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{r}x{k}', f'mat{k}x{c}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}'} | ({f'vec{r}', f'max_ulp_{r}x1'} if r == c else set())))}}};
 use crate::oracle_qr as oracle;
 
 const ONE: i64 = 0x100000000;
@@ -3081,6 +3088,146 @@ fn test_svd_ordered3_is_svd3_try_new() {{
     let a = black_box(mat3x3(a));
     assert!(svd_ordered3(a, true, true, fx(0x100000000), 0).unwrap() == Svd3Trait::new(a));
     assert!(svd_ordered3(a, true, true, fx(-1), 0).is_none());
+}}
+"""
+
+
+
+def render_alt_one_sided(n: int) -> str:
+    """The losing candidate of the SVD study: one-sided (Hestenes) Jacobi on the columns of `M`."""
+    k = SWEEPS[n]
+    V = tname(n, 1)
+    names = [f"a{i}" for i in range(n)] + [f"v{i}" for i in range(n)]
+    decl = "\n".join(f"    {x}: {V}<Fixed>," for x in names)
+    rots = []
+    for p in range(n):
+        for q in range(p + 1, n):
+            ap, aq, vp, vq = f"j.a{p}", f"j.a{q}", f"j.v{p}", f"j.v{q}"
+            g = dot(cols(n, ap), cols(n, aq)).replace("R::", "Real::")
+            npp = fused([(1, x, x) for x in cols(n, ap)]).replace("R::", "Real::")
+            nqq = fused([(1, x, x) for x in cols(n, aq)]).replace("R::", "Real::")
+            def rot(x, y):
+                return (vec_lit(n, lambda i: f"Real::diff_prod(c, {col(n, x, i)}, s, {col(n, y, i)})"),
+                        vec_lit(n, lambda i: f"Real::sum_prod2(s, {col(n, x, i)}, c, {col(n, y, i)})"))
+            na, nb = rot(ap, aq)
+            nv, nw = rot(vp, vq)
+            fields = ", ".join(
+                (f"a{i}: na" if i == p else f"a{i}: nb" if i == q else f"a{i}: j.a{i}") for i in range(n))
+            fields += ", " + ", ".join(
+                (f"v{i}: nv" if i == p else f"v{i}: nw" if i == q else f"v{i}: j.v{i}") for i in range(n))
+            rots.append(f"""    let g = {g};
+    if g != Real::zero() {{
+        let (c, s) = rotation({npp}, g, {nqq});
+        let (na, nb, nv, nw) = ({na}, {nb}, {nv}, {nw});
+        j = OneSided{n} {{ {fields} }};
+    }}""")
+    e = lambda i: vec_lit(n, lambda t, i=i: "Real::one()" if t == i else "Real::zero()")
+    init = ", ".join([f"a{i}: {vec_lit(n, lambda t, i=i: f'm.{fld(n, n, t, i)}')}" for i in range(n)]
+                     + [f"v{i}: {e(i)}" for i in range(n)])
+    sv = "\n".join(f"let s{i} = {norm(cols(n, f'j.a{i}')).replace('R::', 'Real::')};" for i in range(n))
+    mut = "\n".join(f"let (mut s{i}, mut w{i}, mut x{i}) = (s{i}, j.a{i}, j.v{i});" for i in range(n))
+    net = sort_network(n, "{b} > {a}", [], lambda i: (f"s{i}", f"w{i}", f"x{i}"))
+    us = "\n".join(f"let u{i} = {div_into(n, f'w{i}', f's{i}').replace('R::', 'Real::')};" for i in range(n))
+    u_lit = struct_lit(n, n, lambda i, j: col(n, f"u{j}", i))
+    vt_lit = struct_lit(n, n, lambda i, j: col(n, f"x{i}", j))
+    return f"""{HEADER}//! The losing candidate of the SVD study of WP 8.5-P14b, kept as evidence (AGENTS.md rule 8): the
+//! decomposition of a `Matrix{n}` by ONE-SIDED (Hestenes) Jacobi — {k} cyclic sweeps of plane
+//! rotations of the COLUMNS of `M` until they are orthogonal (`M V = U Σ`), never forming `MᵀM`.
+//! The textbook answer for small singular values; here each rotation recomputes three fused
+//! inner products of {n}-vectors where the two-sided Jacobi of `SymmetricEigen{n}` updates
+//! `2 ({n} - 2)` Gram entries, and its left vectors are the normalised columns (never
+//! re-orthogonalised). See `test_one_sided_jacobi{n}_candidate` for the measured comparison with
+//! the shipped `Svd{n}` and `bench_svd{n}_new__alt_one_sided_jacobi` for the gas.
+
+use core::cmp::max;
+use fixed::Fixed;
+use nalgebra::linalg::Svd{n}Trait;
+use nalgebra::{{Matrix{n}, MatrixMul, {V}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, oracle_tol, ulp_diff}};
+use simba::scalar::Real;
+use crate::builders::{{amax_{n}x{n}, mat{n}x{n}, max_ulp_{n}x{n}, orth_{n}x{n}, vec{n}}};
+use crate::oracle_svd as oracle;
+
+#[derive(Copy, Drop)]
+struct OneSided{n} {{
+{decl}
+}}
+
+/// `(c, s)` of the rotation making two columns of squared norms `app`, `aqq` and inner product
+/// `g` orthogonal (the closed form of `Jacobi3::rotation`).
+fn rotation(app: Fixed, g: Fixed, aqq: Fixed) -> (Fixed, Fixed) {{
+    let h = Real::diff_prod(aqq, Real::HALF, app, Real::HALF);
+    let num = if h.is_sign_negative() {{
+        -g
+    }} else {{
+        g
+    }};
+    let t = Real::div(num, h.abs() + Real::norm2(h, g));
+    let c = Real::recip(Real::sqrt(Real::mul_add(t, t, Real::one())));
+    (c, t * c)
+}}
+
+/// One cyclic sweep of column rotations.
+fn sweep(j: OneSided{n}) -> OneSided{n} {{
+    let mut j = j;
+{chr(10).join(rots)}
+    j
+}}
+
+/// `(u, singular values, v_t)` by {k} one-sided sweeps, sorted descending.
+fn one_sided{n}(m: Matrix{n}<Fixed>) -> (Matrix{n}<Fixed>, {V}<Fixed>, Matrix{n}<Fixed>) {{
+    let mut j = OneSided{n} {{ {init} }};
+    {chr(10).join('j = sweep(j);' for _ in range(k))}
+    {sv}
+    {mut}
+    {net}
+    {us}
+    ({u_lit}, {vec_lit(n, lambda i: f's{i}')}, {vt_lit})
+}}
+
+/// The shipped `Svd{n}` against the one-sided candidate on the `svd{n}_singular_values` oracle
+/// cases: `(singular-value excess over the oracle tolerance, reconstruction per unit,
+/// orthonormality of U)` of each, pinned.
+#[test]
+fn test_one_sided_jacobi{n}_candidate() {{
+    let mut cases = oracle::svd{n}_singular_values_cases();
+    let (mut ex, mut rec, mut orth) = (0, 0, 0);
+    let (mut ex2, mut rec2, mut orth2) = (0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let (a, e) = (mat{n}x{n}(a), vec{n}(e));
+        let (u, s, vt) = one_sided{n}(a);
+        {" ".join(f"ex = max(ex, excess(ulp_diff(s.{fld(n, 1, i, 0)}, e.{fld(n, 1, i, 0)}), oracle_tol(abs_raw(e.{fld(n, 1, i, 0)}), tol)));" for i in range(n))}
+        let us = {struct_lit(n, n, lambda i, j: f"u.{fld(n, n, i, j)} * s.{fld(n, 1, j, 0)}")};
+        rec = max(rec, max_ulp_{n}x{n}(us.mul_mat(vt), a) / amax_{n}x{n}(a));
+        orth = max(orth, orth_{n}x{n}(u));
+        let d = Svd{n}Trait::new(a);
+        {" ".join(f"ex2 = max(ex2, excess(ulp_diff(d.singular_values.{fld(n, 1, i, 0)}, e.{fld(n, 1, i, 0)}), oracle_tol(abs_raw(e.{fld(n, 1, i, 0)}), tol)));" for i in range(n))}
+        rec2 = max(rec2, max_ulp_{n}x{n}(d.recompose(), a) / amax_{n}x{n}(a));
+        orth2 = max(orth2, orth_{n}x{n}(d.u));
+    }}
+    assert!(
+        (ex, rec, orth, ex2, rec2, orth2) == ALT_MEASURED,
+        "measured {{}} {{}} {{}} / {{}} {{}} {{}}",
+        ex,
+        rec,
+        orth,
+        ex2,
+        rec2,
+        orth2,
+    );
+}}
+
+/// The one-sided candidate on the benchmark input of `bench_svd{n}_new__eigen_of_gram`.
+#[test]
+#[inline(never)]
+fn bench_svd{n}_new__alt_one_sided_jacobi() {{
+    let (a, _, _) = *oracle::svd{n}_singular_values_cases().at(3);
+    let a = black_box(mat{n}x{n}(a));
+    let e = black_box(true);
+    let (_, s, _) = one_sided{n}(a);
+    assert!((s.x >= s.{fld(n, 1, n - 1, 0)}) == e);
 }}
 """
 

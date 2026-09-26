@@ -3,11 +3,11 @@
 //! (`tools/oracle` suite `spectral`), the factor identities, gas benchmarks.
 
 use core::cmp::max;
+use nalgebra::MatrixMul;
 use nalgebra::linalg::{Matrix4x2QrTrait, Qr4x2Trait};
-use nalgebra::{Matrix4x2, MatrixMul, Vector4};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
-use crate::builders::{amax_4x2, mat2x2, mat4x2, max_ulp_4x1, max_ulp_4x2, orth_4x2, vec4};
+use crate::builders::{amax_4x2, mat2x2, mat4x2, max_ulp_4x2, orth_4x2};
 use crate::oracle_qr as oracle;
 
 const ONE: i64 = 0x100000000;

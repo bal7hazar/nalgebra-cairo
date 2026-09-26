@@ -5,6 +5,8 @@
 //! shapes> --out src/oracle_svd.cairo`).
 
 #[cfg(test)]
+mod alt;
+#[cfg(test)]
 mod builders;
 #[cfg(test)]
 mod oracle_svd;
