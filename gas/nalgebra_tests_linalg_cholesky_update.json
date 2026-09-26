@@ -1,0 +1,36 @@
+{
+  "nalgebra_tests_linalg_cholesky_update::cholesky_update": {
+    "cholesky2_insert_column": {
+      "baseline": 31520,
+      "j0": 77880
+    },
+    "cholesky2_rank_one_update": {
+      "baseline": 32520,
+      "rotations": 63430
+    },
+    "cholesky3_insert_column": {
+      "baseline": 47950,
+      "j0": 131870
+    },
+    "cholesky3_rank_one_update": {
+      "baseline": 49150,
+      "rotations": 113290
+    },
+    "cholesky3_remove_column": {
+      "baseline": 47950,
+      "j0": 75700
+    },
+    "cholesky4_rank_one_update": {
+      "baseline": 73090,
+      "rotations": 182080
+    },
+    "cholesky4_remove_column": {
+      "baseline": 71690,
+      "j0": 130790
+    },
+    "cholesky6_rank_one_update": {
+      "baseline": 142230,
+      "rotations": 376080
+    }
+  }
+}

@@ -170,6 +170,46 @@ pub impl Svd2Impl<
         }
     }
 
+    /// `new` (the closed form is always sorted). Upstream: `SVD::new_unordered`.
+    #[inline(always)]
+    fn new_unordered(matrix: Matrix2<T>) -> Svd2<T> {
+        Self::new(matrix)
+    }
+
+    /// `Some(new(matrix))`: the 2x2 decomposition is a closed form, there is nothing to converge.
+    /// `eps` and `max_niter` are accepted for signature parity and ignored. Upstream:
+    /// `SVD::try_new(matrix, true, true, eps, max_niter)`.
+    #[inline(always)]
+    fn try_new(matrix: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
+        let _ = eps;
+        let _ = max_niter;
+        Some(Self::new(matrix))
+    }
+
+    /// `try_new` (always sorted). Upstream: `SVD::try_new_unordered`.
+    #[inline(always)]
+    fn try_new_unordered(matrix: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
+        Self::try_new(matrix, eps, max_niter)
+    }
+
+    /// Sorts the singular values DESCENDING, swapping the columns of `u` and the rows of `v_t`
+    /// with them (strict comparison: equal values keep their order). `new` already returns them
+    /// sorted, so this only matters after the fields were edited. Upstream:
+    /// `SVD::sort_by_singular_values`.
+    fn sort_by_singular_values(ref self: Svd2<T>) {
+        if self.singular_values.y > self.singular_values.x {
+            let (u, v) = (self.u, self.v_t);
+            self =
+                Svd2 {
+                    u: Matrix2 { m11: u.m12, m21: u.m22, m12: u.m11, m22: u.m21 },
+                    singular_values: Vector2 {
+                        x: self.singular_values.y, y: self.singular_values.x,
+                    },
+                    v_t: Matrix2 { m11: v.m21, m21: v.m11, m12: v.m22, m22: v.m12 },
+                };
+        }
+    }
+
     /// The number of singular values strictly greater than `eps`. `eps` must be non-negative;
     /// a negative one makes every singular value count, which is upstream's behaviour too.
     /// Upstream: `SVD::rank`.
@@ -343,6 +383,85 @@ pub impl Matrix2SvdImpl<
     fn pseudo_inverse(self: Matrix2<T>, eps: T) -> Option<Matrix2<T>> {
         Svd2Trait::new(self).pseudo_inverse(eps)
     }
+
+    /// `svd`: the decomposition is always sorted (see `Svd2Trait::new_unordered`). Upstream:
+    /// `Matrix::svd_unordered`.
+    #[inline(always)]
+    fn svd_unordered(self: Matrix2<T>) -> Svd2<T> {
+        Svd2Trait::new(self)
+    }
+
+    /// See `Svd2Trait::try_new`. Upstream: `Matrix::try_svd(true, true, eps, max_niter)`.
+    #[inline(always)]
+    fn try_svd(self: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
+        Svd2Trait::try_new(self, eps, max_niter)
+    }
+
+    /// See `Svd2Trait::try_new_unordered`. Upstream: `Matrix::try_svd_unordered`.
+    #[inline(always)]
+    fn try_svd_unordered(self: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
+        Svd2Trait::try_new(self, eps, max_niter)
+    }
+
+    /// `singular_values` (always sorted). Upstream: `Matrix::singular_values_unordered`.
+    #[inline(always)]
+    fn singular_values_unordered(self: Matrix2<T>) -> Vector2<T> {
+        Svd2Trait::new(self).singular_values
+    }
+
+    /// The number of singular values strictly greater than `eps`. Upstream: `Matrix::rank`
+    /// (which asserts `eps >= 0`; a negative `eps` counts every value here, like `Svd2::rank`).
+    fn rank(self: Matrix2<T>, eps: T) -> usize {
+        let s = Svd2Trait::new(self).singular_values;
+        let mut n: usize = 0;
+        if s.x > eps {
+            n += 1;
+        }
+        if s.y > eps {
+            n += 1;
+        }
+        n
+    }
+
+    /// The left polar decomposition `M = P · U`, see `Svd2Trait::to_polar`. Upstream:
+    /// `Matrix::polar`.
+    fn polar(self: Matrix2<T>) -> (Matrix2<T>, Matrix2<T>) {
+        Svd2Trait::new(self).to_polar().unwrap()
+    }
+
+    /// `polar`, or `None` when the decomposition did not converge within `eps`, see
+    /// `Svd2Trait::try_new`. Upstream: `Matrix::try_polar`.
+    fn try_polar(self: Matrix2<T>, eps: T, max_niter: usize) -> Option<(Matrix2<T>, Matrix2<T>)> {
+        match Svd2Trait::try_new(self, eps, max_niter) {
+            Some(d) => d.to_polar(),
+            None => None,
+        }
+    }
+}
+
+/// The ordered SVD of a `Matrix2`: `Svd2Trait::new(m)`. Upstream: `nalgebra::linalg::svd_ordered2`
+/// (the closed form of the 2x2 SVD upstream uses, through `atan2` / `sin_cos`). Here the 2x2 SVD
+/// is `Svd2`'s eigen decomposition of `MᵀM`, which needs no transcendental function (steps
+/// criterion, see `Svd2`); both factors are always computed, so `compute_u` / `compute_v` are
+/// accepted for signature parity and ignored.
+pub fn svd_ordered2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+>(
+    m: Matrix2<T>, compute_u: bool, compute_v: bool,
+) -> Svd2<T> {
+    let _ = compute_u;
+    let _ = compute_v;
+    Svd2Trait::new(m)
 }
 
 #[cfg(test)]

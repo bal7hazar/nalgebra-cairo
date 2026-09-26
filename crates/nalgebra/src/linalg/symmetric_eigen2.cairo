@@ -97,6 +97,16 @@ pub impl SymmetricEigen2Impl<
         SymmetricEigen2InternalTrait::new_sym(SymMatrix2 { m11: m.m11, m12: m.m21, m22: m.m22 })
     }
 
+    /// `Some(new(m))`: the 2x2 decomposition is a closed form, there is nothing to converge.
+    /// `eps` and `max_niter` are accepted for signature parity and ignored. Upstream:
+    /// `SymmetricEigen::try_new`.
+    #[inline(always)]
+    fn try_new(m: Matrix2<T>, eps: T, max_niter: usize) -> Option<SymmetricEigen2<T>> {
+        let _ = eps;
+        let _ = max_niter;
+        Some(Self::new(m))
+    }
+
     /// `V * diag(eigenvalues) * Vᵀ`, the symmetric matrix the decomposition came from, up to the
     /// rounding of the decomposition. Only the 3 independent components are computed (a
     /// structured quadratic form), then mirrored. Panics on overflow. Upstream:
@@ -207,6 +217,15 @@ pub impl Matrix2SymmetricEigenImpl<
         SymmetricEigen2Trait::new(self)
     }
 
+    /// See `SymmetricEigen2Trait::try_new` (always `Some`). Upstream:
+    /// `Matrix::try_symmetric_eigen`.
+    #[inline(always)]
+    fn try_symmetric_eigen(
+        self: Matrix2<T>, eps: T, max_niter: usize,
+    ) -> Option<SymmetricEigen2<T>> {
+        SymmetricEigen2Trait::try_new(self, eps, max_niter)
+    }
+
     /// The eigenvalues of the symmetric `self` alone (lower triangle read), ascending, without the
     /// eigenvectors (half the cost: no normalisation). Upstream:
     /// `Matrix::symmetric_eigenvalues`.
@@ -214,6 +233,43 @@ pub impl Matrix2SymmetricEigenImpl<
     fn symmetric_eigenvalues(self: Matrix2<T>) -> Vector2<T> {
         let m = self;
         SymmetricEigen2InternalTrait::eigenvalues(SymMatrix2 { m11: m.m11, m12: m.m21, m22: m.m22 })
+    }
+}
+
+/// The Wilkinson shift: the eigenvalue of the symmetric 2x2 matrix `[[tmm, tmn], [tmn, tnn]]`
+/// closest to `tnn`, i.e. `tnn - sgn(d) tmn² / (|d| + sqrt(d² + tmn²))` with `d = (tmm - tnn) /
+/// 2` (`sgn(0) = +1`, like upstream's `signum`), and `tnn` when `tmn` is exactly zero.
+///
+/// Computed scale-free: `d` is one floored halving (`diff_prod` with `1/2`), the root is a
+/// floored `norm2` (the squares are accumulated unscaled, no intermediate overflow), and the
+/// correction is `tmn * (tmn / den)` — a correctly rounded quotient bounded by 1, then one
+/// floored product — instead of upstream's `tmn² / den`, whose square underflows or overflows
+/// in fixed point. Four roundings. Panics on overflow of the result. Upstream:
+/// `nalgebra::linalg::wilkinson_shift`.
+pub fn wilkinson_shift<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+>(
+    tmm: T, tnn: T, tmn: T,
+) -> T {
+    if tmn == R::zero() {
+        return tnn;
+    }
+    let d = R::diff_prod(tmm, R::HALF, tnn, R::HALF);
+    let q = tmn * R::div(tmn, d.abs() + R::norm2(d, tmn));
+    if d.is_sign_negative() {
+        tnn + q
+    } else {
+        tnn - q
     }
 }
 

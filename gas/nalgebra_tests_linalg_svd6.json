@@ -1,0 +1,20 @@
+{
+  "nalgebra_tests_linalg_svd6::svd6": {
+    "svd6_new": {
+      "baseline": 29320,
+      "eigen_of_gram": 7524450
+    },
+    "svd6_pseudo_inverse": {
+      "baseline": 7531880,
+      "scaled_product": 7733650
+    },
+    "svd6_singular_values": {
+      "baseline": 29320,
+      "eigen_of_gram": 6703950
+    },
+    "svd6_to_polar": {
+      "baseline": 7531880,
+      "products": 7769950
+    }
+  }
+}

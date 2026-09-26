@@ -1,0 +1,38 @@
+{
+  "nalgebra_tests_linalg_svd_wide6b::svd4x6": {
+    "svd4x6_new": {
+      "baseline": 21920,
+      "eigen_of_gram": 2405260
+    },
+    "svd4x6_pseudo_inverse": {
+      "baseline": 2408290,
+      "scaled_product": 2532750
+    },
+    "svd4x6_singular_values": {
+      "baseline": 21920,
+      "eigen_of_gram": 1935440
+    },
+    "svd4x6_to_polar": {
+      "baseline": 2408290,
+      "products": 2527920
+    }
+  },
+  "nalgebra_tests_linalg_svd_wide6b::svd5x6": {
+    "svd5x6_new": {
+      "baseline": 27520,
+      "eigen_of_gram": 4721880
+    },
+    "svd5x6_pseudo_inverse": {
+      "baseline": 4726910,
+      "scaled_product": 4888590
+    },
+    "svd5x6_singular_values": {
+      "baseline": 27520,
+      "eigen_of_gram": 4079350
+    },
+    "svd5x6_to_polar": {
+      "baseline": 4726910,
+      "products": 4900240
+    }
+  }
+}

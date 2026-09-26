@@ -19,14 +19,14 @@ How to read it:
 |---|---:|---:|---:|---:|---:|---:|
 | base | 486 | 0 | 0 | 318 | 804 | 100.0% |
 | geometry | 932 | 3 | 0 | 113 | 1048 | 99.7% |
-| linalg | 152 | 6 | 137 | 9 | 304 | 51.5% |
+| linalg | 177 | 0 | 118 | 9 | 304 | 60.0% |
 | sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
 | io | 1 | 0 | 1 | 0 | 2 | 50.0% |
 | third_party | 0 | 0 | 91 | 72 | 163 | 0.0% |
 | root | 35 | 0 | 0 | 0 | 35 | 100.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1640** | **9** | **229** | **558** | **2436** | **87.3%** |
+| **total** | **1665** | **3** | **210** | **558** | **2436** | **88.7%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -51,7 +51,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 0 | standard numerics | P07 |  |
 | [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 0 | standard numerics | P08, P09b |  |
 | [P13](#p13-dmatrix-dvector-core) | DMatrix / DVector core | 0 | standard numerics | P01-P05 (API to mirror) |  |
-| [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 28 | standard numerics | P01, P05 | `linalg/decomposition.rs` (9), `linalg/svd.rs` (8), `linalg/cholesky.rs` (3), `linalg/householder.rs` (3), `linalg/symmetric_eigen.rs` (3) |
+| [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 3 | standard numerics | P01, P05 | `linalg/householder.rs` (3) |
 | [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 48 | standard numerics | P14 | `linalg/col_piv_qr.rs` (18), `linalg/full_piv_lu.rs` (17), `linalg/lblt.rs` (10), `linalg/decomposition.rs` (3) |
 | [P16](#p16-schur-hessenberg-bidiagonal-tridiagonal-general-eigen) | Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen | 64 | hard numerics | P14 | `linalg/bidiagonal.rs` (14), `linalg/symmetric_tridiagonal.rs` (13), `linalg/hessenberg.rs` (12), `linalg/schur.rs` (12), `linalg/eigen.rs` (6) |
 | [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 3 | hard numerics | P14, P16 | `linalg/pow.rs` (2), `linalg/exp.rs` (1) |
@@ -140,14 +140,9 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P14 Decomposition API completion and triangular solves
 
-`solve_*_triangular*` / `tr_solve_*` / `ad_solve_*` on square matrices, the missing members of `LU` / `QR` / `Cholesky` / `SVD` / `SymmetricEigen` / `UDU` / `PermutationSequence` (`unpack`, `solve_mut`, `rank_one_update`, `try_new`, `*_unordered`...), `Matrix::lu()` .. `svd()` on the missing sizes, `rank`, `polar`. Tier: standard numerics. Depends on: P01, P05. 28 items (`*` = partial):
+`solve_*_triangular*` / `tr_solve_*` / `ad_solve_*` on square matrices, the missing members of `LU` / `QR` / `Cholesky` / `SVD` / `SymmetricEigen` / `UDU` / `PermutationSequence` (`unpack`, `solve_mut`, `rank_one_update`, `try_new`, `*_unordered`...), `Matrix::lu()` .. `svd()` on the missing sizes, `rank`, `polar`. Tier: standard numerics. Depends on: P01, P05. 3 items (`*` = partial):
 
-- **Cholesky**: `insert_column`, `rank_one_update`, `remove_column`
-- **Matrix**: `polar`, `pseudo_inverse`*, `qr`*, `rank`, `singular_values`*, `singular_values_unordered`, `svd`*, `svd_unordered`, `try_polar`, `try_svd`, `try_svd_unordered`
-- **SVD**: `new_unordered`, `sort_by_singular_values`, `try_new`, `try_new_unordered`
-- **SquareMatrix**: `symmetric_eigen`*, `symmetric_eigenvalues`*, `try_symmetric_eigen`
-- **SymmetricEigen**: `try_new`
-- **nalgebra::linalg**: `assemble_q`, `clear_column_unchecked`, `clear_row_unchecked`, `svd_ordered2`, `svd_ordered3`, `wilkinson_shift`
+- **nalgebra::linalg**: `assemble_q`, `clear_column_unchecked`, `clear_row_unchecked`
 
 ### P15 Full-pivot LU, column-pivot QR, LBLᵀ
 
@@ -2955,7 +2950,7 @@ Cairo: none · ported 0, partial 0, missing 14, excluded 1.
 
 #### Cholesky (linalg)
 
-Cairo: Cholesky2/3/4/6 · ported 19, partial 0, missing 3, excluded 0.
+Cairo: Cholesky2/3/4/6 · ported 22, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2965,7 +2960,7 @@ Cairo: Cholesky2/3/4/6 · ported 19, partial 0, missing 3, excluded 0.
 | impl `Deserialize` | ported | Cholesky2/3/4/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/cholesky.rs` |
 | impl `Serialize` | ported | Cholesky2/3/4/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/cholesky.rs` |
 | method `determinant` | ported | Cholesky2/3/4/6::determinant |  | `linalg/cholesky.rs` |
-| method `insert_column` | missing |  | P14 | `linalg/cholesky.rs` |
+| method `insert_column` | ported | Cholesky2/3::insert_column |  | `linalg/cholesky.rs` |
 | method `inverse` | ported | Cholesky2/3/4/6::inverse |  | `linalg/cholesky.rs` |
 | method `l` | ported | Cholesky2/3/4/6::l |  | `linalg/cholesky.rs` |
 | method `l_dirty` | ported | Cholesky2/3/4/6::l_dirty |  | `linalg/cholesky.rs` |
@@ -2974,8 +2969,8 @@ Cairo: Cholesky2/3/4/6 · ported 19, partial 0, missing 3, excluded 0.
 | method `new_unchecked` | ported | Cholesky2/3/4/6::new_unchecked |  | `linalg/cholesky.rs` |
 | method `new_with_substitute` | ported | Cholesky2/3/4/6::new_with_substitute |  | `linalg/cholesky.rs` |
 | method `pack_dirty` | ported | Cholesky2/3/4/6::pack_dirty |  | `linalg/cholesky.rs` |
-| method `rank_one_update` | missing |  | P14 | `linalg/cholesky.rs` |
-| method `remove_column` | missing |  | P14 | `linalg/cholesky.rs` |
+| method `rank_one_update` | ported | Cholesky2/3/4/6::rank_one_update |  | `linalg/cholesky.rs` |
+| method `remove_column` | ported | Cholesky3/4::remove_column |  | `linalg/cholesky.rs` |
 | method `solve` | ported | Cholesky2/3/4/6::solve |  | `linalg/cholesky.rs` |
 | method `solve_mut` | ported | Cholesky2/3/4/6::solve_mut |  | `linalg/cholesky.rs` |
 | method `unpack` | ported | Cholesky2/3/4/6::unpack |  | `linalg/cholesky.rs` |
@@ -3135,7 +3130,7 @@ Cairo: Lu2/3/4/6 · ported 19, partial 0, missing 0, excluded 0.
 
 #### Matrix (linalg)
 
-Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 1, partial 4, missing 10, excluded 0.
+Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5 · ported 12, partial 0, missing 3, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -3143,17 +3138,17 @@ Cairo: Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, 
 | method `col_piv_qr` | missing |  | P15 | `linalg/decomposition.rs` |
 | method `full_piv_lu` | missing |  | P15 | `linalg/decomposition.rs` |
 | method `lu` | ported | Matrix2/3/4/6::lu |  | `linalg/decomposition.rs` |
-| method `polar` | missing |  | P14 | `linalg/decomposition.rs` |
-| method `pseudo_inverse` | partial | Matrix2/3::pseudo_inverse | not on Matrix4/6; P14 | `linalg/svd.rs` |
-| method `qr` | partial | Matrix2/3/4::qr | not on Matrix6; P14 | `linalg/decomposition.rs` |
-| method `rank` | missing |  | P14 | `linalg/svd.rs` |
-| method `singular_values` | partial | Matrix2/3::singular_values | not on Matrix4/6; P14 | `linalg/svd.rs` |
-| method `singular_values_unordered` | missing |  | P14 | `linalg/svd.rs` |
-| method `svd` | partial | Matrix2/3::svd | not on Matrix4/6; P14 | `linalg/decomposition.rs` |
-| method `svd_unordered` | missing |  | P14 | `linalg/decomposition.rs` |
-| method `try_polar` | missing |  | P14 | `linalg/decomposition.rs` |
-| method `try_svd` | missing |  | P14 | `linalg/decomposition.rs` |
-| method `try_svd_unordered` | missing |  | P14 | `linalg/decomposition.rs` |
+| method `polar` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::polar |  | `linalg/decomposition.rs` |
+| method `pseudo_inverse` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::pseudo_inverse |  | `linalg/svd.rs` |
+| method `qr` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::qr |  | `linalg/decomposition.rs` |
+| method `rank` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::rank |  | `linalg/svd.rs` |
+| method `singular_values` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::singular_values |  | `linalg/svd.rs` |
+| method `singular_values_unordered` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::singular_values_unordered |  | `linalg/svd.rs` |
+| method `svd` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::svd |  | `linalg/decomposition.rs` |
+| method `svd_unordered` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::svd_unordered |  | `linalg/decomposition.rs` |
+| method `try_polar` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::try_polar |  | `linalg/decomposition.rs` |
+| method `try_svd` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::try_svd |  | `linalg/decomposition.rs` |
+| method `try_svd_unordered` | ported | Matrix1/2/3/4/5/6, RowVector2/3/4/5/6, Vector2/3/4/5/6, Matrix2x3/4/5/6, Matrix3x2/4/5/6, Matrix4x2/3/5/6, Matrix5x2/3/4/6, Matrix6x2/3/4/5::try_svd_unordered |  | `linalg/decomposition.rs` |
 
 #### PermutationSequence (linalg)
 
@@ -3180,50 +3175,50 @@ Cairo: Perm2/3/4/6 · ported 15, partial 0, missing 0, excluded 1.
 
 #### QR (linalg)
 
-Cairo: Qr2/3/4 · ported 17, partial 0, missing 0, excluded 0.
+Cairo: Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5 · ported 17, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Clone` | ported | Qr2/3/4 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/qr.rs` |
-| impl `Copy` | ported | Qr2/3/4 (impl `Copy`) |  | `linalg/qr.rs` |
-| impl `Debug` | ported | Qr2/3/4 (impl `Debug`) |  | `linalg/qr.rs` |
-| impl `Deserialize` | ported | Qr2/3/4 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/qr.rs` |
-| impl `Serialize` | ported | Qr2/3/4 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/qr.rs` |
-| method `is_invertible` | ported | Qr2/3/4::is_invertible |  | `linalg/qr.rs` |
-| method `new` | ported | Qr2/3/4::new |  | `linalg/qr.rs` |
-| method `q` | ported | Qr2/3/4::q |  | `linalg/qr.rs` |
-| method `q_tr_mul` | ported | Qr2/3/4::q_tr_mul |  | `linalg/qr.rs` |
-| method `qr_internal` | ported | Qr2/3/4::qr_internal |  | `linalg/qr.rs` |
-| method `r` | ported | Qr2/3/4::r |  | `linalg/qr.rs` |
-| method `solve` | ported | Qr2/3/4::solve |  | `linalg/qr.rs` |
-| method `solve_mut` | ported | Qr2/3/4::solve_mut |  | `linalg/qr.rs` |
-| method `try_inverse` | ported | Qr2/3/4::try_inverse |  | `linalg/qr.rs` |
-| method `unpack` | ported | Qr2/3/4::unpack |  | `linalg/qr.rs` |
-| method `unpack_r` | ported | Qr2/3/4::unpack_r |  | `linalg/qr.rs` |
-| type `QR` | ported | Qr2/3/4 | generic upstream type, concrete Cairo types | `linalg/qr.rs` |
+| impl `Clone` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/qr.rs` |
+| impl `Copy` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5 (impl `Copy`) |  | `linalg/qr.rs` |
+| impl `Debug` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5 (impl `Debug`) |  | `linalg/qr.rs` |
+| impl `Deserialize` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/qr.rs` |
+| impl `Serialize` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/qr.rs` |
+| method `is_invertible` | ported | Qr1/2/3/4/5/6::is_invertible |  | `linalg/qr.rs` |
+| method `new` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::new |  | `linalg/qr.rs` |
+| method `q` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::q |  | `linalg/qr.rs` |
+| method `q_tr_mul` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x3/4/5/6, Qr3x4/5/6, Qr4x5/6, Qr5x6::q_tr_mul |  | `linalg/qr.rs` |
+| method `qr_internal` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::qr_internal |  | `linalg/qr.rs` |
+| method `r` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::r |  | `linalg/qr.rs` |
+| method `solve` | ported | Qr1/2/3/4/5/6::solve |  | `linalg/qr.rs` |
+| method `solve_mut` | ported | Qr1/2/3/4/5/6::solve_mut |  | `linalg/qr.rs` |
+| method `try_inverse` | ported | Qr1/2/3/4/5/6::try_inverse |  | `linalg/qr.rs` |
+| method `unpack` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::unpack |  | `linalg/qr.rs` |
+| method `unpack_r` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::unpack_r |  | `linalg/qr.rs` |
+| type `QR` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5 | generic upstream type, concrete Cairo types | `linalg/qr.rs` |
 
 #### SVD (linalg)
 
-Cairo: Svd2/3 · ported 12, partial 0, missing 4, excluded 0.
+Cairo: Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5 · ported 16, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Clone` | ported | Svd2/3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/svd.rs` |
-| impl `Copy` | ported | Svd2/3 (impl `Copy`) |  | `linalg/svd.rs` |
-| impl `Debug` | ported | Svd2/3 (impl `Debug`) |  | `linalg/svd.rs` |
-| impl `Deserialize` | ported | Svd2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/svd.rs` |
-| impl `Serialize` | ported | Svd2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/svd.rs` |
-| method `new` | ported | Svd2/3::new |  | `linalg/svd.rs` |
-| method `new_unordered` | missing |  | P14 | `linalg/svd.rs` |
-| method `pseudo_inverse` | ported | Svd2/3::pseudo_inverse |  | `linalg/svd.rs` |
-| method `rank` | ported | Svd2/3::rank |  | `linalg/svd.rs` |
-| method `recompose` | ported | Svd2/3::recompose |  | `linalg/svd.rs` |
-| method `solve` | ported | Svd2/3::solve |  | `linalg/svd.rs` |
-| method `sort_by_singular_values` | missing |  | P14 | `linalg/svd.rs` |
-| method `to_polar` | ported | Svd2/3::to_polar |  | `linalg/svd.rs` |
-| method `try_new` | missing |  | P14 | `linalg/svd.rs` |
-| method `try_new_unordered` | missing |  | P14 | `linalg/svd.rs` |
-| type `SVD` | ported | Svd2/3 | generic upstream type, concrete Cairo types | `linalg/svd.rs` |
+| impl `Clone` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/svd.rs` |
+| impl `Copy` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5 (impl `Copy`) |  | `linalg/svd.rs` |
+| impl `Debug` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5 (impl `Debug`) |  | `linalg/svd.rs` |
+| impl `Deserialize` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/svd.rs` |
+| impl `Serialize` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/svd.rs` |
+| method `new` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::new |  | `linalg/svd.rs` |
+| method `new_unordered` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::new_unordered |  | `linalg/svd.rs` |
+| method `pseudo_inverse` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::pseudo_inverse |  | `linalg/svd.rs` |
+| method `rank` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::rank |  | `linalg/svd.rs` |
+| method `recompose` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::recompose |  | `linalg/svd.rs` |
+| method `solve` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::solve |  | `linalg/svd.rs` |
+| method `sort_by_singular_values` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::sort_by_singular_values |  | `linalg/svd.rs` |
+| method `to_polar` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::to_polar |  | `linalg/svd.rs` |
+| method `try_new` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::try_new |  | `linalg/svd.rs` |
+| method `try_new_unordered` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5::try_new_unordered |  | `linalg/svd.rs` |
+| type `SVD` | ported | Svd1/2/3/4/5/6, Svd1x2/3/4/5/6, Svd2x1/3/4/5/6, Svd3x1/2/4/5/6, Svd4x1/2/3/5/6, Svd5x1/2/3/4/6, Svd6x1/2/3/4/5 | generic upstream type, concrete Cairo types | `linalg/svd.rs` |
 
 #### Schur (linalg)
 
@@ -3245,7 +3240,7 @@ Cairo: none · ported 0, partial 0, missing 10, excluded 1.
 
 #### SquareMatrix (linalg)
 
-Cairo: Matrix1/2/3/4/5/6 · ported 31, partial 2, missing 11, excluded 0.
+Cairo: Matrix1/2/3/4/5/6 · ported 34, partial 0, missing 10, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -3277,8 +3272,8 @@ Cairo: Matrix1/2/3/4/5/6 · ported 31, partial 2, missing 11, excluded 0.
 | method `solve_upper_triangular_mut` | ported | MatrixSolve::solve_upper_triangular_mut | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
 | method `solve_upper_triangular_unchecked` | ported | MatrixSolve::solve_upper_triangular_unchecked | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
 | method `solve_upper_triangular_unchecked_mut` | ported | MatrixSolve::solve_upper_triangular_unchecked_mut | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
-| method `symmetric_eigen` | partial | Matrix2/3::symmetric_eigen | not on Matrix1/4/5/6; P14 | `linalg/decomposition.rs` |
-| method `symmetric_eigenvalues` | partial | Matrix2/3::symmetric_eigenvalues | not on Matrix1/4/5/6; P14 | `linalg/symmetric_eigen.rs` |
+| method `symmetric_eigen` | ported | Matrix1/2/3/4/5/6::symmetric_eigen |  | `linalg/decomposition.rs` |
+| method `symmetric_eigenvalues` | ported | Matrix1/2/3/4/5/6::symmetric_eigenvalues |  | `linalg/symmetric_eigen.rs` |
 | method `symmetric_tridiagonalize` | missing |  | P16 | `linalg/decomposition.rs` |
 | method `tr_solve_lower_triangular` | ported | MatrixSolve::tr_solve_lower_triangular | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
 | method `tr_solve_lower_triangular_mut` | ported | MatrixSolve::tr_solve_lower_triangular_mut | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
@@ -3291,24 +3286,24 @@ Cairo: Matrix1/2/3/4/5/6 · ported 31, partial 2, missing 11, excluded 0.
 | method `try_inverse` | ported | Matrix2/3/4/6::try_inverse |  | `linalg/inverse.rs` |
 | method `try_inverse_mut` | ported | Matrix2/3/4/6::try_inverse_mut |  | `linalg/inverse.rs` |
 | method `try_schur` | missing |  | P16 | `linalg/decomposition.rs` |
-| method `try_symmetric_eigen` | missing |  | P14 | `linalg/decomposition.rs` |
+| method `try_symmetric_eigen` | ported | Matrix1/2/3/4/5/6::try_symmetric_eigen |  | `linalg/decomposition.rs` |
 | method `udu` | ported | Matrix2/3/4/6::udu |  | `linalg/decomposition.rs` |
 
 #### SymmetricEigen (linalg)
 
-Cairo: SymmetricEigen2/3 · ported 8, partial 0, missing 1, excluded 0.
+Cairo: SymmetricEigen1/2/3/4/5/6 · ported 9, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| impl `Clone` | ported | SymmetricEigen2/3 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/symmetric_eigen.rs` |
-| impl `Copy` | ported | SymmetricEigen2/3 (impl `Copy`) |  | `linalg/symmetric_eigen.rs` |
-| impl `Debug` | ported | SymmetricEigen2/3 (impl `Debug`) |  | `linalg/symmetric_eigen.rs` |
-| impl `Deserialize` | ported | SymmetricEigen2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/symmetric_eigen.rs` |
-| impl `Serialize` | ported | SymmetricEigen2/3 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/symmetric_eigen.rs` |
-| method `new` | ported | SymmetricEigen2/3::new |  | `linalg/symmetric_eigen.rs` |
-| method `recompose` | ported | SymmetricEigen2/3::recompose |  | `linalg/symmetric_eigen.rs` |
-| method `try_new` | missing |  | P14 | `linalg/symmetric_eigen.rs` |
-| type `SymmetricEigen` | ported | SymmetricEigen2/3 | generic upstream type, concrete Cairo types | `linalg/symmetric_eigen.rs` |
+| impl `Clone` | ported | SymmetricEigen1/2/3/4/5/6 (impl `Copy`) | renamed `Copy`: Cairo values are `Copy` | `linalg/symmetric_eigen.rs` |
+| impl `Copy` | ported | SymmetricEigen1/2/3/4/5/6 (impl `Copy`) |  | `linalg/symmetric_eigen.rs` |
+| impl `Debug` | ported | SymmetricEigen1/2/3/4/5/6 (impl `Debug`) |  | `linalg/symmetric_eigen.rs` |
+| impl `Deserialize` | ported | SymmetricEigen1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/symmetric_eigen.rs` |
+| impl `Serialize` | ported | SymmetricEigen1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `linalg/symmetric_eigen.rs` |
+| method `new` | ported | SymmetricEigen1/2/3/4/5/6::new |  | `linalg/symmetric_eigen.rs` |
+| method `recompose` | ported | SymmetricEigen1/2/3/4/5/6::recompose |  | `linalg/symmetric_eigen.rs` |
+| method `try_new` | ported | SymmetricEigen1/2/3/4/5/6::try_new |  | `linalg/symmetric_eigen.rs` |
+| type `SymmetricEigen` | ported | SymmetricEigen1/2/3/4/5/6 | generic upstream type, concrete Cairo types | `linalg/symmetric_eigen.rs` |
 
 #### SymmetricTridiagonal (linalg)
 
@@ -3358,7 +3353,7 @@ Cairo: Matrix1, Vector2/3/4/5/6 · ported 3, partial 0, missing 0, excluded 0.
 
 #### nalgebra::linalg (linalg)
 
-Cairo: nalgebra::linalg · ported 4, partial 0, missing 8, excluded 0.
+Cairo: nalgebra::linalg · ported 7, partial 0, missing 5, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -3369,11 +3364,11 @@ Cairo: nalgebra::linalg · ported 4, partial 0, missing 8, excluded 0.
 | function `gauss_step` | ported | nalgebra::linalg (function `gauss_step`) |  | `linalg/lu.rs` |
 | function `gauss_step_swap` | ported | nalgebra::linalg (function `gauss_step_swap`) |  | `linalg/lu.rs` |
 | function `reflection_axis_mut` | ported | nalgebra::linalg (function `reflection_axis_mut`) |  | `linalg/householder.rs` |
-| function `svd_ordered2` | missing |  | P14 | `linalg/svd2.rs` |
-| function `svd_ordered3` | missing |  | P14 | `linalg/svd3.rs` |
+| function `svd_ordered2` | ported | nalgebra::linalg (function `svd_ordered2`) |  | `linalg/svd2.rs` |
+| function `svd_ordered3` | ported | nalgebra::linalg (function `svd_ordered3`) |  | `linalg/svd3.rs` |
 | function `try_invert_to` | ported | nalgebra::linalg (function `try_invert_to`) |  | `linalg/lu.rs` |
 | function `unbalance` | missing |  | P16 | `linalg/balancing.rs` |
-| function `wilkinson_shift` | missing |  | P14 | `linalg/symmetric_eigen.rs` |
+| function `wilkinson_shift` | ported | nalgebra::linalg (function `wilkinson_shift`) |  | `linalg/symmetric_eigen.rs` |
 
 ### Module `sparse`
 

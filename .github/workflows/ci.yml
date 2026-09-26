@@ -29,6 +29,7 @@ jobs:
           scarb fmt --check
           python3 scripts/api_parity.py --check
           python3 tools/shapegen/shapegen.py --check
+          python3 crates/nalgebra/src/linalg/generate.py --check
       - name: Lint (default features, then the lightest `nalgebra`)
         run: |
           scarb lint --deny-warnings
@@ -67,6 +68,22 @@ jobs:
           - { name: tests_linalg_solve, package: nalgebra_tests_linalg_solve, filters: "nalgebra_tests_linalg_solve" }
           - { name: tests_linalg_solve_rhs, package: nalgebra_tests_linalg_solve_rhs, filters: "nalgebra_tests_linalg_solve_rhs" }
           - { name: tests_linalg_factor, package: nalgebra_tests_linalg_factor, filters: "nalgebra_tests_linalg_factor" }
+          - { name: tests_linalg_eigen, package: nalgebra_tests_linalg_eigen, filters: "nalgebra_tests_linalg_eigen" }
+          - { name: tests_linalg_qr, package: nalgebra_tests_linalg_qr, filters: "nalgebra_tests_linalg_qr" }
+          - { name: tests_linalg_qr_tall, package: nalgebra_tests_linalg_qr_tall, filters: "nalgebra_tests_linalg_qr_tall" }
+          - { name: tests_linalg_qr6, package: nalgebra_tests_linalg_qr6, filters: "nalgebra_tests_linalg_qr6" }
+          - { name: tests_linalg_cholesky_update, package: nalgebra_tests_linalg_cholesky_update, filters: "nalgebra_tests_linalg_cholesky_update" }
+          - { name: tests_linalg_svd, package: nalgebra_tests_linalg_svd, filters: "nalgebra_tests_linalg_svd" }
+          - { name: tests_linalg_svd5, package: nalgebra_tests_linalg_svd5, filters: "nalgebra_tests_linalg_svd5" }
+          - { name: tests_linalg_svd6, package: nalgebra_tests_linalg_svd6, filters: "nalgebra_tests_linalg_svd6" }
+          - { name: tests_linalg_svd_tall, package: nalgebra_tests_linalg_svd_tall, filters: "nalgebra_tests_linalg_svd_tall" }
+          - { name: tests_linalg_svd_tall5, package: nalgebra_tests_linalg_svd_tall5, filters: "nalgebra_tests_linalg_svd_tall5" }
+          - { name: tests_linalg_svd_tall6, package: nalgebra_tests_linalg_svd_tall6, filters: "nalgebra_tests_linalg_svd_tall6" }
+          - { name: tests_linalg_svd_tall6b, package: nalgebra_tests_linalg_svd_tall6b, filters: "nalgebra_tests_linalg_svd_tall6b" }
+          - { name: tests_linalg_svd_wide, package: nalgebra_tests_linalg_svd_wide, filters: "nalgebra_tests_linalg_svd_wide" }
+          - { name: tests_linalg_svd_wide5, package: nalgebra_tests_linalg_svd_wide5, filters: "nalgebra_tests_linalg_svd_wide5" }
+          - { name: tests_linalg_svd_wide6, package: nalgebra_tests_linalg_svd_wide6, filters: "nalgebra_tests_linalg_svd_wide6" }
+          - { name: tests_linalg_svd_wide6b, package: nalgebra_tests_linalg_svd_wide6b, filters: "nalgebra_tests_linalg_svd_wide6b" }
           - { name: tests_dynamic, package: nalgebra_tests_dynamic, filters: "nalgebra_tests_dynamic" }
           - { name: tests_sparse, package: nalgebra_tests_sparse, filters: "nalgebra_tests_sparse" }
           - { name: tests_root, package: nalgebra_tests_root, filters: "nalgebra_tests_root" }

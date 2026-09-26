@@ -534,8 +534,13 @@ fn gen_len(gen: &Gen) -> usize {
         Gen::S | Gen::Pos | Gen::Range(..) => 1,
         Gen::V(n) | Gen::U(n) => *n,
         Gen::ScaledAxis => 3,
-        Gen::M(r, c) => r * c,
+        Gen::M(r, c)
+        | Gen::WellCondRect(r, c)
+        | Gen::NearSingularRect(r, c)
+        | Gen::RankDeficient(r, c) => r * c,
         Gen::Sym(n)
+        | Gen::SymDeficient(n)
+        | Gen::Clustered(n)
         | Gen::WellCond(n)
         | Gen::Spd(n)
         | Gen::NearSingular(n)
