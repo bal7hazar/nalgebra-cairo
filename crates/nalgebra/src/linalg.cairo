@@ -25,8 +25,12 @@
 //!   of `MᵀM` (DESIGN D6).
 
 pub mod cholesky;
+pub mod givens;
+pub mod householder;
+pub mod inverse;
 pub(crate) mod ldlt;
 pub mod lu;
+pub mod lu_steps;
 #[cfg(test)]
 mod oracle_cholesky;
 #[cfg(test)]
@@ -35,6 +39,7 @@ mod oracle_svd;
 mod oracle_symmetric_eigen;
 #[cfg(test)]
 mod oracle_udu;
+pub mod permutation_sequence;
 pub mod qr;
 pub mod svd2;
 pub mod svd3;
@@ -44,13 +49,21 @@ pub mod udu;
 
 pub use cholesky::{
     Cholesky2, Cholesky2Trait, Cholesky3, Cholesky3Trait, Cholesky4, Cholesky4Trait, Cholesky6,
-    Cholesky6Trait,
+    Cholesky6Trait, Matrix2CholeskyTrait, Matrix3CholeskyTrait, Matrix4CholeskyTrait,
+    Matrix6CholeskyTrait,
+};
+pub use givens::{GivensRotate, GivensRotateRows, GivensRotation, GivensRotationTrait};
+pub use householder::reflection_axis_mut;
+pub use inverse::{
+    Matrix2InverseTrait, Matrix3InverseTrait, Matrix4InverseTrait, Matrix6InverseTrait,
 };
 pub use lu::{
     Lu2, Lu2Trait, Lu3, Lu3Trait, Lu4, Lu4Trait, Lu6, Lu6Trait, Matrix2LuTrait, Matrix3LuTrait,
     Matrix4LuTrait, Matrix6LuTrait, Perm2, Perm2Trait, Perm3, Perm3Trait, Perm4, Perm4Trait, Perm6,
     Perm6Trait,
 };
+pub use lu_steps::{gauss_step, gauss_step_swap, try_invert_to};
+pub use permutation_sequence::{PermuteColumns, PermuteRows};
 pub use qr::{
     Matrix2QrTrait, Matrix3QrTrait, Matrix4QrTrait, Qr2, Qr2Trait, Qr3, Qr3Trait, Qr4, Qr4Trait,
 };
@@ -58,4 +71,7 @@ pub use svd2::{Matrix2SvdTrait, Svd2, Svd2Trait};
 pub use svd3::{Matrix3SvdTrait, Svd3, Svd3Trait};
 pub use symmetric_eigen2::{Matrix2SymmetricEigenTrait, SymmetricEigen2, SymmetricEigen2Trait};
 pub use symmetric_eigen3::{Matrix3SymmetricEigenTrait, SymmetricEigen3, SymmetricEigen3Trait};
-pub use udu::{Udu2, Udu2Trait, Udu3, Udu3Trait, Udu4, Udu4Trait, Udu6, Udu6Trait};
+pub use udu::{
+    Matrix2UduTrait, Matrix3UduTrait, Matrix4UduTrait, Matrix6UduTrait, Udu2, Udu2Trait, Udu3,
+    Udu3Trait, Udu4, Udu4Trait, Udu6, Udu6Trait,
+};

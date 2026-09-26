@@ -1,0 +1,36 @@
+{
+  "nalgebra_tests_linalg_factor::givens": {
+    "givens_new": {
+      "baseline": 16440,
+      "cancel_y": 31110,
+      "new": 31780
+    },
+    "givens_rotate": {
+      "baseline": 17640,
+      "matrix2x3": 31350,
+      "rows_matrix3x2": 31350
+    }
+  },
+  "nalgebra_tests_linalg_factor::permutation": {
+    "perm6_permute_rows": {
+      "append": 25340,
+      "baseline": 24140,
+      "columns_matrix6": 65340,
+      "determinant": 27750,
+      "len": 27550,
+      "matrix6": 65340,
+      "vector6": 35340
+    }
+  },
+  "nalgebra_tests_linalg_factor::steps": {
+    "gauss_step": {
+      "baseline": 22840,
+      "matrix6_step0": 98240,
+      "matrix6_swap0": 98240
+    },
+    "reflection_axis": {
+      "baseline": 16840,
+      "vector6": 58240
+    }
+  }
+}

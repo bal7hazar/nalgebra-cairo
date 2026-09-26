@@ -21,3 +21,12 @@ pub const NOT_FREE_FAMILY: felt252 = 'nalgebra: not a free family';
 /// `rows_range`, `row_part`, `select_rows`, `resize`... (`base/matrix_view.cairo`: the output
 /// type is the size of upstream's const generic or dynamic view).
 pub const DIMENSION_MISMATCH: felt252 = 'nalgebra: dimension mismatch';
+/// `PermN::append_permutation(i, i2)` whose smaller index is not after every transposition
+/// already recorded: the compact sequence stores one transposition per elimination step, in step
+/// order (`linalg/lu.cairo`); upstream's heap sequence panics with "Maximum number of
+/// permutations exceeded." when it is full.
+pub const PERMUTATION_ORDER: felt252 = 'nalgebra: permutation order';
+/// `Cholesky::new_unchecked` of a matrix that is not positive definite: a pivot is not positive
+/// (upstream takes the square root of a negative number or divides by zero: NaN / infinities,
+/// which a fixed-point scalar does not have).
+pub const NOT_POSITIVE_DEFINITE: felt252 = 'nalgebra: not positive definite';

@@ -19,6 +19,7 @@ mod projections;
 mod rotation_completion;
 mod scalar;
 mod scale_reflection;
+mod solve;
 mod transform;
 
 /// Every suite, in a stable order.
@@ -35,6 +36,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(cg::suites());
     suites.extend(transform::suites());
     suites.extend(blas_statistics::suites());
+    suites.extend(solve::suites());
     suites
 }
 

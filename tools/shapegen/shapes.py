@@ -38,6 +38,8 @@ import views as P05
 import cg as P07
 import blas as P06B
 import stats as P06
+import solve as P14
+import linalg_p14 as P14L
 import library as L
 from model import ALL_SHAPES, Shape
 
@@ -528,6 +530,15 @@ pub const NOT_FREE_FAMILY: felt252 = 'nalgebra: not a free family';
 /// `rows_range`, `row_part`, `select_rows`, `resize`... (`base/matrix_view.cairo`: the output
 /// type is the size of upstream's const generic or dynamic view).
 pub const DIMENSION_MISMATCH: felt252 = 'nalgebra: dimension mismatch';
+/// `PermN::append_permutation(i, i2)` whose smaller index is not after every transposition
+/// already recorded: the compact sequence stores one transposition per elimination step, in step
+/// order (`linalg/lu.cairo`); upstream's heap sequence panics with "Maximum number of
+/// permutations exceeded." when it is full.
+pub const PERMUTATION_ORDER: felt252 = 'nalgebra: permutation order';
+/// `Cholesky::new_unchecked` of a matrix that is not positive definite: a pivot is not positive
+/// (upstream takes the square root of a negative number or divides by zero: NaN / infinities,
+/// which a fixed-point scalar does not have).
+pub const NOT_POSITIVE_DEFINITE: felt252 = 'nalgebra: not positive definite';
 """
 
 
@@ -597,7 +608,8 @@ pub struct UniformNorm {}
 SHARED_MODULES = {"kernels": render_kernels, "matrix_mul": render_matrix_mul,
                   "matrix_tr_mul": render_matrix_tr_mul, "errors": render_errors,
                   "matrix_index": render_matrix_index, "norm": render_norm,
-                  **P05.SHARED_MODULES, **P06.SHARED_MODULES, **P06B.SHARED_MODULES, **P07.SHARED_MODULES}
+                  **P05.SHARED_MODULES, **P06.SHARED_MODULES, **P06B.SHARED_MODULES, **P07.SHARED_MODULES,
+                  **P14.SHARED_MODULES}
 
 
 def exported(s: Shape) -> list[str]:
@@ -611,8 +623,11 @@ def exported(s: Shape) -> list[str]:
 SHARED_EXPORTS = {"matrix_mul": ["MatrixMul"], "matrix_tr_mul": ["MatrixTrMul"],
                   "matrix_index": ["MatrixIndex"],
                   "norm": ["EuclideanNorm", "LpNorm", "Norm", "OneNorm", "UniformNorm"],
-                  **P05.SHARED_EXPORTS, **P06.SHARED_EXPORTS, **P06B.SHARED_EXPORTS, **P07.SHARED_EXPORTS}
+                  **P05.SHARED_EXPORTS, **P06.SHARED_EXPORTS, **P06B.SHARED_EXPORTS, **P07.SHARED_EXPORTS,
+                  **P14.SHARED_EXPORTS}
 PRIVATE_MODULES = {"kernels"}
+# WP 8.5-P14a: generated modules of `linalg` (`shapegen.library_outputs`).
+LINALG_MODULES = {**P14L.LINALG_MODULES}
 
 
 def base_block() -> list[str]:

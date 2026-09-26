@@ -378,3 +378,95 @@ pub impl Udu6Impl<
         Matrix6Trait::from_diagonal(self.d)
     }
 }
+
+/// `SquareMatrix::udu` on `Matrix2<T>` (upstream `nalgebra::linalg` decomposition entry point).
+#[generate_trait]
+pub impl Matrix2UduImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix2UduTrait<T> {
+    /// The `UDUᵀ` factorisation of the symmetric `self` (its UPPER triangle), or `None` when a
+    /// pivot is exactly zero: `Udu2Trait::new(self)`. Upstream: `SquareMatrix::udu`.
+    #[inline(always)]
+    fn udu(self: Matrix2<T>) -> Option<Udu2<T>> {
+        Udu2Trait::new(self)
+    }
+}
+
+/// `SquareMatrix::udu` on `Matrix3<T>` (upstream `nalgebra::linalg` decomposition entry point).
+#[generate_trait]
+pub impl Matrix3UduImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix3UduTrait<T> {
+    /// The `UDUᵀ` factorisation of the symmetric `self` (its UPPER triangle), or `None` when a
+    /// pivot is exactly zero: `Udu3Trait::new(self)`. Upstream: `SquareMatrix::udu`.
+    #[inline(always)]
+    fn udu(self: Matrix3<T>) -> Option<Udu3<T>> {
+        Udu3Trait::new(self)
+    }
+}
+
+/// `SquareMatrix::udu` on `Matrix4<T>` (upstream `nalgebra::linalg` decomposition entry point).
+#[generate_trait]
+pub impl Matrix4UduImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix4UduTrait<T> {
+    /// The `UDUᵀ` factorisation of the symmetric `self` (its UPPER triangle), or `None` when a
+    /// pivot is exactly zero: `Udu4Trait::new(self)`. Upstream: `SquareMatrix::udu`.
+    #[inline(always)]
+    fn udu(self: Matrix4<T>) -> Option<Udu4<T>> {
+        Udu4Trait::new(self)
+    }
+}
+
+/// `SquareMatrix::udu` on `Matrix6<T>` (upstream `nalgebra::linalg` decomposition entry point).
+#[generate_trait]
+pub impl Matrix6UduImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix6UduTrait<T> {
+    /// The `UDUᵀ` factorisation of the symmetric `self` (its UPPER triangle), or `None` when a
+    /// pivot is exactly zero: `Udu6Trait::new(self)`. Upstream: `SquareMatrix::udu`.
+    #[inline(always)]
+    fn udu(self: Matrix6<T>) -> Option<Udu6<T>> {
+        Udu6Trait::new(self)
+    }
+}

@@ -1189,6 +1189,9 @@ OWNER_CANDIDATES: dict[str, list[str]] = {
     "SVD": ["Svd2", "Svd3"],
     "SymmetricEigen": ["SymmetricEigen2", "SymmetricEigen3"],
     "PermutationSequence": ["Perm2", "Perm3", "Perm4", "Perm6"],
+    # WP 8.5-P14a.
+    "GivensRotation": ["GivensRotation"],
+    "nalgebra::linalg": ["nalgebra::linalg"],
     # The norm markers of `base/norm.rs` (WP 8.2a).
     **{t: [t] for t in ("EuclideanNorm", "LpNorm", "OneNorm", "UniformNorm", "Normed")},
 }
@@ -1237,6 +1240,9 @@ DIM_ONLY: dict[str, set[str]] = {
     **{name: set(M) for name in (
         "determinant", "try_inverse", "lu", "qr", "svd", "pseudo_inverse", "singular_values",
         "is_invertible", "is_special_orthogonal")},
+    # WP 8.5-P14a: the decomposition entry points and the in-place inverse exist where the
+    # decomposition / inverse does (`Cholesky2/3/4/6`, `Udu2/3/4/6`, `try_inverse`).
+    **{name: set(M) for name in ("cholesky", "udu", "try_inverse_mut")},
     # WP 8.3-P06: upstream's symmetric / hermitian rank-one updates assert a square `self` at
     # run time (`xxgerx`): generated on the six squares.
     **{name: set(SQUARES) for name in ("syger", "hegerc", "ger_symm")},
@@ -1340,6 +1346,10 @@ def rendered(item: Item) -> str:
 # is a Cairo rendered name (`method` names are bare, other kinds prefixed); `\1` refers to the
 # item pattern's groups.  Owners may be redirected with `Owner::name`.
 RENAMES = (
+    # WP 8.5-P14a: upstream's triangular solves take any right-hand side with as many rows.
+    rule(r"SquareMatrix", r"((?:tr_|ad_)?solve_(?:lower|upper)_triangular\w*)", r"MatrixSolve::\1",
+         "method of the generic `MatrixSolve` (one kernel impl per square and right-hand side "
+         "with as many rows, 36; `base/solve.cairo`)"),
     rule(r"Matrix|SquareMatrix|Vector|RowS?Vector|Matrix\w+|Vector\d|RowVector\d",
          r"impl:Mul<Matrix>", r"MatrixMul::mul_mat",
          "conformable products are `mul_mat` (Cairo's `Mul` is homogeneous; `*` stays on the "

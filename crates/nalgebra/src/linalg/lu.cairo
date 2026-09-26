@@ -36,11 +36,12 @@ mod oracle_lu3;
 mod oracle_lu4;
 #[cfg(test)]
 mod oracle_lu6;
-
 pub use lu2::{Lu2, Lu2Trait, Matrix2LuTrait};
 pub use lu3::{Lu3, Lu3Trait, Matrix3LuTrait};
 pub use lu4::{Lu4, Lu4Trait, Matrix4LuTrait};
 pub use lu6::{Lu6, Lu6Trait, Matrix6LuTrait};
+use simba::scalar::Real;
+use crate::base::errors::{INDEX_OUT_OF_BOUNDS, PERMUTATION_ORDER};
 
 /// The row permutation of a 2x2 factorisation: the single transposition of step 1.
 ///
@@ -137,7 +138,8 @@ impl Perm6PartialEq of PartialEq<Perm6> {
     }
 }
 
-/// Methods of `Perm2` (upstream `PermutationSequence<U2>`).
+/// Methods of `Perm2` (upstream `PermutationSequence<U2>`). The row / column permutations
+/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
 #[generate_trait]
 pub impl Perm2Impl of Perm2Trait {
     /// The identity permutation of a 2x2 factorisation (no swap). Upstream:
@@ -146,9 +148,71 @@ pub impl Perm2Impl of Perm2Trait {
     fn identity() -> Perm2 {
         Perm2 { p1: 1 }
     }
+
+    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based, like upstream)
+    /// after those already recorded; `i == i2` records nothing. Upstream:
+    /// `PermutationSequence::append_permutation`.
+    ///
+    /// The compact sequence stores ONE transposition per elimination step, `(k, p_k)` with `p_k >=
+    /// k`, in step order: the transposition `(min, max)` is recorded as the step `min`, which
+    /// must come after every step already recorded — what every upstream decomposition does
+    /// (`LU`, `FullPivLU` and `ColPivQR` append `(i, piv)` with `piv >= i` at step `i`). Panics
+    /// with `nalgebra: permutation order` otherwise (upstream's heap sequence only panics when it
+    /// is full: "Maximum number of permutations exceeded."), and with `nalgebra: index out of
+    /// bounds` when an index is `>= 2` (upstream panics when the permutation is applied).
+    fn append_permutation(ref self: Perm2, i: usize, i2: usize) {
+        if i != i2 {
+            let (lo, hi) = if i < i2 {
+                (i, i2)
+            } else {
+                (i2, i)
+            };
+            assert(hi < 2, INDEX_OUT_OF_BOUNDS);
+            let last: usize = if self.p1 != 1 {
+                1
+            } else {
+                0
+            };
+            assert(lo >= last, PERMUTATION_ORDER);
+            // `lo < hi < 2`: the only step is the first.
+            self.p1 = (hi + 1).try_into().unwrap();
+        }
+    }
+
+    /// The number of transpositions actually recorded (the steps `k` with `p_k != k`). Upstream:
+    /// `PermutationSequence::len`.
+    fn len(self: Perm2) -> usize {
+        let mut n: usize = 0;
+        if self.p1 != 1 {
+            n += 1;
+        }
+        n
+    }
+
+    /// Whether no transposition is recorded (the identity). Upstream:
+    /// `PermutationSequence::is_empty`.
+    #[inline(always)]
+    fn is_empty(self: Perm2) -> bool {
+        self.p1 == 1
+    }
+
+    /// The determinant of the permutation: `1` for an even number of transpositions, `-1` for an
+    /// odd one. Exact. Upstream: `PermutationSequence::determinant`.
+    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm2) -> T {
+        let mut odd = false;
+        if self.p1 != 1 {
+            odd = !odd;
+        }
+        if odd {
+            -R::one()
+        } else {
+            R::one()
+        }
+    }
 }
 
-/// Methods of `Perm3` (upstream `PermutationSequence<U3>`).
+/// Methods of `Perm3` (upstream `PermutationSequence<U3>`). The row / column permutations
+/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
 #[generate_trait]
 pub impl Perm3Impl of Perm3Trait {
     /// The identity permutation of a 3x3 factorisation (no swap). Upstream:
@@ -157,9 +221,83 @@ pub impl Perm3Impl of Perm3Trait {
     fn identity() -> Perm3 {
         Perm3 { p1: 1, p2: 2 }
     }
+
+    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based, like upstream)
+    /// after those already recorded; `i == i2` records nothing. Upstream:
+    /// `PermutationSequence::append_permutation`.
+    ///
+    /// The compact sequence stores ONE transposition per elimination step, `(k, p_k)` with `p_k >=
+    /// k`, in step order: the transposition `(min, max)` is recorded as the step `min`, which
+    /// must come after every step already recorded — what every upstream decomposition does
+    /// (`LU`, `FullPivLU` and `ColPivQR` append `(i, piv)` with `piv >= i` at step `i`). Panics
+    /// with `nalgebra: permutation order` otherwise (upstream's heap sequence only panics when it
+    /// is full: "Maximum number of permutations exceeded."), and with `nalgebra: index out of
+    /// bounds` when an index is `>= 3` (upstream panics when the permutation is applied).
+    fn append_permutation(ref self: Perm3, i: usize, i2: usize) {
+        if i != i2 {
+            let (lo, hi) = if i < i2 {
+                (i, i2)
+            } else {
+                (i2, i)
+            };
+            assert(hi < 3, INDEX_OUT_OF_BOUNDS);
+            let last: usize = if self.p2 != 2 {
+                2
+            } else if self.p1 != 1 {
+                1
+            } else {
+                0
+            };
+            assert(lo >= last, PERMUTATION_ORDER);
+            let v: u8 = (hi + 1).try_into().unwrap();
+            match lo {
+                0 => self.p1 = v,
+                1 => self.p2 = v,
+                _ => {},
+            }
+        }
+    }
+
+    /// The number of transpositions actually recorded (the steps `k` with `p_k != k`). Upstream:
+    /// `PermutationSequence::len`.
+    fn len(self: Perm3) -> usize {
+        let mut n: usize = 0;
+        if self.p1 != 1 {
+            n += 1;
+        }
+        if self.p2 != 2 {
+            n += 1;
+        }
+        n
+    }
+
+    /// Whether no transposition is recorded (the identity). Upstream:
+    /// `PermutationSequence::is_empty`.
+    #[inline(always)]
+    fn is_empty(self: Perm3) -> bool {
+        self.p1 == 1 && self.p2 == 2
+    }
+
+    /// The determinant of the permutation: `1` for an even number of transpositions, `-1` for an
+    /// odd one. Exact. Upstream: `PermutationSequence::determinant`.
+    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm3) -> T {
+        let mut odd = false;
+        if self.p1 != 1 {
+            odd = !odd;
+        }
+        if self.p2 != 2 {
+            odd = !odd;
+        }
+        if odd {
+            -R::one()
+        } else {
+            R::one()
+        }
+    }
 }
 
-/// Methods of `Perm4` (upstream `PermutationSequence<U4>`).
+/// Methods of `Perm4` (upstream `PermutationSequence<U4>`). The row / column permutations
+/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
 #[generate_trait]
 pub impl Perm4Impl of Perm4Trait {
     /// The identity permutation of a 4x4 factorisation (no swap). Upstream:
@@ -168,9 +306,92 @@ pub impl Perm4Impl of Perm4Trait {
     fn identity() -> Perm4 {
         Perm4 { p1: 1, p2: 2, p3: 3 }
     }
+
+    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based, like upstream)
+    /// after those already recorded; `i == i2` records nothing. Upstream:
+    /// `PermutationSequence::append_permutation`.
+    ///
+    /// The compact sequence stores ONE transposition per elimination step, `(k, p_k)` with `p_k >=
+    /// k`, in step order: the transposition `(min, max)` is recorded as the step `min`, which
+    /// must come after every step already recorded — what every upstream decomposition does
+    /// (`LU`, `FullPivLU` and `ColPivQR` append `(i, piv)` with `piv >= i` at step `i`). Panics
+    /// with `nalgebra: permutation order` otherwise (upstream's heap sequence only panics when it
+    /// is full: "Maximum number of permutations exceeded."), and with `nalgebra: index out of
+    /// bounds` when an index is `>= 4` (upstream panics when the permutation is applied).
+    fn append_permutation(ref self: Perm4, i: usize, i2: usize) {
+        if i != i2 {
+            let (lo, hi) = if i < i2 {
+                (i, i2)
+            } else {
+                (i2, i)
+            };
+            assert(hi < 4, INDEX_OUT_OF_BOUNDS);
+            let last: usize = if self.p3 != 3 {
+                3
+            } else if self.p2 != 2 {
+                2
+            } else if self.p1 != 1 {
+                1
+            } else {
+                0
+            };
+            assert(lo >= last, PERMUTATION_ORDER);
+            let v: u8 = (hi + 1).try_into().unwrap();
+            match lo {
+                0 => self.p1 = v,
+                1 => self.p2 = v,
+                2 => self.p3 = v,
+                _ => {},
+            }
+        }
+    }
+
+    /// The number of transpositions actually recorded (the steps `k` with `p_k != k`). Upstream:
+    /// `PermutationSequence::len`.
+    fn len(self: Perm4) -> usize {
+        let mut n: usize = 0;
+        if self.p1 != 1 {
+            n += 1;
+        }
+        if self.p2 != 2 {
+            n += 1;
+        }
+        if self.p3 != 3 {
+            n += 1;
+        }
+        n
+    }
+
+    /// Whether no transposition is recorded (the identity). Upstream:
+    /// `PermutationSequence::is_empty`.
+    #[inline(always)]
+    fn is_empty(self: Perm4) -> bool {
+        self.p1 == 1 && self.p2 == 2 && self.p3 == 3
+    }
+
+    /// The determinant of the permutation: `1` for an even number of transpositions, `-1` for an
+    /// odd one. Exact. Upstream: `PermutationSequence::determinant`.
+    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm4) -> T {
+        let mut odd = false;
+        if self.p1 != 1 {
+            odd = !odd;
+        }
+        if self.p2 != 2 {
+            odd = !odd;
+        }
+        if self.p3 != 3 {
+            odd = !odd;
+        }
+        if odd {
+            -R::one()
+        } else {
+            R::one()
+        }
+    }
 }
 
-/// Methods of `Perm6` (upstream `PermutationSequence<U6>`).
+/// Methods of `Perm6` (upstream `PermutationSequence<U6>`). The row / column permutations
+/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
 #[generate_trait]
 pub impl Perm6Impl of Perm6Trait {
     /// The identity permutation of a 6x6 factorisation (no swap). Upstream:
@@ -178,5 +399,105 @@ pub impl Perm6Impl of Perm6Trait {
     #[inline(always)]
     fn identity() -> Perm6 {
         Perm6 { p1: 1, p2: 2, p3: 3, p4: 4, p5: 5 }
+    }
+
+    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based, like upstream)
+    /// after those already recorded; `i == i2` records nothing. Upstream:
+    /// `PermutationSequence::append_permutation`.
+    ///
+    /// The compact sequence stores ONE transposition per elimination step, `(k, p_k)` with `p_k >=
+    /// k`, in step order: the transposition `(min, max)` is recorded as the step `min`, which
+    /// must come after every step already recorded — what every upstream decomposition does
+    /// (`LU`, `FullPivLU` and `ColPivQR` append `(i, piv)` with `piv >= i` at step `i`). Panics
+    /// with `nalgebra: permutation order` otherwise (upstream's heap sequence only panics when it
+    /// is full: "Maximum number of permutations exceeded."), and with `nalgebra: index out of
+    /// bounds` when an index is `>= 6` (upstream panics when the permutation is applied).
+    fn append_permutation(ref self: Perm6, i: usize, i2: usize) {
+        if i != i2 {
+            let (lo, hi) = if i < i2 {
+                (i, i2)
+            } else {
+                (i2, i)
+            };
+            assert(hi < 6, INDEX_OUT_OF_BOUNDS);
+            let last: usize = if self.p5 != 5 {
+                5
+            } else if self.p4 != 4 {
+                4
+            } else if self.p3 != 3 {
+                3
+            } else if self.p2 != 2 {
+                2
+            } else if self.p1 != 1 {
+                1
+            } else {
+                0
+            };
+            assert(lo >= last, PERMUTATION_ORDER);
+            let v: u8 = (hi + 1).try_into().unwrap();
+            match lo {
+                0 => self.p1 = v,
+                1 => self.p2 = v,
+                2 => self.p3 = v,
+                3 => self.p4 = v,
+                4 => self.p5 = v,
+                _ => {},
+            }
+        }
+    }
+
+    /// The number of transpositions actually recorded (the steps `k` with `p_k != k`). Upstream:
+    /// `PermutationSequence::len`.
+    fn len(self: Perm6) -> usize {
+        let mut n: usize = 0;
+        if self.p1 != 1 {
+            n += 1;
+        }
+        if self.p2 != 2 {
+            n += 1;
+        }
+        if self.p3 != 3 {
+            n += 1;
+        }
+        if self.p4 != 4 {
+            n += 1;
+        }
+        if self.p5 != 5 {
+            n += 1;
+        }
+        n
+    }
+
+    /// Whether no transposition is recorded (the identity). Upstream:
+    /// `PermutationSequence::is_empty`.
+    #[inline(always)]
+    fn is_empty(self: Perm6) -> bool {
+        self.p1 == 1 && self.p2 == 2 && self.p3 == 3 && self.p4 == 4 && self.p5 == 5
+    }
+
+    /// The determinant of the permutation: `1` for an even number of transpositions, `-1` for an
+    /// odd one. Exact. Upstream: `PermutationSequence::determinant`.
+    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm6) -> T {
+        let mut odd = false;
+        if self.p1 != 1 {
+            odd = !odd;
+        }
+        if self.p2 != 2 {
+            odd = !odd;
+        }
+        if self.p3 != 3 {
+            odd = !odd;
+        }
+        if self.p4 != 4 {
+            odd = !odd;
+        }
+        if self.p5 != 5 {
+            odd = !odd;
+        }
+        if odd {
+            -R::one()
+        } else {
+            R::one()
+        }
     }
 }
