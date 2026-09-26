@@ -56,13 +56,16 @@ pub impl Lblt1Impl<
     /// one floor of the exact product of `alpha colmax` and the correctly rounded quotient), so a
     /// tie at the last bit may choose differently from upstream's `f64`.
     ///
-    /// Updates: a 1x1 block divides its column (correctly rounded quotients, one prepared divisor;
-    /// upstream multiplies by a rounded `1 / a_kk`) and updates the trailing entries with ONE
-    /// `Real::mul_add` each; a 2x2 block uses upstream's scaled inverse (`d = |b|`, `d11`, `d22`
-    /// correctly rounded, `scale = 1 / (d (d11 d22 - 1))`), its two coefficients per row are one
-    /// floor each of an exact `(x d11 ∓ y) scale`, and each trailing entry is one fused sum of
-    /// two products. Panics on overflow (and divides by zero only on a zero pivot that rounding
-    /// made exactly zero).
+    /// Updates (steps criterion, oracle tolerance first): upstream multiplies rounded ratios
+    /// (`a_ik / a_kk`, the scaled 2x2 inverse) by the entries, harmless in `f64` but an absolute
+    /// error of `|a_jk| / 2` ulp in Q32.32 (measured: 1 206 ulp on a `medium` 4x4). Here every
+    /// updated entry is ONE exact numerator over a pivot, correctly rounded (one prepared divisor
+    /// per pivot): a 1x1 block stores `a_ik / a_kk` and updates `(a_ij a_kk - a_ik a_jk) / a_kk`;
+    /// a 2x2 block `[[a, b], [b, c]]` stores `(c x - b y) / det`, `(a y - b x) / det` (`det = a c -
+    /// b²`) and forms the Schur complement by two elimination steps (pivot `b`, then `-det / b`),
+    /// the same value as upstream's `a_ij - x_i w1_j - y_i w2_j`. Panics on overflow (the exact
+    /// numerators are products of two entries: entries up to about 3·10⁴) and divides by zero
+    /// only on a pivot that rounding made exactly zero.
     fn new(matrix: Matrix1<T>) -> Lblt1<T> {
         revoke_ap_tracking();
         let alpha = R::from_ratio(2750446389, 0x100000000);
@@ -98,10 +101,12 @@ pub impl Lblt1Impl<
     /// Overwrites `b` (any shape with 1 rows) with the solution of `A x = b` and returns `true`,
     /// or returns `false` (and leaves `b` unchanged) when a column was exactly zero
     /// (`zero_pivot`). `x = Pᵀ L⁻ᵀ B⁻¹ L⁻¹ P b`: permutation (moves), unit lower solve,
-    /// `B⁻¹ b` as one fused sum per entry (`B⁻¹` from the 1x1 reciprocals and upstream's
-    /// scaled 2x2 inverses), the unit upper solve as a unit lower one on the reversed order
-    /// (moves), the inverse permutation. Upstream interleaves the same steps (`LBLT::solve_mut`);
-    /// the rounding differs (fused sums here). Panics on overflow.
+    /// `B⁻¹ y`
+    /// as upstream's per-block formula (`y_k / b_kk`, or `(c y_k - b y_k1) / det` and `(a y_k1 - b
+    /// y_k) / det`: one exact numerator and one correctly rounded quotient per entry), the unit
+    /// upper solve as a unit lower one on the reversed order (moves), the inverse permutation.
+    /// Upstream interleaves the same steps (`LBLT::solve_mut`); the sums are fused here. Panics on
+    /// overflow.
     fn solve_mut<B, impl P: PermuteRows<Perm1, B>, impl K: SolveKernel<Matrix1<T>, B>, +Drop<B>>(
         self: Lblt1<T>, ref b: B,
     ) -> bool {
@@ -112,7 +117,8 @@ pub impl Lblt1Impl<
         let j = Perm1 {};
         P::permute_rows(p, ref b);
         b = K::lower_unit(l, b);
-        b = K::tr_mul_rhs(Lblt1InternalTrait::d_inv(self), b);
+        let (adj, g) = Lblt1InternalTrait::d_parts(self);
+        b = K::upper(g, K::tr_mul_rhs(adj, b));
         P::permute_rows(j, ref b);
         b = K::lower_unit(Matrix1 { x: R::one() }, b);
         P::permute_rows(j, ref b);
@@ -167,17 +173,19 @@ pub(crate) impl Lblt1InternalImpl<
         (Perm1 {}, Matrix1 { x: R::one() })
     }
 
-    /// `B⁻¹`: `1 / b_kk` on the 1x1 blocks, upstream's scaled inverse `[[d11, -s], [-s, d22]] /
-    /// e`
-    /// on the 2x2 ones (`d = |b|`, `s = sign(b)`, `e = d (d11 d22 - 1)`: no product of two entries
-    /// is ever formed). Correctly rounded quotients.
-    fn d_inv(self: Lblt1<T>) -> Matrix1<T> {
+    /// `B⁻¹ = G⁻¹ adj(B)` as the pair `(adj(B), G)`: the adjugate of each block (`1` for a
+    /// 1x1 block, `[[c, -b], [-b, a]]` for a 2x2 one) and the diagonal `G` of the divisors (`b_kk`,
+    /// or the block determinant `a c - b²`, one fused floor): upstream's `(b_k d22 - b_k1 d21) /
+    /// det`
+    /// with an exact numerator. Moves and one fused sum per 2x2 block.
+    fn d_parts(self: Lblt1<T>) -> (Matrix1<T>, Matrix1<T>) {
         let st0 = true;
         let mut e00 = R::zero();
+        let mut g0 = self.matrix.x;
         if st0 {
-            e00 = R::recip(self.matrix.x);
+            e00 = R::one();
         }
-        Matrix1 { x: e00 }
+        (Matrix1 { x: e00 }, Matrix1 { x: g0 })
     }
 }
 

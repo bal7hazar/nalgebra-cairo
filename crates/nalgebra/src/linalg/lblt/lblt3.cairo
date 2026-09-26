@@ -60,13 +60,16 @@ pub impl Lblt3Impl<
     /// one floor of the exact product of `alpha colmax` and the correctly rounded quotient), so a
     /// tie at the last bit may choose differently from upstream's `f64`.
     ///
-    /// Updates: a 1x1 block divides its column (correctly rounded quotients, one prepared divisor;
-    /// upstream multiplies by a rounded `1 / a_kk`) and updates the trailing entries with ONE
-    /// `Real::mul_add` each; a 2x2 block uses upstream's scaled inverse (`d = |b|`, `d11`, `d22`
-    /// correctly rounded, `scale = 1 / (d (d11 d22 - 1))`), its two coefficients per row are one
-    /// floor each of an exact `(x d11 ∓ y) scale`, and each trailing entry is one fused sum of
-    /// two products. Panics on overflow (and divides by zero only on a zero pivot that rounding
-    /// made exactly zero).
+    /// Updates (steps criterion, oracle tolerance first): upstream multiplies rounded ratios
+    /// (`a_ik / a_kk`, the scaled 2x2 inverse) by the entries, harmless in `f64` but an absolute
+    /// error of `|a_jk| / 2` ulp in Q32.32 (measured: 1 206 ulp on a `medium` 4x4). Here every
+    /// updated entry is ONE exact numerator over a pivot, correctly rounded (one prepared divisor
+    /// per pivot): a 1x1 block stores `a_ik / a_kk` and updates `(a_ij a_kk - a_ik a_jk) / a_kk`;
+    /// a 2x2 block `[[a, b], [b, c]]` stores `(c x - b y) / det`, `(a y - b x) / det` (`det = a c -
+    /// b²`) and forms the Schur complement by two elimination steps (pivot `b`, then `-det / b`),
+    /// the same value as upstream's `a_ij - x_i w1_j - y_i w2_j`. Panics on overflow (the exact
+    /// numerators are products of two entries: entries up to about 3·10⁴) and divides by zero
+    /// only on a pivot that rounding made exactly zero.
     fn new(matrix: Matrix3<T>) -> Lblt3<T> {
         revoke_ap_tracking();
         let alpha = R::from_ratio(2750446389, 0x100000000);
@@ -126,30 +129,18 @@ pub impl Lblt3Impl<
                     a10 = a20;
                     a20 = t;
                 }
-                let sneg = a10 < R::zero();
-                let d = R::abs(a10);
-                let d11 = R::div(a11, d);
-                let d22 = R::div(a00, d);
-                let scale = R::recip(d * R::mul_add(d11, d22, -R::one()));
-                let (tx, ty) = if sneg {
-                    (-a20, -a21)
-                } else {
-                    (a20, a21)
-                };
-                let w1_2 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a20, d11), ty), scale,
+                let det = R::diff_prod(a00, a11, a10, a10);
+                let w1_2 = R::div(R::diff_prod(a20, a11, a21, a10), det);
+                let w2_2 = R::div(R::diff_prod(a21, a00, a20, a10), det);
+                let (p2, g2, h2, t22) = R::div4(
+                    R::diff_prod(a10, a10, a00, a11),
+                    R::diff_prod(a10, a20, a00, a21),
+                    R::diff_prod(a10, a21, a11, a20),
+                    R::diff_prod(a10, a22, a20, a21),
+                    a10,
                 );
-                let w2_2 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a21, d22), tx), scale,
-                );
-                a22 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a22), a20, w1_2),
-                            a21,
-                            w2_2,
-                        ),
-                    );
+                let s22 = R::div(R::diff_prod(t22, p2, h2, g2), p2);
+                a22 = s22;
                 a20 = w1_2;
                 a21 = w2_2;
                 pi0 = piv;
@@ -173,10 +164,17 @@ pub impl Lblt3Impl<
                     a00 = a22;
                     a22 = t;
                 }
-                let (l1, l2) = (R::div(a10, a00), R::div(a20, a00));
-                a11 = R::mul_add(-l1, a10, a11);
-                a21 = R::mul_add(-l2, a10, a21);
-                a22 = R::mul_add(-l2, a20, a22);
+                let (l1, l2, s11, s21, s22) = R::div5(
+                    a10,
+                    a20,
+                    R::diff_prod(a11, a00, a10, a10),
+                    R::diff_prod(a21, a00, a20, a10),
+                    R::diff_prod(a22, a00, a20, a20),
+                    a00,
+                );
+                a11 = s11;
+                a21 = s21;
+                a22 = s22;
                 a10 = l1;
                 a20 = l2;
                 pi0 = piv;
@@ -223,7 +221,8 @@ pub impl Lblt3Impl<
                         a22 = t;
                     }
                     let l2 = R::div(a21, a11);
-                    a22 = R::mul_add(-l2, a21, a22);
+                    let s22 = R::div(R::diff_prod(a22, a11, a21, a21), a11);
+                    a22 = s22;
                     a21 = l2;
                     pi1 = piv;
                     ps1 = 1;
@@ -303,10 +302,12 @@ pub impl Lblt3Impl<
     /// Overwrites `b` (any shape with 3 rows) with the solution of `A x = b` and returns `true`,
     /// or returns `false` (and leaves `b` unchanged) when a column was exactly zero
     /// (`zero_pivot`). `x = Pᵀ L⁻ᵀ B⁻¹ L⁻¹ P b`: permutation (moves), unit lower solve,
-    /// `B⁻¹ b` as one fused sum per entry (`B⁻¹` from the 1x1 reciprocals and upstream's
-    /// scaled 2x2 inverses), the unit upper solve as a unit lower one on the reversed order
-    /// (moves), the inverse permutation. Upstream interleaves the same steps (`LBLT::solve_mut`);
-    /// the rounding differs (fused sums here). Panics on overflow.
+    /// `B⁻¹ y`
+    /// as upstream's per-block formula (`y_k / b_kk`, or `(c y_k - b y_k1) / det` and `(a y_k1 - b
+    /// y_k) / det`: one exact numerator and one correctly rounded quotient per entry), the unit
+    /// upper solve as a unit lower one on the reversed order (moves), the inverse permutation.
+    /// Upstream interleaves the same steps (`LBLT::solve_mut`); the sums are fused here. Panics on
+    /// overflow.
     fn solve_mut<B, impl P: PermuteRows<Perm3, B>, impl K: SolveKernel<Matrix3<T>, B>, +Drop<B>>(
         self: Lblt3<T>, ref b: B,
     ) -> bool {
@@ -317,7 +318,8 @@ pub impl Lblt3Impl<
         let j = Perm3 { p1: 3, p2: 2 };
         P::permute_rows(p, ref b);
         b = K::lower_unit(l, b);
-        b = K::tr_mul_rhs(Lblt3InternalTrait::d_inv(self), b);
+        let (adj, g) = Lblt3InternalTrait::d_parts(self);
+        b = K::upper(g, K::tr_mul_rhs(adj, b));
         P::permute_rows(j, ref b);
         b =
             K::lower_unit(
@@ -456,11 +458,12 @@ pub(crate) impl Lblt3InternalImpl<
         )
     }
 
-    /// `B⁻¹`: `1 / b_kk` on the 1x1 blocks, upstream's scaled inverse `[[d11, -s], [-s, d22]] /
-    /// e`
-    /// on the 2x2 ones (`d = |b|`, `s = sign(b)`, `e = d (d11 d22 - 1)`: no product of two entries
-    /// is ever formed). Correctly rounded quotients.
-    fn d_inv(self: Lblt3<T>) -> Matrix3<T> {
+    /// `B⁻¹ = G⁻¹ adj(B)` as the pair `(adj(B), G)`: the adjugate of each block (`1` for a
+    /// 1x1 block, `[[c, -b], [-b, a]]` for a 2x2 one) and the diagonal `G` of the divisors (`b_kk`,
+    /// or the block determinant `a c - b²`, one fused floor): upstream's `(b_k d22 - b_k1 d21) /
+    /// det`
+    /// with an exact numerator. Moves and one fused sum per 2x2 block.
+    fn d_parts(self: Lblt3<T>) -> (Matrix3<T>, Matrix3<T>) {
         let (_, s0) = self.p1;
         let two0 = s0 == 2;
         let (_, s1) = self.p2;
@@ -474,58 +477,64 @@ pub(crate) impl Lblt3InternalImpl<
         let mut e11 = R::zero();
         let mut e21 = R::zero();
         let mut e22 = R::zero();
+        let mut g0 = self.matrix.m11;
+        let mut g1 = self.matrix.m22;
+        let mut g2 = self.matrix.m33;
         if st0 {
             if two0 {
-                let d = R::abs(self.matrix.m21);
-                let d11 = R::div(self.matrix.m22, d);
-                let d22 = R::div(self.matrix.m11, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m21 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e00 = x0;
-                e11 = x1;
-                e10 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m11, self.matrix.m22, self.matrix.m21, self.matrix.m21,
+                );
+                e00 = self.matrix.m22;
+                e11 = self.matrix.m11;
+                e10 = -self.matrix.m21;
+                g0 = det;
+                g1 = det;
             } else {
-                e00 = R::recip(self.matrix.m11);
+                e00 = R::one();
             }
         }
         if st1 {
             if two1 {
-                let d = R::abs(self.matrix.m32);
-                let d11 = R::div(self.matrix.m33, d);
-                let d22 = R::div(self.matrix.m22, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m32 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e11 = x0;
-                e22 = x1;
-                e21 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m22, self.matrix.m33, self.matrix.m32, self.matrix.m32,
+                );
+                e11 = self.matrix.m33;
+                e22 = self.matrix.m22;
+                e21 = -self.matrix.m32;
+                g1 = det;
+                g2 = det;
             } else {
-                e11 = R::recip(self.matrix.m22);
+                e11 = R::one();
             }
         }
         if st2 {
-            e22 = R::recip(self.matrix.m33);
+            e22 = R::one();
         }
-        Matrix3 {
-            m11: e00,
-            m21: e10,
-            m31: e20,
-            m12: e10,
-            m22: e11,
-            m32: e21,
-            m13: e20,
-            m23: e21,
-            m33: e22,
-        }
+        (
+            Matrix3 {
+                m11: e00,
+                m21: e10,
+                m31: e20,
+                m12: e10,
+                m22: e11,
+                m32: e21,
+                m13: e20,
+                m23: e21,
+                m33: e22,
+            },
+            Matrix3 {
+                m11: g0,
+                m21: R::zero(),
+                m31: R::zero(),
+                m12: R::zero(),
+                m22: g1,
+                m32: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: g2,
+            },
+        )
     }
 }
 

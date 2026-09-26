@@ -58,13 +58,16 @@ pub impl Lblt2Impl<
     /// one floor of the exact product of `alpha colmax` and the correctly rounded quotient), so a
     /// tie at the last bit may choose differently from upstream's `f64`.
     ///
-    /// Updates: a 1x1 block divides its column (correctly rounded quotients, one prepared divisor;
-    /// upstream multiplies by a rounded `1 / a_kk`) and updates the trailing entries with ONE
-    /// `Real::mul_add` each; a 2x2 block uses upstream's scaled inverse (`d = |b|`, `d11`, `d22`
-    /// correctly rounded, `scale = 1 / (d (d11 d22 - 1))`), its two coefficients per row are one
-    /// floor each of an exact `(x d11 ∓ y) scale`, and each trailing entry is one fused sum of
-    /// two products. Panics on overflow (and divides by zero only on a zero pivot that rounding
-    /// made exactly zero).
+    /// Updates (steps criterion, oracle tolerance first): upstream multiplies rounded ratios
+    /// (`a_ik / a_kk`, the scaled 2x2 inverse) by the entries, harmless in `f64` but an absolute
+    /// error of `|a_jk| / 2` ulp in Q32.32 (measured: 1 206 ulp on a `medium` 4x4). Here every
+    /// updated entry is ONE exact numerator over a pivot, correctly rounded (one prepared divisor
+    /// per pivot): a 1x1 block stores `a_ik / a_kk` and updates `(a_ij a_kk - a_ik a_jk) / a_kk`;
+    /// a 2x2 block `[[a, b], [b, c]]` stores `(c x - b y) / det`, `(a y - b x) / det` (`det = a c -
+    /// b²`) and forms the Schur complement by two elimination steps (pivot `b`, then `-det / b`),
+    /// the same value as upstream's `a_ij - x_i w1_j - y_i w2_j`. Panics on overflow (the exact
+    /// numerators are products of two entries: entries up to about 3·10⁴) and divides by zero
+    /// only on a pivot that rounding made exactly zero.
     fn new(matrix: Matrix2<T>) -> Lblt2<T> {
         revoke_ap_tracking();
         let alpha = R::from_ratio(2750446389, 0x100000000);
@@ -114,7 +117,8 @@ pub impl Lblt2Impl<
                     a11 = t;
                 }
                 let l1 = R::div(a10, a00);
-                a11 = R::mul_add(-l1, a10, a11);
+                let s11 = R::div(R::diff_prod(a11, a00, a10, a10), a00);
+                a11 = s11;
                 a10 = l1;
                 pi0 = piv;
                 ps0 = 1;
@@ -164,10 +168,12 @@ pub impl Lblt2Impl<
     /// Overwrites `b` (any shape with 2 rows) with the solution of `A x = b` and returns `true`,
     /// or returns `false` (and leaves `b` unchanged) when a column was exactly zero
     /// (`zero_pivot`). `x = Pᵀ L⁻ᵀ B⁻¹ L⁻¹ P b`: permutation (moves), unit lower solve,
-    /// `B⁻¹ b` as one fused sum per entry (`B⁻¹` from the 1x1 reciprocals and upstream's
-    /// scaled 2x2 inverses), the unit upper solve as a unit lower one on the reversed order
-    /// (moves), the inverse permutation. Upstream interleaves the same steps (`LBLT::solve_mut`);
-    /// the rounding differs (fused sums here). Panics on overflow.
+    /// `B⁻¹ y`
+    /// as upstream's per-block formula (`y_k / b_kk`, or `(c y_k - b y_k1) / det` and `(a y_k1 - b
+    /// y_k) / det`: one exact numerator and one correctly rounded quotient per entry), the unit
+    /// upper solve as a unit lower one on the reversed order (moves), the inverse permutation.
+    /// Upstream interleaves the same steps (`LBLT::solve_mut`); the sums are fused here. Panics on
+    /// overflow.
     fn solve_mut<B, impl P: PermuteRows<Perm2, B>, impl K: SolveKernel<Matrix2<T>, B>, +Drop<B>>(
         self: Lblt2<T>, ref b: B,
     ) -> bool {
@@ -178,7 +184,8 @@ pub impl Lblt2Impl<
         let j = Perm2 { p1: 2 };
         P::permute_rows(p, ref b);
         b = K::lower_unit(l, b);
-        b = K::tr_mul_rhs(Lblt2InternalTrait::d_inv(self), b);
+        let (adj, g) = Lblt2InternalTrait::d_parts(self);
+        b = K::upper(g, K::tr_mul_rhs(adj, b));
         P::permute_rows(j, ref b);
         b = K::lower_unit(Matrix2 { m11: R::one(), m21: l.m21, m12: R::zero(), m22: R::one() }, b);
         P::permute_rows(j, ref b);
@@ -256,11 +263,12 @@ pub(crate) impl Lblt2InternalImpl<
         (Perm2 { p1: q1 }, Matrix2 { m11: R::one(), m21: l10, m12: R::zero(), m22: R::one() })
     }
 
-    /// `B⁻¹`: `1 / b_kk` on the 1x1 blocks, upstream's scaled inverse `[[d11, -s], [-s, d22]] /
-    /// e`
-    /// on the 2x2 ones (`d = |b|`, `s = sign(b)`, `e = d (d11 d22 - 1)`: no product of two entries
-    /// is ever formed). Correctly rounded quotients.
-    fn d_inv(self: Lblt2<T>) -> Matrix2<T> {
+    /// `B⁻¹ = G⁻¹ adj(B)` as the pair `(adj(B), G)`: the adjugate of each block (`1` for a
+    /// 1x1 block, `[[c, -b], [-b, a]]` for a 2x2 one) and the diagonal `G` of the divisors (`b_kk`,
+    /// or the block determinant `a c - b²`, one fused floor): upstream's `(b_k d22 - b_k1 d21) /
+    /// det`
+    /// with an exact numerator. Moves and one fused sum per 2x2 block.
+    fn d_parts(self: Lblt2<T>) -> (Matrix2<T>, Matrix2<T>) {
         let (_, s0) = self.p1;
         let two0 = s0 == 2;
         let st0 = true;
@@ -268,29 +276,29 @@ pub(crate) impl Lblt2InternalImpl<
         let mut e00 = R::zero();
         let mut e10 = R::zero();
         let mut e11 = R::zero();
+        let mut g0 = self.matrix.m11;
+        let mut g1 = self.matrix.m22;
         if st0 {
             if two0 {
-                let d = R::abs(self.matrix.m21);
-                let d11 = R::div(self.matrix.m22, d);
-                let d22 = R::div(self.matrix.m11, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m21 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e00 = x0;
-                e11 = x1;
-                e10 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m11, self.matrix.m22, self.matrix.m21, self.matrix.m21,
+                );
+                e00 = self.matrix.m22;
+                e11 = self.matrix.m11;
+                e10 = -self.matrix.m21;
+                g0 = det;
+                g1 = det;
             } else {
-                e00 = R::recip(self.matrix.m11);
+                e00 = R::one();
             }
         }
         if st1 {
-            e11 = R::recip(self.matrix.m22);
+            e11 = R::one();
         }
-        Matrix2 { m11: e00, m21: e10, m12: e10, m22: e11 }
+        (
+            Matrix2 { m11: e00, m21: e10, m12: e10, m22: e11 },
+            Matrix2 { m11: g0, m21: R::zero(), m12: R::zero(), m22: g1 },
+        )
     }
 }
 

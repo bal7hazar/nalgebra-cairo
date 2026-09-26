@@ -53,6 +53,22 @@ def let_div(names: list[str], xs: list[str], d: str) -> str:
     return f"let ({', '.join(names)}) = {call};"
 
 
+DIV_SIZES = (16, 9, 6, 5, 4, 3, 1)
+
+
+def div_all(names: list[str], nums: list[str], d: str) -> list[str]:
+    """`let` statements dividing each numerator by `d`: `Real::divN` chunks (one prepared divisor
+    each, bit-identical to `Real::div`), largest first; two leftovers are two `div`."""
+    st = []
+    i = 0
+    while i < len(nums):
+        left = len(nums) - i
+        k = next(s for s in DIV_SIZES if s <= left)
+        st.append(let_div(names[i:i + k], nums[i:i + k], d))
+        i += k
+    return st
+
+
 def swaps(pairs) -> str:
     return " ".join(f"let t = {x}; {x} = {y}; {y} = t;" for x, y in pairs)
 
@@ -104,6 +120,7 @@ pub struct Perm1 {}
 #[cfg(test)]
 impl Perm1PartialEq of PartialEq<Perm1> {
     fn eq(lhs: @Perm1, rhs: @Perm1) -> bool {
+        let _ = (lhs, rhs);
         true
     }
 }
@@ -891,12 +908,16 @@ def lblt_step(n: int, k: int) -> str:
             }}
         }}"""
     one_ic = chain_u8("piv", range(k + 1, n), lambda p: interchange(n, k, k, p, False))
-    upd1 = []
-    ls = [f"l{i}" for i in range(k + 1, n)]
-    upd1.append(let_div(ls, [v(i, k) for i in range(k + 1, n)], v(k, k)))
+    # the multipliers `a_ik / a_kk` (stored) and the trailing entries `(a_ij a_kk - a_ik a_jk) /
+    # a_kk`: one exact numerator and one correctly rounded quotient each, one prepared divisor
+    names = [f"l{i}" for i in range(k + 1, n)]
+    nums = [v(i, k) for i in range(k + 1, n)]
     for j in range(k + 1, n):
         for i in range(j, n):
-            upd1.append(f"{v(i, j)} = R::mul_add(-l{i}, {v(j, k)}, {v(i, j)});")
+            names.append(f"s{i}{j}")
+            nums.append(f"R::diff_prod({v(i, j)}, {v(k, k)}, {v(i, k)}, {v(j, k)})")
+    upd1 = div_all(names, nums, v(k, k))
+    upd1 += [f"{v(i, j)} = s{i}{j};" for j in range(k + 1, n) for i in range(j, n)]
     upd1 += [f"{v(i, k)} = l{i};" for i in range(k + 1, n)]
     one = f"""{one_ic}
             {chr(10).join(upd1)}
@@ -905,20 +926,33 @@ def lblt_step(n: int, k: int) -> str:
         two_ic = chain_u8("piv", range(k + 2, n), lambda p: interchange(n, k, k + 1, p, True))
         upd2 = []
         if k + 2 < n:
-            upd2 += [f"let sneg = {v(k + 1, k)} < R::zero();",
-                     f"let d = R::abs({v(k + 1, k)});",
-                     f"let d11 = R::div({v(k + 1, k + 1)}, d);",
-                     f"let d22 = R::div({v(k, k)}, d);",
-                     "let scale = R::recip(d * R::mul_add(d11, d22, -R::one()));"]
-            for j in range(k + 2, n):
+            a, bb, c = v(k, k), v(k + 1, k), v(k + 1, k + 1)
+            js = range(k + 2, n)
+            # the coefficients `[x_j, y_j] B⁻¹` from exact numerators over `det = a c - b²`
+            upd2.append(f"let det = R::diff_prod({a}, {c}, {bb}, {bb});")
+            names, nums = [], []
+            for j in js:
                 x, y = v(j, k), v(j, k + 1)
-                upd2.append(f"let (tx, ty) = if sneg {{ (-{x}, -{y}) }} else {{ ({x}, {y}) }};")
-                upd2.append(f"let w1_{j} = R::wide_mul_scalar(R::wide_sub(R::wide_add_prod(R::wide_zero(), {x}, d11), ty), scale);")
-                upd2.append(f"let w2_{j} = R::wide_mul_scalar(R::wide_sub(R::wide_add_prod(R::wide_zero(), {y}, d22), tx), scale);")
-            for j in range(k + 2, n):
+                names += [f"w1_{j}", f"w2_{j}"]
+                nums += [f"R::diff_prod({x}, {c}, {y}, {bb})", f"R::diff_prod({y}, {a}, {x}, {bb})"]
+            upd2 += div_all(names, nums, "det")
+            # the Schur complement by two elimination steps (pivot b, then p2 = -det / b): every
+            # entry an exact numerator over a pivot, so no rounded ratio multiplies a large entry
+            names, nums = ["p2"], [f"R::diff_prod({bb}, {bb}, {a}, {c})"]
+            for j in js:
+                names += [f"g{j}", f"h{j}"]
+                nums += [f"R::diff_prod({bb}, {v(j, k)}, {a}, {v(j, k + 1)})",
+                         f"R::diff_prod({bb}, {v(j, k + 1)}, {c}, {v(j, k)})"]
+            for j in js:
                 for i in range(j, n):
-                    upd2.append(f"{v(i, j)} = {fused([(1, v(i, j), None), (-1, v(i, k), f'w1_{j}'), (-1, v(i, k + 1), f'w2_{j}')])};")
-            for j in range(k + 2, n):
+                    names.append(f"t{i}{j}")
+                    nums.append(f"R::diff_prod({bb}, {v(i, j)}, {v(i, k)}, {v(j, k + 1)})")
+            upd2 += div_all(names, nums, bb)
+            names = [f"s{i}{j}" for j in js for i in range(j, n)]
+            nums = [f"R::diff_prod(t{i}{j}, p2, h{i}, g{j})" for j in js for i in range(j, n)]
+            upd2 += div_all(names, nums, "p2")
+            upd2 += [f"{v(i, j)} = s{i}{j};" for j in js for i in range(j, n)]
+            for j in js:
                 upd2.append(f"{v(j, k)} = w1_{j}; {v(j, k + 1)} = w2_{j};")
         twob = f"""{two_ic}
             {chr(10).join(upd2)}
@@ -1018,23 +1052,23 @@ def render_lblt(n: int) -> str:
     l_lit = struct_lit(n, n, lambda i, j: f"l{i}{j}" if i > j else (
         "R::one()" if i == j else "R::zero()"))
     perm = perm_lit(n, lambda k: f"q{k + 1}")
-    # D^-1 (block diagonal)
+    # B = adj(B) / diag(det): the adjugate of each block and the divisor of each row
     dinv = [f"let mut e{i}{j} = R::zero();" for j in range(n) for i in range(j, n)]
+    dinv += [f"let mut g{k} = self.matrix.{fld(n, n, k, k)};" for k in range(n)]
     for k in range(n):
-        one = f"e{k}{k} = R::recip(self.matrix.{fld(n, n, k, k)});"
+        one = f"e{k}{k} = R::one();"
         if k < n - 1:
             a, b, cc = (f"self.matrix.{fld(n, n, k, k)}", f"self.matrix.{fld(n, n, k + 1, k)}",
                         f"self.matrix.{fld(n, n, k + 1, k + 1)}")
-            two = (f"let d = R::abs({b}); let d11 = R::div({cc}, d); let d22 = R::div({a}, d); "
-                   f"let e = d * R::mul_add(d11, d22, -R::one()); "
-                   f"let ms = if {b} < R::zero() {{ R::one() }} else {{ -R::one() }}; "
-                   f"let (x0, x1, x2) = R::div3(d11, d22, ms, e); "
-                   f"e{k}{k} = x0; e{k + 1}{k + 1} = x1; e{k + 1}{k} = x2;")
+            two = (f"let det = R::diff_prod({a}, {cc}, {b}, {b}); "
+                   f"e{k}{k} = {cc}; e{k + 1}{k + 1} = {a}; e{k + 1}{k} = -{b}; "
+                   f"g{k} = det; g{k + 1} = det;")
             fac = f"if two{k} {{ {two} }} else {{ {one} }}"
         else:
             fac = one
         dinv.append(f"if st{k} {{ {fac} }}")
     e_lit = struct_lit(n, n, lambda i, j: f"e{max(i, j)}{min(i, j)}")
+    g_lit = struct_lit(n, n, lambda i, j: f"g{i}" if i == j else "R::zero()")
     jlj = struct_lit(n, n, lambda i, j: f"l.{fld(n, n, n - 1 - j, n - 1 - i)}" if i > j else (
         "R::one()" if i == j else "R::zero()"))
     jperm = perm_lit(n, lambda k: str(n - k) if k < n // 2 else None)
@@ -1072,13 +1106,16 @@ pub struct {B}<T> {{
     /// one floor of the exact product of `alpha colmax` and the correctly rounded quotient), so a
     /// tie at the last bit may choose differently from upstream's `f64`.
     ///
-    /// Updates: a 1x1 block divides its column (correctly rounded quotients, one prepared divisor;
-    /// upstream multiplies by a rounded `1 / a_kk`) and updates the trailing entries with ONE
-    /// `Real::mul_add` each; a 2x2 block uses upstream's scaled inverse (`d = |b|`, `d11`, `d22`
-    /// correctly rounded, `scale = 1 / (d (d11 d22 - 1))`), its two coefficients per row are one
-    /// floor each of an exact `(x d11 ∓ y) scale`, and each trailing entry is one fused sum of
-    /// two products. Panics on overflow (and divides by zero only on a zero pivot that rounding
-    /// made exactly zero).
+    /// Updates (steps criterion, oracle tolerance first): upstream multiplies rounded ratios
+    /// (`a_ik / a_kk`, the scaled 2x2 inverse) by the entries, harmless in `f64` but an absolute
+    /// error of `|a_jk| / 2` ulp in Q32.32 (measured: 1 206 ulp on a `medium` 4x4). Here every
+    /// updated entry is ONE exact numerator over a pivot, correctly rounded (one prepared divisor
+    /// per pivot): a 1x1 block stores `a_ik / a_kk` and updates `(a_ij a_kk - a_ik a_jk) / a_kk`;
+    /// a 2x2 block `[[a, b], [b, c]]` stores `(c x - b y) / det`, `(a y - b x) / det` (`det = a c -
+    /// b²`) and forms the Schur complement by two elimination steps (pivot `b`, then `-det / b`),
+    /// the same value as upstream's `a_ij - x_i w1_j - y_i w2_j`. Panics on overflow (the exact
+    /// numerators are products of two entries: entries up to about 3·10⁴) and divides by zero only
+    /// on a pivot that rounding made exactly zero.
     fn new(matrix: {M}<T>) -> {B}<T> {{
         revoke_ap_tracking();
         let alpha = R::from_ratio({ALPHA_RAW}, 0x100000000);
@@ -1111,11 +1148,12 @@ pub struct {B}<T> {{
 
     /// Overwrites `b` (any shape with {n} rows) with the solution of `A x = b` and returns `true`,
     /// or returns `false` (and leaves `b` unchanged) when a column was exactly zero
-    /// (`zero_pivot`). `x = Pᵀ L⁻ᵀ B⁻¹ L⁻¹ P b`: permutation (moves), unit lower solve, `B⁻¹ b` as
-    /// one fused sum per entry (`B⁻¹` from the 1x1 reciprocals and upstream's scaled 2x2
-    /// inverses), the unit upper solve as a unit lower one on the reversed order (moves), the
-    /// inverse permutation. Upstream interleaves the same steps (`LBLT::solve_mut`); the rounding
-    /// differs (fused sums here). Panics on overflow.
+    /// (`zero_pivot`). `x = Pᵀ L⁻ᵀ B⁻¹ L⁻¹ P b`: permutation (moves), unit lower solve, `B⁻¹ y`
+    /// as upstream's per-block formula (`y_k / b_kk`, or `(c y_k - b y_k1) / det` and `(a y_k1 - b
+    /// y_k) / det`: one exact numerator and one correctly rounded quotient per entry), the unit
+    /// upper solve as a unit lower one on the reversed order (moves), the inverse permutation.
+    /// Upstream interleaves the same steps (`LBLT::solve_mut`); the sums are fused here. Panics on
+    /// overflow.
     fn solve_mut<B, impl P: PermuteRows<Perm{n}, B>, impl K: SolveKernel<{M}<T>, B>, +Drop<B>>(
         self: {B}<T>, ref b: B,
     ) -> bool {{
@@ -1126,7 +1164,8 @@ pub struct {B}<T> {{
         let j = {jperm};
         P::permute_rows(p, ref b);
         b = K::lower_unit(l, b);
-        b = K::tr_mul_rhs({B}InternalTrait::d_inv(self), b);
+        let (adj, g) = {B}InternalTrait::d_parts(self);
+        b = K::upper(g, K::tr_mul_rhs(adj, b));
         P::permute_rows(j, ref b);
         b = K::lower_unit({jlj}, b);
         P::permute_rows(j, ref b);
@@ -1172,13 +1211,14 @@ pub(crate) impl {B}InternalImpl<
         ({perm}, {l_lit})
     }}
 
-    /// `B⁻¹`: `1 / b_kk` on the 1x1 blocks, upstream's scaled inverse `[[d11, -s], [-s, d22]] / e`
-    /// on the 2x2 ones (`d = |b|`, `s = sign(b)`, `e = d (d11 d22 - 1)`: no product of two entries
-    /// is ever formed). Correctly rounded quotients.
-    fn d_inv(self: {B}<T>) -> {M}<T> {{
+    /// `B⁻¹ = G⁻¹ adj(B)` as the pair `(adj(B), G)`: the adjugate of each block (`1` for a 1x1
+    /// block, `[[c, -b], [-b, a]]` for a 2x2 one) and the diagonal `G` of the divisors (`b_kk`, or
+    /// the block determinant `a c - b²`, one fused floor): upstream's `(b_k d22 - b_k1 d21) / det`
+    /// with an exact numerator. Moves and one fused sum per 2x2 block.
+    fn d_parts(self: {B}<T>) -> ({M}<T>, {M}<T>) {{
         {chr(10).join(lblt_starts(n, False, True))}
         {chr(10).join(dinv)}
-        {e_lit}
+        ({e_lit}, {g_lit})
     }}
 }}
 
@@ -1258,4 +1298,714 @@ def outputs() -> dict[str, str]:
             out[lin + f"col_piv_qr/col_piv_qr{shp(r, c)}.cairo"] = render_col_piv_qr(r, c)
     for n in DIMS:
         out[lin + f"lblt/lblt{n}.cairo"] = render_lblt(n)
+    out.update(test_packages())
     return out
+
+
+# --- test packages -----------------------------------------------------------------------------
+#
+# Measured bounds pinned by the tests (raw units; reconstruction per unit of `max |a_ij|`):
+# `(what, shape) -> bound`. A missing entry is 0 (maxima) — the first run prints the measurement.
+MEASURED: dict = {}
+
+ONE_RAW = 0x100000000
+
+
+def mb(what: str, r: int, c: int) -> int:
+    return MEASURED.get((what, r, c), 0)
+
+
+def idx_tuple(n: int) -> str:
+    items = [f"{i} * ONE" for i in range(n)]
+    return f"({items[0]},)" if n == 1 else f"({', '.join(items)})"
+
+
+def cmp(r: int, c: int, got: str, exp: str) -> str:
+    return " ".join(
+        f"ex = max(ex, excess(ulp_diff({got}.{fld(r, c, i, j)}, {exp}.{fld(r, c, i, j)}), "
+        f"oracle_tol(abs_raw({exp}.{fld(r, c, i, j)}), tol)));"
+        for i in range(r) for j in range(c))
+
+
+def diag_array(r: int, c: int, var: str) -> str:
+    m = min(r, c)
+    return "array![" + ", ".join(f"abs_raw({var}.{fld(r, c, i, i)})" for i in range(m)) + "]"
+
+
+def perm_eq_uses(ns) -> list[str]:
+    return [f"Perm{n}PartialEq" for n in sorted(set(ns))]
+
+
+RANK_LOOP = """        let k: u32 = (k / ONE).try_into().unwrap();
+        let mut i: u32 = 0;
+        let mut ds = d.span();
+        while let Some(x) = ds.pop_front() {
+            if i < k {
+                lo = min(lo, *x);
+            } else {
+                hi = max(hi, *x);
+            }
+            i += 1;
+        }"""
+
+
+def render_lu_tests(r: int, c: int) -> str:
+    F, M, m, s = fname(r, c), tname(r, c), min(r, c), shp(r, c)
+    rows = f"mat{r}x{c}"
+    b = {f"mat{r}x{c}", f"vec{r}", f"vec{c}", f"amax_{r}x{c}", f"max_ulp_{r}x{c}"}
+    uses_n = {"MatrixMul"}
+    parts = [f"""/// `full_piv_lu{s}` (oracle): the packed factors within the oracle tolerance, the row and
+/// column permutations EXACTLY upstream's (same pivots), `P A Q = L U` within the measured bound.
+#[test]
+fn test_oracle_full_piv_lu{s}() {{
+    let mut cases = oracle::full_piv_lu{s}_cases();
+    let (mut ex, mut rec) = (0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, elu, ep, eq, tol) = *case;
+        let a = black_box({rows}(a));
+        let f = a.full_piv_lu();
+        let (p, l, u, q) = f.unpack();
+        assert!(p == f.p() && q == f.q() && l == f.l() && u == f.u() && f.lu_internal() == f.lu);
+        let e = {rows}(elu);
+        {cmp(r, c, 'f.lu', 'e')}
+        let mut pv = vec{r}({idx_tuple(r)});
+        p.permute_rows(ref pv);
+        assert!(pv == vec{r}(ep), "row pivots");
+        let mut qv = vec{c}({idx_tuple(c)});
+        q.permute_rows(ref qv);
+        assert!(qv == vec{c}(eq), "column pivots");
+        let mut pa = a;
+        p.permute_rows(ref pa);
+        q.permute_columns(ref pa);
+        rec = max(rec, max_ulp_{r}x{c}(l.mul_mat(u), pa) / amax_{r}x{c}(a));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {mb('lu_rec', r, c)}, "measured {{}}", rec);
+}}
+"""]
+    if m >= 2:
+        parts.append(f"""/// `full_piv_lu{s}_rank` (oracle): on EXACTLY rank-deficient matrices of rank `k`, the first `k`
+/// pivots are the large ones and the others are rounding noise (rank-revealing), `P A Q = L U`.
+#[test]
+fn test_oracle_full_piv_lu{s}_rank() {{
+    let mut cases = oracle::full_piv_lu{s}_rank_cases();
+    let (mut lo, mut hi, mut rec) = (0xffffffffffffffff_u128, 0_u128, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, k, _) = *case;
+        let a = black_box({rows}(a));
+        let f = a.full_piv_lu();
+        let d = {diag_array(r, c, 'f.lu')};
+{RANK_LOOP}
+        let mut pa = a;
+        f.p.permute_rows(ref pa);
+        f.q.permute_columns(ref pa);
+        rec = max(rec, max_ulp_{r}x{c}(f.l().mul_mat(f.u()), pa));
+    }}
+    assert!(
+        hi <= {mb('lu_rank_hi', r, c)} && lo >= {MEASURED.get(('lu_rank_lo', r, c), 1 << 60)} && rec <= {mb('lu_rank_rec', r, c)},
+        "measured {{}} {{}} {{}}",
+        hi,
+        lo,
+        rec,
+    );
+}}
+""")
+    if r == c:
+        n = r
+        b |= {f"mat{n}x{n}"}
+        uses_n.add(f"{M}Trait")
+        xcmp = cmp(n, 1, "x", "e")
+        parts.append(f"""/// `full_piv_lu{s}_solve` (oracle), and `solve_mut` agrees (vector and matrix right-hand sides).
+#[test]
+fn test_oracle_full_piv_lu{s}_solve() {{
+    let mut cases = oracle::full_piv_lu{s}_solve_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let f = black_box(mat{n}x{n}(a)).full_piv_lu();
+        assert!(f.is_invertible());
+        let x = f.solve(vec{n}(b)).unwrap();
+        let e = vec{n}(e);
+        {xcmp}
+        let mut y = vec{n}(b);
+        assert!(f.solve_mut(ref y));
+        assert!(y == x);
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+/// `full_piv_lu{s}_solve_near_singular` (oracle, FLAGGED: loose tolerance).
+#[test]
+fn test_oracle_full_piv_lu{s}_solve_near_singular() {{
+    let mut cases = oracle::full_piv_lu{s}_solve_near_singular_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let x = black_box(mat{n}x{n}(a)).full_piv_lu().solve(vec{n}(b)).unwrap();
+        let e = vec{n}(e);
+        {xcmp}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+""" if n >= 2 else f"""/// `full_piv_lu{s}_solve` (oracle), and `solve_mut` agrees.
+#[test]
+fn test_oracle_full_piv_lu{s}_solve() {{
+    let mut cases = oracle::full_piv_lu{s}_solve_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let f = black_box(mat{n}x{n}(a)).full_piv_lu();
+        let x = f.solve(vec{n}(b)).unwrap();
+        let e = vec{n}(e);
+        {xcmp}
+        let mut y = vec{n}(b);
+        assert!(f.solve_mut(ref y));
+        assert!(y == x);
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+""")
+        parts.append(f"""/// `full_piv_lu{s}_inverse` (oracle); `solve_mut` on the identity is bit-identical (the static
+/// unit columns only drop exact zeros).
+#[test]
+fn test_oracle_full_piv_lu{s}_inverse() {{
+    let mut cases = oracle::full_piv_lu{s}_inverse_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let f = black_box(mat{n}x{n}(a)).full_piv_lu();
+        let x = f.try_inverse().unwrap();
+        let e = mat{n}x{n}(e);
+        {cmp(n, n, 'x', 'e')}
+        let mut m = {M}Trait::identity();
+        assert!(f.solve_mut(ref m));
+        assert!(m == x, "solve_mut(identity)");
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+/// `full_piv_lu{s}_determinant` (oracle).
+#[test]
+fn test_oracle_full_piv_lu{s}_determinant() {{
+    let mut cases = oracle::full_piv_lu{s}_determinant_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let d = black_box(mat{n}x{n}(a)).full_piv_lu().determinant();
+        ex = max(ex, excess(ulp_diff(d, fx(e)), oracle_tol(abs_raw(fx(e)), tol)));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+/// A singular matrix: not invertible, `solve` / `try_inverse` are `None`, `solve_mut` leaves its
+/// argument unchanged, the determinant is exactly zero.
+#[test]
+fn test_full_piv_lu{s}_singular() {{
+    let z = black_box(mat{n}x{n}({int_rows_z(n)}));
+    let f = z.full_piv_lu();
+    assert!(!f.is_invertible());
+    assert!(f.try_inverse().is_none());
+    assert!(f.solve(vec{n}({idx_tuple(n)})).is_none());
+    let mut b = vec{n}({idx_tuple(n)});
+    assert!(!f.solve_mut(ref b));
+    assert!(b == vec{n}({idx_tuple(n)}));
+    assert!(f.determinant() == fx(0));
+}}
+""")
+    parts.append(bench(
+        f"full_piv_lu{s}_new", "unrolled", f"let (a, _, _, _, _) = *oracle::full_piv_lu{s}_cases().at(3);",
+        f"let a = black_box({rows}(a));", "let f = a.full_piv_lu();",
+        f"f.lu.{fld(r, c, 0, 0)} == f.lu.{fld(r, c, 0, 0)}", "Full pivoting, unrolled."))
+    if r == c:
+        n = r
+        parts.append(bench(
+            f"full_piv_lu{s}_solve", "substitution",
+            f"let (a, b, _, _) = *oracle::full_piv_lu{s}_solve_cases().at(3);",
+            f"let f = black_box(mat{n}x{n}(a)).full_piv_lu(); let b = black_box(vec{n}(b));",
+            "let x = f.solve(b);", "x.is_some()",
+            "Permutations and triangular solves on a factorisation.", keep="(f, b)"))
+        parts.append(bench(
+            f"full_piv_lu{s}_try_inverse", "unit_columns",
+            f"let (a, _, _) = *oracle::full_piv_lu{s}_inverse_cases().at(3);",
+            f"let f = black_box(mat{n}x{n}(a)).full_piv_lu();", "let x = f.try_inverse();",
+            "x.is_some()", "Static unit columns, then the permutations (on a factorisation).",
+            keep="f"))
+    uses_n.add(M)
+    head = f"""{HEADER}//! `{F}` / `{M}FullPivLuTrait` through the public API (WP 8.5-P15): oracle vectors (`tools/oracle`
+//! suite `pivot`), the factor identities, the rank-revealing property, gas benchmarks.
+
+use core::cmp::{{{'max, min' if m >= 2 else 'max'}}};
+use nalgebra::linalg::{{{F}Trait, {M}FullPivLuTrait, PermuteColumns, PermuteRows}};
+use nalgebra::{{{', '.join(sorted(uses_n))}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{{', '.join(sorted(set(perm_eq_uses([r, c])) | {'abs_raw', 'excess', 'fx', 'oracle_tol', 'ulp_diff'}))}}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_pivot as oracle;
+
+const ONE: i64 = 0x100000000;
+"""
+    return head + "\n" + "\n".join(parts)
+
+
+def int_rows_z(n: int) -> str:
+    """A singular integer matrix: rows `i + j` (rank 2 from n = 3, zero for n = 1)."""
+    if n == 1:
+        return "[[0]]"
+    if n == 2:
+        return "[[ONE, 2 * ONE], [2 * ONE, 4 * ONE]]"
+    return "[" + ", ".join("[" + ", ".join(f"{i + j} * ONE" for j in range(n)) + "]"
+                           for i in range(n)) + "]"
+
+
+def bench(group: str, variant: str, destr: str, setup: str, body: str, check: str,
+          doc: str, keep: str = "a") -> str:
+    """`bench_<group>__baseline` and `bench_<group>__<variant>`: the same operand setup (`destr`
+    then `setup`, both through `black_box`), so the net gas of the variant is the difference."""
+    return f"""#[test]
+#[inline(never)]
+fn bench_{group}__baseline() {{
+    {destr}
+    {setup}
+    let e = black_box(true);
+    let _ = {keep};
+    assert!(e == e);
+}}
+
+/// {doc}
+#[test]
+#[inline(never)]
+fn bench_{group}__{variant}() {{
+    {destr}
+    {setup}
+    let e = black_box(true);
+    {body}
+    assert!(({check}) == e);
+}}
+"""
+
+
+def render_cpqr_tests(r: int, c: int) -> str:
+    C, M, m, s = cname(r, c), tname(r, c), min(r, c), shp(r, c)
+    rows = f"mat{r}x{c}"
+    b = {rows, f"mat{r}x{m}", f"mat{m}x{c}", f"vec{c}", f"amax_{r}x{c}", f"max_ulp_{r}x{c}",
+         f"orth_{r}x{m}"}
+    uses_n = {"MatrixMul", M}
+    # q_tr_mul(A P) against R (rows < m) and zero (rows >= m), per unit of max |a|
+    qt_terms = " ".join(
+        f"qt = max(qt, ulp_diff(t.{fld(r, c, i, j)}, "
+        f"{('rr.' + fld(m, c, i, j)) if i < m else 'fx(0)'}));"
+        for i in range(r) for j in range(c))
+    parts = [f"""/// `col_piv_qr{s}` (oracle): `q` and `r` entry by entry within the oracle tolerance (upstream's
+/// unpacked factors, `diag(r) >= 0`), the column permutation EXACTLY upstream's, `A P = Q R`, the
+/// orthonormality of `q` and `q_tr_mul` (`Qᵀ A P` = `R` above zeros) within the measured bounds.
+#[test]
+fn test_oracle_col_piv_qr{s}() {{
+    let mut cases = oracle::col_piv_qr{s}_cases();
+    let (mut ex, mut rec, mut orth, mut qt) = (0, 0, 0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, eq, er, ep, tol) = *case;
+        let a = black_box({rows}(a));
+        let f = a.col_piv_qr();
+        let (q, rr, p) = f.unpack();
+        assert!(q == f.q() && rr == f.r() && rr == f.unpack_r() && p == f.p());
+        assert!(f.col_piv_qr_internal() == f.col_piv_qr);
+        let (eq, er) = (mat{r}x{m}(eq), mat{m}x{c}(er));
+        {cmp(r, m, 'q', 'eq')}
+        {cmp(m, c, 'rr', 'er')}
+        let mut pv = vec{c}({idx_tuple(c)});
+        p.permute_rows(ref pv);
+        assert!(pv == vec{c}(ep), "column pivots");
+        let mut ap = a;
+        p.permute_columns(ref ap);
+        rec = max(rec, max_ulp_{r}x{c}(q.mul_mat(rr), ap) / amax_{r}x{c}(a));
+        orth = max(orth, orth_{r}x{m}(q));
+        let mut t = ap;
+        f.q_tr_mul(ref t);
+        {qt_terms}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(
+        rec <= {mb('qr_rec', r, c)} && orth <= {mb('qr_orth', r, c)} && qt <= {mb('qr_qt', r, c)},
+        "measured {{}} {{}} {{}}",
+        rec,
+        orth,
+        qt,
+    );
+}}
+"""]
+    if m >= 2:
+        parts.append(f"""/// `col_piv_qr{s}_rank` (oracle): on EXACTLY rank-deficient matrices of rank `k`, the first `k`
+/// diagonal entries of `R` are the large ones and the others are rounding noise, `A P = Q R`.
+#[test]
+fn test_oracle_col_piv_qr{s}_rank() {{
+    let mut cases = oracle::col_piv_qr{s}_rank_cases();
+    let (mut lo, mut hi, mut rec) = (0xffffffffffffffff_u128, 0_u128, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, k, _) = *case;
+        let a = black_box({rows}(a));
+        let f = a.col_piv_qr();
+        let rr = f.r();
+        let d = {diag_array(m, c, 'rr')};
+{RANK_LOOP}
+        let mut ap = a;
+        f.p.permute_columns(ref ap);
+        rec = max(rec, max_ulp_{r}x{c}(f.q().mul_mat(rr), ap));
+    }}
+    assert!(
+        hi <= {mb('qr_rank_hi', r, c)} && lo >= {MEASURED.get(('qr_rank_lo', r, c), 1 << 60)} && rec <= {mb('qr_rank_rec', r, c)},
+        "measured {{}} {{}} {{}}",
+        hi,
+        lo,
+        rec,
+    );
+}}
+""")
+    if r == c:
+        n = r
+        b |= {f"vec{n}", f"max_ulp_{n}x{n}"}
+        uses_n.add(f"{M}Trait")
+        xcmp = cmp(n, 1, "x", "e")
+        ns = f"""
+/// `col_piv_qr{s}_solve_near_singular` (oracle, FLAGGED: loose tolerance).
+#[test]
+fn test_oracle_col_piv_qr{s}_solve_near_singular() {{
+    let mut cases = oracle::col_piv_qr{s}_solve_near_singular_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let x = black_box(mat{n}x{n}(a)).col_piv_qr().solve(vec{n}(b)).unwrap();
+        let e = vec{n}(e);
+        {xcmp}
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+""" if n >= 2 else ""
+        parts.append(f"""/// `col_piv_qr{s}_solve` (oracle); `solve_mut` agrees; `try_inverse` is `solve_mut` on the
+/// identity, bit for bit, and `A A⁻¹ = I` within the measured bound.
+#[test]
+fn test_oracle_col_piv_qr{s}_solve() {{
+    let mut cases = oracle::col_piv_qr{s}_solve_cases();
+    let (mut ex, mut inv) = (0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let a = black_box(mat{n}x{n}(a));
+        let f = a.col_piv_qr();
+        assert!(f.is_invertible());
+        let x = f.solve(vec{n}(b)).unwrap();
+        let e = vec{n}(e);
+        {xcmp}
+        let mut y = vec{n}(b);
+        assert!(f.solve_mut(ref y));
+        assert!(y == x);
+        let ai = f.try_inverse().unwrap();
+        let mut m = {M}Trait::identity();
+        assert!(f.solve_mut(ref m));
+        assert!(m == ai, "solve_mut(identity)");
+        inv = max(inv, max_ulp_{n}x{n}(a.mul_mat(ai), {M}Trait::identity()));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(inv <= {mb('qr_inv', n, n)}, "measured {{}}", inv);
+}}
+{ns}
+/// `col_piv_qr{s}_determinant` (oracle).
+#[test]
+fn test_oracle_col_piv_qr{s}_determinant() {{
+    let mut cases = oracle::col_piv_qr{s}_determinant_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let d = black_box(mat{n}x{n}(a)).col_piv_qr().determinant();
+        ex = max(ex, excess(ulp_diff(d, fx(e)), oracle_tol(abs_raw(fx(e)), tol)));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+/// A singular matrix: not invertible, `solve` / `try_inverse` are `None`, `solve_mut` leaves its
+/// argument unchanged.
+#[test]
+fn test_col_piv_qr{s}_singular() {{
+    let z = black_box(mat{n}x{n}({int_rows_z(n)}));
+    let f = z.col_piv_qr();
+    assert!(!f.is_invertible());
+    assert!(f.try_inverse().is_none());
+    assert!(f.solve(vec{n}({idx_tuple(n)})).is_none());
+    let mut b = vec{n}({idx_tuple(n)});
+    assert!(!f.solve_mut(ref b));
+    assert!(b == vec{n}({idx_tuple(n)}));
+}}
+""")
+    parts.append(bench(
+        f"col_piv_qr{s}_new", "householder",
+        f"let (a, _, _, _, _) = *oracle::col_piv_qr{s}_cases().at(3);",
+        f"let a = black_box({rows}(a));", "let f = a.col_piv_qr();",
+        f"f.col_piv_qr.{fld(r, c, 0, 0)} == f.col_piv_qr.{fld(r, c, 0, 0)}",
+        "Column pivoting and Householder reflections, unrolled."))
+    parts.append(bench(
+        f"col_piv_qr{s}_q", "reflections",
+        f"let (a, _, _, _, _) = *oracle::col_piv_qr{s}_cases().at(3);",
+        f"let f = black_box(black_box({rows}(a)).col_piv_qr());", "let q = f.q();",
+        f"q.{fld(r, m, 0, 0)} == q.{fld(r, m, 0, 0)}",
+        "The reflections applied to the static identity columns.", keep="f"))
+    if r == c:
+        n = r
+        parts.append(bench(
+            f"col_piv_qr{s}_solve", "substitution",
+            f"let (a, b, _, _) = *oracle::col_piv_qr{s}_solve_cases().at(3);",
+            f"let f = black_box(black_box(mat{n}x{n}(a)).col_piv_qr()); let b = black_box(vec{n}(b));",
+            "let x = f.solve(b);", "x.is_some()",
+            "`Q` formed, `Qᵀ b`, back substitution, permutation (on a factorisation).",
+            keep="(f, b)"))
+    head = f"""{HEADER}//! `{C}` / `{M}ColPivQrTrait` through the public API (WP 8.5-P15): oracle vectors (`tools/oracle`
+//! suite `pivot`), the factor identities, the rank-revealing property, gas benchmarks.
+
+use core::cmp::{{{'max, min' if m >= 2 else 'max'}}};
+use nalgebra::linalg::{{{C}Trait, {M}ColPivQrTrait, PermuteColumns, PermuteRows}};
+use nalgebra::{{{', '.join(sorted(uses_n))}}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{{', '.join(sorted(set(perm_eq_uses([c])) | {'abs_raw', 'excess', 'fx', 'oracle_tol', 'ulp_diff'}))}}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_pivot as oracle;
+
+const ONE: i64 = 0x100000000;
+"""
+    return head + "\n" + "\n".join(parts)
+
+
+def exchange_pivots(n: int) -> list[tuple[int, int]]:
+    """Upstream's `exchange_matrix` test: the expected pivots of the exchange matrix."""
+    expected = []
+    m = (n + 2) // 4
+    for r in range(m):
+        pivot = n - 2 * r - 1
+        expected += [(pivot, 2), (pivot, 2)]
+    if n % 2:
+        expected.append((2 * m, 1))
+    for r in range(m, n // 2):
+        pivot = 2 * r + n % 2 + 1
+        expected += [(pivot, 2), (pivot, 2)]
+    return expected
+
+
+def render_lblt_tests(n: int) -> str:
+    B, M = f"Lblt{n}", tname(n, n)
+    b = {f"mat{n}x{n}", f"vec{n}", f"amax_{n}x{n}", f"max_ulp_{n}x{n}"}
+    xcmp = cmp(n, 1, "x", "e")
+    parts = []
+    for sfx in ([""] if n == 1 else ["", "_zero_diag"]):
+        parts.append(f"""/// `lblt{n}{sfx}` (oracle): `d()` and `l_permuted()` within the oracle tolerance (same pivots and
+/// blocks as upstream), `A = (Pᵀ L) B (Pᵀ L)ᵀ` within the measured bound.
+#[test]
+fn test_oracle_lblt{n}{sfx}() {{
+    let mut cases = oracle::lblt{n}{sfx}_cases();
+    let (mut ex, mut rec) = (0, 0);
+    while let Some(case) = cases.pop_front() {{
+        let (a, ed, el, tol) = *case;
+        let a = black_box(mat{n}x{n}(a));
+        let f = a.lblt();
+        let (d, l) = (f.d(), f.l_permuted());
+        let (ed, el) = (mat{n}x{n}(ed), mat{n}x{n}(el));
+        {cmp(n, n, 'd', 'ed')}
+        {cmp(n, n, 'l', 'el')}
+        assert!(f.zero_pivot.is_none());
+        rec = max(rec, max_ulp_{n}x{n}(l.mul_mat(d).mul_mat(l.transpose()), a) / amax_{n}x{n}(a));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+    assert!(rec <= {mb('lblt_rec' + sfx, n, n)}, "measured {{}}", rec);
+}}
+
+/// `lblt{n}{sfx}_solve` (oracle); `solve_mut` agrees.
+#[test]
+fn test_oracle_lblt{n}{sfx}_solve() {{
+    let mut cases = oracle::lblt{n}{sfx}_solve_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, b, e, tol) = *case;
+        let f = black_box(mat{n}x{n}(a)).lblt();
+        let x = f.solve(vec{n}(b)).unwrap();
+        let e = vec{n}(e);
+        {xcmp}
+        let mut y = vec{n}(b);
+        assert!(f.solve_mut(ref y));
+        assert!(y == x);
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+
+/// `lblt{n}{sfx}_determinant` (oracle).
+#[test]
+fn test_oracle_lblt{n}{sfx}_determinant() {{
+    let mut cases = oracle::lblt{n}{sfx}_determinant_cases();
+    let mut ex = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, e, tol) = *case;
+        let d = black_box(mat{n}x{n}(a)).lblt().determinant();
+        ex = max(ex, excess(ulp_diff(d, fx(e)), oracle_tol(abs_raw(fx(e)), tol)));
+    }}
+    assert!(ex == 0, "oracle tolerance exceeded by {{}}", ex);
+}}
+""")
+    zero = "[" + ", ".join("[" + ", ".join("0" for _ in range(n)) + "]" for _ in range(n)) + "]"
+    ident = "[" + ", ".join("[" + ", ".join("ONE" if i == j else "0" for j in range(n)) + "]"
+                            for i in range(n)) + "]"
+    exch = "[" + ", ".join("[" + ", ".join("ONE" if i + j + 1 == n else "0" for j in range(n)) + "]"
+                           for i in range(n)) + "]"
+    zp = " && ".join(f"f.p{k + 1} == ({k}, 1)" for k in range(n))
+    ep = " && ".join(f"f.p{k + 1} == ({p}, {s})" for k, (p, s) in enumerate(exchange_pivots(n)))
+    parts.append(f"""/// Upstream's `zero_matrix` test: identity `l_permuted`, zero `d`, `zero_pivot == Some(0)`, pivots
+/// `(k, 1)`, zero determinant, no solution.
+#[test]
+fn test_lblt{n}_zero_matrix() {{
+    let f = black_box(mat{n}x{n}({zero})).lblt();
+    assert!(f.l_permuted() == {M}Trait::identity());
+    assert!(f.d() == {M}Trait::zeros());
+    assert!(f.zero_pivot == Some(0));
+    assert!({zp});
+    assert!(f.determinant() == fx(0));
+    assert!(f.solve(vec{n}({idx_tuple(n)})).is_none());
+}}
+
+/// Upstream's `identity_matrix` test.
+#[test]
+fn test_lblt{n}_identity_matrix() {{
+    let f = black_box(mat{n}x{n}({ident})).lblt();
+    assert!(f.l_permuted() == {M}Trait::identity());
+    assert!(f.d() == {M}Trait::identity());
+    assert!(f.zero_pivot.is_none());
+    assert!({zp});
+    assert!(f.determinant() == fx(ONE));
+}}
+
+/// Upstream's `exchange_matrix` test: the expected pivot sequence, and an EXACT reconstruction.
+#[test]
+fn test_lblt{n}_exchange_matrix() {{
+    let a = black_box(mat{n}x{n}({exch}));
+    let f = a.lblt();
+    let l = f.l_permuted();
+    assert!(l.mul_mat(f.d()).mul_mat(l.transpose()) == a);
+    assert!({ep});
+}}
+""")
+    parts.append(bench(
+        f"lblt{n}_new", "unrolled", f"let (a, _, _, _) = *oracle::lblt{n}_cases().at(3);",
+        f"let a = black_box(mat{n}x{n}(a));", "let f = a.lblt();", "f.zero_pivot.is_none()",
+        "Bunch-Kaufman, unrolled positions."))
+    parts.append(bench(
+        f"lblt{n}_solve", "substitution", f"let (a, b, _, _) = *oracle::lblt{n}_solve_cases().at(3);",
+        f"let f = black_box(black_box(mat{n}x{n}(a)).lblt()); let b = black_box(vec{n}(b));",
+        "let x = f.solve(b);", "x.is_some()",
+        "Permutation, unit triangular solves, `B⁻¹` (on a factorisation).", keep="(f, b)"))
+    parts.append(bench(
+        f"lblt{n}_l_permuted", "moves", f"let (a, _, _, _) = *oracle::lblt{n}_cases().at(3);",
+        f"let f = black_box(black_box(mat{n}x{n}(a)).lblt());", "let l = f.l_permuted();",
+        "l == l", "Multipliers placed by the recorded interchanges.", keep="f"))
+    parts.append(bench(
+        f"lblt{n}_determinant", "product",
+        f"let (a, _, _) = *oracle::lblt{n}_determinant_cases().at(1);",
+        f"let f = black_box(black_box(mat{n}x{n}(a)).lblt());", "let d = f.determinant();",
+        "d == d", "Block determinants, one floor per product.", keep="f"))
+    head = f"""{HEADER}//! `{B}` / `{M}LbltTrait` through the public API (WP 8.5-P15): oracle vectors (`tools/oracle`
+//! suite `pivot`), upstream's unit tests, gas benchmarks.
+
+use core::cmp::max;
+use nalgebra::linalg::{{{B}Trait, {M}LbltTrait}};
+use nalgebra::{{MatrixMul, {M}Trait}};
+use nalgebra_testing::black_box;
+use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use crate::builders::{{{', '.join(sorted(b))}}};
+use crate::oracle_pivot as oracle;
+
+const ONE: i64 = 0x100000000;
+"""
+    return head + "\n" + "\n".join(parts)
+
+
+PIVOT_PACKAGES = {
+    "tests_linalg_pivot_lu": ("full_piv_lu", "the full-pivot LU of the squares",
+                              lambda r, c: r == c),
+    "tests_linalg_pivot_lu_wide": ("full_piv_lu", "the full-pivot LU of the wide shapes",
+                                   lambda r, c: r < c),
+    "tests_linalg_pivot_lu_tall": ("full_piv_lu", "the full-pivot LU of the tall shapes",
+                                   lambda r, c: r > c),
+    "tests_linalg_pivot_qr": ("col_piv_qr", "the column-pivot QR of the squares",
+                              lambda r, c: r == c),
+    "tests_linalg_pivot_qr_wide": ("col_piv_qr", "the column-pivot QR of the wide shapes",
+                                   lambda r, c: r < c),
+    "tests_linalg_pivot_qr_tall": ("col_piv_qr", "the column-pivot QR of the tall shapes",
+                                   lambda r, c: r > c),
+    "tests_linalg_pivot_lblt": ("lblt", "the LBLT factorisation", None),
+}
+
+
+def pivot_ops(feature: str, shapes) -> list[str]:
+    """The oracle ops of `tools/oracle` suite `pivot` a package emits."""
+    ops = []
+    for r, c in shapes:
+        s = shp(r, c)
+        base = "full_piv_lu" if feature == "full_piv_lu" else "col_piv_qr"
+        ops.append(f"{base}{s}")
+        if min(r, c) >= 2:
+            ops.append(f"{base}{s}_rank")
+        if r == c:
+            ops += [f"{base}{s}_solve", f"{base}{s}_determinant"]
+            if base == "full_piv_lu":
+                ops.append(f"{base}{s}_inverse")
+            if r >= 2:
+                ops.append(f"{base}{s}_solve_near_singular")
+    return ops
+
+
+def lblt_ops(n: int) -> list[str]:
+    return [f"lblt{n}{sfx}{op}" for sfx in ([""] if n == 1 else ["", "_zero_diag"])
+            for op in ("", "_solve", "_determinant")]
+
+
+def test_packages() -> dict[str, str]:
+    from generate import TEST_MANIFEST, render_builders
+    out = {}
+    for pkg, (feature, what, keep) in PIVOT_PACKAGES.items():
+        base = f"crates/{pkg}/"
+        manifest = TEST_MANIFEST.format(
+            name=pkg, features=f'"{feature}"',
+            description=f"Tests and gas benchmarks of {what} (WP 8.5-P15; not published).")
+        out[base + "Scarb.toml"] = manifest
+        mods = ["builders", "oracle_pivot"]
+        need, vecs = set(), set()
+        if feature == "lblt":
+            ops = []
+            for n in DIMS:
+                need.add((n, n))
+                vecs.add(n)
+                mods.append(f"lblt{n}")
+                out[base + f"src/lblt{n}.cairo"] = render_lblt_tests(n)
+                ops += lblt_ops(n)
+        else:
+            shapes = [(r, c) for r in DIMS for c in DIMS if keep(r, c)]
+            ops = pivot_ops(feature, shapes)
+            for r, c in shapes:
+                m = min(r, c)
+                need |= {(r, c), (r, m), (m, c)}
+                vecs |= {r, c}
+                mod = f"{feature}{shp(r, c)}"
+                mods.append(mod)
+                out[base + f"src/{mod}.cairo"] = (render_lu_tests(r, c) if feature == "full_piv_lu"
+                                                   else render_cpqr_tests(r, c))
+        out[base + "src/builders.cairo"] = render_builders(need, vecs)
+        out[base + "src/lib.cairo"] = (
+            HEADER + f"//! Package `nalgebra_{pkg}` (WP 8.5-P15): tests and gas benchmarks of {what},\n"
+            "//! through the public API. Oracle vectors: `tools/oracle` suite `pivot` (`oracle\n"
+            "//! emit-cairo pivot --from vectors --max-per-dist 2 --ops <the ops below> --out\n"
+            "//! src/oracle_pivot.cairo`):\n//!\n"
+            + "".join(f"//! - `{o}`\n" for o in ops) + "\n"
+            + "".join(f"#[cfg(test)]\nmod {m};\n" for m in sorted(mods)))
+    return out
+
+
+def package_ops() -> dict[str, list[str]]:
+    """{package: oracle ops} (for the `emit-cairo` step)."""
+    res = {}
+    for pkg, (feature, _, keep) in PIVOT_PACKAGES.items():
+        if feature == "lblt":
+            res[pkg] = [o for n in DIMS for o in lblt_ops(n)]
+        else:
+            res[pkg] = pivot_ops(feature, [(r, c) for r in DIMS for c in DIMS if keep(r, c)])
+    return res

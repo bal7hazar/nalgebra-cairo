@@ -66,13 +66,16 @@ pub impl Lblt6Impl<
     /// one floor of the exact product of `alpha colmax` and the correctly rounded quotient), so a
     /// tie at the last bit may choose differently from upstream's `f64`.
     ///
-    /// Updates: a 1x1 block divides its column (correctly rounded quotients, one prepared divisor;
-    /// upstream multiplies by a rounded `1 / a_kk`) and updates the trailing entries with ONE
-    /// `Real::mul_add` each; a 2x2 block uses upstream's scaled inverse (`d = |b|`, `d11`, `d22`
-    /// correctly rounded, `scale = 1 / (d (d11 d22 - 1))`), its two coefficients per row are one
-    /// floor each of an exact `(x d11 ∓ y) scale`, and each trailing entry is one fused sum of
-    /// two products. Panics on overflow (and divides by zero only on a zero pivot that rounding
-    /// made exactly zero).
+    /// Updates (steps criterion, oracle tolerance first): upstream multiplies rounded ratios
+    /// (`a_ik / a_kk`, the scaled 2x2 inverse) by the entries, harmless in `f64` but an absolute
+    /// error of `|a_jk| / 2` ulp in Q32.32 (measured: 1 206 ulp on a `medium` 4x4). Here every
+    /// updated entry is ONE exact numerator over a pivot, correctly rounded (one prepared divisor
+    /// per pivot): a 1x1 block stores `a_ik / a_kk` and updates `(a_ij a_kk - a_ik a_jk) / a_kk`;
+    /// a 2x2 block `[[a, b], [b, c]]` stores `(c x - b y) / det`, `(a y - b x) / det` (`det = a c -
+    /// b²`) and forms the Schur complement by two elimination steps (pivot `b`, then `-det / b`),
+    /// the same value as upstream's `a_ij - x_i w1_j - y_i w2_j`. Panics on overflow (the exact
+    /// numerators are products of two entries: entries up to about 3·10⁴) and divides by zero
+    /// only on a pivot that rounding made exactly zero.
     fn new(matrix: Matrix6<T>) -> Lblt6<T> {
         revoke_ap_tracking();
         let alpha = R::from_ratio(2750446389, 0x100000000);
@@ -271,135 +274,67 @@ pub impl Lblt6Impl<
                     a10 = a50;
                     a50 = t;
                 }
-                let sneg = a10 < R::zero();
-                let d = R::abs(a10);
-                let d11 = R::div(a11, d);
-                let d22 = R::div(a00, d);
-                let scale = R::recip(d * R::mul_add(d11, d22, -R::one()));
-                let (tx, ty) = if sneg {
-                    (-a20, -a21)
-                } else {
-                    (a20, a21)
-                };
-                let w1_2 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a20, d11), ty), scale,
+                let det = R::diff_prod(a00, a11, a10, a10);
+                let (w1_2, w2_2, w1_3, w2_3, w1_4, w2_4) = R::div6(
+                    R::diff_prod(a20, a11, a21, a10),
+                    R::diff_prod(a21, a00, a20, a10),
+                    R::diff_prod(a30, a11, a31, a10),
+                    R::diff_prod(a31, a00, a30, a10),
+                    R::diff_prod(a40, a11, a41, a10),
+                    R::diff_prod(a41, a00, a40, a10),
+                    det,
                 );
-                let w2_2 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a21, d22), tx), scale,
+                let w1_5 = R::div(R::diff_prod(a50, a11, a51, a10), det);
+                let w2_5 = R::div(R::diff_prod(a51, a00, a50, a10), det);
+                let (p2, g2, h2, g3, h3, g4, h4, g5, h5, t22, t32, t42, t52, t33, t43, t53) =
+                    R::div16(
+                    R::diff_prod(a10, a10, a00, a11),
+                    R::diff_prod(a10, a20, a00, a21),
+                    R::diff_prod(a10, a21, a11, a20),
+                    R::diff_prod(a10, a30, a00, a31),
+                    R::diff_prod(a10, a31, a11, a30),
+                    R::diff_prod(a10, a40, a00, a41),
+                    R::diff_prod(a10, a41, a11, a40),
+                    R::diff_prod(a10, a50, a00, a51),
+                    R::diff_prod(a10, a51, a11, a50),
+                    R::diff_prod(a10, a22, a20, a21),
+                    R::diff_prod(a10, a32, a30, a21),
+                    R::diff_prod(a10, a42, a40, a21),
+                    R::diff_prod(a10, a52, a50, a21),
+                    R::diff_prod(a10, a33, a30, a31),
+                    R::diff_prod(a10, a43, a40, a31),
+                    R::diff_prod(a10, a53, a50, a31),
+                    a10,
                 );
-                let (tx, ty) = if sneg {
-                    (-a30, -a31)
-                } else {
-                    (a30, a31)
-                };
-                let w1_3 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a30, d11), ty), scale,
+                let (t44, t54, t55) = R::div3(
+                    R::diff_prod(a10, a44, a40, a41),
+                    R::diff_prod(a10, a54, a50, a41),
+                    R::diff_prod(a10, a55, a50, a51),
+                    a10,
                 );
-                let w2_3 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a31, d22), tx), scale,
+                let (s22, s32, s42, s52, s33, s43, s53, s44, s54) = R::div9(
+                    R::diff_prod(t22, p2, h2, g2),
+                    R::diff_prod(t32, p2, h3, g2),
+                    R::diff_prod(t42, p2, h4, g2),
+                    R::diff_prod(t52, p2, h5, g2),
+                    R::diff_prod(t33, p2, h3, g3),
+                    R::diff_prod(t43, p2, h4, g3),
+                    R::diff_prod(t53, p2, h5, g3),
+                    R::diff_prod(t44, p2, h4, g4),
+                    R::diff_prod(t54, p2, h5, g4),
+                    p2,
                 );
-                let (tx, ty) = if sneg {
-                    (-a40, -a41)
-                } else {
-                    (a40, a41)
-                };
-                let w1_4 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a40, d11), ty), scale,
-                );
-                let w2_4 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a41, d22), tx), scale,
-                );
-                let (tx, ty) = if sneg {
-                    (-a50, -a51)
-                } else {
-                    (a50, a51)
-                };
-                let w1_5 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a50, d11), ty), scale,
-                );
-                let w2_5 = R::wide_mul_scalar(
-                    R::wide_sub(R::wide_add_prod(R::wide_zero(), a51, d22), tx), scale,
-                );
-                a22 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a22), a20, w1_2),
-                            a21,
-                            w2_2,
-                        ),
-                    );
-                a32 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a32), a30, w1_2),
-                            a31,
-                            w2_2,
-                        ),
-                    );
-                a42 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a42), a40, w1_2),
-                            a41,
-                            w2_2,
-                        ),
-                    );
-                a52 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a52), a50, w1_2),
-                            a51,
-                            w2_2,
-                        ),
-                    );
-                a33 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a33), a30, w1_3),
-                            a31,
-                            w2_3,
-                        ),
-                    );
-                a43 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a43), a40, w1_3),
-                            a41,
-                            w2_3,
-                        ),
-                    );
-                a53 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a53), a50, w1_3),
-                            a51,
-                            w2_3,
-                        ),
-                    );
-                a44 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a44), a40, w1_4),
-                            a41,
-                            w2_4,
-                        ),
-                    );
-                a54 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a54), a50, w1_4),
-                            a51,
-                            w2_4,
-                        ),
-                    );
-                a55 =
-                    R::wide_rescale(
-                        R::wide_sub_prod(
-                            R::wide_sub_prod(R::wide_add(R::wide_zero(), a55), a50, w1_5),
-                            a51,
-                            w2_5,
-                        ),
-                    );
+                let s55 = R::div(R::diff_prod(t55, p2, h5, g5), p2);
+                a22 = s22;
+                a32 = s32;
+                a42 = s42;
+                a52 = s52;
+                a33 = s33;
+                a43 = s43;
+                a53 = s53;
+                a44 = s44;
+                a54 = s54;
+                a55 = s55;
                 a20 = w1_2;
                 a21 = w2_2;
                 a30 = w1_3;
@@ -495,22 +430,48 @@ pub impl Lblt6Impl<
                     a00 = a55;
                     a55 = t;
                 }
-                let (l1, l2, l3, l4, l5) = R::div5(a10, a20, a30, a40, a50, a00);
-                a11 = R::mul_add(-l1, a10, a11);
-                a21 = R::mul_add(-l2, a10, a21);
-                a31 = R::mul_add(-l3, a10, a31);
-                a41 = R::mul_add(-l4, a10, a41);
-                a51 = R::mul_add(-l5, a10, a51);
-                a22 = R::mul_add(-l2, a20, a22);
-                a32 = R::mul_add(-l3, a20, a32);
-                a42 = R::mul_add(-l4, a20, a42);
-                a52 = R::mul_add(-l5, a20, a52);
-                a33 = R::mul_add(-l3, a30, a33);
-                a43 = R::mul_add(-l4, a30, a43);
-                a53 = R::mul_add(-l5, a30, a53);
-                a44 = R::mul_add(-l4, a40, a44);
-                a54 = R::mul_add(-l5, a40, a54);
-                a55 = R::mul_add(-l5, a50, a55);
+                let (l1, l2, l3, l4, l5, s11, s21, s31, s41, s51, s22, s32, s42, s52, s33, s43) =
+                    R::div16(
+                    a10,
+                    a20,
+                    a30,
+                    a40,
+                    a50,
+                    R::diff_prod(a11, a00, a10, a10),
+                    R::diff_prod(a21, a00, a20, a10),
+                    R::diff_prod(a31, a00, a30, a10),
+                    R::diff_prod(a41, a00, a40, a10),
+                    R::diff_prod(a51, a00, a50, a10),
+                    R::diff_prod(a22, a00, a20, a20),
+                    R::diff_prod(a32, a00, a30, a20),
+                    R::diff_prod(a42, a00, a40, a20),
+                    R::diff_prod(a52, a00, a50, a20),
+                    R::diff_prod(a33, a00, a30, a30),
+                    R::diff_prod(a43, a00, a40, a30),
+                    a00,
+                );
+                let (s53, s44, s54, s55) = R::div4(
+                    R::diff_prod(a53, a00, a50, a30),
+                    R::diff_prod(a44, a00, a40, a40),
+                    R::diff_prod(a54, a00, a50, a40),
+                    R::diff_prod(a55, a00, a50, a50),
+                    a00,
+                );
+                a11 = s11;
+                a21 = s21;
+                a31 = s31;
+                a41 = s41;
+                a51 = s51;
+                a22 = s22;
+                a32 = s32;
+                a42 = s42;
+                a52 = s52;
+                a33 = s33;
+                a43 = s43;
+                a53 = s53;
+                a44 = s44;
+                a54 = s54;
+                a55 = s55;
                 a10 = l1;
                 a20 = l2;
                 a30 = l3;
@@ -631,92 +592,50 @@ pub impl Lblt6Impl<
                         a21 = a51;
                         a51 = t;
                     }
-                    let sneg = a21 < R::zero();
-                    let d = R::abs(a21);
-                    let d11 = R::div(a22, d);
-                    let d22 = R::div(a11, d);
-                    let scale = R::recip(d * R::mul_add(d11, d22, -R::one()));
-                    let (tx, ty) = if sneg {
-                        (-a31, -a32)
-                    } else {
-                        (a31, a32)
-                    };
-                    let w1_3 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a31, d11), ty), scale,
+                    let det = R::diff_prod(a11, a22, a21, a21);
+                    let (w1_3, w2_3, w1_4, w2_4, w1_5, w2_5) = R::div6(
+                        R::diff_prod(a31, a22, a32, a21),
+                        R::diff_prod(a32, a11, a31, a21),
+                        R::diff_prod(a41, a22, a42, a21),
+                        R::diff_prod(a42, a11, a41, a21),
+                        R::diff_prod(a51, a22, a52, a21),
+                        R::diff_prod(a52, a11, a51, a21),
+                        det,
                     );
-                    let w2_3 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a32, d22), tx), scale,
+                    let (p2, g3, h3, g4, h4, g5, h5, t33, t43) = R::div9(
+                        R::diff_prod(a21, a21, a11, a22),
+                        R::diff_prod(a21, a31, a11, a32),
+                        R::diff_prod(a21, a32, a22, a31),
+                        R::diff_prod(a21, a41, a11, a42),
+                        R::diff_prod(a21, a42, a22, a41),
+                        R::diff_prod(a21, a51, a11, a52),
+                        R::diff_prod(a21, a52, a22, a51),
+                        R::diff_prod(a21, a33, a31, a32),
+                        R::diff_prod(a21, a43, a41, a32),
+                        a21,
                     );
-                    let (tx, ty) = if sneg {
-                        (-a41, -a42)
-                    } else {
-                        (a41, a42)
-                    };
-                    let w1_4 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a41, d11), ty), scale,
+                    let (t53, t44, t54, t55) = R::div4(
+                        R::diff_prod(a21, a53, a51, a32),
+                        R::diff_prod(a21, a44, a41, a42),
+                        R::diff_prod(a21, a54, a51, a42),
+                        R::diff_prod(a21, a55, a51, a52),
+                        a21,
                     );
-                    let w2_4 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a42, d22), tx), scale,
+                    let (s33, s43, s53, s44, s54, s55) = R::div6(
+                        R::diff_prod(t33, p2, h3, g3),
+                        R::diff_prod(t43, p2, h4, g3),
+                        R::diff_prod(t53, p2, h5, g3),
+                        R::diff_prod(t44, p2, h4, g4),
+                        R::diff_prod(t54, p2, h5, g4),
+                        R::diff_prod(t55, p2, h5, g5),
+                        p2,
                     );
-                    let (tx, ty) = if sneg {
-                        (-a51, -a52)
-                    } else {
-                        (a51, a52)
-                    };
-                    let w1_5 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a51, d11), ty), scale,
-                    );
-                    let w2_5 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a52, d22), tx), scale,
-                    );
-                    a33 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a33), a31, w1_3),
-                                a32,
-                                w2_3,
-                            ),
-                        );
-                    a43 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a43), a41, w1_3),
-                                a42,
-                                w2_3,
-                            ),
-                        );
-                    a53 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a53), a51, w1_3),
-                                a52,
-                                w2_3,
-                            ),
-                        );
-                    a44 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a44), a41, w1_4),
-                                a42,
-                                w2_4,
-                            ),
-                        );
-                    a54 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a54), a51, w1_4),
-                                a52,
-                                w2_4,
-                            ),
-                        );
-                    a55 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a55), a51, w1_5),
-                                a52,
-                                w2_5,
-                            ),
-                        );
+                    a33 = s33;
+                    a43 = s43;
+                    a53 = s53;
+                    a44 = s44;
+                    a54 = s54;
+                    a55 = s55;
                     a31 = w1_3;
                     a32 = w2_3;
                     a41 = w1_4;
@@ -782,17 +701,36 @@ pub impl Lblt6Impl<
                         a11 = a55;
                         a55 = t;
                     }
-                    let (l2, l3, l4, l5) = R::div4(a21, a31, a41, a51, a11);
-                    a22 = R::mul_add(-l2, a21, a22);
-                    a32 = R::mul_add(-l3, a21, a32);
-                    a42 = R::mul_add(-l4, a21, a42);
-                    a52 = R::mul_add(-l5, a21, a52);
-                    a33 = R::mul_add(-l3, a31, a33);
-                    a43 = R::mul_add(-l4, a31, a43);
-                    a53 = R::mul_add(-l5, a31, a53);
-                    a44 = R::mul_add(-l4, a41, a44);
-                    a54 = R::mul_add(-l5, a41, a54);
-                    a55 = R::mul_add(-l5, a51, a55);
+                    let (l2, l3, l4, l5, s22, s32, s42, s52, s33) = R::div9(
+                        a21,
+                        a31,
+                        a41,
+                        a51,
+                        R::diff_prod(a22, a11, a21, a21),
+                        R::diff_prod(a32, a11, a31, a21),
+                        R::diff_prod(a42, a11, a41, a21),
+                        R::diff_prod(a52, a11, a51, a21),
+                        R::diff_prod(a33, a11, a31, a31),
+                        a11,
+                    );
+                    let (s43, s53, s44, s54, s55) = R::div5(
+                        R::diff_prod(a43, a11, a41, a31),
+                        R::diff_prod(a53, a11, a51, a31),
+                        R::diff_prod(a44, a11, a41, a41),
+                        R::diff_prod(a54, a11, a51, a41),
+                        R::diff_prod(a55, a11, a51, a51),
+                        a11,
+                    );
+                    a22 = s22;
+                    a32 = s32;
+                    a42 = s42;
+                    a52 = s52;
+                    a33 = s33;
+                    a43 = s43;
+                    a53 = s53;
+                    a44 = s44;
+                    a54 = s54;
+                    a55 = s55;
                     a21 = l2;
                     a31 = l3;
                     a41 = l4;
@@ -867,57 +805,34 @@ pub impl Lblt6Impl<
                         a32 = a52;
                         a52 = t;
                     }
-                    let sneg = a32 < R::zero();
-                    let d = R::abs(a32);
-                    let d11 = R::div(a33, d);
-                    let d22 = R::div(a22, d);
-                    let scale = R::recip(d * R::mul_add(d11, d22, -R::one()));
-                    let (tx, ty) = if sneg {
-                        (-a42, -a43)
-                    } else {
-                        (a42, a43)
-                    };
-                    let w1_4 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a42, d11), ty), scale,
+                    let det = R::diff_prod(a22, a33, a32, a32);
+                    let (w1_4, w2_4, w1_5, w2_5) = R::div4(
+                        R::diff_prod(a42, a33, a43, a32),
+                        R::diff_prod(a43, a22, a42, a32),
+                        R::diff_prod(a52, a33, a53, a32),
+                        R::diff_prod(a53, a22, a52, a32),
+                        det,
                     );
-                    let w2_4 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a43, d22), tx), scale,
+                    let (p2, g4, h4, g5, h5, t44) = R::div6(
+                        R::diff_prod(a32, a32, a22, a33),
+                        R::diff_prod(a32, a42, a22, a43),
+                        R::diff_prod(a32, a43, a33, a42),
+                        R::diff_prod(a32, a52, a22, a53),
+                        R::diff_prod(a32, a53, a33, a52),
+                        R::diff_prod(a32, a44, a42, a43),
+                        a32,
                     );
-                    let (tx, ty) = if sneg {
-                        (-a52, -a53)
-                    } else {
-                        (a52, a53)
-                    };
-                    let w1_5 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a52, d11), ty), scale,
+                    let t54 = R::div(R::diff_prod(a32, a54, a52, a43), a32);
+                    let t55 = R::div(R::diff_prod(a32, a55, a52, a53), a32);
+                    let (s44, s54, s55) = R::div3(
+                        R::diff_prod(t44, p2, h4, g4),
+                        R::diff_prod(t54, p2, h5, g4),
+                        R::diff_prod(t55, p2, h5, g5),
+                        p2,
                     );
-                    let w2_5 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a53, d22), tx), scale,
-                    );
-                    a44 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a44), a42, w1_4),
-                                a43,
-                                w2_4,
-                            ),
-                        );
-                    a54 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a54), a52, w1_4),
-                                a53,
-                                w2_4,
-                            ),
-                        );
-                    a55 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a55), a52, w1_5),
-                                a53,
-                                w2_5,
-                            ),
-                        );
+                    a44 = s44;
+                    a54 = s54;
+                    a55 = s55;
                     a42 = w1_4;
                     a43 = w2_4;
                     a52 = w1_5;
@@ -959,13 +874,24 @@ pub impl Lblt6Impl<
                         a22 = a55;
                         a55 = t;
                     }
-                    let (l3, l4, l5) = R::div3(a32, a42, a52, a22);
-                    a33 = R::mul_add(-l3, a32, a33);
-                    a43 = R::mul_add(-l4, a32, a43);
-                    a53 = R::mul_add(-l5, a32, a53);
-                    a44 = R::mul_add(-l4, a42, a44);
-                    a54 = R::mul_add(-l5, a42, a54);
-                    a55 = R::mul_add(-l5, a52, a55);
+                    let (l3, l4, l5, s33, s43, s53, s44, s54, s55) = R::div9(
+                        a32,
+                        a42,
+                        a52,
+                        R::diff_prod(a33, a22, a32, a32),
+                        R::diff_prod(a43, a22, a42, a32),
+                        R::diff_prod(a53, a22, a52, a32),
+                        R::diff_prod(a44, a22, a42, a42),
+                        R::diff_prod(a54, a22, a52, a42),
+                        R::diff_prod(a55, a22, a52, a52),
+                        a22,
+                    );
+                    a33 = s33;
+                    a43 = s43;
+                    a53 = s53;
+                    a44 = s44;
+                    a54 = s54;
+                    a55 = s55;
                     a32 = l3;
                     a42 = l4;
                     a52 = l5;
@@ -1019,30 +945,18 @@ pub impl Lblt6Impl<
                         a43 = a53;
                         a53 = t;
                     }
-                    let sneg = a43 < R::zero();
-                    let d = R::abs(a43);
-                    let d11 = R::div(a44, d);
-                    let d22 = R::div(a33, d);
-                    let scale = R::recip(d * R::mul_add(d11, d22, -R::one()));
-                    let (tx, ty) = if sneg {
-                        (-a53, -a54)
-                    } else {
-                        (a53, a54)
-                    };
-                    let w1_5 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a53, d11), ty), scale,
+                    let det = R::diff_prod(a33, a44, a43, a43);
+                    let w1_5 = R::div(R::diff_prod(a53, a44, a54, a43), det);
+                    let w2_5 = R::div(R::diff_prod(a54, a33, a53, a43), det);
+                    let (p2, g5, h5, t55) = R::div4(
+                        R::diff_prod(a43, a43, a33, a44),
+                        R::diff_prod(a43, a53, a33, a54),
+                        R::diff_prod(a43, a54, a44, a53),
+                        R::diff_prod(a43, a55, a53, a54),
+                        a43,
                     );
-                    let w2_5 = R::wide_mul_scalar(
-                        R::wide_sub(R::wide_add_prod(R::wide_zero(), a54, d22), tx), scale,
-                    );
-                    a55 =
-                        R::wide_rescale(
-                            R::wide_sub_prod(
-                                R::wide_sub_prod(R::wide_add(R::wide_zero(), a55), a53, w1_5),
-                                a54,
-                                w2_5,
-                            ),
-                        );
+                    let s55 = R::div(R::diff_prod(t55, p2, h5, g5), p2);
+                    a55 = s55;
                     a53 = w1_5;
                     a54 = w2_5;
                     pi3 = piv;
@@ -1066,10 +980,17 @@ pub impl Lblt6Impl<
                         a33 = a55;
                         a55 = t;
                     }
-                    let (l4, l5) = (R::div(a43, a33), R::div(a53, a33));
-                    a44 = R::mul_add(-l4, a43, a44);
-                    a54 = R::mul_add(-l5, a43, a54);
-                    a55 = R::mul_add(-l5, a53, a55);
+                    let (l4, l5, s44, s54, s55) = R::div5(
+                        a43,
+                        a53,
+                        R::diff_prod(a44, a33, a43, a43),
+                        R::diff_prod(a54, a33, a53, a43),
+                        R::diff_prod(a55, a33, a53, a53),
+                        a33,
+                    );
+                    a44 = s44;
+                    a54 = s54;
+                    a55 = s55;
                     a43 = l4;
                     a53 = l5;
                     pi3 = piv;
@@ -1117,7 +1038,8 @@ pub impl Lblt6Impl<
                         a55 = t;
                     }
                     let l5 = R::div(a54, a44);
-                    a55 = R::mul_add(-l5, a54, a55);
+                    let s55 = R::div(R::diff_prod(a55, a44, a54, a54), a44);
+                    a55 = s55;
                     a54 = l5;
                     pi4 = piv;
                     ps4 = 1;
@@ -1278,10 +1200,12 @@ pub impl Lblt6Impl<
     /// Overwrites `b` (any shape with 6 rows) with the solution of `A x = b` and returns `true`,
     /// or returns `false` (and leaves `b` unchanged) when a column was exactly zero
     /// (`zero_pivot`). `x = Pᵀ L⁻ᵀ B⁻¹ L⁻¹ P b`: permutation (moves), unit lower solve,
-    /// `B⁻¹ b` as one fused sum per entry (`B⁻¹` from the 1x1 reciprocals and upstream's
-    /// scaled 2x2 inverses), the unit upper solve as a unit lower one on the reversed order
-    /// (moves), the inverse permutation. Upstream interleaves the same steps (`LBLT::solve_mut`);
-    /// the rounding differs (fused sums here). Panics on overflow.
+    /// `B⁻¹ y`
+    /// as upstream's per-block formula (`y_k / b_kk`, or `(c y_k - b y_k1) / det` and `(a y_k1 - b
+    /// y_k) / det`: one exact numerator and one correctly rounded quotient per entry), the unit
+    /// upper solve as a unit lower one on the reversed order (moves), the inverse permutation.
+    /// Upstream interleaves the same steps (`LBLT::solve_mut`); the sums are fused here. Panics on
+    /// overflow.
     fn solve_mut<B, impl P: PermuteRows<Perm6, B>, impl K: SolveKernel<Matrix6<T>, B>, +Drop<B>>(
         self: Lblt6<T>, ref b: B,
     ) -> bool {
@@ -1292,7 +1216,8 @@ pub impl Lblt6Impl<
         let j = Perm6 { p1: 6, p2: 5, p3: 4, p4: 4, p5: 5 };
         P::permute_rows(p, ref b);
         b = K::lower_unit(l, b);
-        b = K::tr_mul_rhs(Lblt6InternalTrait::d_inv(self), b);
+        let (adj, g) = Lblt6InternalTrait::d_parts(self);
+        b = K::upper(g, K::tr_mul_rhs(adj, b));
         P::permute_rows(j, ref b);
         b =
             K::lower_unit(
@@ -1701,11 +1626,12 @@ pub(crate) impl Lblt6InternalImpl<
         )
     }
 
-    /// `B⁻¹`: `1 / b_kk` on the 1x1 blocks, upstream's scaled inverse `[[d11, -s], [-s, d22]] /
-    /// e`
-    /// on the 2x2 ones (`d = |b|`, `s = sign(b)`, `e = d (d11 d22 - 1)`: no product of two entries
-    /// is ever formed). Correctly rounded quotients.
-    fn d_inv(self: Lblt6<T>) -> Matrix6<T> {
+    /// `B⁻¹ = G⁻¹ adj(B)` as the pair `(adj(B), G)`: the adjugate of each block (`1` for a
+    /// 1x1 block, `[[c, -b], [-b, a]]` for a 2x2 one) and the diagonal `G` of the divisors (`b_kk`,
+    /// or the block determinant `a c - b²`, one fused floor): upstream's `(b_k d22 - b_k1 d21) /
+    /// det`
+    /// with an exact numerator. Moves and one fused sum per 2x2 block.
+    fn d_parts(self: Lblt6<T>) -> (Matrix6<T>, Matrix6<T>) {
         let (_, s0) = self.p1;
         let two0 = s0 == 2;
         let (_, s1) = self.p2;
@@ -1743,142 +1669,163 @@ pub(crate) impl Lblt6InternalImpl<
         let mut e44 = R::zero();
         let mut e54 = R::zero();
         let mut e55 = R::zero();
+        let mut g0 = self.matrix.m11;
+        let mut g1 = self.matrix.m22;
+        let mut g2 = self.matrix.m33;
+        let mut g3 = self.matrix.m44;
+        let mut g4 = self.matrix.m55;
+        let mut g5 = self.matrix.m66;
         if st0 {
             if two0 {
-                let d = R::abs(self.matrix.m21);
-                let d11 = R::div(self.matrix.m22, d);
-                let d22 = R::div(self.matrix.m11, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m21 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e00 = x0;
-                e11 = x1;
-                e10 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m11, self.matrix.m22, self.matrix.m21, self.matrix.m21,
+                );
+                e00 = self.matrix.m22;
+                e11 = self.matrix.m11;
+                e10 = -self.matrix.m21;
+                g0 = det;
+                g1 = det;
             } else {
-                e00 = R::recip(self.matrix.m11);
+                e00 = R::one();
             }
         }
         if st1 {
             if two1 {
-                let d = R::abs(self.matrix.m32);
-                let d11 = R::div(self.matrix.m33, d);
-                let d22 = R::div(self.matrix.m22, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m32 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e11 = x0;
-                e22 = x1;
-                e21 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m22, self.matrix.m33, self.matrix.m32, self.matrix.m32,
+                );
+                e11 = self.matrix.m33;
+                e22 = self.matrix.m22;
+                e21 = -self.matrix.m32;
+                g1 = det;
+                g2 = det;
             } else {
-                e11 = R::recip(self.matrix.m22);
+                e11 = R::one();
             }
         }
         if st2 {
             if two2 {
-                let d = R::abs(self.matrix.m43);
-                let d11 = R::div(self.matrix.m44, d);
-                let d22 = R::div(self.matrix.m33, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m43 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e22 = x0;
-                e33 = x1;
-                e32 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m33, self.matrix.m44, self.matrix.m43, self.matrix.m43,
+                );
+                e22 = self.matrix.m44;
+                e33 = self.matrix.m33;
+                e32 = -self.matrix.m43;
+                g2 = det;
+                g3 = det;
             } else {
-                e22 = R::recip(self.matrix.m33);
+                e22 = R::one();
             }
         }
         if st3 {
             if two3 {
-                let d = R::abs(self.matrix.m54);
-                let d11 = R::div(self.matrix.m55, d);
-                let d22 = R::div(self.matrix.m44, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m54 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e33 = x0;
-                e44 = x1;
-                e43 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m44, self.matrix.m55, self.matrix.m54, self.matrix.m54,
+                );
+                e33 = self.matrix.m55;
+                e44 = self.matrix.m44;
+                e43 = -self.matrix.m54;
+                g3 = det;
+                g4 = det;
             } else {
-                e33 = R::recip(self.matrix.m44);
+                e33 = R::one();
             }
         }
         if st4 {
             if two4 {
-                let d = R::abs(self.matrix.m65);
-                let d11 = R::div(self.matrix.m66, d);
-                let d22 = R::div(self.matrix.m55, d);
-                let e = d * R::mul_add(d11, d22, -R::one());
-                let ms = if self.matrix.m65 < R::zero() {
-                    R::one()
-                } else {
-                    -R::one()
-                };
-                let (x0, x1, x2) = R::div3(d11, d22, ms, e);
-                e44 = x0;
-                e55 = x1;
-                e54 = x2;
+                let det = R::diff_prod(
+                    self.matrix.m55, self.matrix.m66, self.matrix.m65, self.matrix.m65,
+                );
+                e44 = self.matrix.m66;
+                e55 = self.matrix.m55;
+                e54 = -self.matrix.m65;
+                g4 = det;
+                g5 = det;
             } else {
-                e44 = R::recip(self.matrix.m55);
+                e44 = R::one();
             }
         }
         if st5 {
-            e55 = R::recip(self.matrix.m66);
+            e55 = R::one();
         }
-        Matrix6 {
-            m11: e00,
-            m21: e10,
-            m31: e20,
-            m41: e30,
-            m51: e40,
-            m61: e50,
-            m12: e10,
-            m22: e11,
-            m32: e21,
-            m42: e31,
-            m52: e41,
-            m62: e51,
-            m13: e20,
-            m23: e21,
-            m33: e22,
-            m43: e32,
-            m53: e42,
-            m63: e52,
-            m14: e30,
-            m24: e31,
-            m34: e32,
-            m44: e33,
-            m54: e43,
-            m64: e53,
-            m15: e40,
-            m25: e41,
-            m35: e42,
-            m45: e43,
-            m55: e44,
-            m65: e54,
-            m16: e50,
-            m26: e51,
-            m36: e52,
-            m46: e53,
-            m56: e54,
-            m66: e55,
-        }
+        (
+            Matrix6 {
+                m11: e00,
+                m21: e10,
+                m31: e20,
+                m41: e30,
+                m51: e40,
+                m61: e50,
+                m12: e10,
+                m22: e11,
+                m32: e21,
+                m42: e31,
+                m52: e41,
+                m62: e51,
+                m13: e20,
+                m23: e21,
+                m33: e22,
+                m43: e32,
+                m53: e42,
+                m63: e52,
+                m14: e30,
+                m24: e31,
+                m34: e32,
+                m44: e33,
+                m54: e43,
+                m64: e53,
+                m15: e40,
+                m25: e41,
+                m35: e42,
+                m45: e43,
+                m55: e44,
+                m65: e54,
+                m16: e50,
+                m26: e51,
+                m36: e52,
+                m46: e53,
+                m56: e54,
+                m66: e55,
+            },
+            Matrix6 {
+                m11: g0,
+                m21: R::zero(),
+                m31: R::zero(),
+                m41: R::zero(),
+                m51: R::zero(),
+                m61: R::zero(),
+                m12: R::zero(),
+                m22: g1,
+                m32: R::zero(),
+                m42: R::zero(),
+                m52: R::zero(),
+                m62: R::zero(),
+                m13: R::zero(),
+                m23: R::zero(),
+                m33: g2,
+                m43: R::zero(),
+                m53: R::zero(),
+                m63: R::zero(),
+                m14: R::zero(),
+                m24: R::zero(),
+                m34: R::zero(),
+                m44: g3,
+                m54: R::zero(),
+                m64: R::zero(),
+                m15: R::zero(),
+                m25: R::zero(),
+                m35: R::zero(),
+                m45: R::zero(),
+                m55: g4,
+                m65: R::zero(),
+                m16: R::zero(),
+                m26: R::zero(),
+                m36: R::zero(),
+                m46: R::zero(),
+                m56: R::zero(),
+                m66: g5,
+            },
+        )
     }
 }
 

@@ -40,6 +40,7 @@ pub struct Perm1 {}
 #[cfg(test)]
 impl Perm1PartialEq of PartialEq<Perm1> {
     fn eq(lhs: @Perm1, rhs: @Perm1) -> bool {
+        let _ = (lhs, rhs);
         true
     }
 }

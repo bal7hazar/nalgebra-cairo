@@ -151,7 +151,7 @@ use nalgebra::linalg::lu::lu2::Lu2;
 use nalgebra::linalg::lu::lu3::Lu3;
 use nalgebra::linalg::lu::lu4::Lu4;
 use nalgebra::linalg::lu::lu6::Lu6;
-use nalgebra::linalg::lu::{Perm2, Perm3, Perm4, Perm6};
+use nalgebra::linalg::lu::{Perm1, Perm2, Perm3, Perm4, Perm5, Perm6};
 #[cfg(feature: 'qr')]
 use nalgebra::linalg::qr::qr2::Qr2;
 #[cfg(feature: 'qr')]
@@ -1136,6 +1136,15 @@ pub impl Cholesky6PartialEq<T, +PartialEq<T>> of PartialEq<Cholesky6<T>> {
     }
 }
 
+/// Test-only equality (upstream `PermutationSequence` has no `PartialEq`): a `Perm1` records
+/// nothing.
+pub impl Perm1PartialEq of PartialEq<Perm1> {
+    fn eq(lhs: @Perm1, rhs: @Perm1) -> bool {
+        let _ = (lhs, rhs);
+        true
+    }
+}
+
 /// Test-only field-wise equality (upstream `PermutationSequence` has no `PartialEq`): the tests
 /// and the benchmarks compare permutations through it.
 pub impl Perm2PartialEq of PartialEq<Perm2> {
@@ -1157,6 +1166,13 @@ pub impl Perm3PartialEq of PartialEq<Perm3> {
 pub impl Perm4PartialEq of PartialEq<Perm4> {
     fn eq(lhs: @Perm4, rhs: @Perm4) -> bool {
         lhs.p1 == rhs.p1 && lhs.p2 == rhs.p2 && lhs.p3 == rhs.p3
+    }
+}
+
+/// Test-only field-wise equality (upstream `PermutationSequence` has no `PartialEq`).
+pub impl Perm5PartialEq of PartialEq<Perm5> {
+    fn eq(lhs: @Perm5, rhs: @Perm5) -> bool {
+        lhs.p1 == rhs.p1 && lhs.p2 == rhs.p2 && lhs.p3 == rhs.p3 && lhs.p4 == rhs.p4
     }
 }
 
