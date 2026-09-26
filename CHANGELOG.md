@@ -4,7 +4,7 @@ Numeric results are part of the API: any change of a result is a MINOR bump (pre
 release that changes results is scheduled so that consumers regenerate their goldens. Two packages
 are versioned together from this repository: `nalgebra` and `nalgebra_glam`.
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-09-26)
 
 - First release from this repository: a Cairo port of the Rust `nalgebra` crate (0.35.0) on the
   Q32.32 fixed point of fixed-cairo, designed gas-first (no loops in static code, every sum of

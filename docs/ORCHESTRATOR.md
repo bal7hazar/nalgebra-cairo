@@ -101,8 +101,8 @@ Standing delegation, confirmed by the owner in this repository's orchestrator se
 orchestration", the project lead)** on the owner's behalf, under the conditions of
 `/home/claude/projects/pm/decisions/2026-09-25-release-go-delegated-to-pm.md`:
 
-1. CI green on `main` at the release commit, and this repository's release checklist followed
-   (whole-workspace gate run by the orchestrator, gas snapshots, `api_parity.py --check`,
+1. CI green on `main` at the release commit (every shard, the Workspace job, gas snapshot and shard
+   coverage: the whole-workspace gate), and this repository's release checklist followed (gas snapshots, `api_parity.py --check`,
    CHANGELOG entry, `repository` metadata, `scarb package` verified).
 2. Version policy: a numeric change is a MINOR bump; pre-releases (`0.1.0-alpha.N`) for packages
    consumed before their API is stable; a release that changes numeric results is scheduled so
