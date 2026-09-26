@@ -53,3 +53,5 @@ mod symmetric_tridiagonal4;
 mod symmetric_tridiagonal5;
 #[cfg(test)]
 mod symmetric_tridiagonal6;
+#[cfg(test)]
+mod util;

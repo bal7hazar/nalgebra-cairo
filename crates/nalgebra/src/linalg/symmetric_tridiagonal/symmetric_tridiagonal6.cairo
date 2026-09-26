@@ -586,337 +586,337 @@ pub impl SymmetricTridiagonal6Impl<
     fn q(self: SymmetricTridiagonal6<T>) -> Matrix6<T> {
         revoke_ap_tracking();
         let sq4 = self.off_diagonal.a < R::zero();
+        let q4_v0 = self.tri.m65 + self.tri.m65;
+        let q4_nv0 = -q4_v0;
         let h = self.tri.m65;
-        let w = h + h;
-        let nw = -w;
         let q4_55 = if sq4 {
-            R::mul_add(w, self.tri.m65, -R::one())
+            R::mul_add(h, q4_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m65, R::one())
+            R::mul_add(h, q4_nv0, R::one())
         };
         let sq3 = self.off_diagonal.w < R::zero();
+        let q3_v0 = self.tri.m54 + self.tri.m54;
+        let q3_nv0 = -q3_v0;
+        let q3_v1 = self.tri.m64 + self.tri.m64;
+        let q3_nv1 = -q3_v1;
         let h = self.tri.m54;
-        let w = h + h;
-        let nw = -w;
         let q3_44 = if sq3 {
-            R::mul_add(w, self.tri.m54, -R::one())
+            R::mul_add(h, q3_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m54, R::one())
+            R::mul_add(h, q3_nv0, R::one())
         };
         let q3_54 = if sq3 {
-            w * self.tri.m64
+            h * q3_v1
         } else {
-            nw * self.tri.m64
+            h * q3_nv1
         };
         let h = self.tri.m64 * q4_55;
-        let w = h + h;
-        let nw = -w;
         let q3_45 = if sq3 {
-            w * self.tri.m54
+            h * q3_v0
         } else {
-            nw * self.tri.m54
+            h * q3_nv0
         };
         let q3_55 = if sq3 {
-            R::mul_add(w, self.tri.m64, -q4_55)
+            R::mul_add(h, q3_v1, -q4_55)
         } else {
-            R::mul_add(nw, self.tri.m64, q4_55)
+            R::mul_add(h, q3_nv1, q4_55)
         };
         let sq2 = self.off_diagonal.z < R::zero();
+        let q2_v0 = self.tri.m43 + self.tri.m43;
+        let q2_nv0 = -q2_v0;
+        let q2_v1 = self.tri.m53 + self.tri.m53;
+        let q2_nv1 = -q2_v1;
+        let q2_v2 = self.tri.m63 + self.tri.m63;
+        let q2_nv2 = -q2_v2;
         let h = self.tri.m43;
-        let w = h + h;
-        let nw = -w;
         let q2_33 = if sq2 {
-            R::mul_add(w, self.tri.m43, -R::one())
+            R::mul_add(h, q2_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m43, R::one())
+            R::mul_add(h, q2_nv0, R::one())
         };
         let q2_43 = if sq2 {
-            w * self.tri.m53
+            h * q2_v1
         } else {
-            nw * self.tri.m53
+            h * q2_nv1
         };
         let q2_53 = if sq2 {
-            w * self.tri.m63
+            h * q2_v2
         } else {
-            nw * self.tri.m63
+            h * q2_nv2
         };
         let h = R::sum_prod2(self.tri.m53, q3_44, self.tri.m63, q3_54);
-        let w = h + h;
-        let nw = -w;
         let q2_34 = if sq2 {
-            w * self.tri.m43
+            h * q2_v0
         } else {
-            nw * self.tri.m43
+            h * q2_nv0
         };
         let q2_44 = if sq2 {
-            R::mul_add(w, self.tri.m53, -q3_44)
+            R::mul_add(h, q2_v1, -q3_44)
         } else {
-            R::mul_add(nw, self.tri.m53, q3_44)
+            R::mul_add(h, q2_nv1, q3_44)
         };
         let q2_54 = if sq2 {
-            R::mul_add(w, self.tri.m63, -q3_54)
+            R::mul_add(h, q2_v2, -q3_54)
         } else {
-            R::mul_add(nw, self.tri.m63, q3_54)
+            R::mul_add(h, q2_nv2, q3_54)
         };
         let h = R::sum_prod2(self.tri.m53, q3_45, self.tri.m63, q3_55);
-        let w = h + h;
-        let nw = -w;
         let q2_35 = if sq2 {
-            w * self.tri.m43
+            h * q2_v0
         } else {
-            nw * self.tri.m43
+            h * q2_nv0
         };
         let q2_45 = if sq2 {
-            R::mul_add(w, self.tri.m53, -q3_45)
+            R::mul_add(h, q2_v1, -q3_45)
         } else {
-            R::mul_add(nw, self.tri.m53, q3_45)
+            R::mul_add(h, q2_nv1, q3_45)
         };
         let q2_55 = if sq2 {
-            R::mul_add(w, self.tri.m63, -q3_55)
+            R::mul_add(h, q2_v2, -q3_55)
         } else {
-            R::mul_add(nw, self.tri.m63, q3_55)
+            R::mul_add(h, q2_nv2, q3_55)
         };
         let sq1 = self.off_diagonal.y < R::zero();
+        let q1_v0 = self.tri.m32 + self.tri.m32;
+        let q1_nv0 = -q1_v0;
+        let q1_v1 = self.tri.m42 + self.tri.m42;
+        let q1_nv1 = -q1_v1;
+        let q1_v2 = self.tri.m52 + self.tri.m52;
+        let q1_nv2 = -q1_v2;
+        let q1_v3 = self.tri.m62 + self.tri.m62;
+        let q1_nv3 = -q1_v3;
         let h = self.tri.m32;
-        let w = h + h;
-        let nw = -w;
         let q1_22 = if sq1 {
-            R::mul_add(w, self.tri.m32, -R::one())
+            R::mul_add(h, q1_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m32, R::one())
+            R::mul_add(h, q1_nv0, R::one())
         };
         let q1_32 = if sq1 {
-            w * self.tri.m42
+            h * q1_v1
         } else {
-            nw * self.tri.m42
+            h * q1_nv1
         };
         let q1_42 = if sq1 {
-            w * self.tri.m52
+            h * q1_v2
         } else {
-            nw * self.tri.m52
+            h * q1_nv2
         };
         let q1_52 = if sq1 {
-            w * self.tri.m62
+            h * q1_v3
         } else {
-            nw * self.tri.m62
+            h * q1_nv3
         };
         let h = R::sum_prod3(self.tri.m42, q2_33, self.tri.m52, q2_43, self.tri.m62, q2_53);
-        let w = h + h;
-        let nw = -w;
         let q1_23 = if sq1 {
-            w * self.tri.m32
+            h * q1_v0
         } else {
-            nw * self.tri.m32
+            h * q1_nv0
         };
         let q1_33 = if sq1 {
-            R::mul_add(w, self.tri.m42, -q2_33)
+            R::mul_add(h, q1_v1, -q2_33)
         } else {
-            R::mul_add(nw, self.tri.m42, q2_33)
+            R::mul_add(h, q1_nv1, q2_33)
         };
         let q1_43 = if sq1 {
-            R::mul_add(w, self.tri.m52, -q2_43)
+            R::mul_add(h, q1_v2, -q2_43)
         } else {
-            R::mul_add(nw, self.tri.m52, q2_43)
+            R::mul_add(h, q1_nv2, q2_43)
         };
         let q1_53 = if sq1 {
-            R::mul_add(w, self.tri.m62, -q2_53)
+            R::mul_add(h, q1_v3, -q2_53)
         } else {
-            R::mul_add(nw, self.tri.m62, q2_53)
+            R::mul_add(h, q1_nv3, q2_53)
         };
         let h = R::sum_prod3(self.tri.m42, q2_34, self.tri.m52, q2_44, self.tri.m62, q2_54);
-        let w = h + h;
-        let nw = -w;
         let q1_24 = if sq1 {
-            w * self.tri.m32
+            h * q1_v0
         } else {
-            nw * self.tri.m32
+            h * q1_nv0
         };
         let q1_34 = if sq1 {
-            R::mul_add(w, self.tri.m42, -q2_34)
+            R::mul_add(h, q1_v1, -q2_34)
         } else {
-            R::mul_add(nw, self.tri.m42, q2_34)
+            R::mul_add(h, q1_nv1, q2_34)
         };
         let q1_44 = if sq1 {
-            R::mul_add(w, self.tri.m52, -q2_44)
+            R::mul_add(h, q1_v2, -q2_44)
         } else {
-            R::mul_add(nw, self.tri.m52, q2_44)
+            R::mul_add(h, q1_nv2, q2_44)
         };
         let q1_54 = if sq1 {
-            R::mul_add(w, self.tri.m62, -q2_54)
+            R::mul_add(h, q1_v3, -q2_54)
         } else {
-            R::mul_add(nw, self.tri.m62, q2_54)
+            R::mul_add(h, q1_nv3, q2_54)
         };
         let h = R::sum_prod3(self.tri.m42, q2_35, self.tri.m52, q2_45, self.tri.m62, q2_55);
-        let w = h + h;
-        let nw = -w;
         let q1_25 = if sq1 {
-            w * self.tri.m32
+            h * q1_v0
         } else {
-            nw * self.tri.m32
+            h * q1_nv0
         };
         let q1_35 = if sq1 {
-            R::mul_add(w, self.tri.m42, -q2_35)
+            R::mul_add(h, q1_v1, -q2_35)
         } else {
-            R::mul_add(nw, self.tri.m42, q2_35)
+            R::mul_add(h, q1_nv1, q2_35)
         };
         let q1_45 = if sq1 {
-            R::mul_add(w, self.tri.m52, -q2_45)
+            R::mul_add(h, q1_v2, -q2_45)
         } else {
-            R::mul_add(nw, self.tri.m52, q2_45)
+            R::mul_add(h, q1_nv2, q2_45)
         };
         let q1_55 = if sq1 {
-            R::mul_add(w, self.tri.m62, -q2_55)
+            R::mul_add(h, q1_v3, -q2_55)
         } else {
-            R::mul_add(nw, self.tri.m62, q2_55)
+            R::mul_add(h, q1_nv3, q2_55)
         };
         let sq0 = self.off_diagonal.x < R::zero();
+        let q0_v0 = self.tri.m21 + self.tri.m21;
+        let q0_nv0 = -q0_v0;
+        let q0_v1 = self.tri.m31 + self.tri.m31;
+        let q0_nv1 = -q0_v1;
+        let q0_v2 = self.tri.m41 + self.tri.m41;
+        let q0_nv2 = -q0_v2;
+        let q0_v3 = self.tri.m51 + self.tri.m51;
+        let q0_nv3 = -q0_v3;
+        let q0_v4 = self.tri.m61 + self.tri.m61;
+        let q0_nv4 = -q0_v4;
         let h = self.tri.m21;
-        let w = h + h;
-        let nw = -w;
         let q0_11 = if sq0 {
-            R::mul_add(w, self.tri.m21, -R::one())
+            R::mul_add(h, q0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m21, R::one())
+            R::mul_add(h, q0_nv0, R::one())
         };
         let q0_21 = if sq0 {
-            w * self.tri.m31
+            h * q0_v1
         } else {
-            nw * self.tri.m31
+            h * q0_nv1
         };
         let q0_31 = if sq0 {
-            w * self.tri.m41
+            h * q0_v2
         } else {
-            nw * self.tri.m41
+            h * q0_nv2
         };
         let q0_41 = if sq0 {
-            w * self.tri.m51
+            h * q0_v3
         } else {
-            nw * self.tri.m51
+            h * q0_nv3
         };
         let q0_51 = if sq0 {
-            w * self.tri.m61
+            h * q0_v4
         } else {
-            nw * self.tri.m61
+            h * q0_nv4
         };
         let h = R::sum_prod4(
             self.tri.m31, q1_22, self.tri.m41, q1_32, self.tri.m51, q1_42, self.tri.m61, q1_52,
         );
-        let w = h + h;
-        let nw = -w;
         let q0_12 = if sq0 {
-            w * self.tri.m21
+            h * q0_v0
         } else {
-            nw * self.tri.m21
+            h * q0_nv0
         };
         let q0_22 = if sq0 {
-            R::mul_add(w, self.tri.m31, -q1_22)
+            R::mul_add(h, q0_v1, -q1_22)
         } else {
-            R::mul_add(nw, self.tri.m31, q1_22)
+            R::mul_add(h, q0_nv1, q1_22)
         };
         let q0_32 = if sq0 {
-            R::mul_add(w, self.tri.m41, -q1_32)
+            R::mul_add(h, q0_v2, -q1_32)
         } else {
-            R::mul_add(nw, self.tri.m41, q1_32)
+            R::mul_add(h, q0_nv2, q1_32)
         };
         let q0_42 = if sq0 {
-            R::mul_add(w, self.tri.m51, -q1_42)
+            R::mul_add(h, q0_v3, -q1_42)
         } else {
-            R::mul_add(nw, self.tri.m51, q1_42)
+            R::mul_add(h, q0_nv3, q1_42)
         };
         let q0_52 = if sq0 {
-            R::mul_add(w, self.tri.m61, -q1_52)
+            R::mul_add(h, q0_v4, -q1_52)
         } else {
-            R::mul_add(nw, self.tri.m61, q1_52)
+            R::mul_add(h, q0_nv4, q1_52)
         };
         let h = R::sum_prod4(
             self.tri.m31, q1_23, self.tri.m41, q1_33, self.tri.m51, q1_43, self.tri.m61, q1_53,
         );
-        let w = h + h;
-        let nw = -w;
         let q0_13 = if sq0 {
-            w * self.tri.m21
+            h * q0_v0
         } else {
-            nw * self.tri.m21
+            h * q0_nv0
         };
         let q0_23 = if sq0 {
-            R::mul_add(w, self.tri.m31, -q1_23)
+            R::mul_add(h, q0_v1, -q1_23)
         } else {
-            R::mul_add(nw, self.tri.m31, q1_23)
+            R::mul_add(h, q0_nv1, q1_23)
         };
         let q0_33 = if sq0 {
-            R::mul_add(w, self.tri.m41, -q1_33)
+            R::mul_add(h, q0_v2, -q1_33)
         } else {
-            R::mul_add(nw, self.tri.m41, q1_33)
+            R::mul_add(h, q0_nv2, q1_33)
         };
         let q0_43 = if sq0 {
-            R::mul_add(w, self.tri.m51, -q1_43)
+            R::mul_add(h, q0_v3, -q1_43)
         } else {
-            R::mul_add(nw, self.tri.m51, q1_43)
+            R::mul_add(h, q0_nv3, q1_43)
         };
         let q0_53 = if sq0 {
-            R::mul_add(w, self.tri.m61, -q1_53)
+            R::mul_add(h, q0_v4, -q1_53)
         } else {
-            R::mul_add(nw, self.tri.m61, q1_53)
+            R::mul_add(h, q0_nv4, q1_53)
         };
         let h = R::sum_prod4(
             self.tri.m31, q1_24, self.tri.m41, q1_34, self.tri.m51, q1_44, self.tri.m61, q1_54,
         );
-        let w = h + h;
-        let nw = -w;
         let q0_14 = if sq0 {
-            w * self.tri.m21
+            h * q0_v0
         } else {
-            nw * self.tri.m21
+            h * q0_nv0
         };
         let q0_24 = if sq0 {
-            R::mul_add(w, self.tri.m31, -q1_24)
+            R::mul_add(h, q0_v1, -q1_24)
         } else {
-            R::mul_add(nw, self.tri.m31, q1_24)
+            R::mul_add(h, q0_nv1, q1_24)
         };
         let q0_34 = if sq0 {
-            R::mul_add(w, self.tri.m41, -q1_34)
+            R::mul_add(h, q0_v2, -q1_34)
         } else {
-            R::mul_add(nw, self.tri.m41, q1_34)
+            R::mul_add(h, q0_nv2, q1_34)
         };
         let q0_44 = if sq0 {
-            R::mul_add(w, self.tri.m51, -q1_44)
+            R::mul_add(h, q0_v3, -q1_44)
         } else {
-            R::mul_add(nw, self.tri.m51, q1_44)
+            R::mul_add(h, q0_nv3, q1_44)
         };
         let q0_54 = if sq0 {
-            R::mul_add(w, self.tri.m61, -q1_54)
+            R::mul_add(h, q0_v4, -q1_54)
         } else {
-            R::mul_add(nw, self.tri.m61, q1_54)
+            R::mul_add(h, q0_nv4, q1_54)
         };
         let h = R::sum_prod4(
             self.tri.m31, q1_25, self.tri.m41, q1_35, self.tri.m51, q1_45, self.tri.m61, q1_55,
         );
-        let w = h + h;
-        let nw = -w;
         let q0_15 = if sq0 {
-            w * self.tri.m21
+            h * q0_v0
         } else {
-            nw * self.tri.m21
+            h * q0_nv0
         };
         let q0_25 = if sq0 {
-            R::mul_add(w, self.tri.m31, -q1_25)
+            R::mul_add(h, q0_v1, -q1_25)
         } else {
-            R::mul_add(nw, self.tri.m31, q1_25)
+            R::mul_add(h, q0_nv1, q1_25)
         };
         let q0_35 = if sq0 {
-            R::mul_add(w, self.tri.m41, -q1_35)
+            R::mul_add(h, q0_v2, -q1_35)
         } else {
-            R::mul_add(nw, self.tri.m41, q1_35)
+            R::mul_add(h, q0_nv2, q1_35)
         };
         let q0_45 = if sq0 {
-            R::mul_add(w, self.tri.m51, -q1_45)
+            R::mul_add(h, q0_v3, -q1_45)
         } else {
-            R::mul_add(nw, self.tri.m51, q1_45)
+            R::mul_add(h, q0_nv3, q1_45)
         };
         let q0_55 = if sq0 {
-            R::mul_add(w, self.tri.m61, -q1_55)
+            R::mul_add(h, q0_v4, -q1_55)
         } else {
-            R::mul_add(nw, self.tri.m61, q1_55)
+            R::mul_add(h, q0_nv4, q1_55)
         };
         Matrix6 {
             m11: R::one(),

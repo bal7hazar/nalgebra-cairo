@@ -27,3 +27,5 @@ mod bidiagonal6;
 mod builders;
 #[cfg(test)]
 mod oracle_schur;
+#[cfg(test)]
+mod util;

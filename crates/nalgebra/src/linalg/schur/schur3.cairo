@@ -55,42 +55,51 @@ pub impl Schur3Impl<
     /// has three rows or more, the 2x2 standardisation otherwise (a 2x2 block with real
     /// eigenvalues is rotated to upper triangular, a complex pair is left as a 2x2 block); one
     /// iteration per pass, `None` when the count reaches `max_niter`. `T` is scaled back by the
-    /// largest entry (one floor per entry).
+    /// largest entry (one floor per entry). Every step is one function per static window
+    /// (`Schur3KernelTrait`), dispatched on the run-time `(start, end)`.
     ///
-    /// Deflation: an entry `t_k,k-1` is negligible when `|t| <= eps (|t_kk| + |t_k-1,k-1|)`
-    /// (upstream's relative test, `eps` a `Real` in raw units: `default_epsilon()` is one ulp) or
-    /// `|t| <= max(eps², 2^-26)` in the normalised matrix. Upstream's absolute threshold is
-    /// `eps²`, "the equivalent of LAPACK's SMLNUM"; in Q32.32 `eps²` is zero (only exact zeros
-    /// would deflate), and a Francis step leaves a rounding noise of a few ulp to a few thousand
-    /// ulp in the entries it chases through (the angle of a reflection built on a small bulge is
-    /// only known to `1 / |bulge|`): measured on a bit-faithful Q32.32 model of this code (random,
-    /// symmetric, integer, non-normal, clustered and defective matrices of sizes 3 to 6), the
-    /// threshold 0 leaves 10 % to 60 % of the inputs iterating for more than 500 passes, 2^-26 (64
-    /// ulp)
-    /// converges on all of them (median 4 / 6 / 10 / 16 passes for n = 3 / 4 / 5 / 6, a tail of a
-    /// few percent above 100 where a subdiagonal entry sits in the noise), for an eigenvalue error
-    /// of a few hundred ulp per unit of the largest entry. Larger thresholds (256, 1024, 4096 ulp)
-    /// cut the tail but grow the error of well-conditioned inputs; smaller ones lengthen the tail.
+    /// Deflation, upstream's test: `t_k,k-1` is negligible when `|t| <= eps (|t_kk| +
+    /// |t_k-1,k-1|)` (`eps` in raw units: `default_epsilon()` is one ulp) or `|t| <= thr`.
+    /// Upstream's absolute threshold is `eps²` ("the equivalent of LAPACK's SMLNUM"), which is
+    /// zero in Q32.32 (only exact zeros would deflate) while a Francis step leaves a rounding noise
+    /// of a few ulp to a few thousand ulp in the entries it chases through (the angle of a
+    /// reflection built on a small bulge is only known to `1 / |bulge|`). Q32.32 thresholds,
+    /// measured on a bit-faithful model of this code (random, symmetric, integer, non-normal,
+    /// clustered, defective and near-triangular matrices of sizes 3 to 6) and on the oracle
+    /// vectors:
+    /// - `thr = max(eps², 2^-26)` of the normalised matrix: with `thr = eps²` 10 % to
+    ///   60 % of those inputs iterate for more than 500 passes; with 2^-26 (64 ulp) almost all
+    ///   converge (median 4 / 6 / 10 / 16 passes for n = 3 / 4 / 5 / 6, like upstream's `f64`
+    ///   median 5 / 6 / 9 / 12) and the eigenvalues are within the oracle tolerance;
+    /// - `thr` DOUBLES after 8 consecutive passes that leave the active window unchanged (back to
+    ///   its base value when it changes), up to 2^-16: an entry that sits in the rounding noise
+    ///   (defective and clustered spectra, tiny subdiagonal entries) would otherwise keep the loop
+    ///   running (a defective 4x4 of the oracle never converged); the eigenvalue error then grows
+    ///   with the threshold reached, which the oracle's scaled tolerance of those families covers.
+    ///   Below the cap nothing changes for a window that converges; above it, like upstream, a
+    ///   matrix on which the iteration cycles without converging (e.g. the cyclic permutation of
+    ///   size 6: upstream's `f64` code loops forever on it too, there are no exceptional shifts)
+    ///   never returns with `max_niter = 0`.
     ///
-    /// The shift vector (the first column of `(H - σ1)(H - σ2)`) is upstream's `(h11² + h12 h21
-    /// - tra h11 + det, h21 (h11 + h22 - tra), h21 h32)` DIVIDED by `sc = |h21| + |h11 - hmm| +
-    /// |h11 - hnn| + |hnm|` before its products (LAPACK `dlahqr`'s scaling): it is the product of
-    /// two first-order small quantities near convergence, which Q32.32 floors to exactly zero
-    /// (the step then does nothing, forever: measured on clustered spectra). Same direction, hence
-    /// the same reflection, in exact arithmetic: `(p d2 - hmn r + h12 g, g (h11 + h22 - tra), g
-    /// h32)`
-    /// with `(p, r, g) = (h11 - hmm, hnm, h21) / sc` and `d2 = h11 - hnn`, one fused sum.
+    /// Shift vector: upstream's first column of `(H - σ1)(H - σ2)`, `(h11² + h12 h21 - tra h11 +
+    /// det, h21 (h11 + h22 - tra), h21 h32)`, DIVIDED by `sc = |h21| + |h11 - hmm| + |h11 - hnn| +
+    /// |hnm|` before its products (LAPACK `dlahqr`'s scaling): near convergence it is the product
+    /// of two first-order small quantities, which Q32.32 floors to exactly zero (the step then
+    /// does nothing, forever: measured on clustered spectra). Same direction, hence the same
+    /// reflection, in exact arithmetic: `(p d2 - hmn r + h12 g, g (h11 + h22 - tra), g h32)` with
+    /// `(p, r, g) = (h11 - hmm, hnm, h21) / sc` and `d2 = h11 - hnn`, one fused sum.
+    ///
+    /// 2x2 blocks: `4 discr = 4 h10 h01 + (h00 - h11)²` exact (its sign exact: upstream's `0.5
+    /// (h00 - h11)` then `discr` rounds twice), `√(4 discr)` the floored root of the exact sum,
+    /// `x = (h00 - h11 ± √(4 discr)) / 2` (the larger in magnitude, as upstream), the rotation
+    /// `GivensRotation::new(x, h10)` normalised twice (see `householder_kernels::givens`), and the
+    /// diagonal of the rotated block set to the closed-form eigenvalues `(h11 + x, h00 - x)`
+    /// (what the rotation gives in exact arithmetic; the rotated entries lose `ulp / |x|`, hundreds
+    /// of ulp on clustered eigenvalues, measured).
     ///
     /// Reflections: axes by `linalg::householder_kernels` (upstream's two normalisations), one
-    /// fused dot product (doubled exactly) and one `Real::mul_add` per updated entry; the 2x2
-    /// branch computes `4 discr = 4 h10 h01 + (h00 - h11)²` exactly (its sign is exact: upstream's
-    /// `0.5 (h00 - h11)` then `discr` rounds twice) and the rotation from `x = (h00 - h11 ± √(4
-    /// discr)) / 2` (the one of larger magnitude, as upstream) by `GivensRotation::new`.
-    ///
-    /// Like upstream, `max_niter = 0` never gives up: a matrix on which the
-    /// unshifted-exception-free Francis iteration cycles (e.g. the cyclic permutation of size 6, on
-    /// which upstream's `f64`
-    /// code loops forever too) never returns. Panics on overflow.
+    /// fused dot product (doubled exactly) and one `Real::mul_add` per updated entry. Panics on
+    /// overflow.
     fn try_new(m: Matrix3<T>, eps: T, max_niter: usize) -> Option<Schur3<T>> {
         match Schur3KernelTrait::decompose(m, eps, max_niter, true) {
             Option::Some((q, t)) => Option::Some(Schur3 { q, t }),
@@ -133,7 +142,6 @@ pub impl Schur3Impl<
         let half = R::from_ratio(1, 2);
         let mut second = false;
         if !second && self.t.m21 != R::zero() {
-            let dd = self.t.m11 - self.t.m22;
             let d4 = HouseholderKernelTrait::<
                 T,
             >::disc4(self.t.m11, self.t.m12, self.t.m21, self.t.m22);
@@ -155,7 +163,6 @@ pub impl Schur3Impl<
             second = false;
         }
         if !second && self.t.m32 != R::zero() {
-            let dd = self.t.m22 - self.t.m33;
             let d4 = HouseholderKernelTrait::<
                 T,
             >::disc4(self.t.m22, self.t.m23, self.t.m32, self.t.m33);
@@ -665,61 +672,46 @@ pub(crate) impl Schur3KernelImpl<
         let (nrm, nz, u0, u1, u2) = HouseholderKernelTrait::<T>::axis3(ax, ay, az);
         if nz {
             let _ = nrm;
+            let nv_u0 = -(u0 + u0);
+            let nv_u1 = -(u1 + u1);
+            let nv_u2 = -(u2 + u2);
             let h = R::sum_prod3(u0, t00, u1, t10, u2, t20);
-            let w = h + h;
-            let nw = -w;
-            t00 = R::mul_add(nw, u0, t00);
-            t10 = R::mul_add(nw, u1, t10);
-            t20 = R::mul_add(nw, u2, t20);
+            t00 = R::mul_add(h, nv_u0, t00);
+            t10 = R::mul_add(h, nv_u1, t10);
+            t20 = R::mul_add(h, nv_u2, t20);
             let h = R::sum_prod3(u0, t01, u1, t11, u2, t21);
-            let w = h + h;
-            let nw = -w;
-            t01 = R::mul_add(nw, u0, t01);
-            t11 = R::mul_add(nw, u1, t11);
-            t21 = R::mul_add(nw, u2, t21);
+            t01 = R::mul_add(h, nv_u0, t01);
+            t11 = R::mul_add(h, nv_u1, t11);
+            t21 = R::mul_add(h, nv_u2, t21);
             let h = R::sum_prod3(u0, t02, u1, t12, u2, t22);
-            let w = h + h;
-            let nw = -w;
-            t02 = R::mul_add(nw, u0, t02);
-            t12 = R::mul_add(nw, u1, t12);
-            t22 = R::mul_add(nw, u2, t22);
+            t02 = R::mul_add(h, nv_u0, t02);
+            t12 = R::mul_add(h, nv_u1, t12);
+            t22 = R::mul_add(h, nv_u2, t22);
             let h = R::sum_prod3(t00, u0, t01, u1, t02, u2);
-            let w = h + h;
-            let nw = -w;
-            t00 = R::mul_add(nw, u0, t00);
-            t01 = R::mul_add(nw, u1, t01);
-            t02 = R::mul_add(nw, u2, t02);
+            t00 = R::mul_add(h, nv_u0, t00);
+            t01 = R::mul_add(h, nv_u1, t01);
+            t02 = R::mul_add(h, nv_u2, t02);
             let h = R::sum_prod3(t10, u0, t11, u1, t12, u2);
-            let w = h + h;
-            let nw = -w;
-            t10 = R::mul_add(nw, u0, t10);
-            t11 = R::mul_add(nw, u1, t11);
-            t12 = R::mul_add(nw, u2, t12);
+            t10 = R::mul_add(h, nv_u0, t10);
+            t11 = R::mul_add(h, nv_u1, t11);
+            t12 = R::mul_add(h, nv_u2, t12);
             let h = R::sum_prod3(t20, u0, t21, u1, t22, u2);
-            let w = h + h;
-            let nw = -w;
-            t20 = R::mul_add(nw, u0, t20);
-            t21 = R::mul_add(nw, u1, t21);
-            t22 = R::mul_add(nw, u2, t22);
+            t20 = R::mul_add(h, nv_u0, t20);
+            t21 = R::mul_add(h, nv_u1, t21);
+            t22 = R::mul_add(h, nv_u2, t22);
             if compute_q {
                 let h = R::sum_prod3(q00, u0, q01, u1, q02, u2);
-                let w = h + h;
-                let nw = -w;
-                q00 = R::mul_add(nw, u0, q00);
-                q01 = R::mul_add(nw, u1, q01);
-                q02 = R::mul_add(nw, u2, q02);
+                q00 = R::mul_add(h, nv_u0, q00);
+                q01 = R::mul_add(h, nv_u1, q01);
+                q02 = R::mul_add(h, nv_u2, q02);
                 let h = R::sum_prod3(q10, u0, q11, u1, q12, u2);
-                let w = h + h;
-                let nw = -w;
-                q10 = R::mul_add(nw, u0, q10);
-                q11 = R::mul_add(nw, u1, q11);
-                q12 = R::mul_add(nw, u2, q12);
+                q10 = R::mul_add(h, nv_u0, q10);
+                q11 = R::mul_add(h, nv_u1, q11);
+                q12 = R::mul_add(h, nv_u2, q12);
                 let h = R::sum_prod3(q20, u0, q21, u1, q22, u2);
-                let w = h + h;
-                let nw = -w;
-                q20 = R::mul_add(nw, u0, q20);
-                q21 = R::mul_add(nw, u1, q21);
-                q22 = R::mul_add(nw, u2, q22);
+                q20 = R::mul_add(h, nv_u0, q20);
+                q21 = R::mul_add(h, nv_u1, q21);
+                q22 = R::mul_add(h, nv_u2, q22);
             }
         }
         ax = t10;
@@ -729,47 +721,33 @@ pub(crate) impl Schur3KernelImpl<
         if nz {
             t10 = nrm;
             t20 = R::zero();
+            let nv_u0 = -(u0 + u0);
+            let nv_u1 = -(u1 + u1);
             let h = R::sum_prod2(u0, t11, u1, t21);
-            let w = h + h;
-            let nw = -w;
-            t11 = R::mul_add(nw, u0, t11);
-            t21 = R::mul_add(nw, u1, t21);
+            t11 = R::mul_add(h, nv_u0, t11);
+            t21 = R::mul_add(h, nv_u1, t21);
             let h = R::sum_prod2(u0, t12, u1, t22);
-            let w = h + h;
-            let nw = -w;
-            t12 = R::mul_add(nw, u0, t12);
-            t22 = R::mul_add(nw, u1, t22);
+            t12 = R::mul_add(h, nv_u0, t12);
+            t22 = R::mul_add(h, nv_u1, t22);
             let h = R::sum_prod2(t01, u0, t02, u1);
-            let w = h + h;
-            let nw = -w;
-            t01 = R::mul_add(nw, u0, t01);
-            t02 = R::mul_add(nw, u1, t02);
+            t01 = R::mul_add(h, nv_u0, t01);
+            t02 = R::mul_add(h, nv_u1, t02);
             let h = R::sum_prod2(t11, u0, t12, u1);
-            let w = h + h;
-            let nw = -w;
-            t11 = R::mul_add(nw, u0, t11);
-            t12 = R::mul_add(nw, u1, t12);
+            t11 = R::mul_add(h, nv_u0, t11);
+            t12 = R::mul_add(h, nv_u1, t12);
             let h = R::sum_prod2(t21, u0, t22, u1);
-            let w = h + h;
-            let nw = -w;
-            t21 = R::mul_add(nw, u0, t21);
-            t22 = R::mul_add(nw, u1, t22);
+            t21 = R::mul_add(h, nv_u0, t21);
+            t22 = R::mul_add(h, nv_u1, t22);
             if compute_q {
                 let h = R::sum_prod2(q01, u0, q02, u1);
-                let w = h + h;
-                let nw = -w;
-                q01 = R::mul_add(nw, u0, q01);
-                q02 = R::mul_add(nw, u1, q02);
+                q01 = R::mul_add(h, nv_u0, q01);
+                q02 = R::mul_add(h, nv_u1, q02);
                 let h = R::sum_prod2(q11, u0, q12, u1);
-                let w = h + h;
-                let nw = -w;
-                q11 = R::mul_add(nw, u0, q11);
-                q12 = R::mul_add(nw, u1, q12);
+                q11 = R::mul_add(h, nv_u0, q11);
+                q12 = R::mul_add(h, nv_u1, q12);
                 let h = R::sum_prod2(q21, u0, q22, u1);
-                let w = h + h;
-                let nw = -w;
-                q21 = R::mul_add(nw, u0, q21);
-                q22 = R::mul_add(nw, u1, q22);
+                q21 = R::mul_add(h, nv_u0, q21);
+                q22 = R::mul_add(h, nv_u1, q22);
             }
         }
         t =

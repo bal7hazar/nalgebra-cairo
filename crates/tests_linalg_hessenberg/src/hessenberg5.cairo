@@ -10,9 +10,10 @@ use nalgebra::linalg::{
 };
 use nalgebra::{Matrix5, MatrixMul, Vector4, Vector5};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
+use nalgebra_tests_utils::fx;
 use crate::builders::{amax_5x5, mat5x5, max_ulp_5x5, orth_5x5};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `hessenberg5` (oracle): `q` and `h` entry by entry within the oracle tolerance (upstream's
 /// signs), `H` zero below the subdiagonal, `A = Q H Qᵀ` and `QᵀQ = I` within the measured
@@ -40,56 +41,8 @@ fn test_oracle_hessenberg5() {
             "Hessenberg form",
         );
         let (eq, eh) = (mat5x5(eq), mat5x5(eh));
-        ex = max(ex, excess(ulp_diff(q.m11, eq.m11), oracle_tol(abs_raw(eq.m11), tol)));
-        ex = max(ex, excess(ulp_diff(q.m12, eq.m12), oracle_tol(abs_raw(eq.m12), tol)));
-        ex = max(ex, excess(ulp_diff(q.m13, eq.m13), oracle_tol(abs_raw(eq.m13), tol)));
-        ex = max(ex, excess(ulp_diff(q.m14, eq.m14), oracle_tol(abs_raw(eq.m14), tol)));
-        ex = max(ex, excess(ulp_diff(q.m15, eq.m15), oracle_tol(abs_raw(eq.m15), tol)));
-        ex = max(ex, excess(ulp_diff(q.m21, eq.m21), oracle_tol(abs_raw(eq.m21), tol)));
-        ex = max(ex, excess(ulp_diff(q.m22, eq.m22), oracle_tol(abs_raw(eq.m22), tol)));
-        ex = max(ex, excess(ulp_diff(q.m23, eq.m23), oracle_tol(abs_raw(eq.m23), tol)));
-        ex = max(ex, excess(ulp_diff(q.m24, eq.m24), oracle_tol(abs_raw(eq.m24), tol)));
-        ex = max(ex, excess(ulp_diff(q.m25, eq.m25), oracle_tol(abs_raw(eq.m25), tol)));
-        ex = max(ex, excess(ulp_diff(q.m31, eq.m31), oracle_tol(abs_raw(eq.m31), tol)));
-        ex = max(ex, excess(ulp_diff(q.m32, eq.m32), oracle_tol(abs_raw(eq.m32), tol)));
-        ex = max(ex, excess(ulp_diff(q.m33, eq.m33), oracle_tol(abs_raw(eq.m33), tol)));
-        ex = max(ex, excess(ulp_diff(q.m34, eq.m34), oracle_tol(abs_raw(eq.m34), tol)));
-        ex = max(ex, excess(ulp_diff(q.m35, eq.m35), oracle_tol(abs_raw(eq.m35), tol)));
-        ex = max(ex, excess(ulp_diff(q.m41, eq.m41), oracle_tol(abs_raw(eq.m41), tol)));
-        ex = max(ex, excess(ulp_diff(q.m42, eq.m42), oracle_tol(abs_raw(eq.m42), tol)));
-        ex = max(ex, excess(ulp_diff(q.m43, eq.m43), oracle_tol(abs_raw(eq.m43), tol)));
-        ex = max(ex, excess(ulp_diff(q.m44, eq.m44), oracle_tol(abs_raw(eq.m44), tol)));
-        ex = max(ex, excess(ulp_diff(q.m45, eq.m45), oracle_tol(abs_raw(eq.m45), tol)));
-        ex = max(ex, excess(ulp_diff(q.m51, eq.m51), oracle_tol(abs_raw(eq.m51), tol)));
-        ex = max(ex, excess(ulp_diff(q.m52, eq.m52), oracle_tol(abs_raw(eq.m52), tol)));
-        ex = max(ex, excess(ulp_diff(q.m53, eq.m53), oracle_tol(abs_raw(eq.m53), tol)));
-        ex = max(ex, excess(ulp_diff(q.m54, eq.m54), oracle_tol(abs_raw(eq.m54), tol)));
-        ex = max(ex, excess(ulp_diff(q.m55, eq.m55), oracle_tol(abs_raw(eq.m55), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m11, eh.m11), oracle_tol(abs_raw(eh.m11), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m12, eh.m12), oracle_tol(abs_raw(eh.m12), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m13, eh.m13), oracle_tol(abs_raw(eh.m13), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m14, eh.m14), oracle_tol(abs_raw(eh.m14), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m15, eh.m15), oracle_tol(abs_raw(eh.m15), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m21, eh.m21), oracle_tol(abs_raw(eh.m21), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m22, eh.m22), oracle_tol(abs_raw(eh.m22), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m23, eh.m23), oracle_tol(abs_raw(eh.m23), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m24, eh.m24), oracle_tol(abs_raw(eh.m24), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m25, eh.m25), oracle_tol(abs_raw(eh.m25), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m31, eh.m31), oracle_tol(abs_raw(eh.m31), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m32, eh.m32), oracle_tol(abs_raw(eh.m32), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m33, eh.m33), oracle_tol(abs_raw(eh.m33), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m34, eh.m34), oracle_tol(abs_raw(eh.m34), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m35, eh.m35), oracle_tol(abs_raw(eh.m35), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m41, eh.m41), oracle_tol(abs_raw(eh.m41), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m42, eh.m42), oracle_tol(abs_raw(eh.m42), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m43, eh.m43), oracle_tol(abs_raw(eh.m43), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m44, eh.m44), oracle_tol(abs_raw(eh.m44), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m45, eh.m45), oracle_tol(abs_raw(eh.m45), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m51, eh.m51), oracle_tol(abs_raw(eh.m51), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m52, eh.m52), oracle_tol(abs_raw(eh.m52), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m53, eh.m53), oracle_tol(abs_raw(eh.m53), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m54, eh.m54), oracle_tol(abs_raw(eh.m54), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m55, eh.m55), oracle_tol(abs_raw(eh.m55), tol)));
+        ex = max(ex, excess_all(q, eq, tol));
+        ex = max(ex, excess_all(hh, eh, tol));
         let qt = Matrix5 {
             m11: q.m11,
             m21: q.m12,

@@ -5,14 +5,12 @@
 
 use core::cmp::max;
 use fixed::Fixed;
-use nalgebra::linalg::{
-    Bidiagonal2x1Trait, Vector2BidiagonalTrait, clear_column_unchecked, clear_row_unchecked,
-};
+use nalgebra::linalg::{Bidiagonal2x1Trait, Vector2BidiagonalTrait, clear_column_unchecked};
 use nalgebra::{Matrix1, MatrixMul, Vector2};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
 use crate::builders::{amax_2x1, mat1x1, mat2x1, max_ulp_2x1, orth_1x1, orth_2x1};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `bidiagonal2x1` (oracle): `u`, `d` and `v_t` entry by entry within the oracle tolerance
 /// (upstream's signs), `A = U D Vᵀ`, orthonormal columns of `U` and rows of `Vᵀ` within the
@@ -31,15 +29,12 @@ fn test_oracle_bidiagonal2x1() {
         assert!(bd.is_upper_diagonal() == true);
         assert!(bd.diagonal() == Matrix1 { x: d.x }, "diagonal");
         let (eu, ed, evt) = (mat2x1(eu), mat1x1(ed), mat1x1(evt));
-        ex = max(ex, excess(ulp_diff(u.x, eu.x), oracle_tol(abs_raw(eu.x), tol)));
-        ex = max(ex, excess(ulp_diff(u.y, eu.y), oracle_tol(abs_raw(eu.y), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(vt.x, evt.x), oracle_tol(abs_raw(evt.x), tol)));
+        ex = max(ex, excess_all(u, eu, tol));
+        ex = max(ex, excess_all(d, ed, tol));
+        ex = max(ex, excess_all(vt, evt, tol));
         rec = max(rec, max_ulp_2x1(u.mul_mat(d).mul_mat(vt), a) / amax_2x1(a));
         orth = max(orth, max(orth_2x1(u), orth_1x1(vt)));
         let mut m = a;
-        let mut packed = Matrix1 { x: fx(0) };
-        let mut work = Vector2 { x: fx(0), y: fx(0) };
         let mut none: Option<Vector2<Fixed>> = Option::None;
         let d0 = clear_column_unchecked(ref m, 0, 0, ref none);
         assert!(m == bd.uv && Matrix1 { x: d0 } == bd.diagonal, "householder steps");

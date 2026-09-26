@@ -205,38 +205,52 @@ def axis_call(n: int, xs: list[str], norm: str, nz: str, us: list[str]) -> str:
             f"HouseholderKernelTrait::<T>::axis{n}({', '.join(xs)});")
 
 
+def prep(us: list[str], signed: bool) -> list[str]:
+    """`v_k = 2 u_k` / `nv_k = -2 u_k` (exact) once per reflection: each update is then ONE
+    `Real::mul_add(h, ±2u_k, x)`, the same exact product as `mul_add(-(h + h), u_k, x)`."""
+    st = []
+    for u in us:
+        if signed:
+            st.append(f"let v_{u} = {u} + {u}; let nv_{u} = -v_{u};")
+        else:
+            st.append(f"let nv_{u} = -({u} + {u});")
+    return st
+
+
 def reflect_cols(A, us: list[str], rows: list[int], cols, neg: str | None) -> list[str]:
     """Left reflection `x -> s (x - 2 (u·x) u)` of the columns `cols` restricted to `rows`
     (upstream `Reflection::reflect_with_sign`; `neg` = the name of the `sign < 0` flag, or `None`
-    for the unsigned `reflect`). `A[(i, j)]` = the variable of entry (i, j); in place."""
+    for the unsigned `reflect`). `A[(i, j)]` = the variable of entry (i, j); in place. Expects
+    `prep(us, neg is not None)` in scope."""
     st = []
     for j in cols:
         h = fsum([(1, us[k], A[(r, j)]) for k, r in enumerate(rows)])
-        st.append(f"let h = {h}; let w = h + h; let nw = -w;")
+        st.append(f"let h = {h};")
         for k, r in enumerate(rows):
             x = A[(r, j)]
             if neg is None:
-                st.append(f"{x} = R::mul_add(nw, {us[k]}, {x});")
+                st.append(f"{x} = R::mul_add(h, nv_{us[k]}, {x});")
             else:
-                st.append(f"{x} = if {neg} {{ R::mul_add(w, {us[k]}, -{x}) }} "
-                          f"else {{ R::mul_add(nw, {us[k]}, {x}) }};")
+                st.append(f"{x} = if {neg} {{ R::mul_add(h, v_{us[k]}, -{x}) }} "
+                          f"else {{ R::mul_add(h, nv_{us[k]}, {x}) }};")
     return st
 
 
 def reflect_rows(A, us: list[str], cols: list[int], rows, neg: str | None) -> list[str]:
     """Right reflection of the rows `rows` restricted to `cols` (upstream
-    `Reflection::reflect_rows_with_sign` / `reflect_rows`): `h = row · u` per row."""
+    `Reflection::reflect_rows_with_sign` / `reflect_rows`): `h = row · u` per row. Expects
+    `prep(us, neg is not None)` in scope."""
     st = []
     for i in rows:
         h = fsum([(1, A[(i, c)], us[k]) for k, c in enumerate(cols)])
-        st.append(f"let h = {h}; let w = h + h; let nw = -w;")
+        st.append(f"let h = {h};")
         for k, c in enumerate(cols):
             x = A[(i, c)]
             if neg is None:
-                st.append(f"{x} = R::mul_add(nw, {us[k]}, {x});")
+                st.append(f"{x} = R::mul_add(h, nv_{us[k]}, {x});")
             else:
-                st.append(f"{x} = if {neg} {{ R::mul_add(w, {us[k]}, -{x}) }} "
-                          f"else {{ R::mul_add(nw, {us[k]}, {x}) }};")
+                st.append(f"{x} = if {neg} {{ R::mul_add(h, v_{us[k]}, -{x}) }} "
+                          f"else {{ R::mul_add(h, nv_{us[k]}, {x}) }};")
     return st
 
 
@@ -244,7 +258,7 @@ def sym_reflect_cols(E, us: list[str], rows: list[int], cols, sign_var: str, tag
     """`reflect_with_sign` of the columns `cols` (restricted to `rows`) of a SYMBOLIC matrix `E`
     (entries "0", "1" or variable names): the static zeros and ones of an identity vanish at
     generation time. New entries get fresh names `{tag}{i}{j}`."""
-    st = []
+    st = [f"let {tag}v{k} = {u} + {u}; let {tag}nv{k} = -{tag}v{k};" for k, u in enumerate(us)]
     for j in cols:
         terms = []
         for k, r in enumerate(rows):
@@ -254,17 +268,18 @@ def sym_reflect_cols(E, us: list[str], rows: list[int], cols, sign_var: str, tag
             terms.append((1, us[k], None) if e == "1" else (1, us[k], e))
         if not terms:
             continue
-        st.append(f"let h = {fsum(terms)}; let w = h + h; let nw = -w;")
+        st.append(f"let h = {fsum(terms)};")
         for k, r in enumerate(rows):
             e = E[(r, j)]
             name = f"{tag}{r}{j}"
+            v2, nv2 = f"{tag}v{k}", f"{tag}nv{k}"
             if e == "0":
-                neg, pos = f"w * {us[k]}", f"nw * {us[k]}"
+                neg, pos = f"h * {v2}", f"h * {nv2}"
             elif e == "1":
-                neg, pos = (f"R::mul_add(w, {us[k]}, -R::one())",
-                            f"R::mul_add(nw, {us[k]}, R::one())")
+                neg, pos = (f"R::mul_add(h, {v2}, -R::one())",
+                            f"R::mul_add(h, {nv2}, R::one())")
             else:
-                neg, pos = f"R::mul_add(w, {us[k]}, -{e})", f"R::mul_add(nw, {us[k]}, {e})"
+                neg, pos = f"R::mul_add(h, {v2}, -{e})", f"R::mul_add(h, {nv2}, {e})"
             st.append(f"let {name} = if {sign_var} {{ {neg} }} else {{ {pos} }};")
             E[(r, j)] = name
     return st
@@ -272,7 +287,7 @@ def sym_reflect_cols(E, us: list[str], rows: list[int], cols, sign_var: str, tag
 
 def sym_reflect_rows(E, us: list[str], cols: list[int], rows, sign_var: str, tag: str):
     """`reflect_rows_with_sign` of the rows `rows` (restricted to `cols`) of a symbolic matrix."""
-    st = []
+    st = [f"let {tag}v{k} = {u} + {u}; let {tag}nv{k} = -{tag}v{k};" for k, u in enumerate(us)]
     for i in rows:
         terms = []
         for k, c in enumerate(cols):
@@ -282,17 +297,18 @@ def sym_reflect_rows(E, us: list[str], cols: list[int], rows, sign_var: str, tag
             terms.append((1, us[k], None) if e == "1" else (1, e, us[k]))
         if not terms:
             continue
-        st.append(f"let h = {fsum(terms)}; let w = h + h; let nw = -w;")
+        st.append(f"let h = {fsum(terms)};")
         for k, c in enumerate(cols):
             e = E[(i, c)]
             name = f"{tag}{i}{c}"
+            v2, nv2 = f"{tag}v{k}", f"{tag}nv{k}"
             if e == "0":
-                neg, pos = f"w * {us[k]}", f"nw * {us[k]}"
+                neg, pos = f"h * {v2}", f"h * {nv2}"
             elif e == "1":
-                neg, pos = (f"R::mul_add(w, {us[k]}, -R::one())",
-                            f"R::mul_add(nw, {us[k]}, R::one())")
+                neg, pos = (f"R::mul_add(h, {v2}, -R::one())",
+                            f"R::mul_add(h, {nv2}, R::one())")
             else:
-                neg, pos = f"R::mul_add(w, {us[k]}, -{e})", f"R::mul_add(nw, {us[k]}, {e})"
+                neg, pos = f"R::mul_add(h, {v2}, -{e})", f"R::mul_add(h, {nv2}, {e})"
             st.append(f"let {name} = if {sign_var} {{ {neg} }} else {{ {pos} }};")
             E[(i, c)] = name
     return st
@@ -339,7 +355,7 @@ def render_hessenberg(n: int) -> str:
         us = [f"u{i}_{k}" for k in range(L)]
         st.append(f"// column {i}: `clear_column_unchecked(hess, {i}, 1, Some(work))`")
         st.append(axis_call(L, [A[(r, i)] for r in rows], f"s{i}", f"nz{i}", us))
-        body = [f"let neg = s{i} < R::zero();"]
+        body = [f"let neg = s{i} < R::zero();"] + prep(us, True)
         body += reflect_rows(A, us, rows, range(n), "neg")
         body += reflect_cols(A, us, rows, range(i + 1, n), "neg")
         body += [f"{A[(r, i)]} = {us[k]};" for k, r in enumerate(rows)]
@@ -656,7 +672,7 @@ def bid_new(r: int, c: int) -> list[str]:
         st.append(f"// `{out} = clear_column_unchecked(matrix, {icol}, {shift}, None)`")
         st.append(axis_call(len(rows), [A[(t, icol)] for t in rows], out, f"nz_{out}", us))
         refl = reflect_cols(A, us, rows, range(icol + 1, c), "neg")
-        body = ([f"let neg = {out} < R::zero();"] if refl else []) + refl
+        body = ([f"let neg = {out} < R::zero();"] + prep(us, True) if refl else []) + refl
         body += [f"{A[(t, icol)]} = {us[q]};" for q, t in enumerate(rows)]
         st.append(f"if nz_{out} {{\n" + "\n".join(body) + "\n}")
 
@@ -666,7 +682,7 @@ def bid_new(r: int, c: int) -> list[str]:
         st.append(f"// `{out} = clear_row_unchecked(matrix, axis_packed, work, {irow}, {shift})`")
         st.append(axis_call(len(cols), [A[(irow, t)] for t in cols], out, f"nz_{out}", us))
         refl = reflect_rows(A, us, cols, range(irow + 1, r), "neg")
-        body = ([f"let neg = {out} < R::zero();"] if refl else []) + refl
+        body = ([f"let neg = {out} < R::zero();"] + prep(us, True) if refl else []) + refl
         body += [f"{A[(irow, t)]} = {us[q]};" for q, t in enumerate(cols)]
         st.append(f"if nz_{out} {{\n" + "\n".join(body) + "\n}")
     if r >= c:
@@ -904,7 +920,7 @@ def outputs() -> dict[str, str]:
         "//! The tridiagonalisation of the symmetric static squares (upstream\n"
         "//! `nalgebra::linalg::SymmetricTridiagonal`, WP 8.5-P16): `SymmetricTridiagonal1` ..\n"
         "//! `SymmetricTridiagonal6`.\n",
-        "symmetric_tridiagonal")
+        "hessenberg")
     items = []
     for r in DIMS:
         for c in DIMS:
@@ -1047,6 +1063,7 @@ def francis_fn(n: int, s: int, e: int) -> str:
                         f"{tv(k + 2, k - 1)} = R::zero();")
         else:
             body.append("let _ = nrm;")
+        body += prep(us, False)
         body += reflect_cols(T, us, rows, range(k, n), None)
         body += reflect_rows(T, us, rows, range(0, min(k + 4, e + 1)), None)
         qb = reflect_rows(Q, us, rows, range(n), None)
@@ -1059,7 +1076,7 @@ def francis_fn(n: int, s: int, e: int) -> str:
     us = ["u0", "u1"]
     rows = [m, e]
     st.append(axis_call(2, ["ax", "ay"], "nrm", "nz", us))
-    body = [f"{tv(m, m - 1)} = nrm; {tv(e, m - 1)} = R::zero();"]
+    body = [f"{tv(m, m - 1)} = nrm; {tv(e, m - 1)} = R::zero();"] + prep(us, False)
     body += reflect_cols(T, us, rows, range(m, n), None)
     body += reflect_rows(T, us, rows, range(0, e + 1), None)
     qb = reflect_rows(Q, us, rows, range(n), None)
@@ -1126,39 +1143,51 @@ def schur_doc(n: int) -> str:
     /// has three rows or more, the 2x2 standardisation otherwise (a 2x2 block with real
     /// eigenvalues is rotated to upper triangular, a complex pair is left as a 2x2 block); one
     /// iteration per pass, `None` when the count reaches `max_niter`. `T` is scaled back by the
-    /// largest entry (one floor per entry).
+    /// largest entry (one floor per entry). Every step is one function per static window
+    /// (`{scname(n)}KernelTrait`), dispatched on the run-time `(start, end)`.
     ///
-    /// Deflation: an entry `t_k,k-1` is negligible when `|t| <= eps (|t_kk| + |t_k-1,k-1|)`
-    /// (upstream's relative test, `eps` a `Real` in raw units: `default_epsilon()` is one ulp) or
-    /// `|t| <= max(eps², 2^-{SCHUR_NOISE_LOG2 * -1 + 32})` in the normalised matrix. Upstream's absolute threshold is `eps²`, "the
-    /// equivalent of LAPACK's SMLNUM"; in Q32.32 `eps²` is zero (only exact zeros would deflate),
-    /// and a Francis step leaves a rounding noise of a few ulp to a few thousand ulp in the
-    /// entries it chases through (the angle of a reflection built on a small bulge is only known to
-    /// `1 / |bulge|`): measured on a bit-faithful Q32.32 model of this code (random, symmetric,
-    /// integer, non-normal, clustered and defective matrices of sizes 3 to 6), the threshold 0
-    /// leaves 10 % to 60 % of the inputs iterating for more than 500 passes, 2^-26 (64 ulp)
-    /// converges on all of them (median 4 / 6 / 10 / 16 passes for n = 3 / 4 / 5 / 6, a tail of a
-    /// few percent above 100 where a subdiagonal entry sits in the noise), for an eigenvalue error of
-    /// a few hundred ulp per unit of the largest entry. Larger thresholds (256, 1024, 4096 ulp) cut
-    /// the tail but grow the error of well-conditioned inputs; smaller ones lengthen the tail.
+    /// Deflation, upstream's test: `t_k,k-1` is negligible when `|t| <= eps (|t_kk| +
+    /// |t_k-1,k-1|)` (`eps` in raw units: `default_epsilon()` is one ulp) or `|t| <= thr`.
+    /// Upstream's absolute threshold is `eps²` ("the equivalent of LAPACK's SMLNUM"), which is
+    /// zero in Q32.32 (only exact zeros would deflate) while a Francis step leaves a rounding noise
+    /// of a few ulp to a few thousand ulp in the entries it chases through (the angle of a
+    /// reflection built on a small bulge is only known to `1 / |bulge|`). Q32.32 thresholds,
+    /// measured on a bit-faithful model of this code (random, symmetric, integer, non-normal,
+    /// clustered, defective and near-triangular matrices of sizes 3 to 6) and on the oracle
+    /// vectors:
+    /// - `thr = max(eps², 2^-{32 - SCHUR_NOISE_LOG2})` of the normalised matrix: with `thr = eps²` 10 % to
+    ///   60 % of those inputs iterate for more than 500 passes; with 2^-26 (64 ulp) almost all
+    ///   converge (median 4 / 6 / 10 / 16 passes for n = 3 / 4 / 5 / 6, like upstream's `f64`
+    ///   median 5 / 6 / 9 / 12) and the eigenvalues are within the oracle tolerance;
+    /// - `thr` DOUBLES after {STUCK_PASSES} consecutive passes that leave the active window unchanged (back to
+    ///   its base value when it changes), up to 2^-{STUCK_CAP_LOG2}: an entry that sits in the rounding noise
+    ///   (defective and clustered spectra, tiny subdiagonal entries) would otherwise keep the loop
+    ///   running (a defective 4x4 of the oracle never converged); the eigenvalue error then grows
+    ///   with the threshold reached, which the oracle's scaled tolerance of those families covers.
+    ///   Below the cap nothing changes for a window that converges; above it, like upstream, a
+    ///   matrix on which the iteration cycles without converging (e.g. the cyclic permutation of
+    ///   size 6: upstream's `f64` code loops forever on it too, there are no exceptional shifts)
+    ///   never returns with `max_niter = 0`.
     ///
-    /// The shift vector (the first column of `(H - σ1)(H - σ2)`) is upstream's `(h11² + h12 h21
-    /// - tra h11 + det, h21 (h11 + h22 - tra), h21 h32)` DIVIDED by `sc = |h21| + |h11 - hmm| +
-    /// |h11 - hnn| + |hnm|` before its products (LAPACK `dlahqr`'s scaling): it is the product of
-    /// two first-order small quantities near convergence, which Q32.32 floors to exactly zero
-    /// (the step then does nothing, forever: measured on clustered spectra). Same direction, hence
-    /// the same reflection, in exact arithmetic: `(p d2 - hmn r + h12 g, g (h11 + h22 - tra), g h32)`
-    /// with `(p, r, g) = (h11 - hmm, hnm, h21) / sc` and `d2 = h11 - hnn`, one fused sum.
+    /// Shift vector: upstream's first column of `(H - σ1)(H - σ2)`, `(h11² + h12 h21 - tra h11 +
+    /// det, h21 (h11 + h22 - tra), h21 h32)`, DIVIDED by `sc = |h21| + |h11 - hmm| + |h11 - hnn| +
+    /// |hnm|` before its products (LAPACK `dlahqr`'s scaling): near convergence it is the product
+    /// of two first-order small quantities, which Q32.32 floors to exactly zero (the step then
+    /// does nothing, forever: measured on clustered spectra). Same direction, hence the same
+    /// reflection, in exact arithmetic: `(p d2 - hmn r + h12 g, g (h11 + h22 - tra), g h32)` with
+    /// `(p, r, g) = (h11 - hmm, hnm, h21) / sc` and `d2 = h11 - hnn`, one fused sum.
+    ///
+    /// 2x2 blocks: `4 discr = 4 h10 h01 + (h00 - h11)²` exact (its sign exact: upstream's `0.5
+    /// (h00 - h11)` then `discr` rounds twice), `√(4 discr)` the floored root of the exact sum,
+    /// `x = (h00 - h11 ± √(4 discr)) / 2` (the larger in magnitude, as upstream), the rotation
+    /// `GivensRotation::new(x, h10)` normalised twice (see `householder_kernels::givens`), and the
+    /// diagonal of the rotated block set to the closed-form eigenvalues `(h11 + x, h00 - x)`
+    /// (what the rotation gives in exact arithmetic; the rotated entries lose `ulp / |x|`, hundreds
+    /// of ulp on clustered eigenvalues, measured).
     ///
     /// Reflections: axes by `linalg::householder_kernels` (upstream's two normalisations), one
-    /// fused dot product (doubled exactly) and one `Real::mul_add` per updated entry; the 2x2
-    /// branch computes `4 discr = 4 h10 h01 + (h00 - h11)²` exactly (its sign is exact: upstream's
-    /// `0.5 (h00 - h11)` then `discr` rounds twice) and the rotation from `x = (h00 - h11 ± √(4
-    /// discr)) / 2` (the one of larger magnitude, as upstream) by `GivensRotation::new`.
-    ///
-    /// Like upstream, `max_niter = 0` never gives up: a matrix on which the unshifted-exception-free
-    /// Francis iteration cycles (e.g. the cyclic permutation of size 6, on which upstream's `f64`
-    /// code loops forever too) never returns. Panics on overflow."""
+    /// fused dot product (doubled exactly) and one `Real::mul_add` per updated entry. Panics on
+    /// overflow."""
 
 
 def render_schur(n: int) -> str:
@@ -1350,7 +1379,7 @@ def render_schur(n: int) -> str:
         nn = mm + 1
         hmm, hnm, hmn, hnn = (f"self.t.{fld(n, n, mm, mm)}", f"self.t.{fld(n, n, nn, mm)}",
                               f"self.t.{fld(n, n, mm, nn)}", f"self.t.{fld(n, n, nn, nn)}")
-        blk = eig2_code(hmm, hmn, hnm, hnn)
+        blk = eig2_code(hmm, hmn, hnm, hnn)[1:]
         blk += [f"let im = if d4 < R::zero() {{ {sqrt_d4(hmm, hmn, hnm, hnn, True)} * half }} "
                 "else { R::zero() };",
                 f"let re = ({hmm} + {hnn}) * half;",
@@ -2275,10 +2304,8 @@ def mb(what: str, *shape) -> int:
 
 
 def cmp(r: int, c: int, got: str, exp: str) -> str:
-    return " ".join(
-        f"ex = max(ex, excess(ulp_diff({got}.{fld(r, c, i, j)}, {exp}.{fld(r, c, i, j)}), "
-        f"oracle_tol(abs_raw({exp}.{fld(r, c, i, j)}), tol)));"
-        for i in range(r) for j in range(c))
+    """The largest excess over the oracle tolerance of every entry (one loop: compile budget)."""
+    return f"ex = max(ex, excess_all({got}, {exp}, tol));"
 
 
 def transpose_lit(r: int, c: int, var: str) -> str:
@@ -2307,10 +2334,30 @@ fn bench_{group}__{variant}() {{
 """
 
 
-UTIL = HEADER + """//! Test helpers of the WP 8.5-P16 packages: sorting of the eigenvalues (the oracle emits them
-//! sorted), the iteration count of a Schur decomposition.
+UTIL = HEADER + """//! Test helpers of the WP 8.5-P16 packages: the oracle comparison of whole matrices (one loop:
+//! compile budget), the sorting of the eigenvalues (the oracle emits them sorted).
 
 use fixed::Fixed;
+use nalgebra::linalg::ColumnMajor;
+use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
+
+/// The largest excess of `|got - exp|` over the oracle tolerance (`oracle_tol(|exp|, tol)`), over
+/// every entry of two matrices of the same shape.
+pub fn excess_all<M, impl C: ColumnMajor<M, Fixed>, +Drop<M>>(got: M, exp: M, tol: u64) -> u128 {
+    let g = C::to_column_major(got);
+    let e = C::to_column_major(exp);
+    let mut ex = 0;
+    let mut i = 0;
+    while i < g.len() {
+        let (a, b) = (*g[i], *e[i]);
+        let x = excess(ulp_diff(a, b), oracle_tol(abs_raw(b), tol));
+        if x > ex {
+            ex = x;
+        }
+        i += 1;
+    }
+    ex
+}
 
 /// `(re, im)` raw pairs sorted by `re` then `im` (insertion sort).
 pub fn sorted_pairs(re: Array<Fixed>, im: Array<Fixed>) -> Array<(i64, i64)> {
@@ -2639,7 +2686,7 @@ PACKAGES = {
     # package: (features, description, modules)
     "tests_linalg_schur": (["schur"], "the Schur and general eigen decompositions",
                            [("schur", n) for n in DIMS]),
-    "tests_linalg_hessenberg": (["hessenberg", "symmetric_tridiagonal", "balancing"],
+    "tests_linalg_hessenberg": (["hessenberg"],
                                 "the Hessenberg decomposition, the symmetric tridiagonalisation, "
                                 "the balancing",
                                 [("hessenberg", n) for n in DIMS]
@@ -2684,7 +2731,7 @@ def test_packages() -> dict[str, str]:
         out[base + "Scarb.toml"] = TEST_MANIFEST.format(
             name=pkg, features=", ".join(f'"{f}"' for f in features),
             description=f"Tests and gas benchmarks of {what} (WP 8.5-P16; not published).")
-        names = ["builders", "oracle_schur"] + (["util"] if pkg == "tests_linalg_schur" else [])
+        names = ["builders", "oracle_schur", "util"]
         need, vecs = set(), set()
         for kind, *shape in mods:
             if kind == "balancing":
@@ -2711,8 +2758,7 @@ def test_packages() -> dict[str, str]:
                       "symmetric_tridiagonal": render_tridiagonal_tests}[kind]
             out[base + f"src/{kind}{n}.cairo"] = render(n)
         out[base + "src/builders.cairo"] = render_builders(need, vecs)
-        if pkg == "tests_linalg_schur":
-            out[base + "src/util.cairo"] = UTIL
+        out[base + "src/util.cairo"] = UTIL
         out[base + "src/lib.cairo"] = (
             HEADER + f"//! Package `nalgebra_{pkg}` (WP 8.5-P16): tests and gas benchmarks of {what},\n"
             "//! through the public API. Oracle vectors: `tools/oracle` suite `schur` (`oracle\n"
@@ -2809,9 +2855,10 @@ use fixed::Fixed;
 use nalgebra::linalg::{{{', '.join(sorted(uses))}}};
 use nalgebra::{{{', '.join(sorted({M, V, 'MatrixMul'} | ({tname(n - 1, 1)} if n >= 2 else set())))}}};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use nalgebra_tests_utils::fx;
 use crate::builders::{{{', '.join(sorted(b))}}};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 """
     if n == 1:
         head = head.replace("use fixed::Fixed;\n", "")
@@ -2879,9 +2926,9 @@ fn test_oracle_symmetric_tridiagonal{n}() {{
 use core::cmp::max;
 use nalgebra::linalg::{{{M}SymmetricTridiagonalTrait, {S}Trait}};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{{abs_raw, excess, oracle_tol, ulp_diff}};
 use crate::builders::{{{', '.join(sorted(b))}}};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 """
     return head + "\n" + "\n".join(parts)
 
@@ -2924,9 +2971,9 @@ fn test_oracle_balance{n}() {{
 use core::cmp::max;
 use nalgebra::linalg::{{balance_parlett_reinsch, unbalance}};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{{abs_raw, excess, oracle_tol, ulp_diff}};
 use crate::builders::{{{', '.join(sorted(b))}}};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 """
     return head + "\n" + "\n".join(parts)
 
@@ -2945,9 +2992,14 @@ def render_bidiagonal_tests(r: int, c: int) -> str:
         dcheck.append(f"assert!(bd.off_diagonal() == {vec_lit(k - 1, lambda i: f'd.{fld(k, k, i, i + 1) if upper else fld(k, k, i + 1, i)}')}, \"off_diagonal\");")
     # helper replay
     V_R, V_C = tname(r, 1), tname(c, 1)
-    replay = [f"let mut m = a;", f"let mut packed = {vec_lit(c, lambda i: 'fx(0)')};",
-              f"let mut work = {vec_lit(r, lambda i: 'fx(0)')};",
-              f"let mut none: Option<{V_R}<Fixed>> = Option::None;"]
+    use_col = upper or k >= 2
+    use_row = (not upper) or k >= 2
+    replay = ["let mut m = a;"]
+    if use_row:
+        replay += [f"let mut packed = {vec_lit(c, lambda i: 'fx(0)')};",
+                   f"let mut work = {vec_lit(r, lambda i: 'fx(0)')};"]
+    if use_col:
+        replay.append(f"let mut none: Option<{V_R}<Fixed>> = Option::None;")
     if upper:
         for ite in range(k - 1):
             replay.append(f"let d{ite} = clear_column_unchecked(ref m, {ite}, 0, ref none);")
@@ -2962,7 +3014,8 @@ def render_bidiagonal_tests(r: int, c: int) -> str:
     if k >= 2:
         conds.append(f"{vec_lit(k - 1, lambda i: f'e{i}')} == bd.off_diagonal")
     replay.append(f"assert!({' && '.join(conds)}, \"householder steps\");")
-    replay.append("assert!(none.is_none());")
+    if use_col:
+        replay.append("assert!(none.is_none());")
     parts = [f"""/// `bidiagonal{s}` (oracle): `u`, `d` and `v_t` entry by entry within the oracle tolerance
 /// (upstream's signs), `A = U D Vᵀ`, orthonormal columns of `U` and rows of `Vᵀ` within the
 /// measured bounds, the accessors consistent, and the Householder building blocks
@@ -3000,8 +3053,9 @@ fn test_oracle_bidiagonal{s}() {{
     parts.append(bench(f"bidiagonal{s}_unpack", "symbolic", setup_u, "let (u, _, vt) = a.unpack();",
                        f"u.{fld(r, k, 0, 0)} == vt.{fld(k, c, 0, 0)} || true",
                        "`(U, D, Vᵀ)`: the reflections applied to symbolic identity entries."))
-    uses = [f"{B}Trait", f"{M}BidiagonalTrait", "clear_column_unchecked", "clear_row_unchecked"]
-    shapes = {M, V_R, "MatrixMul"}
+    uses = [f"{B}Trait", f"{M}BidiagonalTrait"] + (["clear_column_unchecked"] if use_col else []) \
+        + (["clear_row_unchecked"] if use_row else [])
+    shapes = {"MatrixMul"} | ({V_R} if use_col else set())
     if k >= 2:
         shapes.add(tname(k - 1, 1))
     shapes.add(tname(k, 1))
@@ -3015,8 +3069,13 @@ use fixed::Fixed;
 use nalgebra::linalg::{{{', '.join(sorted(uses))}}};
 use nalgebra::{{{', '.join(sorted(shapes))}}};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
+use nalgebra_tests_utils::fx;
 use crate::builders::{{{', '.join(sorted(b))}}};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 """
+    if not use_col:
+        head = head.replace("use fixed::Fixed;\n", "")
+    if not use_row:
+        head = head.replace("use nalgebra_tests_utils::fx;\n", "")
     return head + "\n" + "\n".join(parts)

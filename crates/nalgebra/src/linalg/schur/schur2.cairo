@@ -84,7 +84,6 @@ pub impl Schur2Impl<
         let half = R::from_ratio(1, 2);
         let mut second = false;
         if !second && self.t.m21 != R::zero() {
-            let dd = self.t.m11 - self.t.m22;
             let d4 = HouseholderKernelTrait::<
                 T,
             >::disc4(self.t.m11, self.t.m12, self.t.m21, self.t.m22);

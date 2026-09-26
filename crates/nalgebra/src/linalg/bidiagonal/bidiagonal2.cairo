@@ -70,18 +70,20 @@ pub impl Bidiagonal2Impl<
         let (d0, nz_d0, uc0_0, uc0_1) = HouseholderKernelTrait::<T>::axis2(a00, a10);
         if nz_d0 {
             let neg = d0 < R::zero();
+            let v_uc0_0 = uc0_0 + uc0_0;
+            let nv_uc0_0 = -v_uc0_0;
+            let v_uc0_1 = uc0_1 + uc0_1;
+            let nv_uc0_1 = -v_uc0_1;
             let h = R::sum_prod2(uc0_0, a01, uc0_1, a11);
-            let w = h + h;
-            let nw = -w;
             a01 = if neg {
-                R::mul_add(w, uc0_0, -a01)
+                R::mul_add(h, v_uc0_0, -a01)
             } else {
-                R::mul_add(nw, uc0_0, a01)
+                R::mul_add(h, nv_uc0_0, a01)
             };
             a11 = if neg {
-                R::mul_add(w, uc0_1, -a11)
+                R::mul_add(h, v_uc0_1, -a11)
             } else {
-                R::mul_add(nw, uc0_1, a11)
+                R::mul_add(h, nv_uc0_1, a11)
             };
             a00 = uc0_0;
             a10 = uc0_1;
@@ -90,13 +92,13 @@ pub impl Bidiagonal2Impl<
         let (e0, nz_e0, ur0_0) = HouseholderKernelTrait::<T>::axis1(a01);
         if nz_e0 {
             let neg = e0 < R::zero();
+            let v_ur0_0 = ur0_0 + ur0_0;
+            let nv_ur0_0 = -v_ur0_0;
             let h = a11 * ur0_0;
-            let w = h + h;
-            let nw = -w;
             a11 = if neg {
-                R::mul_add(w, ur0_0, -a11)
+                R::mul_add(h, v_ur0_0, -a11)
             } else {
-                R::mul_add(nw, ur0_0, a11)
+                R::mul_add(h, nv_ur0_0, a11)
             };
             a01 = ur0_0;
         }
@@ -146,40 +148,40 @@ pub impl Bidiagonal2Impl<
     fn u(self: Bidiagonal2<T>) -> Matrix2<T> {
         revoke_ap_tracking();
         let su1 = self.diagonal.y < R::zero();
+        let u1_v0 = self.uv.m22 + self.uv.m22;
+        let u1_nv0 = -u1_v0;
         let h = self.uv.m22;
-        let w = h + h;
-        let nw = -w;
         let u1_11 = if su1 {
-            R::mul_add(w, self.uv.m22, -R::one())
+            R::mul_add(h, u1_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m22, R::one())
+            R::mul_add(h, u1_nv0, R::one())
         };
         let su0 = self.diagonal.x < R::zero();
+        let u0_v0 = self.uv.m11 + self.uv.m11;
+        let u0_nv0 = -u0_v0;
+        let u0_v1 = self.uv.m21 + self.uv.m21;
+        let u0_nv1 = -u0_v1;
         let h = self.uv.m11;
-        let w = h + h;
-        let nw = -w;
         let u0_00 = if su0 {
-            R::mul_add(w, self.uv.m11, -R::one())
+            R::mul_add(h, u0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m11, R::one())
+            R::mul_add(h, u0_nv0, R::one())
         };
         let u0_10 = if su0 {
-            w * self.uv.m21
+            h * u0_v1
         } else {
-            nw * self.uv.m21
+            h * u0_nv1
         };
         let h = self.uv.m21 * u1_11;
-        let w = h + h;
-        let nw = -w;
         let u0_01 = if su0 {
-            w * self.uv.m11
+            h * u0_v0
         } else {
-            nw * self.uv.m11
+            h * u0_nv0
         };
         let u0_11 = if su0 {
-            R::mul_add(w, self.uv.m21, -u1_11)
+            R::mul_add(h, u0_v1, -u1_11)
         } else {
-            R::mul_add(nw, self.uv.m21, u1_11)
+            R::mul_add(h, u0_nv1, u1_11)
         };
         Matrix2 { m11: u0_00, m21: u0_10, m12: u0_01, m22: u0_11 }
     }
@@ -189,13 +191,13 @@ pub impl Bidiagonal2Impl<
     fn v_t(self: Bidiagonal2<T>) -> Matrix2<T> {
         revoke_ap_tracking();
         let sv0 = self.off_diagonal.x < R::zero();
+        let v0_v0 = self.uv.m12 + self.uv.m12;
+        let v0_nv0 = -v0_v0;
         let h = self.uv.m12;
-        let w = h + h;
-        let nw = -w;
         let v0_11 = if sv0 {
-            R::mul_add(w, self.uv.m12, -R::one())
+            R::mul_add(h, v0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m12, R::one())
+            R::mul_add(h, v0_nv0, R::one())
         };
         Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: v0_11 }
     }

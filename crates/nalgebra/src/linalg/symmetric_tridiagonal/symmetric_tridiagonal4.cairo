@@ -241,95 +241,95 @@ pub impl SymmetricTridiagonal4Impl<
     fn q(self: SymmetricTridiagonal4<T>) -> Matrix4<T> {
         revoke_ap_tracking();
         let sq2 = self.off_diagonal.z < R::zero();
+        let q2_v0 = self.tri.m43 + self.tri.m43;
+        let q2_nv0 = -q2_v0;
         let h = self.tri.m43;
-        let w = h + h;
-        let nw = -w;
         let q2_33 = if sq2 {
-            R::mul_add(w, self.tri.m43, -R::one())
+            R::mul_add(h, q2_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m43, R::one())
+            R::mul_add(h, q2_nv0, R::one())
         };
         let sq1 = self.off_diagonal.y < R::zero();
+        let q1_v0 = self.tri.m32 + self.tri.m32;
+        let q1_nv0 = -q1_v0;
+        let q1_v1 = self.tri.m42 + self.tri.m42;
+        let q1_nv1 = -q1_v1;
         let h = self.tri.m32;
-        let w = h + h;
-        let nw = -w;
         let q1_22 = if sq1 {
-            R::mul_add(w, self.tri.m32, -R::one())
+            R::mul_add(h, q1_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m32, R::one())
+            R::mul_add(h, q1_nv0, R::one())
         };
         let q1_32 = if sq1 {
-            w * self.tri.m42
+            h * q1_v1
         } else {
-            nw * self.tri.m42
+            h * q1_nv1
         };
         let h = self.tri.m42 * q2_33;
-        let w = h + h;
-        let nw = -w;
         let q1_23 = if sq1 {
-            w * self.tri.m32
+            h * q1_v0
         } else {
-            nw * self.tri.m32
+            h * q1_nv0
         };
         let q1_33 = if sq1 {
-            R::mul_add(w, self.tri.m42, -q2_33)
+            R::mul_add(h, q1_v1, -q2_33)
         } else {
-            R::mul_add(nw, self.tri.m42, q2_33)
+            R::mul_add(h, q1_nv1, q2_33)
         };
         let sq0 = self.off_diagonal.x < R::zero();
+        let q0_v0 = self.tri.m21 + self.tri.m21;
+        let q0_nv0 = -q0_v0;
+        let q0_v1 = self.tri.m31 + self.tri.m31;
+        let q0_nv1 = -q0_v1;
+        let q0_v2 = self.tri.m41 + self.tri.m41;
+        let q0_nv2 = -q0_v2;
         let h = self.tri.m21;
-        let w = h + h;
-        let nw = -w;
         let q0_11 = if sq0 {
-            R::mul_add(w, self.tri.m21, -R::one())
+            R::mul_add(h, q0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m21, R::one())
+            R::mul_add(h, q0_nv0, R::one())
         };
         let q0_21 = if sq0 {
-            w * self.tri.m31
+            h * q0_v1
         } else {
-            nw * self.tri.m31
+            h * q0_nv1
         };
         let q0_31 = if sq0 {
-            w * self.tri.m41
+            h * q0_v2
         } else {
-            nw * self.tri.m41
+            h * q0_nv2
         };
         let h = R::sum_prod2(self.tri.m31, q1_22, self.tri.m41, q1_32);
-        let w = h + h;
-        let nw = -w;
         let q0_12 = if sq0 {
-            w * self.tri.m21
+            h * q0_v0
         } else {
-            nw * self.tri.m21
+            h * q0_nv0
         };
         let q0_22 = if sq0 {
-            R::mul_add(w, self.tri.m31, -q1_22)
+            R::mul_add(h, q0_v1, -q1_22)
         } else {
-            R::mul_add(nw, self.tri.m31, q1_22)
+            R::mul_add(h, q0_nv1, q1_22)
         };
         let q0_32 = if sq0 {
-            R::mul_add(w, self.tri.m41, -q1_32)
+            R::mul_add(h, q0_v2, -q1_32)
         } else {
-            R::mul_add(nw, self.tri.m41, q1_32)
+            R::mul_add(h, q0_nv2, q1_32)
         };
         let h = R::sum_prod2(self.tri.m31, q1_23, self.tri.m41, q1_33);
-        let w = h + h;
-        let nw = -w;
         let q0_13 = if sq0 {
-            w * self.tri.m21
+            h * q0_v0
         } else {
-            nw * self.tri.m21
+            h * q0_nv0
         };
         let q0_23 = if sq0 {
-            R::mul_add(w, self.tri.m31, -q1_23)
+            R::mul_add(h, q0_v1, -q1_23)
         } else {
-            R::mul_add(nw, self.tri.m31, q1_23)
+            R::mul_add(h, q0_nv1, q1_23)
         };
         let q0_33 = if sq0 {
-            R::mul_add(w, self.tri.m41, -q1_33)
+            R::mul_add(h, q0_v2, -q1_33)
         } else {
-            R::mul_add(nw, self.tri.m41, q1_33)
+            R::mul_add(h, q0_nv2, q1_33)
         };
         Matrix4 {
             m11: R::one(),

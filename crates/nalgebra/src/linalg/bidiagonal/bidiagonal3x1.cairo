@@ -101,23 +101,27 @@ pub impl Bidiagonal3x1Impl<
     fn u(self: Bidiagonal3x1<T>) -> Vector3<T> {
         revoke_ap_tracking();
         let su0 = self.diagonal.x < R::zero();
+        let u0_v0 = self.uv.x + self.uv.x;
+        let u0_nv0 = -u0_v0;
+        let u0_v1 = self.uv.y + self.uv.y;
+        let u0_nv1 = -u0_v1;
+        let u0_v2 = self.uv.z + self.uv.z;
+        let u0_nv2 = -u0_v2;
         let h = self.uv.x;
-        let w = h + h;
-        let nw = -w;
         let u0_00 = if su0 {
-            R::mul_add(w, self.uv.x, -R::one())
+            R::mul_add(h, u0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.x, R::one())
+            R::mul_add(h, u0_nv0, R::one())
         };
         let u0_10 = if su0 {
-            w * self.uv.y
+            h * u0_v1
         } else {
-            nw * self.uv.y
+            h * u0_nv1
         };
         let u0_20 = if su0 {
-            w * self.uv.z
+            h * u0_v2
         } else {
-            nw * self.uv.z
+            h * u0_nv2
         };
         Vector3 { x: u0_00, y: u0_10, z: u0_20 }
     }

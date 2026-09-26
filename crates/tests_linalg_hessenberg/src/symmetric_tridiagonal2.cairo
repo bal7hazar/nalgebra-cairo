@@ -5,9 +5,9 @@
 use core::cmp::max;
 use nalgebra::linalg::{Matrix2SymmetricTridiagonalTrait, SymmetricTridiagonal2Trait};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 use crate::builders::{amax_2x2, mat2x2, max_ulp_2x2, orth_2x2, vec1, vec2};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `symmetric_tridiagonal2` (oracle): `q`, the diagonal and the off-diagonal within the oracle
 /// tolerance (upstream's signs), `recompose()` = `A` and `QᵀQ = I` within the measured bounds,
@@ -24,14 +24,10 @@ fn test_oracle_symmetric_tridiagonal2() {
         assert!(q == t.q() && d == t.diagonal() && t.internal_tri() == t.tri);
         assert!(t.unpack_tridiagonal() == (d, e) && t.off_diagonal() == e);
         let (eq, ed) = (mat2x2(eq), vec2(ed));
-        ex = max(ex, excess(ulp_diff(q.m11, eq.m11), oracle_tol(abs_raw(eq.m11), tol)));
-        ex = max(ex, excess(ulp_diff(q.m12, eq.m12), oracle_tol(abs_raw(eq.m12), tol)));
-        ex = max(ex, excess(ulp_diff(q.m21, eq.m21), oracle_tol(abs_raw(eq.m21), tol)));
-        ex = max(ex, excess(ulp_diff(q.m22, eq.m22), oracle_tol(abs_raw(eq.m22), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.y, ed.y), oracle_tol(abs_raw(ed.y), tol)));
+        ex = max(ex, excess_all(q, eq, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         let ee = vec1(ee);
-        ex = max(ex, excess(ulp_diff(e.x, ee.x), oracle_tol(abs_raw(ee.x), tol)));
+        ex = max(ex, excess_all(e, ee, tol));
         rec = max(rec, max_ulp_2x2(t.recompose(), a) / amax_2x2(a));
         orth = max(orth, orth_2x2(q));
     }

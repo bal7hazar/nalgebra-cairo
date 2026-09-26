@@ -4,15 +4,13 @@
 //! gas benchmarks.
 
 use core::cmp::max;
-use fixed::Fixed;
-use nalgebra::linalg::{
-    Bidiagonal1x3Trait, RowVector3BidiagonalTrait, clear_column_unchecked, clear_row_unchecked,
-};
-use nalgebra::{Matrix1, MatrixMul, RowVector3, Vector3};
+use nalgebra::linalg::{Bidiagonal1x3Trait, RowVector3BidiagonalTrait, clear_row_unchecked};
+use nalgebra::{Matrix1, MatrixMul, Vector3};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
+use nalgebra_tests_utils::fx;
 use crate::builders::{amax_1x3, mat1x1, mat1x3, max_ulp_1x3, orth_1x1, orth_1x3};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `bidiagonal1x3` (oracle): `u`, `d` and `v_t` entry by entry within the oracle tolerance
 /// (upstream's signs), `A = U D Vᵀ`, orthonormal columns of `U` and rows of `Vᵀ` within the
@@ -31,20 +29,16 @@ fn test_oracle_bidiagonal1x3() {
         assert!(bd.is_upper_diagonal() == false);
         assert!(bd.diagonal() == Matrix1 { x: d.x }, "diagonal");
         let (eu, ed, evt) = (mat1x1(eu), mat1x1(ed), mat1x3(evt));
-        ex = max(ex, excess(ulp_diff(u.x, eu.x), oracle_tol(abs_raw(eu.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(vt.x, evt.x), oracle_tol(abs_raw(evt.x), tol)));
-        ex = max(ex, excess(ulp_diff(vt.y, evt.y), oracle_tol(abs_raw(evt.y), tol)));
-        ex = max(ex, excess(ulp_diff(vt.z, evt.z), oracle_tol(abs_raw(evt.z), tol)));
+        ex = max(ex, excess_all(u, eu, tol));
+        ex = max(ex, excess_all(d, ed, tol));
+        ex = max(ex, excess_all(vt, evt, tol));
         rec = max(rec, max_ulp_1x3(u.mul_mat(d).mul_mat(vt), a) / amax_1x3(a));
         orth = max(orth, max(orth_1x1(u), orth_1x3(vt)));
         let mut m = a;
         let mut packed = Vector3 { x: fx(0), y: fx(0), z: fx(0) };
         let mut work = Matrix1 { x: fx(0) };
-        let mut none: Option<Matrix1<Fixed>> = Option::None;
         let d0 = clear_row_unchecked(ref m, ref packed, ref work, 0, 0);
         assert!(m == bd.uv && Matrix1 { x: d0 } == bd.diagonal, "householder steps");
-        assert!(none.is_none());
     }
     assert!(ex == 0, "oracle tolerance exceeded by {}", ex);
     assert!(rec <= 4 && orth <= 8, "measured {} {}", rec, orth);

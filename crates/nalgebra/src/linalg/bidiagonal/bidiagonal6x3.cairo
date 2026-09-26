@@ -87,6 +87,18 @@ pub impl Bidiagonal6x3Impl<
         >::axis6(a00, a10, a20, a30, a40, a50);
         if nz_d0 {
             let neg = d0 < R::zero();
+            let v_uc0_0 = uc0_0 + uc0_0;
+            let nv_uc0_0 = -v_uc0_0;
+            let v_uc0_1 = uc0_1 + uc0_1;
+            let nv_uc0_1 = -v_uc0_1;
+            let v_uc0_2 = uc0_2 + uc0_2;
+            let nv_uc0_2 = -v_uc0_2;
+            let v_uc0_3 = uc0_3 + uc0_3;
+            let nv_uc0_3 = -v_uc0_3;
+            let v_uc0_4 = uc0_4 + uc0_4;
+            let nv_uc0_4 = -v_uc0_4;
+            let v_uc0_5 = uc0_5 + uc0_5;
+            let nv_uc0_5 = -v_uc0_5;
             let h = R::wide_rescale(
                 R::wide_add_prod(
                     R::wide_add_prod(
@@ -108,37 +120,35 @@ pub impl Bidiagonal6x3Impl<
                     a51,
                 ),
             );
-            let w = h + h;
-            let nw = -w;
             a01 = if neg {
-                R::mul_add(w, uc0_0, -a01)
+                R::mul_add(h, v_uc0_0, -a01)
             } else {
-                R::mul_add(nw, uc0_0, a01)
+                R::mul_add(h, nv_uc0_0, a01)
             };
             a11 = if neg {
-                R::mul_add(w, uc0_1, -a11)
+                R::mul_add(h, v_uc0_1, -a11)
             } else {
-                R::mul_add(nw, uc0_1, a11)
+                R::mul_add(h, nv_uc0_1, a11)
             };
             a21 = if neg {
-                R::mul_add(w, uc0_2, -a21)
+                R::mul_add(h, v_uc0_2, -a21)
             } else {
-                R::mul_add(nw, uc0_2, a21)
+                R::mul_add(h, nv_uc0_2, a21)
             };
             a31 = if neg {
-                R::mul_add(w, uc0_3, -a31)
+                R::mul_add(h, v_uc0_3, -a31)
             } else {
-                R::mul_add(nw, uc0_3, a31)
+                R::mul_add(h, nv_uc0_3, a31)
             };
             a41 = if neg {
-                R::mul_add(w, uc0_4, -a41)
+                R::mul_add(h, v_uc0_4, -a41)
             } else {
-                R::mul_add(nw, uc0_4, a41)
+                R::mul_add(h, nv_uc0_4, a41)
             };
             a51 = if neg {
-                R::mul_add(w, uc0_5, -a51)
+                R::mul_add(h, v_uc0_5, -a51)
             } else {
-                R::mul_add(nw, uc0_5, a51)
+                R::mul_add(h, nv_uc0_5, a51)
             };
             let h = R::wide_rescale(
                 R::wide_add_prod(
@@ -161,37 +171,35 @@ pub impl Bidiagonal6x3Impl<
                     a52,
                 ),
             );
-            let w = h + h;
-            let nw = -w;
             a02 = if neg {
-                R::mul_add(w, uc0_0, -a02)
+                R::mul_add(h, v_uc0_0, -a02)
             } else {
-                R::mul_add(nw, uc0_0, a02)
+                R::mul_add(h, nv_uc0_0, a02)
             };
             a12 = if neg {
-                R::mul_add(w, uc0_1, -a12)
+                R::mul_add(h, v_uc0_1, -a12)
             } else {
-                R::mul_add(nw, uc0_1, a12)
+                R::mul_add(h, nv_uc0_1, a12)
             };
             a22 = if neg {
-                R::mul_add(w, uc0_2, -a22)
+                R::mul_add(h, v_uc0_2, -a22)
             } else {
-                R::mul_add(nw, uc0_2, a22)
+                R::mul_add(h, nv_uc0_2, a22)
             };
             a32 = if neg {
-                R::mul_add(w, uc0_3, -a32)
+                R::mul_add(h, v_uc0_3, -a32)
             } else {
-                R::mul_add(nw, uc0_3, a32)
+                R::mul_add(h, nv_uc0_3, a32)
             };
             a42 = if neg {
-                R::mul_add(w, uc0_4, -a42)
+                R::mul_add(h, v_uc0_4, -a42)
             } else {
-                R::mul_add(nw, uc0_4, a42)
+                R::mul_add(h, nv_uc0_4, a42)
             };
             a52 = if neg {
-                R::mul_add(w, uc0_5, -a52)
+                R::mul_add(h, v_uc0_5, -a52)
             } else {
-                R::mul_add(nw, uc0_5, a52)
+                R::mul_add(h, nv_uc0_5, a52)
             };
             a00 = uc0_0;
             a10 = uc0_1;
@@ -204,70 +212,64 @@ pub impl Bidiagonal6x3Impl<
         let (e0, nz_e0, ur0_0, ur0_1) = HouseholderKernelTrait::<T>::axis2(a01, a02);
         if nz_e0 {
             let neg = e0 < R::zero();
+            let v_ur0_0 = ur0_0 + ur0_0;
+            let nv_ur0_0 = -v_ur0_0;
+            let v_ur0_1 = ur0_1 + ur0_1;
+            let nv_ur0_1 = -v_ur0_1;
             let h = R::sum_prod2(a11, ur0_0, a12, ur0_1);
-            let w = h + h;
-            let nw = -w;
             a11 = if neg {
-                R::mul_add(w, ur0_0, -a11)
+                R::mul_add(h, v_ur0_0, -a11)
             } else {
-                R::mul_add(nw, ur0_0, a11)
+                R::mul_add(h, nv_ur0_0, a11)
             };
             a12 = if neg {
-                R::mul_add(w, ur0_1, -a12)
+                R::mul_add(h, v_ur0_1, -a12)
             } else {
-                R::mul_add(nw, ur0_1, a12)
+                R::mul_add(h, nv_ur0_1, a12)
             };
             let h = R::sum_prod2(a21, ur0_0, a22, ur0_1);
-            let w = h + h;
-            let nw = -w;
             a21 = if neg {
-                R::mul_add(w, ur0_0, -a21)
+                R::mul_add(h, v_ur0_0, -a21)
             } else {
-                R::mul_add(nw, ur0_0, a21)
+                R::mul_add(h, nv_ur0_0, a21)
             };
             a22 = if neg {
-                R::mul_add(w, ur0_1, -a22)
+                R::mul_add(h, v_ur0_1, -a22)
             } else {
-                R::mul_add(nw, ur0_1, a22)
+                R::mul_add(h, nv_ur0_1, a22)
             };
             let h = R::sum_prod2(a31, ur0_0, a32, ur0_1);
-            let w = h + h;
-            let nw = -w;
             a31 = if neg {
-                R::mul_add(w, ur0_0, -a31)
+                R::mul_add(h, v_ur0_0, -a31)
             } else {
-                R::mul_add(nw, ur0_0, a31)
+                R::mul_add(h, nv_ur0_0, a31)
             };
             a32 = if neg {
-                R::mul_add(w, ur0_1, -a32)
+                R::mul_add(h, v_ur0_1, -a32)
             } else {
-                R::mul_add(nw, ur0_1, a32)
+                R::mul_add(h, nv_ur0_1, a32)
             };
             let h = R::sum_prod2(a41, ur0_0, a42, ur0_1);
-            let w = h + h;
-            let nw = -w;
             a41 = if neg {
-                R::mul_add(w, ur0_0, -a41)
+                R::mul_add(h, v_ur0_0, -a41)
             } else {
-                R::mul_add(nw, ur0_0, a41)
+                R::mul_add(h, nv_ur0_0, a41)
             };
             a42 = if neg {
-                R::mul_add(w, ur0_1, -a42)
+                R::mul_add(h, v_ur0_1, -a42)
             } else {
-                R::mul_add(nw, ur0_1, a42)
+                R::mul_add(h, nv_ur0_1, a42)
             };
             let h = R::sum_prod2(a51, ur0_0, a52, ur0_1);
-            let w = h + h;
-            let nw = -w;
             a51 = if neg {
-                R::mul_add(w, ur0_0, -a51)
+                R::mul_add(h, v_ur0_0, -a51)
             } else {
-                R::mul_add(nw, ur0_0, a51)
+                R::mul_add(h, nv_ur0_0, a51)
             };
             a52 = if neg {
-                R::mul_add(w, ur0_1, -a52)
+                R::mul_add(h, v_ur0_1, -a52)
             } else {
-                R::mul_add(nw, ur0_1, a52)
+                R::mul_add(h, nv_ur0_1, a52)
             };
             a01 = ur0_0;
             a02 = ur0_1;
@@ -278,6 +280,16 @@ pub impl Bidiagonal6x3Impl<
         >::axis5(a11, a21, a31, a41, a51);
         if nz_d1 {
             let neg = d1 < R::zero();
+            let v_uc1_0 = uc1_0 + uc1_0;
+            let nv_uc1_0 = -v_uc1_0;
+            let v_uc1_1 = uc1_1 + uc1_1;
+            let nv_uc1_1 = -v_uc1_1;
+            let v_uc1_2 = uc1_2 + uc1_2;
+            let nv_uc1_2 = -v_uc1_2;
+            let v_uc1_3 = uc1_3 + uc1_3;
+            let nv_uc1_3 = -v_uc1_3;
+            let v_uc1_4 = uc1_4 + uc1_4;
+            let nv_uc1_4 = -v_uc1_4;
             let h = R::wide_rescale(
                 R::wide_add_prod(
                     R::wide_add_prod(
@@ -295,32 +307,30 @@ pub impl Bidiagonal6x3Impl<
                     a52,
                 ),
             );
-            let w = h + h;
-            let nw = -w;
             a12 = if neg {
-                R::mul_add(w, uc1_0, -a12)
+                R::mul_add(h, v_uc1_0, -a12)
             } else {
-                R::mul_add(nw, uc1_0, a12)
+                R::mul_add(h, nv_uc1_0, a12)
             };
             a22 = if neg {
-                R::mul_add(w, uc1_1, -a22)
+                R::mul_add(h, v_uc1_1, -a22)
             } else {
-                R::mul_add(nw, uc1_1, a22)
+                R::mul_add(h, nv_uc1_1, a22)
             };
             a32 = if neg {
-                R::mul_add(w, uc1_2, -a32)
+                R::mul_add(h, v_uc1_2, -a32)
             } else {
-                R::mul_add(nw, uc1_2, a32)
+                R::mul_add(h, nv_uc1_2, a32)
             };
             a42 = if neg {
-                R::mul_add(w, uc1_3, -a42)
+                R::mul_add(h, v_uc1_3, -a42)
             } else {
-                R::mul_add(nw, uc1_3, a42)
+                R::mul_add(h, nv_uc1_3, a42)
             };
             a52 = if neg {
-                R::mul_add(w, uc1_4, -a52)
+                R::mul_add(h, v_uc1_4, -a52)
             } else {
-                R::mul_add(nw, uc1_4, a52)
+                R::mul_add(h, nv_uc1_4, a52)
             };
             a11 = uc1_0;
             a21 = uc1_1;
@@ -332,37 +342,31 @@ pub impl Bidiagonal6x3Impl<
         let (e1, nz_e1, ur1_0) = HouseholderKernelTrait::<T>::axis1(a12);
         if nz_e1 {
             let neg = e1 < R::zero();
+            let v_ur1_0 = ur1_0 + ur1_0;
+            let nv_ur1_0 = -v_ur1_0;
             let h = a22 * ur1_0;
-            let w = h + h;
-            let nw = -w;
             a22 = if neg {
-                R::mul_add(w, ur1_0, -a22)
+                R::mul_add(h, v_ur1_0, -a22)
             } else {
-                R::mul_add(nw, ur1_0, a22)
+                R::mul_add(h, nv_ur1_0, a22)
             };
             let h = a32 * ur1_0;
-            let w = h + h;
-            let nw = -w;
             a32 = if neg {
-                R::mul_add(w, ur1_0, -a32)
+                R::mul_add(h, v_ur1_0, -a32)
             } else {
-                R::mul_add(nw, ur1_0, a32)
+                R::mul_add(h, nv_ur1_0, a32)
             };
             let h = a42 * ur1_0;
-            let w = h + h;
-            let nw = -w;
             a42 = if neg {
-                R::mul_add(w, ur1_0, -a42)
+                R::mul_add(h, v_ur1_0, -a42)
             } else {
-                R::mul_add(nw, ur1_0, a42)
+                R::mul_add(h, nv_ur1_0, a42)
             };
             let h = a52 * ur1_0;
-            let w = h + h;
-            let nw = -w;
             a52 = if neg {
-                R::mul_add(w, ur1_0, -a52)
+                R::mul_add(h, v_ur1_0, -a52)
             } else {
-                R::mul_add(nw, ur1_0, a52)
+                R::mul_add(h, nv_ur1_0, a52)
             };
             a12 = ur1_0;
         }
@@ -441,121 +445,143 @@ pub impl Bidiagonal6x3Impl<
     fn u(self: Bidiagonal6x3<T>) -> Matrix6x3<T> {
         revoke_ap_tracking();
         let su2 = self.diagonal.z < R::zero();
+        let u2_v0 = self.uv.m33 + self.uv.m33;
+        let u2_nv0 = -u2_v0;
+        let u2_v1 = self.uv.m43 + self.uv.m43;
+        let u2_nv1 = -u2_v1;
+        let u2_v2 = self.uv.m53 + self.uv.m53;
+        let u2_nv2 = -u2_v2;
+        let u2_v3 = self.uv.m63 + self.uv.m63;
+        let u2_nv3 = -u2_v3;
         let h = self.uv.m33;
-        let w = h + h;
-        let nw = -w;
         let u2_22 = if su2 {
-            R::mul_add(w, self.uv.m33, -R::one())
+            R::mul_add(h, u2_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m33, R::one())
+            R::mul_add(h, u2_nv0, R::one())
         };
         let u2_32 = if su2 {
-            w * self.uv.m43
+            h * u2_v1
         } else {
-            nw * self.uv.m43
+            h * u2_nv1
         };
         let u2_42 = if su2 {
-            w * self.uv.m53
+            h * u2_v2
         } else {
-            nw * self.uv.m53
+            h * u2_nv2
         };
         let u2_52 = if su2 {
-            w * self.uv.m63
+            h * u2_v3
         } else {
-            nw * self.uv.m63
+            h * u2_nv3
         };
         let su1 = self.diagonal.y < R::zero();
+        let u1_v0 = self.uv.m22 + self.uv.m22;
+        let u1_nv0 = -u1_v0;
+        let u1_v1 = self.uv.m32 + self.uv.m32;
+        let u1_nv1 = -u1_v1;
+        let u1_v2 = self.uv.m42 + self.uv.m42;
+        let u1_nv2 = -u1_v2;
+        let u1_v3 = self.uv.m52 + self.uv.m52;
+        let u1_nv3 = -u1_v3;
+        let u1_v4 = self.uv.m62 + self.uv.m62;
+        let u1_nv4 = -u1_v4;
         let h = self.uv.m22;
-        let w = h + h;
-        let nw = -w;
         let u1_11 = if su1 {
-            R::mul_add(w, self.uv.m22, -R::one())
+            R::mul_add(h, u1_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m22, R::one())
+            R::mul_add(h, u1_nv0, R::one())
         };
         let u1_21 = if su1 {
-            w * self.uv.m32
+            h * u1_v1
         } else {
-            nw * self.uv.m32
+            h * u1_nv1
         };
         let u1_31 = if su1 {
-            w * self.uv.m42
+            h * u1_v2
         } else {
-            nw * self.uv.m42
+            h * u1_nv2
         };
         let u1_41 = if su1 {
-            w * self.uv.m52
+            h * u1_v3
         } else {
-            nw * self.uv.m52
+            h * u1_nv3
         };
         let u1_51 = if su1 {
-            w * self.uv.m62
+            h * u1_v4
         } else {
-            nw * self.uv.m62
+            h * u1_nv4
         };
         let h = R::sum_prod4(
             self.uv.m32, u2_22, self.uv.m42, u2_32, self.uv.m52, u2_42, self.uv.m62, u2_52,
         );
-        let w = h + h;
-        let nw = -w;
         let u1_12 = if su1 {
-            w * self.uv.m22
+            h * u1_v0
         } else {
-            nw * self.uv.m22
+            h * u1_nv0
         };
         let u1_22 = if su1 {
-            R::mul_add(w, self.uv.m32, -u2_22)
+            R::mul_add(h, u1_v1, -u2_22)
         } else {
-            R::mul_add(nw, self.uv.m32, u2_22)
+            R::mul_add(h, u1_nv1, u2_22)
         };
         let u1_32 = if su1 {
-            R::mul_add(w, self.uv.m42, -u2_32)
+            R::mul_add(h, u1_v2, -u2_32)
         } else {
-            R::mul_add(nw, self.uv.m42, u2_32)
+            R::mul_add(h, u1_nv2, u2_32)
         };
         let u1_42 = if su1 {
-            R::mul_add(w, self.uv.m52, -u2_42)
+            R::mul_add(h, u1_v3, -u2_42)
         } else {
-            R::mul_add(nw, self.uv.m52, u2_42)
+            R::mul_add(h, u1_nv3, u2_42)
         };
         let u1_52 = if su1 {
-            R::mul_add(w, self.uv.m62, -u2_52)
+            R::mul_add(h, u1_v4, -u2_52)
         } else {
-            R::mul_add(nw, self.uv.m62, u2_52)
+            R::mul_add(h, u1_nv4, u2_52)
         };
         let su0 = self.diagonal.x < R::zero();
+        let u0_v0 = self.uv.m11 + self.uv.m11;
+        let u0_nv0 = -u0_v0;
+        let u0_v1 = self.uv.m21 + self.uv.m21;
+        let u0_nv1 = -u0_v1;
+        let u0_v2 = self.uv.m31 + self.uv.m31;
+        let u0_nv2 = -u0_v2;
+        let u0_v3 = self.uv.m41 + self.uv.m41;
+        let u0_nv3 = -u0_v3;
+        let u0_v4 = self.uv.m51 + self.uv.m51;
+        let u0_nv4 = -u0_v4;
+        let u0_v5 = self.uv.m61 + self.uv.m61;
+        let u0_nv5 = -u0_v5;
         let h = self.uv.m11;
-        let w = h + h;
-        let nw = -w;
         let u0_00 = if su0 {
-            R::mul_add(w, self.uv.m11, -R::one())
+            R::mul_add(h, u0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m11, R::one())
+            R::mul_add(h, u0_nv0, R::one())
         };
         let u0_10 = if su0 {
-            w * self.uv.m21
+            h * u0_v1
         } else {
-            nw * self.uv.m21
+            h * u0_nv1
         };
         let u0_20 = if su0 {
-            w * self.uv.m31
+            h * u0_v2
         } else {
-            nw * self.uv.m31
+            h * u0_nv2
         };
         let u0_30 = if su0 {
-            w * self.uv.m41
+            h * u0_v3
         } else {
-            nw * self.uv.m41
+            h * u0_nv3
         };
         let u0_40 = if su0 {
-            w * self.uv.m51
+            h * u0_v4
         } else {
-            nw * self.uv.m51
+            h * u0_nv4
         };
         let u0_50 = if su0 {
-            w * self.uv.m61
+            h * u0_v5
         } else {
-            nw * self.uv.m61
+            h * u0_nv5
         };
         let h = R::wide_rescale(
             R::wide_add_prod(
@@ -576,37 +602,35 @@ pub impl Bidiagonal6x3Impl<
                 u1_51,
             ),
         );
-        let w = h + h;
-        let nw = -w;
         let u0_01 = if su0 {
-            w * self.uv.m11
+            h * u0_v0
         } else {
-            nw * self.uv.m11
+            h * u0_nv0
         };
         let u0_11 = if su0 {
-            R::mul_add(w, self.uv.m21, -u1_11)
+            R::mul_add(h, u0_v1, -u1_11)
         } else {
-            R::mul_add(nw, self.uv.m21, u1_11)
+            R::mul_add(h, u0_nv1, u1_11)
         };
         let u0_21 = if su0 {
-            R::mul_add(w, self.uv.m31, -u1_21)
+            R::mul_add(h, u0_v2, -u1_21)
         } else {
-            R::mul_add(nw, self.uv.m31, u1_21)
+            R::mul_add(h, u0_nv2, u1_21)
         };
         let u0_31 = if su0 {
-            R::mul_add(w, self.uv.m41, -u1_31)
+            R::mul_add(h, u0_v3, -u1_31)
         } else {
-            R::mul_add(nw, self.uv.m41, u1_31)
+            R::mul_add(h, u0_nv3, u1_31)
         };
         let u0_41 = if su0 {
-            R::mul_add(w, self.uv.m51, -u1_41)
+            R::mul_add(h, u0_v4, -u1_41)
         } else {
-            R::mul_add(nw, self.uv.m51, u1_41)
+            R::mul_add(h, u0_nv4, u1_41)
         };
         let u0_51 = if su0 {
-            R::mul_add(w, self.uv.m61, -u1_51)
+            R::mul_add(h, u0_v5, -u1_51)
         } else {
-            R::mul_add(nw, self.uv.m61, u1_51)
+            R::mul_add(h, u0_nv5, u1_51)
         };
         let h = R::wide_rescale(
             R::wide_add_prod(
@@ -627,37 +651,35 @@ pub impl Bidiagonal6x3Impl<
                 u1_52,
             ),
         );
-        let w = h + h;
-        let nw = -w;
         let u0_02 = if su0 {
-            w * self.uv.m11
+            h * u0_v0
         } else {
-            nw * self.uv.m11
+            h * u0_nv0
         };
         let u0_12 = if su0 {
-            R::mul_add(w, self.uv.m21, -u1_12)
+            R::mul_add(h, u0_v1, -u1_12)
         } else {
-            R::mul_add(nw, self.uv.m21, u1_12)
+            R::mul_add(h, u0_nv1, u1_12)
         };
         let u0_22 = if su0 {
-            R::mul_add(w, self.uv.m31, -u1_22)
+            R::mul_add(h, u0_v2, -u1_22)
         } else {
-            R::mul_add(nw, self.uv.m31, u1_22)
+            R::mul_add(h, u0_nv2, u1_22)
         };
         let u0_32 = if su0 {
-            R::mul_add(w, self.uv.m41, -u1_32)
+            R::mul_add(h, u0_v3, -u1_32)
         } else {
-            R::mul_add(nw, self.uv.m41, u1_32)
+            R::mul_add(h, u0_nv3, u1_32)
         };
         let u0_42 = if su0 {
-            R::mul_add(w, self.uv.m51, -u1_42)
+            R::mul_add(h, u0_v4, -u1_42)
         } else {
-            R::mul_add(nw, self.uv.m51, u1_42)
+            R::mul_add(h, u0_nv4, u1_42)
         };
         let u0_52 = if su0 {
-            R::mul_add(w, self.uv.m61, -u1_52)
+            R::mul_add(h, u0_v5, -u1_52)
         } else {
-            R::mul_add(nw, self.uv.m61, u1_52)
+            R::mul_add(h, u0_nv5, u1_52)
         };
         Matrix6x3 {
             m11: u0_00,
@@ -686,40 +708,40 @@ pub impl Bidiagonal6x3Impl<
     fn v_t(self: Bidiagonal6x3<T>) -> Matrix3<T> {
         revoke_ap_tracking();
         let sv1 = self.off_diagonal.y < R::zero();
+        let v1_v0 = self.uv.m23 + self.uv.m23;
+        let v1_nv0 = -v1_v0;
         let h = self.uv.m23;
-        let w = h + h;
-        let nw = -w;
         let v1_22 = if sv1 {
-            R::mul_add(w, self.uv.m23, -R::one())
+            R::mul_add(h, v1_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m23, R::one())
+            R::mul_add(h, v1_nv0, R::one())
         };
         let sv0 = self.off_diagonal.x < R::zero();
+        let v0_v0 = self.uv.m12 + self.uv.m12;
+        let v0_nv0 = -v0_v0;
+        let v0_v1 = self.uv.m13 + self.uv.m13;
+        let v0_nv1 = -v0_v1;
         let h = self.uv.m12;
-        let w = h + h;
-        let nw = -w;
         let v0_11 = if sv0 {
-            R::mul_add(w, self.uv.m12, -R::one())
+            R::mul_add(h, v0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.m12, R::one())
+            R::mul_add(h, v0_nv0, R::one())
         };
         let v0_12 = if sv0 {
-            w * self.uv.m13
+            h * v0_v1
         } else {
-            nw * self.uv.m13
+            h * v0_nv1
         };
         let h = v1_22 * self.uv.m13;
-        let w = h + h;
-        let nw = -w;
         let v0_21 = if sv0 {
-            w * self.uv.m12
+            h * v0_v0
         } else {
-            nw * self.uv.m12
+            h * v0_nv0
         };
         let v0_22 = if sv0 {
-            R::mul_add(w, self.uv.m13, -v1_22)
+            R::mul_add(h, v0_v1, -v1_22)
         } else {
-            R::mul_add(nw, self.uv.m13, v1_22)
+            R::mul_add(h, v0_nv1, v1_22)
         };
         Matrix3 {
             m11: R::one(),

@@ -5,9 +5,9 @@
 use core::cmp::max;
 use nalgebra::linalg::{Matrix1SymmetricTridiagonalTrait, SymmetricTridiagonal1Trait};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 use crate::builders::{amax_1x1, mat1x1, max_ulp_1x1, orth_1x1, vec1};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `symmetric_tridiagonal1` (oracle): `q`, the diagonal and the off-diagonal within the oracle
 /// tolerance (upstream's signs), `recompose()` = `A` and `QᵀQ = I` within the measured bounds,
@@ -24,8 +24,8 @@ fn test_oracle_symmetric_tridiagonal1() {
         assert!(q == t.q() && d == t.diagonal() && t.internal_tri() == t.tri);
 
         let (eq, ed) = (mat1x1(eq), vec1(ed));
-        ex = max(ex, excess(ulp_diff(q.x, eq.x), oracle_tol(abs_raw(eq.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
+        ex = max(ex, excess_all(q, eq, tol));
+        ex = max(ex, excess_all(d, ed, tol));
 
         rec = max(rec, max_ulp_1x1(t.recompose(), a) / amax_1x1(a));
         orth = max(orth, orth_1x1(q));

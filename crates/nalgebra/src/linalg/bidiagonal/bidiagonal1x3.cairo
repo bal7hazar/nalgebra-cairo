@@ -109,23 +109,27 @@ pub impl Bidiagonal1x3Impl<
     fn v_t(self: Bidiagonal1x3<T>) -> RowVector3<T> {
         revoke_ap_tracking();
         let sv0 = self.diagonal.x < R::zero();
+        let v0_v0 = self.uv.x + self.uv.x;
+        let v0_nv0 = -v0_v0;
+        let v0_v1 = self.uv.y + self.uv.y;
+        let v0_nv1 = -v0_v1;
+        let v0_v2 = self.uv.z + self.uv.z;
+        let v0_nv2 = -v0_v2;
         let h = self.uv.x;
-        let w = h + h;
-        let nw = -w;
         let v0_00 = if sv0 {
-            R::mul_add(w, self.uv.x, -R::one())
+            R::mul_add(h, v0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.x, R::one())
+            R::mul_add(h, v0_nv0, R::one())
         };
         let v0_01 = if sv0 {
-            w * self.uv.y
+            h * v0_v1
         } else {
-            nw * self.uv.y
+            h * v0_nv1
         };
         let v0_02 = if sv0 {
-            w * self.uv.z
+            h * v0_v2
         } else {
-            nw * self.uv.z
+            h * v0_nv2
         };
         RowVector3 { x: v0_00, y: v0_01, z: v0_02 }
     }

@@ -83,131 +83,123 @@ pub impl Hessenberg4Impl<
         let (s0, nz0, u0_0, u0_1, u0_2) = HouseholderKernelTrait::<T>::axis3(a10, a20, a30);
         if nz0 {
             let neg = s0 < R::zero();
+            let v_u0_0 = u0_0 + u0_0;
+            let nv_u0_0 = -v_u0_0;
+            let v_u0_1 = u0_1 + u0_1;
+            let nv_u0_1 = -v_u0_1;
+            let v_u0_2 = u0_2 + u0_2;
+            let nv_u0_2 = -v_u0_2;
             let h = R::sum_prod3(a01, u0_0, a02, u0_1, a03, u0_2);
-            let w = h + h;
-            let nw = -w;
             a01 = if neg {
-                R::mul_add(w, u0_0, -a01)
+                R::mul_add(h, v_u0_0, -a01)
             } else {
-                R::mul_add(nw, u0_0, a01)
+                R::mul_add(h, nv_u0_0, a01)
             };
             a02 = if neg {
-                R::mul_add(w, u0_1, -a02)
+                R::mul_add(h, v_u0_1, -a02)
             } else {
-                R::mul_add(nw, u0_1, a02)
+                R::mul_add(h, nv_u0_1, a02)
             };
             a03 = if neg {
-                R::mul_add(w, u0_2, -a03)
+                R::mul_add(h, v_u0_2, -a03)
             } else {
-                R::mul_add(nw, u0_2, a03)
+                R::mul_add(h, nv_u0_2, a03)
             };
             let h = R::sum_prod3(a11, u0_0, a12, u0_1, a13, u0_2);
-            let w = h + h;
-            let nw = -w;
             a11 = if neg {
-                R::mul_add(w, u0_0, -a11)
+                R::mul_add(h, v_u0_0, -a11)
             } else {
-                R::mul_add(nw, u0_0, a11)
+                R::mul_add(h, nv_u0_0, a11)
             };
             a12 = if neg {
-                R::mul_add(w, u0_1, -a12)
+                R::mul_add(h, v_u0_1, -a12)
             } else {
-                R::mul_add(nw, u0_1, a12)
+                R::mul_add(h, nv_u0_1, a12)
             };
             a13 = if neg {
-                R::mul_add(w, u0_2, -a13)
+                R::mul_add(h, v_u0_2, -a13)
             } else {
-                R::mul_add(nw, u0_2, a13)
+                R::mul_add(h, nv_u0_2, a13)
             };
             let h = R::sum_prod3(a21, u0_0, a22, u0_1, a23, u0_2);
-            let w = h + h;
-            let nw = -w;
             a21 = if neg {
-                R::mul_add(w, u0_0, -a21)
+                R::mul_add(h, v_u0_0, -a21)
             } else {
-                R::mul_add(nw, u0_0, a21)
+                R::mul_add(h, nv_u0_0, a21)
             };
             a22 = if neg {
-                R::mul_add(w, u0_1, -a22)
+                R::mul_add(h, v_u0_1, -a22)
             } else {
-                R::mul_add(nw, u0_1, a22)
+                R::mul_add(h, nv_u0_1, a22)
             };
             a23 = if neg {
-                R::mul_add(w, u0_2, -a23)
+                R::mul_add(h, v_u0_2, -a23)
             } else {
-                R::mul_add(nw, u0_2, a23)
+                R::mul_add(h, nv_u0_2, a23)
             };
             let h = R::sum_prod3(a31, u0_0, a32, u0_1, a33, u0_2);
-            let w = h + h;
-            let nw = -w;
             a31 = if neg {
-                R::mul_add(w, u0_0, -a31)
+                R::mul_add(h, v_u0_0, -a31)
             } else {
-                R::mul_add(nw, u0_0, a31)
+                R::mul_add(h, nv_u0_0, a31)
             };
             a32 = if neg {
-                R::mul_add(w, u0_1, -a32)
+                R::mul_add(h, v_u0_1, -a32)
             } else {
-                R::mul_add(nw, u0_1, a32)
+                R::mul_add(h, nv_u0_1, a32)
             };
             a33 = if neg {
-                R::mul_add(w, u0_2, -a33)
+                R::mul_add(h, v_u0_2, -a33)
             } else {
-                R::mul_add(nw, u0_2, a33)
+                R::mul_add(h, nv_u0_2, a33)
             };
             let h = R::sum_prod3(u0_0, a11, u0_1, a21, u0_2, a31);
-            let w = h + h;
-            let nw = -w;
             a11 = if neg {
-                R::mul_add(w, u0_0, -a11)
+                R::mul_add(h, v_u0_0, -a11)
             } else {
-                R::mul_add(nw, u0_0, a11)
+                R::mul_add(h, nv_u0_0, a11)
             };
             a21 = if neg {
-                R::mul_add(w, u0_1, -a21)
+                R::mul_add(h, v_u0_1, -a21)
             } else {
-                R::mul_add(nw, u0_1, a21)
+                R::mul_add(h, nv_u0_1, a21)
             };
             a31 = if neg {
-                R::mul_add(w, u0_2, -a31)
+                R::mul_add(h, v_u0_2, -a31)
             } else {
-                R::mul_add(nw, u0_2, a31)
+                R::mul_add(h, nv_u0_2, a31)
             };
             let h = R::sum_prod3(u0_0, a12, u0_1, a22, u0_2, a32);
-            let w = h + h;
-            let nw = -w;
             a12 = if neg {
-                R::mul_add(w, u0_0, -a12)
+                R::mul_add(h, v_u0_0, -a12)
             } else {
-                R::mul_add(nw, u0_0, a12)
+                R::mul_add(h, nv_u0_0, a12)
             };
             a22 = if neg {
-                R::mul_add(w, u0_1, -a22)
+                R::mul_add(h, v_u0_1, -a22)
             } else {
-                R::mul_add(nw, u0_1, a22)
+                R::mul_add(h, nv_u0_1, a22)
             };
             a32 = if neg {
-                R::mul_add(w, u0_2, -a32)
+                R::mul_add(h, v_u0_2, -a32)
             } else {
-                R::mul_add(nw, u0_2, a32)
+                R::mul_add(h, nv_u0_2, a32)
             };
             let h = R::sum_prod3(u0_0, a13, u0_1, a23, u0_2, a33);
-            let w = h + h;
-            let nw = -w;
             a13 = if neg {
-                R::mul_add(w, u0_0, -a13)
+                R::mul_add(h, v_u0_0, -a13)
             } else {
-                R::mul_add(nw, u0_0, a13)
+                R::mul_add(h, nv_u0_0, a13)
             };
             a23 = if neg {
-                R::mul_add(w, u0_1, -a23)
+                R::mul_add(h, v_u0_1, -a23)
             } else {
-                R::mul_add(nw, u0_1, a23)
+                R::mul_add(h, nv_u0_1, a23)
             };
             a33 = if neg {
-                R::mul_add(w, u0_2, -a33)
+                R::mul_add(h, v_u0_2, -a33)
             } else {
-                R::mul_add(nw, u0_2, a33)
+                R::mul_add(h, nv_u0_2, a33)
             };
             a10 = u0_0;
             a20 = u0_1;
@@ -217,83 +209,75 @@ pub impl Hessenberg4Impl<
         let (s1, nz1, u1_0, u1_1) = HouseholderKernelTrait::<T>::axis2(a21, a31);
         if nz1 {
             let neg = s1 < R::zero();
+            let v_u1_0 = u1_0 + u1_0;
+            let nv_u1_0 = -v_u1_0;
+            let v_u1_1 = u1_1 + u1_1;
+            let nv_u1_1 = -v_u1_1;
             let h = R::sum_prod2(a02, u1_0, a03, u1_1);
-            let w = h + h;
-            let nw = -w;
             a02 = if neg {
-                R::mul_add(w, u1_0, -a02)
+                R::mul_add(h, v_u1_0, -a02)
             } else {
-                R::mul_add(nw, u1_0, a02)
+                R::mul_add(h, nv_u1_0, a02)
             };
             a03 = if neg {
-                R::mul_add(w, u1_1, -a03)
+                R::mul_add(h, v_u1_1, -a03)
             } else {
-                R::mul_add(nw, u1_1, a03)
+                R::mul_add(h, nv_u1_1, a03)
             };
             let h = R::sum_prod2(a12, u1_0, a13, u1_1);
-            let w = h + h;
-            let nw = -w;
             a12 = if neg {
-                R::mul_add(w, u1_0, -a12)
+                R::mul_add(h, v_u1_0, -a12)
             } else {
-                R::mul_add(nw, u1_0, a12)
+                R::mul_add(h, nv_u1_0, a12)
             };
             a13 = if neg {
-                R::mul_add(w, u1_1, -a13)
+                R::mul_add(h, v_u1_1, -a13)
             } else {
-                R::mul_add(nw, u1_1, a13)
+                R::mul_add(h, nv_u1_1, a13)
             };
             let h = R::sum_prod2(a22, u1_0, a23, u1_1);
-            let w = h + h;
-            let nw = -w;
             a22 = if neg {
-                R::mul_add(w, u1_0, -a22)
+                R::mul_add(h, v_u1_0, -a22)
             } else {
-                R::mul_add(nw, u1_0, a22)
+                R::mul_add(h, nv_u1_0, a22)
             };
             a23 = if neg {
-                R::mul_add(w, u1_1, -a23)
+                R::mul_add(h, v_u1_1, -a23)
             } else {
-                R::mul_add(nw, u1_1, a23)
+                R::mul_add(h, nv_u1_1, a23)
             };
             let h = R::sum_prod2(a32, u1_0, a33, u1_1);
-            let w = h + h;
-            let nw = -w;
             a32 = if neg {
-                R::mul_add(w, u1_0, -a32)
+                R::mul_add(h, v_u1_0, -a32)
             } else {
-                R::mul_add(nw, u1_0, a32)
+                R::mul_add(h, nv_u1_0, a32)
             };
             a33 = if neg {
-                R::mul_add(w, u1_1, -a33)
+                R::mul_add(h, v_u1_1, -a33)
             } else {
-                R::mul_add(nw, u1_1, a33)
+                R::mul_add(h, nv_u1_1, a33)
             };
             let h = R::sum_prod2(u1_0, a22, u1_1, a32);
-            let w = h + h;
-            let nw = -w;
             a22 = if neg {
-                R::mul_add(w, u1_0, -a22)
+                R::mul_add(h, v_u1_0, -a22)
             } else {
-                R::mul_add(nw, u1_0, a22)
+                R::mul_add(h, nv_u1_0, a22)
             };
             a32 = if neg {
-                R::mul_add(w, u1_1, -a32)
+                R::mul_add(h, v_u1_1, -a32)
             } else {
-                R::mul_add(nw, u1_1, a32)
+                R::mul_add(h, nv_u1_1, a32)
             };
             let h = R::sum_prod2(u1_0, a23, u1_1, a33);
-            let w = h + h;
-            let nw = -w;
             a23 = if neg {
-                R::mul_add(w, u1_0, -a23)
+                R::mul_add(h, v_u1_0, -a23)
             } else {
-                R::mul_add(nw, u1_0, a23)
+                R::mul_add(h, nv_u1_0, a23)
             };
             a33 = if neg {
-                R::mul_add(w, u1_1, -a33)
+                R::mul_add(h, v_u1_1, -a33)
             } else {
-                R::mul_add(nw, u1_1, a33)
+                R::mul_add(h, nv_u1_1, a33)
             };
             a21 = u1_0;
             a31 = u1_1;
@@ -302,45 +286,37 @@ pub impl Hessenberg4Impl<
         let (s2, nz2, u2_0) = HouseholderKernelTrait::<T>::axis1(a32);
         if nz2 {
             let neg = s2 < R::zero();
+            let v_u2_0 = u2_0 + u2_0;
+            let nv_u2_0 = -v_u2_0;
             let h = a03 * u2_0;
-            let w = h + h;
-            let nw = -w;
             a03 = if neg {
-                R::mul_add(w, u2_0, -a03)
+                R::mul_add(h, v_u2_0, -a03)
             } else {
-                R::mul_add(nw, u2_0, a03)
+                R::mul_add(h, nv_u2_0, a03)
             };
             let h = a13 * u2_0;
-            let w = h + h;
-            let nw = -w;
             a13 = if neg {
-                R::mul_add(w, u2_0, -a13)
+                R::mul_add(h, v_u2_0, -a13)
             } else {
-                R::mul_add(nw, u2_0, a13)
+                R::mul_add(h, nv_u2_0, a13)
             };
             let h = a23 * u2_0;
-            let w = h + h;
-            let nw = -w;
             a23 = if neg {
-                R::mul_add(w, u2_0, -a23)
+                R::mul_add(h, v_u2_0, -a23)
             } else {
-                R::mul_add(nw, u2_0, a23)
+                R::mul_add(h, nv_u2_0, a23)
             };
             let h = a33 * u2_0;
-            let w = h + h;
-            let nw = -w;
             a33 = if neg {
-                R::mul_add(w, u2_0, -a33)
+                R::mul_add(h, v_u2_0, -a33)
             } else {
-                R::mul_add(nw, u2_0, a33)
+                R::mul_add(h, nv_u2_0, a33)
             };
             let h = u2_0 * a33;
-            let w = h + h;
-            let nw = -w;
             a33 = if neg {
-                R::mul_add(w, u2_0, -a33)
+                R::mul_add(h, v_u2_0, -a33)
             } else {
-                R::mul_add(nw, u2_0, a33)
+                R::mul_add(h, nv_u2_0, a33)
             };
             a32 = u2_0;
         }
@@ -411,95 +387,95 @@ pub impl Hessenberg4Impl<
     fn q(self: Hessenberg4<T>) -> Matrix4<T> {
         revoke_ap_tracking();
         let sq2 = self.subdiag.z < R::zero();
+        let q2_v0 = self.hess.m43 + self.hess.m43;
+        let q2_nv0 = -q2_v0;
         let h = self.hess.m43;
-        let w = h + h;
-        let nw = -w;
         let q2_33 = if sq2 {
-            R::mul_add(w, self.hess.m43, -R::one())
+            R::mul_add(h, q2_v0, -R::one())
         } else {
-            R::mul_add(nw, self.hess.m43, R::one())
+            R::mul_add(h, q2_nv0, R::one())
         };
         let sq1 = self.subdiag.y < R::zero();
+        let q1_v0 = self.hess.m32 + self.hess.m32;
+        let q1_nv0 = -q1_v0;
+        let q1_v1 = self.hess.m42 + self.hess.m42;
+        let q1_nv1 = -q1_v1;
         let h = self.hess.m32;
-        let w = h + h;
-        let nw = -w;
         let q1_22 = if sq1 {
-            R::mul_add(w, self.hess.m32, -R::one())
+            R::mul_add(h, q1_v0, -R::one())
         } else {
-            R::mul_add(nw, self.hess.m32, R::one())
+            R::mul_add(h, q1_nv0, R::one())
         };
         let q1_32 = if sq1 {
-            w * self.hess.m42
+            h * q1_v1
         } else {
-            nw * self.hess.m42
+            h * q1_nv1
         };
         let h = self.hess.m42 * q2_33;
-        let w = h + h;
-        let nw = -w;
         let q1_23 = if sq1 {
-            w * self.hess.m32
+            h * q1_v0
         } else {
-            nw * self.hess.m32
+            h * q1_nv0
         };
         let q1_33 = if sq1 {
-            R::mul_add(w, self.hess.m42, -q2_33)
+            R::mul_add(h, q1_v1, -q2_33)
         } else {
-            R::mul_add(nw, self.hess.m42, q2_33)
+            R::mul_add(h, q1_nv1, q2_33)
         };
         let sq0 = self.subdiag.x < R::zero();
+        let q0_v0 = self.hess.m21 + self.hess.m21;
+        let q0_nv0 = -q0_v0;
+        let q0_v1 = self.hess.m31 + self.hess.m31;
+        let q0_nv1 = -q0_v1;
+        let q0_v2 = self.hess.m41 + self.hess.m41;
+        let q0_nv2 = -q0_v2;
         let h = self.hess.m21;
-        let w = h + h;
-        let nw = -w;
         let q0_11 = if sq0 {
-            R::mul_add(w, self.hess.m21, -R::one())
+            R::mul_add(h, q0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.hess.m21, R::one())
+            R::mul_add(h, q0_nv0, R::one())
         };
         let q0_21 = if sq0 {
-            w * self.hess.m31
+            h * q0_v1
         } else {
-            nw * self.hess.m31
+            h * q0_nv1
         };
         let q0_31 = if sq0 {
-            w * self.hess.m41
+            h * q0_v2
         } else {
-            nw * self.hess.m41
+            h * q0_nv2
         };
         let h = R::sum_prod2(self.hess.m31, q1_22, self.hess.m41, q1_32);
-        let w = h + h;
-        let nw = -w;
         let q0_12 = if sq0 {
-            w * self.hess.m21
+            h * q0_v0
         } else {
-            nw * self.hess.m21
+            h * q0_nv0
         };
         let q0_22 = if sq0 {
-            R::mul_add(w, self.hess.m31, -q1_22)
+            R::mul_add(h, q0_v1, -q1_22)
         } else {
-            R::mul_add(nw, self.hess.m31, q1_22)
+            R::mul_add(h, q0_nv1, q1_22)
         };
         let q0_32 = if sq0 {
-            R::mul_add(w, self.hess.m41, -q1_32)
+            R::mul_add(h, q0_v2, -q1_32)
         } else {
-            R::mul_add(nw, self.hess.m41, q1_32)
+            R::mul_add(h, q0_nv2, q1_32)
         };
         let h = R::sum_prod2(self.hess.m31, q1_23, self.hess.m41, q1_33);
-        let w = h + h;
-        let nw = -w;
         let q0_13 = if sq0 {
-            w * self.hess.m21
+            h * q0_v0
         } else {
-            nw * self.hess.m21
+            h * q0_nv0
         };
         let q0_23 = if sq0 {
-            R::mul_add(w, self.hess.m31, -q1_23)
+            R::mul_add(h, q0_v1, -q1_23)
         } else {
-            R::mul_add(nw, self.hess.m31, q1_23)
+            R::mul_add(h, q0_nv1, q1_23)
         };
         let q0_33 = if sq0 {
-            R::mul_add(w, self.hess.m41, -q1_33)
+            R::mul_add(h, q0_v2, -q1_33)
         } else {
-            R::mul_add(nw, self.hess.m41, q1_33)
+            R::mul_add(h, q0_nv2, q1_33)
         };
         Matrix4 {
             m11: R::one(),

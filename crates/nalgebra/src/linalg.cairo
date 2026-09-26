@@ -1,10 +1,12 @@
 //! Matrix decompositions (upstream `nalgebra::linalg`), unrolled for the static shapes of `base`
 //! (DESIGN D4, D6).
 //!
-//! Every decomposition here is **closed form or fixed cost**: no convergence loop, no iteration
-//! count, no tolerance parameter. Gas is therefore a constant of the type, which is what a proof
-//! system needs; accuracy is a measured property, reported in the doc comment of each
-//! decomposition and checked against `tools/oracle` in the tests.
+//! Every decomposition here is **closed form or fixed cost** (no convergence loop, no iteration
+//! count: gas is a constant of the type), except upstream's two data-dependent loops ported as
+//! loops in WP 8.5-P16: the real Schur decomposition (`schur`, `eigen`: the Francis iteration
+//! with upstream's convergence test and `max_niter`) and the balancing (`balancing`). Accuracy is
+//! a measured property, reported in the doc comment of each decomposition and checked against
+//! `tools/oracle` in the tests.
 //!
 //! - `cholesky`: `A = L·Lᵀ` for a symmetric POSITIVE-DEFINITE matrix (upstream `Cholesky`), 2,
 //! 3,
@@ -23,18 +25,26 @@
 //! - `symmetric_eigen1..6`: eigen decomposition of symmetric matrices (closed form in 2D,
 //!   fixed-sweep Jacobi beyond); `svd*`: `M = U·Σ·Vᵀ` of every shape, pseudo-inverse, rank,
 //!   polar decomposition (upstream `SVD`), on the symmetric eigen decomposition of `MᵀM`;
-//! - `givens`, `householder`, `lu_steps`, `inverse`, `permutation_sequence`: upstream's building
-//!   blocks and free functions.
+//! - `hessenberg`: `A = Q H Qᵀ` (upstream `Hessenberg`); `symmetric_tridiagonal`: `A = Q T Qᵀ`
+//!   of a symmetric matrix (upstream `SymmetricTridiagonal`); `bidiagonal`: `A = U D Vᵀ` of every
+//!   shape (upstream `Bidiagonal`), all by unrolled Householder reflections; `schur`: the real
+//!   Schur form `A = Q T Qᵀ` and the eigenvalues of the squares (upstream `Schur`); `eigen`: the
+//!   eigenvectors of real simple spectra (upstream `Eigen`); `balancing`: upstream's
+//!   Parlett-Reinsch balancing;
+//! - `givens`, `householder`, `householder_steps`, `lu_steps`, `inverse`, `permutation_sequence`:
+//!   upstream's building blocks and free functions.
 //!
 //! Like upstream, the symmetric factorisations take a full `MatrixN` and read ONE triangle: the
 //! LOWER one for `Cholesky`, `SymmetricEigen` and `LBLT`, the UPPER one for `UDU`.
 //!
 //! Scarb features (DESIGN D9, all in `default`): `eigen` (`symmetric_eigen*`), `svd` (`svd*`, on
-//! `eigen`), `qr`, `cholesky_update`, `full_piv_lu`, `col_piv_qr`, `lblt`. Nothing ungated uses
+//! `eigen`), `qr`, `cholesky_update`, `full_piv_lu`, `col_piv_qr`, `lblt`, `hessenberg`
+//! (`hessenberg`, `householder_steps`, `symmetric_tridiagonal`, `balancing`), `bidiagonal`,
+//! `schur` (`schur`, `eigen`, on `hessenberg`). Nothing ungated uses
 //! them: the only item of `linalg` the rest of the crate uses is `Lu6` (`Matrix6::determinant` /
 //! `try_inverse`), and `lu` / `cholesky` / `udu` stay ungated.
 
-#[cfg(feature: 'balancing')]
+#[cfg(feature: 'hessenberg')]
 pub mod balancing;
 #[cfg(feature: 'bidiagonal')]
 pub mod bidiagonal;
@@ -91,10 +101,10 @@ pub mod symmetric_eigen4;
 pub mod symmetric_eigen5;
 #[cfg(feature: 'eigen')]
 pub mod symmetric_eigen6;
-#[cfg(feature: 'symmetric_tridiagonal')]
+#[cfg(feature: 'hessenberg')]
 pub mod symmetric_tridiagonal;
 pub mod udu;
-#[cfg(feature: 'balancing')]
+#[cfg(feature: 'hessenberg')]
 pub use balancing::{Balancing, balance_parlett_reinsch, unbalance};
 #[cfg(feature: 'bidiagonal')]
 pub use bidiagonal::{
@@ -280,7 +290,7 @@ pub use symmetric_eigen4::{Matrix4SymmetricEigenTrait, SymmetricEigen4, Symmetri
 pub use symmetric_eigen5::{Matrix5SymmetricEigenTrait, SymmetricEigen5, SymmetricEigen5Trait};
 #[cfg(feature: 'eigen')]
 pub use symmetric_eigen6::{Matrix6SymmetricEigenTrait, SymmetricEigen6, SymmetricEigen6Trait};
-#[cfg(feature: 'symmetric_tridiagonal')]
+#[cfg(feature: 'hessenberg')]
 pub use symmetric_tridiagonal::{
     Matrix1SymmetricTridiagonalTrait, Matrix2SymmetricTridiagonalTrait,
     Matrix3SymmetricTridiagonalTrait, Matrix4SymmetricTridiagonalTrait,

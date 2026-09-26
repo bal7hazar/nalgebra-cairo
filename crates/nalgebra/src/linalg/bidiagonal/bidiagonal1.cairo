@@ -92,13 +92,13 @@ pub impl Bidiagonal1Impl<
     fn u(self: Bidiagonal1<T>) -> Matrix1<T> {
         revoke_ap_tracking();
         let su0 = self.diagonal.x < R::zero();
+        let u0_v0 = self.uv.x + self.uv.x;
+        let u0_nv0 = -u0_v0;
         let h = self.uv.x;
-        let w = h + h;
-        let nw = -w;
         let u0_00 = if su0 {
-            R::mul_add(w, self.uv.x, -R::one())
+            R::mul_add(h, u0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.uv.x, R::one())
+            R::mul_add(h, u0_nv0, R::one())
         };
         Matrix1 { x: u0_00 }
     }

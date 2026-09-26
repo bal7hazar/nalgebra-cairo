@@ -2,7 +2,7 @@
 //! The tridiagonalisation of the symmetric static squares (upstream
 //! `nalgebra::linalg::SymmetricTridiagonal`, WP 8.5-P16): `SymmetricTridiagonal1` ..
 //! `SymmetricTridiagonal6`.
-//! Behind the feature `symmetric_tridiagonal`.
+//! Behind the feature `hessenberg`.
 
 pub mod symmetric_tridiagonal1;
 pub mod symmetric_tridiagonal2;

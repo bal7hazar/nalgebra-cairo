@@ -71,29 +71,25 @@ pub impl Hessenberg2Impl<
         let (s0, nz0, u0_0) = HouseholderKernelTrait::<T>::axis1(a10);
         if nz0 {
             let neg = s0 < R::zero();
+            let v_u0_0 = u0_0 + u0_0;
+            let nv_u0_0 = -v_u0_0;
             let h = a01 * u0_0;
-            let w = h + h;
-            let nw = -w;
             a01 = if neg {
-                R::mul_add(w, u0_0, -a01)
+                R::mul_add(h, v_u0_0, -a01)
             } else {
-                R::mul_add(nw, u0_0, a01)
+                R::mul_add(h, nv_u0_0, a01)
             };
             let h = a11 * u0_0;
-            let w = h + h;
-            let nw = -w;
             a11 = if neg {
-                R::mul_add(w, u0_0, -a11)
+                R::mul_add(h, v_u0_0, -a11)
             } else {
-                R::mul_add(nw, u0_0, a11)
+                R::mul_add(h, nv_u0_0, a11)
             };
             let h = u0_0 * a11;
-            let w = h + h;
-            let nw = -w;
             a11 = if neg {
-                R::mul_add(w, u0_0, -a11)
+                R::mul_add(h, v_u0_0, -a11)
             } else {
-                R::mul_add(nw, u0_0, a11)
+                R::mul_add(h, nv_u0_0, a11)
             };
             a10 = u0_0;
         }
@@ -131,13 +127,13 @@ pub impl Hessenberg2Impl<
     fn q(self: Hessenberg2<T>) -> Matrix2<T> {
         revoke_ap_tracking();
         let sq0 = self.subdiag.x < R::zero();
+        let q0_v0 = self.hess.m21 + self.hess.m21;
+        let q0_nv0 = -q0_v0;
         let h = self.hess.m21;
-        let w = h + h;
-        let nw = -w;
         let q0_11 = if sq0 {
-            R::mul_add(w, self.hess.m21, -R::one())
+            R::mul_add(h, q0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.hess.m21, R::one())
+            R::mul_add(h, q0_nv0, R::one())
         };
         Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: q0_11 }
     }

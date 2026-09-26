@@ -10,9 +10,10 @@ use nalgebra::linalg::{
 };
 use nalgebra::{Matrix1, Matrix2, MatrixMul, Vector2};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
+use nalgebra_tests_utils::fx;
 use crate::builders::{amax_2x2, mat2x2, max_ulp_2x2, orth_2x2};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `hessenberg2` (oracle): `q` and `h` entry by entry within the oracle tolerance (upstream's
 /// signs), `H` zero below the subdiagonal, `A = Q H Qᵀ` and `QᵀQ = I` within the measured
@@ -32,14 +33,8 @@ fn test_oracle_hessenberg2() {
         assert!(h2.hess == h.hess, "new_with_workspace");
         assert!(true, "Hessenberg form");
         let (eq, eh) = (mat2x2(eq), mat2x2(eh));
-        ex = max(ex, excess(ulp_diff(q.m11, eq.m11), oracle_tol(abs_raw(eq.m11), tol)));
-        ex = max(ex, excess(ulp_diff(q.m12, eq.m12), oracle_tol(abs_raw(eq.m12), tol)));
-        ex = max(ex, excess(ulp_diff(q.m21, eq.m21), oracle_tol(abs_raw(eq.m21), tol)));
-        ex = max(ex, excess(ulp_diff(q.m22, eq.m22), oracle_tol(abs_raw(eq.m22), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m11, eh.m11), oracle_tol(abs_raw(eh.m11), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m12, eh.m12), oracle_tol(abs_raw(eh.m12), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m21, eh.m21), oracle_tol(abs_raw(eh.m21), tol)));
-        ex = max(ex, excess(ulp_diff(hh.m22, eh.m22), oracle_tol(abs_raw(eh.m22), tol)));
+        ex = max(ex, excess_all(q, eq, tol));
+        ex = max(ex, excess_all(hh, eh, tol));
         let qt = Matrix2 { m11: q.m11, m21: q.m12, m12: q.m21, m22: q.m22 };
         rec = max(rec, max_ulp_2x2(q.mul_mat(hh).mul_mat(qt), a) / amax_2x2(a));
         orth = max(orth, orth_2x2(q));

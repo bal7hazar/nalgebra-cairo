@@ -23,12 +23,15 @@ keywords.workspace = true
 # `eigen`, 0.52 GB more), `qr` (linalg/qr*, 0.23 GB), `cholesky_update` (0.02 GB: its own test
 # package is its only user, grouping it would make another package compile it), `full_piv_lu`
 # (0.29 GB), `col_piv_qr` (0.43 GB), `lblt` (0.09 GB). Nothing ungated uses them (`Lu6`, used by
-# `Matrix6`, stays ungated with `lu`, `cholesky`, `udu`).
+# `Matrix6`, stays ungated with `lu`, `cholesky`, `udu`). WP 8.5-P16: `hessenberg`
+# (linalg/hessenberg*, the Householder building blocks, and, grouped with it because each saves
+# less than 0.1 GB, linalg/symmetric_tridiagonal* and linalg/balancing: 0.19 GB), `bidiagonal`
+# (linalg/bidiagonal*, 0.37 GB), `schur` (linalg/schur*, linalg/eigen*, on top of `hessenberg`,
+# 0.22 GB more).
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
-    "cholesky_update", "full_piv_lu", "col_piv_qr", "lblt", "hessenberg", "bidiagonal",
-    "symmetric_tridiagonal", "schur", "balancing",
+    "cholesky_update", "full_piv_lu", "col_piv_qr", "lblt", "hessenberg", "bidiagonal", "schur",
 ]
 statistics = []
 blas = []
@@ -45,9 +48,7 @@ col_piv_qr = []
 lblt = []
 hessenberg = []
 bidiagonal = []
-symmetric_tridiagonal = []
 schur = ["hessenberg"]
-balancing = []
 
 [dependencies]
 simba.workspace = true

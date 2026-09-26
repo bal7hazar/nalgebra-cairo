@@ -5,13 +5,13 @@
 use core::cmp::max;
 use nalgebra::linalg::{balance_parlett_reinsch, unbalance};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 use crate::builders::{
     amax_1x1, amax_2x2, amax_3x3, amax_4x4, amax_5x5, amax_6x6, mat1x1, mat2x2, mat3x3, mat4x4,
     mat5x5, mat6x6, max_ulp_1x1, max_ulp_2x2, max_ulp_3x3, max_ulp_4x4, max_ulp_5x5, max_ulp_6x6,
     vec1, vec2, vec3, vec4, vec5, vec6,
 };
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `balance1` (oracle): the balanced matrix and `d` within the oracle tolerance; `unbalance`
 /// restores the input within the measured bound (per unit of max |a|).
@@ -25,8 +25,8 @@ fn test_oracle_balance1() {
         let mut m = a;
         let d = balance_parlett_reinsch(ref m);
         let (eb, ed) = (mat1x1(eb), vec1(ed));
-        ex = max(ex, excess(ulp_diff(m.x, eb.x), oracle_tol(abs_raw(eb.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
+        ex = max(ex, excess_all(m, eb, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         unbalance(ref m, d);
         back = max(back, max_ulp_1x1(m, a) / amax_1x1(a));
     }
@@ -68,12 +68,8 @@ fn test_oracle_balance2() {
         let mut m = a;
         let d = balance_parlett_reinsch(ref m);
         let (eb, ed) = (mat2x2(eb), vec2(ed));
-        ex = max(ex, excess(ulp_diff(m.m11, eb.m11), oracle_tol(abs_raw(eb.m11), tol)));
-        ex = max(ex, excess(ulp_diff(m.m12, eb.m12), oracle_tol(abs_raw(eb.m12), tol)));
-        ex = max(ex, excess(ulp_diff(m.m21, eb.m21), oracle_tol(abs_raw(eb.m21), tol)));
-        ex = max(ex, excess(ulp_diff(m.m22, eb.m22), oracle_tol(abs_raw(eb.m22), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.y, ed.y), oracle_tol(abs_raw(ed.y), tol)));
+        ex = max(ex, excess_all(m, eb, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         unbalance(ref m, d);
         back = max(back, max_ulp_2x2(m, a) / amax_2x2(a));
     }
@@ -115,18 +111,8 @@ fn test_oracle_balance3() {
         let mut m = a;
         let d = balance_parlett_reinsch(ref m);
         let (eb, ed) = (mat3x3(eb), vec3(ed));
-        ex = max(ex, excess(ulp_diff(m.m11, eb.m11), oracle_tol(abs_raw(eb.m11), tol)));
-        ex = max(ex, excess(ulp_diff(m.m12, eb.m12), oracle_tol(abs_raw(eb.m12), tol)));
-        ex = max(ex, excess(ulp_diff(m.m13, eb.m13), oracle_tol(abs_raw(eb.m13), tol)));
-        ex = max(ex, excess(ulp_diff(m.m21, eb.m21), oracle_tol(abs_raw(eb.m21), tol)));
-        ex = max(ex, excess(ulp_diff(m.m22, eb.m22), oracle_tol(abs_raw(eb.m22), tol)));
-        ex = max(ex, excess(ulp_diff(m.m23, eb.m23), oracle_tol(abs_raw(eb.m23), tol)));
-        ex = max(ex, excess(ulp_diff(m.m31, eb.m31), oracle_tol(abs_raw(eb.m31), tol)));
-        ex = max(ex, excess(ulp_diff(m.m32, eb.m32), oracle_tol(abs_raw(eb.m32), tol)));
-        ex = max(ex, excess(ulp_diff(m.m33, eb.m33), oracle_tol(abs_raw(eb.m33), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.y, ed.y), oracle_tol(abs_raw(ed.y), tol)));
-        ex = max(ex, excess(ulp_diff(d.z, ed.z), oracle_tol(abs_raw(ed.z), tol)));
+        ex = max(ex, excess_all(m, eb, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         unbalance(ref m, d);
         back = max(back, max_ulp_3x3(m, a) / amax_3x3(a));
     }
@@ -168,26 +154,8 @@ fn test_oracle_balance4() {
         let mut m = a;
         let d = balance_parlett_reinsch(ref m);
         let (eb, ed) = (mat4x4(eb), vec4(ed));
-        ex = max(ex, excess(ulp_diff(m.m11, eb.m11), oracle_tol(abs_raw(eb.m11), tol)));
-        ex = max(ex, excess(ulp_diff(m.m12, eb.m12), oracle_tol(abs_raw(eb.m12), tol)));
-        ex = max(ex, excess(ulp_diff(m.m13, eb.m13), oracle_tol(abs_raw(eb.m13), tol)));
-        ex = max(ex, excess(ulp_diff(m.m14, eb.m14), oracle_tol(abs_raw(eb.m14), tol)));
-        ex = max(ex, excess(ulp_diff(m.m21, eb.m21), oracle_tol(abs_raw(eb.m21), tol)));
-        ex = max(ex, excess(ulp_diff(m.m22, eb.m22), oracle_tol(abs_raw(eb.m22), tol)));
-        ex = max(ex, excess(ulp_diff(m.m23, eb.m23), oracle_tol(abs_raw(eb.m23), tol)));
-        ex = max(ex, excess(ulp_diff(m.m24, eb.m24), oracle_tol(abs_raw(eb.m24), tol)));
-        ex = max(ex, excess(ulp_diff(m.m31, eb.m31), oracle_tol(abs_raw(eb.m31), tol)));
-        ex = max(ex, excess(ulp_diff(m.m32, eb.m32), oracle_tol(abs_raw(eb.m32), tol)));
-        ex = max(ex, excess(ulp_diff(m.m33, eb.m33), oracle_tol(abs_raw(eb.m33), tol)));
-        ex = max(ex, excess(ulp_diff(m.m34, eb.m34), oracle_tol(abs_raw(eb.m34), tol)));
-        ex = max(ex, excess(ulp_diff(m.m41, eb.m41), oracle_tol(abs_raw(eb.m41), tol)));
-        ex = max(ex, excess(ulp_diff(m.m42, eb.m42), oracle_tol(abs_raw(eb.m42), tol)));
-        ex = max(ex, excess(ulp_diff(m.m43, eb.m43), oracle_tol(abs_raw(eb.m43), tol)));
-        ex = max(ex, excess(ulp_diff(m.m44, eb.m44), oracle_tol(abs_raw(eb.m44), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.y, ed.y), oracle_tol(abs_raw(ed.y), tol)));
-        ex = max(ex, excess(ulp_diff(d.z, ed.z), oracle_tol(abs_raw(ed.z), tol)));
-        ex = max(ex, excess(ulp_diff(d.w, ed.w), oracle_tol(abs_raw(ed.w), tol)));
+        ex = max(ex, excess_all(m, eb, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         unbalance(ref m, d);
         back = max(back, max_ulp_4x4(m, a) / amax_4x4(a));
     }
@@ -229,36 +197,8 @@ fn test_oracle_balance5() {
         let mut m = a;
         let d = balance_parlett_reinsch(ref m);
         let (eb, ed) = (mat5x5(eb), vec5(ed));
-        ex = max(ex, excess(ulp_diff(m.m11, eb.m11), oracle_tol(abs_raw(eb.m11), tol)));
-        ex = max(ex, excess(ulp_diff(m.m12, eb.m12), oracle_tol(abs_raw(eb.m12), tol)));
-        ex = max(ex, excess(ulp_diff(m.m13, eb.m13), oracle_tol(abs_raw(eb.m13), tol)));
-        ex = max(ex, excess(ulp_diff(m.m14, eb.m14), oracle_tol(abs_raw(eb.m14), tol)));
-        ex = max(ex, excess(ulp_diff(m.m15, eb.m15), oracle_tol(abs_raw(eb.m15), tol)));
-        ex = max(ex, excess(ulp_diff(m.m21, eb.m21), oracle_tol(abs_raw(eb.m21), tol)));
-        ex = max(ex, excess(ulp_diff(m.m22, eb.m22), oracle_tol(abs_raw(eb.m22), tol)));
-        ex = max(ex, excess(ulp_diff(m.m23, eb.m23), oracle_tol(abs_raw(eb.m23), tol)));
-        ex = max(ex, excess(ulp_diff(m.m24, eb.m24), oracle_tol(abs_raw(eb.m24), tol)));
-        ex = max(ex, excess(ulp_diff(m.m25, eb.m25), oracle_tol(abs_raw(eb.m25), tol)));
-        ex = max(ex, excess(ulp_diff(m.m31, eb.m31), oracle_tol(abs_raw(eb.m31), tol)));
-        ex = max(ex, excess(ulp_diff(m.m32, eb.m32), oracle_tol(abs_raw(eb.m32), tol)));
-        ex = max(ex, excess(ulp_diff(m.m33, eb.m33), oracle_tol(abs_raw(eb.m33), tol)));
-        ex = max(ex, excess(ulp_diff(m.m34, eb.m34), oracle_tol(abs_raw(eb.m34), tol)));
-        ex = max(ex, excess(ulp_diff(m.m35, eb.m35), oracle_tol(abs_raw(eb.m35), tol)));
-        ex = max(ex, excess(ulp_diff(m.m41, eb.m41), oracle_tol(abs_raw(eb.m41), tol)));
-        ex = max(ex, excess(ulp_diff(m.m42, eb.m42), oracle_tol(abs_raw(eb.m42), tol)));
-        ex = max(ex, excess(ulp_diff(m.m43, eb.m43), oracle_tol(abs_raw(eb.m43), tol)));
-        ex = max(ex, excess(ulp_diff(m.m44, eb.m44), oracle_tol(abs_raw(eb.m44), tol)));
-        ex = max(ex, excess(ulp_diff(m.m45, eb.m45), oracle_tol(abs_raw(eb.m45), tol)));
-        ex = max(ex, excess(ulp_diff(m.m51, eb.m51), oracle_tol(abs_raw(eb.m51), tol)));
-        ex = max(ex, excess(ulp_diff(m.m52, eb.m52), oracle_tol(abs_raw(eb.m52), tol)));
-        ex = max(ex, excess(ulp_diff(m.m53, eb.m53), oracle_tol(abs_raw(eb.m53), tol)));
-        ex = max(ex, excess(ulp_diff(m.m54, eb.m54), oracle_tol(abs_raw(eb.m54), tol)));
-        ex = max(ex, excess(ulp_diff(m.m55, eb.m55), oracle_tol(abs_raw(eb.m55), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.y, ed.y), oracle_tol(abs_raw(ed.y), tol)));
-        ex = max(ex, excess(ulp_diff(d.z, ed.z), oracle_tol(abs_raw(ed.z), tol)));
-        ex = max(ex, excess(ulp_diff(d.w, ed.w), oracle_tol(abs_raw(ed.w), tol)));
-        ex = max(ex, excess(ulp_diff(d.a, ed.a), oracle_tol(abs_raw(ed.a), tol)));
+        ex = max(ex, excess_all(m, eb, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         unbalance(ref m, d);
         back = max(back, max_ulp_5x5(m, a) / amax_5x5(a));
     }
@@ -300,48 +240,8 @@ fn test_oracle_balance6() {
         let mut m = a;
         let d = balance_parlett_reinsch(ref m);
         let (eb, ed) = (mat6x6(eb), vec6(ed));
-        ex = max(ex, excess(ulp_diff(m.m11, eb.m11), oracle_tol(abs_raw(eb.m11), tol)));
-        ex = max(ex, excess(ulp_diff(m.m12, eb.m12), oracle_tol(abs_raw(eb.m12), tol)));
-        ex = max(ex, excess(ulp_diff(m.m13, eb.m13), oracle_tol(abs_raw(eb.m13), tol)));
-        ex = max(ex, excess(ulp_diff(m.m14, eb.m14), oracle_tol(abs_raw(eb.m14), tol)));
-        ex = max(ex, excess(ulp_diff(m.m15, eb.m15), oracle_tol(abs_raw(eb.m15), tol)));
-        ex = max(ex, excess(ulp_diff(m.m16, eb.m16), oracle_tol(abs_raw(eb.m16), tol)));
-        ex = max(ex, excess(ulp_diff(m.m21, eb.m21), oracle_tol(abs_raw(eb.m21), tol)));
-        ex = max(ex, excess(ulp_diff(m.m22, eb.m22), oracle_tol(abs_raw(eb.m22), tol)));
-        ex = max(ex, excess(ulp_diff(m.m23, eb.m23), oracle_tol(abs_raw(eb.m23), tol)));
-        ex = max(ex, excess(ulp_diff(m.m24, eb.m24), oracle_tol(abs_raw(eb.m24), tol)));
-        ex = max(ex, excess(ulp_diff(m.m25, eb.m25), oracle_tol(abs_raw(eb.m25), tol)));
-        ex = max(ex, excess(ulp_diff(m.m26, eb.m26), oracle_tol(abs_raw(eb.m26), tol)));
-        ex = max(ex, excess(ulp_diff(m.m31, eb.m31), oracle_tol(abs_raw(eb.m31), tol)));
-        ex = max(ex, excess(ulp_diff(m.m32, eb.m32), oracle_tol(abs_raw(eb.m32), tol)));
-        ex = max(ex, excess(ulp_diff(m.m33, eb.m33), oracle_tol(abs_raw(eb.m33), tol)));
-        ex = max(ex, excess(ulp_diff(m.m34, eb.m34), oracle_tol(abs_raw(eb.m34), tol)));
-        ex = max(ex, excess(ulp_diff(m.m35, eb.m35), oracle_tol(abs_raw(eb.m35), tol)));
-        ex = max(ex, excess(ulp_diff(m.m36, eb.m36), oracle_tol(abs_raw(eb.m36), tol)));
-        ex = max(ex, excess(ulp_diff(m.m41, eb.m41), oracle_tol(abs_raw(eb.m41), tol)));
-        ex = max(ex, excess(ulp_diff(m.m42, eb.m42), oracle_tol(abs_raw(eb.m42), tol)));
-        ex = max(ex, excess(ulp_diff(m.m43, eb.m43), oracle_tol(abs_raw(eb.m43), tol)));
-        ex = max(ex, excess(ulp_diff(m.m44, eb.m44), oracle_tol(abs_raw(eb.m44), tol)));
-        ex = max(ex, excess(ulp_diff(m.m45, eb.m45), oracle_tol(abs_raw(eb.m45), tol)));
-        ex = max(ex, excess(ulp_diff(m.m46, eb.m46), oracle_tol(abs_raw(eb.m46), tol)));
-        ex = max(ex, excess(ulp_diff(m.m51, eb.m51), oracle_tol(abs_raw(eb.m51), tol)));
-        ex = max(ex, excess(ulp_diff(m.m52, eb.m52), oracle_tol(abs_raw(eb.m52), tol)));
-        ex = max(ex, excess(ulp_diff(m.m53, eb.m53), oracle_tol(abs_raw(eb.m53), tol)));
-        ex = max(ex, excess(ulp_diff(m.m54, eb.m54), oracle_tol(abs_raw(eb.m54), tol)));
-        ex = max(ex, excess(ulp_diff(m.m55, eb.m55), oracle_tol(abs_raw(eb.m55), tol)));
-        ex = max(ex, excess(ulp_diff(m.m56, eb.m56), oracle_tol(abs_raw(eb.m56), tol)));
-        ex = max(ex, excess(ulp_diff(m.m61, eb.m61), oracle_tol(abs_raw(eb.m61), tol)));
-        ex = max(ex, excess(ulp_diff(m.m62, eb.m62), oracle_tol(abs_raw(eb.m62), tol)));
-        ex = max(ex, excess(ulp_diff(m.m63, eb.m63), oracle_tol(abs_raw(eb.m63), tol)));
-        ex = max(ex, excess(ulp_diff(m.m64, eb.m64), oracle_tol(abs_raw(eb.m64), tol)));
-        ex = max(ex, excess(ulp_diff(m.m65, eb.m65), oracle_tol(abs_raw(eb.m65), tol)));
-        ex = max(ex, excess(ulp_diff(m.m66, eb.m66), oracle_tol(abs_raw(eb.m66), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.y, ed.y), oracle_tol(abs_raw(ed.y), tol)));
-        ex = max(ex, excess(ulp_diff(d.z, ed.z), oracle_tol(abs_raw(ed.z), tol)));
-        ex = max(ex, excess(ulp_diff(d.w, ed.w), oracle_tol(abs_raw(ed.w), tol)));
-        ex = max(ex, excess(ulp_diff(d.a, ed.a), oracle_tol(abs_raw(ed.a), tol)));
-        ex = max(ex, excess(ulp_diff(d.b, ed.b), oracle_tol(abs_raw(ed.b), tol)));
+        ex = max(ex, excess_all(m, eb, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         unbalance(ref m, d);
         back = max(back, max_ulp_6x6(m, a) / amax_6x6(a));
     }

@@ -5,9 +5,9 @@
 use core::cmp::max;
 use nalgebra::linalg::{Matrix4SymmetricTridiagonalTrait, SymmetricTridiagonal4Trait};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, oracle_tol, ulp_diff};
 use crate::builders::{amax_4x4, mat4x4, max_ulp_4x4, orth_4x4, vec3, vec4};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `symmetric_tridiagonal4` (oracle): `q`, the diagonal and the off-diagonal within the oracle
 /// tolerance (upstream's signs), `recompose()` = `A` and `QᵀQ = I` within the measured bounds,
@@ -24,30 +24,10 @@ fn test_oracle_symmetric_tridiagonal4() {
         assert!(q == t.q() && d == t.diagonal() && t.internal_tri() == t.tri);
         assert!(t.unpack_tridiagonal() == (d, e) && t.off_diagonal() == e);
         let (eq, ed) = (mat4x4(eq), vec4(ed));
-        ex = max(ex, excess(ulp_diff(q.m11, eq.m11), oracle_tol(abs_raw(eq.m11), tol)));
-        ex = max(ex, excess(ulp_diff(q.m12, eq.m12), oracle_tol(abs_raw(eq.m12), tol)));
-        ex = max(ex, excess(ulp_diff(q.m13, eq.m13), oracle_tol(abs_raw(eq.m13), tol)));
-        ex = max(ex, excess(ulp_diff(q.m14, eq.m14), oracle_tol(abs_raw(eq.m14), tol)));
-        ex = max(ex, excess(ulp_diff(q.m21, eq.m21), oracle_tol(abs_raw(eq.m21), tol)));
-        ex = max(ex, excess(ulp_diff(q.m22, eq.m22), oracle_tol(abs_raw(eq.m22), tol)));
-        ex = max(ex, excess(ulp_diff(q.m23, eq.m23), oracle_tol(abs_raw(eq.m23), tol)));
-        ex = max(ex, excess(ulp_diff(q.m24, eq.m24), oracle_tol(abs_raw(eq.m24), tol)));
-        ex = max(ex, excess(ulp_diff(q.m31, eq.m31), oracle_tol(abs_raw(eq.m31), tol)));
-        ex = max(ex, excess(ulp_diff(q.m32, eq.m32), oracle_tol(abs_raw(eq.m32), tol)));
-        ex = max(ex, excess(ulp_diff(q.m33, eq.m33), oracle_tol(abs_raw(eq.m33), tol)));
-        ex = max(ex, excess(ulp_diff(q.m34, eq.m34), oracle_tol(abs_raw(eq.m34), tol)));
-        ex = max(ex, excess(ulp_diff(q.m41, eq.m41), oracle_tol(abs_raw(eq.m41), tol)));
-        ex = max(ex, excess(ulp_diff(q.m42, eq.m42), oracle_tol(abs_raw(eq.m42), tol)));
-        ex = max(ex, excess(ulp_diff(q.m43, eq.m43), oracle_tol(abs_raw(eq.m43), tol)));
-        ex = max(ex, excess(ulp_diff(q.m44, eq.m44), oracle_tol(abs_raw(eq.m44), tol)));
-        ex = max(ex, excess(ulp_diff(d.x, ed.x), oracle_tol(abs_raw(ed.x), tol)));
-        ex = max(ex, excess(ulp_diff(d.y, ed.y), oracle_tol(abs_raw(ed.y), tol)));
-        ex = max(ex, excess(ulp_diff(d.z, ed.z), oracle_tol(abs_raw(ed.z), tol)));
-        ex = max(ex, excess(ulp_diff(d.w, ed.w), oracle_tol(abs_raw(ed.w), tol)));
+        ex = max(ex, excess_all(q, eq, tol));
+        ex = max(ex, excess_all(d, ed, tol));
         let ee = vec3(ee);
-        ex = max(ex, excess(ulp_diff(e.x, ee.x), oracle_tol(abs_raw(ee.x), tol)));
-        ex = max(ex, excess(ulp_diff(e.y, ee.y), oracle_tol(abs_raw(ee.y), tol)));
-        ex = max(ex, excess(ulp_diff(e.z, ee.z), oracle_tol(abs_raw(ee.z), tol)));
+        ex = max(ex, excess_all(e, ee, tol));
         rec = max(rec, max_ulp_4x4(t.recompose(), a) / amax_4x4(a));
         orth = max(orth, orth_4x4(q));
     }

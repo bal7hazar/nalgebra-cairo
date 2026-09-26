@@ -7,9 +7,10 @@ use core::cmp::max;
 use nalgebra::linalg::{Hessenberg1Trait, Matrix1HessenbergTrait};
 use nalgebra::{Matrix1, MatrixMul};
 use nalgebra_testing::black_box;
-use nalgebra_tests_utils::{abs_raw, excess, fx, oracle_tol, ulp_diff};
+use nalgebra_tests_utils::fx;
 use crate::builders::{amax_1x1, mat1x1, max_ulp_1x1, orth_1x1};
 use crate::oracle_schur as oracle;
+use crate::util::excess_all;
 
 /// `hessenberg1` (oracle): `q` and `h` entry by entry within the oracle tolerance (upstream's
 /// signs), `H` zero below the subdiagonal, `A = Q H Qᵀ` and `QᵀQ = I` within the measured
@@ -29,8 +30,8 @@ fn test_oracle_hessenberg1() {
         assert!(h2.hess == h.hess, "new_with_workspace");
         assert!(true, "Hessenberg form");
         let (eq, eh) = (mat1x1(eq), mat1x1(eh));
-        ex = max(ex, excess(ulp_diff(q.x, eq.x), oracle_tol(abs_raw(eq.x), tol)));
-        ex = max(ex, excess(ulp_diff(hh.x, eh.x), oracle_tol(abs_raw(eh.x), tol)));
+        ex = max(ex, excess_all(q, eq, tol));
+        ex = max(ex, excess_all(hh, eh, tol));
         let qt = Matrix1 { x: q.x };
         rec = max(rec, max_ulp_1x1(q.mul_mat(hh).mul_mat(qt), a) / amax_1x1(a));
         orth = max(orth, orth_1x1(q));

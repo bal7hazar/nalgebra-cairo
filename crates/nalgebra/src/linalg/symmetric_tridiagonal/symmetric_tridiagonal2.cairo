@@ -122,13 +122,13 @@ pub impl SymmetricTridiagonal2Impl<
     fn q(self: SymmetricTridiagonal2<T>) -> Matrix2<T> {
         revoke_ap_tracking();
         let sq0 = self.off_diagonal.x < R::zero();
+        let q0_v0 = self.tri.m21 + self.tri.m21;
+        let q0_nv0 = -q0_v0;
         let h = self.tri.m21;
-        let w = h + h;
-        let nw = -w;
         let q0_11 = if sq0 {
-            R::mul_add(w, self.tri.m21, -R::one())
+            R::mul_add(h, q0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m21, R::one())
+            R::mul_add(h, q0_nv0, R::one())
         };
         Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: q0_11 }
     }

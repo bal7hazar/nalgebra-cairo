@@ -169,40 +169,40 @@ pub impl SymmetricTridiagonal3Impl<
     fn q(self: SymmetricTridiagonal3<T>) -> Matrix3<T> {
         revoke_ap_tracking();
         let sq1 = self.off_diagonal.y < R::zero();
+        let q1_v0 = self.tri.m32 + self.tri.m32;
+        let q1_nv0 = -q1_v0;
         let h = self.tri.m32;
-        let w = h + h;
-        let nw = -w;
         let q1_22 = if sq1 {
-            R::mul_add(w, self.tri.m32, -R::one())
+            R::mul_add(h, q1_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m32, R::one())
+            R::mul_add(h, q1_nv0, R::one())
         };
         let sq0 = self.off_diagonal.x < R::zero();
+        let q0_v0 = self.tri.m21 + self.tri.m21;
+        let q0_nv0 = -q0_v0;
+        let q0_v1 = self.tri.m31 + self.tri.m31;
+        let q0_nv1 = -q0_v1;
         let h = self.tri.m21;
-        let w = h + h;
-        let nw = -w;
         let q0_11 = if sq0 {
-            R::mul_add(w, self.tri.m21, -R::one())
+            R::mul_add(h, q0_v0, -R::one())
         } else {
-            R::mul_add(nw, self.tri.m21, R::one())
+            R::mul_add(h, q0_nv0, R::one())
         };
         let q0_21 = if sq0 {
-            w * self.tri.m31
+            h * q0_v1
         } else {
-            nw * self.tri.m31
+            h * q0_nv1
         };
         let h = self.tri.m31 * q1_22;
-        let w = h + h;
-        let nw = -w;
         let q0_12 = if sq0 {
-            w * self.tri.m21
+            h * q0_v0
         } else {
-            nw * self.tri.m21
+            h * q0_nv0
         };
         let q0_22 = if sq0 {
-            R::mul_add(w, self.tri.m31, -q1_22)
+            R::mul_add(h, q0_v1, -q1_22)
         } else {
-            R::mul_add(nw, self.tri.m31, q1_22)
+            R::mul_add(h, q0_nv1, q1_22)
         };
         Matrix3 {
             m11: R::one(),
