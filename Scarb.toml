@@ -30,6 +30,7 @@ members = [
     "crates/tests_linalg_solve",
     "crates/tests_linalg_solve_rhs",
     "crates/tests_linalg_factor",
+    "crates/tests_dynamic",
 ]
 
 [workspace.package]
