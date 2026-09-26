@@ -6,8 +6,11 @@
 use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
+use crate::base::matrix3::Matrix3;
 use crate::base::matrix3x2::Matrix3x2;
+use crate::base::solve::SolveKernel;
 use crate::base::vector3::Vector3;
+use super::kernels::QrComplete3Impl;
 
 /// The QR factorisation `A = q * r` of a `Matrix3x2<T>`: `q` is 3x2 (thin: 3x2, orthonormal
 /// COLUMNS), `r` is 2x2 upper triangular (trapezoidal) with a non-negative diagonal and an exactly
@@ -113,6 +116,54 @@ pub impl Qr3x2Impl<
     #[inline(always)]
     fn qr_internal(self: Qr3x2<T>) -> (Matrix3x2<T>, Matrix2<T>) {
         (self.q, self.r)
+    }
+
+    /// `rhs = Qᵀ * rhs` in place, for any `rhs` with 3 rows (a vector or a matrix), `Q` the
+    /// FULL 3x3 orthogonal factor: the thin `q` completed by 1 unit vector, each the
+    /// axis least represented in the span of the previous columns, stripped of its projection
+    /// and normalised (`full_q`). The first 2 rows of the result are `qᵀ rhs` bit for bit; the
+    /// last 1 is its component along the orthogonal complement of the columns of
+    /// `A`. ONE fused sum of products per entry, floored once. Upstream: `QR::q_tr_mul` (the
+    /// 2 Householder reflections, a rounding each: a different basis of the complement, and
+    /// upstream's signs on the first rows).
+    fn q_tr_mul<B, impl K: SolveKernel<Matrix3<T>, B>, +Drop<B>>(self: Qr3x2<T>, ref rhs: B) {
+        rhs = K::tr_mul_rhs(Qr3x2InternalTrait::full_q(self), rhs);
+    }
+}
+
+/// Crate-internal kernel of `Qr3x2<T>`: the full orthogonal factor of `q_tr_mul`.
+#[generate_trait]
+pub(crate) impl Qr3x2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Qr3x2InternalTrait<T> {
+    /// The full 3x3 orthogonal factor whose first 2 columns are `q`, see `q_tr_mul`
+    /// (upstream exposes the full `Q` only through `q_tr_mul`).
+    fn full_q(self: Qr3x2<T>) -> Matrix3<T> {
+        revoke_ap_tracking();
+        let u0 = Vector3 { x: self.q.m11, y: self.q.m21, z: self.q.m31 };
+        let u1 = Vector3 { x: self.q.m12, y: self.q.m22, z: self.q.m32 };
+        let u2 = QrComplete3Impl::<T>::complete2(u0, u1);
+        Matrix3 {
+            m11: u0.x,
+            m21: u0.y,
+            m31: u0.z,
+            m12: u1.x,
+            m22: u1.y,
+            m32: u1.z,
+            m13: u2.x,
+            m23: u2.y,
+            m33: u2.z,
+        }
     }
 }
 

@@ -174,7 +174,7 @@
   },
   "nalgebra::linalg::svd2::tests": {
     "svd2_new": {
-      "alt_normalised_columns": 116210
+      "alt_normalised_columns": 116810
     },
     "svd2_singular_values": {
       "alt_sqrt_eigenvalues": 36470
@@ -186,8 +186,8 @@
       "transpose_mul_transpose": 33160
     },
     "svd3_new": {
-      "alt_normalised_columns": 808100,
-      "alt_one_sided_jacobi": 779160
+      "alt_normalised_columns": 809400,
+      "alt_one_sided_jacobi": 779360
     },
     "svd3_singular_values": {
       "alt_sqrt_eigenvalues": 380740

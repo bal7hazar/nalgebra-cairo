@@ -543,7 +543,7 @@ pub fn with(field: Field, gen: Gen) -> Input {
 
 fn gen_len(gen: &Gen) -> usize {
     match gen {
-        Gen::S | Gen::Pos | Gen::Range(..) => 1,
+        Gen::S | Gen::Pos | Gen::Range(..) | Gen::Int(..) => 1,
         Gen::V(n) | Gen::U(n) => *n,
         Gen::ScaledAxis => 3,
         Gen::M(r, c)
@@ -565,7 +565,9 @@ fn gen_len(gen: &Gen) -> usize {
         | Gen::SpectrumClustered(n)
         | Gen::Defective(n)
         | Gen::NearTriangular(n)
-        | Gen::BadlyScaled(n) => n * n,
+        | Gen::BadlyScaled(n)
+        | Gen::Skew(n)
+        | Gen::NormScaled(n, ..) => n * n,
         Gen::Group(parts) => parts.iter().map(gen_len).sum(),
         Gen::UnitDual => 8,
     }

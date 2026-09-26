@@ -371,31 +371,31 @@
   "nalgebra_tests_linalg::svd2::tests": {
     "svd2_new": {
       "baseline": 16550,
-      "eigen_of_gram": 88910
+      "eigen_of_gram": 89410
     },
     "svd2_pseudo_inverse": {
-      "baseline": 89230,
-      "reciprocals": 117230
+      "baseline": 90130,
+      "reciprocals": 118530
     },
     "svd2_rank": {
-      "baseline": 89230,
-      "comparisons": 91870
+      "baseline": 90130,
+      "comparisons": 92770
     },
     "svd2_recompose": {
-      "baseline": 89230,
-      "scaled_product": 107400
+      "baseline": 90130,
+      "scaled_product": 109600
     },
     "svd2_singular_values": {
       "baseline": 16550,
-      "from_left_vectors": 88910
+      "from_left_vectors": 89410
     },
     "svd2_solve": {
-      "baseline": 89830,
-      "divisions": 111070
+      "baseline": 90730,
+      "divisions": 112370
     },
     "svd2_to_polar": {
-      "baseline": 89230,
-      "quadform": 114670
+      "baseline": 90130,
+      "quadform": 115770
     }
   },
   "nalgebra_tests_linalg::svd3::tests": {
@@ -404,31 +404,31 @@
     },
     "svd3_new": {
       "baseline": 17550,
-      "eigen_of_gram": 742820
+      "eigen_of_gram": 744020
     },
     "svd3_pseudo_inverse": {
-      "baseline": 744250,
-      "reciprocals": 798280
+      "baseline": 745950,
+      "reciprocals": 800380
     },
     "svd3_rank": {
-      "baseline": 744250,
-      "comparisons": 748060
+      "baseline": 745950,
+      "comparisons": 749760
     },
     "svd3_recompose": {
-      "baseline": 744250,
-      "scaled_product": 783620
+      "baseline": 745950,
+      "scaled_product": 787120
     },
     "svd3_singular_values": {
       "baseline": 17550,
-      "from_left_vectors": 742820
+      "from_left_vectors": 744020
     },
     "svd3_solve": {
-      "baseline": 745050,
-      "divisions": 777360
+      "baseline": 746750,
+      "divisions": 779460
     },
     "svd3_to_polar": {
-      "baseline": 744250,
-      "quadform": 797730
+      "baseline": 745950,
+      "quadform": 799630
     }
   },
   "nalgebra_tests_linalg::udu::benches": {

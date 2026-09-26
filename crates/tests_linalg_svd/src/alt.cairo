@@ -444,13 +444,13 @@ fn test_one_sided_jacobi4_candidate() {
         };
         rec = max(rec, max_ulp_4x4(us.mul_mat(vt), a) / amax_4x4(a));
         orth = max(orth, orth_4x4(u));
-        let d = Svd4Trait::new(a);
+        let d = Svd4Trait::new(a, true, true);
         ex2 = max(ex2, excess(ulp_diff(d.singular_values.x, e.x), oracle_tol(abs_raw(e.x), tol)));
         ex2 = max(ex2, excess(ulp_diff(d.singular_values.y, e.y), oracle_tol(abs_raw(e.y), tol)));
         ex2 = max(ex2, excess(ulp_diff(d.singular_values.z, e.z), oracle_tol(abs_raw(e.z), tol)));
         ex2 = max(ex2, excess(ulp_diff(d.singular_values.w, e.w), oracle_tol(abs_raw(e.w), tol)));
-        rec2 = max(rec2, max_ulp_4x4(d.recompose(), a) / amax_4x4(a));
-        orth2 = max(orth2, orth_4x4(d.u));
+        rec2 = max(rec2, max_ulp_4x4(d.recompose().unwrap(), a) / amax_4x4(a));
+        orth2 = max(orth2, orth_4x4(d.u.unwrap()));
     }
     assert!(
         (ex, rec, orth, ex2, rec2, orth2) == (0, 20, 627, 0, 4, 24),

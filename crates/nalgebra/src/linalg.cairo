@@ -40,7 +40,7 @@
 //! Scarb features (DESIGN D9, all in `default`): `eigen` (`symmetric_eigen*`), `svd` (`svd*`, on
 //! `eigen`), `qr`, `cholesky_update`, `full_piv_lu`, `col_piv_qr`, `lblt`, `hessenberg`
 //! (`hessenberg`, `householder_steps`, `symmetric_tridiagonal`, `balancing`), `bidiagonal`,
-//! `schur` (`schur`, `eigen`, on `hessenberg`). Nothing ungated uses
+//! `schur` (`schur`, `eigen`, on `hessenberg`), `exp` (`exp`, `pow`). Nothing ungated uses
 //! them: the only item of `linalg` the rest of the crate uses is `Lu6` (`Matrix6::determinant` /
 //! `try_inverse`), and `lu` / `cholesky` / `udu` stay ungated.
 
@@ -55,6 +55,8 @@ pub mod cholesky_update;
 pub mod col_piv_qr;
 #[cfg(feature: 'schur')]
 pub mod eigen;
+#[cfg(feature: 'exp')]
+pub mod exp;
 #[cfg(feature: 'full_piv_lu')]
 pub mod full_piv_lu;
 pub mod givens;
@@ -79,6 +81,8 @@ mod oracle_symmetric_eigen;
 #[cfg(test)]
 mod oracle_udu;
 pub mod permutation_sequence;
+#[cfg(feature: 'exp')]
+pub mod pow;
 #[cfg(feature: 'qr')]
 pub mod qr;
 #[cfg(feature: 'schur')]
@@ -175,6 +179,11 @@ pub use eigen::{
     Eigen1, Eigen1Trait, Eigen2, Eigen2Trait, Eigen3, Eigen3Trait, Eigen4, Eigen4Trait, Eigen5,
     Eigen5Trait, Eigen6, Eigen6Trait,
 };
+#[cfg(feature: 'exp')]
+pub use exp::{
+    Matrix1ExpTrait, Matrix2ExpTrait, Matrix3ExpTrait, Matrix4ExpTrait, Matrix5ExpTrait,
+    Matrix6ExpTrait,
+};
 #[cfg(feature: 'full_piv_lu')]
 pub use full_piv_lu::{
     FullPivLu1, FullPivLu1Trait, FullPivLu1x2, FullPivLu1x2Trait, FullPivLu1x3, FullPivLu1x3Trait,
@@ -230,6 +239,11 @@ pub use lu::{
 };
 pub use lu_steps::{gauss_step, gauss_step_swap, try_invert_to};
 pub use permutation_sequence::{PermuteColumns, PermuteRows};
+#[cfg(feature: 'exp')]
+pub use pow::{
+    Matrix1PowTrait, Matrix2PowTrait, Matrix3PowTrait, Matrix4PowTrait, Matrix5PowTrait,
+    Matrix6PowTrait,
+};
 #[cfg(feature: 'qr')]
 pub use qr::{
     Matrix1QrTrait, Matrix2QrTrait, Matrix2x3QrTrait, Matrix2x4QrTrait, Matrix2x5QrTrait,

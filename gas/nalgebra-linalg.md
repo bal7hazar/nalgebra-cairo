@@ -277,7 +277,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_normalised_columns` | 116210 | - | x1.00 |
+| `alt_normalised_columns` | 116810 | - | x1.00 |
 
 ### svd2_singular_values
 
@@ -298,8 +298,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_one_sided_jacobi` | 779160 | - | x1.00 |
-| `alt_normalised_columns` | 808100 | - | x1.04 |
+| `alt_one_sided_jacobi` | 779360 | - | x1.00 |
+| `alt_normalised_columns` | 809400 | - | x1.04 |
 
 ### svd3_singular_values
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generator of the WP 8.5-P14b `linalg` modules (symmetric eigen 1/4/5/6, SVD and QR of every
 static shape, Cholesky column updates) and, through `p15.py`, of the WP 8.5-P15 ones (`FullPivLU`,
-`ColPivQR`, `LBLT`, `Perm1` / `Perm5`).
+`ColPivQR`, `LBLT`, `Perm1` / `Perm5`), through `p16.py` of the WP 8.5-P16 ones and through
+`p17.py` of the WP 8.5-P17 ones (`exp`, `pow`).
 
     python3 crates/nalgebra/src/linalg/generate.py            # write the outputs (runs `scarb fmt`)
     python3 crates/nalgebra/src/linalg/generate.py --check    # fail if a committed output is stale
@@ -589,6 +590,7 @@ def outputs() -> dict[str, str]:
         out[lin + f"svd/{svd_mod(r, c)}.cairo"] = render_svd(r, c)
     for r, c in qr_shapes():
         out[lin + f"qr/{qr_name(r, c).lower()}.cairo"] = render_qr(r, c)
+    out[lin + "qr/kernels.cairo"] = render_qr_kernels()
     out[lin + "cholesky_update.cairo"] = render_cholesky_update()
     out.update(eigen_package())
     out.update(svd_packages())
@@ -598,6 +600,8 @@ def outputs() -> dict[str, str]:
     out.update(p15.outputs())
     import p16  # WP 8.5-P16 (Hessenberg, SymmetricTridiagonal, Bidiagonal, Schur, Eigen, ...)
     out.update(p16.outputs())
+    import p17  # WP 8.5-P17 (exp, pow)
+    out.update(p17.outputs())
     return out
 
 
@@ -1123,24 +1127,41 @@ pub(crate) impl SvdRightImpl<
         }}
     }}"""]
         fns += [gs_kernel(r, k) for k in range(1, r)]
-        for k in range(1, r):
-            args = ", ".join(f"u{l}: {V}<T>" for l in range(k))
-            cands = []
-            for i in range(r):
-                cands.append(f"let c{i} = {fused([(1, col(r, f'u{l}', i), col(r, f'u{l}', i)) for l in range(k)])};")
-            pick = ["let mut best: usize = 0;", "let mut cb = c0;"]
-            for i in range(1, r):
-                pick.append(f"if c{i} < cb {{ best = {i}; cb = c{i}; }}")
-            sel = []
-            for l in range(k):
-                chain = " else ".join(f"if best == {i} {{ {col(r, f'u{l}', i)} }}" for i in range(r - 1))
-                sel.append(f"let a{l} = {chain} else {{ {col(r, f'u{l}', r - 1)} }};")
-            comps = []
-            for i in range(r):
-                terms = [(1, f"if best == {i} {{ R::one() }} else {{ R::zero() }}", None)]
-                terms += [(-1, f"a{l}", col(r, f"u{l}", i)) for l in range(k)]
-                comps.append(fused(terms))
-            fns.append(f"""    /// A unit {r}-vector orthogonal to the {k} orthonormal `u*`: the axis `e_i` whose squared
+        fns += [complete_kernel(r, k) for k in range(1, r)]
+        parts.append(f"""/// The left singular vectors of the SVDs with {r} rows (crate-internal): the first one, the
+/// Gram-Schmidt steps, the completions of orthonormal families of {r}-vectors.
+#[generate_trait]
+pub(crate) impl SvdComplete{r}Impl<
+{BOUNDS}
+> of SvdComplete{r}Trait<T> {{
+{chr(10).join(fns)}
+}}
+""")
+    return "\n".join(parts)
+
+
+def complete_kernel(r: int, k: int) -> str:
+    """`complete{k}`: a unit `r`-vector orthogonal to `k` orthonormal ones (the axis least
+    represented in their span, stripped of its projection). Shared by the SVD left vectors and the
+    full `Q` of the tall QR factorisations."""
+    V = tname(r, 1)
+    args = ", ".join(f"u{l}: {V}<T>" for l in range(k))
+    cands = []
+    for i in range(r):
+        cands.append(f"let c{i} = {fused([(1, col(r, f'u{l}', i), col(r, f'u{l}', i)) for l in range(k)])};")
+    pick = ["let mut best: usize = 0;", "let mut cb = c0;"]
+    for i in range(1, r):
+        pick.append(f"if c{i} < cb {{ best = {i}; cb = c{i}; }}")
+    sel = []
+    for l in range(k):
+        chain = " else ".join(f"if best == {i} {{ {col(r, f'u{l}', i)} }}" for i in range(r - 1))
+        sel.append(f"let a{l} = {chain} else {{ {col(r, f'u{l}', r - 1)} }};")
+    comps = []
+    for i in range(r):
+        terms = [(1, f"if best == {i} {{ R::one() }} else {{ R::zero() }}", None)]
+        terms += [(-1, f"a{l}", col(r, f"u{l}", i)) for l in range(k)]
+        comps.append(fused(terms))
+    return f"""    /// A unit {r}-vector orthogonal to the {k} orthonormal `u*`: the axis `e_i` whose squared
     /// projection `Σ u_l[i]²` onto their span is the SMALLEST (ties to the earlier axis; it is at
     /// most {k}/{r}, so the residual has a squared norm of at least {r - k}/{r}), stripped of that
     /// projection in one fused sum per component and normalised.
@@ -1153,17 +1174,7 @@ pub(crate) impl SvdRightImpl<
         {' '.join(sel)}
         let r = {vec_lit(r, lambda i: comps[i])};
         {div_into(r, 'r', norm(cols(r, 'r')))}
-    }}""")
-        parts.append(f"""/// The left singular vectors of the SVDs with {r} rows (crate-internal): the first one, the
-/// Gram-Schmidt steps, the completions of orthonormal families of {r}-vectors.
-#[generate_trait]
-pub(crate) impl SvdComplete{r}Impl<
-{BOUNDS}
-> of SvdComplete{r}Trait<T> {{
-{chr(10).join(fns)}
-}}
-""")
-    return "\n".join(parts)
+    }}"""
 
 
 def svd_left(r: int, c: int) -> list[str]:
@@ -1234,7 +1245,9 @@ def svd_tall_kernel(r: int, c: int) -> str:
     decl = "\n".join([f"    s{j}: T," for j in range(c)] + [f"    w{j}: {VR}<T>," for j in range(c)]
                      + [f"    v{j}: {VC}<T>," for j in range(c)])
     left = svd_left(r, c)
-    unpack = " ".join(f"let (s{j}, w{j}, v{j}) = (t.s{j}, t.w{j}, t.v{j});" for j in range(c))
+    unpack = " ".join(["let (s0, w0) = (t.s0, t.w0);"] + [f"let w{j} = t.w{j};" for j in range(1, c)])
+    vunpack = " ".join(f"let v{j} = t.v{j};" for j in range(c))
+    U = tname(r, c)
     u_lit = struct_lit(r, c, lambda i, j: col(r, f"u{j}", i))
     vt_lit = struct_lit(c, c, lambda i, j: col(c, f"v{i}", j))
     s_lit = vec_lit(c, lambda i: f"s{i}")
@@ -1325,17 +1338,38 @@ pub(crate) impl {S}InternalImpl<
         Sorted{S} {{ {fields} }}
     }}
 
-    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then the left
-    /// vectors by classical Gram-Schmidt run TWICE ("twice is enough", `SvdComplete{r}::gs*`):
-    /// the second pass costs about as much as the first and keeps `U` orthonormal to the
-    /// rounding of the residual even when `σ_k` is tiny (rank deficiency), where one pass leaves
-    /// `u_k` as far from the others as `rounding / σ_k`. A column that vanishes EXACTLY (or `σ_1
-    /// = 0`) is completed by the axis least represented in the span of the previous ones.
-    fn from_right(m: {M}<T>, v: {MC}<T>) -> {S}<T> {{
+    /// The decomposition from the right singular vectors `v` (columns): `sorted`, then, when
+    /// `compute_u`, the left vectors by classical Gram-Schmidt run TWICE ("twice is enough",
+    /// `SvdComplete{r}::gs*`): the second pass costs about as much as the first and keeps `U`
+    /// orthonormal to the rounding of the residual even when `σ_k` is tiny (rank deficiency),
+    /// where one pass leaves `u_k` as far from the others as `rounding / σ_k`. A column that
+    /// vanishes EXACTLY (or `σ_1 = 0`) is completed by the axis least represented in the span of
+    /// the previous ones. `compute_v` only decides whether `v_t` is kept (the right vectors are
+    /// what the singular values are read off).
+    fn from_right(m: {M}<T>, v: {MC}<T>, compute_u: bool, compute_v: bool) -> {S}<T> {{
         let t = Self::sorted(m, v);
+        let u = if compute_u {{
+            Some(Self::left(t))
+        }} else {{
+            None
+        }};
+        let v_t = if compute_v {{
+            {vunpack}
+            Some({vt_lit})
+        }} else {{
+            None
+        }};
+        {S} {{ u, singular_values: {ts_lit}, v_t }}
+    }}
+
+    /// The left singular vectors of `from_right`. Skipped (`compute_u = false`) they cost no
+    /// Cairo step; the Sierra gas of the snapshots charges a branch at its costliest path
+    /// whatever is executed (docs/BENCHMARK.md), a call boundary would only add its overhead.
+    #[inline(always)]
+    fn left(t: Sorted{S}<T>) -> {U}<T> {{
         {unpack}
         {chr(10).join(left)}
-        {S} {{ u: {u_lit}, singular_values: {s_lit}, v_t: {vt_lit} }}
+        {u_lit}
     }}
 
     /// The singular values alone: `sorted`, without the left vectors.
@@ -1352,20 +1386,22 @@ def svd_methods(r: int, c: int) -> str:
     S, k = svd_name(r, c), min(r, c)
     count = " ".join(f"if self.singular_values.{fld(k, 1, i, 0)} > eps {{ n += 1; }}" for i in range(k))
     sv = [f"self.singular_values.{fld(k, 1, l, 0)}" for l in range(k)]
-    scaled_u = struct_lit(r, k, lambda i, l: f"self.u.{fld(r, k, i, l)} * {sv[l]}")
+    scaled_u = struct_lit(r, k, lambda i, l: f"u.{fld(r, k, i, l)} * {sv[l]}")
     inv = " ".join(f"let p{l} = SvdRightImpl::<T>::inverted({sv[l]}, eps);" for l in range(k))
-    scaled_v = struct_lit(c, k, lambda i, l: f"self.v_t.{fld(k, c, l, i)} * p{l}")
-    u_t = transpose_lit(r, k, "self.u")
+    scaled_v = struct_lit(c, k, lambda i, l: f"v_t.{fld(k, c, l, i)} * p{l}")
+    u_t = transpose_lit(r, k, "u")
     z = vec_lit(k, lambda l: f"SvdRightImpl::<T>::divided(y.{fld(k, 1, l, 0)}, {sv[l]}, eps)")
     # P = (u σ) uᵀ: upper triangle, mirrored (exactly symmetric).
-    scaled = " ".join(f"let a{i}_{l} = self.u.{fld(r, k, i, l)} * {sv[l]};"
+    scaled = " ".join(f"let a{i}_{l} = u.{fld(r, k, i, l)} * {sv[l]};"
                       for i in range(r) for l in range(k))
     p_lets = " ".join(
-        f"let p{i}_{j} = {dot([f'a{i}_{l}' for l in range(k)], [f'self.u.{fld(r, k, j, l)}' for l in range(k)])};"
+        f"let p{i}_{j} = {dot([f'a{i}_{l}' for l in range(k)], [f'u.{fld(r, k, j, l)}' for l in range(k)])};"
         for i in range(r) for j in range(i, r))
     p_lit = struct_lit(r, r, lambda i, j: f"p{min(i, j)}_{max(i, j)}")
-    ucols = [f"let mut uc{l} = {vec_lit(r, lambda i, l=l: f'self.u.{fld(r, k, i, l)}')};" for l in range(k)]
-    vrows = [f"let mut vr{l} = {vec_lit(c, lambda j, l=l: f'self.v_t.{fld(k, c, l, j)}')};" for l in range(k)]
+    zero_u = struct_lit(r, k, lambda i, l: "R::zero()")
+    zero_v = struct_lit(k, c, lambda l, j: "R::zero()")
+    ucols = [f"let mut uc{l} = {vec_lit(r, lambda i, l=l: f'u.{fld(r, k, i, l)}')};" for l in range(k)]
+    vrows = [f"let mut vr{l} = {vec_lit(c, lambda j, l=l: f'v_t.{fld(k, c, l, j)}')};" for l in range(k)]
     svs = [f"let mut s{l} = {sv[l]};" for l in range(k)]
     net = sort_network(k, "{b} > {a}", [], lambda i: (f"s{i}", f"uc{i}", f"vr{i}"))
     return f"""    /// The number of singular values strictly greater than `eps`. Upstream: `SVD::rank`, which
@@ -1376,68 +1412,82 @@ def svd_methods(r: int, c: int) -> str:
         n
     }}
 
-    /// `U · diag(singular_values) · v_t`: the columns of `U` scaled (one floored product each),
-    /// then `MatrixMul::mul_mat` (one fused sum of {k} products per entry). Panics on overflow.
-    /// Upstream: `SVD::recompose` (a `Result` there because `u` / `v_t` may be missing; never
-    /// here).
-    fn recompose(self: {S}<T>) -> {tname(r, c)}<T> {{
+    /// `U · diag(singular_values) · v_t`, or `None` when `u` or `v_t` was not computed: the
+    /// columns of `U` scaled (one floored product each), then `MatrixMul::mul_mat` (one fused sum
+    /// of {k} products per entry). Panics on overflow. Upstream: `SVD::recompose` (`Err` when a
+    /// factor is missing; `None` here).
+    fn recompose(self: {S}<T>) -> Option<{tname(r, c)}<T>> {{
         revoke_ap_tracking();
-        {scaled_u}.mul_mat(self.v_t)
+        let u = self.u?;
+        let v_t = self.v_t?;
+        Some({scaled_u}.mul_mat(v_t))
     }}
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ` ({c}x{r}), `σ⁺_i = 1 / σ_i` when
-    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative. Three roundings per entry
-    /// (the reciprocal, the scaling, the fused sum). `eps = 0` keeps a singular value of one raw
-    /// unit, whose reciprocal overflows: pass an `eps` matched to the problem. Panics on overflow.
-    /// Upstream: `SVD::pseudo_inverse` (`Err` on a negative `eps`).
+    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative or when `u` or `v_t` was
+    /// not computed. Three roundings per entry (the reciprocal, the scaling, the fused sum). `eps
+    /// = 0` keeps a singular value of one raw unit, whose reciprocal overflows: pass an `eps`
+    /// matched to the problem. Panics on overflow. Upstream: `SVD::pseudo_inverse` (`Err` in
+    /// those cases).
     fn pseudo_inverse(self: {S}<T>, eps: T) -> Option<{tname(c, r)}<T>> {{
         revoke_ap_tracking();
         if eps.is_sign_negative() {{
             return None;
         }}
+        let u = self.u?;
+        let v_t = self.v_t?;
         {inv}
         Some({scaled_v}.mul_mat({u_t}))
     }}
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
-    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative. One fused sum, one
-    /// correctly rounded division and one fused sum per component. Upstream: `SVD::solve` (any
-    /// right-hand side there; a vector here).
+    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative or when `u` or `v_t`
+    /// was not computed. One fused sum, one correctly rounded division and one fused sum per
+    /// component. Upstream: `SVD::solve` (`Err` in those cases; any right-hand side there, a
+    /// vector here).
     fn solve(self: {S}<T>, b: {tname(r, 1)}<T>, eps: T) -> Option<{tname(c, 1)}<T>> {{
         revoke_ap_tracking();
         if eps.is_sign_negative() {{
             return None;
         }}
-        let y = self.u.tr_mul(b);
-        Some(self.v_t.tr_mul({z}))
+        let u = self.u?;
+        let v_t = self.v_t?;
+        let y = u.tr_mul(b);
+        Some(v_t.tr_mul({z}))
     }}
 
-    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ`
-    /// ({r}x{r}, symmetric positive semi-definite: its upper triangle is computed and mirrored)
-    /// and `U = u · v_t` ({r}x{c}). Two roundings per entry of `P`, one per entry of `U`. Always
-    /// `Some` (upstream returns `None` only when `u` or `v_t` was not computed). Panics on
-    /// overflow. Upstream: `SVD::to_polar`.
+    /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`, or `None` when `u` or `v_t`
+    /// was not computed: `P = u · diag(σ) · uᵀ` ({r}x{r}, symmetric positive semi-definite: its
+    /// upper triangle is computed and mirrored) and `U = u · v_t` ({r}x{c}). Two roundings per
+    /// entry of `P`, one per entry of `U`. Panics on overflow. Upstream: `SVD::to_polar`.
     fn to_polar(self: {S}<T>) -> Option<({tname(r, r)}<T>, {tname(r, c)}<T>)> {{
         revoke_ap_tracking();
+        let u = self.u?;
+        let v_t = self.v_t?;
         {scaled}
         {p_lets}
-        Some(({p_lit}, self.u.mul_mat(self.v_t)))
+        Some(({p_lit}, u.mul_mat(v_t)))
     }}
 
     /// Sorts the singular values DESCENDING, permuting the columns of `u` and the rows of `v_t`
-    /// with them (stable odd-even transposition network, strict comparison: equal values keep
-    /// their order). `new` already returns them sorted, so this only matters after the fields
-    /// were edited. Upstream: `SVD::sort_by_singular_values`.
+    /// (those that were computed) with them (stable odd-even transposition network, strict
+    /// comparison: equal values keep their order). `new` already returns them sorted, so this
+    /// only matters after the fields were edited. Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: {S}<T>) {{
         revoke_ap_tracking();
+        let (has_u, has_v) = (self.u.is_some(), self.v_t.is_some());
+        let u = self.u.unwrap_or_else(|| {zero_u});
+        let v_t = self.v_t.unwrap_or_else(|| {zero_v});
         {chr(10).join(svs)}
         {chr(10).join(ucols)}
         {chr(10).join(vrows)}
         {net}
+        let u = {struct_lit(r, k, lambda i, l: col(r, f'uc{l}', i))};
+        let v_t = {struct_lit(k, c, lambda l, j: col(c, f'vr{l}', j))};
         self = {S} {{
-            u: {struct_lit(r, k, lambda i, l: col(r, f'uc{l}', i))},
+            u: if has_u {{ Some(u) }} else {{ None }},
             singular_values: {vec_lit(k, lambda l: f's{l}')},
-            v_t: {struct_lit(k, c, lambda l, j: col(c, f'vr{l}', j))},
+            v_t: if has_v {{ Some(v_t) }} else {{ None }},
         }};
     }}
 """
@@ -1477,9 +1527,8 @@ def render_svd(r: int, c: int) -> str:
     uses.append("use core::internal::revoke_ap_tracking;")
     uses = sorted(set(uses))
     if tall:
-        ctor = f"""    /// The singular value decomposition of `matrix`. Upstream: `SVD::new(matrix, true, true)`
-    /// (both factors are always computed here: the `compute_u` / `compute_v` flags are dropped,
-    /// like `Svd2` / `Svd3`).
+        ctor = f"""    /// The singular value decomposition of `matrix`, with `u` when `compute_u` and `v_t` when
+    /// `compute_v` (`None` otherwise). Upstream: `SVD::new(matrix, compute_u, compute_v)`.
     ///
     /// ```text
     /// S   = MᵀM                    ({c * (c + 1) // 2} fused sums)
@@ -1494,21 +1543,27 @@ def render_svd(r: int, c: int) -> str:
     /// negative rounding). Rank deficiency: a left vector whose Gram-Schmidt residual is EXACTLY
     /// zero is completed by an axis (`U` stays orthonormal); tiny singular values are not treated
     /// as zero, use `rank(eps)` / `pseudo_inverse(eps)` / `solve(b, eps)` for rank decisions.
-    /// Cost: constant. The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
+    /// Cost: constant for given flags. Skipping `u` skips the Gram-Schmidt of the left vectors
+    /// (the last line above) in Cairo steps, the proof cost (measured on `Svd4`: 13 070 → 11 463
+    /// steps net, `bench_svd4_new__without_u` under `--tracked-resource cairo-steps`); the
+    /// Sierra gas of the snapshots charges a branch at its costliest path, so it shows no
+    /// saving. `v_t` is free (the right vectors are what the singular values are read off). The Gram matrix is formed from `M / max |m_ij|` (see `normalised`), so it
     /// cannot overflow; `M V` must fit (it does whenever `σ_1 = |M|₂` does).
-    fn new(matrix: {M}<T>) -> {S}<T> {{
-        {S}InternalTrait::from_right(matrix, {S}InternalTrait::right(matrix))
+    fn new(matrix: {M}<T>, compute_u: bool, compute_v: bool) -> {S}<T> {{
+        {S}InternalTrait::from_right(matrix, {S}InternalTrait::right(matrix), compute_u, compute_v)
     }}
 
     /// `new`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`
     /// (every off-diagonal entry of the final Jacobi state within `eps * (|s_ii| + |s_jj|)`;
     /// {'always `Some` for the closed form of one or two columns' if c <= 2 else 'see `SymmetricEigen' + str(c) + 'Trait::try_new`'}). `max_niter` is accepted for
     /// signature parity and ignored: the iteration budget is a constant of the type. Upstream:
-    /// `SVD::try_new(matrix, true, true, eps, max_niter)`.
-    fn try_new(matrix: {M}<T>, eps: T, max_niter: usize) -> Option<{S}<T>> {{
+    /// `SVD::try_new(matrix, compute_u, compute_v, eps, max_niter)`.
+    fn try_new(
+        matrix: {M}<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<{S}<T>> {{
         let _ = max_niter;
         match {S}InternalTrait::try_right(matrix, eps) {{
-            Some(v) => Some({S}InternalTrait::from_right(matrix, v)),
+            Some(v) => Some({S}InternalTrait::from_right(matrix, v, compute_u, compute_v)),
             None => None,
         }}
     }}
@@ -1517,22 +1572,26 @@ def render_svd(r: int, c: int) -> str:
         internal = svd_tall_kernel(r, c)
     else:
         T_ = svd_name(c, r)
-        conv = f"""{S} {{ u: {transpose_lit(r, r, 't.v_t')}, singular_values: t.singular_values, v_t: {transpose_lit(c, r, 't.u')} }}"""
-        ctor = f"""    /// The singular value decomposition of `matrix`, through the decomposition of its
-    /// TRANSPOSE (`{T_}`): `Mᵀ = U' Σ V'ᵀ` gives `M = V' Σ U'ᵀ`, so `u = V'` and `v_t = U'ᵀ`
-    /// (moves only). The Gram matrix is then `M Mᵀ` ({r}x{r}), the smaller one. Same algorithm,
-    /// accuracy and conventions as `{T_}Trait::new`. Upstream: `SVD::new(matrix, true, true)`
-    /// (both factors always computed).
-    fn new(matrix: {M}<T>) -> {S}<T> {{
-        let t = {T_}Trait::new({transpose_lit(r, c, 'matrix')});
+        conv = (f"""{S} {{ u: match t.v_t {{ Some(x) => Some({transpose_lit(r, r, 'x')}), None => None }}, """
+                f"""singular_values: t.singular_values, v_t: match t.u {{ Some(x) => Some({transpose_lit(c, r, 'x')}), None => None }} }}""")
+        ctor = f"""    /// The singular value decomposition of `matrix`, with `u` when `compute_u` and `v_t` when
+    /// `compute_v`, through the decomposition of its TRANSPOSE (`{T_}`): `Mᵀ = U' Σ V'ᵀ` gives
+    /// `M = V' Σ U'ᵀ`, so `u = V'` and `v_t = U'ᵀ` (moves only; skipping `v_t` skips the
+    /// Gram-Schmidt of `U'`). The Gram matrix is then `M Mᵀ` ({r}x{r}), the smaller one. Same
+    /// algorithm, accuracy and conventions as `{T_}Trait::new`. Upstream: `SVD::new(matrix,
+    /// compute_u, compute_v)`.
+    fn new(matrix: {M}<T>, compute_u: bool, compute_v: bool) -> {S}<T> {{
+        let t = {T_}Trait::new({transpose_lit(r, c, 'matrix')}, compute_v, compute_u);
         {conv}
     }}
 
     /// `new`, or `None` when the eigen decomposition of `M Mᵀ` did not converge within `eps`,
     /// see `{T_}Trait::try_new`. `max_niter` is ignored (constant budget). Upstream:
-    /// `SVD::try_new(matrix, true, true, eps, max_niter)`.
-    fn try_new(matrix: {M}<T>, eps: T, max_niter: usize) -> Option<{S}<T>> {{
-        match {T_}Trait::try_new({transpose_lit(r, c, 'matrix')}, eps, max_niter) {{
+    /// `SVD::try_new(matrix, compute_u, compute_v, eps, max_niter)`.
+    fn try_new(
+        matrix: {M}<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<{S}<T>> {{
+        match {T_}Trait::try_new({transpose_lit(r, c, 'matrix')}, compute_v, compute_u, eps, max_niter) {{
             Some(t) => Some({conv}),
             None => None,
         }}
@@ -1549,8 +1608,8 @@ def render_svd(r: int, c: int) -> str:
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `{M}<T>`:
 /// `u` is {r}x{k} with orthonormal columns, `v_t` is {k}x{c} with orthonormal rows, the {k}
-/// singular values are non-negative and sorted DESCENDING. Unlike upstream, where `u` and `v_t`
-/// are `Option`s selected by the `compute_u` / `compute_v` flags, both are always present.
+/// singular values are non-negative and sorted DESCENDING. `u` / `v_t` are `None` when the
+/// decomposition was built without them (`compute_u` / `compute_v`), like upstream.
 ///
 /// Sign and order convention: the rows of `v_t` are the eigenvectors of the Gram matrix
 /// {'`MᵀM`' if tall else '`M Mᵀ` of the transpose'} as the eigen decomposition returns them, reordered by descending singular
@@ -1560,12 +1619,12 @@ def render_svd(r: int, c: int) -> str:
 /// Upstream: `SVD {{ u: Option<OMatrix>, v_t: Option<OMatrix>, singular_values: OVector }}`.
 #[derive(Copy, Drop, Serde, Debug)]
 pub struct {S}<T> {{
-    /// The left singular vectors, as columns ({r}x{k}).
-    pub u: {U}<T>,
+    /// The left singular vectors, as columns ({r}x{k}), when computed.
+    pub u: Option<{U}<T>>,
     /// The {k} singular values, descending, non-negative.
     pub singular_values: {SV}<T>,
-    /// The TRANSPOSE of the right singular vectors ({k}x{c}): `v_i` is row `i`.
-    pub v_t: {VT}<T>,
+    /// The TRANSPOSE of the right singular vectors ({k}x{c}): `v_i` is row `i`, when computed.
+    pub v_t: Option<{VT}<T>>,
 }}
 
 /// Test-only field-wise equality (upstream `SVD` has no `PartialEq`).
@@ -1586,14 +1645,16 @@ pub impl {S}Impl<
     /// vectors needs it), so the unordered form costs the same and is sorted too — a valid
     /// "unordered" result. Upstream: `SVD::new_unordered`.
     #[inline(always)]
-    fn new_unordered(matrix: {M}<T>) -> {S}<T> {{
-        Self::new(matrix)
+    fn new_unordered(matrix: {M}<T>, compute_u: bool, compute_v: bool) -> {S}<T> {{
+        Self::new(matrix, compute_u, compute_v)
     }}
 
     /// `try_new`, see `new_unordered`. Upstream: `SVD::try_new_unordered`.
     #[inline(always)]
-    fn try_new_unordered(matrix: {M}<T>, eps: T, max_niter: usize) -> Option<{S}<T>> {{
-        Self::try_new(matrix, eps, max_niter)
+    fn try_new_unordered(
+        matrix: {M}<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<{S}<T>> {{
+        Self::try_new(matrix, compute_u, compute_v, eps, max_niter)
     }}
 
 {svd_methods(r, c)}
@@ -1606,32 +1667,37 @@ pub impl {S}Impl<
 pub impl {M}SvdImpl<
 {BOUNDS}
 > of {M}SvdTrait<T> {{
-    /// The singular value decomposition, see `{S}Trait::new`. Upstream: `Matrix::svd(true, true)`.
+    /// The singular value decomposition, see `{S}Trait::new`. Upstream: `Matrix::svd`.
     #[inline(always)]
-    fn svd(self: {M}<T>) -> {S}<T> {{
-        {S}Trait::new(self)
+    fn svd(self: {M}<T>, compute_u: bool, compute_v: bool) -> {S}<T> {{
+        {S}Trait::new(self, compute_u, compute_v)
     }}
 
     /// `svd` (already sorted, see `{S}Trait::new_unordered`). Upstream: `Matrix::svd_unordered`.
     #[inline(always)]
-    fn svd_unordered(self: {M}<T>) -> {S}<T> {{
-        {S}Trait::new(self)
+    fn svd_unordered(self: {M}<T>, compute_u: bool, compute_v: bool) -> {S}<T> {{
+        {S}Trait::new(self, compute_u, compute_v)
     }}
 
-    /// See `{S}Trait::try_new`. Upstream: `Matrix::try_svd(true, true, eps, max_niter)`.
+    /// See `{S}Trait::try_new`. Upstream: `Matrix::try_svd`.
     #[inline(always)]
-    fn try_svd(self: {M}<T>, eps: T, max_niter: usize) -> Option<{S}<T>> {{
-        {S}Trait::try_new(self, eps, max_niter)
+    fn try_svd(
+        self: {M}<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<{S}<T>> {{
+        {S}Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }}
 
     /// See `{S}Trait::try_new_unordered`. Upstream: `Matrix::try_svd_unordered`.
     #[inline(always)]
-    fn try_svd_unordered(self: {M}<T>, eps: T, max_niter: usize) -> Option<{S}<T>> {{
-        {S}Trait::try_new(self, eps, max_niter)
+    fn try_svd_unordered(
+        self: {M}<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<{S}<T>> {{
+        {S}Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }}
 
     /// The singular values alone, DESCENDING: the decomposition without the left vectors
-    /// (cheaper than `svd().singular_values`, bit-identical to it). Upstream:
+    /// (bit-identical to `svd(false, false).singular_values` and to the full decomposition's, and
+    /// no dearer than the former: `bench_svd{svd_suffix(r, c)}_singular_values__*`). Upstream:
     /// `Matrix::singular_values`.
     fn singular_values(self: {M}<T>) -> {SV}<T> {{
         {values}
@@ -1658,19 +1724,19 @@ pub impl {M}SvdImpl<
     /// `Matrix::pseudo_inverse` (`Err` on a negative `eps`; `None` here).
     #[inline(always)]
     fn pseudo_inverse(self: {M}<T>, eps: T) -> Option<{tname(c, r)}<T>> {{
-        {S}Trait::new(self).pseudo_inverse(eps)
+        {S}Trait::new(self, true, true).pseudo_inverse(eps)
     }}
 
     /// The left polar decomposition `M = P · U`, see `{S}Trait::to_polar`. Upstream:
     /// `Matrix::polar`.
     fn polar(self: {M}<T>) -> ({tname(r, r)}<T>, {M}<T>) {{
-        {S}Trait::new(self).to_polar().unwrap()
+        {S}Trait::new(self, true, true).to_polar().unwrap()
     }}
 
     /// `polar`, or `None` when the decomposition did not converge within `eps`, see
     /// `{S}Trait::try_new`. Upstream: `Matrix::try_polar`.
     fn try_polar(self: {M}<T>, eps: T, max_niter: usize) -> Option<({tname(r, r)}<T>, {M}<T>)> {{
-        match {S}Trait::try_new(self, eps, max_niter) {{
+        match {S}Trait::try_new(self, true, true, eps, max_niter) {{
             Some(d) => d.to_polar(),
             None => None,
         }}
@@ -1758,6 +1824,46 @@ def render_qr(r: int, c: int) -> str:
     fn q_tr_mul<B, impl K: SolveKernel<{tname(r, r)}<T>, B>, +Drop<B>>(self: {Q}<T>, ref rhs: B) {{
         rhs = K::tr_mul_rhs(self.q, rhs);
     }}
+"""
+    else:
+        # WP 8.5-P17: the tall shapes apply the FULL orthogonal `Q` ({r}x{r}): the thin factor
+        # completed by `QrComplete{r}` (the SVD's axis completion).
+        uses.add("use crate::base::solve::SolveKernel;")
+        uses.add(use_shape(r, r))
+        uses.add(use_shape(r, 1))
+        uses.add(f"use super::kernels::QrComplete{r}Impl;")
+        qcols = [f"let u{j} = {vec_lit(r, lambda i, j=j: f'self.q.{fld(r, c, i, j)}')};" for j in range(c)]
+        for j in range(c, r):
+            us = ", ".join(f"u{l}" for l in range(j))
+            qcols.append(f"let u{j} = QrComplete{r}Impl::<T>::complete{j}({us});")
+        full = struct_lit(r, r, lambda i, j: col(r, f"u{j}", i))
+        extra += f"""
+    /// `rhs = Qᵀ * rhs` in place, for any `rhs` with {r} rows (a vector or a matrix), `Q` the
+    /// FULL {r}x{r} orthogonal factor: the thin `q` completed by {r - c} unit vector{'s' if r - c > 1 else ''}, each the
+    /// axis least represented in the span of the previous columns, stripped of its projection
+    /// and normalised (`full_q`). The first {c} row{'s' if c > 1 else ''} of the result {'are' if c > 1 else 'is'} `qᵀ rhs` bit for bit; the
+    /// last {r - c} {'are' if r - c > 1 else 'is'} its component{'s' if r - c > 1 else ''} along the orthogonal complement of the columns of
+    /// `A`. ONE fused sum of products per entry, floored once. Upstream: `QR::q_tr_mul` (the
+    /// {c} Householder reflection{'s' if c > 1 else ''}, a rounding each: a different basis of the complement, and
+    /// upstream's signs on the first rows).
+    fn q_tr_mul<B, impl K: SolveKernel<{tname(r, r)}<T>, B>, +Drop<B>>(self: {Q}<T>, ref rhs: B) {{
+        rhs = K::tr_mul_rhs({Q}InternalTrait::full_q(self), rhs);
+    }}
+"""
+        internal = f"""
+/// Crate-internal kernel of `{Q}<T>`: the full orthogonal factor of `q_tr_mul`.
+#[generate_trait]
+pub(crate) impl {Q}InternalImpl<
+{BOUNDS}
+> of {Q}InternalTrait<T> {{
+    /// The full {r}x{r} orthogonal factor whose first {c} column{'s' if c > 1 else ''} {'are' if c > 1 else 'is'} `q`, see `q_tr_mul`
+    /// (upstream exposes the full `Q` only through `q_tr_mul`).
+    fn full_q(self: {Q}<T>) -> {tname(r, r)}<T> {{
+        revoke_ap_tracking();
+        {' '.join(qcols)}
+        {full}
+    }}
+}}
 """
     if square:
         n = r
@@ -1922,6 +2028,29 @@ pub impl {M}QrImpl<
 }}
 """
 
+
+
+def render_qr_kernels() -> str:
+    """`linalg/qr/kernels.cairo`: the basis completions of the tall QR factorisations."""
+    parts = [f"""{HEADER}//! Crate-internal kernels of the tall QR factorisations (WP 8.5-P17): the completion of `k`
+//! orthonormal `R`-vectors by one more (`complete{{k}}`, the SVD's completion), which builds the
+//! full orthogonal `Q` that `q_tr_mul` applies.
+
+use core::internal::revoke_ap_tracking;
+use simba::scalar::Real;
+{chr(10).join(use_shape(n, 1) for n in range(2, 7))}
+"""]
+    for r in range(2, 7):
+        fns = [complete_kernel(r, k) for k in range(1, r)]
+        parts.append(f"""/// The completions of orthonormal families of {r}-vectors (crate-internal).
+#[generate_trait]
+pub(crate) impl QrComplete{r}Impl<
+{BOUNDS}
+> of QrComplete{r}Trait<T> {{
+{chr(10).join(fns)}
+}}
+""")
+    return "\n".join(parts)
 
 
 # --- Cholesky updates --------------------------------------------------------------------------
@@ -2248,8 +2377,8 @@ def render_svd_tests(r: int, c: int, bounds: dict, oracle_mod: str) -> str:
     checks = " ".join(
         f"ex = max(ex, excess(ulp_diff({a}, {e}), oracle_tol(abs_raw({e}), tol)));"
         for a, e in zip(sv, ex))
-    orth_u = f"orth_{r}x{k}(d.u)"
-    orth_v = f"orth_{k}x{c}(d.v_t)"
+    orth_u = f"orth_{r}x{k}(d.u.unwrap())"
+    orth_v = f"orth_{k}x{c}(d.v_t.unwrap())"
     tests = [f"""/// `svd{sfx}_singular_values` (oracle, well-conditioned): singular values within the oracle
 /// tolerance, `U Σ Vᵀ = M` and the orthonormality of `U` / `V` within the measured bounds.
 #[test]
@@ -2286,7 +2415,7 @@ fn test_oracle_svd{sfx}_rank_deficient() {{
         let a = black_box(mat{r}x{c}(a));
         let rank: i64 = a.rank(fx(EPS)).into();
         assert!(rank * 0x100000000 == expected, "rank {{}}", rank);
-        let rank2: i64 = a.svd().rank(fx(EPS)).into();
+        let rank2: i64 = a.svd(true, true).rank(fx(EPS)).into();
         assert!(rank2 == rank);
     }}
 }}""")
@@ -2339,15 +2468,15 @@ fn test_svd{sfx}_diagonal_and_zero_are_exact() {{
     // A rectangular diagonal: the singular values are its entries, sorted, and every factor is
     // exact.
     let a = black_box(mat{r}x{c}({int_rows(ax_rows)}));
-    let d = a.svd();
+    let d = a.svd(true, true);
     assert!(d.singular_values == {sv_exact});
-    assert!(d.recompose() == a);
+    assert!(d.recompose().unwrap() == a);
     assert!({orth_u} == 0 && {orth_v} == 0);
     // The zero matrix: nothing divides by zero, `U` is completed to an orthonormal basis.
     let z = black_box(mat{r}x{c}({int_rows(zero_rows)}));
-    let d = z.svd();
+    let d = z.svd(true, true);
     assert!(d.rank(fx(0)) == 0);
-    assert!(d.recompose() == z);
+    assert!(d.recompose().unwrap() == z);
     assert!({orth_u} == 0 && {orth_v} == 0);
 }}
 
@@ -2355,13 +2484,13 @@ fn test_svd{sfx}_diagonal_and_zero_are_exact() {{
 fn test_svd{sfx}_api() {{
     let (a, _, _) = *{wc}::svd{sfx}_singular_values_cases().at(0);
     let a = black_box(mat{r}x{c}(a));
-    let d = {S}Trait::new(a);
+    let d = {S}Trait::new(a, true, true);
     // The unordered and `try` forms, `sort_by_singular_values` on a sorted decomposition.
-    assert!({S}Trait::new_unordered(a) == d);
-    assert!(a.svd_unordered() == d);
-    assert!({S}Trait::try_new(a, fx(ONE), 0).unwrap() == d);
-    assert!(a.try_svd(fx(ONE), 100).unwrap() == d);
-    assert!(a.try_svd_unordered(fx(ONE), 100).unwrap() == d);
+    assert!({S}Trait::new_unordered(a, true, true) == d);
+    assert!(a.svd_unordered(true, true) == d);
+    assert!({S}Trait::try_new(a, true, true, fx(ONE), 0).unwrap() == d);
+    assert!(a.try_svd(true, true, fx(ONE), 100).unwrap() == d);
+    assert!(a.try_svd_unordered(true, true, fx(ONE), 100).unwrap() == d);
     assert!(a.singular_values_unordered() == d.singular_values);
     let mut e = d;
     e.sort_by_singular_values();
@@ -2374,6 +2503,22 @@ fn test_svd{sfx}_api() {{
     assert!(d.pseudo_inverse(fx(-1)).is_none());
     assert!(d.solve({vec_lit(r, lambda i: 'fx(ONE)')}, fx(-1)).is_none());
     assert!(d.solve({vec_lit(r, lambda i: 'fx(ONE)')}, fx(EPS)).is_some());
+    // Upstream's `compute_u` / `compute_v`: a factor not asked for is `None`, the singular values
+    // are bit-identical, and what needs both factors reports `None` (upstream's `Err` / `None`).
+    let n = a.svd(black_box(false), black_box(false));
+    assert!(n.u.is_none() && n.v_t.is_none() && n.singular_values == d.singular_values);
+    assert!(n.recompose().is_none() && n.pseudo_inverse(fx(EPS)).is_none());
+    assert!(n.to_polar().is_none() && n.solve({vec_lit(r, lambda i: 'fx(ONE)')}, fx(EPS)).is_none());
+    let uo = a.svd(black_box(true), black_box(false));
+    assert!(uo.u == d.u && uo.v_t.is_none() && uo.singular_values == d.singular_values);
+    assert!(uo.recompose().is_none() && uo.to_polar().is_none());
+    let vo = a.svd(black_box(false), black_box(true));
+    assert!(vo.u.is_none() && vo.v_t == d.v_t && vo.singular_values == d.singular_values);
+    assert!(vo.pseudo_inverse(fx(EPS)).is_none());
+    let mut e = vo;
+    e.sort_by_singular_values();
+    assert!(e == vo);
+    assert!(a.try_svd(black_box(false), black_box(false), fx(ONE), 0).unwrap() == n);
 }}""")
     # benches
     tests.append(f"""/// A `unit` oracle case: the benchmark input.
@@ -2396,7 +2541,7 @@ fn bench_svd{sfx}_new__baseline() {{
 fn bench_svd{sfx}_new__eigen_of_gram() {{
     let a = black_box(a_bench());
     let e = black_box(true);
-    let d = a.svd();
+    let d = a.svd(true, true);
     assert!((d.singular_values.{fld(k, 1, 0, 0)} >= d.singular_values.{fld(k, 1, k - 1, 0)}) == e);
 }}
 
@@ -2418,10 +2563,40 @@ fn bench_svd{sfx}_singular_values__eigen_of_gram() {{
     assert!((s.{fld(k, 1, 0, 0)} >= s.{fld(k, 1, k - 1, 0)}) == e);
 }}
 
+/// `svd(false, false).singular_values`: upstream's route to the singular values alone.
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_singular_values__svd_without_factors() {{
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let s = a.svd(black_box(false), black_box(false)).singular_values;
+    assert!((s.{fld(k, 1, 0, 0)} >= s.{fld(k, 1, k - 1, 0)}) == e);
+}}
+
+/// `svd(false, true)`: without the left vectors.
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_new__without_u() {{
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let d = a.svd(black_box(false), black_box(true));
+    assert!((d.singular_values.{fld(k, 1, 0, 0)} >= d.singular_values.{fld(k, 1, k - 1, 0)}) == e);
+}}
+
+/// `svd(true, false)`: without the right vectors.
+#[test]
+#[inline(never)]
+fn bench_svd{sfx}_new__without_v() {{
+    let a = black_box(a_bench());
+    let e = black_box(true);
+    let d = a.svd(black_box(true), black_box(false));
+    assert!((d.singular_values.{fld(k, 1, 0, 0)} >= d.singular_values.{fld(k, 1, k - 1, 0)}) == e);
+}}
+
 #[test]
 #[inline(never)]
 fn bench_svd{sfx}_pseudo_inverse__baseline() {{
-    let _d = black_box(a_bench().svd());
+    let _d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     assert!(e == e);
 }}
@@ -2430,7 +2605,7 @@ fn bench_svd{sfx}_pseudo_inverse__baseline() {{
 #[test]
 #[inline(never)]
 fn bench_svd{sfx}_pseudo_inverse__scaled_product() {{
-    let d = black_box(a_bench().svd());
+    let d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     let p = d.pseudo_inverse(fx(EPS)).unwrap();
     assert!((p.{fld(c, r, 0, 0)} == p.{fld(c, r, 0, 0)}) == e);
@@ -2439,7 +2614,7 @@ fn bench_svd{sfx}_pseudo_inverse__scaled_product() {{
 #[test]
 #[inline(never)]
 fn bench_svd{sfx}_to_polar__baseline() {{
-    let _d = black_box(a_bench().svd());
+    let _d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     assert!(e == e);
 }}
@@ -2448,7 +2623,7 @@ fn bench_svd{sfx}_to_polar__baseline() {{
 #[test]
 #[inline(never)]
 fn bench_svd{sfx}_to_polar__products() {{
-    let d = black_box(a_bench().svd());
+    let d = black_box(a_bench().svd(true, true));
     let e = black_box(true);
     let (p, _u) = d.to_polar().unwrap();
     assert!((p.{fld(r, r, 0, 0)} == p.{fld(r, r, 0, 0)}) == e);
@@ -2477,11 +2652,11 @@ const EPS: i64 = {EPS_RAW};
 /// `max(1, max |a_ij|)`, orthonormality error of `U` and `V`)` of one case, in raw units; also
 /// checks that `singular_values` is bit-identical to the decomposition's.
 fn measure(a: {M}<Fixed>, expected: {tname(k, 1)}<Fixed>, tol: u64) -> (u128, u128, u128) {{
-    let d = a.svd();
+    let d = a.svd(true, true);
     assert!(a.singular_values() == d.singular_values, "singular values differ from svd");
     let mut ex = 0;
     {checks}
-    (ex, max_ulp_{r}x{c}(d.recompose(), a) / amax_{r}x{c}(a), max({orth_u}, {orth_v}))
+    (ex, max_ulp_{r}x{c}(d.recompose().unwrap(), a) / amax_{r}x{c}(a), max({orth_u}, {orth_v}))
 }}
 
 /// The worst `measure` over `cases`.
@@ -2652,6 +2827,26 @@ QR_BOUNDS: dict = {
 }
 
 
+# Measured orthonormality of the full `Q` of the tall QR factorisations (`q_tr_mul`), raw units.
+QR_FULL_BOUNDS: dict = {
+    (2, 1): 2,
+    (3, 1): 17,
+    (3, 2): 43,
+    (4, 1): 4,
+    (4, 2): 22,
+    (4, 3): 18,
+    (5, 1): 15,
+    (5, 2): 39,
+    (5, 3): 16,
+    (5, 4): 15,
+    (6, 1): 12,
+    (6, 2): 13,
+    (6, 3): 70,
+    (6, 4): 74,
+    (6, 5): 97,
+}
+
+
 def cmp_lines(r: int, c: int, got: str, exp: str) -> str:
     return " ".join(
         f"ex = max(ex, excess(ulp_diff({got}.{fld(r, c, i, j)}, {exp}.{fld(r, c, i, j)}), oracle_tol(abs_raw({exp}.{fld(r, c, i, j)}), tol)));"
@@ -2674,6 +2869,56 @@ fn test_qr{sfx}_q_tr_mul() {{
     let mut b = {ones};
     f.q_tr_mul(ref b);
     assert!(b == f.q.tr_mul({ones}));
+}}
+"""
+        uses.add("MatrixTrMul")
+        uses.add(tname(r, 1))
+    else:
+        ones = vec_lit(r, lambda i: f"fx({i + 1} * ONE)")
+        same = " && ".join(f"b.{fld(r, 1, i, 0)} == t.{fld(c, 1, i, 0)}" for i in range(c))
+        ident = int_rows([[1 if i == j else 0 for j in range(r)] for i in range(r)]).replace("1", "ONE").replace("0", "0")
+        extra += f"""
+/// `q_tr_mul` (tall: the full orthogonal `Q`): its first {c} row{'s' if c > 1 else ''} {'are' if c > 1 else 'is'} `qᵀ b` bit for bit, and
+/// `Qᵀ` (`q_tr_mul` on the identity) is orthogonal within the measured bound on every oracle
+/// case.
+#[test]
+fn test_qr{sfx}_q_tr_mul() {{
+    let mut cases = oracle::qr{sfx}_q_r_cases();
+    let mut orth = 0;
+    while let Some(case) = cases.pop_front() {{
+        let (a, _, _, _) = *case;
+        let f = black_box(mat{r}x{c}(a)).qr();
+        let mut b = {ones};
+        f.q_tr_mul(ref b);
+        let t = f.q.tr_mul({ones});
+        assert!({same});
+        let mut qt = mat{r}x{r}({ident});
+        f.q_tr_mul(ref qt);
+        orth = max(orth, orth_{r}x{r}(qt));
+    }}
+    assert!(orth <= {QR_FULL_BOUNDS.get((r, c), 0)}, "measured {{}}", orth);
+}}
+
+#[test]
+#[inline(never)]
+fn bench_qr{sfx}_q_tr_mul__baseline() {{
+    let (a, _, _, _) = *oracle::qr{sfx}_q_r_cases().at(3);
+    let f = black_box(mat{r}x{c}(a)).qr();
+    let _b = black_box({ones});
+    let e = black_box(true);
+    assert!((f.r.{fld(k, c, 0, 0)} >= fx(0)) == e);
+}}
+
+/// The full `Q` (completion) then one fused `tr_mul`.
+#[test]
+#[inline(never)]
+fn bench_qr{sfx}_q_tr_mul__full_q() {{
+    let (a, _, _, _) = *oracle::qr{sfx}_q_r_cases().at(3);
+    let f = black_box(mat{r}x{c}(a)).qr();
+    let mut b = black_box({ones});
+    let e = black_box(true);
+    f.q_tr_mul(ref b);
+    assert!((b.{fld(r, 1, 0, 0)} == b.{fld(r, 1, 0, 0)}) == e);
 }}
 """
         uses.add("MatrixTrMul")
@@ -2723,7 +2968,7 @@ use nalgebra::linalg::{{{M}QrTrait, {Q}Trait}};
 use nalgebra::{{{', '.join(sorted(uses))}}};
 use nalgebra_testing::black_box;
 use nalgebra_tests_utils::{{abs_raw, excess, fx, oracle_tol, ulp_diff}};
-use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{r}x{k}', f'mat{k}x{c}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}'} | ({f'vec{r}', f'max_ulp_{r}x1'} if r == c else set())))}}};
+use crate::builders::{{{', '.join(sorted({f'amax_{r}x{c}', f'mat{r}x{c}', f'mat{r}x{k}', f'mat{k}x{c}', f'max_ulp_{r}x{c}', f'orth_{r}x{k}'} | ({f'vec{r}', f'max_ulp_{r}x1'} if r == c else set()) | ({f'mat{r}x{r}', f'orth_{r}x{r}'} if r > c else set())))}}};
 use crate::oracle_qr as oracle;
 
 const ONE: i64 = 0x100000000;
@@ -2976,6 +3221,8 @@ def qr_package() -> dict[str, str]:
         for r, c in shapes:
             k = min(r, c)
             need |= {(r, c), (r, k), (k, c), (r, 1)}
+            if r > c:
+                need.add((r, r))
             vecs.add(r)
         out[base + "src/builders.cairo"] = render_builders(need, vecs)
         mods = ["builders", "oracle_qr"]
@@ -3116,15 +3363,15 @@ use crate::oracle_svd23;
 fn test_svd_ordered2_is_svd2() {{
     let (a, _, _) = *oracle_svd23::svd2_singular_values_cases().at(3);
     let a = black_box(mat2x2(a));
-    assert!(svd_ordered2(a, true, true) == Svd2Trait::new(a));
-    assert!(svd_ordered2(a, false, false) == Svd2Trait::new(a));
+    assert!(svd_ordered2(a, true, true) == Svd2Trait::new(a, true, true));
+    assert!(svd_ordered2(a, false, false) == Svd2Trait::new(a, false, false));
 }}
 
 #[test]
 fn test_svd_ordered3_is_svd3_try_new() {{
     let (a, _, _) = *oracle_svd23::svd3_singular_values_cases().at(3);
     let a = black_box(mat3x3(a));
-    assert!(svd_ordered3(a, true, true, fx(0x100000000), 0).unwrap() == Svd3Trait::new(a));
+    assert!(svd_ordered3(a, true, true, fx(0x100000000), 0).unwrap() == Svd3Trait::new(a, true, true));
     assert!(svd_ordered3(a, true, true, fx(-1), 0).is_none());
 }}
 """
@@ -3240,10 +3487,10 @@ fn test_one_sided_jacobi{n}_candidate() {{
         let us = {struct_lit(n, n, lambda i, j: f"u.{fld(n, n, i, j)} * s.{fld(n, 1, j, 0)}")};
         rec = max(rec, max_ulp_{n}x{n}(us.mul_mat(vt), a) / amax_{n}x{n}(a));
         orth = max(orth, orth_{n}x{n}(u));
-        let d = Svd{n}Trait::new(a);
+        let d = Svd{n}Trait::new(a, true, true);
         {" ".join(f"ex2 = max(ex2, excess(ulp_diff(d.singular_values.{fld(n, 1, i, 0)}, e.{fld(n, 1, i, 0)}), oracle_tol(abs_raw(e.{fld(n, 1, i, 0)}), tol)));" for i in range(n))}
-        rec2 = max(rec2, max_ulp_{n}x{n}(d.recompose(), a) / amax_{n}x{n}(a));
-        orth2 = max(orth2, orth_{n}x{n}(d.u));
+        rec2 = max(rec2, max_ulp_{n}x{n}(d.recompose().unwrap(), a) / amax_{n}x{n}(a));
+        orth2 = max(orth2, orth_{n}x{n}(d.u.unwrap()));
     }}
     assert!(
         (ex, rec, orth, ex2, rec2, orth2) == ALT_MEASURED,

@@ -1376,17 +1376,13 @@ DIM_ONLY: dict[str, set[str]] = {
        for name in ("Mul<Transform>", "Div<Transform>")},
 }
 # WP 8.5-P14b: the QR of a non-square shape has no `solve` / `solve_mut` / `try_inverse` /
-# `is_invertible` (upstream's `impl QR<T, D, D>`), and its `q_tr_mul` needs the square `Q` of the
-# shapes with at most as many rows as columns (the thin `Q` of a tall shape cannot be applied in
-# place: upstream applies the full Householder product, which modified Gram-Schmidt never forms).
-# The column insertion / removal of a Cholesky factor exists where the neighbouring size does
+# `is_invertible` (upstream's `impl QR<T, D, D>`); `q_tr_mul` exists on every shape (WP 8.5-P17:
+# the tall ones complete their thin `Q`). The column insertion / removal of a Cholesky factor exists where the neighbouring size does
 # (`Cholesky2 -> 3`, `3 -> 4`; `3 -> 2`, `4 -> 3`).
 _EVERY = {t for ts in OWNER_CANDIDATES.values() for t in ts}
 _QR_RECT = {f"Qr{r}x{c}" for r in DIMS for c in DIMS if r != c}
-_QR_TALL = {f"Qr{r}x{c}" for r in DIMS for c in DIMS if r > c}
 for _name in ("solve", "solve_mut", "is_invertible", "try_inverse"):
     DIM_ONLY[_name] = (DIM_ONLY.get(_name, _EVERY) | {f"Qr{n}" for n in DIMS}) - _QR_RECT
-DIM_ONLY["q_tr_mul"] = _EVERY - _QR_TALL
 # WP 8.5-P15: the square-only methods of `FullPivLU` / `ColPivQR` (upstream's `impl<.., D, D>`).
 _PIVOT_RECT = {f"{t}{r}x{c}" for t in ("FullPivLu", "ColPivQr") for r in DIMS for c in DIMS
                if r != c}
@@ -1394,6 +1390,10 @@ for _name in ("solve", "solve_mut", "is_invertible", "try_inverse", "determinant
     DIM_ONLY[_name] = (DIM_ONLY.get(_name, _EVERY) | {f"{t}{n}" for t in ("FullPivLu", "ColPivQr")
                                                       for n in DIMS}
                        | {f"Lblt{n}" for n in DIMS}) - _PIVOT_RECT
+# WP 8.5-P17: `nalgebra::convert` of a `Point<D>` / `Scale<D>` / `Translation<D>` into its
+# homogeneous `(D + 1)x(D + 1)` matrix: the 6-dimensional ones have no 7x7 target (upstream's
+# aliases, hence the Cairo shapes, stop at 6; owner ruling, issue #41).
+DIM_ONLY["SubsetOf<Matrix>"] = _EVERY - {"Point6", "Scale6", "Translation6"}
 DIM_ONLY["insert_column"] = DIM_ONLY["insert_column"] | {"Cholesky2", "Cholesky3"}
 DIM_ONLY["remove_column"] = DIM_ONLY["remove_column"] | {"Cholesky3", "Cholesky4"}
 

@@ -18,15 +18,15 @@ How to read it:
 | Module | Ported | Partial | Missing | Excluded | Items | Coverage |
 |---|---:|---:|---:|---:|---:|---:|
 | base | 486 | 0 | 0 | 318 | 804 | 100.0% |
-| geometry | 932 | 3 | 0 | 113 | 1048 | 99.7% |
-| linalg | 300 | 0 | 3 | 1 | 304 | 99.0% |
+| geometry | 935 | 0 | 0 | 113 | 1048 | 100.0% |
+| linalg | 303 | 0 | 0 | 1 | 304 | 100.0% |
 | sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
 | io | 1 | 0 | 1 | 0 | 2 | 50.0% |
 | third_party | 91 | 0 | 0 | 72 | 163 | 100.0% |
 | root | 35 | 0 | 0 | 0 | 35 | 100.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1879** | **3** | **4** | **550** | **2436** | **99.6%** |
+| **total** | **1885** | **0** | **1** | **550** | **2436** | **99.9%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -44,9 +44,9 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P06](#p06-statistics-and-blas-like-kernels) | Statistics and BLAS-like kernels | 0 | standard numerics | P01, P05 |  |
 | [P07](#p07-homogeneous-computer-graphics-helpers) | Homogeneous / computer-graphics helpers | 0 | standard numerics | P01 |  |
 | [P08](#p08-quaternion-unitquaternion-unitcomplex-completion) | Quaternion, UnitQuaternion, UnitComplex completion | 0 | standard numerics | — |  |
-| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 2 | mechanical | P08 | `geometry/point_conversion.rs` (1), `geometry/translation_conversion.rs` (1) |
+| [P09a](#p09a-rotation-translation-point-completion) | Rotation, Translation, Point completion | 0 | mechanical | P08 |  |
 | [P09b](#p09b-isometry-similarity-completion-incl-rotation-matrix-variants) | Isometry, Similarity completion (incl. rotation-matrix variants) | 0 | mechanical | P09a |  |
-| [P10](#p10-scale-and-reflection) | Scale and Reflection | 1 | mechanical | P09a | `geometry/scale_conversion.rs` (1) |
+| [P10](#p10-scale-and-reflection) | Scale and Reflection | 0 | mechanical | P09a |  |
 | [P11a](#p11a-transform-affine-projective) | Transform, Affine, Projective | 0 | standard numerics | P07, P09b |  |
 | [P11b](#p11b-perspective3-orthographic3) | Perspective3, Orthographic3 | 0 | standard numerics | P07 |  |
 | [P12](#p12-dualquaternion-unitdualquaternion) | DualQuaternion, UnitDualQuaternion | 0 | standard numerics | P08, P09b |  |
@@ -54,7 +54,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P14](#p14-decomposition-api-completion-and-triangular-solves) | Decomposition API completion and triangular solves | 0 | standard numerics | P01, P05 |  |
 | [P15](#p15-full-pivot-lu-column-pivot-qr-lbl) | Full-pivot LU, column-pivot QR, LBLᵀ | 0 | standard numerics | P14 |  |
 | [P16](#p16-schur-hessenberg-bidiagonal-tridiagonal-general-eigen) | Schur, Hessenberg, Bidiagonal, tridiagonal, general eigen | 0 | hard numerics | P14 |  |
-| [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 3 | hard numerics | P14, P16 | `linalg/pow.rs` (2), `linalg/exp.rs` (1) |
+| [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 0 | hard numerics | P14, P16 |  |
 | [P18](#p18-convolution) | Convolution | 0 | mechanical | P13 |  |
 | [P19](#p19-glam-cairo-conversions) | glam-cairo conversions | 0 | mechanical | WP 6.2 (glam-cairo pin) |  |
 | [P20](#p20-sparse-matrices-and-matrix-market-i-o) | Sparse matrices and Matrix Market I/O | 1 | standard numerics | P13 | `io/matrix_market.rs` (1) |
@@ -102,10 +102,8 @@ quaternion transcendental functions (`exp`, `ln`, `powf`, `sqrt`, trig), polar d
 
 ### P09a Rotation, Translation, Point completion
 
-cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 2 items (`*` = partial):
+cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`...), `Point1/4/5/6`, `Translation1/4/5/6`, `Rotation3::new`, `from_matrix*`, `from_basis_unchecked`, `slerp` / `powf` on rotations, `cast`, `RelativeEq`. Tier: mechanical. Depends on: P08. 0 items (`*` = partial):
 
-- **Point**: `impl:SubsetOf<Matrix>`*
-- **Translation**: `impl:SubsetOf<Matrix>`*
 
 ### P09b Isometry, Similarity completion (incl. rotation-matrix variants)
 
@@ -114,9 +112,8 @@ cross-type operators (`Rotation * Translation`, `Translation * UnitQuaternion`..
 
 ### P10 Scale and Reflection
 
-`Scale1..6` (non-uniform scaling, inverse, homogeneous form, operators) and `Reflection1..6` (`reflect`, `reflect_rows`...). Tier: mechanical. Depends on: P09a. 1 items (`*` = partial):
+`Scale1..6` (non-uniform scaling, inverse, homogeneous form, operators) and `Reflection1..6` (`reflect`, `reflect_rows`...). Tier: mechanical. Depends on: P09a. 0 items (`*` = partial):
 
-- **Scale**: `impl:SubsetOf<Matrix>`*
 
 ### P11a Transform, Affine, Projective
 
@@ -155,9 +152,8 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P17 Matrix exponential and power
 
-`exp` (Padé approximant with scaling and squaring) and `pow` / `pow_mut`. Tier: hard numerics. Depends on: P14, P16. 3 items (`*` = partial):
+`exp` (Padé approximant with scaling and squaring) and `pow` / `pow_mut`. Tier: hard numerics. Depends on: P14, P16. 0 items (`*` = partial):
 
-- **SquareMatrix**: `exp`, `pow`, `pow_mut`
 
 ### P18 Convolution
 
@@ -1906,7 +1902,7 @@ Cairo: Perspective3 · ported 28, partial 0, missing 0, excluded 5.
 
 #### Point (geometry)
 
-Cairo: Point1/2/3/4/5/6 · ported 90, partial 1, missing 0, excluded 15.
+Cairo: Point1/2/3/4/5/6 · ported 91, partial 0, missing 0, excluded 15.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -1947,7 +1943,7 @@ Cairo: Point1/2/3/4/5/6 · ported 90, partial 1, missing 0, excluded 15.
 | impl `Sub<Matrix>` | ported | Point1/2/3/4/5/6::sub_vector | renamed `sub_vector`: `p - v`: Cairo's `Sub` is homogeneous, the heterogeneous operator is a named method | `geometry/point_ops.rs` |
 | impl `Sub<Point>` | ported | Point1/2/3/4/5/6::sub_point | renamed `sub_point`: `p - q` (a vector): Cairo's `Sub` is homogeneous, the heterogeneous operator is a named method | `geometry/point_ops.rs` |
 | impl `SubAssign<Matrix>` | ported | Point1/2/3/4/5/6 (impl `SubAssign<Matrix>`) |  | `geometry/point_ops.rs` |
-| impl `SubsetOf<Matrix>` | partial | Point1/2/3/4/5::to_homogeneous | not on Point6; renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`; P09a | `geometry/point_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | Point1/2/3/4/5::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous` | `geometry/point_conversion.rs` |
 | impl `SubsetOf<Point>` | ported | Point1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/point_conversion.rs` |
 | impl `UlpsEq` | ported | Point1/2/3/4/5/6::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/point.rs` |
 | impl `Zeroable` | excluded |  | glue | `geometry/point.rs` |
@@ -2287,7 +2283,7 @@ Cairo: Rotation3 · ported 31, partial 0, missing 0, excluded 2.
 
 #### Scale (geometry)
 
-Cairo: Scale1/2/3/4/5/6 · ported 41, partial 1, missing 0, excluded 9.
+Cairo: Scale1/2/3/4/5/6 · ported 42, partial 0, missing 0, excluded 9.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2320,7 +2316,7 @@ Cairo: Scale1/2/3/4/5/6 · ported 41, partial 1, missing 0, excluded 9.
 | impl `Pod` | excluded |  | glue | `geometry/scale.rs` |
 | impl `RelativeEq` | ported | Scale1/2/3/4/5/6::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/scale.rs` |
 | impl `Serialize` | ported | Scale1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/scale.rs` |
-| impl `SubsetOf<Matrix>` | partial | Scale1/2/3/4/5::to_homogeneous | not on Scale6; renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`; P10 | `geometry/scale_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | Scale1/2/3/4/5::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous` | `geometry/scale_conversion.rs` |
 | impl `SubsetOf<Scale>` | ported | Scale1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/scale_conversion.rs` |
 | impl `SubsetOf<Transform>` | ported | Affine3 (impl `From<Scale>`) | renamed `From<Scale>`: Cairo-imposed: `nalgebra::convert` is `Into` (into the three categories) | `geometry/scale_conversion.rs` |
 | impl `UlpsEq` | ported | Scale1/2/3/4/5/6::ulps_eq | renamed `ulps_eq`: tolerance in ulp (DESIGN D3) | `geometry/scale.rs` |
@@ -2576,7 +2572,7 @@ Cairo: Transform2/3, Projective2/3, Affine2/3 · ported 51, partial 0, missing 0
 
 #### Translation (geometry)
 
-Cairo: Translation1/2/3/4/5/6 · ported 52, partial 1, missing 0, excluded 9.
+Cairo: Translation1/2/3/4/5/6 · ported 53, partial 0, missing 0, excluded 9.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -2619,7 +2615,7 @@ Cairo: Translation1/2/3/4/5/6 · ported 52, partial 1, missing 0, excluded 9.
 | impl `RelativeEq` | ported | Translation1/2/3/4/5/6::relative_eq | renamed `relative_eq`: tolerance in ulp (DESIGN D3) | `geometry/translation.rs` |
 | impl `Serialize` | ported | Translation1/2/3/4/5/6 (impl `Serde`) | renamed `Serde`: Cairo `Serde` | `geometry/translation.rs` |
 | impl `SubsetOf<Isometry>` | ported | Isometry3 (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (`Isometry2` likewise) | `geometry/translation_conversion.rs` |
-| impl `SubsetOf<Matrix>` | partial | Translation1/2/3/4/5::to_homogeneous | not on Translation6; renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous`; P09a | `geometry/translation_conversion.rs` |
+| impl `SubsetOf<Matrix>` | ported | Translation1/2/3/4/5::to_homogeneous | renamed `to_homogeneous`: Cairo-imposed: `nalgebra::convert` into a matrix / homogeneous vector is `to_homogeneous` | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Similarity>` | ported | Similarity3 (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (`Similarity2` likewise) | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Transform>` | ported | Affine3 (impl `From<Translation>`) | renamed `From<Translation>`: Cairo-imposed: `nalgebra::convert` is `Into` (into the three categories) | `geometry/translation_conversion.rs` |
 | impl `SubsetOf<Translation>` | ported | Translation1/2/3/4/5/6::cast | renamed `cast`: Cairo-imposed: the scalar conversion behind `SubsetOf` is `cast` | `geometry/translation_conversion.rs` |
@@ -3149,7 +3145,7 @@ Cairo: Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6
 | method `is_invertible` | ported | Qr1/2/3/4/5/6::is_invertible |  | `linalg/qr.rs` |
 | method `new` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::new |  | `linalg/qr.rs` |
 | method `q` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::q |  | `linalg/qr.rs` |
-| method `q_tr_mul` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x3/4/5/6, Qr3x4/5/6, Qr4x5/6, Qr5x6::q_tr_mul |  | `linalg/qr.rs` |
+| method `q_tr_mul` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::q_tr_mul |  | `linalg/qr.rs` |
 | method `qr_internal` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::qr_internal |  | `linalg/qr.rs` |
 | method `r` | ported | Qr1/2/3/4/5/6, Qr1x2/3/4/5/6, Qr2x1/3/4/5/6, Qr3x1/2/4/5/6, Qr4x1/2/3/5/6, Qr5x1/2/3/4/6, Qr6x1/2/3/4/5::r |  | `linalg/qr.rs` |
 | method `solve` | ported | Qr1/2/3/4/5/6::solve |  | `linalg/qr.rs` |
@@ -3202,7 +3198,7 @@ Cairo: Schur1/2/3/4/5/6 · ported 11, partial 0, missing 0, excluded 0.
 
 #### SquareMatrix (linalg)
 
-Cairo: Matrix1/2/3/4/5/6 · ported 41, partial 0, missing 3, excluded 0.
+Cairo: Matrix1/2/3/4/5/6 · ported 44, partial 0, missing 0, excluded 0.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
@@ -3218,11 +3214,11 @@ Cairo: Matrix1/2/3/4/5/6 · ported 41, partial 0, missing 3, excluded 0.
 | method `complex_eigenvalues` | ported | Matrix1/2/3/4/5/6::complex_eigenvalues |  | `linalg/schur.rs` |
 | method `determinant` | ported | Matrix2/3/4/6::determinant |  | `linalg/determinant.rs` |
 | method `eigenvalues` | ported | Matrix1/2/3/4/5/6::eigenvalues |  | `linalg/schur.rs` |
-| method `exp` | missing |  | P17 | `linalg/exp.rs` |
+| method `exp` | ported | Matrix1/2/3/4/5/6::exp |  | `linalg/exp.rs` |
 | method `hessenberg` | ported | Matrix1/2/3/4/5/6::hessenberg |  | `linalg/decomposition.rs` |
 | method `lblt` | ported | Matrix1/2/3/4/5/6::lblt |  | `linalg/decomposition.rs` |
-| method `pow` | missing |  | P17 | `linalg/pow.rs` |
-| method `pow_mut` | missing |  | P17 | `linalg/pow.rs` |
+| method `pow` | ported | Matrix1/2/3/4/5/6::pow |  | `linalg/pow.rs` |
+| method `pow_mut` | ported | Matrix1/2/3/4/5/6::pow_mut |  | `linalg/pow.rs` |
 | method `schur` | ported | Matrix1/2/3/4/5/6::schur |  | `linalg/decomposition.rs` |
 | method `solve_lower_triangular` | ported | MatrixSolve::solve_lower_triangular | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |
 | method `solve_lower_triangular_mut` | ported | MatrixSolve::solve_lower_triangular_mut | method of the generic `MatrixSolve` (one kernel impl per square and right-hand side with as many rows, 36; `base/solve.cairo`) | `linalg/solve.rs` |

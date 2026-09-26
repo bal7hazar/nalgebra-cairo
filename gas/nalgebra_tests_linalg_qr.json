@@ -39,6 +39,10 @@
     "qr2x1_new": {
       "baseline": 17520,
       "mgs": 31580
+    },
+    "qr2x1_q_tr_mul": {
+      "baseline": 32090,
+      "full_q": 60270
     }
   },
   "nalgebra_tests_linalg_qr::qr2x3": {
@@ -69,12 +73,20 @@
     "qr3x1_new": {
       "baseline": 17720,
       "mgs": 36000
+    },
+    "qr3x1_q_tr_mul": {
+      "baseline": 36710,
+      "full_q": 109880
     }
   },
   "nalgebra_tests_linalg_qr::qr3x2": {
     "qr3x2_new": {
       "baseline": 18320,
       "mgs": 61350
+    },
+    "qr3x2_q_tr_mul": {
+      "baseline": 62060,
+      "full_q": 103790
     }
   },
   "nalgebra_tests_linalg_qr::qr3x4": {

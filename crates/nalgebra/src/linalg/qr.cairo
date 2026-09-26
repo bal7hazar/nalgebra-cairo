@@ -41,6 +41,7 @@
 //! the successful call costs (`bench_qrN_solve_singular__none`). Check `is_invertible` when the
 //! answer changes what the caller does, not to save gas.
 
+pub(crate) mod kernels;
 #[cfg(test)]
 mod oracle_qr2;
 #[cfg(test)]

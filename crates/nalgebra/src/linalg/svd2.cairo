@@ -35,9 +35,8 @@ use crate::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 /// The singular value decomposition `M = U · diag(singular_values) · v_t` of a `Matrix2<T>`.
 ///
 /// `singular_values` are sorted **descending** and non-negative (like `tools/oracle` and upstream's
-/// `singular_values`), `u` and `v_t` are orthonormal. Unlike upstream, where `u` and `v_t` are
-/// `Option`s selected by the `compute_u` / `compute_v` flags, both are always present: the 2x2
-/// closed form produces them at a cost the flags could not save.
+/// `singular_values`), `u` and `v_t` are orthonormal, and `None` when the decomposition was built
+/// without them (the `compute_u` / `compute_v` flags, like upstream).
 ///
 /// Sign and order convention (the decomposition is only defined up to a sign per column and up to
 /// the order of equal singular values): the columns of `V` are the eigenvectors that
@@ -50,12 +49,13 @@ use crate::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 /// Upstream: `SVD { u: Option<OMatrix>, v_t: Option<OMatrix>, singular_values: OVector }`.
 #[derive(Copy, Drop, Serde, Debug)]
 pub struct Svd2<T> {
-    /// The left singular vectors, as columns. Orthonormal.
-    pub u: Matrix2<T>,
+    /// The left singular vectors, as columns, when computed. Orthonormal.
+    pub u: Option<Matrix2<T>>,
     /// The two singular values, descending, non-negative.
     pub singular_values: Vector2<T>,
-    /// The TRANSPOSE of the right singular vectors, i.e. `v_i` is ROW `i`. Orthonormal.
-    pub v_t: Matrix2<T>,
+    /// The TRANSPOSE of the right singular vectors, i.e. `v_i` is ROW `i`, when computed.
+    /// Orthonormal.
+    pub v_t: Option<Matrix2<T>>,
 }
 
 /// Test-only field-wise equality (upstream `Svd2` has no `PartialEq`): the tests and the
@@ -82,8 +82,10 @@ pub impl Svd2Impl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd2Trait<T> {
-    /// The singular value decomposition of `matrix`. Upstream: `matrix.svd(true, true)` /
-    /// `SVD::new(matrix, true, true)`.
+    /// The singular value decomposition of `matrix`, with `u` when `compute_u` and `v_t` when
+    /// `compute_v` (`None` otherwise; skipping `u` skips its two divisions and the perpendicular,
+    /// `v_t` is free: the right vectors are what the singular values are read off). Upstream:
+    /// `matrix.svd(compute_u, compute_v)` / `SVD::new(matrix, compute_u, compute_v)`.
     ///
     /// ```text
     /// S  = MᵀM                    (3 fused kernels, exact up to one floor per component)
@@ -123,7 +125,7 @@ pub impl Svd2Impl<
     ///
     /// Cost: constant. Panics with the scalar's overflow error if a component of `MᵀM` does not
     /// fit (the squares of the entries must be representable, unlike `norm2`).
-    fn new(matrix: Matrix2<T>) -> Svd2<T> {
+    fn new(matrix: Matrix2<T>, compute_u: bool, compute_v: bool) -> Svd2<T> {
         let eigen = SymmetricEigen2InternalTrait::new_sym(Svd2InternalTrait::gram(matrix));
         // RENORMALISE the eigenvectors. `SymmetricEigen2` divides the raw eigen direction by its
         // own FLOORED norm, and on a `small` matrix that direction is a tiny vector — the row of
@@ -151,61 +153,69 @@ pub impl Svd2Impl<
         } else {
             (s1, s2, w1, w2, v1, v2)
         };
-        let u1 = if s1 == R::zero() {
-            Vector2 { x: R::one(), y: R::zero() }
+        let u = if compute_u {
+            Some(Svd2InternalTrait::left(w1, w2, s1))
         } else {
-            Vector2 { x: R::div(w1.x, s1), y: R::div(w1.y, s1) }
-        };
-        // `<perp(u1), w2>` with perp(u1) = (-u1.y, u1.x): one rounding, and its sign orients u2.
-        let along = R::diff_prod(u1.x, w2.y, u1.y, w2.x);
-        let u2 = if along.is_sign_negative() {
-            Vector2 { x: u1.y, y: -u1.x }
-        } else {
-            Vector2 { x: -u1.y, y: u1.x }
+            None
         };
         Svd2 {
-            u: Matrix2Trait::from_columns(u1, u2),
+            u,
             singular_values: Vector2 { x: s1, y: s2 },
-            v_t: Matrix2Trait::from_rows(v1, v2),
+            v_t: if compute_v {
+                Some(Matrix2Trait::from_rows(v1, v2))
+            } else {
+                None
+            },
         }
     }
 
     /// `new` (the closed form is always sorted). Upstream: `SVD::new_unordered`.
     #[inline(always)]
-    fn new_unordered(matrix: Matrix2<T>) -> Svd2<T> {
-        Self::new(matrix)
+    fn new_unordered(matrix: Matrix2<T>, compute_u: bool, compute_v: bool) -> Svd2<T> {
+        Self::new(matrix, compute_u, compute_v)
     }
 
     /// `Some(new(matrix))`: the 2x2 decomposition is a closed form, there is nothing to converge.
     /// `eps` and `max_niter` are accepted for signature parity and ignored. Upstream:
-    /// `SVD::try_new(matrix, true, true, eps, max_niter)`.
+    /// `SVD::try_new(matrix, compute_u, compute_v, eps, max_niter)`.
     #[inline(always)]
-    fn try_new(matrix: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
+    fn try_new(
+        matrix: Matrix2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd2<T>> {
         let _ = eps;
         let _ = max_niter;
-        Some(Self::new(matrix))
+        Some(Self::new(matrix, compute_u, compute_v))
     }
 
     /// `try_new` (always sorted). Upstream: `SVD::try_new_unordered`.
     #[inline(always)]
-    fn try_new_unordered(matrix: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
-        Self::try_new(matrix, eps, max_niter)
+    fn try_new_unordered(
+        matrix: Matrix2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd2<T>> {
+        Self::try_new(matrix, compute_u, compute_v, eps, max_niter)
     }
 
     /// Sorts the singular values DESCENDING, swapping the columns of `u` and the rows of `v_t`
-    /// with them (strict comparison: equal values keep their order). `new` already returns them
-    /// sorted, so this only matters after the fields were edited. Upstream:
-    /// `SVD::sort_by_singular_values`.
+    /// (those that were computed) with them (strict comparison: equal values keep their order).
+    /// `new` already returns them sorted, so this only matters after the fields were edited.
+    /// Upstream: `SVD::sort_by_singular_values`.
     fn sort_by_singular_values(ref self: Svd2<T>) {
         if self.singular_values.y > self.singular_values.x {
-            let (u, v) = (self.u, self.v_t);
+            let u = match self.u {
+                Some(u) => Some(Matrix2 { m11: u.m12, m21: u.m22, m12: u.m11, m22: u.m21 }),
+                None => None,
+            };
+            let v_t = match self.v_t {
+                Some(v) => Some(Matrix2 { m11: v.m21, m21: v.m11, m12: v.m22, m22: v.m12 }),
+                None => None,
+            };
             self =
                 Svd2 {
-                    u: Matrix2 { m11: u.m12, m21: u.m22, m12: u.m11, m22: u.m21 },
+                    u,
                     singular_values: Vector2 {
                         x: self.singular_values.y, y: self.singular_values.x,
                     },
-                    v_t: Matrix2 { m11: v.m21, m21: v.m11, m12: v.m22, m22: v.m12 },
+                    v_t,
                 };
         }
     }
@@ -226,26 +236,29 @@ pub impl Svd2Impl<
     }
 
     /// `U · diag(singular_values) · v_t`, the matrix the decomposition came from, up to its
-    /// rounding (measured: **6 ulp per unit of `max |m_ij|`** on the oracle vectors).
+    /// rounding (measured: **6 ulp per unit of `max |m_ij|`** on the oracle vectors), or `None`
+    /// when `u` or `v_t` was not computed.
     ///
     /// Two roundings per entry: the columns of `U` are scaled by the singular values (4 floored
     /// products), then the product with `v_t` is 4 fused `sum_prod2`. Panics on overflow.
-    /// Upstream: `SVD::recompose`, which returns a `Result` because `u` / `v_t` may be missing;
-    /// here they never are.
-    fn recompose(self: Svd2<T>) -> Matrix2<T> {
+    /// Upstream: `SVD::recompose` (`Err` when a factor is missing; `None` here).
+    fn recompose(self: Svd2<T>) -> Option<Matrix2<T>> {
+        let u = self.u?;
+        let v_t = self.v_t?;
         let us = Matrix2 {
-            m11: self.u.m11 * self.singular_values.x,
-            m21: self.u.m21 * self.singular_values.x,
-            m12: self.u.m12 * self.singular_values.y,
-            m22: self.u.m22 * self.singular_values.y,
+            m11: u.m11 * self.singular_values.x,
+            m21: u.m21 * self.singular_values.x,
+            m12: u.m12 * self.singular_values.y,
+            m22: u.m22 * self.singular_values.y,
         };
-        us * self.v_t
+        Some(us * v_t)
     }
 
     /// The Moore-Penrose pseudo-inverse `V · diag(σ⁺) · Uᵀ`, where `σ⁺_i = 1 / σ_i` when
-    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative.
+    /// `σ_i > eps` and `0` otherwise, or `None` when `eps` is negative or when `u` or `v_t` was
+    /// not computed.
     ///
-    /// Upstream: `SVD::pseudo_inverse`, which returns `Err` on a negative `eps` and otherwise
+    /// Upstream: `SVD::pseudo_inverse`, which returns `Err` in those cases and otherwise
     /// recomposes with the inverted singular values and takes the adjoint — the same expression.
     /// Note that upstream's test is `> eps` as well, so `eps = 0` keeps every nonzero singular
     /// value, including one of 1 raw unit whose reciprocal overflows: pass an `eps` matched to the
@@ -257,6 +270,8 @@ pub impl Svd2Impl<
         if eps.is_sign_negative() {
             return None;
         }
+        let u = self.u?;
+        let v_t = self.v_t?;
         let r1 = if self.singular_values.x > eps {
             self.singular_values.x.recip()
         } else {
@@ -267,13 +282,14 @@ pub impl Svd2Impl<
         } else {
             R::zero()
         };
-        let v = self.v_t.transpose();
+        let v = v_t.transpose();
         let vr = Matrix2 { m11: v.m11 * r1, m21: v.m21 * r1, m12: v.m12 * r2, m22: v.m22 * r2 };
-        Some(vr * self.u.transpose())
+        Some(vr * u.transpose())
     }
 
     /// The least-squares solution of `M x = b`, `V · (Uᵀ b / σ)` with the components whose
-    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative. Upstream: `SVD::solve`.
+    /// singular value is `<= eps` zeroed, or `None` when `eps` is negative or when `u` or `v_t`
+    /// was not computed. Upstream: `SVD::solve` (`Err` in those cases).
     ///
     /// Unlike `pseudo_inverse` this divides instead of multiplying by a reciprocal — one rounding
     /// per component instead of two, and no overflow on a tiny singular value unless the solution
@@ -282,7 +298,9 @@ pub impl Svd2Impl<
         if eps.is_sign_negative() {
             return None;
         }
-        let y = self.u.tr_mul(b);
+        let u = self.u?;
+        let v_t = self.v_t?;
+        let y = u.tr_mul(b);
         let y1 = if self.singular_values.x > eps {
             R::div(y.x, self.singular_values.x)
         } else {
@@ -293,25 +311,21 @@ pub impl Svd2Impl<
         } else {
             R::zero()
         };
-        Some(self.v_t.tr_mul(Vector2 { x: y1, y: y2 }))
+        Some(v_t.tr_mul(Vector2 { x: y1, y: y2 }))
     }
 
     /// The LEFT polar decomposition `M = P · U`, as `Some((P, U))`: `P = u · diag(σ) · uᵀ` is
     /// symmetric positive semi-definite and `U = u · v_t` is orthonormal (a rotation when
-    /// `det(M) > 0`). Always `Some`: upstream returns `None` only when `u` or `v_t` was not
-    /// computed, and both always are here.
+    /// `det(M) > 0`), or `None` when `u` or `v_t` was not computed (as upstream).
     ///
     /// `U` costs one 2x2 product and `P` one structured quadratic form (only its 3 independent
     /// components are computed, then mirrored); both are two roundings per entry. Panics on
     /// overflow. Upstream: `SVD::to_polar`.
     #[inline(always)]
     fn to_polar(self: Svd2<T>) -> Option<(Matrix2<T>, Matrix2<T>)> {
-        Some(
-            (
-                SymMatrix2Trait::quadform(self.u, self.singular_values).to_matrix(),
-                self.u * self.v_t,
-            ),
-        )
+        let u = self.u?;
+        let v_t = self.v_t?;
+        Some((SymMatrix2Trait::quadform(u, self.singular_values).to_matrix(), u * v_t))
     }
 }
 
@@ -331,6 +345,28 @@ pub(crate) impl Svd2InternalImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Svd2InternalTrait<T> {
+    /// The left singular vectors of `new` from the sorted `w_i = M v_i` and `σ_1`: `u_1 = w_1 /
+    /// σ_1` (or `e_1` when `σ_1 = 0`), `u_2 = ± perp(u_1)` (see `new`). Skipped (`compute_u =
+    /// false`) they cost no Cairo step; the Sierra gas of the snapshots charges a branch at its
+    /// costliest path whatever is executed (docs/BENCHMARK.md).
+    #[inline(always)]
+    fn left(w1: Vector2<T>, w2: Vector2<T>, s1: T) -> Matrix2<T> {
+        let u1 = if s1 == R::zero() {
+            Vector2 { x: R::one(), y: R::zero() }
+        } else {
+            Vector2 { x: R::div(w1.x, s1), y: R::div(w1.y, s1) }
+        };
+        // `<perp(u1), w2>` with perp(u1) = (-u1.y, u1.x): one rounding, and its sign orients
+        // u2.
+        let along = R::diff_prod(u1.x, w2.y, u1.y, w2.x);
+        let u2 = if along.is_sign_negative() {
+            Vector2 { x: u1.y, y: -u1.x }
+        } else {
+            Vector2 { x: -u1.y, y: u1.x }
+        };
+        Matrix2Trait::from_columns(u1, u2)
+    }
+
     /// `MᵀM` as a symmetric matrix: 3 fused kernels instead of 8 products, bit-identical to the
     /// upper triangle of `m.transpose() * m` and to `m.transpose().mul_transpose()` — which
     /// would reuse `base` instead of repeating the kernel, and costs the moves of the transpose
@@ -362,57 +398,59 @@ pub impl Matrix2SvdImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Matrix2SvdTrait<T> {
-    /// The singular value decomposition. Upstream: `Matrix2::svd(true, true)`.
+    /// The singular value decomposition, see `Svd2Trait::new`. Upstream: `Matrix2::svd`.
     #[inline(always)]
-    fn svd(self: Matrix2<T>) -> Svd2<T> {
-        Svd2Trait::new(self)
+    fn svd(self: Matrix2<T>, compute_u: bool, compute_v: bool) -> Svd2<T> {
+        Svd2Trait::new(self, compute_u, compute_v)
     }
 
-    /// The singular values alone, descending. Upstream: `Matrix2::singular_values`.
-    ///
-    /// Not cheaper than the full decomposition here (the left vectors are what the norms are read
-    /// off), unlike upstream, where skipping `U` and `V` saves the whole accumulation.
+    /// The singular values alone, descending: `svd(false, false)` (no left vectors). Upstream:
+    /// `Matrix2::singular_values`.
     #[inline(always)]
     fn singular_values(self: Matrix2<T>) -> Vector2<T> {
-        Svd2Trait::new(self).singular_values
+        Svd2Trait::new(self, false, false).singular_values
     }
 
     /// The Moore-Penrose pseudo-inverse, see `Svd2::pseudo_inverse`. Upstream:
     /// `Matrix2::pseudo_inverse`.
     #[inline(always)]
     fn pseudo_inverse(self: Matrix2<T>, eps: T) -> Option<Matrix2<T>> {
-        Svd2Trait::new(self).pseudo_inverse(eps)
+        Svd2Trait::new(self, true, true).pseudo_inverse(eps)
     }
 
     /// `svd`: the decomposition is always sorted (see `Svd2Trait::new_unordered`). Upstream:
     /// `Matrix::svd_unordered`.
     #[inline(always)]
-    fn svd_unordered(self: Matrix2<T>) -> Svd2<T> {
-        Svd2Trait::new(self)
+    fn svd_unordered(self: Matrix2<T>, compute_u: bool, compute_v: bool) -> Svd2<T> {
+        Svd2Trait::new(self, compute_u, compute_v)
     }
 
-    /// See `Svd2Trait::try_new`. Upstream: `Matrix::try_svd(true, true, eps, max_niter)`.
+    /// See `Svd2Trait::try_new`. Upstream: `Matrix::try_svd`.
     #[inline(always)]
-    fn try_svd(self: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
-        Svd2Trait::try_new(self, eps, max_niter)
+    fn try_svd(
+        self: Matrix2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd2<T>> {
+        Svd2Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }
 
     /// See `Svd2Trait::try_new_unordered`. Upstream: `Matrix::try_svd_unordered`.
     #[inline(always)]
-    fn try_svd_unordered(self: Matrix2<T>, eps: T, max_niter: usize) -> Option<Svd2<T>> {
-        Svd2Trait::try_new(self, eps, max_niter)
+    fn try_svd_unordered(
+        self: Matrix2<T>, compute_u: bool, compute_v: bool, eps: T, max_niter: usize,
+    ) -> Option<Svd2<T>> {
+        Svd2Trait::try_new(self, compute_u, compute_v, eps, max_niter)
     }
 
     /// `singular_values` (always sorted). Upstream: `Matrix::singular_values_unordered`.
     #[inline(always)]
     fn singular_values_unordered(self: Matrix2<T>) -> Vector2<T> {
-        Svd2Trait::new(self).singular_values
+        Svd2Trait::new(self, false, false).singular_values
     }
 
     /// The number of singular values strictly greater than `eps`. Upstream: `Matrix::rank`
     /// (which asserts `eps >= 0`; a negative `eps` counts every value here, like `Svd2::rank`).
     fn rank(self: Matrix2<T>, eps: T) -> usize {
-        let s = Svd2Trait::new(self).singular_values;
+        let s = Svd2Trait::new(self, false, false).singular_values;
         let mut n: usize = 0;
         if s.x > eps {
             n += 1;
@@ -426,24 +464,23 @@ pub impl Matrix2SvdImpl<
     /// The left polar decomposition `M = P · U`, see `Svd2Trait::to_polar`. Upstream:
     /// `Matrix::polar`.
     fn polar(self: Matrix2<T>) -> (Matrix2<T>, Matrix2<T>) {
-        Svd2Trait::new(self).to_polar().unwrap()
+        Svd2Trait::new(self, true, true).to_polar().unwrap()
     }
 
     /// `polar`, or `None` when the decomposition did not converge within `eps`, see
     /// `Svd2Trait::try_new`. Upstream: `Matrix::try_polar`.
     fn try_polar(self: Matrix2<T>, eps: T, max_niter: usize) -> Option<(Matrix2<T>, Matrix2<T>)> {
-        match Svd2Trait::try_new(self, eps, max_niter) {
+        match Svd2Trait::try_new(self, true, true, eps, max_niter) {
             Some(d) => d.to_polar(),
             None => None,
         }
     }
 }
 
-/// The ordered SVD of a `Matrix2`: `Svd2Trait::new(m)`. Upstream: `nalgebra::linalg::svd_ordered2`
-/// (the closed form of the 2x2 SVD upstream uses, through `atan2` / `sin_cos`). Here the 2x2 SVD
-/// is `Svd2`'s eigen decomposition of `MᵀM`, which needs no transcendental function (steps
-/// criterion, see `Svd2`); both factors are always computed, so `compute_u` / `compute_v` are
-/// accepted for signature parity and ignored.
+/// The ordered SVD of a `Matrix2`: `Svd2Trait::new(m, compute_u, compute_v)`. Upstream:
+/// `nalgebra::linalg::svd_ordered2` (the closed form of the 2x2 SVD upstream uses, through
+/// `atan2` / `sin_cos`). Here the 2x2 SVD is `Svd2`'s eigen decomposition of `MᵀM`, which needs
+/// no transcendental function (steps criterion, see `Svd2`).
 pub fn svd_ordered2<
     T,
     impl R: Real<T>,
@@ -459,9 +496,7 @@ pub fn svd_ordered2<
 >(
     m: Matrix2<T>, compute_u: bool, compute_v: bool,
 ) -> Svd2<T> {
-    let _ = compute_u;
-    let _ = compute_v;
-    Svd2Trait::new(m)
+    Svd2Trait::new(m, compute_u, compute_v)
 }
 
 #[cfg(test)]
@@ -518,8 +553,8 @@ mod tests {
     /// `u_2 = M v_2 / σ_2` instead of the perpendicular of `u_1`. Kept as evidence: see
     /// `test_left_vectors_candidates`.
     fn u_from_normalised_columns(m: Matrix2<Fixed>) -> Matrix2<Fixed> {
-        let f = Svd2Trait::new(m);
-        let v = f.v_t.transpose();
+        let f = Svd2Trait::new(m, true, true);
+        let v = f.v_t.unwrap().transpose();
         let (w1, w2) = (m.mul_mat(v.column1()), m.mul_mat(v.column2()));
         let c1 = if f.singular_values.x == Real::zero() {
             Vector2 { x: Real::one(), y: Real::zero() }
@@ -538,28 +573,28 @@ mod tests {
     fn test_new_diagonal_is_exact() {
         // diag(2, -5): singular values 5 and 2, and the sign moves into U.
         let d = Matrix2Trait::new(int(2), int(0), int(0), int(-5));
-        let f = Svd2Trait::new(d);
+        let f = Svd2Trait::new(d, true, true);
         assert!(f.singular_values == Vector2 { x: int(5), y: int(2) });
-        assert!(f.recompose() == d);
-        assert!(orthonormality_error_m2(f.u) == 0);
-        assert!(orthonormality_error_m2(f.v_t) == 0);
+        assert!(f.recompose().unwrap() == d);
+        assert!(orthonormality_error_m2(f.u.unwrap()) == 0);
+        assert!(orthonormality_error_m2(f.v_t.unwrap()) == 0);
     }
 
     #[test]
     fn test_new_rank_one_and_zero() {
-        let f = Svd2Trait::new(a_rank1());
+        let f = Svd2Trait::new(a_rank1(), true, true);
         assert!(f.singular_values.y == Real::zero());
         assert!(f.rank(Real::zero()) == 1);
         // `V` is irrational here (the eigen direction is `(-36, 12)`), so `U` is only orthonormal
         // to the rounding of one normalisation.
-        assert!(orthonormality_error_m2(f.u) <= 4);
-        assert!(max_ulp_diff2(f.recompose(), a_rank1()) <= 16);
+        assert!(orthonormality_error_m2(f.u.unwrap()) <= 4);
+        assert!(max_ulp_diff2(f.recompose().unwrap(), a_rank1()) <= 16);
         // The zero matrix: every singular value vanishes and nothing divides by zero.
-        let z = Svd2Trait::new(Matrix2Trait::<Fixed>::zeros());
+        let z = Svd2Trait::new(Matrix2Trait::<Fixed>::zeros(), true, true);
         assert!(z.singular_values == Vector2 { x: int(0), y: int(0) });
-        assert!(z.u == Matrix2Trait::identity());
+        assert!(z.u.unwrap() == Matrix2Trait::identity());
         assert!(z.rank(Real::zero()) == 0);
-        assert!(z.recompose() == Matrix2Trait::zeros());
+        assert!(z.recompose().unwrap() == Matrix2Trait::zeros());
     }
 
     #[test]
@@ -568,9 +603,11 @@ mod tests {
         let (mut worst_rec, mut worst_orth) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
-            let f = Svd2Trait::new(m2(a));
-            let rec = max_ulp_diff2(f.recompose(), m2(a)) / amax_m2(m2(a));
-            let orth = core::cmp::max(orthonormality_error_m2(f.u), orthonormality_error_m2(f.v_t));
+            let f = Svd2Trait::new(m2(a), true, true);
+            let rec = max_ulp_diff2(f.recompose().unwrap(), m2(a)) / amax_m2(m2(a));
+            let orth = core::cmp::max(
+                orthonormality_error_m2(f.u.unwrap()), orthonormality_error_m2(f.v_t.unwrap()),
+            );
             worst_rec = core::cmp::max(worst_rec, rec);
             worst_orth = core::cmp::max(worst_orth, orth);
         }
@@ -587,7 +624,8 @@ mod tests {
             let e = v2t(expected);
             worst_norm =
                 core::cmp::max(
-                    worst_norm, max_ulp_diff_v2(Svd2Trait::new(m2(a)).singular_values, e),
+                    worst_norm,
+                    max_ulp_diff_v2(Svd2Trait::new(m2(a), true, true).singular_values, e),
                 );
             worst_sqrt =
                 core::cmp::max(worst_sqrt, max_ulp_diff_v2(singular_values_from_sqrt(m2(a)), e));
@@ -603,7 +641,10 @@ mod tests {
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
             worst_perp =
-                core::cmp::max(worst_perp, orthonormality_error_m2(Svd2Trait::new(m2(a)).u));
+                core::cmp::max(
+                    worst_perp,
+                    orthonormality_error_m2(Svd2Trait::new(m2(a), true, true).u.unwrap()),
+                );
             worst_norm =
                 core::cmp::max(
                     worst_norm, orthonormality_error_m2(u_from_normalised_columns(m2(a))),
@@ -618,7 +659,7 @@ mod tests {
         let (mut worst, mut worst_orth) = (0, 0);
         while let Some(case) = cases.pop_front() {
             let (a, _, _) = *case;
-            let (p, u) = Svd2Trait::new(m2(a)).to_polar().unwrap();
+            let (p, u) = Svd2Trait::new(m2(a), true, true).to_polar().unwrap();
             // `P` is symmetric by construction and positive semi-definite: its determinant is the
             // product of the singular values.
             assert!(p == p.transpose(), "P is not symmetric");

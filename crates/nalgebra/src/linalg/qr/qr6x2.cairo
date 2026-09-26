@@ -6,8 +6,11 @@
 use core::internal::revoke_ap_tracking;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
+use crate::base::matrix6::Matrix6;
 use crate::base::matrix6x2::Matrix6x2;
+use crate::base::solve::SolveKernel;
 use crate::base::vector6::Vector6;
+use super::kernels::QrComplete6Impl;
 
 /// The QR factorisation `A = q * r` of a `Matrix6x2<T>`: `q` is 6x2 (thin: 6x2, orthonormal
 /// COLUMNS), `r` is 2x2 upper triangular (trapezoidal) with a non-negative diagonal and an exactly
@@ -207,6 +210,98 @@ pub impl Qr6x2Impl<
     #[inline(always)]
     fn qr_internal(self: Qr6x2<T>) -> (Matrix6x2<T>, Matrix2<T>) {
         (self.q, self.r)
+    }
+
+    /// `rhs = Qᵀ * rhs` in place, for any `rhs` with 6 rows (a vector or a matrix), `Q` the
+    /// FULL 6x6 orthogonal factor: the thin `q` completed by 4 unit vectors, each the
+    /// axis least represented in the span of the previous columns, stripped of its projection
+    /// and normalised (`full_q`). The first 2 rows of the result are `qᵀ rhs` bit for bit; the
+    /// last 4 are its components along the orthogonal complement of the columns of
+    /// `A`. ONE fused sum of products per entry, floored once. Upstream: `QR::q_tr_mul` (the
+    /// 2 Householder reflections, a rounding each: a different basis of the complement, and
+    /// upstream's signs on the first rows).
+    fn q_tr_mul<B, impl K: SolveKernel<Matrix6<T>, B>, +Drop<B>>(self: Qr6x2<T>, ref rhs: B) {
+        rhs = K::tr_mul_rhs(Qr6x2InternalTrait::full_q(self), rhs);
+    }
+}
+
+/// Crate-internal kernel of `Qr6x2<T>`: the full orthogonal factor of `q_tr_mul`.
+#[generate_trait]
+pub(crate) impl Qr6x2InternalImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Qr6x2InternalTrait<T> {
+    /// The full 6x6 orthogonal factor whose first 2 columns are `q`, see `q_tr_mul`
+    /// (upstream exposes the full `Q` only through `q_tr_mul`).
+    fn full_q(self: Qr6x2<T>) -> Matrix6<T> {
+        revoke_ap_tracking();
+        let u0 = Vector6 {
+            x: self.q.m11,
+            y: self.q.m21,
+            z: self.q.m31,
+            w: self.q.m41,
+            a: self.q.m51,
+            b: self.q.m61,
+        };
+        let u1 = Vector6 {
+            x: self.q.m12,
+            y: self.q.m22,
+            z: self.q.m32,
+            w: self.q.m42,
+            a: self.q.m52,
+            b: self.q.m62,
+        };
+        let u2 = QrComplete6Impl::<T>::complete2(u0, u1);
+        let u3 = QrComplete6Impl::<T>::complete3(u0, u1, u2);
+        let u4 = QrComplete6Impl::<T>::complete4(u0, u1, u2, u3);
+        let u5 = QrComplete6Impl::<T>::complete5(u0, u1, u2, u3, u4);
+        Matrix6 {
+            m11: u0.x,
+            m21: u0.y,
+            m31: u0.z,
+            m41: u0.w,
+            m51: u0.a,
+            m61: u0.b,
+            m12: u1.x,
+            m22: u1.y,
+            m32: u1.z,
+            m42: u1.w,
+            m52: u1.a,
+            m62: u1.b,
+            m13: u2.x,
+            m23: u2.y,
+            m33: u2.z,
+            m43: u2.w,
+            m53: u2.a,
+            m63: u2.b,
+            m14: u3.x,
+            m24: u3.y,
+            m34: u3.z,
+            m44: u3.w,
+            m54: u3.a,
+            m64: u3.b,
+            m15: u4.x,
+            m25: u4.y,
+            m35: u4.z,
+            m45: u4.w,
+            m55: u4.a,
+            m65: u4.b,
+            m16: u5.x,
+            m26: u5.y,
+            m36: u5.z,
+            m46: u5.w,
+            m56: u5.a,
+            m66: u5.b,
+        }
     }
 }
 

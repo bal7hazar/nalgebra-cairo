@@ -490,43 +490,43 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 88910 | 72360 | x1.00 |
+| `eigen_of_gram` | 89410 | 72860 | x1.00 |
 
 ### svd2_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reciprocals` | 117230 | 28000 | x1.00 |
+| `reciprocals` | 118530 | 28400 | x1.00 |
 
 ### svd2_rank
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `comparisons` | 91870 | 2640 | x1.00 |
+| `comparisons` | 92770 | 2640 | x1.00 |
 
 ### svd2_recompose
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 107400 | 18170 | x1.00 |
+| `scaled_product` | 109600 | 19470 | x1.00 |
 
 ### svd2_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `from_left_vectors` | 88910 | 72360 | x1.00 |
+| `from_left_vectors` | 89410 | 72860 | x1.00 |
 
 ### svd2_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `divisions` | 111070 | 21240 | x1.00 |
+| `divisions` | 112370 | 21640 | x1.00 |
 
 ### svd2_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 114670 | 25440 | x1.00 |
+| `quadform` | 115770 | 25640 | x1.00 |
 
 ## nalgebra_tests_linalg::svd3::tests
 
@@ -534,43 +534,43 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 742820 | 725270 | x1.00 |
+| `eigen_of_gram` | 744020 | 726470 | x1.00 |
 
 ### svd3_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reciprocals` | 798280 | 54030 | x1.00 |
+| `reciprocals` | 800380 | 54430 | x1.00 |
 
 ### svd3_rank
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `comparisons` | 748060 | 3810 | x1.00 |
+| `comparisons` | 749760 | 3810 | x1.00 |
 
 ### svd3_recompose
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 783620 | 39370 | x1.00 |
+| `scaled_product` | 787120 | 41170 | x1.00 |
 
 ### svd3_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `from_left_vectors` | 742820 | 725270 | x1.00 |
+| `from_left_vectors` | 744020 | 726470 | x1.00 |
 
 ### svd3_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `divisions` | 777360 | 32310 | x1.00 |
+| `divisions` | 779460 | 32710 | x1.00 |
 
 ### svd3_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 797730 | 53480 | x1.00 |
+| `quadform` | 799630 | 53680 | x1.00 |
 
 ## nalgebra_tests_linalg::udu::benches
 

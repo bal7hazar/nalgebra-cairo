@@ -15,6 +15,7 @@ mod dual_quaternion;
 mod dynamic;
 mod geometry;
 mod linalg;
+mod matrix_functions;
 mod pivot;
 mod pose_completion;
 mod projections;
@@ -47,6 +48,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(sparse::suites());
     suites.extend(pivot::suites());
     suites.extend(schur::suites());
+    suites.extend(matrix_functions::suites());
     suites
 }
 

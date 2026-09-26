@@ -2,73 +2,85 @@
   "nalgebra_tests_linalg_svd_wide5::svd1x5": {
     "svd1x5_new": {
       "baseline": 18120,
-      "eigen_of_gram": 61740
+      "eigen_of_gram": 63160,
+      "without_u": 63960,
+      "without_v": 63960
     },
     "svd1x5_pseudo_inverse": {
-      "baseline": 61170,
-      "scaled_product": 87300
+      "baseline": 63890,
+      "scaled_product": 90420
     },
     "svd1x5_singular_values": {
       "baseline": 18120,
-      "eigen_of_gram": 38890
+      "eigen_of_gram": 38890,
+      "svd_without_factors": 63860
     },
     "svd1x5_to_polar": {
-      "baseline": 61170,
-      "products": 77960
+      "baseline": 63890,
+      "products": 81080
     }
   },
   "nalgebra_tests_linalg_svd_wide5::svd2x5": {
     "svd2x5_new": {
       "baseline": 19120,
-      "eigen_of_gram": 314800
+      "eigen_of_gram": 322180,
+      "without_u": 323080,
+      "without_v": 323080
     },
     "svd2x5_pseudo_inverse": {
-      "baseline": 315030,
-      "scaled_product": 365990
+      "baseline": 322910,
+      "scaled_product": 374170
     },
     "svd2x5_singular_values": {
       "baseline": 19120,
-      "eigen_of_gram": 175760
+      "eigen_of_gram": 175760,
+      "svd_without_factors": 323080
     },
     "svd2x5_to_polar": {
-      "baseline": 315030,
-      "products": 353620
+      "baseline": 322910,
+      "products": 361800
     }
   },
   "nalgebra_tests_linalg_svd_wide5::svd3x5": {
     "svd3x5_new": {
       "baseline": 20120,
-      "eigen_of_gram": 1096110
+      "eigen_of_gram": 1106090,
+      "without_u": 1106990,
+      "without_v": 1106990
     },
     "svd3x5_pseudo_inverse": {
-      "baseline": 1097540,
-      "scaled_product": 1175730
+      "baseline": 1108020,
+      "scaled_product": 1186510
     },
     "svd3x5_singular_values": {
       "baseline": 20120,
-      "eigen_of_gram": 833740
+      "eigen_of_gram": 833740,
+      "svd_without_factors": 1106990
     },
     "svd3x5_to_polar": {
-      "baseline": 1097540,
-      "products": 1166770
+      "baseline": 1108020,
+      "products": 1177550
     }
   },
   "nalgebra_tests_linalg_svd_wide5::svd4x5": {
     "svd4x5_new": {
       "baseline": 21120,
-      "eigen_of_gram": 2297770
+      "eigen_of_gram": 2304150,
+      "without_u": 2305050,
+      "without_v": 2305050
     },
     "svd4x5_pseudo_inverse": {
-      "baseline": 2300800,
-      "scaled_product": 2408620
+      "baseline": 2307680,
+      "scaled_product": 2415800
     },
     "svd4x5_singular_values": {
       "baseline": 21120,
-      "eigen_of_gram": 1893210
+      "eigen_of_gram": 1893210,
+      "svd_without_factors": 2305050
     },
     "svd4x5_to_polar": {
-      "baseline": 2300800,
-      "products": 2410110
+      "baseline": 2307680,
+      "products": 2417290
     }
   }
 }

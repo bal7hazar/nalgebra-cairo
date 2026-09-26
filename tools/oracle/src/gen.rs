@@ -268,6 +268,16 @@ pub enum Gen {
     /// WP 8.5-P16: badly scaled `D M D^-1`, `M` with entries of the case's magnitude class, `D` =
     /// diag(2^k), `k` uniform in -6..6 (the input of balancing).
     BadlyScaled(usize),
+    /// WP 8.5-P17: skew-symmetric matrix (the generator of a rotation, `exp` of it is orthogonal):
+    /// strictly-lower entries of the case's magnitude class, mirrored with the opposite sign, an
+    /// exactly zero diagonal (exact in raw).
+    Skew(usize),
+    /// WP 8.5-P17: `n x n` matrix with entries uniform in (-1, 1), rescaled so that its 1-norm (the
+    /// largest absolute column sum) is uniform in `[lo, hi]`: the inputs of `exp` that need
+    /// scaling and squaring, whatever the magnitude class.
+    NormScaled(usize, f64, f64),
+    /// WP 8.5-P17: an integer uniform in `lo ..= hi` (exact in raw), e.g. the exponent of `pow`.
+    Int(i64, i64),
 }
 
 fn quantize_all(values: &[f64]) -> Option<Vec<i64>> {
@@ -552,6 +562,33 @@ impl Gen {
                 }
                 quantize_all(&m)
             }
+            Gen::Skew(n) => {
+                let mut m = vec![0.0; n * n];
+                for i in 0..*n {
+                    for j in 0..i {
+                        m[i * n + j] = rng.scalar(dist);
+                    }
+                }
+                let mut raw = quantize_all(&m)?;
+                for i in 0..*n {
+                    for j in (i + 1)..*n {
+                        raw[i * n + j] = -raw[j * n + i];
+                    }
+                }
+                Some(raw)
+            }
+            Gen::NormScaled(n, lo, hi) => {
+                let m: Vec<f64> = (0..n * n).map(|_| rng.range(-1.0, 1.0)).collect();
+                let norm = (0..*n)
+                    .map(|j| (0..*n).map(|i| m[i * n + j].abs()).sum::<f64>())
+                    .fold(0.0f64, f64::max);
+                if norm == 0.0 {
+                    return None;
+                }
+                let target = rng.range(*lo, *hi);
+                quantize_all(&m.iter().map(|x| x / norm * target).collect::<Vec<f64>>())
+            }
+            Gen::Int(lo, hi) => quantize_all(&[rng.int(*lo, *hi) as f64]),
             Gen::Group(parts) => {
                 let mut out = Vec::new();
                 for part in parts {
