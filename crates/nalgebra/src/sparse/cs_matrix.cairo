@@ -9,7 +9,7 @@
 //! returns upstream's `ncols` first ones. Every constructor (`from_triplet`, `From<Matrix>`, the
 //! operations) produces SORTED, deduplicated columns, the invariant the kernels rely on (as
 //! upstream's). The spans are views of write-once arrays: `CsMatrix` is `Copy` (upstream
-//! `Clone`) and every operation builds new spans (`sparse/cs_utils.cairo`: sorts of packed keys
+//! `Clone`) and every operation builds new spans (`sparse/cs_utils.cairo`: merges of sorted runs
 //! and gathers stand for upstream's scatters).
 
 use simba::scalar::Real;
@@ -52,7 +52,7 @@ use crate::base::vector4::Vector4;
 use crate::base::vector5::Vector5;
 use crate::base::vector6::Vector6;
 use super::cs_kernels::CsKernels;
-use super::cs_utils::{gather, natural_runs, sort_runs, transpose_pattern};
+use super::cs_utils::{Entry, gather, natural_runs, sort_runs, transpose_pattern};
 use super::errors as sparse_errors;
 
 /// A compressed sparse column matrix (upstream `CsMatrix<T>`): `nrows x ncols`, its non-zero
@@ -102,11 +102,10 @@ pub impl CsMatrixImpl<
         if irows.len() != n || icols.len() != n {
             core::panic_with_felt252(sparse_errors::TRIPLET_LENGTHS);
         }
-        // Keys `(col * nrows + row) * 2^32 + k`: unique, sorted by column, row, then position.
-        let mut keys: Array<u128> = array![];
+        // Entries `(col, row, k)`, sorted by column then row (stably).
+        let mut entries: Array<Entry> = array![];
         let mut rr = irows;
         let mut cc = icols;
-        let nrows_w: u128 = nrows.into();
         let mut k: usize = 0;
         while let Some(r) = rr.pop_front() {
             let r = *r;
@@ -114,11 +113,11 @@ pub impl CsMatrixImpl<
             if r >= nrows || c >= ncols {
                 core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS);
             }
-            keys.append((c.into() * nrows_w + r.into()) * 0x100000000 + k.into());
+            entries.append((c, r, k));
             k += 1;
         }
-        let keys = keys.span();
-        let mut sorted = sort_runs(keys, natural_runs(keys));
+        let entries = entries.span();
+        let mut sorted = sort_runs(entries, natural_runs(entries));
         let mut p: Array<usize> = array![0];
         let mut out_i: Array<usize> = array![];
         let mut out_v: Array<T> = array![];
@@ -128,12 +127,9 @@ pub impl CsMatrixImpl<
         let mut cur_r: usize = 0;
         let mut cur_c: usize = 0;
         let mut cur_v: T = R::zero();
-        while let Some(key) = sorted.pop_front() {
-            let (_, pos) = DivRem::div_rem(*key, 0x100000000);
-            let pos: usize = pos.try_into().unwrap();
-            let r = *irows.at(pos);
-            let c = *icols.at(pos);
-            let v = *vals.at(pos);
+        while let Some(entry) = sorted.pop_front() {
+            let (c, r, pos) = *entry;
+            let v = *vals[pos];
             if have && r == cur_r && c == cur_c {
                 cur_v = cur_v + v;
             } else {

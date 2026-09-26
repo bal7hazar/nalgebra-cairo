@@ -20,8 +20,8 @@
 //! kernel (upstream's left-looking variant scatters column updates into a work vector, which
 //! write-once memory cannot do); as upstream, `decompose_left_looking` reads the LOWER triangle
 //! of the values (`A[i, k]`, `i >= k`) and `decompose_up_looking` the UPPER one (`A[i, k]`,
-//! `i <= k`): identical results on symmetric input. `L` is then gathered into its column
-//! layout.
+//! `i <= k`): identical results on symmetric input (`new` reads the upper one, see its doc).
+//! `L` is then gathered into its column layout.
 
 use core::dict::Felt252Dict;
 use simba::scalar::Real;
@@ -43,8 +43,12 @@ pub struct CsCholesky<T> {
     /// The pattern of `L` by rows (strict lower part ascending, then the diagonal).
     rp: Span<usize>,
     rj: Span<usize>,
+    /// The pattern of the analysed matrix (column pointers, row indices).
+    ap: Span<usize>,
+    ai: Span<usize>,
     /// Per entry of `rj`: the position in `values` of `A[j, k]` (upper triangle, column `k`) /
-    /// of `A[k, j]` (lower triangle, column `j`), `NONE` for a fill-in.
+    /// of `A[k, j]` (lower triangle, column `j`; computed by the first `decompose_left_looking`),
+    /// `NONE` for a fill-in.
     upper_src: Span<usize>,
     lower_src: Span<usize>,
     /// The column layout of `L` (rows ascending) and the row-layout position of each entry.
@@ -114,12 +118,15 @@ pub impl CsCholeskyImpl<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of CsCholeskyTrait<T> {
-    /// The symbolic analysis of `m` then its numeric factorization
-    /// (`decompose_left_looking(m.values())`); `l()` is `None` when `m` is not positive
-    /// definite. Upstream: `CsCholesky::new(&m)`.
+    /// The symbolic analysis of `m` then its numeric factorization; `l()` is `None` when `m` is
+    /// not positive definite. Upstream: `CsCholesky::new(&m)`, which runs
+    /// `decompose_left_looking(m.values())` (the LOWER triangle); this one reads the UPPER
+    /// triangle (`decompose_up_looking`): the same factor, bit for bit, on the symmetric input a
+    /// Cholesky factorization is defined for, without the transposition of the pattern the
+    /// lower triangle needs (measured: `bench_cs_cholesky__*`).
     fn new(m: @CsMatrix<T>) -> CsCholesky<T> {
         let mut me = Self::new_symbolic(m);
-        let _ = Self::decompose_left_looking(ref me, *m.vals);
+        let _ = Self::decompose_up_looking(ref me, *m.vals);
         me
     }
 
@@ -134,15 +141,12 @@ pub impl CsCholeskyImpl<
         }
         let mp = *m.p;
         let mi = *m.i;
-        // The rows of `m` (for the lower-triangle positions).
-        let (tp, tj, tsrc) = transpose_pattern(n, mp, mi);
         // `parent[j] = parent + 1` (0: not yet known), `mark[j] = k + 1` when reached for row `k`.
         let mut parent: Felt252Dict<usize> = Default::default();
         let mut mark: Felt252Dict<usize> = Default::default();
         let mut rp: Array<usize> = array![0];
         let mut rj: Array<usize> = array![];
         let mut upper_src: Array<usize> = array![];
-        let mut lower_src: Array<usize> = array![];
         let mut k: usize = 0;
         while k != n {
             let cs = *mp[k];
@@ -183,9 +187,6 @@ pub impl CsCholeskyImpl<
             rj.append_span(row);
             rp.append(rj.len());
             upper_src.append_span(match_positions(row, mi.slice(cs, ce - cs), range(cs, ce)));
-            let rs = *tp[k];
-            let rl = *tp[k + 1] - rs;
-            lower_src.append_span(match_positions(row, tj.slice(rs, rl), tsrc.slice(rs, rl)));
             k += 1;
         }
         let rp = rp.span();
@@ -196,8 +197,10 @@ pub impl CsCholeskyImpl<
             nvals: mi.len(),
             rp,
             rj,
+            ap: mp,
+            ai: mi,
             upper_src: upper_src.span(),
-            lower_src: lower_src.span(),
+            lower_src: array![].span(),
             lp,
             li,
             lsrc,
@@ -233,6 +236,20 @@ pub impl CsCholeskyImpl<
     /// `CsCholesky::decompose_left_looking(&values)` (same factor; see the module doc for the
     /// formulation).
     fn decompose_left_looking(ref self: CsCholesky<T>, values: Span<T>) -> bool {
+        if self.lower_src.len() != self.rj.len() {
+            // First call: the positions of the lower triangle, row by row (computed once).
+            let (tp, tj, tsrc) = transpose_pattern(self.n, self.ap, self.ai);
+            let mut lower_src: Array<usize> = array![];
+            let mut k: usize = 0;
+            while k != self.n {
+                let row = self.rj.slice(*self.rp[k], *self.rp[k + 1] - *self.rp[k]);
+                let rs = *tp[k];
+                let rl = *tp[k + 1] - rs;
+                lower_src.append_span(match_positions(row, tj.slice(rs, rl), tsrc.slice(rs, rl)));
+                k += 1;
+            }
+            self.lower_src = lower_src.span();
+        }
         let src = self.lower_src;
         CsCholeskyNumeric::decompose(ref self, values, src)
     }
