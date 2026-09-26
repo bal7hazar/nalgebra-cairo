@@ -596,6 +596,8 @@ def outputs() -> dict[str, str]:
     sys.dont_write_bytecode = True  # no __pycache__ next to the committed sources
     import p15  # WP 8.5-P15 (FullPivLU, ColPivQR, LBLT)
     out.update(p15.outputs())
+    import p16  # WP 8.5-P16 (Hessenberg, SymmetricTridiagonal, Bidiagonal, Schur, Eigen, ...)
+    out.update(p16.outputs())
     return out
 
 

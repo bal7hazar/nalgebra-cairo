@@ -148,6 +148,42 @@ impl Rng {
         let q2 = self.orthogonal(n);
         q1 * DMatrix::from_diagonal(&nalgebra::DVector::from_column_slice(sigma)) * q2.transpose()
     }
+
+    /// WP 8.5-P16: `P * b * P^-1` with a well-conditioned `P = Q1 * diag(sigma) * Q2^T` (singular
+    /// values log-uniform in [0.5, 2], condition number <= 4), the inverse taken in closed form.
+    fn similar(&mut self, b: &DMatrix<f64>) -> DMatrix<f64> {
+        let n = b.nrows();
+        let q1 = self.orthogonal(n);
+        let q2 = self.orthogonal(n);
+        let sigma: Vec<f64> = (0..n).map(|_| self.log_uniform(0.5, 2.0)).collect();
+        let inv: Vec<f64> = sigma.iter().map(|s| 1.0 / s).collect();
+        let diag = |v: &[f64]| DMatrix::from_diagonal(&nalgebra::DVector::from_column_slice(v));
+        let p = &q1 * diag(&sigma) * q2.transpose();
+        let p_inv = &q2 * diag(&inv) * q1.transpose();
+        p * b * p_inv
+    }
+
+    /// WP 8.5-P16: `n` real values `scale * u`, `u` uniform in [-2, 2], pairwise gaps at least
+    /// `0.1 * max |value|` (`None` asks for a resample).
+    fn separated_reals(&mut self, n: usize, scale: f64) -> Option<Vec<f64>> {
+        let values: Vec<f64> = (0..n).map(|_| scale * self.range(-2.0, 2.0)).collect();
+        separated(&values.iter().map(|v| (*v, 0.0)).collect::<Vec<_>>()).then_some(values)
+    }
+}
+
+/// WP 8.5-P16: pairwise distances of the complex values `(re, im)` at least `0.1 * max |value|`,
+/// and the largest value away from zero.
+fn separated(values: &[(f64, f64)]) -> bool {
+    let modulus = |(re, im): (f64, f64)| libm::sqrt(re * re + im * im);
+    let largest = values.iter().map(|v| modulus(*v)).fold(0.0f64, f64::max);
+    if largest < 1.0e-3 {
+        return false;
+    }
+    values.iter().enumerate().all(|(i, a)| {
+        values[i + 1..]
+            .iter()
+            .all(|b| modulus((a.0 - b.0, a.1 - b.1)) >= 0.1 * largest)
+    })
 }
 
 /// How an input is drawn.
@@ -206,6 +242,32 @@ pub enum Gen {
     /// WP 8.5-P15: symmetric matrix with entries of the case's magnitude class and an EXACTLY zero
     /// diagonal (exactly symmetric in raw): Bunch-Kaufman must start with a 2x2 pivot.
     SymZeroDiag(usize),
+    /// WP 8.5-P16: `P diag(l) P^-1` (`P` well-conditioned, condition number <= 4) with a REAL,
+    /// well-separated spectrum: `l = scale * u`, `u` uniform in [-2, 2], pairwise gaps at least
+    /// `0.1 * max |l|`.
+    SpectrumReal(usize),
+    /// WP 8.5-P16: `P B P^-1` with `B` block-diagonal: 2x2 blocks `[[a, b], [-b, a]]` (`a` in
+    /// [-2, 2] x scale, `|b|` in [0.25, 2] x scale: complex-conjugate pairs `a +- ib`) plus one
+    /// 1x1 real block when `n` is odd; the eigenvalues pairwise separated like `SpectrumReal`.
+    SpectrumComplex(usize),
+    /// WP 8.5-P16: NON-NORMAL `Q T Q^T` (`Q` orthogonal) of an upper triangular `T` with a real,
+    /// separated diagonal (like `SpectrumReal`) and strictly-upper entries uniform in
+    /// `+- 10 * spread`, `spread = max - min` of the diagonal.
+    NonNormal(usize),
+    /// WP 8.5-P16: `P diag(l) P^-1` with CLUSTERED real eigenvalues: `max(2, ceil(n / 2))`
+    /// of them `c * (1 + 1e-3 j)` (relative gaps 1e-3 around `|c|` in [0.5, 2] x scale), the others
+    /// separated from the cluster and from each other.
+    SpectrumClustered(usize),
+    /// WP 8.5-P16: DEFECTIVE `P J P^-1`: `J` holds one Jordan block `[[l, s], [0, l]]` (`s` in
+    /// [0.5, 2] x scale), the other eigenvalues real and separated.
+    Defective(usize),
+    /// WP 8.5-P16: upper quasi-triangular matrix with entries of the case's magnitude class, a
+    /// separated real diagonal and every subdiagonal entry TINY (`|x|` log-uniform in
+    /// [1e-7, 1e-5], random sign): the near-convergence case of the QR iteration.
+    NearTriangular(usize),
+    /// WP 8.5-P16: badly scaled `D M D^-1`, `M` with entries of the case's magnitude class, `D` =
+    /// diag(2^k), `k` uniform in -6..6 (the input of balancing).
+    BadlyScaled(usize),
 }
 
 fn quantize_all(values: &[f64]) -> Option<Vec<i64>> {
@@ -387,6 +449,108 @@ impl Gen {
                 let mut raw = quantize_all(&rows(&(&q * d * q.transpose())))?;
                 mirror_lower(*n, &mut raw);
                 Some(raw)
+            }
+            Gen::SpectrumReal(n) => {
+                let scale = rng.matrix_scale(dist);
+                let l = rng.separated_reals(*n, scale)?;
+                let d = DMatrix::from_diagonal(&nalgebra::DVector::from_column_slice(&l));
+                quantize_all(&rows(&rng.similar(&d)))
+            }
+            Gen::SpectrumComplex(n) => {
+                let scale = rng.matrix_scale(dist);
+                let mut b = DMatrix::zeros(*n, *n);
+                let mut values = Vec::with_capacity(*n);
+                for k in 0..n / 2 {
+                    let re = scale * rng.range(-2.0, 2.0);
+                    let im = scale * rng.sign() * rng.range(0.25, 2.0);
+                    let i = 2 * k;
+                    b[(i, i)] = re;
+                    b[(i + 1, i + 1)] = re;
+                    b[(i, i + 1)] = im;
+                    b[(i + 1, i)] = -im;
+                    values.push((re, im));
+                    values.push((re, -im));
+                }
+                if n % 2 == 1 {
+                    let re = scale * rng.range(-2.0, 2.0);
+                    b[(n - 1, n - 1)] = re;
+                    values.push((re, 0.0));
+                }
+                if !separated(&values) {
+                    return None;
+                }
+                quantize_all(&rows(&rng.similar(&b)))
+            }
+            Gen::NonNormal(n) => {
+                let scale = rng.matrix_scale(dist);
+                let l = rng.separated_reals(*n, scale)?;
+                let spread = l.iter().fold(f64::MIN, |m, v| m.max(*v))
+                    - l.iter().fold(f64::MAX, |m, v| m.min(*v));
+                let mut t = DMatrix::from_diagonal(&nalgebra::DVector::from_column_slice(&l));
+                for i in 0..*n {
+                    for j in (i + 1)..*n {
+                        t[(i, j)] = 10.0 * spread * rng.range(-1.0, 1.0);
+                    }
+                }
+                let q = rng.orthogonal(*n);
+                quantize_all(&rows(&(&q * t * q.transpose())))
+            }
+            Gen::SpectrumClustered(n) => {
+                let scale = rng.matrix_scale(dist);
+                let c = scale * rng.sign() * rng.range(0.5, 2.0);
+                let m = n.div_ceil(2).max(2);
+                let mut l: Vec<f64> = (0..m).map(|j| c * (1.0 + 1.0e-3 * j as f64)).collect();
+                let others = rng.separated_reals(n - m + 1, scale)?;
+                // `others[0]` stands for the cluster in the separation check.
+                let mut check: Vec<(f64, f64)> = others[1..].iter().map(|v| (*v, 0.0)).collect();
+                check.push((c, 0.0));
+                if !separated(&check) {
+                    return None;
+                }
+                l.extend(&others[1..]);
+                let d = DMatrix::from_diagonal(&nalgebra::DVector::from_column_slice(&l));
+                quantize_all(&rows(&rng.similar(&d)))
+            }
+            Gen::Defective(n) => {
+                let scale = rng.matrix_scale(dist);
+                let l = rng.separated_reals(n - 1, scale)?;
+                let mut j = DMatrix::zeros(*n, *n);
+                j[(0, 0)] = l[0];
+                j[(1, 1)] = l[0];
+                j[(0, 1)] = scale * rng.range(0.5, 2.0);
+                for (k, v) in l[1..].iter().enumerate() {
+                    j[(k + 2, k + 2)] = *v;
+                }
+                quantize_all(&rows(&rng.similar(&j)))
+            }
+            Gen::NearTriangular(n) => {
+                let diagonal: Vec<f64> = (0..*n).map(|_| rng.scalar(dist)).collect();
+                if !separated(&diagonal.iter().map(|v| (*v, 0.0)).collect::<Vec<_>>()) {
+                    return None;
+                }
+                let mut m = vec![0.0; n * n];
+                for i in 0..*n {
+                    m[i * n + i] = diagonal[i];
+                    for j in (i + 1)..*n {
+                        m[i * n + j] = rng.scalar(dist);
+                    }
+                    if i > 0 {
+                        m[i * n + i - 1] = rng.sign() * rng.log_uniform(1.0e-7, 1.0e-5);
+                    }
+                }
+                quantize_all(&m)
+            }
+            Gen::BadlyScaled(n) => {
+                let d: Vec<f64> = (0..*n)
+                    .map(|_| libm::ldexp(1.0, rng.int(-6, 6) as i32))
+                    .collect();
+                let mut m = vec![0.0; n * n];
+                for i in 0..*n {
+                    for j in 0..*n {
+                        m[i * n + j] = d[i] * rng.scalar(dist) / d[j];
+                    }
+                }
+                quantize_all(&m)
             }
             Gen::Group(parts) => {
                 let mut out = Vec::new();

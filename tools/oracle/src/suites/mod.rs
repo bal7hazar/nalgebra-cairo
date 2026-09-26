@@ -21,6 +21,7 @@ mod projections;
 mod rotation_completion;
 mod scalar;
 mod scale_reflection;
+mod schur;
 mod solve;
 mod sparse;
 mod spectral;
@@ -45,6 +46,7 @@ pub fn all() -> Vec<Suite> {
     suites.extend(dynamic::suites());
     suites.extend(sparse::suites());
     suites.extend(pivot::suites());
+    suites.extend(schur::suites());
     suites
 }
 

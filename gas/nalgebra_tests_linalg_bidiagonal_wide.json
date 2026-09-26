@@ -1,0 +1,152 @@
+{
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x2": {
+    "bidiagonal1x2_new": {
+      "baseline": 17520,
+      "householder": 47050
+    },
+    "bidiagonal1x2_unpack": {
+      "baseline": 47450,
+      "symbolic": 58350
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x3": {
+    "bidiagonal1x3_new": {
+      "baseline": 17720,
+      "householder": 56210
+    },
+    "bidiagonal1x3_unpack": {
+      "baseline": 56910,
+      "symbolic": 70730
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x4": {
+    "bidiagonal1x4_new": {
+      "baseline": 17920,
+      "householder": 65070
+    },
+    "bidiagonal1x4_unpack": {
+      "baseline": 66070,
+      "symbolic": 83210
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x5": {
+    "bidiagonal1x5_new": {
+      "baseline": 18120,
+      "householder": 83080
+    },
+    "bidiagonal1x5_unpack": {
+      "baseline": 84380,
+      "symbolic": 105240
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x6": {
+    "bidiagonal1x6_new": {
+      "baseline": 18320,
+      "householder": 91940
+    },
+    "bidiagonal1x6_unpack": {
+      "baseline": 93540,
+      "symbolic": 117720
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x3": {
+    "bidiagonal2x3_new": {
+      "baseline": 18320,
+      "householder": 112410
+    },
+    "bidiagonal2x3_unpack": {
+      "baseline": 113910,
+      "symbolic": 153640
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x4": {
+    "bidiagonal2x4_new": {
+      "baseline": 18720,
+      "householder": 138620
+    },
+    "bidiagonal2x4_unpack": {
+      "baseline": 140520,
+      "symbolic": 189670
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x5": {
+    "bidiagonal2x5_new": {
+      "baseline": 19120,
+      "householder": 173680
+    },
+    "bidiagonal2x5_unpack": {
+      "baseline": 175980,
+      "symbolic": 234150
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x6": {
+    "bidiagonal2x6_new": {
+      "baseline": 19520,
+      "householder": 208740
+    },
+    "bidiagonal2x6_unpack": {
+      "baseline": 211440,
+      "symbolic": 279430
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x4": {
+    "bidiagonal3x4_new": {
+      "baseline": 19520,
+      "householder": 242410
+    },
+    "bidiagonal3x4_unpack": {
+      "baseline": 245510,
+      "symbolic": 339410
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x5": {
+    "bidiagonal3x5_new": {
+      "baseline": 20120,
+      "householder": 300070
+    },
+    "bidiagonal3x5_unpack": {
+      "baseline": 303770,
+      "symbolic": 415270
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x6": {
+    "bidiagonal3x6_new": {
+      "baseline": 20720,
+      "householder": 357430
+    },
+    "bidiagonal3x6_unpack": {
+      "baseline": 361730,
+      "symbolic": 491630
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal4x5": {
+    "bidiagonal4x5_new": {
+      "baseline": 21120,
+      "householder": 439860
+    },
+    "bidiagonal4x5_unpack": {
+      "baseline": 444960,
+      "symbolic": 630700
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal4x6": {
+    "bidiagonal4x6_new": {
+      "baseline": 21920,
+      "householder": 525180
+    },
+    "bidiagonal4x6_unpack": {
+      "baseline": 531080,
+      "symbolic": 745180
+    }
+  },
+  "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal5x6": {
+    "bidiagonal5x6_new": {
+      "baseline": 23120,
+      "householder": 706030
+    },
+    "bidiagonal5x6_unpack": {
+      "baseline": 713530,
+      "symbolic": 1039210
+    }
+  }
+}
