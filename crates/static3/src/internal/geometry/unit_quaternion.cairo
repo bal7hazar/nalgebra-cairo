@@ -5,9 +5,25 @@ use nalgebra_core::base::matrix3::Matrix3;
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::quaternion::{Quaternion, QuaternionTrait};
 use crate::geometry::unit_quaternion::{
-    FROM_MATRIX_MAX_ITER, FROM_MATRIX_MAX_PERTURBATIONS, Sym4, UnitQuaternion, UnitQuaternionTrait,
+    FROM_MATRIX_MAX_ITER, FROM_MATRIX_MAX_PERTURBATIONS, UnitQuaternion, UnitQuaternionTrait,
 };
 use crate::internal::geometry::quaternion::QuaternionInternalTrait;
+
+/// A symmetric 4x4 matrix in `(w, i, j, k)` order, upper triangle: the working type of
+/// `UnitQuaternion::mean_of`. Crate-internal.
+#[derive(Copy, Drop, PartialEq, Debug)]
+pub struct Sym4<T> {
+    pub ww: T,
+    pub wi: T,
+    pub wj: T,
+    pub wk: T,
+    pub ii: T,
+    pub ij: T,
+    pub ik: T,
+    pub jj: T,
+    pub jk: T,
+    pub kk: T,
+}
 
 /// Crate-internal kernels of `UnitQuaternion<T>` (WP 8.0: the public API is strictly upstream's):
 /// the fused `conj_mul` of `Isometry3::inv_mul` (upstream writes `self.inverse() * other`), and the

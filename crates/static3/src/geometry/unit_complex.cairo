@@ -36,7 +36,6 @@ use super::rotation2::Rotation2;
 use super::similarity2::Similarity2;
 use super::translation2::Translation2;
 
-
 /// Upper bound of the iterations of `UnitComplex::from_matrix_eps` when `max_iter > 0`
 /// (`max_iter = 0`, upstream's "until convergence", is the closed form). The 2D iteration
 /// `θ ← θ + tan(φ - θ)` converges cubically once `|φ - θ| < π/2`; measured on the oracle
@@ -612,7 +611,6 @@ pub impl UnitComplexImpl<
     }
 }
 
-
 pub impl UnitComplexAngleImpl<
     T,
     impl R: Real<T>,
@@ -730,7 +728,6 @@ pub impl UnitComplexAngleImpl<
         r
     }
 }
-
 
 /// `a * b`: the composition of two rotations (turn by `b`, then by `a` — the product of complex
 /// numbers is commutative, so the order does not matter), `(re_a·re_b - im_a·im_b,

@@ -8,6 +8,15 @@
 //! are methods of `Matrix3Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+#[cfg(test)]
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
+
+#[cfg(test)]
+mod benches_views;
+
+#[cfg(test)]
+mod tests;
+
 pub use nalgebra_core::base::matrix3::*;
 pub use nalgebra_static3::base::matrix3::*;
 pub use nalgebra_static3::geometry::isometry2::Matrix3FromIsometry2;

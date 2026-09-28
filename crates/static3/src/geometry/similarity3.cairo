@@ -21,7 +21,6 @@ use super::quaternion::Quaternion;
 use super::translation3::Translation3;
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
-
 pub mod errors {
     pub const ZERO_SCALING: felt252 = 'nalgebra: zero scale';
 }

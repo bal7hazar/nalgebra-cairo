@@ -48,7 +48,6 @@ use super::rotation3::{Rotation3, Rotation3Trait};
 use super::similarity3::Similarity3;
 use super::translation3::Translation3;
 
-
 /// Panic messages of `UnitQuaternion` (stable API).
 pub mod errors {
     /// `mean_of` of an empty span (upstream asserts that the sum of the outer products is not
@@ -820,23 +819,6 @@ pub impl UnitQuaternionImpl<
     }
 }
 
-
-/// A symmetric 4x4 matrix in `(w, i, j, k)` order, upper triangle: the working type of
-/// `UnitQuaternion::mean_of`. Crate-internal.
-#[derive(Copy, Drop, PartialEq, Debug)]
-pub(crate) struct Sym4<T> {
-    pub ww: T,
-    pub wi: T,
-    pub wj: T,
-    pub wk: T,
-    pub ii: T,
-    pub ij: T,
-    pub ik: T,
-    pub jj: T,
-    pub jk: T,
-    pub kk: T,
-}
-
 /// Rotation operations of `UnitQuaternion<T>` that need trigonometry, hence their own trait:
 /// scalars may implement `Real` only (see `Vector3AngleTrait`).
 ///
@@ -1260,7 +1242,6 @@ pub impl UnitQuaternionAngleImpl<
         UnitQuaternionInternalTrait::shepperd_sign(q)
     }
 }
-
 
 /// The composition of two rotations: the Hamilton product of the quaternions, `lhs` applied last
 /// (`(lhs * rhs).transform_vector(v) = lhs.transform_vector(rhs.transform_vector(v))`). The result

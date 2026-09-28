@@ -89,6 +89,8 @@ names = [
     "UnitQuaternionInternalTrait", "UnitQuaternionAngleInternalTrait", "Rotation2InternalTrait",
     "Rotation3InternalTrait", "Isometry2InternalTrait", "Isometry3InternalTrait",
     "UnitComplexInternalTrait", "UnitComplexAngleInternalTrait",
+    # (hand-written, moved by NS4: `geometry::unit_quaternion`'s `Sym4`, named by an in-crate test)
+    "Sym4",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of

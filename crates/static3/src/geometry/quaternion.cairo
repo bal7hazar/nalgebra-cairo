@@ -44,7 +44,6 @@ use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::internal::geometry::quaternion::QuaternionInternalTrait;
 
-
 /// Panic messages of the quaternion algebra (stable API).
 pub mod errors {
     /// `tan`, `tanh` or `atan` divided by a quaternion whose squared norm floors to zero (upstream
@@ -56,7 +55,6 @@ pub mod errors {
     /// whose imaginary part is zero where upstream normalises it (its result is `NaN` there).
     pub const REAL_QUATERNION: felt252 = 'nalgebra: real quaternion (NaN)';
 }
-
 
 /// A quaternion `w + i·i + j·j + k·k`.
 ///
@@ -529,7 +527,6 @@ pub impl QuaternionImpl<
         }
     }
 }
-
 
 /// The transcendental functions of the quaternion algebra, over a `Real` + `Transcendental`
 /// scalar (the split mirrors `UnitQuaternionTrait` / `UnitQuaternionAngleTrait`).

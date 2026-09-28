@@ -1497,6 +1497,3 @@ pub impl Matrix2AngleImpl<
         m * Tr::exp(R::div(Tr::ln(s), R::from_int(p)))
     }
 }
-
-#[cfg(test)]
-mod tests;

@@ -2024,9 +2024,3 @@ pub impl UnitVector3AngleImpl<
         }
     }
 }
-
-#[cfg(test)]
-mod benches;
-
-#[cfg(test)]
-mod tests;

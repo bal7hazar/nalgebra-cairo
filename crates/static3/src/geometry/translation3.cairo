@@ -29,7 +29,6 @@ use super::rotation3::Rotation3;
 use super::similarity3::Similarity3;
 use super::unit_quaternion::UnitQuaternion;
 
-
 /// A 3D translation by `vector`. The field name is upstream's (`Translation { vector }`).
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
 pub struct Translation3<T> {

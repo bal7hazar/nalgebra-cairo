@@ -42,5 +42,5 @@ pub use nalgebra_static3::geometry::unit_quaternion::*;
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
 use nalgebra_static3::internal::geometry::unit_quaternion::{
-    UnitQuaternionAngleInternalTrait, UnitQuaternionInternalTrait,
+    Sym4, UnitQuaternionAngleInternalTrait, UnitQuaternionInternalTrait,
 };

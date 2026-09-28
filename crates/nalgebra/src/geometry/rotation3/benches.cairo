@@ -11,6 +11,7 @@
 //! in `crates/tests_geometry/src/rotation3/benches.cairo`.
 
 use fixed::Fixed;
+use nalgebra_static3::internal::geometry::unit_quaternion::UnitQuaternionInternalTrait;
 use simba::scalar::Real;
 use crate::base::MatrixTrMul;
 use crate::base::matrix3::{Matrix3, Matrix3Trait};
@@ -18,7 +19,7 @@ use crate::base::matrix_test_utils::{fx, r3};
 use crate::base::unit::Unit3Trait;
 use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::geometry::rotation3::Rotation3InternalTrait;
-use crate::geometry::unit_quaternion::{UnitQuaternionInternalTrait, UnitQuaternionTrait};
+use crate::geometry::unit_quaternion::UnitQuaternionTrait;
 use crate::testing::black_box;
 use super::{Rotation3, Rotation3AngleTrait, Rotation3Trait};
 

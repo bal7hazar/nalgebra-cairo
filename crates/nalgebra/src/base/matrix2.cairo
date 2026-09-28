@@ -8,6 +8,12 @@
 //! are methods of `Matrix2Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+#[cfg(test)]
+use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
+
+#[cfg(test)]
+mod tests;
+
 pub use nalgebra_core::base::matrix2::*;
 pub use nalgebra_static3::base::matrix2::*;
 pub use nalgebra_static3::geometry::rotation2::{Matrix2FromRotation2, Matrix2MulRotation2};

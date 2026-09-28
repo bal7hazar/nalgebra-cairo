@@ -47,7 +47,6 @@ use super::similarity2::{Similarity2, Similarity2Trait};
 use super::translation2::{Translation2, Translation2Trait};
 use super::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 
-
 /// A 2D direct isometry: the rotation `rotation` followed by the translation `translation`. The
 /// field names and their order are upstream's (`Isometry { rotation, translation }`); the parts
 /// are read through the public fields, like upstream (the trait methods `translation` and
@@ -372,7 +371,6 @@ pub impl Isometry2Impl<
         Isometry2 { rotation: self.rotation.cast(), translation: self.translation.cast() }
     }
 }
-
 
 /// Operations of `Isometry2<T>` that go through an angle, hence their own trait: scalars may
 /// implement `Real` only (the whole rapier hot path — composition, `inv_mul`, transforms — is

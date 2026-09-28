@@ -442,10 +442,13 @@ class CrateMap:
                     root = "crate" if pkg == self.facade_package else pkg
                     explicit[f].append(f"pub use {root}::{mod[: -len('.cairo')].replace('/', '::')}::{it.name};")
             for it in mods:
-                # a test module (`#[cfg(test)] mod tests;`) goes with the file's highest package,
-                # which hosts the methods it tests; any other module with the lowest
+                # a test module (`#[cfg(test)] mod tests;`) stays in the facade package, which
+                # hosts the test helpers every in-crate test uses (`matrix_test_utils`, the
+                # oracles, `testing`; WP 9-NS4: the file's highest package, NS3's rule, is no
+                # longer the facade's once `static3` hosts the methods); any other module goes
+                # with the lowest
                 test = TEST_ONLY.search(text[it.start:it.end]) is not None
-                host = (max if test else min)(pkgs, key=self.package_rank)
+                host = self.facade_package if test else min(pkgs, key=self.package_rank)
                 pieces[(host, f)].append((f, text[it.start:it.end]))
         # a whole file keeps its text, except the imports of `[internal]` items (now at `internal::`)
         for (pkg, f), text in list(whole.items()):
@@ -661,7 +664,9 @@ class CrateMap:
                     cur, rest = cur[:-1], rest[1:]
                 absolute = cur + rest
                 target_pkg = pkg
-                it = idx.get(absolute[-1])
+                # an item of a generated file is found where it was placed first (a homonym
+                # elsewhere, `Sym4`, must not redirect it)
+                it = None if ("/".join(absolute[:-1]) + ".cairo", absolute[-1]) in placed else idx.get(absolute[-1])
                 if it is not None:
                     tc = self.crate_of(it, idx)
                     target_pkg = self.crates[tc]
@@ -676,7 +681,7 @@ class CrateMap:
                 if pl is not None:
                     target_pkg = pl[0]
                     absolute = pl[1][: -len(".cairo")].split("/") + absolute[-1:]
-                elif it is None:
+                elif it is None and ("/".join(absolute[:-1]) + ".cairo", absolute[-1]) not in placed:
                     # a module (`crate::base::errors`): the package whose `src/` holds its file
                     # when this package does not (WP 9-NS4)
                     rel = os.path.join(*absolute) + ".cairo"

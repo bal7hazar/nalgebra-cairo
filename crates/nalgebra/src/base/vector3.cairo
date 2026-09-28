@@ -18,6 +18,15 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
+#[cfg(test)]
+use nalgebra_static3::internal::base::vector3::Vector3InternalTrait;
+
+#[cfg(test)]
+mod benches;
+
+#[cfg(test)]
+mod tests;
+
 pub use nalgebra_core::base::vector3::*;
 pub use nalgebra_static3::base::vector3::*;
 pub use crate::base::matrix2x5::Vector3KroneckerMatrix2x5;

@@ -2462,9 +2462,3 @@ pub impl Matrix3AngleImpl<
         m * Tr::exp(R::div(Tr::ln(s), R::from_int(p)))
     }
 }
-
-#[cfg(test)]
-mod benches_views;
-
-#[cfg(test)]
-mod tests;

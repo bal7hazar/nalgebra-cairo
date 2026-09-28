@@ -28,7 +28,6 @@ use super::rotation2::Rotation2;
 use super::similarity2::Similarity2;
 use super::unit_complex::UnitComplex;
 
-
 /// A 2D translation by `vector`. The field name is upstream's (`Translation { vector }`).
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
 pub struct Translation2<T> {

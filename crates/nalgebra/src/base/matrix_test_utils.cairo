@@ -103,9 +103,11 @@
 //! the test packages use `crates/tests_utils/src/lib.cairo`.
 
 use fixed::Fixed;
+use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 use simba::scalar::Real;
-use crate::base::matrix2::{Matrix2, Matrix2InternalTrait};
-use crate::base::matrix3::{Matrix3, Matrix3InternalTrait};
+use crate::base::matrix2::Matrix2;
+use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::{Matrix4, Matrix4InternalTrait};
 use crate::base::matrix6::Matrix6;
 use crate::base::point2::Point2;

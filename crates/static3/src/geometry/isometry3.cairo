@@ -55,7 +55,6 @@ use super::similarity3::{Similarity3, Similarity3Trait};
 use super::translation3::{Translation3, Translation3Trait};
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
-
 /// A 3D direct isometry: the rotation `rotation` followed by the translation `translation`. The
 /// field names and their order are upstream's (`Isometry { rotation, translation }`); the parts
 /// are read through the public fields, like upstream (the trait methods `translation` and
@@ -453,7 +452,6 @@ pub impl Isometry3Impl<
         Isometry3 { rotation: self.rotation.cast(), translation: self.translation.cast() }
     }
 }
-
 
 /// Operations of `Isometry3<T>` that need trigonometry, hence their own trait: scalars may
 /// implement `Real` only (the whole rapier hot path — composition, `inv_mul`, transforms — is

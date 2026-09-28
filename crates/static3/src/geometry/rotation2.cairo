@@ -40,7 +40,6 @@ use super::similarity_matrix2::SimilarityMatrix2;
 use super::translation2::Translation2;
 use super::unit_complex::{UnitComplex, UnitComplexAngleTrait};
 
-
 /// Panic messages of `Rotation2` (stable API).
 pub mod errors {
     /// `r[(i, j)]` with `i > 1` or `j > 1`.
@@ -471,7 +470,6 @@ pub impl Rotation2Impl<
         Self::mul_similarity(self, inv_sim)
     }
 }
-
 
 pub impl Rotation2AngleImpl<
     T,

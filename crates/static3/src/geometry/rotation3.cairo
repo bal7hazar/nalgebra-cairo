@@ -43,7 +43,6 @@ use super::similarity_matrix3::{SimilarityMatrix3, SimilarityMatrix3Trait};
 use super::translation3::Translation3;
 use super::unit_quaternion::{UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait};
 
-
 /// Panic messages of `Rotation3` (stable API).
 pub mod errors {
     /// `r[(i, j)]` with `i > 2` or `j > 2`.
@@ -429,7 +428,6 @@ pub impl Rotation3Impl<
         Self::mul_similarity(self, SimilarityMatrix3Trait::inverse(sim))
     }
 }
-
 
 /// Methods of `Rotation3<T>` that need trigonometry, hence their own trait: scalars may implement
 /// `Real` only (see `Vector3AngleTrait`).

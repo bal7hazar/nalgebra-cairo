@@ -20,7 +20,6 @@ use super::isometry2::{Isometry2, Isometry2Trait};
 use super::translation2::Translation2;
 use super::unit_complex::{UnitComplex, UnitComplexAngleTrait, UnitComplexTrait};
 
-
 pub mod errors {
     pub const ZERO_SCALING: felt252 = 'nalgebra: zero scale';
 }
