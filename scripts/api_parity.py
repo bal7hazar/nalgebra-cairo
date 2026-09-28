@@ -923,7 +923,49 @@ def parse_simba(simba_root: Path) -> list[str]:
 
 # WP 8.6-P19: `nalgebra_glam` (DESIGN D11) holds upstream's `third_party/glam` conversions; its
 # items are owned by the nalgebra types they convert.
-CAIRO_CRATES = ("crates/nalgebra/src", "crates/nalgebra_glam/src")
+# WP 9-NS2: the library is every package of the crate map (`tools/split/crates.toml`: the
+# sub-crates of the package split and the facade `nalgebra`); a module keeps its path in whichever
+# package hosts it, so every library item is reported as the facade's (`crates/nalgebra/src/<same
+# module file>`, module = its top-level module): the report does not depend on the split.
+def library_sources() -> list[Path]:
+    """`src/` of every package of the crate map that exists, the facade's first."""
+    sys.path.insert(0, str(ROOT / "tools" / "split"))
+    sys.dont_write_bytecode = True
+    import cratemap
+
+    cm = cratemap.load()
+    pkgs = [cm.facade_package] + [p for p in cm.packages() if p != cm.facade_package]
+    return [ROOT / cratemap.package_dir(p) / "src" for p in pkgs
+            if (ROOT / cratemap.package_dir(p) / "src").is_dir()]
+
+
+LIBRARY_SOURCES = library_sources()
+
+
+def facade_paths() -> dict[tuple[str, str], str]:
+    """{(module file where an item sits, item name): module file of its facade path} for the
+    items the split moved to another module (an impl moved to its anchor's module) and that the
+    facade re-exports explicitly at their 0.1.0 module (`pub use nalgebra_x::a::b::Name;`)."""
+    packages = {"crate"}
+    sys.path.insert(0, str(ROOT / "tools" / "split"))
+    import cratemap
+    from edges import expand_use
+
+    packages |= set(cratemap.load().packages())
+    out = {}
+    for path in sorted(LIBRARY_SOURCES[0].rglob("*.cairo")):
+        rel = str(path.relative_to(LIBRARY_SOURCES[0]))
+        for m in re.finditer(r"^pub use ([^;]+);", mask_comments(path.read_text()), re.M):
+            for full in expand_use(m.group(1)):
+                segs = [x.strip() for x in full.split("::")]
+                if len(segs) < 3 or segs[0] not in packages or not re.fullmatch(r"\w+", segs[-1]):
+                    continue
+                target = "/".join(segs[1:-1]) + ".cairo"
+                if target != rel:
+                    out[(target, segs[-1])] = rel
+    return out
+FACADE_SRC = LIBRARY_SOURCES[0]
+CAIRO_CRATES = tuple(str(p.relative_to(ROOT)) for p in LIBRARY_SOURCES) + ("crates/nalgebra_glam/src",)
 
 
 @functools.cache
@@ -1021,14 +1063,19 @@ CROSS_FILE_TRAITS = {"Norm", "PermuteRows", "PermuteColumns", "MatrixInfSup"}
 
 def parse_cairo() -> list[Item]:
     files = [(p, mask_comments(p.read_text())) for p in cairo_files()]
+    moved = facade_paths()
     types = sorted({m.group(1) for _, text in files
                     for m in re.finditer(r"\bpub\s+(?:struct|enum)\s+([A-Za-z_]\w*)", text)})
     items: set[Item] = set()
     trait_re = re.compile(r"\bpub\s+trait\s+([A-Za-z_]\w*)[^{;]*\{")
     impl_re = re.compile(r"(#\[generate_trait\]\s*)?\bpub\s+impl\s+([A-Za-z_]\w*)")
     for path, text in files:
-        if path.is_relative_to(ROOT / "crates/nalgebra"):
-            crate, source = "nalgebra", str(path.relative_to(ROOT))
+        lib = next((src for src in LIBRARY_SOURCES if path.is_relative_to(src)), None)
+        moved_here = {}
+        if lib is not None:
+            rel = path.relative_to(lib)
+            crate, source = "nalgebra", str((FACADE_SRC / rel).relative_to(ROOT))
+            moved_here = {name: facade for (target, name), facade in moved.items() if target == str(rel)}
         elif path.is_relative_to(ROOT / "crates/nalgebra_glam"):
             crate, source = "nalgebra_glam", str(path.relative_to(ROOT))
         else:
@@ -1038,7 +1085,7 @@ def parse_cairo() -> list[Item]:
         elif crate == "simba":
             module = "simba"
         else:
-            module = path.relative_to(ROOT / "crates/nalgebra/src").parts[0].removesuffix(".cairo")
+            module = rel.parts[0].removesuffix(".cairo")
         test_spans = []
         for m in re.finditer(r"#\[cfg\(test\)\]\s*(?:pub(?:\(crate\))?\s+)?mod\s+\w+\s*\{", text):
             test_spans.append((m.start(), closing(text, m.end() - 1)))
@@ -1062,6 +1109,10 @@ def parse_cairo() -> list[Item]:
                 scope = "\n".join(t for _, t in files) if name in CROSS_FILE_TRAITS else text
                 impls = re.findall(rf"\bpub\s+impl\s+([A-Za-z_]\w*)\s*(?:<[^{{]*?>)?\s*of\s+"
                                    rf"(?:[\w:]*::)?{name}\b", mask_comments(scope))
+                if name not in CROSS_FILE_TRAITS:
+                    # WP 9-NS2: an impl the split moved into the trait's module is not one of
+                    # the trait's file in 0.1.0 (its facade path is its shape's module)
+                    impls = [i for i in impls if i not in moved_here]
                 owners = sorted({cairo_owner(i, types, "") for i in impls} - {""}) or [
                     {"PermTrait": "Perm"}.get(name, name)]
             else:
@@ -1093,6 +1144,12 @@ def parse_cairo() -> list[Item]:
             if of:
                 tracked = cairo_impl_item(of.group(1), owner)
                 if tracked:
+                    if impl_name in moved_here:
+                        # WP 9-NS2: reported at its facade path (its 0.1.0 module)
+                        facade = moved_here[impl_name]
+                        items.add(Item(tracked[0], "impl", tracked[1], facade.split("/")[0].removesuffix(".cairo"),
+                                       str((FACADE_SRC / facade).relative_to(ROOT))))
+                        continue
                     items.add(Item(tracked[0], "impl", tracked[1], module, source))
         for m in re.finditer(r"\bpub\s+type\s+([A-Za-z_]\w*)\s*(?:<[^=]*>)?\s*=", text):
             # `pub type Matrix3x1<T> = Vector3<T>;`: an upstream alias name, a type of its own

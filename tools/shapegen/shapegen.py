@@ -52,6 +52,9 @@ import tests_ops
 import tests_stats
 from model import ALL_SHAPES, COORDS, Shape
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "split"))
+import cratemap  # noqa: E402  (the crate map of the package split, tools/split/crates.toml)
+
 ROOT = Path(__file__).resolve().parents[2]
 TOOL = ROOT / "tools" / "shapegen"
 PROTO = TOOL / "proto"
@@ -1181,8 +1184,10 @@ def library_outputs(pkg: Path) -> dict[Path, Path]:
     out[library.BASE / "dynamic" / "shapes.cairo"] = src / "dynamic" / "shapes.cairo"
     for target, module in dynamic.TYPE_MODULES.items():
         committed = library.BASE / "dynamic" / f"{module}.cairo"
-        (src / "dynamic" / f"{module}.cairo").write_text(
-            shapes.splice(committed.read_text(), dynamic.conversion_block(target)))
+        # the hand-written part: from the package that hosts the module (the package split)
+        (src / "dynamic" / f"{module}.cairo").write_text(shapes.splice(
+            cratemap.committed_path(committed, shapes.BEGIN).read_text(),
+            dynamic.conversion_block(target)))
         out[committed] = src / "dynamic" / f"{module}.cairo"
     # WP 8.6-P21: the construction macros (their `mod` line is hand-written in `lib.cairo`).
     (src / "macros.cairo").write_text(root_ops.render_macros())
@@ -1247,7 +1252,8 @@ def main() -> int:
     tmp_views = TOOL / ".tmp-tests-views"
     tmp_cg = TOOL / ".tmp-tests-cg"
     tmp_p06 = TOOL / ".tmp-tests-p06"
-    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun, tmp_views, tmp_cg, tmp_p06)
+    tmp_routed = TOOL / ".tmp-routed"
+    tmps = (tmp_proto, tmp_lib, tmp_tests, tmp_ops, tmp_fun, tmp_views, tmp_cg, tmp_p06, tmp_routed)
     try:
         for tmp in tmps:
             shutil.rmtree(tmp, ignore_errors=True)
@@ -1256,6 +1262,9 @@ def main() -> int:
                    | tests_functional.outputs(tmp_fun) | tests_views.outputs(tmp_views)
                    | tests_cg.outputs(tmp_cg) | tests_stats.outputs(tmp_p06)
                    | tests_blas.outputs(tmp_p06))
+        # the package split (tools/split/crates.toml): each library item into the package of its
+        # crate; the identity in single-crate mode
+        outputs = cratemap.route_outputs(outputs, tmp_routed, "shapegen")
         committed = (set((PROTO / "src").rglob("*.cairo"))
                      | set((tests_core.PACKAGE / "src").rglob("*.cairo"))
                      | {p for pkg in tests_ops.PACKAGES

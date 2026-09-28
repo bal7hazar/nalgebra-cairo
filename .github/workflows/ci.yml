@@ -70,6 +70,19 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+  # Package split (docs/SPLIT.md §3.4, §12.3): the facade exports exactly the public paths of 0.1.0
+  # (tools/split/public_paths_0.1.0.txt + public_paths_added.txt), and a consumer naming every one
+  # of them, plus the usage checks, builds.
+  path-proof:
+    name: Path proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - name: Public paths of the facade against 0.1.0, consumer build
+        run: python3 tools/split/public_paths.py --check
+
   library:
     name: Library (${{ matrix.name }})
     runs-on: ubuntu-latest

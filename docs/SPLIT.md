@@ -405,21 +405,44 @@ A runner measurement needs a workflow change (orchestrator files): escalated (RE
 
 ## 7. Generators and tooling
 
-- `tools/shapegen`: emits each shape's items into the crate of their class (types crate of the
-  band: struct, core-trait impls, products at the larger operand, indexing, solve / permutation
-  / Givens impls, edit kernels; `dim*` crates: the inherent traits; family crates: views,
-  edition, Kronecker, norm impls, in the trait or marker module), module path unchanged; the
-  facade's re-export lists (today `lib.cairo` / `base.cairo` between the `shapegen` markers).
-- `tools/linalggen`: one output crate per family group and band (§3.1 names).
-- `scripts/api_parity.py`: scans every sub-crate plus the facade; an item's owner is its
-  0.1.0 path, resolved through the facade (§3.4); the report stays one table.
+Built in WP 9-NS2 (usage: `docs/ORCHESTRATOR.md`, "Repository tooling" and the move-PR checklist).
+
+- **Crate map** `tools/split/crates.toml`, read by `tools/split/cratemap.py`: `[crates]` lists the
+  planned crates (the names of §3.1; NS1b renames them there only), lowest first, each with the
+  Cairo package that hosts it TODAY; `facade` names the crate of what no rule places (root,
+  macros); `[[rule]]`s place every top-level item, first match wins, by module file (globs), item
+  class (`struct`, `inherent`, `impl`...), name, implemented trait, shape, band (of the file, of
+  the impl's type arguments or of the item name), with a `lift` of every impl above its type
+  arguments; the module of an impl follows §3.2 (the first anchor in its package). Committed in
+  single-crate mode (every crate hosted by `nalgebra`). With every crate hosted by its own
+  package (`cratemap.py --split-map`) it reproduces NS1's `final` plan item by item (5,706 /
+  5,706 items, crate and module: `cratemap.py --compare-plan`).
+- **Generators** `tools/shapegen`, `tools/linalggen`: their library outputs go through
+  `cratemap.route_outputs`: each item into `crates/<package dir>/src/<same module file>`, a file
+  whose items all go to one package moved whole, the facade keeping the module doc and
+  `pub use nalgebra_<crate>::<path>::*` plus one explicit `pub use` per public impl moved to an
+  anchor module (its 0.1.0 path), the sub-crates their `pub mod` roots. `use` / `pub mod` lines
+  are added when missing (`scarb fmt` sorts them), moved impls sit in marked blocks per generator,
+  so the two generators are idempotent after each other. Single-crate mode: byte-identical output.
+  Split mode on a throwaway checkout: the same 356 files and 4,571 generated items as
+  `prototype.py` (`cratemap.py --compare-tree`).
+- `scripts/api_parity.py`: scans every package of the crate map plus `nalgebra_glam`; an item
+  is reported at its facade path (a moved impl at the module of its explicit facade re-export), so
+  the report is byte-identical in both modes.
+- **Path proof** `tools/split/public_paths.py` (CI job `Path proof`): the public surface is every
+  public module (`internal` excluded), every public item (impls included) and every `pub use`
+  name, globs followed across the packages of the map. 0.1.0 has **9,289** public paths (the
+  4,284 of §3.4, 4,622 public impls, the modules), frozen in `public_paths_0.1.0.txt`;
+  `--check` proves the facade exports exactly that set plus `public_paths_added.txt` and builds a
+  consumer naming every path with the `usage` checks of §3.4 (4 min, 11.3 GB on this machine).
+- `tools/split/gas_compare.py --base <git ref or dir> --head gas/`: the zero-step proof of §5.
+- `tools/split/rewrite_imports.py`: the test-package rewrite of §5 (dry run by default).
 - `consumer_cost.toml`: gates on every `nalgebra_*` sub-crate (lines + MARGINAL cost, the
   column the orchestrator adds); `[closures]`: `nalgebra_glam`, `static3_svd`, `core_pivot`,
   `static4_geometry`, `static4_factor` (§6.2); the facade reported, not gated.
-- CI: one test shard per test package as today; a `path_proof` job (the facade must keep every
-  0.1.0 path: generated list, frozen at 0.1.0 and extended by each new public item); the gas job
-  unchanged plus `gas_compare.py` in move PRs.
-- `tools/split/`: the helpers of this study (§10), reusable by rapier / glam.
+- CI: one test shard per test package as today; the `Path proof` job; the gas job unchanged plus
+  `gas_compare.py` in move PRs (PR template checkbox).
+- `tools/split/`: the helpers of this study (§11), reusable by rapier / glam.
 
 ## 8. `nalgebra_glam`
 
@@ -478,23 +501,32 @@ order: `nalgebra_core`, `_dim3v`, `_dim3`, `_types5`, `_dim4`, `_geometry`, `_ty
 
 | file | role |
 |---|---|
+| `crates.toml`, `cratemap.py` | the crate map and its engine (placement, routing of the generators; `--show`, `--place`, `--split-map`, `--compare-plan`, `--compare-tree`) (NS2) |
+| `public_paths.py`, `public_paths_0.1.0.txt` | the public surface and the path proof (NS2) |
+| `rewrite_imports.py` | `use nalgebra::X` of test packages -> the sub-crates (NS2) |
+| `gas_compare.py` | zero-step proof of a move (`--base REF --head gas/`) |
 | `files.py` | library lines per file (`consumer_cost.py`'s rules) |
 | `edges.py` | the item graph (JSON) |
 | `plan.py`, `layouts.py` | placement solver; `layouts.py` keeps every candidate (`naive`, `z`, `v1`..`v6`, `final`) |
 | `prototype.py` | emits the throwaway workspace of a plan |
-| `facade.py` | facade prototype + `path_proof` (every 0.1.0 path) |
+| `facade.py` | facade prototype + `path_proof` (the 4,284 item paths) |
 | `glam_proto.py` | `nalgebra_glam` rewritten on the sub-crates |
 | `measure.py` | marginal and closure costs (cold, under the build lock) |
-| `gas_compare.py` | zero-step proof of a move |
 | `probes/` | the coherence probes of §1 |
 
-Reproduce: `python3 tools/split/edges.py crates/nalgebra --json /tmp/e.json`;
+Reproduce NS1: `python3 tools/split/edges.py crates/nalgebra --json /tmp/e.json`;
 `python3 tools/split/plan.py /tmp/e.json final --json /tmp/p.json`;
 `python3 tools/split/prototype.py /tmp/e.json /tmp/p.json /tmp/proto`;
 `python3 tools/split/facade.py /tmp/e.json /tmp/proto`;
 `python3 tools/split/glam_proto.py /tmp/e.json /tmp/p.json /tmp/proto`; then in `/tmp/proto`
 `scarb build -p path_proof`, and `flock ~/orchestrator/heavy-build.lock python3
 tools/split/measure.py /tmp/proto --cache /tmp/m.json --crate core …`.
+
+Reproduce NS2's check of the crate map: `python3 tools/split/cratemap.py --split-map /tmp/split.toml`;
+`python3 tools/split/cratemap.py --map /tmp/split.toml --compare-plan /tmp/e.json /tmp/p.json`;
+on a throwaway copy (`git archive HEAD | tar -x -C /tmp/co`), `NALGEBRA_CRATE_MAP=/tmp/split.toml`
+`python3 tools/shapegen/shapegen.py` and `python3 tools/linalggen/generate.py` there, then
+`python3 tools/split/cratemap.py --map /tmp/split.toml --compare-tree /tmp/co /tmp/proto`.
 
 ## 12. Decisions of the programme session (2026-09-28, plan approved)
 
