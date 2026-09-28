@@ -2326,7 +2326,16 @@ pub impl Matrix5x2AngleImpl<
     }
 }
 
-pub use nalgebra_shapes5::base::matrix5x2::*;
+pub use nalgebra_shapes5::base::matrix5x2::{
+    Matrix5x2, Matrix5x2Add, Matrix5x2AddAssign, Matrix5x2Bounded, Matrix5x2DivAssignScalar,
+    Matrix5x2FromColumnArrays, Matrix5x2IndexLinear, Matrix5x2IndexPair, Matrix5x2IntoColumnArrays,
+    Matrix5x2MatrixIndexLinear, Matrix5x2MatrixIndexPair, Matrix5x2MulAssignScalar,
+    Matrix5x2MulMatrix2, Matrix5x2MulMatrix2x3, Matrix5x2MulMatrix2x4, Matrix5x2MulMatrix2x5,
+    Matrix5x2MulRotation2, Matrix5x2MulVector2, Matrix5x2Neg, Matrix5x2PartialOrd, Matrix5x2Sub,
+    Matrix5x2SubAssign, Matrix5x2Sum, Matrix5x2SumSnapshot, Matrix5x2TrMulMatrix5,
+    Matrix5x2TrMulMatrix5x2, Matrix5x2TrMulMatrix5x3, Matrix5x2TrMulMatrix5x4,
+    Matrix5x2TrMulVector5,
+};
 pub use crate::base::matrix2x6::Matrix5x2MulMatrix2x6;
 pub use crate::base::matrix5x6::Matrix5x2TrMulMatrix5x6;
 pub use crate::base::matrix_kronecker::{

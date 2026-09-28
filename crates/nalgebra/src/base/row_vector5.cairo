@@ -1366,7 +1366,16 @@ pub impl RowVector5AngleImpl<
     }
 }
 
-pub use nalgebra_shapes5::base::row_vector5::*;
+pub use nalgebra_shapes5::base::row_vector5::{
+    Matrix1x5, RowVector5, RowVector5Add, RowVector5AddAssign, RowVector5Bounded,
+    RowVector5DivAssignScalar, RowVector5FromArray, RowVector5FromColumnArrays,
+    RowVector5IndexLinear, RowVector5IndexPair, RowVector5IntoArray, RowVector5IntoColumnArrays,
+    RowVector5MatrixIndexLinear, RowVector5MatrixIndexPair, RowVector5MulAssignScalar,
+    RowVector5MulMatrix5, RowVector5MulMatrix5x2, RowVector5MulMatrix5x3, RowVector5MulMatrix5x4,
+    RowVector5MulVector5, RowVector5Neg, RowVector5PartialOrd, RowVector5Sub, RowVector5SubAssign,
+    RowVector5Sum, RowVector5SumSnapshot, RowVector5TrMulMatrix1, RowVector5TrMulRowVector2,
+    RowVector5TrMulRowVector3, RowVector5TrMulRowVector4, RowVector5TrMulRowVector5,
+};
 pub use crate::base::matrix5x6::RowVector5MulMatrix5x6;
 pub use crate::base::matrix_kronecker::{
     RowVector5KroneckerMatrix1, RowVector5KroneckerVector2, RowVector5KroneckerVector3,

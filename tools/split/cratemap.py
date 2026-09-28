@@ -552,7 +552,8 @@ class CrateMap:
             subs = sorted((p for p in hosted.get(mod, ()) if p != self.facade_package), key=self.package_rank)
             path = mod[: -len(".cairo")].replace("/", "::")
             stmts[os.path.join(facade_dir, "src", mod)].extend(
-                [f"pub use {p}::{path}::*;" for p in subs] + sorted(explicit.get(mod, [])))
+                [self._facade_reexport(p, mod, bodies, stmts, items, tag) for p in subs]
+                + sorted(explicit.get(mod, [])))
         # the module roots of the sub-crates: `pub mod x;` down to every hosted module
         for mod, pkgs in hosted.items():
             for pkg in pkgs - {self.facade_package}:
@@ -563,6 +564,30 @@ class CrateMap:
         for path in sorted(set(bodies) | set(stmts) | set(items)):
             out[path] = self._assemble(path, bodies.get(path), stmts.get(path, []), items.get(path, []), tag)
         return out
+
+    def _facade_reexport(self, pkg, mod, bodies, stmts, items, tag):
+        """The facade's re-export of module `mod` of package `pkg`: `pub use <pkg>::<path>::*;`,
+        or an explicit name list when that module also holds public impls moved in from other
+        modules (their 0.1.0 path is another module, which re-exports them explicitly), so that no
+        path appears twice (docs/SPLIT.md §12.6; WP 9-NS5)."""
+        path = mod[: -len(".cairo")].replace("/", "::")
+        glob = f"pub use {pkg}::{path}::*;"
+        sub = os.path.join(package_dir(pkg), "src", mod)
+        if sub in bodies or sub in stmts or sub in items:
+            text = self._assemble(sub, bodies.get(sub), stmts.get(sub, []), items.get(sub, []), tag)
+        elif os.path.exists(os.path.join(ROOT, sub)):
+            text = open(os.path.join(ROOT, sub), encoding="utf-8").read()
+        else:
+            return glob
+        names = public_names(text)
+        expected = expected_paths()
+        if names is None or not expected:
+            return glob
+        here = f"nalgebra::{path}::"
+        moved = {n for n in names if here + n not in expected and n in expected_names()}
+        if not moved:
+            return glob
+        return f"pub use {pkg}::{path}::{{{', '.join(sorted(names - moved))}}};"
 
     @staticmethod
     def _methods(it, texts):
@@ -593,8 +618,13 @@ class CrateMap:
             # the `use` lines of the committed file that the kept blocks of other generators need
             need = set(IDENT.findall(cc.mask("\n".join(foreign))))
             have = statements(base)
-            for m in USE.finditer(cc.mask(ITEM_BLOCK.sub("", committed))):
-                stmt = committed[m.start():m.end()].strip()
+            stripped = ITEM_BLOCK.sub("", committed)
+            masked = cc.mask(stripped)
+            for m in USE.finditer(masked):
+                # the statement alone: the offsets are the block-free text's, and the comments
+                # right above it (masked to spaces) are not part of it (WP 9-NS5)
+                lead = len(masked[m.start():m.end()]) - len(masked[m.start():m.end()].lstrip())
+                stmt = stripped[m.start() + lead:m.end()].strip()
                 names = {x.split(" as ")[-1].split("::")[-1].strip() for x in expand_use(m.group(1))}
                 if names & need and not statements(stmt) <= have:
                     stmts = [stmt] + list(stmts)
@@ -755,6 +785,51 @@ def _defined(masked):
     out = set(re.findall(r"^(?:pub(?:\(crate\))?\s+)?(?:impl|trait|struct|enum|fn|const|type)\s+(\w+)", masked, re.M))
     out |= set(re.findall(r"#\[generate_trait\]\s*(?:pub(?:\(crate\))?\s+)?impl\s+\w+[^{;]*?\bof\s+(\w+)", masked))
     return out
+
+
+def public_names(text):
+    """The public names a module text defines or re-exports (child modules but `internal`
+    included), or None if it re-exports a glob."""
+    masked = cc.mask(text)
+    out = set()
+    for kind, name, gen, _of, s, e in cut_items(masked):
+        if not re.match(r"pub\s", masked[s:e]):
+            continue
+        if kind == "use":
+            for full in expand_use(re.sub(r"\s+", " ", text[s:e]).split("use", 1)[1].rsplit(";", 1)[0].strip()):
+                last = full.split(" as ")[-1].split("::")[-1].strip()
+                if last == "*":
+                    return None
+                out.add(last)
+            continue
+        if kind == "mod" and name == "internal":
+            continue
+        if name:
+            out.add(name)
+        if gen:
+            out.add(gen)
+    return out
+
+
+_EXPECTED = None
+
+
+def expected_paths():
+    """The public paths the facade exports: 0.1.0's (`public_paths_0.1.0.txt`) and the added ones
+    (`public_paths_added.txt`), as `tools/split/public_paths.py --check` expects them."""
+    global _EXPECTED
+    if _EXPECTED is None:
+        _EXPECTED = set()
+        for f in ("public_paths_0.1.0.txt", "public_paths_added.txt"):
+            p = os.path.join(HERE, f)
+            if os.path.exists(p):
+                _EXPECTED |= {ln.strip() for ln in open(p, encoding="utf-8")
+                              if ln.strip() and not ln.startswith("#")}
+    return _EXPECTED
+
+
+def expected_names():
+    return {p.rsplit("::", 1)[-1] for p in expected_paths()}
 
 
 def publish(chunk):
