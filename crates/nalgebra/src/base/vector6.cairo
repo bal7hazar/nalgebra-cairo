@@ -4019,6 +4019,48 @@ pub impl RowVector4KroneckerVector6<
     }
 }
 
+/// The Kronecker product of a `RowVector5` and a `Vector6`, a `Matrix6x5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector5KroneckerVector6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector5<T>, Vector6<T>> {
+    type Output = Matrix6x5<T>;
+    fn kronecker(self: RowVector5<T>, rhs: Vector6<T>) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m51: self.x * rhs.a,
+            m61: self.x * rhs.b,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m52: self.y * rhs.a,
+            m62: self.y * rhs.b,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m43: self.z * rhs.w,
+            m53: self.z * rhs.a,
+            m63: self.z * rhs.b,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m34: self.w * rhs.z,
+            m44: self.w * rhs.w,
+            m54: self.w * rhs.a,
+            m64: self.w * rhs.b,
+            m15: self.a * rhs.x,
+            m25: self.a * rhs.y,
+            m35: self.a * rhs.z,
+            m45: self.a * rhs.w,
+            m55: self.a * rhs.a,
+            m65: self.a * rhs.b,
+        }
+    }
+}
+
 impl Vector6ColumnVectorLen<T> of ColumnVectorLen<Vector6<T>> {
     #[inline(always)]
     fn len() -> usize {
@@ -4058,6 +4100,7 @@ impl Vector6BlasTranspose<T> of BlasTranspose<Vector6<T>> {
 use nalgebra_core::base::unit::Normed;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
+use nalgebra_geometry4::geometry::reflection1::{Reflection1, Reflection1Rows, Reflection1Trait};
 
 // crate-map: generated items (tools/split/cratemap.py) [unit]
 // crate-map: from base/unit.cairo
@@ -4103,6 +4146,105 @@ pub impl Vector6Normed<
     #[inline(always)]
     fn abs_diff_eq(self: Vector6<T>, rhs: Vector6<T>, ulps: u64) -> bool {
         Vector6Trait::abs_diff_eq(self, rhs, ulps)
+    }
+}
+// crate-map: end
+
+// crate-map: generated items (tools/split/cratemap.py) [split]
+// crate-map: from geometry/reflection1.cairo
+/// `Reflection1Rows` on `Vector6` with the scratch vector `Vector6`.
+pub impl Reflection1RowsVector6<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Mul<T>, +Neg<T>,
+> of Reflection1Rows<Vector6<T>, Vector6<T>, T> {
+    fn reflect_rows(self: Reflection1<T>, ref lhs: Vector6<T>, ref work: Vector6<T>) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), lhs);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.x, a.x);
+        let w = R::wide_sub(w, b);
+        let s1 = R::wide_rescale(w);
+        let f1 = -(s1 + s1);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.y, a.x);
+        let w = R::wide_sub(w, b);
+        let s2 = R::wide_rescale(w);
+        let f2 = -(s2 + s2);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.z, a.x);
+        let w = R::wide_sub(w, b);
+        let s3 = R::wide_rescale(w);
+        let f3 = -(s3 + s3);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.w, a.x);
+        let w = R::wide_sub(w, b);
+        let s4 = R::wide_rescale(w);
+        let f4 = -(s4 + s4);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.a, a.x);
+        let w = R::wide_sub(w, b);
+        let s5 = R::wide_rescale(w);
+        let f5 = -(s5 + s5);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.b, a.x);
+        let w = R::wide_sub(w, b);
+        let s6 = R::wide_rescale(w);
+        let f6 = -(s6 + s6);
+        lhs =
+            Vector6 {
+                x: R::mul_add(f1, a.x, m.x),
+                y: R::mul_add(f2, a.x, m.y),
+                z: R::mul_add(f3, a.x, m.z),
+                w: R::mul_add(f4, a.x, m.w),
+                a: R::mul_add(f5, a.x, m.a),
+                b: R::mul_add(f6, a.x, m.b),
+            };
+        work = Vector6 { x: s1, y: s2, z: s3, w: s4, a: s5, b: s6 };
+    }
+
+    fn reflect_rows_with_sign(
+        self: Reflection1<T>, ref lhs: Vector6<T>, ref work: Vector6<T>, sign: T,
+    ) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), lhs);
+        let m_two = -(sign + sign);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.x, a.x);
+        let w = R::wide_sub(w, b);
+        let s1 = R::wide_rescale(w);
+        let f1 = m_two * s1;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.y, a.x);
+        let w = R::wide_sub(w, b);
+        let s2 = R::wide_rescale(w);
+        let f2 = m_two * s2;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.z, a.x);
+        let w = R::wide_sub(w, b);
+        let s3 = R::wide_rescale(w);
+        let f3 = m_two * s3;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.w, a.x);
+        let w = R::wide_sub(w, b);
+        let s4 = R::wide_rescale(w);
+        let f4 = m_two * s4;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.a, a.x);
+        let w = R::wide_sub(w, b);
+        let s5 = R::wide_rescale(w);
+        let f5 = m_two * s5;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.b, a.x);
+        let w = R::wide_sub(w, b);
+        let s6 = R::wide_rescale(w);
+        let f6 = m_two * s6;
+        lhs =
+            Vector6 {
+                x: R::sum_prod2(f1, a.x, sign, m.x),
+                y: R::sum_prod2(f2, a.x, sign, m.y),
+                z: R::sum_prod2(f3, a.x, sign, m.z),
+                w: R::sum_prod2(f4, a.x, sign, m.w),
+                a: R::sum_prod2(f5, a.x, sign, m.a),
+                b: R::sum_prod2(f6, a.x, sign, m.b),
+            };
+        work = Vector6 { x: s1, y: s2, z: s3, w: s4, a: s5, b: s6 };
     }
 }
 // crate-map: end

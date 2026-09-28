@@ -424,6 +424,10 @@ class CrateMap:
                 mod = self.module_of(it, c, idx)
                 rows.append((it, pkg, mod))
                 placed[(f, it.label)] = (pkg, mod)
+                if it.kind == "inherent" and it.name and it.name != it.label:
+                    # the impl of a `#[generate_trait]` trait, named by its own name
+                    # (`Matrix4Kernels::pmp`) in the other pieces (WP 9-NS5)
+                    placed.setdefault((f, it.name), (pkg, mod))
             pkgs = {pkg for _it, pkg, mod in rows if mod == f} or {self.facade_package}
             if len(pkgs) == 1 and all(mod == f for _i, _p, mod in rows):
                 # the whole file goes to one package: written as it is (comments, markers)
@@ -464,6 +468,27 @@ class CrateMap:
             # (nor is `Self::gauss_step`: a name after `::` is never imported)
             used = set(IDENT.findall(re.sub(r"\bfn\s+\w+|::\s*\w+", " ", masked_joined)))
             used -= _defined(masked_joined + "\n" + cc.mask(whole.get((pkg, mod), "")))
+            # a trait the piece uses through method calls only (`Rotation2AngleTrait::new(a)
+            # .to_homogeneous()` needs `Rotation2Trait`): kept when one of the original file's
+            # `use` names is a trait of a type the piece names (`Rotation2`, `Rotation2...Trait`)
+            # declaring a method the piece calls (WP 9-NS5)
+            called = set(re.findall(r"\.\s*(\w+)\s*\(", masked_joined))
+            for o in origins:
+                for u in uses_of[o]:
+                    mu = USE.match(u.strip())
+                    if mu is None:
+                        continue
+                    for full in expand_use(mu.group(1)):
+                        nm = full.split(" as ")[-1].split("::")[-1].strip()
+                        it = idx.get(nm)
+                        if nm in used or it is None or it.kind not in ("trait", "inherent"):
+                            continue
+                        stem = re.sub(r"(Angle)?Trait$", "", nm)
+                        if stem == nm or not any(x == stem or (x.startswith(stem) and x.endswith("Trait"))
+                                                 for x in used):
+                            continue
+                        if self._methods(it, texts) & called:
+                            used.add(nm)
             lines = []
             for o in origins:
                 for u in uses_of[o]:
@@ -538,6 +563,12 @@ class CrateMap:
         for path in sorted(set(bodies) | set(stmts) | set(items)):
             out[path] = self._assemble(path, bodies.get(path), stmts.get(path, []), items.get(path, []), tag)
         return out
+
+    @staticmethod
+    def _methods(it, texts):
+        """The names of the methods a trait (or `#[generate_trait]` impl) declares."""
+        body = cc.mask(texts.get(it.file, ""))[it.start:it.end]
+        return set(re.findall(r"\bfn\s+(\w+)", body))
 
     @staticmethod
     def _assemble(path, body, stmts, items, tag):
@@ -689,12 +720,19 @@ class CrateMap:
                 elif it is None and ("/".join(absolute[:-1]) + ".cairo", absolute[-1]) not in placed:
                     # a module (`crate::base::errors`): the package whose `src/` holds its file
                     # when this package does not (WP 9-NS4)
-                    rel = os.path.join(*absolute) + ".cairo"
-                    if not os.path.exists(os.path.join(ROOT, package_dir(pkg), "src", rel)):
-                        for p in self.packages():
-                            if os.path.exists(os.path.join(ROOT, package_dir(p), "src", rel)):
-                                target_pkg = p
-                                break
+                    # (or a name of such a module, `crate::base::errors::INDEX_OUT_OF_BOUNDS`,
+                    # WP 9-NS5)
+                    rels = [os.path.join(*absolute) + ".cairo"]
+                    if len(absolute) > 1:
+                        rels.append(os.path.join(*absolute[:-1]) + ".cairo")
+                    for rel in rels:
+                        if os.path.exists(os.path.join(ROOT, package_dir(pkg), "src", rel)):
+                            break
+                        hit = [p for p in self.packages()
+                               if os.path.exists(os.path.join(ROOT, package_dir(p), "src", rel))]
+                        if hit:
+                            target_pkg = hit[0]
+                            break
                 root = "crate" if target_pkg == pkg else target_pkg
                 full = "::".join([root] + absolute)
             keep.append(full + (f" as {alias}" if alias else ""))

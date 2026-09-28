@@ -5258,6 +5258,8 @@ use nalgebra_core::internal::linalg::givens::GivensRotationInternalTrait;
 use nalgebra_core::linalg::givens::{GivensRotate, GivensRotation};
 use nalgebra_core::linalg::lu::Perm2;
 use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
+use nalgebra_shapes5::base::matrix5x2::Matrix5x2;
+use crate::base::matrix5x6::Matrix5x6;
 use crate::linalg::lu::Perm6;
 
 /// The Kronecker product of a `Matrix1` and a `Matrix2x6`, a `Matrix2x6`: one floored product per
@@ -5439,6 +5441,33 @@ pub impl Matrix2x4TrMulMatrix2x6<
     }
 }
 
+/// `selfᵀ * rhs`, a `Matrix5x6`: `mul_mat` of the transposed components, so one `sum_prod2` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix2x5TrMulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix2x5<T>, Matrix2x6<T>> {
+    type Output = Matrix5x6<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix2x5<T>, rhs: Matrix2x6<T>) -> Matrix5x6<T> {
+        MatrixMul::mul_mat(
+            Matrix5x2 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m51: self.m15,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m52: self.m25,
+            },
+            rhs,
+        )
+    }
+}
+
 /// The Kronecker product of a `Vector3` and a `Matrix2x6`, a `Matrix6`: one floored product per
 /// component. Panics on overflow. Upstream: `kronecker`.
 pub impl Vector3KroneckerMatrix2x6<
@@ -5549,6 +5578,48 @@ pub impl Matrix4x2MulMatrix2x6<
             m26: R::sum_prod2(self.m21, rhs.m16, self.m22, rhs.m26),
             m36: R::sum_prod2(self.m31, rhs.m16, self.m32, rhs.m26),
             m46: R::sum_prod2(self.m41, rhs.m16, self.m42, rhs.m26),
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix5x6`: one `sum_prod2` per component (one rounding each). Panics on
+/// overflow. Upstream: `Matrix5x2 * Matrix2x6` (`Mul`).
+pub impl Matrix5x2MulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix5x2<T>, Matrix2x6<T>> {
+    type Output = Matrix5x6<T>;
+    fn mul_mat(self: Matrix5x2<T>, rhs: Matrix2x6<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: R::sum_prod2(self.m11, rhs.m11, self.m12, rhs.m21),
+            m21: R::sum_prod2(self.m21, rhs.m11, self.m22, rhs.m21),
+            m31: R::sum_prod2(self.m31, rhs.m11, self.m32, rhs.m21),
+            m41: R::sum_prod2(self.m41, rhs.m11, self.m42, rhs.m21),
+            m51: R::sum_prod2(self.m51, rhs.m11, self.m52, rhs.m21),
+            m12: R::sum_prod2(self.m11, rhs.m12, self.m12, rhs.m22),
+            m22: R::sum_prod2(self.m21, rhs.m12, self.m22, rhs.m22),
+            m32: R::sum_prod2(self.m31, rhs.m12, self.m32, rhs.m22),
+            m42: R::sum_prod2(self.m41, rhs.m12, self.m42, rhs.m22),
+            m52: R::sum_prod2(self.m51, rhs.m12, self.m52, rhs.m22),
+            m13: R::sum_prod2(self.m11, rhs.m13, self.m12, rhs.m23),
+            m23: R::sum_prod2(self.m21, rhs.m13, self.m22, rhs.m23),
+            m33: R::sum_prod2(self.m31, rhs.m13, self.m32, rhs.m23),
+            m43: R::sum_prod2(self.m41, rhs.m13, self.m42, rhs.m23),
+            m53: R::sum_prod2(self.m51, rhs.m13, self.m52, rhs.m23),
+            m14: R::sum_prod2(self.m11, rhs.m14, self.m12, rhs.m24),
+            m24: R::sum_prod2(self.m21, rhs.m14, self.m22, rhs.m24),
+            m34: R::sum_prod2(self.m31, rhs.m14, self.m32, rhs.m24),
+            m44: R::sum_prod2(self.m41, rhs.m14, self.m42, rhs.m24),
+            m54: R::sum_prod2(self.m51, rhs.m14, self.m52, rhs.m24),
+            m15: R::sum_prod2(self.m11, rhs.m15, self.m12, rhs.m25),
+            m25: R::sum_prod2(self.m21, rhs.m15, self.m22, rhs.m25),
+            m35: R::sum_prod2(self.m31, rhs.m15, self.m32, rhs.m25),
+            m45: R::sum_prod2(self.m41, rhs.m15, self.m42, rhs.m25),
+            m55: R::sum_prod2(self.m51, rhs.m15, self.m52, rhs.m25),
+            m16: R::sum_prod2(self.m11, rhs.m16, self.m12, rhs.m26),
+            m26: R::sum_prod2(self.m21, rhs.m16, self.m22, rhs.m26),
+            m36: R::sum_prod2(self.m31, rhs.m16, self.m32, rhs.m26),
+            m46: R::sum_prod2(self.m41, rhs.m16, self.m42, rhs.m26),
+            m56: R::sum_prod2(self.m51, rhs.m16, self.m52, rhs.m26),
         }
     }
 }
@@ -6125,3 +6196,112 @@ pub impl Perm6PermuteColumnsMatrix2x6<
             };
     }
 }
+use nalgebra_geometry4::geometry::reflection2::{Reflection2, Reflection2Columns, Reflection2Trait};
+
+// crate-map: generated items (tools/split/cratemap.py) [split]
+// crate-map: from geometry/reflection2.cairo
+/// `Reflection2Columns` on `Matrix2x6`.
+pub impl Reflection2ColumnsMatrix2x6<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Neg<T>,
+> of Reflection2Columns<Matrix2x6<T>, T> {
+    fn reflect(self: Reflection2<T>, ref rhs: Matrix2x6<T>) {
+        let (a, b, m) = (Reflection2Trait::axis(self), Reflection2Trait::bias(self), rhs);
+        let m_two = -R::TWO;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m11);
+        let w = R::wide_add_prod(w, a.y, m.m21);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m12);
+        let w = R::wide_add_prod(w, a.y, m.m22);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m13);
+        let w = R::wide_add_prod(w, a.y, m.m23);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m14);
+        let w = R::wide_add_prod(w, a.y, m.m24);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m15);
+        let w = R::wide_add_prod(w, a.y, m.m25);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m16);
+        let w = R::wide_add_prod(w, a.y, m.m26);
+        let w = R::wide_sub(w, b);
+        let f6 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            Matrix2x6 {
+                m11: R::mul_add(f1, a.x, m.m11),
+                m21: R::mul_add(f1, a.y, m.m21),
+                m12: R::mul_add(f2, a.x, m.m12),
+                m22: R::mul_add(f2, a.y, m.m22),
+                m13: R::mul_add(f3, a.x, m.m13),
+                m23: R::mul_add(f3, a.y, m.m23),
+                m14: R::mul_add(f4, a.x, m.m14),
+                m24: R::mul_add(f4, a.y, m.m24),
+                m15: R::mul_add(f5, a.x, m.m15),
+                m25: R::mul_add(f5, a.y, m.m25),
+                m16: R::mul_add(f6, a.x, m.m16),
+                m26: R::mul_add(f6, a.y, m.m26),
+            };
+    }
+
+    fn reflect_with_sign(self: Reflection2<T>, ref rhs: Matrix2x6<T>, sign: T) {
+        let (a, b, m) = (Reflection2Trait::axis(self), Reflection2Trait::bias(self), rhs);
+        let m_two = -(sign + sign);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m11);
+        let w = R::wide_add_prod(w, a.y, m.m21);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m12);
+        let w = R::wide_add_prod(w, a.y, m.m22);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m13);
+        let w = R::wide_add_prod(w, a.y, m.m23);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m14);
+        let w = R::wide_add_prod(w, a.y, m.m24);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m15);
+        let w = R::wide_add_prod(w, a.y, m.m25);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m16);
+        let w = R::wide_add_prod(w, a.y, m.m26);
+        let w = R::wide_sub(w, b);
+        let f6 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            Matrix2x6 {
+                m11: R::sum_prod2(f1, a.x, sign, m.m11),
+                m21: R::sum_prod2(f1, a.y, sign, m.m21),
+                m12: R::sum_prod2(f2, a.x, sign, m.m12),
+                m22: R::sum_prod2(f2, a.y, sign, m.m22),
+                m13: R::sum_prod2(f3, a.x, sign, m.m13),
+                m23: R::sum_prod2(f3, a.y, sign, m.m23),
+                m14: R::sum_prod2(f4, a.x, sign, m.m14),
+                m24: R::sum_prod2(f4, a.y, sign, m.m24),
+                m15: R::sum_prod2(f5, a.x, sign, m.m15),
+                m25: R::sum_prod2(f5, a.y, sign, m.m25),
+                m16: R::sum_prod2(f6, a.x, sign, m.m16),
+                m26: R::sum_prod2(f6, a.y, sign, m.m26),
+            };
+    }
+}
+// crate-map: end

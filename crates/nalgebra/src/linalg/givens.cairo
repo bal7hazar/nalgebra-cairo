@@ -10,7 +10,7 @@
 //! rotation a correctly rounded quotient, each rotated entry ONE fused sum of two products.
 
 pub use nalgebra_core::linalg::givens::*;
-pub use crate::base::matrix2x5::GivensRotationRotateMatrix2x5;
+pub use nalgebra_shapes5::base::matrix2x5::GivensRotationRotateMatrix2x5;
+pub use nalgebra_shapes5::base::matrix5x2::GivensRotationRotateRowsMatrix5x2;
 pub use crate::base::matrix2x6::GivensRotationRotateMatrix2x6;
-pub use crate::base::matrix5x2::GivensRotationRotateRowsMatrix5x2;
 pub use crate::base::matrix6x2::GivensRotationRotateRowsMatrix6x2;

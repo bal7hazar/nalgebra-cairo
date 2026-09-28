@@ -9,11 +9,11 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 pub use nalgebra_core::base::matrix3x2::*;
+pub use nalgebra_shapes5::base::matrix2x5::Matrix3x2MulMatrix2x5;
+pub use nalgebra_shapes5::base::matrix3x5::Matrix3x2TrMulMatrix3x5;
 pub use nalgebra_static3::base::matrix3x2::*;
 pub use nalgebra_static3::geometry::rotation2::Matrix3x2MulRotation2;
-pub use crate::base::matrix2x5::Matrix3x2MulMatrix2x5;
 pub use crate::base::matrix2x6::Matrix3x2MulMatrix2x6;
-pub use crate::base::matrix3x5::Matrix3x2TrMulMatrix3x5;
 pub use crate::base::matrix3x6::Matrix3x2TrMulMatrix3x6;
 pub use crate::base::matrix_kronecker::{
     Matrix3x2KroneckerMatrix1, Matrix3x2KroneckerMatrix2, Matrix3x2KroneckerMatrix2x3,

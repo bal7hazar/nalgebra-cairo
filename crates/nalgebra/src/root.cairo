@@ -804,19 +804,36 @@ use nalgebra_core::base::row_vector4::RowVector4;
 use nalgebra_core::base::vector2::Vector2;
 use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::base::vector4::Vector4;
+use nalgebra_shapes5::base::matrix2x5::Matrix2x5;
+use nalgebra_shapes5::base::matrix3x5::Matrix3x5;
+use nalgebra_shapes5::base::matrix4x5::Matrix4x5;
+use nalgebra_shapes5::base::matrix5::Matrix5;
+use nalgebra_shapes5::base::matrix5x2::Matrix5x2;
+use nalgebra_shapes5::base::matrix5x3::Matrix5x3;
+use nalgebra_shapes5::base::matrix5x4::Matrix5x4;
+use nalgebra_shapes5::base::row_vector5::RowVector5;
+use nalgebra_shapes5::base::vector5::Vector5;
 use crate::base::matrix1::Matrix1Trait;
 use crate::base::matrix2::Matrix2Trait;
 use crate::base::matrix2x3::Matrix2x3Trait;
 use crate::base::matrix2x4::Matrix2x4Trait;
+use crate::base::matrix2x5::Matrix2x5Trait;
 use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix3x2::Matrix3x2Trait;
 use crate::base::matrix3x4::Matrix3x4Trait;
+use crate::base::matrix3x5::Matrix3x5Trait;
 use crate::base::matrix4::Matrix4Trait;
 use crate::base::matrix4x2::Matrix4x2Trait;
 use crate::base::matrix4x3::Matrix4x3Trait;
+use crate::base::matrix4x5::Matrix4x5Trait;
+use crate::base::matrix5::Matrix5Trait;
+use crate::base::matrix5x2::Matrix5x2Trait;
+use crate::base::matrix5x3::Matrix5x3Trait;
+use crate::base::matrix5x4::Matrix5x4Trait;
 use crate::base::row_vector2::RowVector2Trait;
 use crate::base::row_vector3::RowVector3Trait;
 use crate::base::row_vector4::RowVector4Trait;
+use crate::base::row_vector5::RowVector5Trait;
 use crate::base::vector2::Vector2Trait;
 use crate::base::vector3::Vector3Trait;
 use crate::base::vector4::Vector4Trait;
@@ -826,18 +843,27 @@ use crate::base::vector4::Vector4Trait;
 // crate-map: from base/matrix2.cairo
 // crate-map: from base/matrix2x3.cairo
 // crate-map: from base/matrix2x4.cairo
+// crate-map: from base/matrix2x5.cairo
 // crate-map: from base/matrix3.cairo
 // crate-map: from base/matrix3x2.cairo
 // crate-map: from base/matrix3x4.cairo
+// crate-map: from base/matrix3x5.cairo
 // crate-map: from base/matrix4.cairo
 // crate-map: from base/matrix4x2.cairo
 // crate-map: from base/matrix4x3.cairo
+// crate-map: from base/matrix4x5.cairo
+// crate-map: from base/matrix5.cairo
+// crate-map: from base/matrix5x2.cairo
+// crate-map: from base/matrix5x3.cairo
+// crate-map: from base/matrix5x4.cairo
 // crate-map: from base/row_vector2.cairo
 // crate-map: from base/row_vector3.cairo
 // crate-map: from base/row_vector4.cairo
+// crate-map: from base/row_vector5.cairo
 // crate-map: from base/vector2.cairo
 // crate-map: from base/vector3.cairo
 // crate-map: from base/vector4.cairo
+// crate-map: from base/vector5.cairo
 /// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix1`: the shape's
 /// `inf` / `sup` / `inf_sup`.
 pub impl Matrix1InfSup<
@@ -951,6 +977,35 @@ pub impl RowVector4InfSup<
     #[inline(always)]
     fn inf_sup(a: RowVector4<T>, b: RowVector4<T>) -> (RowVector4<T>, RowVector4<T>) {
         RowVector4Trait::inf_sup(a, b)
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `RowVector5`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl RowVector5InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<RowVector5<T>> {
+    #[inline(always)]
+    fn inf(a: RowVector5<T>, b: RowVector5<T>) -> RowVector5<T> {
+        RowVector5Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: RowVector5<T>, b: RowVector5<T>) -> RowVector5<T> {
+        RowVector5Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: RowVector5<T>, b: RowVector5<T>) -> (RowVector5<T>, RowVector5<T>) {
+        RowVector5Trait::inf_sup(a, b)
     }
 }
 
@@ -1070,6 +1125,35 @@ pub impl Matrix2x4InfSup<
     }
 }
 
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix2x5`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix2x5InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix2x5<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix2x5<T>, b: Matrix2x5<T>) -> Matrix2x5<T> {
+        Matrix2x5Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix2x5<T>, b: Matrix2x5<T>) -> Matrix2x5<T> {
+        Matrix2x5Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix2x5<T>, b: Matrix2x5<T>) -> (Matrix2x5<T>, Matrix2x5<T>) {
+        Matrix2x5Trait::inf_sup(a, b)
+    }
+}
+
 /// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Vector3`: the shape's
 /// `inf` / `sup` / `inf_sup`.
 pub impl Vector3InfSup<
@@ -1186,6 +1270,35 @@ pub impl Matrix3x4InfSup<
     }
 }
 
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix3x5`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix3x5InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix3x5<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix3x5<T>, b: Matrix3x5<T>) -> Matrix3x5<T> {
+        Matrix3x5Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix3x5<T>, b: Matrix3x5<T>) -> Matrix3x5<T> {
+        Matrix3x5Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix3x5<T>, b: Matrix3x5<T>) -> (Matrix3x5<T>, Matrix3x5<T>) {
+        Matrix3x5Trait::inf_sup(a, b)
+    }
+}
+
 /// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Vector4`: the shape's
 /// `inf` / `sup` / `inf_sup`.
 pub impl Vector4InfSup<
@@ -1299,6 +1412,180 @@ pub impl Matrix4InfSup<
     #[inline(always)]
     fn inf_sup(a: Matrix4<T>, b: Matrix4<T>) -> (Matrix4<T>, Matrix4<T>) {
         Matrix4Trait::inf_sup(a, b)
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix4x5`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix4x5InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix4x5<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix4x5<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
+        Matrix4x5Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix4x5<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
+        Matrix4x5Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix4x5<T>, b: Matrix4x5<T>) -> (Matrix4x5<T>, Matrix4x5<T>) {
+        Matrix4x5Trait::inf_sup(a, b)
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Vector5`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Vector5InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Vector5<T>> {
+    #[inline(always)]
+    fn inf(a: Vector5<T>, b: Vector5<T>) -> Vector5<T> {
+        Vector5Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Vector5<T>, b: Vector5<T>) -> Vector5<T> {
+        Vector5Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Vector5<T>, b: Vector5<T>) -> (Vector5<T>, Vector5<T>) {
+        Vector5Trait::inf_sup(a, b)
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix5x2`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix5x2InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix5x2<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix5x2<T>, b: Matrix5x2<T>) -> Matrix5x2<T> {
+        Matrix5x2Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix5x2<T>, b: Matrix5x2<T>) -> Matrix5x2<T> {
+        Matrix5x2Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix5x2<T>, b: Matrix5x2<T>) -> (Matrix5x2<T>, Matrix5x2<T>) {
+        Matrix5x2Trait::inf_sup(a, b)
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix5x3`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix5x3InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix5x3<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix5x3<T>, b: Matrix5x3<T>) -> Matrix5x3<T> {
+        Matrix5x3Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix5x3<T>, b: Matrix5x3<T>) -> Matrix5x3<T> {
+        Matrix5x3Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix5x3<T>, b: Matrix5x3<T>) -> (Matrix5x3<T>, Matrix5x3<T>) {
+        Matrix5x3Trait::inf_sup(a, b)
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix5x4`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix5x4InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix5x4<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix5x4<T>, b: Matrix5x4<T>) -> Matrix5x4<T> {
+        Matrix5x4Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix5x4<T>, b: Matrix5x4<T>) -> Matrix5x4<T> {
+        Matrix5x4Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix5x4<T>, b: Matrix5x4<T>) -> (Matrix5x4<T>, Matrix5x4<T>) {
+        Matrix5x4Trait::inf_sup(a, b)
+    }
+}
+
+/// The kernel of the crate-root `nalgebra::inf` / `sup` / `inf_sup` on `Matrix5`: the shape's
+/// `inf` / `sup` / `inf_sup`.
+pub impl Matrix5InfSup<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of crate::root::MatrixInfSup<Matrix5<T>> {
+    #[inline(always)]
+    fn inf(a: Matrix5<T>, b: Matrix5<T>) -> Matrix5<T> {
+        Matrix5Trait::inf(a, b)
+    }
+    #[inline(always)]
+    fn sup(a: Matrix5<T>, b: Matrix5<T>) -> Matrix5<T> {
+        Matrix5Trait::sup(a, b)
+    }
+    #[inline(always)]
+    fn inf_sup(a: Matrix5<T>, b: Matrix5<T>) -> (Matrix5<T>, Matrix5<T>) {
+        Matrix5Trait::inf_sup(a, b)
     }
 }
 // crate-map: end

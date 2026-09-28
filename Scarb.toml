@@ -2,6 +2,9 @@
 members = [
     "crates/core",
     "crates/static3",
+    "crates/shapes5",
+    "crates/static4",
+    "crates/geometry4",
     "crates/nalgebra",
     "crates/nalgebra_glam",
     "crates/testing",
