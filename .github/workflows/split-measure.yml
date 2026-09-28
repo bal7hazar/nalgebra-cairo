@@ -1,0 +1,199 @@
+name: Split measurement
+
+# Package split (docs/SPLIT.md §6, §12.4; WP 9-NS1b): builds the THROWAWAY split workspace of the
+# crate map (`tools/split/crates.toml` -> `mapplan.py` -> `prototype.py` + `glam_proto.py`, nothing
+# committed) and measures on GitHub runners, with interleaved cold builds, the marginal cost of
+# every crate (one job per crate: its consumer against the consumer of its direct dependencies)
+# and every declared closure of the map (one job per closure: against the no-dependency consumer).
+# `runner_report.py` then writes the tables of docs/SPLIT.md §3.1 / §6.2 (job summary + artifact).
+# Manual only: `gh workflow run split-measure.yml --ref <branch> [-f merges="new=a+b ..."]`.
+
+run-name: Split measurement ${{ inputs.label }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: Free text shown in the run name
+        type: string
+        default: ""
+      merges:
+        description: Crate merges tried on the map, space-separated `NEW=a+b` (mapplan.py --merge)
+        type: string
+        default: ""
+      crates:
+        description: Crates whose marginal is measured, comma-separated (empty = all, `none` = no crate)
+        type: string
+        default: ""
+      closures:
+        description: Declared closures measured, comma-separated (empty = all, `none` = no closure)
+        type: string
+        default: ""
+      repeat:
+        description: Interleaved rounds per consumer, marginal jobs
+        type: string
+        default: "9"
+      closure_repeat:
+        description: Interleaved rounds per consumer, closure jobs
+        type: string
+        default: "15"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash # enables pipefail
+
+env:
+  MERGES: ${{ inputs.merges }}
+  CRATES: ${{ inputs.crates }}
+  CLOSURES: ${{ inputs.closures }}
+  REPEAT: ${{ inputs.repeat || '9' }}
+  CLOSURE_REPEAT: ${{ inputs.closure_repeat || '15' }}
+
+jobs:
+  prepare:
+    name: Prototype of the crate map
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      crates: ${{ steps.matrix.outputs.crates }}
+      closures: ${{ steps.matrix.outputs.closures }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Item graph, plan of the map, prototype workspace
+        run: |
+          mkdir -p build
+          python3 tools/split/edges.py crates/nalgebra --json build/edges.json > /dev/null
+          args=()
+          for m in $MERGES; do args+=(--merge "$m"); done
+          python3 tools/split/mapplan.py build/edges.json build/plan.json --lines "${args[@]}" | tee build/plan.txt
+          python3 tools/split/prototype.py build/edges.json build/plan.json build/proto | tee build/prototype.txt
+          python3 tools/split/glam_proto.py build/edges.json build/plan.json build/proto | tee -a build/prototype.txt
+          grep -q "^upward references (not imported): 0$" build/prototype.txt
+      - id: matrix
+        name: Job matrix
+        run: |
+          python3 - <<'EOF' >> "$GITHUB_OUTPUT"
+          import json, os
+          plan = json.load(open("build/plan.json"))
+          def pick(env, every):
+              v = os.environ.get(env, "").strip()
+              if v == "none":
+                  return []
+              want = [x.strip() for x in v.split(",") if x.strip()]
+              unknown = [x for x in want if x not in every]
+              if unknown:
+                  raise SystemExit(f"{env}: unknown {unknown} (known: {every})")
+              return want or every
+          crates = pick("CRATES", [c for c in plan["crates"] if c != "facade"] + ["glam_bridge"])
+          closures = pick("CLOSURES", list(plan["closures"]))
+          print("crates=" + json.dumps(crates))
+          print("closures=" + json.dumps([{"name": n, "members": ",".join(plan["closures"][n])}
+                                          for n in closures]))
+          EOF
+          cat "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: split-prototype
+          path: |
+            build/plan.json
+            build/plan.txt
+            build/prototype.txt
+            build/proto
+          retention-days: 30
+
+  marginal:
+    name: Marginal ${{ matrix.crate }}
+    needs: prepare
+    if: needs.prepare.outputs.crates != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        crate: ${{ fromJSON(needs.prepare.outputs.crates) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: split-prototype
+          path: build
+      - name: Interleaved cold builds (the crate, its direct dependencies, the baseline)
+        run: |
+          [ -x /usr/bin/time ] || sudo apt-get install -y time > /dev/null
+          echo "runner: $(nproc) vCPU, $(free -g | awk '/Mem:/ {print $2}') GB"
+          mkdir -p results
+          python3 tools/split/measure.py build/proto --cache "results/cache-${{ matrix.crate }}.json" \
+            --crate "${{ matrix.crate }}" --repeat "$REPEAT" --interleave \
+            --json "results/marginal-${{ matrix.crate }}.json" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: split-marginal-${{ matrix.crate }}
+          path: results
+          retention-days: 30
+
+  closure:
+    name: Closure ${{ matrix.closure.name }}
+    needs: prepare
+    if: needs.prepare.outputs.closures != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        closure: ${{ fromJSON(needs.prepare.outputs.closures) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: split-prototype
+          path: build
+      - name: Interleaved cold builds (the closure, the baseline)
+        run: |
+          [ -x /usr/bin/time ] || sudo apt-get install -y time > /dev/null
+          echo "runner: $(nproc) vCPU, $(free -g | awk '/Mem:/ {print $2}') GB"
+          mkdir -p results
+          python3 tools/split/measure.py build/proto --cache "results/cache-${{ matrix.closure.name }}.json" \
+            --closure "${{ matrix.closure.name }}=${{ matrix.closure.members }}" --repeat "$CLOSURE_REPEAT" \
+            --interleave --json "results/closure-${{ matrix.closure.name }}.json" | tee -a "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: split-closure-${{ matrix.closure.name }}
+          path: results
+          retention-days: 30
+
+  report:
+    name: Report
+    needs: [prepare, marginal, closure]
+    if: always() && needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: split-prototype
+          path: build
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: split-*-*
+          path: results
+      - name: Tables (crates, closures, gates)
+        run: |
+          python3 tools/split/runner_report.py build/plan.json build/proto results \
+            --md split_measure.md --json split_measure.json
+          { echo "merges: \`${MERGES:-none}\`"; echo; cat split_measure.md; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: split-measure-report
+          path: |
+            split_measure.md
+            split_measure.json
+            results
+          retention-days: 90
