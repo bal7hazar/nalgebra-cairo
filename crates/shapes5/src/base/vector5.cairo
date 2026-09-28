@@ -588,8 +588,76 @@ impl Vector5BlasTranspose<T> of BlasTranspose<Vector5<T>> {
         RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
     }
 }
+use nalgebra_core::base::unit::Normed;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
+
+// crate-map: generated items (tools/split/cratemap.py) [unit]
+// crate-map: from base/unit.cairo
+/// `Normed` of `Vector5` (`UnitVector5`): the kernels of `Vector5Trait`, whose one-line
+/// `#[inline(always)]` bodies are written out here (`Vector5Trait` lives above this crate,
+/// docs/SPLIT.md §3.3.3; same code, same steps).
+pub impl Vector5Normed<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Normed<Vector5<T>, T> {
+    #[inline(always)]
+    fn norm(self: Vector5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
+        let w = R::wide_add_prod(w, self.y, self.y);
+        let w = R::wide_add_prod(w, self.z, self.z);
+        let w = R::wide_add_prod(w, self.w, self.w);
+        R::wide_sqrt(R::wide_add_prod(w, self.a, self.a))
+    }
+
+    #[inline(always)]
+    fn norm_squared(self: Vector5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
+        let w = R::wide_add_prod(w, self.y, self.y);
+        let w = R::wide_add_prod(w, self.z, self.z);
+        let w = R::wide_add_prod(w, self.w, self.w);
+        R::wide_rescale(R::wide_add_prod(w, self.a, self.a))
+    }
+
+    #[inline(always)]
+    fn scale(self: Vector5<T>, k: T) -> Vector5<T> {
+        Vector5 { x: self.x * k, y: self.y * k, z: self.z * k, w: self.w * k, a: self.a * k }
+    }
+
+    #[inline(always)]
+    fn unscale(self: Vector5<T>, k: T) -> Vector5<T> {
+        let (x, y, z, w, a) = R::div5(self.x, self.y, self.z, self.w, self.a, k);
+        Vector5 { x, y, z, w, a }
+    }
+
+    #[inline(always)]
+    fn dot(self: Vector5<T>, rhs: Vector5<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, rhs.x);
+        let w = R::wide_add_prod(w, self.y, rhs.y);
+        let w = R::wide_add_prod(w, self.z, rhs.z);
+        let w = R::wide_add_prod(w, self.w, rhs.w);
+        R::wide_rescale(R::wide_add_prod(w, self.a, rhs.a))
+    }
+
+    #[inline(always)]
+    fn abs_diff_eq(self: Vector5<T>, rhs: Vector5<T>, ulps: u64) -> bool {
+        R::abs_diff_eq(self.x, rhs.x, ulps)
+            && R::abs_diff_eq(self.y, rhs.y, ulps)
+            && R::abs_diff_eq(self.z, rhs.z, ulps)
+            && R::abs_diff_eq(self.w, rhs.w, ulps)
+            && R::abs_diff_eq(self.a, rhs.a, ulps)
+    }
+}
+// crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
 // crate-map: from linalg/lu/perm1_5.cairo

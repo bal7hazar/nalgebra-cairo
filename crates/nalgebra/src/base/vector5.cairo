@@ -1972,7 +1972,6 @@ pub impl UnitVector5AngleImpl<
         }
     }
 }
-use nalgebra_core::base::unit::Normed;
 
 pub use nalgebra_shapes5::base::vector5::{
     Matrix5x1, UnitVector5, Vector5, Vector5Add, Vector5AddAssign, Vector5Bounded,
@@ -1999,51 +1998,3 @@ pub use crate::base::norm::{
 };
 pub use crate::base::row_vector6::{Vector5KroneckerRowVector6, Vector5MulRowVector6};
 pub use crate::root::Vector5InfSup;
-
-// crate-map: generated items (tools/split/cratemap.py) [unit]
-// crate-map: from base/unit.cairo
-/// `Normed` of `Vector5` (`UnitVector5`): the kernels of `Vector5Trait`.
-pub impl Vector5Normed<
-    T,
-    impl R: Real<T>,
-    +Copy<T>,
-    +Drop<T>,
-    +Drop<R::Wide>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +PartialOrd<T>,
-> of Normed<Vector5<T>, T> {
-    #[inline(always)]
-    fn norm(self: Vector5<T>) -> T {
-        Vector5Trait::norm(self)
-    }
-
-    #[inline(always)]
-    fn norm_squared(self: Vector5<T>) -> T {
-        Vector5Trait::norm_squared(self)
-    }
-
-    #[inline(always)]
-    fn scale(self: Vector5<T>, k: T) -> Vector5<T> {
-        Vector5Trait::scale(self, k)
-    }
-
-    #[inline(always)]
-    fn unscale(self: Vector5<T>, k: T) -> Vector5<T> {
-        Vector5Trait::unscale(self, k)
-    }
-
-    #[inline(always)]
-    fn dot(self: Vector5<T>, rhs: Vector5<T>) -> T {
-        Vector5Trait::dot(self, rhs)
-    }
-
-    #[inline(always)]
-    fn abs_diff_eq(self: Vector5<T>, rhs: Vector5<T>, ulps: u64) -> bool {
-        Vector5Trait::abs_diff_eq(self, rhs, ulps)
-    }
-}
-// crate-map: end

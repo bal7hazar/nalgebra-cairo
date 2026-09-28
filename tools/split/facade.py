@@ -204,6 +204,8 @@ mod usage {
         EuclideanNorm, Isometry3, Isometry3Trait, Matrix3, Matrix3Trait, Matrix6, Matrix6Trait,
         MatrixMul, MatrixSolve, MatrixTrMul, Matrix5x3, Matrix3x5, Matrix5, FixedView, Matrix2,
         UnitQuaternion, UnitQuaternionTrait, Vector3, Vector3Trait, dmatrix, matrix, vector, point,
+        Matrix1, Matrix2x6, Reflection2, Reflection2Columns, Reflection2Trait, Unit, UnitTrait,
+        UnitVector5, UnitVector6, Vector5, Vector6,
     };
     use nalgebra::linalg::Matrix3LuTrait;
 
@@ -229,6 +231,18 @@ mod usage {
 
     fn geometry(q: UnitQuaternion<Fixed>, iso: Isometry3<Fixed>, v: Vector3<Fixed>) -> Vector3<Fixed> {
         iso.transform_vector(q.transform_vector(v))
+    }
+
+    // impls the facade package does not define: `Normed` of the shapes of every band (WP 9-NS5:
+    // `Vector5Normed` sat in a facade module after `Vector5` moved) and a reflection of a
+    // dimension-6 shape (defined above the reflection's crate)
+    fn units(a: Vector5<Fixed>, b: Vector6<Fixed>, c: Matrix1<Fixed>, r: Reflection2<Fixed>, m: Matrix2x6<Fixed>) -> Fixed {
+        let ua: UnitVector5<Fixed> = UnitTrait::new_normalize(a);
+        let ub: UnitVector6<Fixed> = UnitTrait::new_normalize(b);
+        let uc: Unit<Matrix1<Fixed>> = UnitTrait::new_normalize(c);
+        let mut m = m;
+        Reflection2Columns::reflect(r, ref m);
+        ua.value.x + ub.value.x + uc.value.x + m.m11 + r.bias()
     }
 
     fn macros() -> Matrix3<Fixed> {
