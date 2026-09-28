@@ -554,7 +554,7 @@ def make_final():
     crates = [
         "core", "dim3", "types5", "dim4", "geometry", "types6", "dim5", "dim5a", "dim6a",
         "dim6", "edition", "views", "kronecker", "norm", "geometry_nd", "statistics", "blas",
-        "linalg", "linalg_ext", "linalg5", "linalg5_ext", "linalg6", "linalg6_pivot",
+        "linalg", "linalg_svd", "linalg_ext", "linalg5", "linalg5_ext", "linalg6", "linalg6_pivot",
         "linalg6_spectral", "dynamic", "sparse", "facade",
     ]
     rename = {
@@ -565,8 +565,8 @@ def make_final():
         "dynamic": "dynamic", "sparse": "sparse", "top": "facade", "la_hh": "linalg",
     }
     la_map = {
-        "s": {"lu": "linalg", "chol": "linalg", "qr": "linalg", "eig": "linalg", "svd": "linalg",
-              "rest": "linalg_ext"},
+        "s": {"lu": "linalg", "chol": "linalg", "qr": "linalg", "eig": "linalg_svd",
+              "svd": "linalg_svd", "rest": "linalg_ext"},
         "5": {"lu": "linalg5", "chol": "linalg5", "qr": "linalg5", "eig": "linalg5",
               "svd": "linalg5", "rest": "linalg5_ext"},
         "6": {"lu": "linalg6", "chol": "linalg6", "qr": "linalg6", "eig": "linalg6",
@@ -575,6 +575,13 @@ def make_final():
     PIVOT6 = ("col_piv_qr", "full_piv_lu", "lblt", "lu")
 
     def home(g, n):
+        if g.kind(n) == "typebound" and g.info[n]["args"]:
+            st = g.struct_node.get(g.info[n]["args"][0])
+            if st is not None and st != n:
+                return home_(g, st)
+        return home_(g, n)
+
+    def home_(g, n):
         h = v5.home(g, n)
         it = g.info[n]
         name = it["gen"] or it["name"]
@@ -584,6 +591,11 @@ def make_final():
         if s and name.endswith("EditTrait"):
             b = max(s)
             return {5: "types5", 6: "dim6a"}.get(b, "core")
+        if p in ("geometry/point4.cairo", "geometry/translation4.cairo", "geometry/point1.cairo",
+                 "geometry/translation1.cairo"):
+            # the 1- and 4-dimensional point / translation TYPES with the other types of dimension
+            # <= 4 (their methods stay in `geometry`): `nalgebra_glam` converts them
+            return "core"
         if of == "LuSteps":
             b = band_of_label(name) or 1
             return "linalg" if b <= 4 else ("linalg5" if b == 5 else "dim6")

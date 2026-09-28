@@ -86,7 +86,7 @@ def manifest(proto, members):
         if m.startswith("@"):
             lines.append(EXTERNAL[m[1:]])
         elif m.startswith("/"):
-            name = os.path.basename(m.rstrip("/"))
+            name = re.search(r'^name = "(\w+)"', open(os.path.join(m, "Scarb.toml")).read(), re.M).group(1)
             lines.append(f'{name} = {{ path = "{m}" }}')
         else:
             lines.append(f'{PREFIX}{m} = {{ path = "{os.path.join(proto, "crates", m)}" }}')

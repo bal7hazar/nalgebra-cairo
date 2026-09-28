@@ -287,6 +287,10 @@ class Splitter:
             q, y = w
             if q == p and y == c:
                 continue
+            if not counted and y != c and self.plan_deps and y not in self.closure(c):
+                # imported by the original file for method resolution only, from a crate the plan
+                # does not depend on: the build proves the call does not need it
+                continue
             r = self.ref(name, c, p, counted, o)
             if r:
                 line = f"use {r}::{modpath(q)}::{name};"
