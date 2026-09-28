@@ -32,6 +32,10 @@ jobs:
           python3 tools/linalggen/generate.py --check
       - name: Library lines of the published crates (proxy of the package size gate, report only)
         run: python3 scripts/consumer_cost.py --lines-only --report-only
+      - name: Consumer cost script (self-test, consumer manifests of the dry run; no build)
+        run: |
+          python3 scripts/consumer_cost.py --self-test
+          python3 scripts/consumer_cost.py --dry-run --report-only
       - name: Lint (default features, then the lightest `nalgebra`)
         run: |
           scarb lint --deny-warnings
