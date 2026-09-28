@@ -970,6 +970,53 @@ NS1_NAMES = {
 }
 
 
+def check_anchors(cm):
+    """The move-PR checklist's step 7 (docs/SPLIT.md §15), two checks; the number of findings.
+
+    1. Anchors: every impl with type arguments is placed in the module of its trait or of one of
+       its argument types, in its own package (Cairo finds it nowhere else).
+    2. Placement: every item of the committed tree sits in the package of its crate (a hand-written
+       block the generators do not rewrite, `Vector5Normed`, WP 9-NS5); test-only items aside."""
+    from files import files as walk
+
+    texts = cm.library_files()
+    idx, known = cm.index(texts)
+    placed = cm.place_all(texts)
+    bad = 0
+    for f, rows in sorted(placed.items()):
+        for it, c, m in rows:
+            if it.kind != "impl" or not it.args:
+                continue
+            anchors = []
+            for a in list(it.args) + ([it.of] if it.of else []):
+                an = idx.get(a)
+                if an is None or an.kind not in ("struct", "enum", "trait", "inherent"):
+                    continue
+                ca = cm.crate_of(an, idx)
+                anchors.append((cm.crates[ca], cm.module_of(an, ca, idx)))
+            if anchors and (cm.crates[c], m) not in anchors:
+                bad += 1
+                print(f"anchor: {it.label} ({c}, {m}) is in none of {anchors}")
+    for pkg in cm.packages():
+        d = os.path.join(ROOT, package_dir(pkg))
+        if not os.path.exists(os.path.join(d, "src", "lib.cairo")):
+            continue
+        for rel in walk(d):
+            if rel == "lib.cairo":
+                continue
+            text = open(os.path.join(d, "src", rel), encoding="utf-8").read()
+            f = rel[len(INTERNAL):] if rel.startswith(INTERNAL) else rel
+            for it in parse(f, text, known):
+                if it.kind in ("use", "mod") or TEST_ONLY.search(text[it.start:it.end].split("{", 1)[0]):
+                    continue
+                c = cm.crate_of(it, idx)
+                if cm.crates[c] != pkg:
+                    bad += 1
+                    print(f"placement: {it.label} ({pkg}, {rel}) belongs to {c} ({cm.crates[c]})")
+    print(f"anchors and placement: {bad} finding(s)")
+    return bad
+
+
 def compare_plan(cm, edges_path, plan_path, generated_only):
     import json
 
@@ -1106,6 +1153,8 @@ def main():
     ap.add_argument("--compare-plan", nargs=2, metavar=("EDGES", "PLAN"))
     ap.add_argument("--generated", action="store_true", help="--compare-plan: generated files only")
     ap.add_argument("--split-map", metavar="OUT")
+    ap.add_argument("--anchors", action="store_true",
+                    help="the anchor and placement checks of a move PR (docs/SPLIT.md §15)")
     ap.add_argument("--compare-tree", nargs=2, metavar=("CHECKOUT", "PROTO"),
                     help="a checkout the generators wrote in split mode against prototype.py's output")
     a = ap.parse_args()
@@ -1124,6 +1173,9 @@ def main():
         counts = collections.Counter(c for rows in placed.values() for _it, c, _m in rows)
         for c in cm.order:
             print(f"  {c:20s} {counts[c]:6d} items")
+    if a.anchors:
+        sys.path.insert(0, HERE)
+        return 1 if check_anchors(cm) else 0
     if a.compare_tree:
         return 1 if compare_tree(cm, *a.compare_tree) else 0
     if a.compare_plan:
