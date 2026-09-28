@@ -559,7 +559,7 @@ def make_final():
         "core", "dim3v", "dim3", "types5", "dim4", "geometry", "types6", "dim5", "dim5a", "dim6a",
         "dim6", "dim6b", "edition", "views", "kronecker", "norm", "geometry_nd", "statistics", "blas",
         "linalg", "linalg_svd", "linalg_pivot", "linalg_spectral", "linalg5", "linalg5_pivot",
-        "linalg5_spectral", "linalg6", "linalg6_pivot", "linalg6_spectral", "dynamic", "sparse", "facade",
+        "linalg5_spectral", "linalg6", "linalg6_pivot", "linalg6_bidiagonal", "linalg6_spectral", "dynamic", "sparse", "facade",
     ]
     rename = {
         "core": "core", "base3": "dim3", "t5": "types5", "base4": "dim4", "geometry": "geometry",
@@ -627,6 +627,8 @@ def make_final():
                 stem = p.split("/")[1].split(".")[0]
                 pre = {"s": "linalg", "5": "linalg5", "6": "linalg6"}[b]
                 c = f"{pre}_pivot" if stem in PIVOT6 else f"{pre}_spectral"
+                if b == "6" and stem == "bidiagonal":
+                    c = "linalg6_bidiagonal"
             return c
         return rename[h]
 
