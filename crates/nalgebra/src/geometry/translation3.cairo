@@ -15,4 +15,12 @@
 //! Numeric contract (AGENTS.md): additions and negations panic instead of wrapping; no sum of
 //! products is formed here, so no fused kernel is needed.
 
-pub use nalgebra_static3::geometry::translation3::*;
+// an explicit list: the conversions and products of the shapes into this module's type (0.1.0:
+// `base::matrix*`, `base::row_vector*`) sit in this module of `nalgebra_static3`, the module of
+// their geometry type (docs/SPLIT.md §3.2, §12.6)
+pub use nalgebra_static3::geometry::translation3::{
+    Similarity3FromTranslation3, Translation3, Translation3Div, Translation3DivAssign,
+    Translation3FromArray, Translation3FromPoint, Translation3FromVector, Translation3Impl,
+    Translation3IntoArray, Translation3Mul, Translation3MulAssign, Translation3One,
+    Translation3Trait,
+};

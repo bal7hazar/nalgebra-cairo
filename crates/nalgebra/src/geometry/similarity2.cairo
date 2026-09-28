@@ -9,4 +9,12 @@
 //! upstream's fixed-point-observable order (`rotate`, then `scale`, then `translate`) while
 //! avoiding a checked scalar addition after the scale.
 
-pub use nalgebra_static3::geometry::similarity2::*;
+// an explicit list: the conversions and products of the shapes into this module's type (0.1.0:
+// `base::matrix*`, `base::row_vector*`) sit in this module of `nalgebra_static3`, the module of
+// their geometry type (docs/SPLIT.md §3.2, §12.6)
+pub use nalgebra_static3::geometry::similarity2::{
+    Similarity2, Similarity2AngleImpl, Similarity2AngleTrait, Similarity2Default, Similarity2Div,
+    Similarity2DivAssign, Similarity2DivAssignIsometry2, Similarity2Impl, Similarity2Mul,
+    Similarity2MulAssign, Similarity2MulAssignIsometry2, Similarity2MulAssignTranslation2,
+    Similarity2One, Similarity2Trait, errors,
+};
