@@ -15,13 +15,13 @@
 
 use core::num::traits::One;
 use core::ops::{DivAssign, MulAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::isometry_matrix3::{IsometryMatrix3, IsometryMatrix3Trait};
-use super::quaternion::ApproxEqTrait;
 use super::rotation3::{Rotation3, Rotation3AngleTrait, Rotation3Trait};
 use super::similarity3::errors::ZERO_SCALING;
 use super::similarity3::{Similarity3, Similarity3InternalTrait};

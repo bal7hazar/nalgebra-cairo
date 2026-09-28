@@ -4,10 +4,10 @@
 //! (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix2x6::Matrix2x6;
-use crate::base::solve::SolveKernel;
 use crate::base::vector2::Vector2;
 use crate::linalg::lu::Perm6;
 

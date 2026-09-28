@@ -10,10 +10,10 @@
 
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use nalgebra_core::internal::base::kernels::{Fused, Powi};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
-use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
-use super::kernels::{Fused, Powi};
 use super::matrix1::Matrix1;
 use super::matrix2x5::Matrix2x5;
 use super::matrix3x5::Matrix3x5;
@@ -2696,3 +2696,339 @@ pub impl RowVector5InfSup<
         RowVector5Trait::inf_sup(a, b)
     }
 }
+use nalgebra_core::internal::base::matrix_view::RowVectorLen;
+use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_core::internal::base::transpose::BlasTranspose;
+
+/// `self * rhs`, a `RowVector5`: one floored product per component. Panics on overflow. Upstream:
+/// `Matrix1 * RowVector5` (`Mul`).
+pub impl Matrix1MulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix1<T>, RowVector5<T>> {
+    type Output = RowVector5<T>;
+    fn mul_mat(self: Matrix1<T>, rhs: RowVector5<T>) -> RowVector5<T> {
+        RowVector5 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.x * rhs.z,
+            w: self.x * rhs.w,
+            a: self.x * rhs.a,
+        }
+    }
+}
+
+/// `selfᵀ * rhs`, a `RowVector5`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix1TrMulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix1<T>, RowVector5<T>> {
+    type Output = RowVector5<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix1<T>, rhs: RowVector5<T>) -> RowVector5<T> {
+        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `RowVector5`, a `RowVector5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerRowVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, RowVector5<T>> {
+    type Output = RowVector5<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: RowVector5<T>) -> RowVector5<T> {
+        RowVector5 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.x * rhs.z,
+            w: self.x * rhs.w,
+            a: self.x * rhs.a,
+        }
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix2x5`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl RowVector2TrMulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<RowVector2<T>, RowVector5<T>> {
+    type Output = Matrix2x5<T>;
+    #[inline(always)]
+    fn tr_mul(self: RowVector2<T>, rhs: RowVector5<T>) -> Matrix2x5<T> {
+        MatrixMul::mul_mat(Vector2 { x: self.x, y: self.y }, rhs)
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix3x5`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl RowVector3TrMulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<RowVector3<T>, RowVector5<T>> {
+    type Output = Matrix3x5<T>;
+    #[inline(always)]
+    fn tr_mul(self: RowVector3<T>, rhs: RowVector5<T>) -> Matrix3x5<T> {
+        MatrixMul::mul_mat(Vector3 { x: self.x, y: self.y, z: self.z }, rhs)
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix4x5`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl RowVector4TrMulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<RowVector4<T>, RowVector5<T>> {
+    type Output = Matrix4x5<T>;
+    #[inline(always)]
+    fn tr_mul(self: RowVector4<T>, rhs: RowVector5<T>) -> Matrix4x5<T> {
+        MatrixMul::mul_mat(Vector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
+    }
+}
+
+/// `self * rhs`, a `Matrix2x5`: one floored product per component. Panics on overflow. Upstream:
+/// `Vector2 * RowVector5` (`Mul`).
+pub impl Vector2MulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Vector2<T>, RowVector5<T>> {
+    type Output = Matrix2x5<T>;
+    fn mul_mat(self: Vector2<T>, rhs: RowVector5<T>) -> Matrix2x5<T> {
+        Matrix2x5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `RowVector5`, a `Matrix2x5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerRowVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, RowVector5<T>> {
+    type Output = Matrix2x5<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: RowVector5<T>) -> Matrix2x5<T> {
+        Matrix2x5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix3x5`: one floored product per component. Panics on overflow. Upstream:
+/// `Vector3 * RowVector5` (`Mul`).
+pub impl Vector3MulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Vector3<T>, RowVector5<T>> {
+    type Output = Matrix3x5<T>;
+    fn mul_mat(self: Vector3<T>, rhs: RowVector5<T>) -> Matrix3x5<T> {
+        Matrix3x5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector5`, a `Matrix3x5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector5<T>> {
+    type Output = Matrix3x5<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector5<T>) -> Matrix3x5<T> {
+        Matrix3x5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix4x5`: one floored product per component. Panics on overflow. Upstream:
+/// `Vector4 * RowVector5` (`Mul`).
+pub impl Vector4MulRowVector5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Vector4<T>, RowVector5<T>> {
+    type Output = Matrix4x5<T>;
+    fn mul_mat(self: Vector4<T>, rhs: RowVector5<T>) -> Matrix4x5<T> {
+        Matrix4x5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+            m45: self.w * rhs.a,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector4` and a `RowVector5`, a `Matrix4x5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector4KroneckerRowVector5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector4<T>, RowVector5<T>> {
+    type Output = Matrix4x5<T>;
+    fn kronecker(self: Vector4<T>, rhs: RowVector5<T>) -> Matrix4x5<T> {
+        Matrix4x5 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+            m45: self.w * rhs.a,
+        }
+    }
+}
+
+impl RowVector5RowVectorLen<T> of RowVectorLen<RowVector5<T>> {
+    #[inline(always)]
+    fn len() -> usize {
+        5
+    }
+}
+
+impl RowVector5BlasTranspose<T> of BlasTranspose<RowVector5<T>> {
+    type Output = Vector5<T>;
+    #[inline(always)]
+    fn tr(self: RowVector5<T>) -> Vector5<T> {
+        Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
+    }
+}
+
+impl Matrix1SolveKernelRowVector5<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Mul<T>, +Neg<T>, +PartialEq<T>,
+> of SolveKernel<Matrix1<T>, RowVector5<T>> {
+    type Scalar = T;
+
+    fn lower(self: Matrix1<T>, b: RowVector5<T>) -> RowVector5<T> {
+        let (x00, x01, x02, x03, x04) = R::div5(b.x, b.y, b.z, b.w, b.a, self.x);
+        RowVector5 { x: x00, y: x01, z: x02, w: x03, a: x04 }
+    }
+
+    fn upper(self: Matrix1<T>, b: RowVector5<T>) -> RowVector5<T> {
+        let (x00, x01, x02, x03, x04) = R::div5(b.x, b.y, b.z, b.w, b.a, self.x);
+        RowVector5 { x: x00, y: x01, z: x02, w: x03, a: x04 }
+    }
+
+    fn lower_unit(self: Matrix1<T>, b: RowVector5<T>) -> RowVector5<T> {
+        let x00 = b.x;
+        let x01 = b.y;
+        let x02 = b.z;
+        let x03 = b.w;
+        let x04 = b.a;
+        RowVector5 { x: x00, y: x01, z: x02, w: x03, a: x04 }
+    }
+
+    fn lower_with_diag(self: Matrix1<T>, b: RowVector5<T>, diag: T) -> RowVector5<T> {
+        let x00 = b.x;
+        let x01 = b.y;
+        let x02 = b.z;
+        let x03 = b.w;
+        let x04 = b.a;
+        let _ = diag;
+        RowVector5 { x: x00, y: x01, z: x02, w: x03, a: x04 }
+    }
+
+    #[inline(always)]
+    fn nonzero_diagonal(self: Matrix1<T>) -> bool {
+        self.x != R::zero()
+    }
+
+    #[inline(always)]
+    fn is_zero(x: T) -> bool {
+        x == R::zero()
+    }
+
+    #[inline(always)]
+    fn tr_mul_rhs(self: Matrix1<T>, b: RowVector5<T>) -> RowVector5<T> {
+        MatrixTrMul::tr_mul(self, b)
+    }
+}
+use nalgebra_core::linalg::lu::perm1_5::Perm1;
+use nalgebra_core::linalg::permutation_sequence::PermuteRows;
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/lu/perm1_5.cairo
+pub impl Perm1PermuteRowsRowVector5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector5<T>> {
+    fn permute_rows(self: Perm1, ref rhs: RowVector5<T>) {
+        let _ = self;
+        let _ = rhs;
+    }
+
+    fn inv_permute_rows(self: Perm1, ref rhs: RowVector5<T>) {
+        let _ = self;
+        let _ = rhs;
+    }
+}
+// crate-map: end

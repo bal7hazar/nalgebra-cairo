@@ -10,10 +10,10 @@
 
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use nalgebra_core::internal::base::kernels::{Fused, Powi};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
-use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
-use super::kernels::{Fused, Powi};
 use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
 use super::matrix2x3::Matrix2x3;
@@ -5248,5 +5248,880 @@ pub impl Matrix2x6InfSup<
     #[inline(always)]
     fn inf_sup(a: Matrix2x6<T>, b: Matrix2x6<T>) -> (Matrix2x6<T>, Matrix2x6<T>) {
         Matrix2x6Trait::inf_sup(a, b)
+    }
+}
+use nalgebra_core::base::matrix3x2::Matrix3x2;
+use nalgebra_core::base::matrix4x2::Matrix4x2;
+use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_core::internal::base::transpose::BlasTranspose;
+use nalgebra_core::internal::linalg::givens::GivensRotationInternalTrait;
+use nalgebra_core::linalg::givens::{GivensRotate, GivensRotation};
+use nalgebra_core::linalg::lu::Perm2;
+use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
+use crate::linalg::lu::Perm6;
+
+/// The Kronecker product of a `Matrix1` and a `Matrix2x6`, a `Matrix2x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix2x6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix2x6<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix2x6<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m15: self.x * rhs.m15,
+            m25: self.x * rhs.m25,
+            m16: self.x * rhs.m16,
+            m26: self.x * rhs.m26,
+        }
+    }
+}
+
+/// `self * rhs`, a `RowVector6`: one `sum_prod2` per component (one rounding each). Panics on
+/// overflow. Upstream: `RowVector2 * Matrix2x6` (`Mul`).
+pub impl RowVector2MulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<RowVector2<T>, Matrix2x6<T>> {
+    type Output = RowVector6<T>;
+    fn mul_mat(self: RowVector2<T>, rhs: Matrix2x6<T>) -> RowVector6<T> {
+        RowVector6 {
+            x: R::sum_prod2(self.x, rhs.m11, self.y, rhs.m21),
+            y: R::sum_prod2(self.x, rhs.m12, self.y, rhs.m22),
+            z: R::sum_prod2(self.x, rhs.m13, self.y, rhs.m23),
+            w: R::sum_prod2(self.x, rhs.m14, self.y, rhs.m24),
+            a: R::sum_prod2(self.x, rhs.m15, self.y, rhs.m25),
+            b: R::sum_prod2(self.x, rhs.m16, self.y, rhs.m26),
+        }
+    }
+}
+
+/// `selfᵀ * rhs`, a `RowVector6`: `mul_mat` of the transposed components, so one `sum_prod2` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Vector2TrMulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Vector2<T>, Matrix2x6<T>> {
+    type Output = RowVector6<T>;
+    #[inline(always)]
+    fn tr_mul(self: Vector2<T>, rhs: Matrix2x6<T>) -> RowVector6<T> {
+        MatrixMul::mul_mat(RowVector2 { x: self.x, y: self.y }, rhs)
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix2x6`, a `Matrix4x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix2x6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix2x6<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: Vector2<T>, rhs: Matrix2x6<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.y * rhs.m14,
+            m44: self.y * rhs.m24,
+            m15: self.x * rhs.m15,
+            m25: self.x * rhs.m25,
+            m35: self.y * rhs.m15,
+            m45: self.y * rhs.m25,
+            m16: self.x * rhs.m16,
+            m26: self.x * rhs.m26,
+            m36: self.y * rhs.m16,
+            m46: self.y * rhs.m26,
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix2x6`: one `sum_prod2` per component (one rounding each). Panics on
+/// overflow. Upstream: `Matrix2 * Matrix2x6` (`Mul`).
+pub impl Matrix2MulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix2<T>, Matrix2x6<T>> {
+    type Output = Matrix2x6<T>;
+    fn mul_mat(self: Matrix2<T>, rhs: Matrix2x6<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: R::sum_prod2(self.m11, rhs.m11, self.m12, rhs.m21),
+            m21: R::sum_prod2(self.m21, rhs.m11, self.m22, rhs.m21),
+            m12: R::sum_prod2(self.m11, rhs.m12, self.m12, rhs.m22),
+            m22: R::sum_prod2(self.m21, rhs.m12, self.m22, rhs.m22),
+            m13: R::sum_prod2(self.m11, rhs.m13, self.m12, rhs.m23),
+            m23: R::sum_prod2(self.m21, rhs.m13, self.m22, rhs.m23),
+            m14: R::sum_prod2(self.m11, rhs.m14, self.m12, rhs.m24),
+            m24: R::sum_prod2(self.m21, rhs.m14, self.m22, rhs.m24),
+            m15: R::sum_prod2(self.m11, rhs.m15, self.m12, rhs.m25),
+            m25: R::sum_prod2(self.m21, rhs.m15, self.m22, rhs.m25),
+            m16: R::sum_prod2(self.m11, rhs.m16, self.m12, rhs.m26),
+            m26: R::sum_prod2(self.m21, rhs.m16, self.m22, rhs.m26),
+        }
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix2x6`: `mul_mat` of the transposed components, so one `sum_prod2` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix2TrMulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix2<T>, Matrix2x6<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix2<T>, rhs: Matrix2x6<T>) -> Matrix2x6<T> {
+        MatrixMul::mul_mat(
+            Matrix2 { m11: self.m11, m21: self.m12, m12: self.m21, m22: self.m22 }, rhs,
+        )
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix3x6`: `mul_mat` of the transposed components, so one `sum_prod2` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix2x3TrMulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix2x3<T>, Matrix2x6<T>> {
+    type Output = Matrix3x6<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix2x3<T>, rhs: Matrix2x6<T>) -> Matrix3x6<T> {
+        MatrixMul::mul_mat(
+            Matrix3x2 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+            },
+            rhs,
+        )
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix4x6`: `mul_mat` of the transposed components, so one `sum_prod2` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix2x4TrMulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix2x4<T>, Matrix2x6<T>> {
+    type Output = Matrix4x6<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix2x4<T>, rhs: Matrix2x6<T>) -> Matrix4x6<T> {
+        MatrixMul::mul_mat(
+            Matrix4x2 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+            },
+            rhs,
+        )
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2x6`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2x6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2x6<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Vector3<T>, rhs: Matrix2x6<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m53: self.z * rhs.m13,
+            m63: self.z * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.y * rhs.m14,
+            m44: self.y * rhs.m24,
+            m54: self.z * rhs.m14,
+            m64: self.z * rhs.m24,
+            m15: self.x * rhs.m15,
+            m25: self.x * rhs.m25,
+            m35: self.y * rhs.m15,
+            m45: self.y * rhs.m25,
+            m55: self.z * rhs.m15,
+            m65: self.z * rhs.m25,
+            m16: self.x * rhs.m16,
+            m26: self.x * rhs.m26,
+            m36: self.y * rhs.m16,
+            m46: self.y * rhs.m26,
+            m56: self.z * rhs.m16,
+            m66: self.z * rhs.m26,
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix3x6`: one `sum_prod2` per component (one rounding each). Panics on
+/// overflow. Upstream: `Matrix3x2 * Matrix2x6` (`Mul`).
+pub impl Matrix3x2MulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix3x2<T>, Matrix2x6<T>> {
+    type Output = Matrix3x6<T>;
+    fn mul_mat(self: Matrix3x2<T>, rhs: Matrix2x6<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: R::sum_prod2(self.m11, rhs.m11, self.m12, rhs.m21),
+            m21: R::sum_prod2(self.m21, rhs.m11, self.m22, rhs.m21),
+            m31: R::sum_prod2(self.m31, rhs.m11, self.m32, rhs.m21),
+            m12: R::sum_prod2(self.m11, rhs.m12, self.m12, rhs.m22),
+            m22: R::sum_prod2(self.m21, rhs.m12, self.m22, rhs.m22),
+            m32: R::sum_prod2(self.m31, rhs.m12, self.m32, rhs.m22),
+            m13: R::sum_prod2(self.m11, rhs.m13, self.m12, rhs.m23),
+            m23: R::sum_prod2(self.m21, rhs.m13, self.m22, rhs.m23),
+            m33: R::sum_prod2(self.m31, rhs.m13, self.m32, rhs.m23),
+            m14: R::sum_prod2(self.m11, rhs.m14, self.m12, rhs.m24),
+            m24: R::sum_prod2(self.m21, rhs.m14, self.m22, rhs.m24),
+            m34: R::sum_prod2(self.m31, rhs.m14, self.m32, rhs.m24),
+            m15: R::sum_prod2(self.m11, rhs.m15, self.m12, rhs.m25),
+            m25: R::sum_prod2(self.m21, rhs.m15, self.m22, rhs.m25),
+            m35: R::sum_prod2(self.m31, rhs.m15, self.m32, rhs.m25),
+            m16: R::sum_prod2(self.m11, rhs.m16, self.m12, rhs.m26),
+            m26: R::sum_prod2(self.m21, rhs.m16, self.m22, rhs.m26),
+            m36: R::sum_prod2(self.m31, rhs.m16, self.m32, rhs.m26),
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix4x6`: one `sum_prod2` per component (one rounding each). Panics on
+/// overflow. Upstream: `Matrix4x2 * Matrix2x6` (`Mul`).
+pub impl Matrix4x2MulMatrix2x6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix4x2<T>, Matrix2x6<T>> {
+    type Output = Matrix4x6<T>;
+    fn mul_mat(self: Matrix4x2<T>, rhs: Matrix2x6<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: R::sum_prod2(self.m11, rhs.m11, self.m12, rhs.m21),
+            m21: R::sum_prod2(self.m21, rhs.m11, self.m22, rhs.m21),
+            m31: R::sum_prod2(self.m31, rhs.m11, self.m32, rhs.m21),
+            m41: R::sum_prod2(self.m41, rhs.m11, self.m42, rhs.m21),
+            m12: R::sum_prod2(self.m11, rhs.m12, self.m12, rhs.m22),
+            m22: R::sum_prod2(self.m21, rhs.m12, self.m22, rhs.m22),
+            m32: R::sum_prod2(self.m31, rhs.m12, self.m32, rhs.m22),
+            m42: R::sum_prod2(self.m41, rhs.m12, self.m42, rhs.m22),
+            m13: R::sum_prod2(self.m11, rhs.m13, self.m12, rhs.m23),
+            m23: R::sum_prod2(self.m21, rhs.m13, self.m22, rhs.m23),
+            m33: R::sum_prod2(self.m31, rhs.m13, self.m32, rhs.m23),
+            m43: R::sum_prod2(self.m41, rhs.m13, self.m42, rhs.m23),
+            m14: R::sum_prod2(self.m11, rhs.m14, self.m12, rhs.m24),
+            m24: R::sum_prod2(self.m21, rhs.m14, self.m22, rhs.m24),
+            m34: R::sum_prod2(self.m31, rhs.m14, self.m32, rhs.m24),
+            m44: R::sum_prod2(self.m41, rhs.m14, self.m42, rhs.m24),
+            m15: R::sum_prod2(self.m11, rhs.m15, self.m12, rhs.m25),
+            m25: R::sum_prod2(self.m21, rhs.m15, self.m22, rhs.m25),
+            m35: R::sum_prod2(self.m31, rhs.m15, self.m32, rhs.m25),
+            m45: R::sum_prod2(self.m41, rhs.m15, self.m42, rhs.m25),
+            m16: R::sum_prod2(self.m11, rhs.m16, self.m12, rhs.m26),
+            m26: R::sum_prod2(self.m21, rhs.m16, self.m22, rhs.m26),
+            m36: R::sum_prod2(self.m31, rhs.m16, self.m32, rhs.m26),
+            m46: R::sum_prod2(self.m41, rhs.m16, self.m42, rhs.m26),
+        }
+    }
+}
+
+impl Matrix2x6BlasTranspose<T> of BlasTranspose<Matrix2x6<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn tr(self: Matrix2x6<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.m11,
+            m21: self.m12,
+            m31: self.m13,
+            m41: self.m14,
+            m51: self.m15,
+            m61: self.m16,
+            m12: self.m21,
+            m22: self.m22,
+            m32: self.m23,
+            m42: self.m24,
+            m52: self.m25,
+            m62: self.m26,
+        }
+    }
+}
+
+impl Matrix2SolveKernelMatrix2x6<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Mul<T>, +Neg<T>, +PartialEq<T>,
+> of SolveKernel<Matrix2<T>, Matrix2x6<T>> {
+    type Scalar = T;
+
+    fn lower(self: Matrix2<T>, b: Matrix2x6<T>) -> Matrix2x6<T> {
+        let (x00, x01, x02, x03, x04, x05) = R::div6(
+            b.m11, b.m12, b.m13, b.m14, b.m15, b.m16, self.m11,
+        );
+        let n10 = -self.m21;
+        let (x10, x11, x12, x13, x14, x15) = R::div6(
+            R::mul_add(n10, x00, b.m21),
+            R::mul_add(n10, x01, b.m22),
+            R::mul_add(n10, x02, b.m23),
+            R::mul_add(n10, x03, b.m24),
+            R::mul_add(n10, x04, b.m25),
+            R::mul_add(n10, x05, b.m26),
+            self.m22,
+        );
+        Matrix2x6 {
+            m11: x00,
+            m21: x10,
+            m12: x01,
+            m22: x11,
+            m13: x02,
+            m23: x12,
+            m14: x03,
+            m24: x13,
+            m15: x04,
+            m25: x14,
+            m16: x05,
+            m26: x15,
+        }
+    }
+
+    fn upper(self: Matrix2<T>, b: Matrix2x6<T>) -> Matrix2x6<T> {
+        let (x10, x11, x12, x13, x14, x15) = R::div6(
+            b.m21, b.m22, b.m23, b.m24, b.m25, b.m26, self.m22,
+        );
+        let n01 = -self.m12;
+        let (x00, x01, x02, x03, x04, x05) = R::div6(
+            R::mul_add(n01, x10, b.m11),
+            R::mul_add(n01, x11, b.m12),
+            R::mul_add(n01, x12, b.m13),
+            R::mul_add(n01, x13, b.m14),
+            R::mul_add(n01, x14, b.m15),
+            R::mul_add(n01, x15, b.m16),
+            self.m11,
+        );
+        Matrix2x6 {
+            m11: x00,
+            m21: x10,
+            m12: x01,
+            m22: x11,
+            m13: x02,
+            m23: x12,
+            m14: x03,
+            m24: x13,
+            m15: x04,
+            m25: x14,
+            m16: x05,
+            m26: x15,
+        }
+    }
+
+    fn lower_unit(self: Matrix2<T>, b: Matrix2x6<T>) -> Matrix2x6<T> {
+        let x00 = b.m11;
+        let x01 = b.m12;
+        let x02 = b.m13;
+        let x03 = b.m14;
+        let x04 = b.m15;
+        let x05 = b.m16;
+        let n10 = -self.m21;
+        let x10 = R::mul_add(n10, x00, b.m21);
+        let x11 = R::mul_add(n10, x01, b.m22);
+        let x12 = R::mul_add(n10, x02, b.m23);
+        let x13 = R::mul_add(n10, x03, b.m24);
+        let x14 = R::mul_add(n10, x04, b.m25);
+        let x15 = R::mul_add(n10, x05, b.m26);
+        Matrix2x6 {
+            m11: x00,
+            m21: x10,
+            m12: x01,
+            m22: x11,
+            m13: x02,
+            m23: x12,
+            m14: x03,
+            m24: x13,
+            m15: x04,
+            m25: x14,
+            m16: x05,
+            m26: x15,
+        }
+    }
+
+    fn lower_with_diag(self: Matrix2<T>, b: Matrix2x6<T>, diag: T) -> Matrix2x6<T> {
+        let x00 = b.m11;
+        let x01 = b.m12;
+        let x02 = b.m13;
+        let x03 = b.m14;
+        let x04 = b.m15;
+        let x05 = b.m16;
+        let (q00, q01, q02, q03, q04, q05) = R::div6(x00, x01, x02, x03, x04, x05, diag);
+        let n10 = -self.m21;
+        let x10 = R::mul_add(n10, q00, b.m21);
+        let x11 = R::mul_add(n10, q01, b.m22);
+        let x12 = R::mul_add(n10, q02, b.m23);
+        let x13 = R::mul_add(n10, q03, b.m24);
+        let x14 = R::mul_add(n10, q04, b.m25);
+        let x15 = R::mul_add(n10, q05, b.m26);
+        Matrix2x6 {
+            m11: x00,
+            m21: x10,
+            m12: x01,
+            m22: x11,
+            m13: x02,
+            m23: x12,
+            m14: x03,
+            m24: x13,
+            m15: x04,
+            m25: x14,
+            m16: x05,
+            m26: x15,
+        }
+    }
+
+    #[inline(always)]
+    fn nonzero_diagonal(self: Matrix2<T>) -> bool {
+        self.m11 != R::zero() && self.m22 != R::zero()
+    }
+
+    #[inline(always)]
+    fn is_zero(x: T) -> bool {
+        x == R::zero()
+    }
+
+    #[inline(always)]
+    fn tr_mul_rhs(self: Matrix2<T>, b: Matrix2x6<T>) -> Matrix2x6<T> {
+        MatrixTrMul::tr_mul(self, b)
+    }
+}
+
+pub impl GivensRotationRotateMatrix2x6<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
+> of GivensRotate<T, Matrix2x6<T>> {
+    fn rotate(self: GivensRotation<T>, ref rhs: Matrix2x6<T>) {
+        let c = GivensRotationInternalTrait::c(self);
+        let s = GivensRotationInternalTrait::s(self);
+        rhs =
+            Matrix2x6 {
+                m11: R::diff_prod(c, rhs.m11, s, rhs.m21),
+                m21: R::sum_prod2(s, rhs.m11, c, rhs.m21),
+                m12: R::diff_prod(c, rhs.m12, s, rhs.m22),
+                m22: R::sum_prod2(s, rhs.m12, c, rhs.m22),
+                m13: R::diff_prod(c, rhs.m13, s, rhs.m23),
+                m23: R::sum_prod2(s, rhs.m13, c, rhs.m23),
+                m14: R::diff_prod(c, rhs.m14, s, rhs.m24),
+                m24: R::sum_prod2(s, rhs.m14, c, rhs.m24),
+                m15: R::diff_prod(c, rhs.m15, s, rhs.m25),
+                m25: R::sum_prod2(s, rhs.m15, c, rhs.m25),
+                m16: R::diff_prod(c, rhs.m16, s, rhs.m26),
+                m26: R::sum_prod2(s, rhs.m16, c, rhs.m26),
+            };
+    }
+}
+
+pub impl Perm2PermuteRowsMatrix2x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, Matrix2x6<T>> {
+    fn permute_rows(self: Perm2, ref rhs: Matrix2x6<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a05 = rhs.m16;
+        let mut a15 = rhs.m26;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a10;
+            a10 = tmp;
+            let tmp = a01;
+            a01 = a11;
+            a11 = tmp;
+            let tmp = a02;
+            a02 = a12;
+            a12 = tmp;
+            let tmp = a03;
+            a03 = a13;
+            a13 = tmp;
+            let tmp = a04;
+            a04 = a14;
+            a14 = tmp;
+            let tmp = a05;
+            a05 = a15;
+            a15 = tmp;
+        }
+        rhs =
+            Matrix2x6 {
+                m11: a00,
+                m21: a10,
+                m12: a01,
+                m22: a11,
+                m13: a02,
+                m23: a12,
+                m14: a03,
+                m24: a13,
+                m15: a04,
+                m25: a14,
+                m16: a05,
+                m26: a15,
+            };
+    }
+
+    fn inv_permute_rows(self: Perm2, ref rhs: Matrix2x6<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a05 = rhs.m16;
+        let mut a15 = rhs.m26;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a10;
+            a10 = tmp;
+            let tmp = a01;
+            a01 = a11;
+            a11 = tmp;
+            let tmp = a02;
+            a02 = a12;
+            a12 = tmp;
+            let tmp = a03;
+            a03 = a13;
+            a13 = tmp;
+            let tmp = a04;
+            a04 = a14;
+            a14 = tmp;
+            let tmp = a05;
+            a05 = a15;
+            a15 = tmp;
+        }
+        rhs =
+            Matrix2x6 {
+                m11: a00,
+                m21: a10,
+                m12: a01,
+                m22: a11,
+                m13: a02,
+                m23: a12,
+                m14: a03,
+                m24: a13,
+                m15: a04,
+                m25: a14,
+                m16: a05,
+                m26: a15,
+            };
+    }
+}
+
+pub impl Perm6PermuteColumnsMatrix2x6<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm6, Matrix2x6<T>> {
+    fn permute_columns(self: Perm6, ref rhs: Matrix2x6<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a05 = rhs.m16;
+        let mut a15 = rhs.m26;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a02;
+            a02 = tmp;
+            let tmp = a10;
+            a10 = a12;
+            a12 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a03;
+            a03 = tmp;
+            let tmp = a10;
+            a10 = a13;
+            a13 = tmp;
+        } else if self.p1 == 5 {
+            let tmp = a00;
+            a00 = a04;
+            a04 = tmp;
+            let tmp = a10;
+            a10 = a14;
+            a14 = tmp;
+        } else if self.p1 == 6 {
+            let tmp = a00;
+            a00 = a05;
+            a05 = tmp;
+            let tmp = a10;
+            a10 = a15;
+            a15 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a01;
+            a01 = a02;
+            a02 = tmp;
+            let tmp = a11;
+            a11 = a12;
+            a12 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a01;
+            a01 = a03;
+            a03 = tmp;
+            let tmp = a11;
+            a11 = a13;
+            a13 = tmp;
+        } else if self.p2 == 5 {
+            let tmp = a01;
+            a01 = a04;
+            a04 = tmp;
+            let tmp = a11;
+            a11 = a14;
+            a14 = tmp;
+        } else if self.p2 == 6 {
+            let tmp = a01;
+            a01 = a05;
+            a05 = tmp;
+            let tmp = a11;
+            a11 = a15;
+            a15 = tmp;
+        }
+        if self.p3 == 4 {
+            let tmp = a02;
+            a02 = a03;
+            a03 = tmp;
+            let tmp = a12;
+            a12 = a13;
+            a13 = tmp;
+        } else if self.p3 == 5 {
+            let tmp = a02;
+            a02 = a04;
+            a04 = tmp;
+            let tmp = a12;
+            a12 = a14;
+            a14 = tmp;
+        } else if self.p3 == 6 {
+            let tmp = a02;
+            a02 = a05;
+            a05 = tmp;
+            let tmp = a12;
+            a12 = a15;
+            a15 = tmp;
+        }
+        if self.p4 == 5 {
+            let tmp = a03;
+            a03 = a04;
+            a04 = tmp;
+            let tmp = a13;
+            a13 = a14;
+            a14 = tmp;
+        } else if self.p4 == 6 {
+            let tmp = a03;
+            a03 = a05;
+            a05 = tmp;
+            let tmp = a13;
+            a13 = a15;
+            a15 = tmp;
+        }
+        if self.p5 == 6 {
+            let tmp = a04;
+            a04 = a05;
+            a05 = tmp;
+            let tmp = a14;
+            a14 = a15;
+            a15 = tmp;
+        }
+        rhs =
+            Matrix2x6 {
+                m11: a00,
+                m21: a10,
+                m12: a01,
+                m22: a11,
+                m13: a02,
+                m23: a12,
+                m14: a03,
+                m24: a13,
+                m15: a04,
+                m25: a14,
+                m16: a05,
+                m26: a15,
+            };
+    }
+
+    fn inv_permute_columns(self: Perm6, ref rhs: Matrix2x6<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a05 = rhs.m16;
+        let mut a15 = rhs.m26;
+        if self.p5 == 6 {
+            let tmp = a04;
+            a04 = a05;
+            a05 = tmp;
+            let tmp = a14;
+            a14 = a15;
+            a15 = tmp;
+        }
+        if self.p4 == 5 {
+            let tmp = a03;
+            a03 = a04;
+            a04 = tmp;
+            let tmp = a13;
+            a13 = a14;
+            a14 = tmp;
+        } else if self.p4 == 6 {
+            let tmp = a03;
+            a03 = a05;
+            a05 = tmp;
+            let tmp = a13;
+            a13 = a15;
+            a15 = tmp;
+        }
+        if self.p3 == 4 {
+            let tmp = a02;
+            a02 = a03;
+            a03 = tmp;
+            let tmp = a12;
+            a12 = a13;
+            a13 = tmp;
+        } else if self.p3 == 5 {
+            let tmp = a02;
+            a02 = a04;
+            a04 = tmp;
+            let tmp = a12;
+            a12 = a14;
+            a14 = tmp;
+        } else if self.p3 == 6 {
+            let tmp = a02;
+            a02 = a05;
+            a05 = tmp;
+            let tmp = a12;
+            a12 = a15;
+            a15 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a01;
+            a01 = a02;
+            a02 = tmp;
+            let tmp = a11;
+            a11 = a12;
+            a12 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a01;
+            a01 = a03;
+            a03 = tmp;
+            let tmp = a11;
+            a11 = a13;
+            a13 = tmp;
+        } else if self.p2 == 5 {
+            let tmp = a01;
+            a01 = a04;
+            a04 = tmp;
+            let tmp = a11;
+            a11 = a14;
+            a14 = tmp;
+        } else if self.p2 == 6 {
+            let tmp = a01;
+            a01 = a05;
+            a05 = tmp;
+            let tmp = a11;
+            a11 = a15;
+            a15 = tmp;
+        }
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a02;
+            a02 = tmp;
+            let tmp = a10;
+            a10 = a12;
+            a12 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a03;
+            a03 = tmp;
+            let tmp = a10;
+            a10 = a13;
+            a13 = tmp;
+        } else if self.p1 == 5 {
+            let tmp = a00;
+            a00 = a04;
+            a04 = tmp;
+            let tmp = a10;
+            a10 = a14;
+            a14 = tmp;
+        } else if self.p1 == 6 {
+            let tmp = a00;
+            a00 = a05;
+            a05 = tmp;
+            let tmp = a10;
+            a10 = a15;
+            a15 = tmp;
+        }
+        rhs =
+            Matrix2x6 {
+                m11: a00,
+                m21: a10,
+                m12: a01,
+                m22: a11,
+                m13: a02,
+                m23: a12,
+                m14: a03,
+                m24: a13,
+                m15: a04,
+                m25: a14,
+                m16: a05,
+                m26: a15,
+            };
     }
 }

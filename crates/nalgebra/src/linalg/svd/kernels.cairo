@@ -5,6 +5,8 @@
 //! Gram-Schmidt of the left singular vectors when a column vanishes EXACTLY.
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
+use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
 use crate::base::matrix2::Matrix2;
@@ -12,8 +14,6 @@ use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
 use crate::base::matrix5::Matrix5;
 use crate::base::matrix6::Matrix6;
-use crate::base::sym_matrix2::SymMatrix2;
-use crate::base::sym_matrix3::SymMatrix3;
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;

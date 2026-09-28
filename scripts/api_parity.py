@@ -1047,6 +1047,10 @@ def cairo_files() -> list[Path]:
             rel = path.relative_to(src)
             if any(TEST_FILE.match(Path(part).stem) for part in rel.parts):
                 continue
+            # the `internal` modules of the split's sub-crates: 0.1.0's crate-private items, made
+            # `pub` for the packages above (docs/SPLIT.md §12.3), not part of the API
+            if rel.parts[0] in ("internal", "internal.cairo") and src != simba_root() / "src":
+                continue
             paths.append(path)
     return paths
 

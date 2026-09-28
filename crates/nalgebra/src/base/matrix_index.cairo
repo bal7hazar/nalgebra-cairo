@@ -8,13 +8,4 @@
 //! shape for `usize` and `(usize, usize)` (views and ranges are P05's owned blocks). The operators
 //! `m[i]` / `m[(i, j)]` are the `IndexView` impls of the same modules.
 
-/// `m.get(i)` / `m.index(i)` for `i: usize` (column-major) or `(usize, usize)` (row, column).
-pub trait MatrixIndex<M, I> {
-    /// The component type.
-    type Output;
-    /// The component at `index`, `None` when it is out of bounds. Upstream: `Matrix::get`.
-    fn get(self: M, index: I) -> Option<Self::Output>;
-    /// The component at `index`; panics with `nalgebra: index out of bounds` when it is out of
-    /// bounds. Upstream: `Matrix::index`.
-    fn index(self: M, index: I) -> Self::Output;
-}
+pub use nalgebra_core::base::matrix_index::*;

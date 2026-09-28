@@ -9,12 +9,1654 @@
 //! (`<Shape><Marker>`, static dispatch), delegating to the shape's own methods: `norm` /
 //! `metric_distance` (Euclidean), `lp_norm(p)`, `one_norm` and `amax` (uniform norm).
 
-/// A norm `N` on the shape `M` with values in `T`. Upstream: `Norm<T>` (`base/norm.rs`).
-pub trait Norm<N, M, T> {
-    /// The norm of `m`.
-    fn norm(self: @N, m: M) -> T;
-    /// The distance between `m1` and `m2` in this norm.
-    fn metric_distance(self: @N, m1: M, m2: M) -> T;
+use nalgebra_core::base::matrix1::Matrix1;
+use nalgebra_core::base::matrix2::Matrix2;
+use nalgebra_core::base::matrix2x3::Matrix2x3;
+use nalgebra_core::base::matrix2x4::Matrix2x4;
+use nalgebra_core::base::matrix3::Matrix3;
+use nalgebra_core::base::matrix3x2::Matrix3x2;
+use nalgebra_core::base::matrix3x4::Matrix3x4;
+use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_core::base::matrix4x2::Matrix4x2;
+use nalgebra_core::base::matrix4x3::Matrix4x3;
+use nalgebra_core::base::row_vector2::RowVector2;
+use nalgebra_core::base::row_vector3::RowVector3;
+use nalgebra_core::base::row_vector4::RowVector4;
+use nalgebra_core::base::vector2::Vector2;
+use nalgebra_core::base::vector3::Vector3;
+use nalgebra_core::base::vector4::Vector4;
+use simba::scalar::{Real, Transcendental};
+use crate::base::matrix1::{Matrix1AngleTrait, Matrix1Trait};
+use crate::base::matrix2::{Matrix2AngleTrait, Matrix2Trait};
+use crate::base::matrix2x3::{Matrix2x3AngleTrait, Matrix2x3Trait};
+use crate::base::matrix2x4::{Matrix2x4AngleTrait, Matrix2x4Trait};
+use crate::base::matrix3::{Matrix3AngleTrait, Matrix3Trait};
+use crate::base::matrix3x2::{Matrix3x2AngleTrait, Matrix3x2Trait};
+use crate::base::matrix3x4::{Matrix3x4AngleTrait, Matrix3x4Trait};
+use crate::base::matrix4::{Matrix4AngleTrait, Matrix4Trait};
+use crate::base::matrix4x2::{Matrix4x2AngleTrait, Matrix4x2Trait};
+use crate::base::matrix4x3::{Matrix4x3AngleTrait, Matrix4x3Trait};
+use crate::base::row_vector2::{RowVector2AngleTrait, RowVector2Trait};
+use crate::base::row_vector3::{RowVector3AngleTrait, RowVector3Trait};
+use crate::base::row_vector4::{RowVector4AngleTrait, RowVector4Trait};
+use crate::base::vector2::{Vector2AngleTrait, Vector2Trait};
+use crate::base::vector3::{Vector3AngleTrait, Vector3Trait};
+use crate::base::vector4::{Vector4AngleTrait, Vector4Trait};
+
+/// `EuclideanNorm` on `Matrix1`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Matrix1EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix1<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix1<T>) -> T {
+        Matrix1Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix1<T>, m2: Matrix1<T>) -> T {
+        Matrix1Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix1`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix1LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix1<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix1<T>) -> T {
+        Matrix1AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix1<T>, m2: Matrix1<T>) -> T {
+        Matrix1AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix1`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix1OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix1<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix1<T>) -> T {
+        Matrix1Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix1<T>, m2: Matrix1<T>) -> T {
+        Matrix1Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix1`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix1UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix1<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix1<T>) -> T {
+        Matrix1Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix1<T>, m2: Matrix1<T>) -> T {
+        Matrix1Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `RowVector2`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl RowVector2EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, RowVector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: RowVector2<T>) -> T {
+        RowVector2Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: RowVector2<T>, m2: RowVector2<T>) -> T {
+        RowVector2Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `RowVector2`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl RowVector2LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, RowVector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: RowVector2<T>) -> T {
+        RowVector2AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: RowVector2<T>, m2: RowVector2<T>) -> T {
+        RowVector2AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `RowVector2`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl RowVector2OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, RowVector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: RowVector2<T>) -> T {
+        RowVector2Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: RowVector2<T>, m2: RowVector2<T>) -> T {
+        RowVector2Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `RowVector2`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl RowVector2UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, RowVector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: RowVector2<T>) -> T {
+        RowVector2Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: RowVector2<T>, m2: RowVector2<T>) -> T {
+        RowVector2Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `RowVector3`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl RowVector3EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, RowVector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: RowVector3<T>) -> T {
+        RowVector3Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: RowVector3<T>, m2: RowVector3<T>) -> T {
+        RowVector3Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `RowVector3`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl RowVector3LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, RowVector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: RowVector3<T>) -> T {
+        RowVector3AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: RowVector3<T>, m2: RowVector3<T>) -> T {
+        RowVector3AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `RowVector3`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl RowVector3OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, RowVector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: RowVector3<T>) -> T {
+        RowVector3Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: RowVector3<T>, m2: RowVector3<T>) -> T {
+        RowVector3Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `RowVector3`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl RowVector3UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, RowVector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: RowVector3<T>) -> T {
+        RowVector3Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: RowVector3<T>, m2: RowVector3<T>) -> T {
+        RowVector3Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `RowVector4`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl RowVector4EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, RowVector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: RowVector4<T>) -> T {
+        RowVector4Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: RowVector4<T>, m2: RowVector4<T>) -> T {
+        RowVector4Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `RowVector4`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl RowVector4LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, RowVector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: RowVector4<T>) -> T {
+        RowVector4AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: RowVector4<T>, m2: RowVector4<T>) -> T {
+        RowVector4AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `RowVector4`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl RowVector4OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, RowVector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: RowVector4<T>) -> T {
+        RowVector4Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: RowVector4<T>, m2: RowVector4<T>) -> T {
+        RowVector4Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `RowVector4`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl RowVector4UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, RowVector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: RowVector4<T>) -> T {
+        RowVector4Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: RowVector4<T>, m2: RowVector4<T>) -> T {
+        RowVector4Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Vector2`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Vector2EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Vector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Vector2<T>) -> T {
+        Vector2Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Vector2<T>, m2: Vector2<T>) -> T {
+        Vector2Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Vector2`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Vector2LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Vector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Vector2<T>) -> T {
+        Vector2AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Vector2<T>, m2: Vector2<T>) -> T {
+        Vector2AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Vector2`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Vector2OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Vector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Vector2<T>) -> T {
+        Vector2Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Vector2<T>, m2: Vector2<T>) -> T {
+        Vector2Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Vector2`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Vector2UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Vector2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Vector2<T>) -> T {
+        Vector2Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Vector2<T>, m2: Vector2<T>) -> T {
+        Vector2Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix2`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Matrix2EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix2<T>) -> T {
+        Matrix2Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix2`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix2LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix2<T>) -> T {
+        Matrix2AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix2`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix2OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix2<T>) -> T {
+        Matrix2Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix2`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix2UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix2<T>) -> T {
+        Matrix2Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix2<T>, m2: Matrix2<T>) -> T {
+        Matrix2Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix2x3`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl Matrix2x3EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix2x3<T>) -> T {
+        Matrix2x3Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix2x3<T>, m2: Matrix2x3<T>) -> T {
+        Matrix2x3Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix2x3`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix2x3LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix2x3<T>) -> T {
+        Matrix2x3AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix2x3<T>, m2: Matrix2x3<T>) -> T {
+        Matrix2x3AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix2x3`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix2x3OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix2x3<T>) -> T {
+        Matrix2x3Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix2x3<T>, m2: Matrix2x3<T>) -> T {
+        Matrix2x3Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix2x3`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix2x3UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix2x3<T>) -> T {
+        Matrix2x3Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix2x3<T>, m2: Matrix2x3<T>) -> T {
+        Matrix2x3Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix2x4`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl Matrix2x4EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix2x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix2x4<T>) -> T {
+        Matrix2x4Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix2x4<T>, m2: Matrix2x4<T>) -> T {
+        Matrix2x4Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix2x4`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix2x4LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix2x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix2x4<T>) -> T {
+        Matrix2x4AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix2x4<T>, m2: Matrix2x4<T>) -> T {
+        Matrix2x4AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix2x4`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix2x4OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix2x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix2x4<T>) -> T {
+        Matrix2x4Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix2x4<T>, m2: Matrix2x4<T>) -> T {
+        Matrix2x4Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix2x4`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix2x4UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix2x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix2x4<T>) -> T {
+        Matrix2x4Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix2x4<T>, m2: Matrix2x4<T>) -> T {
+        Matrix2x4Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Vector3`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Vector3EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Vector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Vector3<T>) -> T {
+        Vector3Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Vector3<T>, m2: Vector3<T>) -> T {
+        Vector3Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Vector3`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Vector3LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Vector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Vector3<T>) -> T {
+        Vector3AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Vector3<T>, m2: Vector3<T>) -> T {
+        Vector3AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Vector3`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Vector3OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Vector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Vector3<T>) -> T {
+        Vector3Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Vector3<T>, m2: Vector3<T>) -> T {
+        Vector3Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Vector3`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Vector3UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Vector3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Vector3<T>) -> T {
+        Vector3Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Vector3<T>, m2: Vector3<T>) -> T {
+        Vector3Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix3x2`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl Matrix3x2EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix3x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix3x2<T>) -> T {
+        Matrix3x2Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix3x2<T>, m2: Matrix3x2<T>) -> T {
+        Matrix3x2Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix3x2`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix3x2LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix3x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix3x2<T>) -> T {
+        Matrix3x2AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix3x2<T>, m2: Matrix3x2<T>) -> T {
+        Matrix3x2AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix3x2`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix3x2OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix3x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix3x2<T>) -> T {
+        Matrix3x2Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix3x2<T>, m2: Matrix3x2<T>) -> T {
+        Matrix3x2Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix3x2`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix3x2UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix3x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix3x2<T>) -> T {
+        Matrix3x2Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix3x2<T>, m2: Matrix3x2<T>) -> T {
+        Matrix3x2Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix3`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Matrix3EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix3<T>) -> T {
+        Matrix3Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix3<T>, m2: Matrix3<T>) -> T {
+        Matrix3Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix3`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix3LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix3<T>) -> T {
+        Matrix3AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix3<T>, m2: Matrix3<T>) -> T {
+        Matrix3AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix3`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix3OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix3<T>) -> T {
+        Matrix3Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix3<T>, m2: Matrix3<T>) -> T {
+        Matrix3Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix3`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix3UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix3<T>) -> T {
+        Matrix3Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix3<T>, m2: Matrix3<T>) -> T {
+        Matrix3Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix3x4`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl Matrix3x4EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix3x4<T>) -> T {
+        Matrix3x4Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix3x4<T>, m2: Matrix3x4<T>) -> T {
+        Matrix3x4Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix3x4`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix3x4LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix3x4<T>) -> T {
+        Matrix3x4AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix3x4<T>, m2: Matrix3x4<T>) -> T {
+        Matrix3x4AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix3x4`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix3x4OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix3x4<T>) -> T {
+        Matrix3x4Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix3x4<T>, m2: Matrix3x4<T>) -> T {
+        Matrix3x4Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix3x4`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix3x4UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix3x4<T>) -> T {
+        Matrix3x4Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix3x4<T>, m2: Matrix3x4<T>) -> T {
+        Matrix3x4Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Vector4`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Vector4EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Vector4<T>) -> T {
+        Vector4Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Vector4`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Vector4LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Vector4<T>) -> T {
+        Vector4AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Vector4`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Vector4OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Vector4<T>) -> T {
+        Vector4Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Vector4`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Vector4UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Vector4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Vector4<T>) -> T {
+        Vector4Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Vector4<T>, m2: Vector4<T>) -> T {
+        Vector4Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix4x2`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl Matrix4x2EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix4x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix4x2<T>) -> T {
+        Matrix4x2Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix4x2<T>, m2: Matrix4x2<T>) -> T {
+        Matrix4x2Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix4x2`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix4x2LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix4x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix4x2<T>) -> T {
+        Matrix4x2AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix4x2<T>, m2: Matrix4x2<T>) -> T {
+        Matrix4x2AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix4x2`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix4x2OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix4x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix4x2<T>) -> T {
+        Matrix4x2Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix4x2<T>, m2: Matrix4x2<T>) -> T {
+        Matrix4x2Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix4x2`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix4x2UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix4x2<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix4x2<T>) -> T {
+        Matrix4x2Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix4x2<T>, m2: Matrix4x2<T>) -> T {
+        Matrix4x2Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix4x3`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T>
+/// for EuclideanNorm`.
+pub impl Matrix4x3EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix4x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix4x3<T>) -> T {
+        Matrix4x3Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix4x3<T>, m2: Matrix4x3<T>) -> T {
+        Matrix4x3Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix4x3`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix4x3LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix4x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix4x3<T>) -> T {
+        Matrix4x3AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix4x3<T>, m2: Matrix4x3<T>) -> T {
+        Matrix4x3AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix4x3`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix4x3OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix4x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix4x3<T>) -> T {
+        Matrix4x3Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix4x3<T>, m2: Matrix4x3<T>) -> T {
+        Matrix4x3Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix4x3`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix4x3UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix4x3<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix4x3<T>) -> T {
+        Matrix4x3Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix4x3<T>, m2: Matrix4x3<T>) -> T {
+        Matrix4x3Trait::amax(m1 - m2)
+    }
+}
+
+/// `EuclideanNorm` on `Matrix4`: `m.norm()` and the fused `metric_distance`. Upstream: `Norm<T> for
+/// EuclideanNorm`.
+pub impl Matrix4EuclideanNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<EuclideanNorm, Matrix4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @EuclideanNorm, m: Matrix4<T>) -> T {
+        Matrix4Trait::norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @EuclideanNorm, m1: Matrix4<T>, m2: Matrix4<T>) -> T {
+        Matrix4Trait::metric_distance(m1, m2)
+    }
+}
+
+/// `LpNorm` on `Matrix4`: `m.lp_norm(p)`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// LpNorm`.
+pub impl Matrix4LpNorm<
+    T,
+    impl R: Real<T>,
+    impl Tr: Transcendental<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<LpNorm, Matrix4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @LpNorm, m: Matrix4<T>) -> T {
+        Matrix4AngleTrait::lp_norm(m, *self.p)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @LpNorm, m1: Matrix4<T>, m2: Matrix4<T>) -> T {
+        Matrix4AngleTrait::lp_norm(m1 - m2, *self.p)
+    }
+}
+
+/// `OneNorm` on `Matrix4`: `m.one_norm()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// OneNorm`.
+pub impl Matrix4OneNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<OneNorm, Matrix4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @OneNorm, m: Matrix4<T>) -> T {
+        Matrix4Trait::one_norm(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @OneNorm, m1: Matrix4<T>, m2: Matrix4<T>) -> T {
+        Matrix4Trait::one_norm(m1 - m2)
+    }
+}
+
+/// `UniformNorm` on `Matrix4`: `m.amax()`, of `m1 - m2` for the distance. Upstream: `Norm<T> for
+/// UniformNorm`.
+pub impl Matrix4UniformNorm<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Norm<UniformNorm, Matrix4<T>, T> {
+    #[inline(always)]
+    fn norm(self: @UniformNorm, m: Matrix4<T>) -> T {
+        Matrix4Trait::amax(m)
+    }
+    #[inline(always)]
+    fn metric_distance(self: @UniformNorm, m1: Matrix4<T>, m2: Matrix4<T>) -> T {
+        Matrix4Trait::amax(m1 - m2)
+    }
 }
 
 /// The Euclidean (Frobenius) norm, `m.norm()`. Upstream: `EuclideanNorm`.
@@ -37,3 +1679,5 @@ pub struct OneNorm {}
 /// `UniformNorm`.
 #[derive(Copy, Drop, Debug)]
 pub struct UniformNorm {}
+
+pub use nalgebra_core::base::norm::*;

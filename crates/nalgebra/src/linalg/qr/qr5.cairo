@@ -4,9 +4,9 @@
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix5::Matrix5;
-use crate::base::solve::SolveKernel;
 use crate::base::vector5::Vector5;
 
 /// The QR factorisation `A = q * r` of a `Matrix5<T>`: `q` is 5x5, `r` is 5x5

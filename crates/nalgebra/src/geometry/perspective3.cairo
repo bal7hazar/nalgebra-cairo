@@ -24,12 +24,12 @@
 //! upstream's (near-exact `f64`) value than the literal fixed-point transcription, whose variants
 //! are kept and measured in the benchmarks of `nalgebra_tests_geometry_projections`.
 
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::projective3::Projective3;
-use super::quaternion::ApproxEqTrait;
 
 /// Panic messages of `Perspective3` (upstream's assertion messages do not fit a `felt252`: each
 /// constant quotes its upstream message).

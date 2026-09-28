@@ -4,10 +4,10 @@
 //! (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
 use crate::base::row_vector4::RowVector4;
-use crate::base::solve::SolveKernel;
 use crate::linalg::lu::Perm4;
 
 /// The QR factorisation with column pivoting of a `RowVector4<T>`: `A P = Q R` (`P` = `p`, applied

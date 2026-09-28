@@ -7,6 +7,7 @@
 //! squares, `docs/API_PARITY.md`).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::{Real, Transcendental};
 use crate::base::MatrixMul;
 use crate::base::matrix1::Matrix1;
@@ -15,7 +16,6 @@ use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::matrix4::{Matrix4, Matrix4Trait};
 use crate::base::matrix5::{Matrix5, Matrix5Trait};
 use crate::base::matrix6::{Matrix6, Matrix6Trait};
-use crate::base::solve::SolveKernel;
 use crate::linalg::lu::lu2::Lu2Trait;
 use crate::linalg::lu::lu3::Lu3Trait;
 use crate::linalg::lu::lu4::Lu4Trait;

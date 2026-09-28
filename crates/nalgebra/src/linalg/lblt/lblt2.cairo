@@ -3,9 +3,9 @@
 //! `nalgebra::linalg::LBLT<T, U2>`), fully unrolled (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
-use crate::base::solve::SolveKernel;
 use crate::linalg::lu::Perm2;
 use crate::linalg::permutation_sequence::PermuteRows;
 

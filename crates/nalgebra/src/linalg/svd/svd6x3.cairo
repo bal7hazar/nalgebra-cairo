@@ -4,12 +4,12 @@
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix3x6::Matrix3x6;
 use crate::base::matrix6::Matrix6;
 use crate::base::matrix6x3::Matrix6x3;
-use crate::base::sym_matrix3::SymMatrix3;
 use crate::base::vector3::Vector3;
 use crate::base::vector6::Vector6;
 use crate::base::{MatrixMul, MatrixTrMul};

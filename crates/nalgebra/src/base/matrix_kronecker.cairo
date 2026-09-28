@@ -15,3 +15,2463 @@ pub trait MatrixKronecker<Lhs, Rhs> {
     /// `self ⊗ rhs`.
     fn kronecker(self: Lhs, rhs: Rhs) -> Self::Output;
 }
+use nalgebra_core::base::matrix1::Matrix1;
+use nalgebra_core::base::matrix2::Matrix2;
+use nalgebra_core::base::matrix2x3::Matrix2x3;
+use nalgebra_core::base::matrix2x4::Matrix2x4;
+use nalgebra_core::base::matrix3::Matrix3;
+use nalgebra_core::base::matrix3x2::Matrix3x2;
+use nalgebra_core::base::matrix3x4::Matrix3x4;
+use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_core::base::matrix4x2::Matrix4x2;
+use nalgebra_core::base::matrix4x3::Matrix4x3;
+use nalgebra_core::base::row_vector2::RowVector2;
+use nalgebra_core::base::row_vector3::RowVector3;
+use nalgebra_core::base::row_vector4::RowVector4;
+use nalgebra_core::base::vector2::Vector2;
+use nalgebra_core::base::vector3::Vector3;
+use nalgebra_core::base::vector4::Vector4;
+use crate::base::matrix2x6::Matrix2x6;
+use crate::base::matrix3x6::Matrix3x6;
+use crate::base::matrix4x6::Matrix4x6;
+use crate::base::matrix6::Matrix6;
+use crate::base::matrix6x2::Matrix6x2;
+use crate::base::matrix6x3::Matrix6x3;
+use crate::base::matrix6x4::Matrix6x4;
+use crate::base::row_vector6::RowVector6;
+use crate::base::vector6::Vector6;
+
+/// The Kronecker product of a `Matrix1` and a `Matrix1`, a `Matrix1`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix1<T>> {
+    type Output = Matrix1<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix1<T>) -> Matrix1<T> {
+        Matrix1 { x: self.x * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `RowVector2`, a `RowVector2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, RowVector2<T>> {
+    type Output = RowVector2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: RowVector2<T>) -> RowVector2<T> {
+        RowVector2 { x: self.x * rhs.x, y: self.x * rhs.y }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `RowVector3`, a `RowVector3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, RowVector3<T>> {
+    type Output = RowVector3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: RowVector3<T>) -> RowVector3<T> {
+        RowVector3 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `RowVector4`, a `RowVector4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerRowVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, RowVector4<T>> {
+    type Output = RowVector4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: RowVector4<T>) -> RowVector4<T> {
+        RowVector4 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z, w: self.x * rhs.w }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Vector2`, a `Vector2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Vector2<T>> {
+    type Output = Vector2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Vector2<T>) -> Vector2<T> {
+        Vector2 { x: self.x * rhs.x, y: self.x * rhs.y }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix2`, a `Matrix2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix2<T>> {
+    type Output = Matrix2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix2<T>) -> Matrix2<T> {
+        Matrix2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix2x3`, a `Matrix2x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix2x3<T>> {
+    type Output = Matrix2x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix2x3<T>) -> Matrix2x3<T> {
+        Matrix2x3 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix2x4`, a `Matrix2x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix2x4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix2x4<T>> {
+    type Output = Matrix2x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix2x4<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Vector3`, a `Vector3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Vector3<T>> {
+    type Output = Vector3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Vector3<T>) -> Vector3<T> {
+        Vector3 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix3x2`, a `Matrix3x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix3x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix3x2<T>> {
+    type Output = Matrix3x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix3x2<T>) -> Matrix3x2<T> {
+        Matrix3x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix3`, a `Matrix3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix3<T>> {
+    type Output = Matrix3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix3x4`, a `Matrix3x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix3x4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix3x4<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix3x4<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.x * rhs.m34,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Vector4`, a `Vector4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Vector4<T>> {
+    type Output = Vector4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Vector4<T>) -> Vector4<T> {
+        Vector4 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z, w: self.x * rhs.w }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix4x2`, a `Matrix4x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix4x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix4x2<T>> {
+    type Output = Matrix4x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix4x2<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix4x3`, a `Matrix4x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix4x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix4x3<T>> {
+    type Output = Matrix4x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix4x3<T>) -> Matrix4x3<T> {
+        Matrix4x3 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix1` and a `Matrix4`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix4<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix4<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.x * rhs.m34,
+            m44: self.x * rhs.m44,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix1`, a `RowVector2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix1<T>> {
+    type Output = RowVector2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix1<T>) -> RowVector2<T> {
+        RowVector2 { x: self.x * rhs.x, y: self.y * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `RowVector2`, a `RowVector4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, RowVector2<T>> {
+    type Output = RowVector4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: RowVector2<T>) -> RowVector4<T> {
+        RowVector4 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.y * rhs.x, w: self.y * rhs.y }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `RowVector3`, a `RowVector6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, RowVector3<T>> {
+    type Output = RowVector6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: RowVector3<T>) -> RowVector6<T> {
+        RowVector6 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.x * rhs.z,
+            w: self.y * rhs.x,
+            a: self.y * rhs.y,
+            b: self.y * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector2`, a `Matrix2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector2<T>> {
+    type Output = Matrix2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector2<T>) -> Matrix2<T> {
+        Matrix2 {
+            m11: self.x * rhs.x, m21: self.x * rhs.y, m12: self.y * rhs.x, m22: self.y * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix2`, a `Matrix2x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix2<T>> {
+    type Output = Matrix2x4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix2<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix2x3`, a `Matrix2x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix2x3<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix2x3<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector3`, a `Matrix3x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector3<T>> {
+    type Output = Matrix3x2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector3<T>) -> Matrix3x2<T> {
+        Matrix3x2 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix3x2`, a `Matrix3x4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix3x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix3x2<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix3x2<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix3`, a `Matrix3x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix3<T>> {
+    type Output = Matrix3x6<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix3<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m34: self.y * rhs.m31,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m35: self.y * rhs.m32,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+            m36: self.y * rhs.m33,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Vector4`, a `Matrix4x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Vector4<T>> {
+    type Output = Matrix4x2<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Vector4<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix4x2`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix4x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix4x2<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector2<T>, rhs: Matrix4x2<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix4x3`, a `Matrix4x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix4x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix4x3<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix4x3<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+            m14: self.y * rhs.m11,
+            m24: self.y * rhs.m21,
+            m34: self.y * rhs.m31,
+            m44: self.y * rhs.m41,
+            m15: self.y * rhs.m12,
+            m25: self.y * rhs.m22,
+            m35: self.y * rhs.m32,
+            m45: self.y * rhs.m42,
+            m16: self.y * rhs.m13,
+            m26: self.y * rhs.m23,
+            m36: self.y * rhs.m33,
+            m46: self.y * rhs.m43,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Matrix1`, a `RowVector3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Matrix1<T>> {
+    type Output = RowVector3<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector3<T>, rhs: Matrix1<T>) -> RowVector3<T> {
+        RowVector3 { x: self.x * rhs.x, y: self.y * rhs.x, z: self.z * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `RowVector2`, a `RowVector6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, RowVector2<T>> {
+    type Output = RowVector6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector3<T>, rhs: RowVector2<T>) -> RowVector6<T> {
+        RowVector6 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.y * rhs.x,
+            w: self.y * rhs.y,
+            a: self.z * rhs.x,
+            b: self.z * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Vector2`, a `Matrix2x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Vector2<T>> {
+    type Output = Matrix2x3<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector3<T>, rhs: Vector2<T>) -> Matrix2x3<T> {
+        Matrix2x3 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Matrix2`, a `Matrix2x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Matrix2<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector3<T>, rhs: Matrix2<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m15: self.z * rhs.m11,
+            m25: self.z * rhs.m21,
+            m16: self.z * rhs.m12,
+            m26: self.z * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Vector3`, a `Matrix3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Vector3<T>> {
+    type Output = Matrix3<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector3<T>, rhs: Vector3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Matrix3x2`, a `Matrix3x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerMatrix3x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Matrix3x2<T>> {
+    type Output = Matrix3x6<T>;
+    fn kronecker(self: RowVector3<T>, rhs: Matrix3x2<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m15: self.z * rhs.m11,
+            m25: self.z * rhs.m21,
+            m35: self.z * rhs.m31,
+            m16: self.z * rhs.m12,
+            m26: self.z * rhs.m22,
+            m36: self.z * rhs.m32,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Vector4`, a `Matrix4x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Vector4<T>> {
+    type Output = Matrix4x3<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector3<T>, rhs: Vector4<T>) -> Matrix4x3<T> {
+        Matrix4x3 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m43: self.z * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Matrix4x2`, a `Matrix4x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerMatrix4x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Matrix4x2<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: RowVector3<T>, rhs: Matrix4x2<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+            m15: self.z * rhs.m11,
+            m25: self.z * rhs.m21,
+            m35: self.z * rhs.m31,
+            m45: self.z * rhs.m41,
+            m16: self.z * rhs.m12,
+            m26: self.z * rhs.m22,
+            m36: self.z * rhs.m32,
+            m46: self.z * rhs.m42,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector4` and a `Matrix1`, a `RowVector4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector4KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector4<T>, Matrix1<T>> {
+    type Output = RowVector4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector4<T>, rhs: Matrix1<T>) -> RowVector4<T> {
+        RowVector4 { x: self.x * rhs.x, y: self.y * rhs.x, z: self.z * rhs.x, w: self.w * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `RowVector4` and a `Vector2`, a `Matrix2x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector4KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector4<T>, Vector2<T>> {
+    type Output = Matrix2x4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector4<T>, rhs: Vector2<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector4` and a `Vector3`, a `Matrix3x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector4KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector4<T>, Vector3<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector4<T>, rhs: Vector3<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m34: self.w * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector4` and a `Vector4`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector4KroneckerVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector4<T>, Vector4<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: RowVector4<T>, rhs: Vector4<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.x * rhs.x,
+            m21: self.x * rhs.y,
+            m31: self.x * rhs.z,
+            m41: self.x * rhs.w,
+            m12: self.y * rhs.x,
+            m22: self.y * rhs.y,
+            m32: self.y * rhs.z,
+            m42: self.y * rhs.w,
+            m13: self.z * rhs.x,
+            m23: self.z * rhs.y,
+            m33: self.z * rhs.z,
+            m43: self.z * rhs.w,
+            m14: self.w * rhs.x,
+            m24: self.w * rhs.y,
+            m34: self.w * rhs.z,
+            m44: self.w * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix1`, a `Vector2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix1<T>> {
+    type Output = Vector2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: Matrix1<T>) -> Vector2<T> {
+        Vector2 { x: self.x * rhs.x, y: self.y * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `RowVector2`, a `Matrix2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, RowVector2<T>> {
+    type Output = Matrix2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: RowVector2<T>) -> Matrix2<T> {
+        Matrix2 {
+            m11: self.x * rhs.x, m21: self.y * rhs.x, m12: self.x * rhs.y, m22: self.y * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `RowVector3`, a `Matrix2x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, RowVector3<T>> {
+    type Output = Matrix2x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: RowVector3<T>) -> Matrix2x3<T> {
+        Matrix2x3 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `RowVector4`, a `Matrix2x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerRowVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, RowVector4<T>> {
+    type Output = Matrix2x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: RowVector4<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Vector2`, a `Vector4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Vector2<T>> {
+    type Output = Vector4<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: Vector2<T>) -> Vector4<T> {
+        Vector4 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.y * rhs.x, w: self.y * rhs.y }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix2`, a `Matrix4x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix2<T>> {
+    type Output = Matrix4x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: Matrix2<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix2x3`, a `Matrix4x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix2x3<T>> {
+    type Output = Matrix4x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: Matrix2x3<T>) -> Matrix4x3<T> {
+        Matrix4x3 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix2x4`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix2x4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix2x4<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: Matrix2x4<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.y * rhs.m14,
+            m44: self.y * rhs.m24,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Vector3`, a `Vector6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Vector3<T>> {
+    type Output = Vector6<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: Vector3<T>) -> Vector6<T> {
+        Vector6 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.x * rhs.z,
+            w: self.y * rhs.x,
+            a: self.y * rhs.y,
+            b: self.y * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix3x2`, a `Matrix6x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix3x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix3x2<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector2<T>, rhs: Matrix3x2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.y * rhs.m11,
+            m51: self.y * rhs.m21,
+            m61: self.y * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.y * rhs.m12,
+            m52: self.y * rhs.m22,
+            m62: self.y * rhs.m32,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix3`, a `Matrix6x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix3<T>> {
+    type Output = Matrix6x3<T>;
+    fn kronecker(self: Vector2<T>, rhs: Matrix3<T>) -> Matrix6x3<T> {
+        Matrix6x3 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.y * rhs.m11,
+            m51: self.y * rhs.m21,
+            m61: self.y * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.y * rhs.m12,
+            m52: self.y * rhs.m22,
+            m62: self.y * rhs.m32,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.y * rhs.m13,
+            m53: self.y * rhs.m23,
+            m63: self.y * rhs.m33,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector2` and a `Matrix3x4`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector2KroneckerMatrix3x4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector2<T>, Matrix3x4<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Vector2<T>, rhs: Matrix3x4<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.y * rhs.m11,
+            m51: self.y * rhs.m21,
+            m61: self.y * rhs.m31,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.y * rhs.m12,
+            m52: self.y * rhs.m22,
+            m62: self.y * rhs.m32,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.y * rhs.m13,
+            m53: self.y * rhs.m23,
+            m63: self.y * rhs.m33,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.x * rhs.m34,
+            m44: self.y * rhs.m14,
+            m54: self.y * rhs.m24,
+            m64: self.y * rhs.m34,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `Matrix1`, a `Matrix2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, Matrix1<T>> {
+    type Output = Matrix2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2<T>, rhs: Matrix1<T>) -> Matrix2<T> {
+        Matrix2 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `RowVector2`, a `Matrix2x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, RowVector2<T>> {
+    type Output = Matrix2x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2<T>, rhs: RowVector2<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m13: self.m12 * rhs.x,
+            m23: self.m22 * rhs.x,
+            m14: self.m12 * rhs.y,
+            m24: self.m22 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `RowVector3`, a `Matrix2x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, RowVector3<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2<T>, rhs: RowVector3<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m13: self.m11 * rhs.z,
+            m23: self.m21 * rhs.z,
+            m14: self.m12 * rhs.x,
+            m24: self.m22 * rhs.x,
+            m15: self.m12 * rhs.y,
+            m25: self.m22 * rhs.y,
+            m16: self.m12 * rhs.z,
+            m26: self.m22 * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `Vector2`, a `Matrix4x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, Vector2<T>> {
+    type Output = Matrix4x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2<T>, rhs: Vector2<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `Matrix2`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, Matrix2<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2<T>, rhs: Matrix2<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m21 * rhs.m11,
+            m41: self.m21 * rhs.m21,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m21 * rhs.m12,
+            m42: self.m21 * rhs.m22,
+            m13: self.m12 * rhs.m11,
+            m23: self.m12 * rhs.m21,
+            m33: self.m22 * rhs.m11,
+            m43: self.m22 * rhs.m21,
+            m14: self.m12 * rhs.m12,
+            m24: self.m12 * rhs.m22,
+            m34: self.m22 * rhs.m12,
+            m44: self.m22 * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `Matrix2x3`, a `Matrix4x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, Matrix2x3<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: Matrix2<T>, rhs: Matrix2x3<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m21 * rhs.m11,
+            m41: self.m21 * rhs.m21,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m21 * rhs.m12,
+            m42: self.m21 * rhs.m22,
+            m13: self.m11 * rhs.m13,
+            m23: self.m11 * rhs.m23,
+            m33: self.m21 * rhs.m13,
+            m43: self.m21 * rhs.m23,
+            m14: self.m12 * rhs.m11,
+            m24: self.m12 * rhs.m21,
+            m34: self.m22 * rhs.m11,
+            m44: self.m22 * rhs.m21,
+            m15: self.m12 * rhs.m12,
+            m25: self.m12 * rhs.m22,
+            m35: self.m22 * rhs.m12,
+            m45: self.m22 * rhs.m22,
+            m16: self.m12 * rhs.m13,
+            m26: self.m12 * rhs.m23,
+            m36: self.m22 * rhs.m13,
+            m46: self.m22 * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `Vector3`, a `Matrix6x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, Vector3<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2<T>, rhs: Vector3<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m11 * rhs.z,
+            m41: self.m21 * rhs.x,
+            m51: self.m21 * rhs.y,
+            m61: self.m21 * rhs.z,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m12 * rhs.z,
+            m42: self.m22 * rhs.x,
+            m52: self.m22 * rhs.y,
+            m62: self.m22 * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `Matrix3x2`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerMatrix3x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, Matrix3x2<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Matrix2<T>, rhs: Matrix3x2<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m11 * rhs.m31,
+            m41: self.m21 * rhs.m11,
+            m51: self.m21 * rhs.m21,
+            m61: self.m21 * rhs.m31,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m11 * rhs.m32,
+            m42: self.m21 * rhs.m12,
+            m52: self.m21 * rhs.m22,
+            m62: self.m21 * rhs.m32,
+            m13: self.m12 * rhs.m11,
+            m23: self.m12 * rhs.m21,
+            m33: self.m12 * rhs.m31,
+            m43: self.m22 * rhs.m11,
+            m53: self.m22 * rhs.m21,
+            m63: self.m22 * rhs.m31,
+            m14: self.m12 * rhs.m12,
+            m24: self.m12 * rhs.m22,
+            m34: self.m12 * rhs.m32,
+            m44: self.m22 * rhs.m12,
+            m54: self.m22 * rhs.m22,
+            m64: self.m22 * rhs.m32,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2` and a `Matrix3`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2KroneckerMatrix3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2<T>, Matrix3<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Matrix2<T>, rhs: Matrix3<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m11 * rhs.m31,
+            m41: self.m21 * rhs.m11,
+            m51: self.m21 * rhs.m21,
+            m61: self.m21 * rhs.m31,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m11 * rhs.m32,
+            m42: self.m21 * rhs.m12,
+            m52: self.m21 * rhs.m22,
+            m62: self.m21 * rhs.m32,
+            m13: self.m11 * rhs.m13,
+            m23: self.m11 * rhs.m23,
+            m33: self.m11 * rhs.m33,
+            m43: self.m21 * rhs.m13,
+            m53: self.m21 * rhs.m23,
+            m63: self.m21 * rhs.m33,
+            m14: self.m12 * rhs.m11,
+            m24: self.m12 * rhs.m21,
+            m34: self.m12 * rhs.m31,
+            m44: self.m22 * rhs.m11,
+            m54: self.m22 * rhs.m21,
+            m64: self.m22 * rhs.m31,
+            m15: self.m12 * rhs.m12,
+            m25: self.m12 * rhs.m22,
+            m35: self.m12 * rhs.m32,
+            m45: self.m22 * rhs.m12,
+            m55: self.m22 * rhs.m22,
+            m65: self.m22 * rhs.m32,
+            m16: self.m12 * rhs.m13,
+            m26: self.m12 * rhs.m23,
+            m36: self.m12 * rhs.m33,
+            m46: self.m22 * rhs.m13,
+            m56: self.m22 * rhs.m23,
+            m66: self.m22 * rhs.m33,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x3` and a `Matrix1`, a `Matrix2x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x3KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x3<T>, Matrix1<T>> {
+    type Output = Matrix2x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2x3<T>, rhs: Matrix1<T>) -> Matrix2x3<T> {
+        Matrix2x3 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x3` and a `RowVector2`, a `Matrix2x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x3KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x3<T>, RowVector2<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2x3<T>, rhs: RowVector2<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m13: self.m12 * rhs.x,
+            m23: self.m22 * rhs.x,
+            m14: self.m12 * rhs.y,
+            m24: self.m22 * rhs.y,
+            m15: self.m13 * rhs.x,
+            m25: self.m23 * rhs.x,
+            m16: self.m13 * rhs.y,
+            m26: self.m23 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x3` and a `Vector2`, a `Matrix4x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x3KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x3<T>, Vector2<T>> {
+    type Output = Matrix4x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2x3<T>, rhs: Vector2<T>) -> Matrix4x3<T> {
+        Matrix4x3 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m23 * rhs.x,
+            m43: self.m23 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x3` and a `Matrix2`, a `Matrix4x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x3KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x3<T>, Matrix2<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: Matrix2x3<T>, rhs: Matrix2<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m21 * rhs.m11,
+            m41: self.m21 * rhs.m21,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m21 * rhs.m12,
+            m42: self.m21 * rhs.m22,
+            m13: self.m12 * rhs.m11,
+            m23: self.m12 * rhs.m21,
+            m33: self.m22 * rhs.m11,
+            m43: self.m22 * rhs.m21,
+            m14: self.m12 * rhs.m12,
+            m24: self.m12 * rhs.m22,
+            m34: self.m22 * rhs.m12,
+            m44: self.m22 * rhs.m22,
+            m15: self.m13 * rhs.m11,
+            m25: self.m13 * rhs.m21,
+            m35: self.m23 * rhs.m11,
+            m45: self.m23 * rhs.m21,
+            m16: self.m13 * rhs.m12,
+            m26: self.m13 * rhs.m22,
+            m36: self.m23 * rhs.m12,
+            m46: self.m23 * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x3` and a `Vector3`, a `Matrix6x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x3KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x3<T>, Vector3<T>> {
+    type Output = Matrix6x3<T>;
+    fn kronecker(self: Matrix2x3<T>, rhs: Vector3<T>) -> Matrix6x3<T> {
+        Matrix6x3 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m11 * rhs.z,
+            m41: self.m21 * rhs.x,
+            m51: self.m21 * rhs.y,
+            m61: self.m21 * rhs.z,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m12 * rhs.z,
+            m42: self.m22 * rhs.x,
+            m52: self.m22 * rhs.y,
+            m62: self.m22 * rhs.z,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m13 * rhs.z,
+            m43: self.m23 * rhs.x,
+            m53: self.m23 * rhs.y,
+            m63: self.m23 * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x3` and a `Matrix3x2`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x3KroneckerMatrix3x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x3<T>, Matrix3x2<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Matrix2x3<T>, rhs: Matrix3x2<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m11 * rhs.m31,
+            m41: self.m21 * rhs.m11,
+            m51: self.m21 * rhs.m21,
+            m61: self.m21 * rhs.m31,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m11 * rhs.m32,
+            m42: self.m21 * rhs.m12,
+            m52: self.m21 * rhs.m22,
+            m62: self.m21 * rhs.m32,
+            m13: self.m12 * rhs.m11,
+            m23: self.m12 * rhs.m21,
+            m33: self.m12 * rhs.m31,
+            m43: self.m22 * rhs.m11,
+            m53: self.m22 * rhs.m21,
+            m63: self.m22 * rhs.m31,
+            m14: self.m12 * rhs.m12,
+            m24: self.m12 * rhs.m22,
+            m34: self.m12 * rhs.m32,
+            m44: self.m22 * rhs.m12,
+            m54: self.m22 * rhs.m22,
+            m64: self.m22 * rhs.m32,
+            m15: self.m13 * rhs.m11,
+            m25: self.m13 * rhs.m21,
+            m35: self.m13 * rhs.m31,
+            m45: self.m23 * rhs.m11,
+            m55: self.m23 * rhs.m21,
+            m65: self.m23 * rhs.m31,
+            m16: self.m13 * rhs.m12,
+            m26: self.m13 * rhs.m22,
+            m36: self.m13 * rhs.m32,
+            m46: self.m23 * rhs.m12,
+            m56: self.m23 * rhs.m22,
+            m66: self.m23 * rhs.m32,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x4` and a `Matrix1`, a `Matrix2x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x4KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x4<T>, Matrix1<T>> {
+    type Output = Matrix2x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2x4<T>, rhs: Matrix1<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m14: self.m14 * rhs.x,
+            m24: self.m24 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x4` and a `Vector2`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x4KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x4<T>, Vector2<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix2x4<T>, rhs: Vector2<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m23 * rhs.x,
+            m43: self.m23 * rhs.y,
+            m14: self.m14 * rhs.x,
+            m24: self.m14 * rhs.y,
+            m34: self.m24 * rhs.x,
+            m44: self.m24 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix2x4` and a `Vector3`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix2x4KroneckerVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix2x4<T>, Vector3<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Matrix2x4<T>, rhs: Vector3<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m11 * rhs.z,
+            m41: self.m21 * rhs.x,
+            m51: self.m21 * rhs.y,
+            m61: self.m21 * rhs.z,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m12 * rhs.z,
+            m42: self.m22 * rhs.x,
+            m52: self.m22 * rhs.y,
+            m62: self.m22 * rhs.z,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m13 * rhs.z,
+            m43: self.m23 * rhs.x,
+            m53: self.m23 * rhs.y,
+            m63: self.m23 * rhs.z,
+            m14: self.m14 * rhs.x,
+            m24: self.m14 * rhs.y,
+            m34: self.m14 * rhs.z,
+            m44: self.m24 * rhs.x,
+            m54: self.m24 * rhs.y,
+            m64: self.m24 * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix1`, a `Vector3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix1<T>> {
+    type Output = Vector3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: Matrix1<T>) -> Vector3<T> {
+        Vector3 { x: self.x * rhs.x, y: self.y * rhs.x, z: self.z * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector2`, a `Matrix3x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector2<T>> {
+    type Output = Matrix3x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector2<T>) -> Matrix3x2<T> {
+        Matrix3x2 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector3`, a `Matrix3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector3<T>> {
+    type Output = Matrix3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector3<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `RowVector4`, a `Matrix3x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerRowVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, RowVector4<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: RowVector4<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Vector2`, a `Vector6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Vector2<T>> {
+    type Output = Vector6<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: Vector2<T>) -> Vector6<T> {
+        Vector6 {
+            x: self.x * rhs.x,
+            y: self.x * rhs.y,
+            z: self.y * rhs.x,
+            w: self.y * rhs.y,
+            a: self.z * rhs.x,
+            b: self.z * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2`, a `Matrix6x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector3<T>, rhs: Matrix2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2x3`, a `Matrix6x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2x3<T>> {
+    type Output = Matrix6x3<T>;
+    fn kronecker(self: Vector3<T>, rhs: Matrix2x3<T>) -> Matrix6x3<T> {
+        Matrix6x3 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m53: self.z * rhs.m13,
+            m63: self.z * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector3` and a `Matrix2x4`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector3KroneckerMatrix2x4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector3<T>, Matrix2x4<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Vector3<T>, rhs: Matrix2x4<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.y * rhs.m11,
+            m41: self.y * rhs.m21,
+            m51: self.z * rhs.m11,
+            m61: self.z * rhs.m21,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.y * rhs.m12,
+            m42: self.y * rhs.m22,
+            m52: self.z * rhs.m12,
+            m62: self.z * rhs.m22,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.y * rhs.m13,
+            m43: self.y * rhs.m23,
+            m53: self.z * rhs.m13,
+            m63: self.z * rhs.m23,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.y * rhs.m14,
+            m44: self.y * rhs.m24,
+            m54: self.z * rhs.m14,
+            m64: self.z * rhs.m24,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x2` and a `Matrix1`, a `Matrix3x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x2KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x2<T>, Matrix1<T>> {
+    type Output = Matrix3x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix3x2<T>, rhs: Matrix1<T>) -> Matrix3x2<T> {
+        Matrix3x2 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x2` and a `RowVector2`, a `Matrix3x4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x2KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x2<T>, RowVector2<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix3x2<T>, rhs: RowVector2<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m32: self.m31 * rhs.y,
+            m13: self.m12 * rhs.x,
+            m23: self.m22 * rhs.x,
+            m33: self.m32 * rhs.x,
+            m14: self.m12 * rhs.y,
+            m24: self.m22 * rhs.y,
+            m34: self.m32 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x2` and a `RowVector3`, a `Matrix3x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x2KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x2<T>, RowVector3<T>> {
+    type Output = Matrix3x6<T>;
+    fn kronecker(self: Matrix3x2<T>, rhs: RowVector3<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m32: self.m31 * rhs.y,
+            m13: self.m11 * rhs.z,
+            m23: self.m21 * rhs.z,
+            m33: self.m31 * rhs.z,
+            m14: self.m12 * rhs.x,
+            m24: self.m22 * rhs.x,
+            m34: self.m32 * rhs.x,
+            m15: self.m12 * rhs.y,
+            m25: self.m22 * rhs.y,
+            m35: self.m32 * rhs.y,
+            m16: self.m12 * rhs.z,
+            m26: self.m22 * rhs.z,
+            m36: self.m32 * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x2` and a `Vector2`, a `Matrix6x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x2KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x2<T>, Vector2<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix3x2<T>, rhs: Vector2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m51: self.m31 * rhs.x,
+            m61: self.m31 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+            m52: self.m32 * rhs.x,
+            m62: self.m32 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x2` and a `Matrix2`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x2KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x2<T>, Matrix2<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Matrix3x2<T>, rhs: Matrix2<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m21 * rhs.m11,
+            m41: self.m21 * rhs.m21,
+            m51: self.m31 * rhs.m11,
+            m61: self.m31 * rhs.m21,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m21 * rhs.m12,
+            m42: self.m21 * rhs.m22,
+            m52: self.m31 * rhs.m12,
+            m62: self.m31 * rhs.m22,
+            m13: self.m12 * rhs.m11,
+            m23: self.m12 * rhs.m21,
+            m33: self.m22 * rhs.m11,
+            m43: self.m22 * rhs.m21,
+            m53: self.m32 * rhs.m11,
+            m63: self.m32 * rhs.m21,
+            m14: self.m12 * rhs.m12,
+            m24: self.m12 * rhs.m22,
+            m34: self.m22 * rhs.m12,
+            m44: self.m22 * rhs.m22,
+            m54: self.m32 * rhs.m12,
+            m64: self.m32 * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x2` and a `Matrix2x3`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x2KroneckerMatrix2x3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x2<T>, Matrix2x3<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Matrix3x2<T>, rhs: Matrix2x3<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m21 * rhs.m11,
+            m41: self.m21 * rhs.m21,
+            m51: self.m31 * rhs.m11,
+            m61: self.m31 * rhs.m21,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m21 * rhs.m12,
+            m42: self.m21 * rhs.m22,
+            m52: self.m31 * rhs.m12,
+            m62: self.m31 * rhs.m22,
+            m13: self.m11 * rhs.m13,
+            m23: self.m11 * rhs.m23,
+            m33: self.m21 * rhs.m13,
+            m43: self.m21 * rhs.m23,
+            m53: self.m31 * rhs.m13,
+            m63: self.m31 * rhs.m23,
+            m14: self.m12 * rhs.m11,
+            m24: self.m12 * rhs.m21,
+            m34: self.m22 * rhs.m11,
+            m44: self.m22 * rhs.m21,
+            m54: self.m32 * rhs.m11,
+            m64: self.m32 * rhs.m21,
+            m15: self.m12 * rhs.m12,
+            m25: self.m12 * rhs.m22,
+            m35: self.m22 * rhs.m12,
+            m45: self.m22 * rhs.m22,
+            m55: self.m32 * rhs.m12,
+            m65: self.m32 * rhs.m22,
+            m16: self.m12 * rhs.m13,
+            m26: self.m12 * rhs.m23,
+            m36: self.m22 * rhs.m13,
+            m46: self.m22 * rhs.m23,
+            m56: self.m32 * rhs.m13,
+            m66: self.m32 * rhs.m23,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3` and a `Matrix1`, a `Matrix3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3<T>, Matrix1<T>> {
+    type Output = Matrix3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix3<T>, rhs: Matrix1<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m33: self.m33 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3` and a `RowVector2`, a `Matrix3x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3<T>, RowVector2<T>> {
+    type Output = Matrix3x6<T>;
+    fn kronecker(self: Matrix3<T>, rhs: RowVector2<T>) -> Matrix3x6<T> {
+        Matrix3x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m32: self.m31 * rhs.y,
+            m13: self.m12 * rhs.x,
+            m23: self.m22 * rhs.x,
+            m33: self.m32 * rhs.x,
+            m14: self.m12 * rhs.y,
+            m24: self.m22 * rhs.y,
+            m34: self.m32 * rhs.y,
+            m15: self.m13 * rhs.x,
+            m25: self.m23 * rhs.x,
+            m35: self.m33 * rhs.x,
+            m16: self.m13 * rhs.y,
+            m26: self.m23 * rhs.y,
+            m36: self.m33 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3` and a `Vector2`, a `Matrix6x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3<T>, Vector2<T>> {
+    type Output = Matrix6x3<T>;
+    fn kronecker(self: Matrix3<T>, rhs: Vector2<T>) -> Matrix6x3<T> {
+        Matrix6x3 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m51: self.m31 * rhs.x,
+            m61: self.m31 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+            m52: self.m32 * rhs.x,
+            m62: self.m32 * rhs.y,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m23 * rhs.x,
+            m43: self.m23 * rhs.y,
+            m53: self.m33 * rhs.x,
+            m63: self.m33 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3` and a `Matrix2`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3KroneckerMatrix2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3<T>, Matrix2<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: Matrix3<T>, rhs: Matrix2<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11 * rhs.m11,
+            m21: self.m11 * rhs.m21,
+            m31: self.m21 * rhs.m11,
+            m41: self.m21 * rhs.m21,
+            m51: self.m31 * rhs.m11,
+            m61: self.m31 * rhs.m21,
+            m12: self.m11 * rhs.m12,
+            m22: self.m11 * rhs.m22,
+            m32: self.m21 * rhs.m12,
+            m42: self.m21 * rhs.m22,
+            m52: self.m31 * rhs.m12,
+            m62: self.m31 * rhs.m22,
+            m13: self.m12 * rhs.m11,
+            m23: self.m12 * rhs.m21,
+            m33: self.m22 * rhs.m11,
+            m43: self.m22 * rhs.m21,
+            m53: self.m32 * rhs.m11,
+            m63: self.m32 * rhs.m21,
+            m14: self.m12 * rhs.m12,
+            m24: self.m12 * rhs.m22,
+            m34: self.m22 * rhs.m12,
+            m44: self.m22 * rhs.m22,
+            m54: self.m32 * rhs.m12,
+            m64: self.m32 * rhs.m22,
+            m15: self.m13 * rhs.m11,
+            m25: self.m13 * rhs.m21,
+            m35: self.m23 * rhs.m11,
+            m45: self.m23 * rhs.m21,
+            m55: self.m33 * rhs.m11,
+            m65: self.m33 * rhs.m21,
+            m16: self.m13 * rhs.m12,
+            m26: self.m13 * rhs.m22,
+            m36: self.m23 * rhs.m12,
+            m46: self.m23 * rhs.m22,
+            m56: self.m33 * rhs.m12,
+            m66: self.m33 * rhs.m22,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x4` and a `Matrix1`, a `Matrix3x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x4KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x4<T>, Matrix1<T>> {
+    type Output = Matrix3x4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix3x4<T>, rhs: Matrix1<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m33: self.m33 * rhs.x,
+            m14: self.m14 * rhs.x,
+            m24: self.m24 * rhs.x,
+            m34: self.m34 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix3x4` and a `Vector2`, a `Matrix6x4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix3x4KroneckerVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix3x4<T>, Vector2<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: Matrix3x4<T>, rhs: Vector2<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m11 * rhs.y,
+            m31: self.m21 * rhs.x,
+            m41: self.m21 * rhs.y,
+            m51: self.m31 * rhs.x,
+            m61: self.m31 * rhs.y,
+            m12: self.m12 * rhs.x,
+            m22: self.m12 * rhs.y,
+            m32: self.m22 * rhs.x,
+            m42: self.m22 * rhs.y,
+            m52: self.m32 * rhs.x,
+            m62: self.m32 * rhs.y,
+            m13: self.m13 * rhs.x,
+            m23: self.m13 * rhs.y,
+            m33: self.m23 * rhs.x,
+            m43: self.m23 * rhs.y,
+            m53: self.m33 * rhs.x,
+            m63: self.m33 * rhs.y,
+            m14: self.m14 * rhs.x,
+            m24: self.m14 * rhs.y,
+            m34: self.m24 * rhs.x,
+            m44: self.m24 * rhs.y,
+            m54: self.m34 * rhs.x,
+            m64: self.m34 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector4` and a `Matrix1`, a `Vector4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector4KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector4<T>, Matrix1<T>> {
+    type Output = Vector4<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector4<T>, rhs: Matrix1<T>) -> Vector4<T> {
+        Vector4 { x: self.x * rhs.x, y: self.y * rhs.x, z: self.z * rhs.x, w: self.w * rhs.x }
+    }
+}
+
+/// The Kronecker product of a `Vector4` and a `RowVector2`, a `Matrix4x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector4KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector4<T>, RowVector2<T>> {
+    type Output = Matrix4x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector4<T>, rhs: RowVector2<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector4` and a `RowVector3`, a `Matrix4x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector4KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector4<T>, RowVector3<T>> {
+    type Output = Matrix4x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector4<T>, rhs: RowVector3<T>) -> Matrix4x3<T> {
+        Matrix4x3 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector4` and a `RowVector4`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector4KroneckerRowVector4<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector4<T>, RowVector4<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: Vector4<T>, rhs: RowVector4<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix4x2` and a `Matrix1`, a `Matrix4x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix4x2KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix4x2<T>, Matrix1<T>> {
+    type Output = Matrix4x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix4x2<T>, rhs: Matrix1<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m41: self.m41 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+            m42: self.m42 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix4x2` and a `RowVector2`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix4x2KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix4x2<T>, RowVector2<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix4x2<T>, rhs: RowVector2<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m41: self.m41 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m32: self.m31 * rhs.y,
+            m42: self.m41 * rhs.y,
+            m13: self.m12 * rhs.x,
+            m23: self.m22 * rhs.x,
+            m33: self.m32 * rhs.x,
+            m43: self.m42 * rhs.x,
+            m14: self.m12 * rhs.y,
+            m24: self.m22 * rhs.y,
+            m34: self.m32 * rhs.y,
+            m44: self.m42 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix4x2` and a `RowVector3`, a `Matrix4x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix4x2KroneckerRowVector3<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix4x2<T>, RowVector3<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: Matrix4x2<T>, rhs: RowVector3<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m41: self.m41 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m32: self.m31 * rhs.y,
+            m42: self.m41 * rhs.y,
+            m13: self.m11 * rhs.z,
+            m23: self.m21 * rhs.z,
+            m33: self.m31 * rhs.z,
+            m43: self.m41 * rhs.z,
+            m14: self.m12 * rhs.x,
+            m24: self.m22 * rhs.x,
+            m34: self.m32 * rhs.x,
+            m44: self.m42 * rhs.x,
+            m15: self.m12 * rhs.y,
+            m25: self.m22 * rhs.y,
+            m35: self.m32 * rhs.y,
+            m45: self.m42 * rhs.y,
+            m16: self.m12 * rhs.z,
+            m26: self.m22 * rhs.z,
+            m36: self.m32 * rhs.z,
+            m46: self.m42 * rhs.z,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix4x3` and a `Matrix1`, a `Matrix4x3`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix4x3KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix4x3<T>, Matrix1<T>> {
+    type Output = Matrix4x3<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix4x3<T>, rhs: Matrix1<T>) -> Matrix4x3<T> {
+        Matrix4x3 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m41: self.m41 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+            m42: self.m42 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m33: self.m33 * rhs.x,
+            m43: self.m43 * rhs.x,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix4x3` and a `RowVector2`, a `Matrix4x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix4x3KroneckerRowVector2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix4x3<T>, RowVector2<T>> {
+    type Output = Matrix4x6<T>;
+    fn kronecker(self: Matrix4x3<T>, rhs: RowVector2<T>) -> Matrix4x6<T> {
+        Matrix4x6 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m41: self.m41 * rhs.x,
+            m12: self.m11 * rhs.y,
+            m22: self.m21 * rhs.y,
+            m32: self.m31 * rhs.y,
+            m42: self.m41 * rhs.y,
+            m13: self.m12 * rhs.x,
+            m23: self.m22 * rhs.x,
+            m33: self.m32 * rhs.x,
+            m43: self.m42 * rhs.x,
+            m14: self.m12 * rhs.y,
+            m24: self.m22 * rhs.y,
+            m34: self.m32 * rhs.y,
+            m44: self.m42 * rhs.y,
+            m15: self.m13 * rhs.x,
+            m25: self.m23 * rhs.x,
+            m35: self.m33 * rhs.x,
+            m45: self.m43 * rhs.x,
+            m16: self.m13 * rhs.y,
+            m26: self.m23 * rhs.y,
+            m36: self.m33 * rhs.y,
+            m46: self.m43 * rhs.y,
+        }
+    }
+}
+
+/// The Kronecker product of a `Matrix4` and a `Matrix1`, a `Matrix4`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix4KroneckerMatrix1<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix4<T>, Matrix1<T>> {
+    type Output = Matrix4<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix4<T>, rhs: Matrix1<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.m11 * rhs.x,
+            m21: self.m21 * rhs.x,
+            m31: self.m31 * rhs.x,
+            m41: self.m41 * rhs.x,
+            m12: self.m12 * rhs.x,
+            m22: self.m22 * rhs.x,
+            m32: self.m32 * rhs.x,
+            m42: self.m42 * rhs.x,
+            m13: self.m13 * rhs.x,
+            m23: self.m23 * rhs.x,
+            m33: self.m33 * rhs.x,
+            m43: self.m43 * rhs.x,
+            m14: self.m14 * rhs.x,
+            m24: self.m24 * rhs.x,
+            m34: self.m34 * rhs.x,
+            m44: self.m44 * rhs.x,
+        }
+    }
+}

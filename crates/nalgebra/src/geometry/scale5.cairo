@@ -14,11 +14,11 @@
 
 use core::num::traits::One;
 use core::ops::MulAssign;
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::vector5::Vector5;
 use super::point5::Point5;
-use super::quaternion::ApproxEqTrait;
 
 /// A non-uniform scale by `vector`, one factor per axis. The field name is upstream's (`Scale {
 /// vector }`).

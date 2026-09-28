@@ -19,9 +19,9 @@
 //! measurement and the counter-example. Upstream has no unpivoted variant either, only `LU`
 //! (partial pivoting) and `FullPivLU` (complete pivoting).
 
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
-use crate::base::solve::SolveKernel;
 use crate::base::vector2::Vector2;
 use super::Perm2;
 use super::super::permutation_sequence::PermuteRows;
@@ -38,6 +38,10 @@ pub struct Lu2<T> {
     /// The row transpositions applied by partial pivoting.
     pub p: Perm2,
 }
+
+// the test-only `PartialEq` of `Perm2` (`linalg::lu`, not `Perm2`'s module since the split)
+#[cfg(test)]
+use super::Perm2PartialEq;
 
 /// Test-only field-wise equality (upstream `Lu2` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.
@@ -421,7 +425,7 @@ mod tests {
         fx, m2, max_abs_v2, max_ulp_diff2, max_ulp_diff_v2, oracle_tol, v2it, v2t,
     };
     use crate::base::vector2::Vector2;
-    use crate::linalg::lu::{Perm2, Perm2Trait, oracle_lu2 as oracle};
+    use crate::linalg::lu::{Perm2, Perm2PartialEq, Perm2Trait, oracle_lu2 as oracle};
     use crate::testing::black_box;
     use super::{Lu2, Lu2InternalTrait, Lu2Trait};
 

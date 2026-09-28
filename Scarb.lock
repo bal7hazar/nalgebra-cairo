@@ -21,6 +21,16 @@ name = "nalgebra"
 version = "0.1.0"
 dependencies = [
  "fixed",
+ "nalgebra_core",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_core"
+version = "0.1.0"
+dependencies = [
+ "fixed",
  "simba",
  "snforge_std",
 ]

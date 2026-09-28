@@ -4,10 +4,10 @@
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix2x3::Matrix2x3;
-use crate::base::solve::SolveKernel;
 use crate::base::vector2::Vector2;
 
 /// The QR factorisation `A = q * r` of a `Matrix2x3<T>`: `q` is 2x2, `r` is 2x3

@@ -10,10 +10,10 @@
 
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use nalgebra_core::internal::base::kernels::{Fused, Powi};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
-use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
-use super::kernels::{Fused, Powi};
 use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
 use super::matrix2x3::Matrix2x3;
@@ -8237,5 +8237,1171 @@ pub impl Matrix4x5InfSup<
     #[inline(always)]
     fn inf_sup(a: Matrix4x5<T>, b: Matrix4x5<T>) -> (Matrix4x5<T>, Matrix4x5<T>) {
         Matrix4x5Trait::inf_sup(a, b)
+    }
+}
+use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_core::internal::base::transpose::BlasTranspose;
+use nalgebra_core::linalg::lu::Perm4;
+use nalgebra_core::linalg::permutation_sequence::PermuteRows;
+
+/// The Kronecker product of a `Matrix1` and a `Matrix4x5`, a `Matrix4x5`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix4x5<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix4x5<T>> {
+    type Output = Matrix4x5<T>;
+    fn kronecker(self: Matrix1<T>, rhs: Matrix4x5<T>) -> Matrix4x5<T> {
+        Matrix4x5 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.x * rhs.m34,
+            m44: self.x * rhs.m44,
+            m15: self.x * rhs.m15,
+            m25: self.x * rhs.m25,
+            m35: self.x * rhs.m35,
+            m45: self.x * rhs.m45,
+        }
+    }
+}
+
+/// `self * rhs`, a `RowVector5`: one `sum_prod4` per component (one rounding each). Panics on
+/// overflow. Upstream: `RowVector4 * Matrix4x5` (`Mul`).
+pub impl RowVector4MulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<RowVector4<T>, Matrix4x5<T>> {
+    type Output = RowVector5<T>;
+    fn mul_mat(self: RowVector4<T>, rhs: Matrix4x5<T>) -> RowVector5<T> {
+        RowVector5 {
+            x: R::sum_prod4(self.x, rhs.m11, self.y, rhs.m21, self.z, rhs.m31, self.w, rhs.m41),
+            y: R::sum_prod4(self.x, rhs.m12, self.y, rhs.m22, self.z, rhs.m32, self.w, rhs.m42),
+            z: R::sum_prod4(self.x, rhs.m13, self.y, rhs.m23, self.z, rhs.m33, self.w, rhs.m43),
+            w: R::sum_prod4(self.x, rhs.m14, self.y, rhs.m24, self.z, rhs.m34, self.w, rhs.m44),
+            a: R::sum_prod4(self.x, rhs.m15, self.y, rhs.m25, self.z, rhs.m35, self.w, rhs.m45),
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix2x5`: one `sum_prod4` per component (one rounding each). Panics on
+/// overflow. Upstream: `Matrix2x4 * Matrix4x5` (`Mul`).
+pub impl Matrix2x4MulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix2x4<T>, Matrix4x5<T>> {
+    type Output = Matrix2x5<T>;
+    fn mul_mat(self: Matrix2x4<T>, rhs: Matrix4x5<T>) -> Matrix2x5<T> {
+        Matrix2x5 {
+            m11: R::sum_prod4(
+                self.m11, rhs.m11, self.m12, rhs.m21, self.m13, rhs.m31, self.m14, rhs.m41,
+            ),
+            m21: R::sum_prod4(
+                self.m21, rhs.m11, self.m22, rhs.m21, self.m23, rhs.m31, self.m24, rhs.m41,
+            ),
+            m12: R::sum_prod4(
+                self.m11, rhs.m12, self.m12, rhs.m22, self.m13, rhs.m32, self.m14, rhs.m42,
+            ),
+            m22: R::sum_prod4(
+                self.m21, rhs.m12, self.m22, rhs.m22, self.m23, rhs.m32, self.m24, rhs.m42,
+            ),
+            m13: R::sum_prod4(
+                self.m11, rhs.m13, self.m12, rhs.m23, self.m13, rhs.m33, self.m14, rhs.m43,
+            ),
+            m23: R::sum_prod4(
+                self.m21, rhs.m13, self.m22, rhs.m23, self.m23, rhs.m33, self.m24, rhs.m43,
+            ),
+            m14: R::sum_prod4(
+                self.m11, rhs.m14, self.m12, rhs.m24, self.m13, rhs.m34, self.m14, rhs.m44,
+            ),
+            m24: R::sum_prod4(
+                self.m21, rhs.m14, self.m22, rhs.m24, self.m23, rhs.m34, self.m24, rhs.m44,
+            ),
+            m15: R::sum_prod4(
+                self.m11, rhs.m15, self.m12, rhs.m25, self.m13, rhs.m35, self.m14, rhs.m45,
+            ),
+            m25: R::sum_prod4(
+                self.m21, rhs.m15, self.m22, rhs.m25, self.m23, rhs.m35, self.m24, rhs.m45,
+            ),
+        }
+    }
+}
+
+/// `self * rhs`, a `Matrix3x5`: one `sum_prod4` per component (one rounding each). Panics on
+/// overflow. Upstream: `Matrix3x4 * Matrix4x5` (`Mul`).
+pub impl Matrix3x4MulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix3x4<T>, Matrix4x5<T>> {
+    type Output = Matrix3x5<T>;
+    fn mul_mat(self: Matrix3x4<T>, rhs: Matrix4x5<T>) -> Matrix3x5<T> {
+        Matrix3x5 {
+            m11: R::sum_prod4(
+                self.m11, rhs.m11, self.m12, rhs.m21, self.m13, rhs.m31, self.m14, rhs.m41,
+            ),
+            m21: R::sum_prod4(
+                self.m21, rhs.m11, self.m22, rhs.m21, self.m23, rhs.m31, self.m24, rhs.m41,
+            ),
+            m31: R::sum_prod4(
+                self.m31, rhs.m11, self.m32, rhs.m21, self.m33, rhs.m31, self.m34, rhs.m41,
+            ),
+            m12: R::sum_prod4(
+                self.m11, rhs.m12, self.m12, rhs.m22, self.m13, rhs.m32, self.m14, rhs.m42,
+            ),
+            m22: R::sum_prod4(
+                self.m21, rhs.m12, self.m22, rhs.m22, self.m23, rhs.m32, self.m24, rhs.m42,
+            ),
+            m32: R::sum_prod4(
+                self.m31, rhs.m12, self.m32, rhs.m22, self.m33, rhs.m32, self.m34, rhs.m42,
+            ),
+            m13: R::sum_prod4(
+                self.m11, rhs.m13, self.m12, rhs.m23, self.m13, rhs.m33, self.m14, rhs.m43,
+            ),
+            m23: R::sum_prod4(
+                self.m21, rhs.m13, self.m22, rhs.m23, self.m23, rhs.m33, self.m24, rhs.m43,
+            ),
+            m33: R::sum_prod4(
+                self.m31, rhs.m13, self.m32, rhs.m23, self.m33, rhs.m33, self.m34, rhs.m43,
+            ),
+            m14: R::sum_prod4(
+                self.m11, rhs.m14, self.m12, rhs.m24, self.m13, rhs.m34, self.m14, rhs.m44,
+            ),
+            m24: R::sum_prod4(
+                self.m21, rhs.m14, self.m22, rhs.m24, self.m23, rhs.m34, self.m24, rhs.m44,
+            ),
+            m34: R::sum_prod4(
+                self.m31, rhs.m14, self.m32, rhs.m24, self.m33, rhs.m34, self.m34, rhs.m44,
+            ),
+            m15: R::sum_prod4(
+                self.m11, rhs.m15, self.m12, rhs.m25, self.m13, rhs.m35, self.m14, rhs.m45,
+            ),
+            m25: R::sum_prod4(
+                self.m21, rhs.m15, self.m22, rhs.m25, self.m23, rhs.m35, self.m24, rhs.m45,
+            ),
+            m35: R::sum_prod4(
+                self.m31, rhs.m15, self.m32, rhs.m25, self.m33, rhs.m35, self.m34, rhs.m45,
+            ),
+        }
+    }
+}
+
+/// `selfᵀ * rhs`, a `RowVector5`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Vector4TrMulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Vector4<T>, Matrix4x5<T>> {
+    type Output = RowVector5<T>;
+    #[inline(always)]
+    fn tr_mul(self: Vector4<T>, rhs: Matrix4x5<T>) -> RowVector5<T> {
+        MatrixMul::mul_mat(RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w }, rhs)
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix2x5`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix4x2TrMulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix4x2<T>, Matrix4x5<T>> {
+    type Output = Matrix2x5<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix4x2<T>, rhs: Matrix4x5<T>) -> Matrix2x5<T> {
+        MatrixMul::mul_mat(
+            Matrix2x4 {
+                m11: self.m11,
+                m21: self.m12,
+                m12: self.m21,
+                m22: self.m22,
+                m13: self.m31,
+                m23: self.m32,
+                m14: self.m41,
+                m24: self.m42,
+            },
+            rhs,
+        )
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix3x5`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix4x3TrMulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix4x3<T>, Matrix4x5<T>> {
+    type Output = Matrix3x5<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix4x3<T>, rhs: Matrix4x5<T>) -> Matrix3x5<T> {
+        MatrixMul::mul_mat(
+            Matrix3x4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+            },
+            rhs,
+        )
+    }
+}
+
+/// `self * rhs`, a `Matrix4x5`: one `sum_prod4` per component (one rounding each). Panics on
+/// overflow. Upstream: `Matrix4 * Matrix4x5` (`Mul`).
+pub impl Matrix4MulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Matrix4<T>, Matrix4x5<T>> {
+    type Output = Matrix4x5<T>;
+    fn mul_mat(self: Matrix4<T>, rhs: Matrix4x5<T>) -> Matrix4x5<T> {
+        Matrix4x5 {
+            m11: R::sum_prod4(
+                self.m11, rhs.m11, self.m12, rhs.m21, self.m13, rhs.m31, self.m14, rhs.m41,
+            ),
+            m21: R::sum_prod4(
+                self.m21, rhs.m11, self.m22, rhs.m21, self.m23, rhs.m31, self.m24, rhs.m41,
+            ),
+            m31: R::sum_prod4(
+                self.m31, rhs.m11, self.m32, rhs.m21, self.m33, rhs.m31, self.m34, rhs.m41,
+            ),
+            m41: R::sum_prod4(
+                self.m41, rhs.m11, self.m42, rhs.m21, self.m43, rhs.m31, self.m44, rhs.m41,
+            ),
+            m12: R::sum_prod4(
+                self.m11, rhs.m12, self.m12, rhs.m22, self.m13, rhs.m32, self.m14, rhs.m42,
+            ),
+            m22: R::sum_prod4(
+                self.m21, rhs.m12, self.m22, rhs.m22, self.m23, rhs.m32, self.m24, rhs.m42,
+            ),
+            m32: R::sum_prod4(
+                self.m31, rhs.m12, self.m32, rhs.m22, self.m33, rhs.m32, self.m34, rhs.m42,
+            ),
+            m42: R::sum_prod4(
+                self.m41, rhs.m12, self.m42, rhs.m22, self.m43, rhs.m32, self.m44, rhs.m42,
+            ),
+            m13: R::sum_prod4(
+                self.m11, rhs.m13, self.m12, rhs.m23, self.m13, rhs.m33, self.m14, rhs.m43,
+            ),
+            m23: R::sum_prod4(
+                self.m21, rhs.m13, self.m22, rhs.m23, self.m23, rhs.m33, self.m24, rhs.m43,
+            ),
+            m33: R::sum_prod4(
+                self.m31, rhs.m13, self.m32, rhs.m23, self.m33, rhs.m33, self.m34, rhs.m43,
+            ),
+            m43: R::sum_prod4(
+                self.m41, rhs.m13, self.m42, rhs.m23, self.m43, rhs.m33, self.m44, rhs.m43,
+            ),
+            m14: R::sum_prod4(
+                self.m11, rhs.m14, self.m12, rhs.m24, self.m13, rhs.m34, self.m14, rhs.m44,
+            ),
+            m24: R::sum_prod4(
+                self.m21, rhs.m14, self.m22, rhs.m24, self.m23, rhs.m34, self.m24, rhs.m44,
+            ),
+            m34: R::sum_prod4(
+                self.m31, rhs.m14, self.m32, rhs.m24, self.m33, rhs.m34, self.m34, rhs.m44,
+            ),
+            m44: R::sum_prod4(
+                self.m41, rhs.m14, self.m42, rhs.m24, self.m43, rhs.m34, self.m44, rhs.m44,
+            ),
+            m15: R::sum_prod4(
+                self.m11, rhs.m15, self.m12, rhs.m25, self.m13, rhs.m35, self.m14, rhs.m45,
+            ),
+            m25: R::sum_prod4(
+                self.m21, rhs.m15, self.m22, rhs.m25, self.m23, rhs.m35, self.m24, rhs.m45,
+            ),
+            m35: R::sum_prod4(
+                self.m31, rhs.m15, self.m32, rhs.m25, self.m33, rhs.m35, self.m34, rhs.m45,
+            ),
+            m45: R::sum_prod4(
+                self.m41, rhs.m15, self.m42, rhs.m25, self.m43, rhs.m35, self.m44, rhs.m45,
+            ),
+        }
+    }
+}
+
+/// `selfᵀ * rhs`, a `Matrix4x5`: `mul_mat` of the transposed components, so one `sum_prod4` per
+/// component (one rounding each); bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas
+/// (the transpose only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl Matrix4TrMulMatrix4x5<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<Matrix4<T>, Matrix4x5<T>> {
+    type Output = Matrix4x5<T>;
+    #[inline(always)]
+    fn tr_mul(self: Matrix4<T>, rhs: Matrix4x5<T>) -> Matrix4x5<T> {
+        MatrixMul::mul_mat(
+            Matrix4 {
+                m11: self.m11,
+                m21: self.m12,
+                m31: self.m13,
+                m41: self.m14,
+                m12: self.m21,
+                m22: self.m22,
+                m32: self.m23,
+                m42: self.m24,
+                m13: self.m31,
+                m23: self.m32,
+                m33: self.m33,
+                m43: self.m34,
+                m14: self.m41,
+                m24: self.m42,
+                m34: self.m43,
+                m44: self.m44,
+            },
+            rhs,
+        )
+    }
+}
+
+impl Matrix4x5BlasTranspose<T> of BlasTranspose<Matrix4x5<T>> {
+    type Output = Matrix5x4<T>;
+    #[inline(always)]
+    fn tr(self: Matrix4x5<T>) -> Matrix5x4<T> {
+        Matrix5x4 {
+            m11: self.m11,
+            m21: self.m12,
+            m31: self.m13,
+            m41: self.m14,
+            m51: self.m15,
+            m12: self.m21,
+            m22: self.m22,
+            m32: self.m23,
+            m42: self.m24,
+            m52: self.m25,
+            m13: self.m31,
+            m23: self.m32,
+            m33: self.m33,
+            m43: self.m34,
+            m53: self.m35,
+            m14: self.m41,
+            m24: self.m42,
+            m34: self.m43,
+            m44: self.m44,
+            m54: self.m45,
+        }
+    }
+}
+
+impl Matrix4SolveKernelMatrix4x5<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Mul<T>, +Neg<T>, +PartialEq<T>,
+> of SolveKernel<Matrix4<T>, Matrix4x5<T>> {
+    type Scalar = T;
+
+    fn lower(self: Matrix4<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
+        let (x00, x01, x02, x03, x04) = R::div5(b.m11, b.m12, b.m13, b.m14, b.m15, self.m11);
+        let n10 = -self.m21;
+        let (x10, x11, x12, x13, x14) = R::div5(
+            R::mul_add(n10, x00, b.m21),
+            R::mul_add(n10, x01, b.m22),
+            R::mul_add(n10, x02, b.m23),
+            R::mul_add(n10, x03, b.m24),
+            R::mul_add(n10, x04, b.m25),
+            self.m22,
+        );
+        let (x20, x21, x22, x23, x24) = R::div5(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m31), self.m31, x00),
+                    self.m32,
+                    x10,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m32), self.m31, x01),
+                    self.m32,
+                    x11,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m33), self.m31, x02),
+                    self.m32,
+                    x12,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m34), self.m31, x03),
+                    self.m32,
+                    x13,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m35), self.m31, x04),
+                    self.m32,
+                    x14,
+                ),
+            ),
+            self.m33,
+        );
+        let (x30, x31, x32, x33, x34) = R::div5(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m41), self.m41, x00),
+                        self.m42,
+                        x10,
+                    ),
+                    self.m43,
+                    x20,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m42), self.m41, x01),
+                        self.m42,
+                        x11,
+                    ),
+                    self.m43,
+                    x21,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m43), self.m41, x02),
+                        self.m42,
+                        x12,
+                    ),
+                    self.m43,
+                    x22,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m44), self.m41, x03),
+                        self.m42,
+                        x13,
+                    ),
+                    self.m43,
+                    x23,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m45), self.m41, x04),
+                        self.m42,
+                        x14,
+                    ),
+                    self.m43,
+                    x24,
+                ),
+            ),
+            self.m44,
+        );
+        Matrix4x5 {
+            m11: x00,
+            m21: x10,
+            m31: x20,
+            m41: x30,
+            m12: x01,
+            m22: x11,
+            m32: x21,
+            m42: x31,
+            m13: x02,
+            m23: x12,
+            m33: x22,
+            m43: x32,
+            m14: x03,
+            m24: x13,
+            m34: x23,
+            m44: x33,
+            m15: x04,
+            m25: x14,
+            m35: x24,
+            m45: x34,
+        }
+    }
+
+    fn upper(self: Matrix4<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
+        let (x30, x31, x32, x33, x34) = R::div5(b.m41, b.m42, b.m43, b.m44, b.m45, self.m44);
+        let n23 = -self.m34;
+        let (x20, x21, x22, x23, x24) = R::div5(
+            R::mul_add(n23, x30, b.m31),
+            R::mul_add(n23, x31, b.m32),
+            R::mul_add(n23, x32, b.m33),
+            R::mul_add(n23, x33, b.m34),
+            R::mul_add(n23, x34, b.m35),
+            self.m33,
+        );
+        let (x10, x11, x12, x13, x14) = R::div5(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m21), self.m24, x30),
+                    self.m23,
+                    x20,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m22), self.m24, x31),
+                    self.m23,
+                    x21,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m23), self.m24, x32),
+                    self.m23,
+                    x22,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m24), self.m24, x33),
+                    self.m23,
+                    x23,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m25), self.m24, x34),
+                    self.m23,
+                    x24,
+                ),
+            ),
+            self.m22,
+        );
+        let (x00, x01, x02, x03, x04) = R::div5(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m11), self.m14, x30),
+                        self.m13,
+                        x20,
+                    ),
+                    self.m12,
+                    x10,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m12), self.m14, x31),
+                        self.m13,
+                        x21,
+                    ),
+                    self.m12,
+                    x11,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m13), self.m14, x32),
+                        self.m13,
+                        x22,
+                    ),
+                    self.m12,
+                    x12,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m14), self.m14, x33),
+                        self.m13,
+                        x23,
+                    ),
+                    self.m12,
+                    x13,
+                ),
+            ),
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m15), self.m14, x34),
+                        self.m13,
+                        x24,
+                    ),
+                    self.m12,
+                    x14,
+                ),
+            ),
+            self.m11,
+        );
+        Matrix4x5 {
+            m11: x00,
+            m21: x10,
+            m31: x20,
+            m41: x30,
+            m12: x01,
+            m22: x11,
+            m32: x21,
+            m42: x31,
+            m13: x02,
+            m23: x12,
+            m33: x22,
+            m43: x32,
+            m14: x03,
+            m24: x13,
+            m34: x23,
+            m44: x33,
+            m15: x04,
+            m25: x14,
+            m35: x24,
+            m45: x34,
+        }
+    }
+
+    fn lower_unit(self: Matrix4<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
+        let x00 = b.m11;
+        let x01 = b.m12;
+        let x02 = b.m13;
+        let x03 = b.m14;
+        let x04 = b.m15;
+        let n10 = -self.m21;
+        let x10 = R::mul_add(n10, x00, b.m21);
+        let x11 = R::mul_add(n10, x01, b.m22);
+        let x12 = R::mul_add(n10, x02, b.m23);
+        let x13 = R::mul_add(n10, x03, b.m24);
+        let x14 = R::mul_add(n10, x04, b.m25);
+        let x20 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m31), self.m31, x00), self.m32, x10,
+            ),
+        );
+        let x21 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m32), self.m31, x01), self.m32, x11,
+            ),
+        );
+        let x22 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m33), self.m31, x02), self.m32, x12,
+            ),
+        );
+        let x23 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m34), self.m31, x03), self.m32, x13,
+            ),
+        );
+        let x24 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m35), self.m31, x04), self.m32, x14,
+            ),
+        );
+        let x30 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m41), self.m41, x00),
+                    self.m42,
+                    x10,
+                ),
+                self.m43,
+                x20,
+            ),
+        );
+        let x31 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m42), self.m41, x01),
+                    self.m42,
+                    x11,
+                ),
+                self.m43,
+                x21,
+            ),
+        );
+        let x32 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m43), self.m41, x02),
+                    self.m42,
+                    x12,
+                ),
+                self.m43,
+                x22,
+            ),
+        );
+        let x33 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m44), self.m41, x03),
+                    self.m42,
+                    x13,
+                ),
+                self.m43,
+                x23,
+            ),
+        );
+        let x34 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m45), self.m41, x04),
+                    self.m42,
+                    x14,
+                ),
+                self.m43,
+                x24,
+            ),
+        );
+        Matrix4x5 {
+            m11: x00,
+            m21: x10,
+            m31: x20,
+            m41: x30,
+            m12: x01,
+            m22: x11,
+            m32: x21,
+            m42: x31,
+            m13: x02,
+            m23: x12,
+            m33: x22,
+            m43: x32,
+            m14: x03,
+            m24: x13,
+            m34: x23,
+            m44: x33,
+            m15: x04,
+            m25: x14,
+            m35: x24,
+            m45: x34,
+        }
+    }
+
+    fn lower_with_diag(self: Matrix4<T>, b: Matrix4x5<T>, diag: T) -> Matrix4x5<T> {
+        let x00 = b.m11;
+        let x01 = b.m12;
+        let x02 = b.m13;
+        let x03 = b.m14;
+        let x04 = b.m15;
+        let (q00, q01, q02, q03, q04) = R::div5(x00, x01, x02, x03, x04, diag);
+        let n10 = -self.m21;
+        let x10 = R::mul_add(n10, q00, b.m21);
+        let x11 = R::mul_add(n10, q01, b.m22);
+        let x12 = R::mul_add(n10, q02, b.m23);
+        let x13 = R::mul_add(n10, q03, b.m24);
+        let x14 = R::mul_add(n10, q04, b.m25);
+        let (q10, q11, q12, q13, q14) = R::div5(x10, x11, x12, x13, x14, diag);
+        let x20 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m31), self.m31, q00), self.m32, q10,
+            ),
+        );
+        let x21 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m32), self.m31, q01), self.m32, q11,
+            ),
+        );
+        let x22 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m33), self.m31, q02), self.m32, q12,
+            ),
+        );
+        let x23 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m34), self.m31, q03), self.m32, q13,
+            ),
+        );
+        let x24 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m35), self.m31, q04), self.m32, q14,
+            ),
+        );
+        let (q20, q21, q22, q23, q24) = R::div5(x20, x21, x22, x23, x24, diag);
+        let x30 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m41), self.m41, q00),
+                    self.m42,
+                    q10,
+                ),
+                self.m43,
+                q20,
+            ),
+        );
+        let x31 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m42), self.m41, q01),
+                    self.m42,
+                    q11,
+                ),
+                self.m43,
+                q21,
+            ),
+        );
+        let x32 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m43), self.m41, q02),
+                    self.m42,
+                    q12,
+                ),
+                self.m43,
+                q22,
+            ),
+        );
+        let x33 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m44), self.m41, q03),
+                    self.m42,
+                    q13,
+                ),
+                self.m43,
+                q23,
+            ),
+        );
+        let x34 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), b.m45), self.m41, q04),
+                    self.m42,
+                    q14,
+                ),
+                self.m43,
+                q24,
+            ),
+        );
+        Matrix4x5 {
+            m11: x00,
+            m21: x10,
+            m31: x20,
+            m41: x30,
+            m12: x01,
+            m22: x11,
+            m32: x21,
+            m42: x31,
+            m13: x02,
+            m23: x12,
+            m33: x22,
+            m43: x32,
+            m14: x03,
+            m24: x13,
+            m34: x23,
+            m44: x33,
+            m15: x04,
+            m25: x14,
+            m35: x24,
+            m45: x34,
+        }
+    }
+
+    #[inline(always)]
+    fn nonzero_diagonal(self: Matrix4<T>) -> bool {
+        self.m11 != R::zero()
+            && self.m22 != R::zero()
+            && self.m33 != R::zero()
+            && self.m44 != R::zero()
+    }
+
+    #[inline(always)]
+    fn is_zero(x: T) -> bool {
+        x == R::zero()
+    }
+
+    #[inline(always)]
+    fn tr_mul_rhs(self: Matrix4<T>, b: Matrix4x5<T>) -> Matrix4x5<T> {
+        MatrixTrMul::tr_mul(self, b)
+    }
+}
+
+pub impl Perm4PermuteRowsMatrix4x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, Matrix4x5<T>> {
+    fn permute_rows(self: Perm4, ref rhs: Matrix4x5<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a22 = rhs.m33;
+        let mut a32 = rhs.m43;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a23 = rhs.m34;
+        let mut a33 = rhs.m44;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a24 = rhs.m35;
+        let mut a34 = rhs.m45;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a10;
+            a10 = tmp;
+            let tmp = a01;
+            a01 = a11;
+            a11 = tmp;
+            let tmp = a02;
+            a02 = a12;
+            a12 = tmp;
+            let tmp = a03;
+            a03 = a13;
+            a13 = tmp;
+            let tmp = a04;
+            a04 = a14;
+            a14 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a20;
+            a20 = tmp;
+            let tmp = a01;
+            a01 = a21;
+            a21 = tmp;
+            let tmp = a02;
+            a02 = a22;
+            a22 = tmp;
+            let tmp = a03;
+            a03 = a23;
+            a23 = tmp;
+            let tmp = a04;
+            a04 = a24;
+            a24 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a30;
+            a30 = tmp;
+            let tmp = a01;
+            a01 = a31;
+            a31 = tmp;
+            let tmp = a02;
+            a02 = a32;
+            a32 = tmp;
+            let tmp = a03;
+            a03 = a33;
+            a33 = tmp;
+            let tmp = a04;
+            a04 = a34;
+            a34 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a10;
+            a10 = a20;
+            a20 = tmp;
+            let tmp = a11;
+            a11 = a21;
+            a21 = tmp;
+            let tmp = a12;
+            a12 = a22;
+            a22 = tmp;
+            let tmp = a13;
+            a13 = a23;
+            a23 = tmp;
+            let tmp = a14;
+            a14 = a24;
+            a24 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a10;
+            a10 = a30;
+            a30 = tmp;
+            let tmp = a11;
+            a11 = a31;
+            a31 = tmp;
+            let tmp = a12;
+            a12 = a32;
+            a32 = tmp;
+            let tmp = a13;
+            a13 = a33;
+            a33 = tmp;
+            let tmp = a14;
+            a14 = a34;
+            a34 = tmp;
+        }
+        if self.p3 == 4 {
+            let tmp = a20;
+            a20 = a30;
+            a30 = tmp;
+            let tmp = a21;
+            a21 = a31;
+            a31 = tmp;
+            let tmp = a22;
+            a22 = a32;
+            a32 = tmp;
+            let tmp = a23;
+            a23 = a33;
+            a33 = tmp;
+            let tmp = a24;
+            a24 = a34;
+            a34 = tmp;
+        }
+        rhs =
+            Matrix4x5 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m13: a02,
+                m23: a12,
+                m33: a22,
+                m43: a32,
+                m14: a03,
+                m24: a13,
+                m34: a23,
+                m44: a33,
+                m15: a04,
+                m25: a14,
+                m35: a24,
+                m45: a34,
+            };
+    }
+
+    fn inv_permute_rows(self: Perm4, ref rhs: Matrix4x5<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a22 = rhs.m33;
+        let mut a32 = rhs.m43;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a23 = rhs.m34;
+        let mut a33 = rhs.m44;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a24 = rhs.m35;
+        let mut a34 = rhs.m45;
+        if self.p3 == 4 {
+            let tmp = a20;
+            a20 = a30;
+            a30 = tmp;
+            let tmp = a21;
+            a21 = a31;
+            a31 = tmp;
+            let tmp = a22;
+            a22 = a32;
+            a32 = tmp;
+            let tmp = a23;
+            a23 = a33;
+            a33 = tmp;
+            let tmp = a24;
+            a24 = a34;
+            a34 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a10;
+            a10 = a20;
+            a20 = tmp;
+            let tmp = a11;
+            a11 = a21;
+            a21 = tmp;
+            let tmp = a12;
+            a12 = a22;
+            a22 = tmp;
+            let tmp = a13;
+            a13 = a23;
+            a23 = tmp;
+            let tmp = a14;
+            a14 = a24;
+            a24 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a10;
+            a10 = a30;
+            a30 = tmp;
+            let tmp = a11;
+            a11 = a31;
+            a31 = tmp;
+            let tmp = a12;
+            a12 = a32;
+            a32 = tmp;
+            let tmp = a13;
+            a13 = a33;
+            a33 = tmp;
+            let tmp = a14;
+            a14 = a34;
+            a34 = tmp;
+        }
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a10;
+            a10 = tmp;
+            let tmp = a01;
+            a01 = a11;
+            a11 = tmp;
+            let tmp = a02;
+            a02 = a12;
+            a12 = tmp;
+            let tmp = a03;
+            a03 = a13;
+            a13 = tmp;
+            let tmp = a04;
+            a04 = a14;
+            a14 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a20;
+            a20 = tmp;
+            let tmp = a01;
+            a01 = a21;
+            a21 = tmp;
+            let tmp = a02;
+            a02 = a22;
+            a22 = tmp;
+            let tmp = a03;
+            a03 = a23;
+            a23 = tmp;
+            let tmp = a04;
+            a04 = a24;
+            a24 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a30;
+            a30 = tmp;
+            let tmp = a01;
+            a01 = a31;
+            a31 = tmp;
+            let tmp = a02;
+            a02 = a32;
+            a32 = tmp;
+            let tmp = a03;
+            a03 = a33;
+            a33 = tmp;
+            let tmp = a04;
+            a04 = a34;
+            a34 = tmp;
+        }
+        rhs =
+            Matrix4x5 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m13: a02,
+                m23: a12,
+                m33: a22,
+                m43: a32,
+                m14: a03,
+                m24: a13,
+                m34: a23,
+                m44: a33,
+                m15: a04,
+                m25: a14,
+                m35: a24,
+                m45: a34,
+            };
     }
 }

@@ -30,8 +30,9 @@
 
 use core::num::traits::{One, Zero};
 use core::ops::{DivAssign, Index, MulAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::Real;
-use super::quaternion::{ApproxEqTrait, Quaternion, QuaternionTrait};
+use super::quaternion::{Quaternion, QuaternionTrait};
 use super::unit_dual_quaternion::{UnitDualQuaternion, UnitDualQuaternionTrait};
 
 /// Panic messages of the dual-quaternion algebra (stable API).

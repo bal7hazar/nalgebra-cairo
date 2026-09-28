@@ -31,13 +31,13 @@
 //! When no square root is wanted, upstream's `UDU` (`crate::linalg::udu`, on the crate-internal
 //! `LDLᵀ` kernel of DESIGN D6) factorises without one, indefinite symmetric matrices included.
 
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::{Real, Transcendental};
 use crate::base::errors::NOT_POSITIVE_DEFINITE;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix4::Matrix4;
 use crate::base::matrix6::Matrix6;
-use crate::base::solve::SolveKernel;
 use crate::base::sym_matrix2::SymMatrix2;
 use crate::base::sym_matrix3::SymMatrix3;
 use crate::base::vector2::Vector2;

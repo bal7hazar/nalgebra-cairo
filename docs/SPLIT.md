@@ -543,6 +543,11 @@ proves zero step change (`gas_compare.py`) and unchanged paths (`path_proof`).
 | NS10 | `nalgebra_linalg5`, `_linalg_pivot5`, `_linalg_spectral5`, `nalgebra_linalg6`, `_linalg_pivot6`, `_linalg_spectral6` | ~110k (linalggen-driven) |
 | NS11 | `nalgebra_dynamic`, `nalgebra_sparse`; `nalgebra` becomes the pure facade (root, macros, re-exports, features as no-ops); one README per package; release script; CI gates | ~27k |
 
+Progress: **NS3 done** (PR #66): `nalgebra_core`, 21,568 library lines, marginal 0.47 GB and
+~1.4 s locally (minimum of 5 cold builds under the shared build lock; NS1b runner: 1.5 s / 0.44 GB),
+zero step change (every CI gas shard unchanged), path proof green; 0.1.0 crate-private items it
+shares under `nalgebra_core::internal` (`crates.toml` `[internal]`).
+
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible
 change is §4's cost of `default-features = false` on the facade), published in this dependency

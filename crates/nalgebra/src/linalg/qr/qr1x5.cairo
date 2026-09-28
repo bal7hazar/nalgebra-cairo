@@ -4,10 +4,10 @@
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
 use crate::base::row_vector5::RowVector5;
-use crate::base::solve::SolveKernel;
 
 /// The QR factorisation `A = q * r` of a `RowVector5<T>`: `q` is 1x1, `r` is 1x5
 /// upper triangular (trapezoidal) with a non-negative diagonal and an exactly zero strict lower

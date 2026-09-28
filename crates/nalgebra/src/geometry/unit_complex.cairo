@@ -23,6 +23,7 @@
 
 use core::num::traits::One;
 use core::ops::{DivAssign, MulAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix3::Matrix3;
@@ -30,7 +31,6 @@ use crate::base::point2::Point2;
 use crate::base::unit::Unit;
 use crate::base::vector2::Vector2;
 use super::isometry2::Isometry2;
-use super::quaternion::ApproxEqTrait;
 use super::rotation2::Rotation2;
 use super::similarity2::Similarity2;
 use super::translation2::Translation2;
@@ -948,3 +948,49 @@ pub impl Similarity2FromUnitComplex<
         }
     }
 }
+
+// crate-map: generated items (tools/split/cratemap.py) [shapegen]
+// crate-map: from base/matrix2.cairo
+// crate-map: from base/matrix3.cairo
+/// `unitcomplex.into()`: the rotation matrix `[[re, -im], [im, re]]`. Exact (no arithmetic).
+/// Upstream: `From<UnitComplex> for Matrix2`.
+pub impl Matrix2FromUnitComplex<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<UnitComplex<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn into(self: UnitComplex<T>) -> Matrix2<T> {
+        UnitComplexTrait::to_rotation_matrix(self).matrix
+    }
+}
+
+/// `unitcomplex.into()`: the homogeneous rotation. Exact (no arithmetic). Upstream:
+/// `From<UnitComplex> for Matrix3`.
+pub impl Matrix3FromUnitComplex<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<UnitComplex<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: UnitComplex<T>) -> Matrix3<T> {
+        UnitComplexTrait::to_homogeneous(self)
+    }
+}
+// crate-map: end

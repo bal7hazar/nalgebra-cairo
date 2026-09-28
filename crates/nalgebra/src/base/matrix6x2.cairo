@@ -10,11 +10,11 @@
 
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use nalgebra_core::internal::base::kernels::Powi;
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::Rotation2;
-use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
-use super::kernels::Powi;
 use super::matrix1::Matrix1;
 use super::matrix2::{Matrix2, Matrix2Trait};
 use super::matrix2x3::Matrix2x3;
@@ -4702,5 +4702,551 @@ pub impl Matrix6x2InfSup<
     #[inline(always)]
     fn inf_sup(a: Matrix6x2<T>, b: Matrix6x2<T>) -> (Matrix6x2<T>, Matrix6x2<T>) {
         Matrix6x2Trait::inf_sup(a, b)
+    }
+}
+use nalgebra_core::internal::base::transpose::BlasTranspose;
+use nalgebra_core::internal::linalg::givens::GivensRotationInternalTrait;
+use nalgebra_core::linalg::givens::{GivensRotateRows, GivensRotation};
+use nalgebra_core::linalg::lu::Perm2;
+use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
+use crate::linalg::lu::Perm6;
+
+/// The Kronecker product of a `Matrix1` and a `Matrix6x2`, a `Matrix6x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix6x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix6x2<T>> {
+    type Output = Matrix6x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix6x2<T>) -> Matrix6x2<T> {
+        Matrix6x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m61: self.x * rhs.m61,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m62: self.x * rhs.m62,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix6x2`, a `Matrix6x4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix6x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix6x2<T>> {
+    type Output = Matrix6x4<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix6x2<T>) -> Matrix6x4<T> {
+        Matrix6x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m61: self.x * rhs.m61,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m62: self.x * rhs.m62,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m53: self.y * rhs.m51,
+            m63: self.y * rhs.m61,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+            m54: self.y * rhs.m52,
+            m64: self.y * rhs.m62,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Matrix6x2`, a `Matrix6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerMatrix6x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Matrix6x2<T>> {
+    type Output = Matrix6<T>;
+    fn kronecker(self: RowVector3<T>, rhs: Matrix6x2<T>) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m61: self.x * rhs.m61,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m62: self.x * rhs.m62,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m53: self.y * rhs.m51,
+            m63: self.y * rhs.m61,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+            m54: self.y * rhs.m52,
+            m64: self.y * rhs.m62,
+            m15: self.z * rhs.m11,
+            m25: self.z * rhs.m21,
+            m35: self.z * rhs.m31,
+            m45: self.z * rhs.m41,
+            m55: self.z * rhs.m51,
+            m65: self.z * rhs.m61,
+            m16: self.z * rhs.m12,
+            m26: self.z * rhs.m22,
+            m36: self.z * rhs.m32,
+            m46: self.z * rhs.m42,
+            m56: self.z * rhs.m52,
+            m66: self.z * rhs.m62,
+        }
+    }
+}
+
+impl Matrix6x2BlasTranspose<T> of BlasTranspose<Matrix6x2<T>> {
+    type Output = Matrix2x6<T>;
+    #[inline(always)]
+    fn tr(self: Matrix6x2<T>) -> Matrix2x6<T> {
+        Matrix2x6 {
+            m11: self.m11,
+            m21: self.m12,
+            m12: self.m21,
+            m22: self.m22,
+            m13: self.m31,
+            m23: self.m32,
+            m14: self.m41,
+            m24: self.m42,
+            m15: self.m51,
+            m25: self.m52,
+            m16: self.m61,
+            m26: self.m62,
+        }
+    }
+}
+
+pub impl GivensRotationRotateRowsMatrix6x2<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
+> of GivensRotateRows<T, Matrix6x2<T>> {
+    fn rotate_rows(self: GivensRotation<T>, ref lhs: Matrix6x2<T>) {
+        let c = GivensRotationInternalTrait::c(self);
+        let s = GivensRotationInternalTrait::s(self);
+        lhs =
+            Matrix6x2 {
+                m11: R::sum_prod2(c, lhs.m11, s, lhs.m12),
+                m21: R::sum_prod2(c, lhs.m21, s, lhs.m22),
+                m31: R::sum_prod2(c, lhs.m31, s, lhs.m32),
+                m41: R::sum_prod2(c, lhs.m41, s, lhs.m42),
+                m51: R::sum_prod2(c, lhs.m51, s, lhs.m52),
+                m61: R::sum_prod2(c, lhs.m61, s, lhs.m62),
+                m12: R::diff_prod(c, lhs.m12, s, lhs.m11),
+                m22: R::diff_prod(c, lhs.m22, s, lhs.m21),
+                m32: R::diff_prod(c, lhs.m32, s, lhs.m31),
+                m42: R::diff_prod(c, lhs.m42, s, lhs.m41),
+                m52: R::diff_prod(c, lhs.m52, s, lhs.m51),
+                m62: R::diff_prod(c, lhs.m62, s, lhs.m61),
+            };
+    }
+}
+
+pub impl Perm2PermuteColumnsMatrix6x2<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm2, Matrix6x2<T>> {
+    fn permute_columns(self: Perm2, ref rhs: Matrix6x2<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a50 = rhs.m61;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        let mut a51 = rhs.m62;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+            let tmp = a20;
+            a20 = a21;
+            a21 = tmp;
+            let tmp = a30;
+            a30 = a31;
+            a31 = tmp;
+            let tmp = a40;
+            a40 = a41;
+            a41 = tmp;
+            let tmp = a50;
+            a50 = a51;
+            a51 = tmp;
+        }
+        rhs =
+            Matrix6x2 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m61: a50,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+                m62: a51,
+            };
+    }
+
+    fn inv_permute_columns(self: Perm2, ref rhs: Matrix6x2<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a50 = rhs.m61;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        let mut a51 = rhs.m62;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+            let tmp = a20;
+            a20 = a21;
+            a21 = tmp;
+            let tmp = a30;
+            a30 = a31;
+            a31 = tmp;
+            let tmp = a40;
+            a40 = a41;
+            a41 = tmp;
+            let tmp = a50;
+            a50 = a51;
+            a51 = tmp;
+        }
+        rhs =
+            Matrix6x2 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m61: a50,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+                m62: a51,
+            };
+    }
+}
+
+pub impl Perm6PermuteRowsMatrix6x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, Matrix6x2<T>> {
+    fn permute_rows(self: Perm6, ref rhs: Matrix6x2<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a50 = rhs.m61;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        let mut a51 = rhs.m62;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a10;
+            a10 = tmp;
+            let tmp = a01;
+            a01 = a11;
+            a11 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a20;
+            a20 = tmp;
+            let tmp = a01;
+            a01 = a21;
+            a21 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a30;
+            a30 = tmp;
+            let tmp = a01;
+            a01 = a31;
+            a31 = tmp;
+        } else if self.p1 == 5 {
+            let tmp = a00;
+            a00 = a40;
+            a40 = tmp;
+            let tmp = a01;
+            a01 = a41;
+            a41 = tmp;
+        } else if self.p1 == 6 {
+            let tmp = a00;
+            a00 = a50;
+            a50 = tmp;
+            let tmp = a01;
+            a01 = a51;
+            a51 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a10;
+            a10 = a20;
+            a20 = tmp;
+            let tmp = a11;
+            a11 = a21;
+            a21 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a10;
+            a10 = a30;
+            a30 = tmp;
+            let tmp = a11;
+            a11 = a31;
+            a31 = tmp;
+        } else if self.p2 == 5 {
+            let tmp = a10;
+            a10 = a40;
+            a40 = tmp;
+            let tmp = a11;
+            a11 = a41;
+            a41 = tmp;
+        } else if self.p2 == 6 {
+            let tmp = a10;
+            a10 = a50;
+            a50 = tmp;
+            let tmp = a11;
+            a11 = a51;
+            a51 = tmp;
+        }
+        if self.p3 == 4 {
+            let tmp = a20;
+            a20 = a30;
+            a30 = tmp;
+            let tmp = a21;
+            a21 = a31;
+            a31 = tmp;
+        } else if self.p3 == 5 {
+            let tmp = a20;
+            a20 = a40;
+            a40 = tmp;
+            let tmp = a21;
+            a21 = a41;
+            a41 = tmp;
+        } else if self.p3 == 6 {
+            let tmp = a20;
+            a20 = a50;
+            a50 = tmp;
+            let tmp = a21;
+            a21 = a51;
+            a51 = tmp;
+        }
+        if self.p4 == 5 {
+            let tmp = a30;
+            a30 = a40;
+            a40 = tmp;
+            let tmp = a31;
+            a31 = a41;
+            a41 = tmp;
+        } else if self.p4 == 6 {
+            let tmp = a30;
+            a30 = a50;
+            a50 = tmp;
+            let tmp = a31;
+            a31 = a51;
+            a51 = tmp;
+        }
+        if self.p5 == 6 {
+            let tmp = a40;
+            a40 = a50;
+            a50 = tmp;
+            let tmp = a41;
+            a41 = a51;
+            a51 = tmp;
+        }
+        rhs =
+            Matrix6x2 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m61: a50,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+                m62: a51,
+            };
+    }
+
+    fn inv_permute_rows(self: Perm6, ref rhs: Matrix6x2<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a50 = rhs.m61;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        let mut a51 = rhs.m62;
+        if self.p5 == 6 {
+            let tmp = a40;
+            a40 = a50;
+            a50 = tmp;
+            let tmp = a41;
+            a41 = a51;
+            a51 = tmp;
+        }
+        if self.p4 == 5 {
+            let tmp = a30;
+            a30 = a40;
+            a40 = tmp;
+            let tmp = a31;
+            a31 = a41;
+            a41 = tmp;
+        } else if self.p4 == 6 {
+            let tmp = a30;
+            a30 = a50;
+            a50 = tmp;
+            let tmp = a31;
+            a31 = a51;
+            a51 = tmp;
+        }
+        if self.p3 == 4 {
+            let tmp = a20;
+            a20 = a30;
+            a30 = tmp;
+            let tmp = a21;
+            a21 = a31;
+            a31 = tmp;
+        } else if self.p3 == 5 {
+            let tmp = a20;
+            a20 = a40;
+            a40 = tmp;
+            let tmp = a21;
+            a21 = a41;
+            a41 = tmp;
+        } else if self.p3 == 6 {
+            let tmp = a20;
+            a20 = a50;
+            a50 = tmp;
+            let tmp = a21;
+            a21 = a51;
+            a51 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a10;
+            a10 = a20;
+            a20 = tmp;
+            let tmp = a11;
+            a11 = a21;
+            a21 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a10;
+            a10 = a30;
+            a30 = tmp;
+            let tmp = a11;
+            a11 = a31;
+            a31 = tmp;
+        } else if self.p2 == 5 {
+            let tmp = a10;
+            a10 = a40;
+            a40 = tmp;
+            let tmp = a11;
+            a11 = a41;
+            a41 = tmp;
+        } else if self.p2 == 6 {
+            let tmp = a10;
+            a10 = a50;
+            a50 = tmp;
+            let tmp = a11;
+            a11 = a51;
+            a51 = tmp;
+        }
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a10;
+            a10 = tmp;
+            let tmp = a01;
+            a01 = a11;
+            a11 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a20;
+            a20 = tmp;
+            let tmp = a01;
+            a01 = a21;
+            a21 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a30;
+            a30 = tmp;
+            let tmp = a01;
+            a01 = a31;
+            a31 = tmp;
+        } else if self.p1 == 5 {
+            let tmp = a00;
+            a00 = a40;
+            a40 = tmp;
+            let tmp = a01;
+            a01 = a41;
+            a41 = tmp;
+        } else if self.p1 == 6 {
+            let tmp = a00;
+            a00 = a50;
+            a50 = tmp;
+            let tmp = a01;
+            a01 = a51;
+            a51 = tmp;
+        }
+        rhs =
+            Matrix6x2 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m61: a50,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+                m62: a51,
+            };
     }
 }

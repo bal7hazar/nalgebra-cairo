@@ -10,11 +10,11 @@
 
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use nalgebra_core::internal::base::kernels::Powi;
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::Rotation2;
-use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
-use super::kernels::Powi;
 use super::matrix1::Matrix1;
 use super::matrix2::{Matrix2, Matrix2Trait};
 use super::matrix2x3::Matrix2x3;
@@ -4172,5 +4172,238 @@ pub impl Matrix5x2InfSup<
     #[inline(always)]
     fn inf_sup(a: Matrix5x2<T>, b: Matrix5x2<T>) -> (Matrix5x2<T>, Matrix5x2<T>) {
         Matrix5x2Trait::inf_sup(a, b)
+    }
+}
+use nalgebra_core::internal::base::transpose::BlasTranspose;
+use nalgebra_core::internal::linalg::givens::GivensRotationInternalTrait;
+use nalgebra_core::linalg::givens::{GivensRotateRows, GivensRotation};
+use nalgebra_core::linalg::lu::Perm2;
+use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
+
+/// The Kronecker product of a `Matrix1` and a `Matrix5x2`, a `Matrix5x2`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix5x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix5x2<T>> {
+    type Output = Matrix5x2<T>;
+    #[inline(always)]
+    fn kronecker(self: Matrix1<T>, rhs: Matrix5x2<T>) -> Matrix5x2<T> {
+        Matrix5x2 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector2` and a `Matrix5x2`, a `Matrix5x4`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector2KroneckerMatrix5x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector2<T>, Matrix5x2<T>> {
+    type Output = Matrix5x4<T>;
+    fn kronecker(self: RowVector2<T>, rhs: Matrix5x2<T>) -> Matrix5x4<T> {
+        Matrix5x4 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m53: self.y * rhs.m51,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+            m54: self.y * rhs.m52,
+        }
+    }
+}
+
+/// The Kronecker product of a `RowVector3` and a `Matrix5x2`, a `Matrix5x6`: one floored product
+/// per component. Panics on overflow. Upstream: `kronecker`.
+pub impl RowVector3KroneckerMatrix5x2<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<RowVector3<T>, Matrix5x2<T>> {
+    type Output = Matrix5x6<T>;
+    fn kronecker(self: RowVector3<T>, rhs: Matrix5x2<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m13: self.y * rhs.m11,
+            m23: self.y * rhs.m21,
+            m33: self.y * rhs.m31,
+            m43: self.y * rhs.m41,
+            m53: self.y * rhs.m51,
+            m14: self.y * rhs.m12,
+            m24: self.y * rhs.m22,
+            m34: self.y * rhs.m32,
+            m44: self.y * rhs.m42,
+            m54: self.y * rhs.m52,
+            m15: self.z * rhs.m11,
+            m25: self.z * rhs.m21,
+            m35: self.z * rhs.m31,
+            m45: self.z * rhs.m41,
+            m55: self.z * rhs.m51,
+            m16: self.z * rhs.m12,
+            m26: self.z * rhs.m22,
+            m36: self.z * rhs.m32,
+            m46: self.z * rhs.m42,
+            m56: self.z * rhs.m52,
+        }
+    }
+}
+
+impl Matrix5x2BlasTranspose<T> of BlasTranspose<Matrix5x2<T>> {
+    type Output = Matrix2x5<T>;
+    #[inline(always)]
+    fn tr(self: Matrix5x2<T>) -> Matrix2x5<T> {
+        Matrix2x5 {
+            m11: self.m11,
+            m21: self.m12,
+            m12: self.m21,
+            m22: self.m22,
+            m13: self.m31,
+            m23: self.m32,
+            m14: self.m41,
+            m24: self.m42,
+            m15: self.m51,
+            m25: self.m52,
+        }
+    }
+}
+
+pub impl GivensRotationRotateRowsMatrix5x2<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Neg<T>,
+> of GivensRotateRows<T, Matrix5x2<T>> {
+    fn rotate_rows(self: GivensRotation<T>, ref lhs: Matrix5x2<T>) {
+        let c = GivensRotationInternalTrait::c(self);
+        let s = GivensRotationInternalTrait::s(self);
+        lhs =
+            Matrix5x2 {
+                m11: R::sum_prod2(c, lhs.m11, s, lhs.m12),
+                m21: R::sum_prod2(c, lhs.m21, s, lhs.m22),
+                m31: R::sum_prod2(c, lhs.m31, s, lhs.m32),
+                m41: R::sum_prod2(c, lhs.m41, s, lhs.m42),
+                m51: R::sum_prod2(c, lhs.m51, s, lhs.m52),
+                m12: R::diff_prod(c, lhs.m12, s, lhs.m11),
+                m22: R::diff_prod(c, lhs.m22, s, lhs.m21),
+                m32: R::diff_prod(c, lhs.m32, s, lhs.m31),
+                m42: R::diff_prod(c, lhs.m42, s, lhs.m41),
+                m52: R::diff_prod(c, lhs.m52, s, lhs.m51),
+            };
+    }
+}
+
+pub impl Perm2PermuteColumnsMatrix5x2<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm2, Matrix5x2<T>> {
+    fn permute_columns(self: Perm2, ref rhs: Matrix5x2<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+            let tmp = a20;
+            a20 = a21;
+            a21 = tmp;
+            let tmp = a30;
+            a30 = a31;
+            a31 = tmp;
+            let tmp = a40;
+            a40 = a41;
+            a41 = tmp;
+        }
+        rhs =
+            Matrix5x2 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+            };
+    }
+
+    fn inv_permute_columns(self: Perm2, ref rhs: Matrix5x2<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+            let tmp = a20;
+            a20 = a21;
+            a21 = tmp;
+            let tmp = a30;
+            a30 = a31;
+            a31 = tmp;
+            let tmp = a40;
+            a40 = a41;
+            a41 = tmp;
+        }
+        rhs =
+            Matrix5x2 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+            };
     }
 }

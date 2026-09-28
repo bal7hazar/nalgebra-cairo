@@ -10,6 +10,8 @@
 //! in-place forms take `ref self` like upstream's `&mut self`; methods need their trait in scope
 //! (`use nalgebra::{Matrix3BlasTrait, MatrixGemm};`).
 
+use nalgebra_core::internal::base::matrix_view::ColumnVectorLen;
+use nalgebra_core::internal::base::transpose::BlasTranspose;
 use simba::scalar::Real;
 use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
@@ -38,13 +40,11 @@ use super::matrix6x3::Matrix6x3;
 use super::matrix6x4::Matrix6x4;
 use super::matrix6x5::Matrix6x5;
 use super::matrix_mul::MatrixMul;
-use super::matrix_view::ColumnVectorLen;
 use super::row_vector2::RowVector2;
 use super::row_vector3::RowVector3;
 use super::row_vector4::RowVector4;
 use super::row_vector5::RowVector5;
 use super::row_vector6::RowVector6;
-use super::transpose::BlasTranspose;
 use super::vector2::Vector2;
 use super::vector3::Vector3;
 use super::vector4::Vector4;

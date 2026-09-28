@@ -4,9 +4,9 @@
 //! (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix4::Matrix4;
-use crate::base::solve::SolveKernel;
 use crate::base::vector4::Vector4;
 use crate::linalg::lu::Perm4;
 use crate::linalg::permutation_sequence::PermuteRows;
