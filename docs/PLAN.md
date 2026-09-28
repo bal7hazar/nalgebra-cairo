@@ -21,7 +21,11 @@ outside `src/`, one README per package).
 |---|---|---|
 | NS0 | `scripts/consumer_cost.py` (repository-agnostic: glam and rapier copy it): an empty consumer per published crate from its local path, cold wall time, peak RSS, library lines, gates; a CI job | — |
 | NS1 | Research, no code moved: inventory and cut plan (sub-crates with lines and an acyclic dependency graph, impls pinned by Cairo's coherence rules, what the features become, `nalgebra_glam`'s dependencies, measured cost per planned crate, release order); sent to the programme session before any move | NS0 |
-| NS2..n | The moves, one family per PR, each with zero step change on the gas snapshots and unchanged public paths through the facade | NS1 |
+| NS0b | `consumer_cost.py`: `marginal` column (gate 2), registry crates in closures, `--manifest-path` before the subcommand | NS0 |
+| NS1 ✅ | Plan `docs/SPLIT.md` (#62), approved by the programme session with conditions (SPLIT §12) | NS0 |
+| NS2 | Tooling: generators emit per crate (names from a configuration), `gas_compare.py`, `path_proof`, test-import rewriter, `api_parity.py` over several crates | NS1 |
+| NS1b | Final crate names (dimension + content, no bare suffix), small-crate merges, GitHub-runner measurement of the declared closures (median < 15 s); list approved by the programme session and shown to the owner | NS2 |
+| NS3..NS11 | The moves, bottom-up, one family band per PR, each with zero step change (`gas_compare.py`) and unchanged public paths (`path_proof`) | NS1b |
 
 Gates, precisely (programme session, 2026-09-28): gate 2 (5 s / 1 GB) is a crate's **marginal** cost,
 cost(empty consumer of the crate) − cost(empty consumer of its direct dependencies together); gate 3
