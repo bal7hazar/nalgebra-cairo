@@ -30,6 +30,9 @@ judged on gate 3 only: the facade `nalgebra` (it re-exports everything) cannot p
 declares the closures that must (e.g. core + geometry, core + one decomposition family, `nalgebra_glam`'s
 closure, the first consumer to fix: +37 s / +5.5 GB today).
 
+No public path may change (glam-cairo's cut, PK-G section 9: Cairo finds a core-trait impl without an
+import only in the type's own module, and has no supertraits, so types and the methods returning them stay
+with the type's crate); target: a non-breaking **0.1.x** release through the facade, like glam 0.4.1.
 Releases: no publication without the programme session's written go; sub-crates share the repository
 version.
 
