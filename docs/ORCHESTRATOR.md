@@ -118,7 +118,10 @@ large directly.
   tools/split/public_paths.py --check`; (5) `snforge test -p <pkg> | python3 scripts/gas_report.py
   --update gas/` for each moved or rewritten package, then `python3 tools/split/gas_compare.py
   --base origin/main --head gas/` (0 changed, 0 missing, 0 added: paste the summary line in the
-  PR); (6) `python3 scripts/consumer_cost.py --lines-only --report-only` for the new crates' lines.
+  PR); (6) `python3 scripts/consumer_cost.py --lines-only --report-only` for the new crates' lines;
+  (7) the anchor check (each moved impl's module is its trait's or one of its argument types')
+  and the `[internal]` table for former `pub(crate)` items the facade package still needs
+  (`docs/SPLIT.md` §15); in-crate tests stay in the package hosting their methods.
 
 ## Releases (registry publication and tags)
 

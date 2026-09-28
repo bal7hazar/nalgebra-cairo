@@ -689,3 +689,24 @@ in `crates.toml`, before the release PR).
   `Path proof` green; one executor at a time (14 GB cap, build lock). `Consumer cost` becomes
   enforcing in the PR that lands the last move. The release (0.1.1, 29 packages, resumable script)
   needs the programme session's written go.
+
+## 15. Rules settled by the first move (NS3, orchestrator, 2026-09-28)
+
+- **`[internal]` table** (`tools/split/crates.toml`): a former `pub(crate)` item that a higher
+  package needs is relocated by the router to `internal/<its module file>` of its package and made
+  `pub` ("internal, no stability promise"); impls of internal traits follow the anchor rule.
+  `public_paths.py` and `api_parity.py` skip `internal` modules.
+- **In-crate tests stay with what they need**: a `#[cfg(test)] mod` goes to the file's HIGHEST
+  package (the one hosting the methods and test helpers it uses), not the lowest; a sub-crate
+  cannot dev-depend on the facade package. Its gas keys therefore do not change while the facade
+  package hosts the methods. (Replaces §5's "move with their module" for in-crate tests.)
+- **Transient anchor paths in the path proof**: while the facade package still hosts crates other
+  than the facade, a public impl moved to an anchor module of one of those crates is defined in a
+  facade module and is public there as well as at its 0.1.0 path. `public_paths.py --check`
+  accepts exactly these (printed), only in that state; they disappear as the anchors' crates move
+  (§12.6's explicit lists). Nothing may be missing, nothing else extra.
+- **`LuSteps` by band**: the `LuSteps` impls go to the type's module of each band
+  (`{4 = core, 5 = shapes5, 6 = shapes6}`), so external callers of `gauss_step` / `try_invert_to`
+  keep resolving them; `LuInvert` and `try_invert_to` stay together in `linalg4`. Every move PR
+  runs the anchor check (each impl's placed module is its trait's or one of its argument types'
+  module) and fixes what it flags (`ColumnMajor`, `Balancing`, `HouseholderAxis` at NS9 / NS10).
