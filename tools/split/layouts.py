@@ -546,6 +546,10 @@ v6 = make_v6()
 DIM5_A = {"Matrix2x5", "Matrix3x5", "Matrix4x5", "RowVector5"}
 
 
+# the r x 6 family (their methods use `Matrix6Trait`): the crate above `Matrix6` and its LU
+DIM6_B = {"Matrix2x6", "Matrix3x6", "Matrix4x6", "Matrix5x6", "RowVector6"}
+
+
 def make_final():
     """The recommended cut (docs/SPLIT.md §3): v6 with the crate names of the plan, the edit
     kernels with the methods of their band, `base5` in two, the dimension-6 linalg in three and
@@ -553,7 +557,7 @@ def make_final():
     v5 = make_v5()
     crates = [
         "core", "dim3v", "dim3", "types5", "dim4", "geometry", "types6", "dim5", "dim5a", "dim6a",
-        "dim6", "edition", "views", "kronecker", "norm", "geometry_nd", "statistics", "blas",
+        "dim6", "dim6b", "edition", "views", "kronecker", "norm", "geometry_nd", "statistics", "blas",
         "linalg", "linalg_svd", "linalg_ext", "linalg5", "linalg5_ext", "linalg6", "linalg6_pivot",
         "linalg6_spectral", "dynamic", "sparse", "facade",
     ]
@@ -607,6 +611,11 @@ def make_final():
             # the vector methods of dimensions 1..3 (the rotations use them): below the rotation
             # knot of `dim3`
             return "dim3v"
+        if h == "base6" and s and max(s) == 6:
+            shape = p.split("/")[-1][:-6]
+            tname = "".join(w.capitalize() for w in shape.split("_"))
+            if tname in DIM6_B:
+                return "dim6b"
         if h == "base5" and s:
             shape = p.split("/")[-1][:-6]
             tname = "".join(w.capitalize() for w in shape.split("_"))
