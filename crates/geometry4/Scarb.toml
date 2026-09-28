@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_geometry4"
-description = "Projective / affine / general transforms, perspective and orthographic projections, scales and reflections of dimension 1 to 4, Point1 / Translation1 methods, cg (homogeneous coordinates)."
+description = "Projective / affine / general transforms, perspective and orthographic projections, scales and reflections of dimension 1 to 4, cg (homogeneous coordinates)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

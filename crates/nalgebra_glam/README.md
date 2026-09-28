@@ -9,8 +9,8 @@ of `nalgebra` compile time and memory.
 It depends on the two sub-crates of nalgebra-cairo that define the types it converts,
 `nalgebra_core` (the shapes, `Point2..4`, `Translation4`, `Unit`) and `nalgebra_static3` (their
 methods up to 3x3 and the 2D / 3D geometry: rotations, quaternions, isometries, similarities), and
-on glam-cairo's `glam_core` (every glam type it names) and `glam_int` 0.4.1, not on the `nalgebra` /
-`glam` facades: a much cheaper build. The types are the same as the facades' (`nalgebra` and `glam`
+on glam-cairo's `glam_core` 0.4.1 (every glam type it converts and every impl it needs), not on the
+`nalgebra` / `glam` facades: a much cheaper build. The types are the same as the facades' (`nalgebra` and `glam`
 re-export them, glam from 0.4.1 on), so a dependent of the facades uses it unchanged; glam 0.4.0
 defines its own types, so a lock file pinned to it needs `scarb update glam` (0.4.1):
 
