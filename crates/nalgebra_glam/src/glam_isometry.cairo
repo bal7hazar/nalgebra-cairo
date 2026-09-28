@@ -29,12 +29,21 @@
 //! nalgebra_glam::glam_isometry::Isometry3FromVec3;` (or `use nalgebra_glam::prelude::*;`).
 
 use fixed::{Fixed, ONE, ZERO};
-use glam::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
-use nalgebra::{
-    Isometry2, Isometry2AngleTrait, Isometry2Trait, Isometry3, Isometry3Trait, Matrix2,
-    Matrix2Trait, Matrix3, Matrix3Trait, Quaternion, Rotation3, Translation2, Translation3,
-    UnitComplex, UnitComplexAngleTrait, UnitQuaternionTrait, Vector2, Vector3,
-};
+use glam_core::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
+use nalgebra_core::base::matrix2::Matrix2;
+use nalgebra_core::base::matrix3::Matrix3;
+use nalgebra_core::base::vector2::Vector2;
+use nalgebra_core::base::vector3::Vector3;
+use nalgebra_static3::base::matrix2::Matrix2Trait;
+use nalgebra_static3::base::matrix3::Matrix3Trait;
+use nalgebra_static3::geometry::isometry2::{Isometry2, Isometry2AngleTrait, Isometry2Trait};
+use nalgebra_static3::geometry::isometry3::{Isometry3, Isometry3Trait};
+use nalgebra_static3::geometry::quaternion::Quaternion;
+use nalgebra_static3::geometry::rotation3::Rotation3;
+use nalgebra_static3::geometry::translation2::Translation2;
+use nalgebra_static3::geometry::translation3::Translation3;
+use nalgebra_static3::geometry::unit_complex::{UnitComplex, UnitComplexAngleTrait};
+use nalgebra_static3::geometry::unit_quaternion::UnitQuaternionTrait;
 use crate::glam_matrix::{Matrix3IntoMat3, Matrix4IntoMat4};
 
 /// The tolerance of the orthogonality check of `TryInto<Mat3 | Mat4, Isometry>`, in ulps:

@@ -442,10 +442,13 @@ class CrateMap:
                     root = "crate" if pkg == self.facade_package else pkg
                     explicit[f].append(f"pub use {root}::{mod[: -len('.cairo')].replace('/', '::')}::{it.name};")
             for it in mods:
-                # a test module (`#[cfg(test)] mod tests;`) goes with the file's highest package,
-                # which hosts the methods it tests; any other module with the lowest
+                # a test module (`#[cfg(test)] mod tests;`) stays in the facade package, which
+                # hosts the test helpers every in-crate test uses (`matrix_test_utils`, the
+                # oracles, `testing`; WP 9-NS4: the file's highest package, NS3's rule, is no
+                # longer the facade's once `static3` hosts the methods); any other module goes
+                # with the lowest
                 test = TEST_ONLY.search(text[it.start:it.end]) is not None
-                host = (max if test else min)(pkgs, key=self.package_rank)
+                host = self.facade_package if test else min(pkgs, key=self.package_rank)
                 pieces[(host, f)].append((f, text[it.start:it.end]))
         # a whole file keeps its text, except the imports of `[internal]` items (now at `internal::`)
         for (pkg, f), text in list(whole.items()):
@@ -489,6 +492,9 @@ class CrateMap:
                 lines = [x for x in (keep_uses(ln, lambda full: not any(
                     full.startswith(f"{p}::{here}::") and full.count("::") == here.count("::") + 2
                     for p in subs)) for ln in lines) if x]
+                # the in-crate tests it keeps (`#[cfg(test)] mod tests;`) reach the `[internal]`
+                # items of the module that moved below through a test-only import (WP 9-NS4)
+                lines += self._test_internal_uses(mod, pkg, chunks, placed)
             path = os.path.join(package_dir(pkg), "src", mod)
             if (pkg, mod) in whole:
                 # a whole file plus impls moved into its module: its text, their imports, them
@@ -570,6 +576,11 @@ class CrateMap:
             if not ln:
                 continue
             st = statements(ln)
+            glob = re.fullmatch(r"\s*pub use ([\w:]+)::\*;\s*", ln)
+            if glob and re.search(rf"^\s*pub\s+use\s+{re.escape(glob.group(1))}::\s*[{{\w]", cc.mask(text), re.M):
+                # the file re-exports that module with an explicit name list (a module that
+                # received impls moved from other modules, docs/SPLIT.md §12.6): no glob
+                continue
             if st and not st <= present:
                 add.append(ln)
                 present |= st
@@ -582,6 +593,27 @@ class CrateMap:
             text = (text + "\n\n" if text.strip() else "") + \
                 f"{ITEMS_BEGIN} [{tag}]\n{src}{joined}\n{CRATE_MAP_END}"
         return text + "\n"
+
+    def _test_internal_uses(self, mod, pkg, chunks, placed):
+        """`#[cfg(test)] use <package>::internal::<mod>::<Name>;` for every `[internal]` item of
+        module `mod` placed in another package whose name a test module of `mod` kept in `pkg`
+        (a `#[cfg(test)] mod x;` of `chunks`, file `<mod>/x.cairo`) names."""
+        tests = []
+        for _o, t in chunks:
+            m = re.match(r"\s*#\[cfg\(test\)\]\s*mod\s+(\w+)\s*;", cc.mask(t))
+            if m:
+                p = os.path.join(ROOT, package_dir(pkg), "src", mod[: -len(".cairo")], m.group(1) + ".cairo")
+                if os.path.exists(p):
+                    tests.append(cc.mask(open(p, encoding="utf-8").read()))
+        if not tests:
+            return []
+        out = []
+        for (of, lab), (qp, qm) in sorted(placed.items()):
+            if of != mod or qp == pkg or qm != INTERNAL + mod:
+                continue
+            if any(re.search(rf"\b{re.escape(lab)}\b", t) for t in tests):
+                out.append(f"#[cfg(test)]\nuse {qp}::{qm[: -len('.cairo')].replace('/', '::')}::{lab};")
+        return out
 
     def _internal_uses(self, text, f, pkg, placed, idx):
         """`text` (module file `f` of package `pkg`) with every private `use` statement that names an
@@ -637,17 +669,32 @@ class CrateMap:
                     cur, rest = cur[:-1], rest[1:]
                 absolute = cur + rest
                 target_pkg = pkg
-                it = idx.get(absolute[-1])
+                # an item of a generated file is found where it was placed first (a homonym
+                # elsewhere, `Sym4`, must not redirect it)
+                it = None if ("/".join(absolute[:-1]) + ".cairo", absolute[-1]) in placed else idx.get(absolute[-1])
                 if it is not None:
                     tc = self.crate_of(it, idx)
                     target_pkg = self.crates[tc]
                     q = self.module_of(it, tc, idx)[: -len(".cairo")].split("/")
-                    if q != absolute[:-1] and "/".join(absolute[:-1]) + ".cairo" == it.file:
+                    # a name another sub-crate defines, imported through a re-export of 0.1.0
+                    # (`crate::geometry::Rotation3`), is imported from its defining module: the
+                    # sub-crates keep only the re-exports their own code uses (WP 9-NS4)
+                    if q != absolute[:-1] and ("/".join(absolute[:-1]) + ".cairo" == it.file
+                                               or target_pkg not in (pkg, self.facade_package)):
                         absolute = q + absolute[-1:]
                 pl = placed.get(("/".join(absolute[:-1]) + ".cairo", absolute[-1]))
                 if pl is not None:
                     target_pkg = pl[0]
                     absolute = pl[1][: -len(".cairo")].split("/") + absolute[-1:]
+                elif it is None and ("/".join(absolute[:-1]) + ".cairo", absolute[-1]) not in placed:
+                    # a module (`crate::base::errors`): the package whose `src/` holds its file
+                    # when this package does not (WP 9-NS4)
+                    rel = os.path.join(*absolute) + ".cairo"
+                    if not os.path.exists(os.path.join(ROOT, package_dir(pkg), "src", rel)):
+                        for p in self.packages():
+                            if os.path.exists(os.path.join(ROOT, package_dir(p), "src", rel)):
+                                target_pkg = p
+                                break
                 root = "crate" if target_pkg == pkg else target_pkg
                 full = "::".join([root] + absolute)
             keep.append(full + (f" as {alias}" if alias else ""))

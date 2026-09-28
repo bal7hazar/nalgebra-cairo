@@ -1,11 +1,14 @@
 use fixed::Fixed;
-use glam::{
+use glam_core::{
     BVec2, BVec3, BVec4, IVec2, IVec3, IVec4, Mat2, Mat3, Mat4, UVec2, UVec3, UVec4, Vec2, Vec3,
     Vec4,
 };
-use nalgebra::{
-    Matrix2, Matrix3, Matrix4, UnitVector2, UnitVector3, UnitVector4, Vector2, Vector3, Vector4,
-};
+use nalgebra_core::base::matrix2::Matrix2;
+use nalgebra_core::base::matrix3::Matrix3;
+use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_core::base::vector2::{UnitVector2, Vector2};
+use nalgebra_core::base::vector3::{UnitVector3, Vector3};
+use nalgebra_core::base::vector4::{UnitVector4, Vector4};
 use crate::black_box;
 use crate::glam_matrix::*;
 use super::{int, near};

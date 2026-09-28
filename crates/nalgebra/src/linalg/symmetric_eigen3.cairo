@@ -24,8 +24,9 @@
 //! count is a constant, so the gas of the decomposition is a constant.
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use crate::base::vector3::{Vector3, Vector3Trait};
 
@@ -570,9 +571,10 @@ pub impl Matrix3SymmetricEigenImpl<
 mod tests {
     use fixed::Fixed;
     use fixed::wide::{NormTrait, RecipTrait, norm3_wide};
+    use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
-    use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+    use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_s3, fx, int, m3, max_ulp_diff_s3, max_ulp_diff_v3, s3i, s3r, ulp_diff, v3i, v3t,
     };

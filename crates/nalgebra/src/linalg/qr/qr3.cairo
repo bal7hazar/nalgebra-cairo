@@ -4,9 +4,10 @@
 //! convention of upstream's unpacked `q()` / `r()`, see the module doc of `linalg::qr`.
 
 use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 use simba::scalar::Real;
 use crate::base::MatrixTrMul;
-use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::vector3::Vector3;
 
 /// The QR factorisation of a `Matrix3<T>`: `A = Q * R`.
@@ -352,12 +353,14 @@ mod tests {
     //! are in `crates/tests_linalg/src/qr/qr3/tests.cairo`.
 
     use fixed::Fixed;
+    use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
+    use nalgebra_static3::internal::base::vector3::Vector3InternalTrait;
     use simba::scalar::Real;
-    use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+    use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_m3, int, m3, max_ulp_diff3, orthonormality_error_m3, ulp_diff, v3t,
     };
-    use crate::base::vector3::{Vector3, Vector3InternalTrait, Vector3Trait};
+    use crate::base::vector3::{Vector3, Vector3Trait};
     use crate::linalg::qr::oracle_qr3 as oracle;
     use crate::testing::black_box;
     use super::{Qr3, Qr3InternalTrait, Qr3Trait};

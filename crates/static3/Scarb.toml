@@ -1,0 +1,32 @@
+[package]
+name = "nalgebra_static3"
+description = "includes the 2D / 3D geometry: rotations, unit quaternions, isometries, similarities. Methods of the static shapes up to 3x3 (Matrix1, Vector2, Vector3, Matrix2, Matrix2x3...) and the 2D / 3D geometry: quaternions, unit complex numbers, rotations, translations 2 / 3, isometries, similarities, dual quaternions."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "geometry"]
+readme = "README.md"
+
+# `closures` (as in `nalgebra`, which forwards its own feature of that name here): the methods of
+# the shapes that take a closure (`map`, `fold`, `apply`, `zip_*`...). On by default; `nalgebra`
+# depends on this package with `default-features = false`, so `nalgebra` without its default
+# features still leaves them out (features unify per compilation unit, docs/SPLIT.md §1).
+[features]
+default = ["closures"]
+closures = []
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

@@ -20,11 +20,11 @@ use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::kernels::Powi;
 use nalgebra_core::internal::base::matrix4x2::Matrix4x2EditTrait;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
+use nalgebra_static3::base::matrix2::Matrix2Trait;
+use nalgebra_static3::geometry::rotation2::Rotation2;
 use simba::scalar::{Real, Transcendental};
 use crate::base::errors;
-use crate::base::matrix2::Matrix2Trait;
 use crate::base::matrix5x2::Matrix5x2;
-use crate::geometry::Rotation2;
 
 /// Methods of `Matrix4x2<T>` for any `Real` scalar.
 #[generate_trait]
@@ -1955,6 +1955,7 @@ pub impl Matrix4x2AngleImpl<
 }
 
 pub use nalgebra_core::base::matrix4x2::*;
+pub use nalgebra_static3::geometry::rotation2::Matrix4x2MulRotation2;
 pub use crate::base::matrix2x5::Matrix4x2MulMatrix2x5;
 pub use crate::base::matrix2x6::Matrix4x2MulMatrix2x6;
 pub use crate::base::matrix4x5::Matrix4x2TrMulMatrix4x5;
@@ -1972,5 +1973,4 @@ pub use crate::base::matrix_view::{
 pub use crate::base::norm::{
     Matrix4x2EuclideanNorm, Matrix4x2LpNorm, Matrix4x2OneNorm, Matrix4x2UniformNorm,
 };
-pub use crate::geometry::rotation2::Matrix4x2MulRotation2;
 pub use crate::root::Matrix4x2InfSup;

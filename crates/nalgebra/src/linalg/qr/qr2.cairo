@@ -271,8 +271,9 @@ mod tests {
     //! are in `crates/tests_linalg/src/qr/qr2/tests.cairo`.
 
     use fixed::Fixed;
+    use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
     use simba::scalar::Real;
-    use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
+    use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_m2, int, m2, max_ulp_diff2, orthonormality_error_m2, ulp_diff, v2t,
     };

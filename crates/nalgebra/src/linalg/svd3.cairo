@@ -32,10 +32,12 @@
 //! (`new_one_sided_jacobi`, `bench_svd3_new__alt_one_sided_jacobi`,
 //! `test_one_sided_jacobi_candidate`).
 
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
+use nalgebra_static3::internal::base::vector3::Vector3InternalTrait;
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+use crate::base::matrix3::{Matrix3, Matrix3Trait};
 use crate::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
-use crate::base::vector3::{Vector3, Vector3InternalTrait, Vector3Trait};
+use crate::base::vector3::{Vector3, Vector3Trait};
 use crate::base::{MatrixMul, MatrixTrMul};
 use crate::linalg::symmetric_eigen3::{SymmetricEigen3, SymmetricEigen3InternalTrait};
 
@@ -653,9 +655,10 @@ mod tests {
     //! are in `crates/tests_linalg/src/svd3/tests.cairo`.
 
     use fixed::Fixed;
+    use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
-    use crate::base::matrix3::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+    use crate::base::matrix3::{Matrix3, Matrix3Trait};
     use crate::base::matrix_test_utils::{
         amax_m3, int, m3, max_ulp_diff3, max_ulp_diff_v3, orthonormality_error_m3, v3t,
     };

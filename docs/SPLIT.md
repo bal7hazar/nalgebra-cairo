@@ -546,7 +546,11 @@ proves zero step change (`gas_compare.py`) and unchanged paths (`path_proof`).
 Progress: **NS3 done** (PR #66): `nalgebra_core`, 21,568 library lines, marginal 0.47 GB and
 ~1.4 s locally (minimum of 5 cold builds under the shared build lock; NS1b runner: 1.5 s / 0.44 GB),
 zero step change (every CI gas shard unchanged), path proof green; 0.1.0 crate-private items it
-shares under `nalgebra_core::internal` (`crates.toml` `[internal]`).
+shares under `nalgebra_core::internal` (`crates.toml` `[internal]`). **NS4 done** (PR #67):
+`nalgebra_static3`, 29,486 library lines, marginal 3.2 s / 0.63 GB (CI `Consumer cost`, GitHub
+runner; NS1b: 2.9 s / 0.64 GB), zero step change, path proof green (transient set 524 → 502);
+`nalgebra_glam` on `nalgebra_core` + `nalgebra_static3` + `glam_core` / `glam_int` 0.4.1: closure
+7.3 s / 1.69 GB (was 37 s / 5.5 GB on `nalgebra` + `glam`).
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible

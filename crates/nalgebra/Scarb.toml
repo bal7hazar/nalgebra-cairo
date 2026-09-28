@@ -46,7 +46,7 @@ default = [
 ]
 statistics = []
 blas = []
-closures = []
+closures = ["nalgebra_static3/closures"]
 dynamic = []
 sparse = ["dynamic"]
 io = ["sparse"]
@@ -65,6 +65,7 @@ exp = []
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

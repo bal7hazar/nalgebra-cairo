@@ -3686,6 +3686,11 @@ pub(crate) impl Matrix4InternalImpl<
 mod tests;
 
 pub use nalgebra_core::base::matrix4::*;
+pub use nalgebra_static3::geometry::isometry3::Matrix4FromIsometry3;
+pub use nalgebra_static3::geometry::rotation3::Matrix4FromRotation3;
+pub use nalgebra_static3::geometry::similarity3::Matrix4FromSimilarity3;
+pub use nalgebra_static3::geometry::translation3::Matrix4FromTranslation3;
+pub use nalgebra_static3::geometry::unit_quaternion::Matrix4FromUnitQuaternion;
 pub use crate::base::matrix4x5::{Matrix4MulMatrix4x5, Matrix4TrMulMatrix4x5};
 pub use crate::base::matrix4x6::{Matrix4MulMatrix4x6, Matrix4TrMulMatrix4x6};
 pub use crate::base::matrix_kronecker::Matrix4KroneckerMatrix1;
@@ -3702,9 +3707,4 @@ pub use crate::base::matrix_view::{
 pub use crate::base::norm::{
     Matrix4EuclideanNorm, Matrix4LpNorm, Matrix4OneNorm, Matrix4UniformNorm,
 };
-pub use crate::geometry::isometry3::Matrix4FromIsometry3;
-pub use crate::geometry::rotation3::Matrix4FromRotation3;
-pub use crate::geometry::similarity3::Matrix4FromSimilarity3;
-pub use crate::geometry::translation3::Matrix4FromTranslation3;
-pub use crate::geometry::unit_quaternion::Matrix4FromUnitQuaternion;
 pub use crate::root::Matrix4InfSup;

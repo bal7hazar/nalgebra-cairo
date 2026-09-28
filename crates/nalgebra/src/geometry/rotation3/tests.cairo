@@ -18,8 +18,9 @@
 //! in `crates/tests_geometry/src/rotation3/tests.cairo`.
 
 use fixed::Fixed;
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 use simba::scalar::Real;
-use crate::base::matrix3::{Matrix3InternalTrait, Matrix3Trait};
+use crate::base::matrix3::Matrix3Trait;
 use crate::base::matrix_test_utils::{ONE_RAW, fx, r3i, v3i};
 use crate::base::unit::Unit3Trait;
 use crate::base::vector3::Vector3Trait;

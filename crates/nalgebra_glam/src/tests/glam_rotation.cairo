@@ -1,6 +1,9 @@
 use fixed::Fixed;
-use glam::{Mat2, Quat, Vec2};
-use nalgebra::{Matrix2, Matrix3, Rotation2, Rotation3};
+use glam_core::{Mat2, Quat, Vec2};
+use nalgebra_core::base::matrix2::Matrix2;
+use nalgebra_core::base::matrix3::Matrix3;
+use nalgebra_static3::geometry::rotation2::Rotation2;
+use nalgebra_static3::geometry::rotation3::Rotation3;
 use crate::black_box;
 use crate::glam_rotation::*;
 use super::{FRAC_1_SQRT_2_RAW, int, near};

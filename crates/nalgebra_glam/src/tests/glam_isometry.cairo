@@ -1,9 +1,14 @@
 use fixed::Fixed;
-use glam::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
-use nalgebra::{
-    Isometry2, Isometry3, Quaternion, Translation2, Translation3, UnitComplex, UnitQuaternion,
-    Vector2, Vector3,
-};
+use glam_core::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
+use nalgebra_core::base::vector2::Vector2;
+use nalgebra_core::base::vector3::Vector3;
+use nalgebra_static3::geometry::isometry2::Isometry2;
+use nalgebra_static3::geometry::isometry3::Isometry3;
+use nalgebra_static3::geometry::quaternion::Quaternion;
+use nalgebra_static3::geometry::translation2::Translation2;
+use nalgebra_static3::geometry::translation3::Translation3;
+use nalgebra_static3::geometry::unit_complex::UnitComplex;
+use nalgebra_static3::geometry::unit_quaternion::UnitQuaternion;
 use crate::black_box;
 use crate::glam_isometry::*;
 use super::{FRAC_1_SQRT_2_RAW, int, near};

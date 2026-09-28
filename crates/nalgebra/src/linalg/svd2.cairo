@@ -25,8 +25,9 @@
 //!   four Jacobi sweeps rather than a closed form, and one formula for both sizes is worth more
 //!   than a few ulp.
 
+use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
 use simba::scalar::Real;
-use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
+use crate::base::matrix2::{Matrix2, Matrix2Trait};
 use crate::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
 use crate::base::vector2::Vector2;
 use crate::base::{MatrixMul, MatrixTrMul};
@@ -517,9 +518,10 @@ mod tests {
     //! are in `crates/tests_linalg/src/svd2/tests.cairo`.
 
     use fixed::Fixed;
+    use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
-    use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
+    use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_m2, int, m2, max_ulp_diff2, max_ulp_diff_v2, orthonormality_error_m2, v2t,
     };

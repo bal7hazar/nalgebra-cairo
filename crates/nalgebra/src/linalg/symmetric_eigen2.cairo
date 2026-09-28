@@ -276,9 +276,10 @@ pub fn wilkinson_shift<
 #[cfg(test)]
 mod tests {
     use fixed::Fixed;
+    use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
     use simba::scalar::Real;
     use crate::base::MatrixMul;
-    use crate::base::matrix2::{Matrix2, Matrix2InternalTrait, Matrix2Trait};
+    use crate::base::matrix2::{Matrix2, Matrix2Trait};
     use crate::base::matrix_test_utils::{
         amax_s2, fx, int, max_ulp_diff_s2, max_ulp_diff_v2, s2i, s2r, ulp_diff, v2i, v2t,
     };
