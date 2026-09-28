@@ -714,3 +714,14 @@ in `crates.toml`, before the release PR).
   keep resolving them; `LuInvert` and `try_invert_to` stay together in `linalg4`. Every move PR
   runs the anchor check (each impl's placed module is its trait's or one of its argument types'
   module) and fixes what it flags (`ColumnMajor`, `Balancing`, `HouseholderAxis` at NS9 / NS10).
+- **Router rules added by NS4**: in-crate test modules always stay in the facade package (the
+  package that still hosts `matrix_test_utils`, the oracles and `testing::black_box`); test-only
+  imports of `internal` items go through `#[cfg(test)]` shims; a hand-written explicit facade list
+  suppresses the router's glob for that module.
+- **`nalgebra_glam` depends on `nalgebra_core`, `nalgebra_static3` and `glam_core` only**
+  (orchestrator, NS4: every type and impl it converts is in `glam_core`; `glam_int` is dropped from
+  its dependencies and from the declared closure). User-visible note for the 0.1.1 CHANGELOG:
+  `nalgebra_glam` 0.1.1 needs `glam` ≥ 0.4.1 (which re-exports `glam_core`); with the monolithic
+  `glam` 0.4.0 the glam types differ and `.into()` fails to compile.
+- The `Sym4` entry of `[internal]` also makes `linalg::symmetric_eigen4::Sym4` internal when
+  `linalg_svd_eigen4` moves (NS9): intended (both are crate-private helpers).
