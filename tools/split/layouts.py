@@ -552,7 +552,7 @@ def make_final():
     the small linalg crates merged."""
     v5 = make_v5()
     crates = [
-        "core", "dim3", "types5", "dim4", "geometry", "types6", "dim5", "dim5a", "dim6a",
+        "core", "dim3v", "dim3", "types5", "dim4", "geometry", "types6", "dim5", "dim5a", "dim6a",
         "dim6", "edition", "views", "kronecker", "norm", "geometry_nd", "statistics", "blas",
         "linalg", "linalg_svd", "linalg_ext", "linalg5", "linalg5_ext", "linalg6", "linalg6_pivot",
         "linalg6_spectral", "dynamic", "sparse", "facade",
@@ -601,6 +601,12 @@ def make_final():
             return "linalg" if b <= 4 else ("linalg5" if b == 5 else "dim6")
         if name in ("Perm6", "Perm6Trait") or (of in ("PermuteRows", "PermuteColumns") and "Perm6" in it["args"]):
             return "dim6"
+        if h == "base3" and s and p.split("/")[-1] in (
+            "vector2.cairo", "vector3.cairo", "matrix1.cairo"
+        ):
+            # the vector methods of dimensions 1..3 (the rotations use them): below the rotation
+            # knot of `dim3`
+            return "dim3v"
         if h == "base5" and s:
             shape = p.split("/")[-1][:-6]
             tname = "".join(w.capitalize() for w in shape.split("_"))
