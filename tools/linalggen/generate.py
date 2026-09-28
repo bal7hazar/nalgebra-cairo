@@ -629,7 +629,7 @@ def main() -> int:
                   for rel in files}
         # the package split (tools/split/crates.toml): each library item into the package of its
         # crate; the identity in single-crate mode
-        routed = cratemap.route_outputs(routed, pkg / "routed")
+        routed = cratemap.route_outputs(routed, pkg / "routed", "linalggen")
         stale = []
         for committed, generated in routed.items():
             rel = str(committed.relative_to(ROOT))
