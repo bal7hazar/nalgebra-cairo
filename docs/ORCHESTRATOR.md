@@ -91,6 +91,11 @@ large directly.
 - Gas snapshots live in `gas/<module>.json` (one per CI shard); `snforge test -p <pkg> | python3
   scripts/gas_report.py --update gas/` regenerates a package's shards, `./scripts/check.sh --update`
   all of them (orchestrator only), CI checks each shard's file.
+- `scripts/consumer_cost.py` (repository-agnostic, copied unchanged by the sibling repositories):
+  library lines of each published crate (inline tests excluded) and what an empty consumer of it
+  adds to a cold build (time, peak memory), against the package granularity rule (40,000 lines,
+  5 s / 1 GB, closures 15 s / 3 GB; `consumer_cost.toml`). `--lines-only --report-only` is the fast
+  local proxy; the CI job `Consumer cost` runs it in full, report only until the M9 split lands.
 - `.github/PULL_REQUEST_TEMPLATE.md` is the PR format agents must follow.
 
 ## Releases (registry publication and tags)

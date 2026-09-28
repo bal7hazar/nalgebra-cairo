@@ -1,0 +1,15 @@
+# Gates and closures of scripts/consumer_cost.py (see the docstring at the top of that script).
+# The values below are the defaults of the package granularity rule (a published crate: at most
+# 40,000 library lines; an empty consumer of it adds at most 5 s / 1 GB to the no-dependency
+# build; a typical closure at most 15 s / 3 GB).
+[gates]
+max_lines = 40000
+max_seconds = 5
+max_gb = 1
+closure_seconds = 15
+closure_gb = 3
+
+# "Typical closures": the crates a consumer of a product pulls in together, measured by one
+# consumer that depends on all of them (`--closure NAME=a,b` adds more on the command line).
+[closures]
+nalgebra_with_glam = ["nalgebra", "nalgebra_glam"]
