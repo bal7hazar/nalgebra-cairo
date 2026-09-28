@@ -669,7 +669,7 @@ def split_map_text(path=DEFAULT_MAP):
 NS1_NAMES = {
     "dim3v": "static3", "dim3": "static3", "types5": "shapes5", "dim4": "static4",
     "geometry": "geometry4", "types6": "shapes6", "dim5": "static5", "dim5a": "static5",
-    "dim6a": "static_6xc", "dim6": "static_rx6", "dim6b": "static_rx6", "edition": "blocks",
+    "dim6a": "static6_tall", "dim6": "static6_wide", "dim6b": "static6_wide", "edition": "blocks",
     "kronecker": "blocks", "geometry_nd": "geometry6", "linalg": "linalg4",
     "linalg_svd": "linalg_svd_eigen4", "linalg_pivot": "linalg_pivot4",
     "linalg_spectral": "linalg_spectral4", "linalg5_pivot": "linalg_pivot5",

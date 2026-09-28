@@ -47,8 +47,8 @@ static4 = "nalgebra"
 geometry4 = "nalgebra"
 shapes6 = "nalgebra"
 static5 = "nalgebra"
-static_6xc = "nalgebra"
-static_rx6 = "nalgebra"
+static6_tall = "nalgebra"
+static6_wide = "nalgebra"
 blocks = "nalgebra"
 views = "nalgebra"
 norm = "nalgebra"
@@ -97,7 +97,7 @@ follow = "struct"
 [[rule]]
 shape_file = true
 name = ".*EditTrait"
-bands = { "4" = "core", "5" = "shapes5", "6" = "static_6xc" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "static6_tall" }
 
 # the 1- and 4-dimensional point / translation types (`nalgebra_glam` converts them); the methods
 # of `Point4` / `Translation4` build dimension-5 types
@@ -114,18 +114,18 @@ crate = "core"
 [[rule]]
 trait = ["LuSteps"]
 by = "name"
-bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static_rx6" }
+bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static6_wide" }
 default = "linalg4"
 
 # `Perm6` and its permutation impls: with `Matrix6` (`is_invertible` runs `Lu6`)
 [[rule]]
 name = "Perm6|Perm6Trait"
-crate = "static_rx6"
+crate = "static6_wide"
 
 [[rule]]
 trait = ["PermuteRows", "PermuteColumns"]
 args_any = ["Perm6"]
-crate = "static_rx6"
+crate = "static6_wide"
 
 # solve / permutation families: declarations low, impls with the types of their largest shape
 [[rule]]
@@ -151,7 +151,7 @@ default = "core"
 [[rule]]
 trait = ["LuInvert"]
 by = "args"
-bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static_rx6" }
+bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static6_wide" }
 default = "linalg4"
 
 [[rule]]
@@ -262,19 +262,19 @@ crate = "static5"
 shape = ["Matrix2x6", "Matrix3x6", "Matrix4x6", "Matrix5x6", "RowVector6"]
 kind = ["inherent"]
 name = "(Matrix\\dx6|RowVector6)(Angle)?Trait"
-crate = "static_rx6"
+crate = "static6_wide"
 
 [[rule]]
 file = ["base/matrix6.cairo"]
 kind = ["inherent"]
 name = "Matrix6(Angle)?Trait"
-crate = "static_rx6"
+crate = "static6_wide"
 
 [[rule]]
 shape_file = true
 kind = ["inherent"]
 band = [6]
-crate = "static_6xc"
+crate = "static6_tall"
 
 # shapes: structs, aliases and the rest with the types of their band
 [[rule]]
@@ -335,7 +335,7 @@ crate = "geometry4"
 # linalg: family x band (dimension <= 4, 5, 6); the size is the file's, else the item name's
 [[rule]]
 file = ["linalg/lu/lu6*"]
-crate = "static_rx6"
+crate = "static6_wide"
 
 [[rule]]
 file = ["linalg/householder*.cairo"]

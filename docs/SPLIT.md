@@ -22,7 +22,7 @@
   session asked for (§1, point 2).
 - **Gate 2 (marginal cost ≤ 5 s / 1 GB)**: every sub-crate passes on a GitHub runner (median of 9
   interleaved cold builds, §6.5): the largest marginals are `nalgebra_static3` and
-  `nalgebra_blas` 2.9 s and `nalgebra_static_rx6` 2.7 s; memory is ≤ 0.67 GB for every crate.
+  `nalgebra_blas` 2.9 s and `nalgebra_static6_wide` 2.7 s; memory is ≤ 0.67 GB for every crate.
 - **Gate 3 (declared closures < 15 s / 3 GB)**, GitHub runner, median of 15 interleaved cold
   builds, highest median over four runs: `nalgebra_glam` (on `glam_core` + `glam_int`) **7.1 s /
   1.68 GB** (today 37 s / 5.5 GB); static 1–4 + geometry **12.0 s** / 2.38 GB; static 1–4 +
@@ -155,7 +155,7 @@ direct dependencies together, median of 9 interleaved rounds on one GitHub runne
 with the interquartile range of the per-round differences (run
 [36454463677](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36454463677), §6.5).
 Naming scheme (§13): `core`; `shapesN` = the TYPES of dimension N; `staticN` / `static_RxC` = the
-METHODS of the static shapes of that dimension or shape family (`static_6xc`: 6 rows, `static_rx6`:
+METHODS of the static shapes of that dimension or shape family (`static6_tall`: 6 rows, `static6_wide`:
 6 columns); `geometryN`; the families of upstream `base` (`blocks`, `views`, `norm`, `statistics`,
 `blas`) and `linalg[_family]N` (family, then the largest dimension).
 
@@ -168,11 +168,11 @@ METHODS of the static shapes of that dimension or shape family (`static_6xc`: 6 
 | `nalgebra_geometry4` | projective / affine / general transforms, perspective and orthographic projections, scales and reflections of dimension 1 to 4, `Point1` / `Translation1` methods, `cg` (homogeneous coordinates) | 13,511 | core, shapes5, static3, static4 | 1.6 (1.6–1.7) / 0.32 |
 | `nalgebra_shapes6` | the types of dimension 6 (as `shapes5`) | 35,462 | core, geometry4, shapes5, static3 | 2.4 (2.0–2.4) / 0.67 |
 | `nalgebra_static5` | methods of every dimension-5 shape (`Matrix5`, `Matrix5xC`, `Vector5`, `Matrix2x5`..`Matrix4x5`, `RowVector5`) | 27,040 | core, shapes5, shapes6, static3, static4 | 2.4 (2.2–2.5) / 0.50 |
-| `nalgebra_static_6xc` | methods of the shapes with 6 rows and fewer columns (`Matrix6x1`..`Matrix6x5`, `Vector6`); dimension-6 edit kernels | 24,652 | core, shapes5, shapes6, static3, static4, static5 | 1.7 (1.7–2.0) / 0.40 |
-| `nalgebra_static_rx6` | methods of the shapes with 6 columns (`Matrix6`, `Matrix2x6`..`Matrix5x6`, `RowVector6`); `Lu6`, `Perm6` (`Matrix6::is_invertible` runs `Lu6`) | 32,568 | core, shapes5, shapes6, static_6xc | 2.7 (2.5–2.9) / 0.52 |
-| `nalgebra_blocks` | row / column blocks, resize, pad / crop (`FixedRows`, `FixedColumns`, `FixedResize`, `PadTo6`, `CropFrom6`) and Kronecker products (`MatrixKronecker`), with their impls | 21,574 | core, shapes5, shapes6, static_6xc | 1.2 (1.0–1.4) / 0.31 |
+| `nalgebra_static6_tall` | methods of the shapes with 6 rows and fewer columns (`Matrix6x1`..`Matrix6x5`, `Vector6`); dimension-6 edit kernels | 24,652 | core, shapes5, shapes6, static3, static4, static5 | 1.7 (1.7–2.0) / 0.40 |
+| `nalgebra_static6_wide` | methods of the shapes with 6 columns (`Matrix6`, `Matrix2x6`..`Matrix5x6`, `RowVector6`); `Lu6`, `Perm6` (`Matrix6::is_invertible` runs `Lu6`) | 32,568 | core, shapes5, shapes6, static6_tall | 2.7 (2.5–2.9) / 0.52 |
+| `nalgebra_blocks` | row / column blocks, resize, pad / crop (`FixedRows`, `FixedColumns`, `FixedResize`, `PadTo6`, `CropFrom6`) and Kronecker products (`MatrixKronecker`), with their impls | 21,574 | core, shapes5, shapes6, static6_tall | 1.2 (1.0–1.4) / 0.31 |
 | `nalgebra_views` | `FixedView` and its 441 impls | 23,485 | blocks, core, shapes5, shapes6 | 0.6 (0.6–1.0) / 0.31 |
-| `nalgebra_norm` | the norm markers (`EuclideanNorm`, `LpNorm`, `OneNorm`, `UniformNorm`) and every `Norm` impl | 4,044 | core, shapes5, shapes6, static3, static4, static5, static_6xc, static_rx6 | 0.9 (0.7–1.0) / 0.10 |
+| `nalgebra_norm` | the norm markers (`EuclideanNorm`, `LpNorm`, `OneNorm`, `UniformNorm`) and every `Norm` impl | 4,044 | core, shapes5, shapes6, static3, static4, static5, static6_tall, static6_wide | 0.9 (0.7–1.0) / 0.10 |
 | `nalgebra_geometry6` | points, translations, scales and reflections of dimension 5 and 6 | 6,043 | core, shapes5, shapes6 | 1.1 (0.6–1.4) / 0.16 |
 | `nalgebra_statistics` | `base::statistics` (sums, means, variances, min / max over rows and columns) | 18,576 | core, shapes5, shapes6 | 1.4 (0.9–1.7) / 0.22 |
 | `nalgebra_blas` | `base::blas` (dot products, `gemv`, `gemm`, `axpy`, rank updates...) | 12,322 | core, shapes5, shapes6 | 2.9 (2.4–2.9) / 0.33 |
@@ -183,11 +183,11 @@ METHODS of the static shapes of that dimension or shape family (`static_6xc`: 6 
 | `nalgebra_linalg5` | LU / Cholesky / QR / symmetric eigen / SVD of dimension 5 | 15,075 | core, linalg_svd_eigen4, shapes5 | 1.0 (0.8–1.1) / 0.28 |
 | `nalgebra_linalg_pivot5` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 5 | 13,712 | core, shapes5 | 0.7 (0.6–0.8) / 0.23 |
 | `nalgebra_linalg_spectral5` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal of dimension 5 | 14,793 | core, linalg4, linalg_spectral4, shapes5, static3, static4, static5 | 0.6 (0.3–0.9) / 0.31 |
-| `nalgebra_linalg6` | QR / Cholesky / symmetric eigen / SVD of dimension 6 (`Lu6` is in `static_rx6`) | 26,231 | core, linalg5, linalg_svd_eigen4, shapes5, shapes6, static_rx6 | 2.1 (1.9–2.1) / 0.46 |
-| `nalgebra_linalg_pivot6` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 6 | 24,893 | core, shapes5, shapes6, static_rx6 | 1.6 (1.0–1.9) / 0.41 |
-| `nalgebra_linalg_spectral6` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal of dimension 6 | 25,871 | core, linalg4, linalg_spectral4, shapes5, shapes6, static3, static4, static5, static_rx6 | 1.9 (1.5–2.1) / 0.49 |
-| `nalgebra_dynamic` | `DMatrix`, `DVector`, `RowDVector`, the dynamic forms of the static shapes | 18,360 | blocks, core, shapes5, shapes6, static3, static4, static5, static_6xc, static_rx6 | 2.3 (2.3–2.6) / 0.49 |
-| `nalgebra_sparse` | `sparse` (legacy `CsMatrix`, `CsCholesky`) and `io` (Matrix Market) | 3,654 | core, dynamic, shapes5, shapes6, static_rx6 | 1.3 (0.2–2.1) / 0.10 |
+| `nalgebra_linalg6` | QR / Cholesky / symmetric eigen / SVD of dimension 6 (`Lu6` is in `static6_wide`) | 26,231 | core, linalg5, linalg_svd_eigen4, shapes5, shapes6, static6_wide | 2.1 (1.9–2.1) / 0.46 |
+| `nalgebra_linalg_pivot6` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 6 | 24,893 | core, shapes5, shapes6, static6_wide | 1.6 (1.0–1.9) / 0.41 |
+| `nalgebra_linalg_spectral6` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal of dimension 6 | 25,871 | core, linalg4, linalg_spectral4, shapes5, shapes6, static3, static4, static5, static6_wide | 1.9 (1.5–2.1) / 0.49 |
+| `nalgebra_dynamic` | `DMatrix`, `DVector`, `RowDVector`, the dynamic forms of the static shapes | 18,360 | blocks, core, shapes5, shapes6, static3, static4, static5, static6_tall, static6_wide | 2.3 (2.3–2.6) / 0.49 |
+| `nalgebra_sparse` | `sparse` (legacy `CsMatrix`, `CsCholesky`) and `io` (Matrix Market) | 3,654 | core, dynamic, shapes5, shapes6, static6_wide | 1.3 (0.2–2.1) / 0.10 |
 | **`nalgebra`** (facade) | root functions (`nalgebra::distance`...), the macros (`matrix!`...), the 0.1.0 module tree re-exporting every sub-crate | 6,806 (prototype) | every sub-crate | gate 3 only |
 
 Dependency graph (transitive edges omitted):
@@ -200,11 +200,11 @@ graph BT
   geometry4 --> static4
   shapes6 --> geometry4
   static5 --> shapes6
-  static_6xc --> static5
-  static_rx6 --> static_6xc
-  blocks --> static_6xc
+  static6_tall --> static5
+  static6_wide --> static6_tall
+  blocks --> static6_tall
   views --> blocks
-  norm --> static_rx6
+  norm --> static6_wide
   geometry6 --> shapes6
   statistics --> shapes6
   blas --> shapes6
@@ -218,12 +218,12 @@ graph BT
   linalg_spectral5 --> linalg_spectral4
   linalg_spectral5 --> static5
   linalg6 --> linalg5
-  linalg6 --> static_rx6
-  linalg_pivot6 --> static_rx6
+  linalg6 --> static6_wide
+  linalg_pivot6 --> static6_wide
   linalg_spectral6 --> linalg_spectral4
-  linalg_spectral6 --> static_rx6
+  linalg_spectral6 --> static6_wide
   dynamic --> blocks
-  dynamic --> static_rx6
+  dynamic --> static6_wide
   sparse --> dynamic
   nalgebra --> views
   nalgebra --> norm
@@ -258,7 +258,7 @@ Machine-checked by `plan.py` (0 anchor violations in the final layout) and by th
 | `FixedView`, `FixedRows`, `FixedColumns`, `FixedResize`, `PadTo6`, `CropFrom6`, `MatrixKronecker` | the trait's module in the family crate (801 + 196 impls move out of the shape files). |
 | `Norm<Marker, M, T>` | the marker's module (`nalgebra_norm`, 144 impls). |
 | `MatrixInfSup` (root) | the trait's module in the facade (36 impls). |
-| `SolveKernel` (crate-private, but a blanket impl resolves it at the caller), `PermuteRows`, `GivensRotate` | the shape modules of each type band; `Perm6`'s in `perm` of `nalgebra_static_rx6`. |
+| `SolveKernel` (crate-private, but a blanket impl resolves it at the caller), `PermuteRows`, `GivensRotate` | the shape modules of each type band; `Perm6`'s in `perm` of `nalgebra_static6_wide`. |
 | impls of crate-private traits with no blanket caller (`LuInvert`, `BlasTranspose`, `LuSteps`) | the crate of their callers, imported there (not a public path). |
 | cross-crate products (`Matrix5x3 * Matrix3x2`, `Matrix2x5 * Matrix5x6`) | as above: the operand of the higher band holds them, so every product is found with 0.1.0's imports. |
 
@@ -404,7 +404,7 @@ lines (11 % margin).
 
 The VM's marginals were about twice the runner's and noisier: NS1b re-measured three of these
 rows on GitHub runners as merges (`base5` = `nalgebra_static5` 2.4 s, `dim6` =
-`nalgebra_static_rx6` 2.7 s, `linalg6_spectral` + bidiagonal = `nalgebra_linalg_spectral6` 1.9 s)
+`nalgebra_static6_wide` 2.7 s, `linalg6_spectral` + bidiagonal = `nalgebra_linalg_spectral6` 1.9 s)
 and kept them (§6.5).
 
 ### 6.5 GitHub-runner measurement of the final list (WP 9-NS1b)
@@ -462,7 +462,7 @@ worsens and the merged crate passes gates 1 and 2 with margin):
 | M4 `linalg_pivot` = `linalg_pivot4` + `linalg_pivot5` | 26,348 | 1.9 (1.8–2.3) | core_pivot 9.3 s against 3.6 s (pulls `shapes5`) | **rejected**: a declared closure worsens |
 | M5 `linalg_spectral6` = `linalg_bidiagonal6` (11.5k, 0.5 s) + `linalg_spectral6` (14.5k, 1.6 s) | 25,871 | 1.9 (1.5–2.1) | no declared closure | **kept** (band 6 now like bands 4 and 5, where bidiagonal sits with the spectral family) |
 | M6 `static5` = `static_5xc` (16.5k, 1.2 s) + `static_rx5` (10.8k, 1.1 s) | 27,040 | 2.4 (2.2–2.5) | no declared closure | **kept** |
-| M7 `static_rx6` = `static6` (15.5k, 0.7 s) + `static_rx6` (17.3k, 0.9 s) | 32,568 (19 % margin) | 2.7 (2.5–2.9) | no declared closure | **kept**; side effect: `linalg6` / `linalg_pivot6` now depend on it (+17k lines, about +1 s for their users, no declared closure) |
+| M7 `static6_wide` = `static6` (15.5k, 0.7 s) + `static6_wide` (17.3k, 0.9 s) | 32,568 (19 % margin) | 2.7 (2.5–2.9) | no declared closure | **kept**; side effect: `linalg6` / `linalg_pivot6` now depend on it (+17k lines, about +1 s for their users, no declared closure) |
 
 Not tried, by construction: `norm` (4.0k) has no natural neighbour (it sits above every method
 crate: only `dynamic` or the facade could host it, making every `apply_norm` user pay them);
@@ -537,7 +537,7 @@ proves zero step change (`gas_compare.py`) and unchanged paths (`path_proof`).
 | NS4 | `nalgebra_static3` (with the 2D/3D geometry), then `nalgebra_glam` on it | ~29k |
 | NS5 | `nalgebra_shapes5`, `nalgebra_static4`, `nalgebra_geometry4` | ~50k (generator-driven) |
 | NS6 | `nalgebra_shapes6`, `nalgebra_geometry6` | ~41k (generator-driven) |
-| NS7 | `nalgebra_static5`, `_static_6xc`, `_static_rx6` (with `Lu6`) | ~85k (generator-driven) |
+| NS7 | `nalgebra_static5`, `_static6_tall`, `_static6_wide` (with `Lu6`) | ~85k (generator-driven) |
 | NS8 | `nalgebra_blocks` (with the Kronecker products), `_views`, `_norm`, `_statistics`, `_blas` | ~80k |
 | NS9 | `nalgebra_linalg4`, `_linalg_svd_eigen4`, `_linalg_pivot4`, `_linalg_spectral4` (with the `SvdRightTrait` split) | ~48k |
 | NS10 | `nalgebra_linalg5`, `_linalg_pivot5`, `_linalg_spectral5`, `nalgebra_linalg6`, `_linalg_pivot6`, `_linalg_spectral6` | ~110k (linalggen-driven) |
@@ -547,7 +547,7 @@ Release (no publication without the programme session's written go): one shared 
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible
 change is §4's cost of `default-features = false` on the facade), published in this dependency
 order: `nalgebra_core`, `_static3`, `_shapes5`, `_static4`, `_geometry4`, `_shapes6`, `_static5`,
-`_static_6xc`, `_static_rx6`, `_blocks`, `_views`, `_norm`, `_geometry6`, `_statistics`, `_blas`,
+`_static6_tall`, `_static6_wide`, `_blocks`, `_views`, `_norm`, `_geometry6`, `_statistics`, `_blas`,
 `_linalg4`, `_linalg_svd_eigen4`, `_linalg_pivot4`, `_linalg_spectral4`, `_linalg5`,
 `_linalg_pivot5`, `_linalg_spectral5`, `_linalg6`, `_linalg_pivot6`, `_linalg_spectral6`,
 `_dynamic`, `_sparse`, `nalgebra`, `nalgebra_glam` (29 packages per release).
@@ -556,7 +556,7 @@ order: `nalgebra_core`, `_static3`, `_shapes5`, `_static4`, `_geometry4`, `_shap
 
 - **Crate count**: 27 sub-crates + facade + `nalgebra_glam` per release. The release script
   must publish in order and verify each against the registry (rapier's does).
-- **Technical scopes**: `shapes5` / `static_6xc` are not upstream module names (§13 explains the
+- **Technical scopes**: `shapes5` / `static6_tall` are not upstream module names (§13 explains the
   scheme). Upstream's paths survive inside each crate and through the facade, but a sub-crate
   user sees the dimension split.
 - **Noise**: settled on GitHub runners (§6.5); runners differ by up to 30 % between jobs, so the
@@ -645,8 +645,8 @@ Names say the dimension and the content, prefix `nalgebra_`, upstream vocabulary
   products), without their methods (the type / method separation is the price of zero-break, §2.3).
 - `static3`, `static4`, `static5`: the METHODS of the static shapes of that dimension (upstream's
   "statically sized" matrices), `static3` with the 2D / 3D geometry that is knotted to it (§2.3).
-  Dimension 6 has two method crates named by the shape family: `static_6xc` (6 rows, fewer
-  columns, `Vector6`) and `static_rx6` (6 columns: `Matrix6`, `Matrix2x6`..`Matrix5x6`,
+  Dimension 6 has two method crates named by the shape family: `static6_tall` (6 rows, fewer
+  columns, `Vector6`) and `static6_wide` (6 columns: `Matrix6`, `Matrix2x6`..`Matrix5x6`,
   `RowVector6`, with `Lu6`).
 - `geometry4` (transforms, projections, scales and reflections up to dimension 4, homogeneous
   coordinates), `geometry6` (points, translations, scales, reflections of dimension 5 and 6).
@@ -659,7 +659,28 @@ Names say the dimension and the content, prefix `nalgebra_`, upstream vocabulary
   dimension, SVD and symmetric eigen included).
 
 Merges kept (§6.5): `vectors3` into `static3`, `edition` + `kronecker` = `blocks`, `static_5xc` +
-`static_rx5` = `static5`, `static6` + `static_rx6` = `static_rx6`, `linalg_bidiagonal6` into
+`static_rx5` = `static5`, `static6` + `static6_wide` = `static6_wide`, `linalg_bidiagonal6` into
 `linalg_spectral6`: 32 → 27 sub-crates, no declared closure changes (paired runner measurement),
 every merged crate ≤ 32,568 lines and ≤ 2.9 s marginal. Rejected: `dynamic` + `sparse` (4.3 s,
 too close to 5 s), `linalg_pivot4` + `linalg_pivot5` (core + pivoting closure 3.6 → 9.3 s).
+
+## 14. Approval of the crate list (programme session, 2026-09-28)
+
+The cut (27 sub-crates + facade + `nalgebra_glam`), the merges and the declared closures are
+approved; the moves start (NS3). **Names stay provisional until the release go**: they live only
+in `tools/split/crates.toml`, nothing is published before, so the owner may still rename (one change
+in `crates.toml`, before the release PR).
+
+- Renamed now: `static_6xc` → `nalgebra_static6_tall` (shapes with 6 rows: `Matrix6x1..6x5`,
+  `Vector6`), `static_rx6` → `nalgebra_static6_wide` (shapes with 6 columns: `Matrix6`,
+  `Matrix2x6..5x6`, `RowVector6`; `Lu6`, `Perm6`).
+- `nalgebra_static3` keeps its name; its registry `description` and README **start with**
+  "includes the 2D / 3D geometry: rotations, unit quaternions, isometries, similarities", and the
+  facade README's table has the row "`UnitQuaternion` / `Rotation3` / `Isometry3` →
+  `nalgebra_core` + `nalgebra_static3`".
+- Every package's `description` (`Scarb.toml`, what scarbs.xyz shows) is the one-line content of
+  §3.1's table; its `keywords` include the upstream module names it covers.
+- Moves: bottom-up, one family band per PR, each with `gas_compare.py` (zero step change) and
+  `Path proof` green; one executor at a time (14 GB cap, build lock). `Consumer cost` becomes
+  enforcing in the PR that lands the last move. The release (0.1.1, 29 packages, resumable script)
+  needs the programme session's written go.
