@@ -97,6 +97,28 @@ large directly.
   5 s / 1 GB, closures 15 s / 3 GB; `consumer_cost.toml`). `--lines-only --report-only` is the fast
   local proxy; the CI job `Consumer cost` runs it in full, report only until the M9 split lands.
 - `.github/PULL_REQUEST_TEMPLATE.md` is the PR format agents must follow.
+- Package split (M9, `docs/SPLIT.md` §7, §11), tools of `tools/split/`:
+  - `crates.toml`: the crate map (planned crates -> the package that hosts each one today, and the
+    placement rules). Read by the generators, `api_parity.py`, `public_paths.py`,
+    `rewrite_imports.py`; `NALGEBRA_CRATE_MAP=<file>` points them at another map.
+    `cratemap.py --show` prints it; `--compare-plan` / `--compare-tree` compare it with NS1's plan.
+  - `public_paths.py --check` (CI job `Path proof`): the facade exports exactly the 0.1.0 public
+    paths (`public_paths_0.1.0.txt` + `public_paths_added.txt`) and a consumer naming each one
+    builds. A PR that adds a public item appends its paths to `public_paths_added.txt`.
+  - `gas_compare.py --base origin/main --head gas/`: zero-step proof of a move (package segment
+    of the library packages dropped).
+  - `rewrite_imports.py [--write] crates/<test package>`: `use nalgebra::X` -> the sub-crates.
+- **Move-PR checklist** (NS3..NS11), in this order: (1) switch the moved crates to their package
+  in `tools/split/crates.toml` (`core = "nalgebra_core"`), create the package (manifest, hand-written
+  files moved with `git mv`, workspace member); (2) `python3 tools/shapegen/shapegen.py` and
+  `python3 tools/linalggen/generate.py` (they write the generated items into the new package, the
+  facade re-exports and module roots), then both `--check`; (3) `python3
+  tools/split/rewrite_imports.py --write` on the test packages that import moved items, `scarb
+  fmt`; (4) `python3 scripts/api_parity.py --check` (unchanged report) and `python3
+  tools/split/public_paths.py --check`; (5) `snforge test -p <pkg> | python3 scripts/gas_report.py
+  --update gas/` for each moved or rewritten package, then `python3 tools/split/gas_compare.py
+  --base origin/main --head gas/` (0 changed, 0 missing, 0 added: paste the summary line in the
+  PR); (6) `python3 scripts/consumer_cost.py --lines-only --report-only` for the new crates' lines.
 
 ## Releases (registry publication and tags)
 
