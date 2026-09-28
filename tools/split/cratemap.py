@@ -576,6 +576,11 @@ class CrateMap:
             if not ln:
                 continue
             st = statements(ln)
+            glob = re.fullmatch(r"\s*pub use ([\w:]+)::\*;\s*", ln)
+            if glob and re.search(rf"^\s*pub\s+use\s+{re.escape(glob.group(1))}::\s*[{{\w]", cc.mask(text), re.M):
+                # the file re-exports that module with an explicit name list (a module that
+                # received impls moved from other modules, docs/SPLIT.md §12.6): no glob
+                continue
             if st and not st <= present:
                 add.append(ln)
                 present |= st

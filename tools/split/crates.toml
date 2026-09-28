@@ -134,13 +134,13 @@ file = ["geometry/point4.cairo", "geometry/translation4.cairo", "geometry/point1
     "geometry/translation1.cairo"]
 crate = "core"
 
-# LU steps of each size: up to 4x4 with the types (WP 9-NS3: the public `gauss_step` /
+# LU steps of each size with the types of their band (WP 9-NS3: the public `gauss_step` /
 # `gauss_step_swap` resolve the impl at the caller, so it must sit in the module of its type or of
-# `LuSteps`, both in `core`), then with the LU of the band (`Lu6` sits with `Matrix6`)
+# `LuSteps`; docs/SPLIT.md §15, "LuSteps by band", applied by WP 9-NS4)
 [[rule]]
 trait = ["LuSteps"]
 by = "name"
-bands = { "4" = "core", "5" = "linalg5", "6" = "static6_wide" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
 # `Perm6` and its permutation impls: with `Matrix6` (`is_invertible` runs `Lu6`)
