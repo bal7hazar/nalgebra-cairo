@@ -1,10 +1,11 @@
-# Crate map of the package split (docs/SPLIT.md §3, §7; WP 9-NS2).
+# Crate map of the package split (docs/SPLIT.md §3, §7; WP 9-NS2, final names WP 9-NS1b).
 #
 # Read by `tools/split/cratemap.py`, hence by the generators (`tools/shapegen`, `tools/linalggen`),
 # `scripts/api_parity.py`, `tools/split/public_paths.py` and `tools/split/rewrite_imports.py`.
 #
-# [crates]  planned crate (the NS1 names; NS1b renames them HERE only) -> Cairo package that hosts
-#           it TODAY, lowest crate first (a crate may only depend on crates above it in the table).
+# [crates]  planned crate (the final names of docs/SPLIT.md §3.1, WP 9-NS1b: the package of crate
+#           `x` is `nalgebra_x`; the names live HERE only) -> Cairo package that hosts it TODAY,
+#           lowest crate first (a crate may only depend on crates above it in the table).
 #           Single-crate mode (the committed default until NS3): every crate is hosted by
 #           `nalgebra`, so every generator writes exactly what it wrote before the split tooling.
 #           A move WP switches its crates to their package (`core = "nalgebra_core"`); a package
@@ -86,7 +87,7 @@ static4_geometry = ["core", "vectors3", "static3", "shapes5", "static4", "geomet
 static4_factor = ["core", "vectors3", "static3", "shapes5", "static4", "linalg4"]
 glam_0_4_1_alone = ["@glam_core", "@glam_int"]
 
-# --- rules (NS1's `final` layout, docs/SPLIT.md §3.1-3.2) -------------------------------------------
+# --- rules (NS1's `final` layout under the final names, docs/SPLIT.md §3.1-3.2) -------------------------------------------
 
 # core-trait impls of ONE nalgebra type (`Add<Matrix3>`, `PartialOrd`, array `Into`): with the struct
 [[rule]]

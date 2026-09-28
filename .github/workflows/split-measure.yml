@@ -6,6 +6,8 @@ name: Split measurement
 # every crate (one job per crate: its consumer against the consumer of its direct dependencies)
 # and every declared closure of the map (one job per closure: against the no-dependency consumer).
 # `runner_report.py` then writes the tables of docs/SPLIT.md §3.1 / §6.2 (job summary + artifact).
+# `compare=true` with merges also measures every closure on the map without them, interleaved in the
+# same job (a paired comparison: runners differ by up to ~30 % between jobs).
 # Manual only: `gh workflow run split-measure.yml --ref <branch> [-f merges="new=a+b ..."]`.
 
 run-name: Split measurement ${{ inputs.label }}
@@ -37,6 +39,10 @@ on:
         description: Interleaved rounds per consumer, closure jobs
         type: string
         default: "15"
+      compare:
+        description: With merges, also measure every closure on the map WITHOUT them, in the same jobs
+        type: string
+        default: "false"
 
 permissions:
   contents: read
@@ -51,6 +57,7 @@ env:
   CLOSURES: ${{ inputs.closures }}
   REPEAT: ${{ inputs.repeat || '9' }}
   CLOSURE_REPEAT: ${{ inputs.closure_repeat || '15' }}
+  COMPARE: ${{ inputs.compare || 'false' }}
 
 jobs:
   prepare:
@@ -72,6 +79,12 @@ jobs:
           python3 tools/split/prototype.py build/edges.json build/plan.json build/proto | tee build/prototype.txt
           python3 tools/split/glam_proto.py build/edges.json build/plan.json build/proto | tee -a build/prototype.txt
           grep -q "^upward references (not imported): 0$" build/prototype.txt
+          if [ "$COMPARE" = true ] && [ -n "$MERGES" ]; then
+            # the same closures on the map without the merges, measured in the same jobs (paired)
+            python3 tools/split/mapplan.py build/edges.json build/plan_ref.json > /dev/null
+            python3 tools/split/prototype.py build/edges.json build/plan_ref.json build/proto_ref > /dev/null
+            python3 tools/split/glam_proto.py build/edges.json build/plan_ref.json build/proto_ref
+          fi
       - id: matrix
         name: Job matrix
         run: |
@@ -89,9 +102,10 @@ jobs:
               return want or every
           crates = pick("CRATES", [c for c in plan["crates"] if c != "facade"] + ["glam_bridge"])
           closures = pick("CLOSURES", list(plan["closures"]))
+          ref = json.load(open("build/plan_ref.json"))["closures"] if os.path.exists("build/plan_ref.json") else {}
           print("crates=" + json.dumps(crates))
-          print("closures=" + json.dumps([{"name": n, "members": ",".join(plan["closures"][n])}
-                                          for n in closures]))
+          print("closures=" + json.dumps([{"name": n, "members": ",".join(plan["closures"][n]),
+                                           "members_ref": ",".join(ref.get(n, []))} for n in closures]))
           EOF
           cat "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -102,6 +116,9 @@ jobs:
             build/plan.txt
             build/prototype.txt
             build/proto
+            build/plan_ref.json
+            build/proto_ref
+          if-no-files-found: ignore
           retention-days: 30
 
   marginal:
@@ -158,8 +175,15 @@ jobs:
           [ -x /usr/bin/time ] || sudo apt-get install -y time > /dev/null
           echo "runner: $(nproc) vCPU, $(free -g | awk '/Mem:/ {print $2}') GB"
           mkdir -p results
+          args=(--closure "${{ matrix.closure.name }}=${{ matrix.closure.members }}")
+          if [ -n "${{ matrix.closure.members_ref }}" ]; then
+            # the closure on the map without the merges: crate directories of build/proto_ref
+            ref=$(tr ',' '\n' <<< "${{ matrix.closure.members_ref }}" \
+              | sed "/^@/!s|^|$PWD/build/proto_ref/crates/|" | paste -sd, -)
+            args+=(--closure "${{ matrix.closure.name }}@ref=$ref")
+          fi
           python3 tools/split/measure.py build/proto --cache "results/cache-${{ matrix.closure.name }}.json" \
-            --closure "${{ matrix.closure.name }}=${{ matrix.closure.members }}" --repeat "$CLOSURE_REPEAT" \
+            "${args[@]}" --repeat "$CLOSURE_REPEAT" \
             --interleave --json "results/closure-${{ matrix.closure.name }}.json" | tee -a "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()

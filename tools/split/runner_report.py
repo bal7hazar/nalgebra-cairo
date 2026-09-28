@@ -95,6 +95,13 @@ def main():
         else:
             row["verdict"] = "not measured"
         crows.append(row)
+        ref = closures.get(name + "@ref")
+        if ref:
+            # the same closure on the map without the merges, measured in the same job
+            crows.append({"closure": name + " (without the merges)", "members": ref["members"],
+                          "added_s": ref["added_s"], "added_cpu": ref["added_cpu"],
+                          "added_gb": ref["added_gb"], "added_s_quartiles": ref["added_s_quartiles"],
+                          "verdict": "reference"})
     out = [f"### Split measurement ({len(rows)} crates, rounds per consumer: "
            f"{', '.join(str(x) for x in sorted(rounds)) or '–'})", "",
            "| crate | lines | direct deps (besides simba) | marginal s (median) | spread s (IQR) "
@@ -114,7 +121,8 @@ def main():
                  f"{r['added_gb']:.2f}")
         else:
             m = "– | – | – | –"
-        out.append(f"| {r['closure']} | {', '.join(r['members'])} | {m} | {r['verdict']} |")
+        members = [x.split("/crates/")[-1] for x in r["members"]]
+        out.append(f"| {r['closure']} | {', '.join(members)} | {m} | {r['verdict']} |")
     out += ["", f"Gates: {g['max_lines']:,} lines, marginal ≤ {g['max_seconds']} s / {g['max_gb']} GB, "
             f"declared closure < {g['closure_seconds']} s / {g['closure_gb']} GB. "
             + ("**Failing: " + "; ".join(fails) + "**" if fails else "Every measured row passes.")]
