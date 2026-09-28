@@ -1,0 +1,11 @@
+[package]
+name = "pa"
+version.workspace = true
+edition.workspace = true
+experimental-features = ["user_defined_inline_macros", "associated_item_constraints"]
+[dependencies]
+[dev-dependencies]
+assert_macros.workspace = true
+[features]
+default = ["extra"]
+extra = []
