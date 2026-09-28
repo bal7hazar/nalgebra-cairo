@@ -40,7 +40,7 @@ facade = "facade"
 lift = true
 
 [crates]
-core = "nalgebra"
+core = "nalgebra_core"
 static3 = "nalgebra"
 shapes5 = "nalgebra"
 static4 = "nalgebra"
@@ -68,6 +68,22 @@ linalg_spectral6 = "nalgebra"
 dynamic = "nalgebra"
 sparse = "nalgebra"
 facade = "nalgebra"
+
+# [internal]: items that 0.1.0 keeps crate-private (`pub(crate)` or private) but that a package ABOVE
+# the one hosting them uses once the crates are split (docs/SPLIT.md §12.3). In split mode such an
+# item (hosted below the facade package) moves to `internal/<its module file>` of its package and
+# becomes `pub` there: `nalgebra_core::internal::base::solve::SolveKernel`, internal, no stability
+# promise, never re-exported by the facade (the path proof excludes every `internal` module). An
+# impl anchored on an internal trait follows the anchor rule above (its type's module). Regexes
+# (full match) on the item's label (a `#[generate_trait]` impl: its trait). Single-crate mode: no
+# effect.
+[internal]
+names = [
+    "ApproxEqTrait", "BlasTranspose", "ColumnVectorLen", "RowVectorLen", "FusedTrait", "PowiTrait",
+    "LuSteps", "LuInvert", "SolveKernel", "(Matrix\\d(x\\d)?|Vector\\d|RowVector\\d)EditTrait",
+    "slerp_unit", "Point2InternalTrait", "Point3InternalTrait", "UnitInternalTrait", "SymMatrix2",
+    "SymMatrix2Trait", "SymMatrix3", "SymMatrix3Trait", "GivensRotationInternalTrait",
+]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of
 # a product pulls in together, measured on a GitHub runner by `.github/workflows/split-measure.yml`

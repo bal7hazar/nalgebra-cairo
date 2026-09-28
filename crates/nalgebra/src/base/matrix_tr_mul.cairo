@@ -7,33 +7,4 @@
 //! shape as the impl's associated `Output`. The impls (one per pair of the 36 static shapes with
 //! the same number of rows, 216) live in the module of the left operand.
 
-/// `lhsᵀ * rhs` without forming the transpose (`Matrix3x2ᵀ * Vector3 -> Vector2`). Every
-/// component of the result is ONE fused sum of products (one floor rounding, one overflow check),
-/// so it is bit-identical to `lhs.transpose().mul_mat(rhs)`. Upstream: `Matrix::tr_mul`.
-pub trait MatrixTrMul<Lhs, Rhs> {
-    /// The shape of `lhsᵀ * rhs`.
-    type Output;
-    /// `selfᵀ * rhs`.
-    fn tr_mul(self: Lhs, rhs: Rhs) -> Self::Output;
-    /// `selfᴴ * rhs`, the adjoint (conjugate transpose) times `rhs`: `tr_mul` for a real scalar.
-    /// Upstream: `ad_mul`.
-    #[inline(always)]
-    fn ad_mul(self: Lhs, rhs: Rhs) -> Self::Output {
-        Self::tr_mul(self, rhs)
-    }
-    /// Writes `selfᵀ * rhs` into `out` (`out = self.tr_mul(rhs)`, bit-identical). Upstream:
-    /// `tr_mul_to`.
-    #[inline(always)]
-    fn tr_mul_to<+Drop<Self::Output>>(
-        self: Lhs, rhs: Rhs, ref out: Self::Output,
-    ) {
-        out = Self::tr_mul(self, rhs);
-    }
-    /// Writes `selfᴴ * rhs` into `out`: `tr_mul_to` for a real scalar. Upstream: `ad_mul_to`.
-    #[inline(always)]
-    fn ad_mul_to<+Drop<Self::Output>>(
-        self: Lhs, rhs: Rhs, ref out: Self::Output,
-    ) {
-        out = Self::tr_mul(self, rhs);
-    }
-}
+pub use nalgebra_core::base::matrix_tr_mul::*;

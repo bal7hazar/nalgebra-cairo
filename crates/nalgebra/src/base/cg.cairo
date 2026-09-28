@@ -11,11 +11,11 @@
 //! the trait in scope. `Matrix4::new_perspective` / `new_orthographic` are `Perspective3` /
 //! `Orthographic3`'s (upstream delegates them there).
 
+use nalgebra_core::internal::base::kernels::Fused;
 use simba::scalar::{Real, Transcendental};
 use crate::geometry::{
     IsometryMatrix3Trait, Rotation2AngleTrait, Rotation2Trait, Rotation3AngleTrait, Rotation3Trait,
 };
-use super::kernels::Fused;
 use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
 use super::matrix3::Matrix3;

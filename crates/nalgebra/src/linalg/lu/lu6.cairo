@@ -19,9 +19,9 @@
 //! measurement and the counter-example. Upstream has no unpivoted variant either, only `LU`
 //! (partial pivoting) and `FullPivLU` (complete pivoting).
 
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
-use crate::base::solve::SolveKernel;
 use crate::base::vector6::Vector6;
 use super::Perm6;
 use super::super::permutation_sequence::PermuteRows;

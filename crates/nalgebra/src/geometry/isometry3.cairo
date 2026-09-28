@@ -859,3 +859,27 @@ pub impl Similarity3FromIsometry3<
         Similarity3 { isometry: self, scaling: R::one() }
     }
 }
+
+// crate-map: generated items (tools/split/cratemap.py) [shapegen]
+// crate-map: from base/matrix4.cairo
+/// `isometry3.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream: `From<Isometry3>
+/// for Matrix4`.
+pub impl Matrix4FromIsometry3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Isometry3<T>, Matrix4<T>> {
+    #[inline(always)]
+    fn into(self: Isometry3<T>) -> Matrix4<T> {
+        Isometry3Trait::to_homogeneous(self)
+    }
+}
+// crate-map: end

@@ -5,9 +5,9 @@
 //! `PermuteRows` / `PermuteColumns` impls on every shape with 1 / 5 rows or columns. Moves only:
 //! exact.
 
+use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
 use simba::scalar::Real;
 use crate::base::errors::{INDEX_OUT_OF_BOUNDS, PERMUTATION_ORDER};
-use crate::base::matrix1::Matrix1;
 use crate::base::matrix2x5::Matrix2x5;
 use crate::base::matrix3x5::Matrix3x5;
 use crate::base::matrix4x5::Matrix4x5;
@@ -17,78 +17,8 @@ use crate::base::matrix5x3::Matrix5x3;
 use crate::base::matrix5x4::Matrix5x4;
 use crate::base::matrix5x6::Matrix5x6;
 use crate::base::matrix6x5::Matrix6x5;
-use crate::base::row_vector2::RowVector2;
-use crate::base::row_vector3::RowVector3;
-use crate::base::row_vector4::RowVector4;
 use crate::base::row_vector5::RowVector5;
-use crate::base::row_vector6::RowVector6;
-use crate::base::vector2::Vector2;
-use crate::base::vector3::Vector3;
-use crate::base::vector4::Vector4;
 use crate::base::vector5::Vector5;
-use crate::base::vector6::Vector6;
-use super::super::permutation_sequence::{PermuteColumns, PermuteRows};
-
-/// The row permutation of a 1x1 factorisation: no transposition at all (upstream
-/// `PermutationSequence<U1>`, whose only possible transposition is the identity). The sequences of
-/// the non-square decompositions use the permutation of their rows / columns (see
-/// `linalg::full_piv_lu`).
-#[derive(Copy, Drop, Serde, Debug)]
-pub struct Perm1 {}
-
-/// Test-only equality (upstream `PermutationSequence` has no `PartialEq`).
-#[cfg(test)]
-impl Perm1PartialEq of PartialEq<Perm1> {
-    fn eq(lhs: @Perm1, rhs: @Perm1) -> bool {
-        let _ = (lhs, rhs);
-        true
-    }
-}
-
-/// Methods of `Perm1` (upstream `PermutationSequence<U1>`). The row / column permutations
-/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
-#[generate_trait]
-pub impl Perm1Impl of Perm1Trait {
-    /// The identity permutation (no swap). Upstream: `PermutationSequence::identity`.
-    #[inline(always)]
-    fn identity() -> Perm1 {
-        Perm1 {}
-    }
-
-    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based) after those
-    /// already recorded; `i == i2` records nothing. Same contract as
-    /// `Perm2Trait::append_permutation`
-    /// (one transposition per step, in step order): panics with `nalgebra: permutation order`
-    /// otherwise, and with `nalgebra: index out of bounds` when an index is `>= 1`. Upstream:
-    /// `PermutationSequence::append_permutation`.
-    fn append_permutation(ref self: Perm1, i: usize, i2: usize) {
-        if i != i2 {
-            // Any transposition of a 1x1 sequence has an index out of bounds.
-            core::panic_with_felt252(INDEX_OUT_OF_BOUNDS);
-        }
-        let _ = self;
-    }
-
-    /// The number of transpositions actually recorded. Upstream: `PermutationSequence::len`.
-    fn len(self: Perm1) -> usize {
-        let _ = self;
-        0
-    }
-
-    /// Whether no transposition is recorded. Upstream: `PermutationSequence::is_empty`.
-    #[inline(always)]
-    fn is_empty(self: Perm1) -> bool {
-        let _ = self;
-        true
-    }
-
-    /// `1` for an even number of transpositions, `-1` for an odd one. Exact. Upstream:
-    /// `PermutationSequence::determinant`.
-    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm1) -> T {
-        let _ = self;
-        R::one()
-    }
-}
 
 /// The row permutation of a 5x5 factorisation: the transpositions of steps 1 to 4.
 ///
@@ -209,138 +139,6 @@ pub impl Perm5Impl of Perm5Trait {
     }
 }
 
-pub impl Perm1PermuteRowsMatrix1<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, Matrix1<T>> {
-    fn permute_rows(self: Perm1, ref rhs: Matrix1<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: Matrix1<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteRowsRowVector2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector2<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteRowsRowVector3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector3<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteRowsRowVector4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector4<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector4<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector4<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteRowsRowVector5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector5<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector5<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector5<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteRowsRowVector6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector6<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector6<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector6<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteColumnsMatrix1<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Matrix1<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Matrix1<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Matrix1<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteColumnsVector2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector2<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteColumnsVector3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector3<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteColumnsVector4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector4<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector4<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector4<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteColumnsVector5<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector5<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector5<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector5<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-pub impl Perm1PermuteColumnsVector6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector6<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector6<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector6<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
 pub impl Perm5PermuteRowsVector5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Vector5<T>> {
     fn permute_rows(self: Perm5, ref rhs: Vector5<T>) {
         let mut a00 = rhs.x;
@@ -448,6 +246,7 @@ pub impl Perm5PermuteRowsVector5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Ve
         rhs = Vector5 { x: a00, y: a10, z: a20, w: a30, a: a40 };
     }
 }
+
 pub impl Perm5PermuteRowsMatrix5x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Matrix5x2<T>> {
     fn permute_rows(self: Perm5, ref rhs: Matrix5x2<T>) {
         let mut a00 = rhs.m11;
@@ -649,6 +448,7 @@ pub impl Perm5PermuteRowsMatrix5x2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, 
             };
     }
 }
+
 pub impl Perm5PermuteRowsMatrix5x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Matrix5x3<T>> {
     fn permute_rows(self: Perm5, ref rhs: Matrix5x3<T>) {
         let mut a00 = rhs.m11;
@@ -930,6 +730,7 @@ pub impl Perm5PermuteRowsMatrix5x3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, 
             };
     }
 }
+
 pub impl Perm5PermuteRowsMatrix5x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Matrix5x4<T>> {
     fn permute_rows(self: Perm5, ref rhs: Matrix5x4<T>) {
         let mut a00 = rhs.m11;
@@ -1291,6 +1092,7 @@ pub impl Perm5PermuteRowsMatrix5x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, 
             };
     }
 }
+
 pub impl Perm5PermuteRowsMatrix5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Matrix5<T>> {
     fn permute_rows(self: Perm5, ref rhs: Matrix5<T>) {
         let mut a00 = rhs.m11;
@@ -1732,6 +1534,7 @@ pub impl Perm5PermuteRowsMatrix5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Ma
             };
     }
 }
+
 pub impl Perm5PermuteRowsMatrix5x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, Matrix5x6<T>> {
     fn permute_rows(self: Perm5, ref rhs: Matrix5x6<T>) {
         let mut a00 = rhs.m11;
@@ -2253,6 +2056,7 @@ pub impl Perm5PermuteRowsMatrix5x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm5, 
             };
     }
 }
+
 pub impl Perm5PermuteColumnsRowVector5<
     T, +Copy<T>, +Drop<T>,
 > of PermuteColumns<Perm5, RowVector5<T>> {
@@ -2362,6 +2166,7 @@ pub impl Perm5PermuteColumnsRowVector5<
         rhs = RowVector5 { x: a00, y: a01, z: a02, w: a03, a: a04 };
     }
 }
+
 pub impl Perm5PermuteColumnsMatrix2x5<
     T, +Copy<T>, +Drop<T>,
 > of PermuteColumns<Perm5, Matrix2x5<T>> {
@@ -2565,6 +2370,7 @@ pub impl Perm5PermuteColumnsMatrix2x5<
             };
     }
 }
+
 pub impl Perm5PermuteColumnsMatrix3x5<
     T, +Copy<T>, +Drop<T>,
 > of PermuteColumns<Perm5, Matrix3x5<T>> {
@@ -2848,6 +2654,7 @@ pub impl Perm5PermuteColumnsMatrix3x5<
             };
     }
 }
+
 pub impl Perm5PermuteColumnsMatrix4x5<
     T, +Copy<T>, +Drop<T>,
 > of PermuteColumns<Perm5, Matrix4x5<T>> {
@@ -3211,6 +3018,7 @@ pub impl Perm5PermuteColumnsMatrix4x5<
             };
     }
 }
+
 pub impl Perm5PermuteColumnsMatrix5<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm5, Matrix5<T>> {
     fn permute_columns(self: Perm5, ref rhs: Matrix5<T>) {
         let mut a00 = rhs.m11;
@@ -3652,6 +3460,7 @@ pub impl Perm5PermuteColumnsMatrix5<T, +Copy<T>, +Drop<T>> of PermuteColumns<Per
             };
     }
 }
+
 pub impl Perm5PermuteColumnsMatrix6x5<
     T, +Copy<T>, +Drop<T>,
 > of PermuteColumns<Perm5, Matrix6x5<T>> {
@@ -4175,3 +3984,9 @@ pub impl Perm5PermuteColumnsMatrix6x5<
             };
     }
 }
+
+pub use nalgebra_core::linalg::lu::perm1_5::*;
+pub use crate::base::row_vector5::Perm1PermuteRowsRowVector5;
+pub use crate::base::row_vector6::Perm1PermuteRowsRowVector6;
+pub use crate::base::vector5::Perm1PermuteColumnsVector5;
+pub use crate::base::vector6::Perm1PermuteColumnsVector6;

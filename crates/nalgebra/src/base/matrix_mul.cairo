@@ -8,20 +8,4 @@
 //! `lhs.mul_mat(rhs)`, the output shape being the impl's associated `Output`. The impls (one per
 //! conformable pair of the 36 static shapes, 216) live in the module of the left operand.
 
-/// `lhs * rhs` for conformable shapes (`Matrix2x3 * Matrix3x4 -> Matrix2x4`, `Matrix3 * Vector3
-/// -> Vector3`). Every component of the result is ONE fused sum of products (one floor rounding,
-/// one overflow check). Upstream: `Mul<Matrix<C1, C2>> for Matrix<R1, C1>`.
-pub trait MatrixMul<Lhs, Rhs> {
-    /// The shape of `lhs * rhs`.
-    type Output;
-    /// `self * rhs`.
-    fn mul_mat(self: Lhs, rhs: Rhs) -> Self::Output;
-    /// Writes `self * rhs` into `out` (`out = self.mul_mat(rhs)`, bit-identical). Upstream:
-    /// `mul_to` (`&mut` output of any storage; here the product's own shape).
-    #[inline(always)]
-    fn mul_to<+Drop<Self::Output>>(
-        self: Lhs, rhs: Rhs, ref out: Self::Output,
-    ) {
-        out = Self::mul_mat(self, rhs);
-    }
-}
+pub use nalgebra_core::base::matrix_mul::*;

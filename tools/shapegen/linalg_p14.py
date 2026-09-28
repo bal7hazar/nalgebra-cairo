@@ -40,8 +40,9 @@ GIVENS = """/// A Givens rotation `[[c, -s], [s, c]]` (upstream `nalgebra::linal
 /// `s()`.
 #[derive(Copy, Drop, Debug)]
 pub struct GivensRotation<T> {
-    c: T,
-    s: T,
+    // `pub(crate)`: read by `internal::linalg::givens` (docs/SPLIT.md §12.3), private to users
+    pub(crate) c: T,
+    pub(crate) s: T,
 }
 
 /// The constructors and accessors of `GivensRotation<T>` for any `Real` scalar.
@@ -144,6 +145,23 @@ pub impl GivensRotationImpl<
     }
 }
 
+/// The field reads of the `GivensRotate` / `GivensRotateRows` impls, without the bounds of
+/// `GivensRotationTrait::c` / `s` (crate-private: the impls of the shapes of dimension 5 and 6 live
+/// in the packages above `nalgebra_core`, out of reach of the private fields, docs/SPLIT.md §12.3).
+/// `#[inline(always)]`: the same Sierra as `self.c` / `self.s` written in place.
+#[generate_trait]
+pub(crate) impl GivensRotationInternalImpl<T, +Copy<T>, +Drop<T>> of GivensRotationInternalTrait<T> {
+    #[inline(always)]
+    fn c(self: GivensRotation<T>) -> T {
+        self.c
+    }
+
+    #[inline(always)]
+    fn s(self: GivensRotation<T>) -> T {
+        self.s
+    }
+}
+
 /// `rhs = G * rhs` in place, for a `rhs` with 2 rows (one impl per shape: `Vector2`,
 /// `Matrix2x3`..): each column `(a, b)` becomes `(c a - s b, s a + c b)`, each entry ONE fused
 /// sum of products floored once (`Real::diff_prod` / `Real::sum_prod2`). Upstream:
@@ -169,7 +187,7 @@ def givens_impls() -> list[str]:
     for c in DIMS:
         s = Shape(2, c)
         inline = "#[inline(always)]\n" if s.n <= 4 else ""
-        body = "let c = self.c;\nlet s = self.s;\nrhs = " + lit(s, lambda i, j: (
+        body = "let c = GivensRotationInternalTrait::c(self);\nlet s = GivensRotationInternalTrait::s(self);\nrhs = " + lit(s, lambda i, j: (
             f"R::diff_prod(c, rhs.{s.f(0, j)}, s, rhs.{s.f(1, j)})" if i == 0 else
             f"R::sum_prod2(s, rhs.{s.f(0, j)}, c, rhs.{s.f(1, j)})")) + ";"
         out.append(f"pub impl GivensRotationRotate{s.name}<\n{L.bounds(GIVENS_BOUNDS)}\n> of "
@@ -178,7 +196,7 @@ def givens_impls() -> list[str]:
     for r in DIMS:
         s = Shape(r, 2)
         inline = "#[inline(always)]\n" if s.n <= 4 else ""
-        body = "let c = self.c;\nlet s = self.s;\nlhs = " + lit(s, lambda i, j: (
+        body = "let c = GivensRotationInternalTrait::c(self);\nlet s = GivensRotationInternalTrait::s(self);\nlhs = " + lit(s, lambda i, j: (
             f"R::sum_prod2(c, lhs.{s.f(i, 0)}, s, lhs.{s.f(i, 1)})" if j == 0 else
             f"R::diff_prod(c, lhs.{s.f(i, 1)}, s, lhs.{s.f(i, 0)})")) + ";"
         out.append(f"pub impl GivensRotationRotateRows{s.name}<\n{L.bounds(GIVENS_BOUNDS)}\n> of "

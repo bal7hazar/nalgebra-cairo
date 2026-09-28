@@ -15,10 +15,10 @@
 
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, Index, MulAssign, SubAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::Real;
 use crate::base::vector6::Vector6;
 use super::point::errors as point_errors;
-use super::quaternion::ApproxEqTrait;
 
 /// A point in the 6-dimensional space. The coordinates are fields, like `Point2` / `Point3`.
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]

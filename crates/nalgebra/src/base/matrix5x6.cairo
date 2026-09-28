@@ -10,10 +10,10 @@
 
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
+use nalgebra_core::internal::base::kernels::{Fused, Powi};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
-use crate::geometry::quaternion::ApproxEqTrait;
 use super::errors;
-use super::kernels::{Fused, Powi};
 use super::matrix1::Matrix1;
 use super::matrix2::Matrix2;
 use super::matrix2x3::Matrix2x3;
@@ -13048,5 +13048,715 @@ pub impl Matrix5x6InfSup<
     #[inline(always)]
     fn inf_sup(a: Matrix5x6<T>, b: Matrix5x6<T>) -> (Matrix5x6<T>, Matrix5x6<T>) {
         Matrix5x6Trait::inf_sup(a, b)
+    }
+}
+use nalgebra_core::internal::base::transpose::BlasTranspose;
+use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
+use crate::linalg::lu::Perm6;
+
+/// The Kronecker product of a `Matrix1` and a `Matrix5x6`, a `Matrix5x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Matrix1KroneckerMatrix5x6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Matrix1<T>, Matrix5x6<T>> {
+    type Output = Matrix5x6<T>;
+    fn kronecker(self: Matrix1<T>, rhs: Matrix5x6<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: self.x * rhs.m11,
+            m21: self.x * rhs.m21,
+            m31: self.x * rhs.m31,
+            m41: self.x * rhs.m41,
+            m51: self.x * rhs.m51,
+            m12: self.x * rhs.m12,
+            m22: self.x * rhs.m22,
+            m32: self.x * rhs.m32,
+            m42: self.x * rhs.m42,
+            m52: self.x * rhs.m52,
+            m13: self.x * rhs.m13,
+            m23: self.x * rhs.m23,
+            m33: self.x * rhs.m33,
+            m43: self.x * rhs.m43,
+            m53: self.x * rhs.m53,
+            m14: self.x * rhs.m14,
+            m24: self.x * rhs.m24,
+            m34: self.x * rhs.m34,
+            m44: self.x * rhs.m44,
+            m54: self.x * rhs.m54,
+            m15: self.x * rhs.m15,
+            m25: self.x * rhs.m25,
+            m35: self.x * rhs.m35,
+            m45: self.x * rhs.m45,
+            m55: self.x * rhs.m55,
+            m16: self.x * rhs.m16,
+            m26: self.x * rhs.m26,
+            m36: self.x * rhs.m36,
+            m46: self.x * rhs.m46,
+            m56: self.x * rhs.m56,
+        }
+    }
+}
+
+impl Matrix5x6BlasTranspose<T> of BlasTranspose<Matrix5x6<T>> {
+    type Output = Matrix6x5<T>;
+    #[inline(always)]
+    fn tr(self: Matrix5x6<T>) -> Matrix6x5<T> {
+        Matrix6x5 {
+            m11: self.m11,
+            m21: self.m12,
+            m31: self.m13,
+            m41: self.m14,
+            m51: self.m15,
+            m61: self.m16,
+            m12: self.m21,
+            m22: self.m22,
+            m32: self.m23,
+            m42: self.m24,
+            m52: self.m25,
+            m62: self.m26,
+            m13: self.m31,
+            m23: self.m32,
+            m33: self.m33,
+            m43: self.m34,
+            m53: self.m35,
+            m63: self.m36,
+            m14: self.m41,
+            m24: self.m42,
+            m34: self.m43,
+            m44: self.m44,
+            m54: self.m45,
+            m64: self.m46,
+            m15: self.m51,
+            m25: self.m52,
+            m35: self.m53,
+            m45: self.m54,
+            m55: self.m55,
+            m65: self.m56,
+        }
+    }
+}
+
+pub impl Perm6PermuteColumnsMatrix5x6<
+    T, +Copy<T>, +Drop<T>,
+> of PermuteColumns<Perm6, Matrix5x6<T>> {
+    fn permute_columns(self: Perm6, ref rhs: Matrix5x6<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a22 = rhs.m33;
+        let mut a32 = rhs.m43;
+        let mut a42 = rhs.m53;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a23 = rhs.m34;
+        let mut a33 = rhs.m44;
+        let mut a43 = rhs.m54;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a24 = rhs.m35;
+        let mut a34 = rhs.m45;
+        let mut a44 = rhs.m55;
+        let mut a05 = rhs.m16;
+        let mut a15 = rhs.m26;
+        let mut a25 = rhs.m36;
+        let mut a35 = rhs.m46;
+        let mut a45 = rhs.m56;
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+            let tmp = a20;
+            a20 = a21;
+            a21 = tmp;
+            let tmp = a30;
+            a30 = a31;
+            a31 = tmp;
+            let tmp = a40;
+            a40 = a41;
+            a41 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a02;
+            a02 = tmp;
+            let tmp = a10;
+            a10 = a12;
+            a12 = tmp;
+            let tmp = a20;
+            a20 = a22;
+            a22 = tmp;
+            let tmp = a30;
+            a30 = a32;
+            a32 = tmp;
+            let tmp = a40;
+            a40 = a42;
+            a42 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a03;
+            a03 = tmp;
+            let tmp = a10;
+            a10 = a13;
+            a13 = tmp;
+            let tmp = a20;
+            a20 = a23;
+            a23 = tmp;
+            let tmp = a30;
+            a30 = a33;
+            a33 = tmp;
+            let tmp = a40;
+            a40 = a43;
+            a43 = tmp;
+        } else if self.p1 == 5 {
+            let tmp = a00;
+            a00 = a04;
+            a04 = tmp;
+            let tmp = a10;
+            a10 = a14;
+            a14 = tmp;
+            let tmp = a20;
+            a20 = a24;
+            a24 = tmp;
+            let tmp = a30;
+            a30 = a34;
+            a34 = tmp;
+            let tmp = a40;
+            a40 = a44;
+            a44 = tmp;
+        } else if self.p1 == 6 {
+            let tmp = a00;
+            a00 = a05;
+            a05 = tmp;
+            let tmp = a10;
+            a10 = a15;
+            a15 = tmp;
+            let tmp = a20;
+            a20 = a25;
+            a25 = tmp;
+            let tmp = a30;
+            a30 = a35;
+            a35 = tmp;
+            let tmp = a40;
+            a40 = a45;
+            a45 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a01;
+            a01 = a02;
+            a02 = tmp;
+            let tmp = a11;
+            a11 = a12;
+            a12 = tmp;
+            let tmp = a21;
+            a21 = a22;
+            a22 = tmp;
+            let tmp = a31;
+            a31 = a32;
+            a32 = tmp;
+            let tmp = a41;
+            a41 = a42;
+            a42 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a01;
+            a01 = a03;
+            a03 = tmp;
+            let tmp = a11;
+            a11 = a13;
+            a13 = tmp;
+            let tmp = a21;
+            a21 = a23;
+            a23 = tmp;
+            let tmp = a31;
+            a31 = a33;
+            a33 = tmp;
+            let tmp = a41;
+            a41 = a43;
+            a43 = tmp;
+        } else if self.p2 == 5 {
+            let tmp = a01;
+            a01 = a04;
+            a04 = tmp;
+            let tmp = a11;
+            a11 = a14;
+            a14 = tmp;
+            let tmp = a21;
+            a21 = a24;
+            a24 = tmp;
+            let tmp = a31;
+            a31 = a34;
+            a34 = tmp;
+            let tmp = a41;
+            a41 = a44;
+            a44 = tmp;
+        } else if self.p2 == 6 {
+            let tmp = a01;
+            a01 = a05;
+            a05 = tmp;
+            let tmp = a11;
+            a11 = a15;
+            a15 = tmp;
+            let tmp = a21;
+            a21 = a25;
+            a25 = tmp;
+            let tmp = a31;
+            a31 = a35;
+            a35 = tmp;
+            let tmp = a41;
+            a41 = a45;
+            a45 = tmp;
+        }
+        if self.p3 == 4 {
+            let tmp = a02;
+            a02 = a03;
+            a03 = tmp;
+            let tmp = a12;
+            a12 = a13;
+            a13 = tmp;
+            let tmp = a22;
+            a22 = a23;
+            a23 = tmp;
+            let tmp = a32;
+            a32 = a33;
+            a33 = tmp;
+            let tmp = a42;
+            a42 = a43;
+            a43 = tmp;
+        } else if self.p3 == 5 {
+            let tmp = a02;
+            a02 = a04;
+            a04 = tmp;
+            let tmp = a12;
+            a12 = a14;
+            a14 = tmp;
+            let tmp = a22;
+            a22 = a24;
+            a24 = tmp;
+            let tmp = a32;
+            a32 = a34;
+            a34 = tmp;
+            let tmp = a42;
+            a42 = a44;
+            a44 = tmp;
+        } else if self.p3 == 6 {
+            let tmp = a02;
+            a02 = a05;
+            a05 = tmp;
+            let tmp = a12;
+            a12 = a15;
+            a15 = tmp;
+            let tmp = a22;
+            a22 = a25;
+            a25 = tmp;
+            let tmp = a32;
+            a32 = a35;
+            a35 = tmp;
+            let tmp = a42;
+            a42 = a45;
+            a45 = tmp;
+        }
+        if self.p4 == 5 {
+            let tmp = a03;
+            a03 = a04;
+            a04 = tmp;
+            let tmp = a13;
+            a13 = a14;
+            a14 = tmp;
+            let tmp = a23;
+            a23 = a24;
+            a24 = tmp;
+            let tmp = a33;
+            a33 = a34;
+            a34 = tmp;
+            let tmp = a43;
+            a43 = a44;
+            a44 = tmp;
+        } else if self.p4 == 6 {
+            let tmp = a03;
+            a03 = a05;
+            a05 = tmp;
+            let tmp = a13;
+            a13 = a15;
+            a15 = tmp;
+            let tmp = a23;
+            a23 = a25;
+            a25 = tmp;
+            let tmp = a33;
+            a33 = a35;
+            a35 = tmp;
+            let tmp = a43;
+            a43 = a45;
+            a45 = tmp;
+        }
+        if self.p5 == 6 {
+            let tmp = a04;
+            a04 = a05;
+            a05 = tmp;
+            let tmp = a14;
+            a14 = a15;
+            a15 = tmp;
+            let tmp = a24;
+            a24 = a25;
+            a25 = tmp;
+            let tmp = a34;
+            a34 = a35;
+            a35 = tmp;
+            let tmp = a44;
+            a44 = a45;
+            a45 = tmp;
+        }
+        rhs =
+            Matrix5x6 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+                m13: a02,
+                m23: a12,
+                m33: a22,
+                m43: a32,
+                m53: a42,
+                m14: a03,
+                m24: a13,
+                m34: a23,
+                m44: a33,
+                m54: a43,
+                m15: a04,
+                m25: a14,
+                m35: a24,
+                m45: a34,
+                m55: a44,
+                m16: a05,
+                m26: a15,
+                m36: a25,
+                m46: a35,
+                m56: a45,
+            };
+    }
+
+    fn inv_permute_columns(self: Perm6, ref rhs: Matrix5x6<T>) {
+        let mut a00 = rhs.m11;
+        let mut a10 = rhs.m21;
+        let mut a20 = rhs.m31;
+        let mut a30 = rhs.m41;
+        let mut a40 = rhs.m51;
+        let mut a01 = rhs.m12;
+        let mut a11 = rhs.m22;
+        let mut a21 = rhs.m32;
+        let mut a31 = rhs.m42;
+        let mut a41 = rhs.m52;
+        let mut a02 = rhs.m13;
+        let mut a12 = rhs.m23;
+        let mut a22 = rhs.m33;
+        let mut a32 = rhs.m43;
+        let mut a42 = rhs.m53;
+        let mut a03 = rhs.m14;
+        let mut a13 = rhs.m24;
+        let mut a23 = rhs.m34;
+        let mut a33 = rhs.m44;
+        let mut a43 = rhs.m54;
+        let mut a04 = rhs.m15;
+        let mut a14 = rhs.m25;
+        let mut a24 = rhs.m35;
+        let mut a34 = rhs.m45;
+        let mut a44 = rhs.m55;
+        let mut a05 = rhs.m16;
+        let mut a15 = rhs.m26;
+        let mut a25 = rhs.m36;
+        let mut a35 = rhs.m46;
+        let mut a45 = rhs.m56;
+        if self.p5 == 6 {
+            let tmp = a04;
+            a04 = a05;
+            a05 = tmp;
+            let tmp = a14;
+            a14 = a15;
+            a15 = tmp;
+            let tmp = a24;
+            a24 = a25;
+            a25 = tmp;
+            let tmp = a34;
+            a34 = a35;
+            a35 = tmp;
+            let tmp = a44;
+            a44 = a45;
+            a45 = tmp;
+        }
+        if self.p4 == 5 {
+            let tmp = a03;
+            a03 = a04;
+            a04 = tmp;
+            let tmp = a13;
+            a13 = a14;
+            a14 = tmp;
+            let tmp = a23;
+            a23 = a24;
+            a24 = tmp;
+            let tmp = a33;
+            a33 = a34;
+            a34 = tmp;
+            let tmp = a43;
+            a43 = a44;
+            a44 = tmp;
+        } else if self.p4 == 6 {
+            let tmp = a03;
+            a03 = a05;
+            a05 = tmp;
+            let tmp = a13;
+            a13 = a15;
+            a15 = tmp;
+            let tmp = a23;
+            a23 = a25;
+            a25 = tmp;
+            let tmp = a33;
+            a33 = a35;
+            a35 = tmp;
+            let tmp = a43;
+            a43 = a45;
+            a45 = tmp;
+        }
+        if self.p3 == 4 {
+            let tmp = a02;
+            a02 = a03;
+            a03 = tmp;
+            let tmp = a12;
+            a12 = a13;
+            a13 = tmp;
+            let tmp = a22;
+            a22 = a23;
+            a23 = tmp;
+            let tmp = a32;
+            a32 = a33;
+            a33 = tmp;
+            let tmp = a42;
+            a42 = a43;
+            a43 = tmp;
+        } else if self.p3 == 5 {
+            let tmp = a02;
+            a02 = a04;
+            a04 = tmp;
+            let tmp = a12;
+            a12 = a14;
+            a14 = tmp;
+            let tmp = a22;
+            a22 = a24;
+            a24 = tmp;
+            let tmp = a32;
+            a32 = a34;
+            a34 = tmp;
+            let tmp = a42;
+            a42 = a44;
+            a44 = tmp;
+        } else if self.p3 == 6 {
+            let tmp = a02;
+            a02 = a05;
+            a05 = tmp;
+            let tmp = a12;
+            a12 = a15;
+            a15 = tmp;
+            let tmp = a22;
+            a22 = a25;
+            a25 = tmp;
+            let tmp = a32;
+            a32 = a35;
+            a35 = tmp;
+            let tmp = a42;
+            a42 = a45;
+            a45 = tmp;
+        }
+        if self.p2 == 3 {
+            let tmp = a01;
+            a01 = a02;
+            a02 = tmp;
+            let tmp = a11;
+            a11 = a12;
+            a12 = tmp;
+            let tmp = a21;
+            a21 = a22;
+            a22 = tmp;
+            let tmp = a31;
+            a31 = a32;
+            a32 = tmp;
+            let tmp = a41;
+            a41 = a42;
+            a42 = tmp;
+        } else if self.p2 == 4 {
+            let tmp = a01;
+            a01 = a03;
+            a03 = tmp;
+            let tmp = a11;
+            a11 = a13;
+            a13 = tmp;
+            let tmp = a21;
+            a21 = a23;
+            a23 = tmp;
+            let tmp = a31;
+            a31 = a33;
+            a33 = tmp;
+            let tmp = a41;
+            a41 = a43;
+            a43 = tmp;
+        } else if self.p2 == 5 {
+            let tmp = a01;
+            a01 = a04;
+            a04 = tmp;
+            let tmp = a11;
+            a11 = a14;
+            a14 = tmp;
+            let tmp = a21;
+            a21 = a24;
+            a24 = tmp;
+            let tmp = a31;
+            a31 = a34;
+            a34 = tmp;
+            let tmp = a41;
+            a41 = a44;
+            a44 = tmp;
+        } else if self.p2 == 6 {
+            let tmp = a01;
+            a01 = a05;
+            a05 = tmp;
+            let tmp = a11;
+            a11 = a15;
+            a15 = tmp;
+            let tmp = a21;
+            a21 = a25;
+            a25 = tmp;
+            let tmp = a31;
+            a31 = a35;
+            a35 = tmp;
+            let tmp = a41;
+            a41 = a45;
+            a45 = tmp;
+        }
+        if self.p1 == 2 {
+            let tmp = a00;
+            a00 = a01;
+            a01 = tmp;
+            let tmp = a10;
+            a10 = a11;
+            a11 = tmp;
+            let tmp = a20;
+            a20 = a21;
+            a21 = tmp;
+            let tmp = a30;
+            a30 = a31;
+            a31 = tmp;
+            let tmp = a40;
+            a40 = a41;
+            a41 = tmp;
+        } else if self.p1 == 3 {
+            let tmp = a00;
+            a00 = a02;
+            a02 = tmp;
+            let tmp = a10;
+            a10 = a12;
+            a12 = tmp;
+            let tmp = a20;
+            a20 = a22;
+            a22 = tmp;
+            let tmp = a30;
+            a30 = a32;
+            a32 = tmp;
+            let tmp = a40;
+            a40 = a42;
+            a42 = tmp;
+        } else if self.p1 == 4 {
+            let tmp = a00;
+            a00 = a03;
+            a03 = tmp;
+            let tmp = a10;
+            a10 = a13;
+            a13 = tmp;
+            let tmp = a20;
+            a20 = a23;
+            a23 = tmp;
+            let tmp = a30;
+            a30 = a33;
+            a33 = tmp;
+            let tmp = a40;
+            a40 = a43;
+            a43 = tmp;
+        } else if self.p1 == 5 {
+            let tmp = a00;
+            a00 = a04;
+            a04 = tmp;
+            let tmp = a10;
+            a10 = a14;
+            a14 = tmp;
+            let tmp = a20;
+            a20 = a24;
+            a24 = tmp;
+            let tmp = a30;
+            a30 = a34;
+            a34 = tmp;
+            let tmp = a40;
+            a40 = a44;
+            a44 = tmp;
+        } else if self.p1 == 6 {
+            let tmp = a00;
+            a00 = a05;
+            a05 = tmp;
+            let tmp = a10;
+            a10 = a15;
+            a15 = tmp;
+            let tmp = a20;
+            a20 = a25;
+            a25 = tmp;
+            let tmp = a30;
+            a30 = a35;
+            a35 = tmp;
+            let tmp = a40;
+            a40 = a45;
+            a45 = tmp;
+        }
+        rhs =
+            Matrix5x6 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+                m13: a02,
+                m23: a12,
+                m33: a22,
+                m43: a32,
+                m53: a42,
+                m14: a03,
+                m24: a13,
+                m34: a23,
+                m44: a33,
+                m54: a43,
+                m15: a04,
+                m25: a14,
+                m35: a24,
+                m45: a34,
+                m55: a44,
+                m16: a05,
+                m26: a15,
+                m36: a25,
+                m46: a35,
+                m56: a45,
+            };
     }
 }

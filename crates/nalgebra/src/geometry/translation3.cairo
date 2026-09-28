@@ -17,13 +17,14 @@
 
 use core::num::traits::One;
 use core::ops::{DivAssign, MulAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::Real;
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::isometry3::Isometry3;
 use super::isometry_matrix3::IsometryMatrix3;
-use super::quaternion::{ApproxEqTrait, Quaternion};
+use super::quaternion::Quaternion;
 use super::rotation3::Rotation3;
 use super::similarity3::Similarity3;
 use super::unit_quaternion::UnitQuaternion;
@@ -305,3 +306,27 @@ pub impl Similarity3FromTranslation3<
         }
     }
 }
+
+// crate-map: generated items (tools/split/cratemap.py) [shapegen]
+// crate-map: from base/matrix4.cairo
+/// `translation3.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream:
+/// `From<Translation3> for Matrix4`.
+pub impl Matrix4FromTranslation3<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Translation3<T>, Matrix4<T>> {
+    #[inline(always)]
+    fn into(self: Translation3<T>) -> Matrix4<T> {
+        Translation3Trait::to_homogeneous(self)
+    }
+}
+// crate-map: end

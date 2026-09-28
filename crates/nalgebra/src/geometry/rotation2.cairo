@@ -25,6 +25,7 @@
 
 use core::num::traits::One;
 use core::ops::{DivAssign, Index, MulAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix1::Matrix1;
 use crate::base::matrix2::Matrix2;
@@ -34,7 +35,6 @@ use crate::base::unit::Unit;
 use crate::base::vector2::Vector2;
 use super::isometry2::Isometry2;
 use super::isometry_matrix2::IsometryMatrix2;
-use super::quaternion::ApproxEqTrait;
 use super::similarity2::Similarity2;
 use super::similarity_matrix2::SimilarityMatrix2;
 use super::translation2::Translation2;
@@ -754,3 +754,129 @@ pub impl Similarity2FromRotation2<
         Similarity2 { isometry: self.into(), scaling: R::one() }
     }
 }
+use nalgebra_core::base::matrix3x2::Matrix3x2;
+use nalgebra_core::base::matrix4x2::Matrix4x2;
+use nalgebra_core::base::matrix_mul::MatrixMul;
+use nalgebra_core::base::row_vector2::RowVector2;
+
+// crate-map: generated items (tools/split/cratemap.py) [shapegen]
+// crate-map: from base/matrix2.cairo
+// crate-map: from base/matrix3.cairo
+// crate-map: from base/matrix3x2.cairo
+// crate-map: from base/matrix4x2.cairo
+// crate-map: from base/row_vector2.cairo
+/// `self * r`, a `RowVector2`: the product with the rotation matrix of `r`, each component one
+/// fused `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m
+/// * r`).
+pub impl RowVector2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<RowVector2<T>, Rotation2<T>> {
+    type Output = RowVector2<T>;
+    #[inline(always)]
+    fn mul_mat(self: RowVector2<T>, rhs: Rotation2<T>) -> RowVector2<T> {
+        RowVector2 {
+            x: R::sum_prod2(self.x, rhs.matrix.m11, self.y, rhs.matrix.m21),
+            y: R::sum_prod2(self.x, rhs.matrix.m12, self.y, rhs.matrix.m22),
+        }
+    }
+}
+
+/// `rotation2.into()`: the rotation matrix. Exact (no arithmetic). Upstream: `From<Rotation2> for
+/// Matrix2`.
+pub impl Matrix2FromRotation2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Rotation2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn into(self: Rotation2<T>) -> Matrix2<T> {
+        self.matrix
+    }
+}
+
+/// `self * r`, a `Matrix2`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m * r`).
+pub impl Matrix2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix2<T>, Rotation2<T>> {
+    type Output = Matrix2<T>;
+    #[inline(always)]
+    fn mul_mat(self: Matrix2<T>, rhs: Rotation2<T>) -> Matrix2<T> {
+        Matrix2 {
+            m11: R::sum_prod2(self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21),
+            m21: R::sum_prod2(self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21),
+            m12: R::sum_prod2(self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22),
+            m22: R::sum_prod2(self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22),
+        }
+    }
+}
+
+/// `self * r`, a `Matrix3x2`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m * r`).
+pub impl Matrix3x2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix3x2<T>, Rotation2<T>> {
+    type Output = Matrix3x2<T>;
+
+    fn mul_mat(self: Matrix3x2<T>, rhs: Rotation2<T>) -> Matrix3x2<T> {
+        Matrix3x2 {
+            m11: R::sum_prod2(self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21),
+            m21: R::sum_prod2(self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21),
+            m31: R::sum_prod2(self.m31, rhs.matrix.m11, self.m32, rhs.matrix.m21),
+            m12: R::sum_prod2(self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22),
+            m22: R::sum_prod2(self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22),
+            m32: R::sum_prod2(self.m31, rhs.matrix.m12, self.m32, rhs.matrix.m22),
+        }
+    }
+}
+
+/// `rotation2.into()`: the homogeneous rotation. Exact (no arithmetic). Upstream: `From<Rotation2>
+/// for Matrix3`.
+pub impl Matrix3FromRotation2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Rotation2<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: Rotation2<T>) -> Matrix3<T> {
+        Rotation2Trait::to_homogeneous(self)
+    }
+}
+
+/// `self * r`, a `Matrix4x2`: the product with the rotation matrix of `r`, each component one fused
+/// `sum_prod2` (floored once). Panics on overflow. Upstream: `Mul<Rotation2> for Matrix` (`m * r`).
+pub impl Matrix4x2MulRotation2<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixMul<Matrix4x2<T>, Rotation2<T>> {
+    type Output = Matrix4x2<T>;
+
+    fn mul_mat(self: Matrix4x2<T>, rhs: Rotation2<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: R::sum_prod2(self.m11, rhs.matrix.m11, self.m12, rhs.matrix.m21),
+            m21: R::sum_prod2(self.m21, rhs.matrix.m11, self.m22, rhs.matrix.m21),
+            m31: R::sum_prod2(self.m31, rhs.matrix.m11, self.m32, rhs.matrix.m21),
+            m41: R::sum_prod2(self.m41, rhs.matrix.m11, self.m42, rhs.matrix.m21),
+            m12: R::sum_prod2(self.m11, rhs.matrix.m12, self.m12, rhs.matrix.m22),
+            m22: R::sum_prod2(self.m21, rhs.matrix.m12, self.m22, rhs.matrix.m22),
+            m32: R::sum_prod2(self.m31, rhs.matrix.m12, self.m32, rhs.matrix.m22),
+            m42: R::sum_prod2(self.m41, rhs.matrix.m12, self.m42, rhs.matrix.m22),
+        }
+    }
+}
+// crate-map: end

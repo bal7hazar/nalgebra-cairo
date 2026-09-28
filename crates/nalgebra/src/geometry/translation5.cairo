@@ -7,11 +7,11 @@
 
 use core::num::traits::One;
 use core::ops::{DivAssign, MulAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::vector5::Vector5;
 use super::point5::Point5;
-use super::quaternion::ApproxEqTrait;
 
 /// A translation by `vector`. The field name is upstream's (`Translation { vector }`).
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]

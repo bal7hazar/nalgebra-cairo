@@ -42,6 +42,7 @@ import consumer_cost as cc  # noqa: E402
 from edges import IDENT, USE, expand_use, items as cut_items, raw_start  # noqa: E402
 
 DEFAULT_MAP = os.path.join(HERE, "crates.toml")
+INTERNAL = "internal/"  # the modules of the `[internal]` items of a package (SPLIT §12.3)
 SHAPE_FILE = re.compile(r"base/(matrix|vector|row_vector)(\d)(?:x(\d))?\.cairo$")
 SHAPE_NAME = re.compile(r"(?:Matrix|Vector|RowVector|UnitVector)(\d)(?:x(\d))?$")
 CRATE_MAP_END = "// crate-map: end"
@@ -217,6 +218,7 @@ class CrateMap:
         self.lift = d.get("lift", True)
         self.rules = [Rule(r, self.crates) for r in d.get("rule", [])]
         self.single = len(set(self.crates.values())) == 1
+        self.internal = [re.compile(x) for x in d.get("internal", {}).get("names", [])]
         self._index = None
 
     # --- packages --------------------------------------------------------------------------------
@@ -285,11 +287,22 @@ class CrateMap:
                         c = ca
         return c
 
+    def is_internal(self, it, crate):
+        """An item of `[internal]`: crate-private in 0.1.0, hosted by a package below the facade
+        and used above it (split mode only)."""
+        # (not `it.public`: once moved, the committed item is `pub` in its `internal` module)
+        return (not self.single and self.crates[crate] != self.facade_package
+                and any(r.fullmatch(it.label or "") for r in self.internal))
+
     def module_of(self, it, crate, index):
         """Module file of an item in its package: its own, unless it is an impl with type
         arguments whose module holds neither its trait nor an argument type in the same package
         (Cairo would not find it): then the first such anchor's module (arguments in name order,
-        then the trait)."""
+        then the trait). An `[internal]` item goes to `internal/<its module file>` (SPLIT §12.3)."""
+        m = self._module_of(it, crate, index)
+        return INTERNAL + m if self.is_internal(it, crate) else m
+
+    def _module_of(self, it, crate, index):
         if not (it.kind == "impl" and it.args):
             return it.file
         pkg = self.crates[crate]
@@ -298,8 +311,9 @@ class CrateMap:
             an = index.get(a)
             if an is None or an.kind not in ("struct", "enum", "trait", "inherent"):
                 continue
-            if self.crates[self.crate_of(an, index)] == pkg:
-                here.append(an.file)
+            ca = self.crate_of(an, index)
+            if self.crates[ca] == pkg:
+                here.append(self.module_of(an, ca, index))
         if not here or it.file in here:
             return it.file
         return here[0]
@@ -319,9 +333,11 @@ class CrateMap:
             if not os.path.exists(os.path.join(d, "src", "lib.cairo")):
                 continue
             for rel in walk(d):
-                if rel == "lib.cairo" and pkg != self.facade_package:
+                if rel in ("lib.cairo", INTERNAL[:-1] + ".cairo") and pkg != self.facade_package:
                     continue
                 text = open(os.path.join(d, "src", rel), encoding="utf-8").read()
+                # `internal/x.cairo` holds the `[internal]` items of `x.cairo`: placed as x's
+                rel = rel[len(INTERNAL):] if rel.startswith(INTERNAL) else rel
                 # a module split over several packages: the items of every part
                 out[rel] = out[rel] + "\n" + text if rel in out else text
         out.update(overrides or {})
@@ -348,6 +364,11 @@ class CrateMap:
                         if it.kind == "inherent" and nm != it.gen:
                             continue
                         idx.setdefault(nm, it)
+        # the impl of a `#[generate_trait]` trait, imported by its own name (`use x::Powi;`)
+        for f in sorted(texts):
+            for it in parsed[f]:
+                if it.kind == "inherent" and it.gen and it.name != it.gen and names.get(it.name) == [it]:
+                    idx.setdefault(it.name, it)
         return idx, known
 
     def place_all(self, texts):
@@ -412,20 +433,34 @@ class CrateMap:
                 continue
             mods = [it for it in decl if it.kind == "mod"]
             for it, pkg, mod in rows:
-                pieces[(pkg, mod)].append((f, text[it.start:it.end]))
+                chunk = text[it.start:it.end]
+                if mod.startswith(INTERNAL) and not it.public:
+                    chunk = publish(chunk)
+                pieces[(pkg, mod)].append((f, chunk))
                 if mod != f and it.public:
                     # a public impl moved to an anchor module keeps its 0.1.0 path in the facade
                     root = "crate" if pkg == self.facade_package else pkg
                     explicit[f].append(f"pub use {root}::{mod[: -len('.cairo')].replace('/', '::')}::{it.name};")
-            for it in mods:  # `mod tests;`... stay with the file's lowest package
-                low = min(pkgs, key=self.package_rank)
-                pieces[(low, f)].append((f, text[it.start:it.end]))
+            for it in mods:
+                # a test module (`#[cfg(test)] mod tests;`) goes with the file's highest package,
+                # which hosts the methods it tests; any other module with the lowest
+                test = TEST_ONLY.search(text[it.start:it.end]) is not None
+                host = (max if test else min)(pkgs, key=self.package_rank)
+                pieces[(host, f)].append((f, text[it.start:it.end]))
+        # a whole file keeps its text, except the imports of `[internal]` items (now at `internal::`)
+        for (pkg, f), text in list(whole.items()):
+            whole[(pkg, f)] = self._internal_uses(text, f, pkg, placed, idx)
         for (pkg, mod), chunks in sorted(pieces.items(), key=lambda kv: (kv[0][1], self.package_rank(kv[0][0]))):
             hosted[mod].add(pkg)
             origins = sorted({o for o, _ in chunks})
             header = headers.get(mod) or headers[origins[0]]
             joined = "\n\n".join(t.strip("\n") for _o, t in chunks)
-            used = set(IDENT.findall(cc.mask(joined)))
+            # the names the piece uses (a method declared `fn gauss_step` is not a use of the free
+            # function `gauss_step`), minus the ones its module defines (never imported there)
+            masked_joined = cc.mask(joined)
+            # (nor is `Self::gauss_step`: a name after `::` is never imported)
+            used = set(IDENT.findall(re.sub(r"\bfn\s+\w+|::\s*\w+", " ", masked_joined)))
+            used -= _defined(masked_joined + "\n" + cc.mask(whole.get((pkg, mod), "")))
             lines = []
             for o in origins:
                 for u in uses_of[o]:
@@ -445,15 +480,28 @@ class CrateMap:
                     line = f"use {root}::{qm[:-len('.cairo')].replace('/', '::')}::{lab};"
                     if line not in lines:
                         lines.append(line)
+            if pkg == self.facade_package:
+                # the facade module re-exports the same module of the packages below
+                # (`pub use nalgebra_x::<path>::*`): a private import of one of their names would
+                # shadow that re-export for the rest of the crate
+                here = mod[: -len(".cairo")].replace("/", "::")
+                subs = {self.crates[c] for c in self.crates} - {pkg}
+                lines = [x for x in (keep_uses(ln, lambda full: not any(
+                    full.startswith(f"{p}::{here}::") and full.count("::") == here.count("::") + 2
+                    for p in subs)) for ln in lines) if x]
             path = os.path.join(package_dir(pkg), "src", mod)
             if (pkg, mod) in whole:
                 # a whole file plus impls moved into its module: its text, their imports, them
                 own = whole.pop((pkg, mod))
                 have = statements(own)
+                taken = local_names(own)
                 extra = [ln for ln in lines if not statements(ln) <= have]
+                extra = [x for x in (keep_uses(ln, lambda full: use_local(full) not in taken) for ln in extra) if x]
                 bodies[path] = own.rstrip("\n") + ("\n\n" + "\n".join(extra) if extra else "") + \
                     "\n\n" + joined + "\n"
-            elif mod in gen:
+            elif mod in gen or (mod.startswith(INTERNAL) and mod[len(INTERNAL):] in gen):
+                if mod not in gen:  # the `[internal]` items of a generated module: owned here too
+                    header = INTERNAL_DOC.format(module=mod[len(INTERNAL): -len(".cairo")].replace("/", "::"))
                 bodies[path] = header + "\n".join(lines) + ("\n\n" if lines else "") + joined + "\n"
             else:
                 # impls moved into a module this generator does not write (an anchor type's)
@@ -468,6 +516,8 @@ class CrateMap:
                 bodies[path] = headers[f]
         # the facade: the re-exports of every module that (partly) left it
         for mod in sorted(set(hosted) | set(explicit)):
+            if mod.startswith(INTERNAL):
+                continue  # never re-exported by the facade (SPLIT §12.3)
             subs = sorted((p for p in hosted.get(mod, ()) if p != self.facade_package), key=self.package_rank)
             path = mod[: -len(".cairo")].replace("/", "::")
             stmts[os.path.join(facade_dir, "src", mod)].extend(
@@ -513,8 +563,12 @@ class CrateMap:
                     stmts = [stmt] + list(stmts)
         text = base.rstrip("\n")
         present = statements(text)
+        taken = local_names(text)
         add = []
         for ln in stmts:
+            ln = keep_uses(ln, lambda full: use_local(full) not in taken) if ln.lstrip().startswith("use ") else ln
+            if not ln:
+                continue
             st = statements(ln)
             if st and not st <= present:
                 add.append(ln)
@@ -528,6 +582,32 @@ class CrateMap:
             text = (text + "\n\n" if text.strip() else "") + \
                 f"{ITEMS_BEGIN} [{tag}]\n{src}{joined}\n{CRATE_MAP_END}"
         return text + "\n"
+
+    def _internal_uses(self, text, f, pkg, placed, idx):
+        """`text` (module file `f` of package `pkg`) with every private `use` statement that names an
+        `[internal]` item rewritten to its `internal::` path; the other statements untouched."""
+        if not self.internal:
+            return text
+        masked = cc.mask(text)
+        names = set(IDENT.findall(masked))
+        out, last = [], 0
+        for m in USE.finditer(masked):
+            stmt = text[m.start():m.end()]
+            if stmt.lstrip().startswith("pub"):
+                continue
+            hit = False
+            for full in expand_use(m.group(1)):
+                it = idx.get(full.split(" as ")[0].split("::")[-1].strip())
+                if it is not None and self.is_internal(it, self.crate_of(it, idx)):
+                    hit = True
+            if not hit:
+                continue
+            new = self._rewrite_use(stmt.strip(), f, f, pkg, names, placed, idx)
+            lead = stmt[: len(stmt) - len(stmt.lstrip())]
+            out.append(text[last:m.start()] + lead + (new or ""))
+            last = m.end()
+        out.append(text[last:])
+        return "".join(out)
 
     def _rewrite_use(self, stmt, origin, mod, pkg, used, placed, idx):
         """A `use` statement of the original file for a piece: only the names the piece uses,
@@ -576,6 +656,58 @@ class CrateMap:
         if len(keep) == 1:
             return f"{head}use {keep[0]};"
         return f"{head}use {{{', '.join(keep)}}};".replace("use {", "use {", 1)
+
+
+INTERNAL_DOC = """//! Internal, no stability promise: the crate-private items of `{module}` that the packages
+//! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
+
+"""
+
+
+def _defined(masked):
+    """The names a (comment-free) module text defines at the top level: its items and the traits of
+    its `#[generate_trait]` impls."""
+    out = set(re.findall(r"^(?:pub(?:\(crate\))?\s+)?(?:impl|trait|struct|enum|fn|const|type)\s+(\w+)", masked, re.M))
+    out |= set(re.findall(r"#\[generate_trait\]\s*(?:pub(?:\(crate\))?\s+)?impl\s+\w+[^{;]*?\bof\s+(\w+)", masked))
+    return out
+
+
+def publish(chunk):
+    """An `[internal]` item made `pub` (0.1.0: `pub(crate)` or private): its first item line."""
+    masked = cc.mask(chunk)
+    m = re.search(r"^(pub\(crate\)\s+|pub\s+)?(?=(impl|trait|struct|enum|fn|const|type|mod)\s)", masked, re.M)
+    if m is None:
+        return chunk
+    return chunk[: m.start()] + "pub " + chunk[m.end(1) if m.group(1) else m.start():]
+
+
+def use_local(full):
+    """The local name a `use` path binds (`a::b::C as D` -> `D`)."""
+    return full.split(" as ")[-1].split("::")[-1].strip()
+
+
+def local_names(text):
+    """The names a module text binds at the top level: its items and its non-glob imports."""
+    masked = cc.mask(text)
+    out = _defined(masked)
+    for m in USE.finditer(masked):
+        out |= {use_local(x) for x in expand_use(m.group(1))} - {"*"}
+    return out
+
+
+def keep_uses(line, keep):
+    """A (private) `use` line with only the paths `keep(full path)` accepts; None if none is left."""
+    s = line.strip()
+    m = USE.match(s if s.endswith(";") else s + ";")
+    if m is None or not s.startswith("use "):
+        return line
+    fulls = [x.strip() for x in expand_use(m.group(1))]
+    kept = [x for x in fulls if keep(x)]
+    if not kept:
+        return None
+    if len(kept) == len(fulls):
+        return line
+    return "\n".join(f"use {x};" for x in kept)
 
 
 def statements(text):

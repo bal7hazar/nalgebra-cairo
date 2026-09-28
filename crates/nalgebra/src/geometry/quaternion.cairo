@@ -37,11 +37,11 @@
 
 use core::num::traits::{One, Zero};
 use core::ops::{AddAssign, DivAssign, Index, MulAssign, SubAssign};
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::base::unit::{Unit, UnitTrait};
 use crate::base::vector3::Vector3;
 use crate::base::vector4::Vector4;
-
 #[cfg(test)]
 mod benches;
 #[cfg(test)]
@@ -52,7 +52,6 @@ mod oracle_ext;
 mod tests;
 #[cfg(test)]
 mod tests_ext;
-
 /// Panic messages of the quaternion algebra (stable API).
 pub mod errors {
     /// `tan`, `tanh` or `atan` divided by a quaternion whose squared norm floors to zero (upstream
@@ -64,6 +63,7 @@ pub mod errors {
     /// whose imaginary part is zero where upstream normalises it (its result is `NaN` there).
     pub const REAL_QUATERNION: felt252 = 'nalgebra: real quaternion (NaN)';
 }
+
 
 /// A quaternion `w + i·i + j·j + k·k`.
 ///
@@ -608,37 +608,6 @@ pub(crate) impl QuaternionInternalImpl<
         let k = R::wide_add_prod(R::wide_sub_prod(k, self.i, other.j), self.j, other.i);
         let k = R::wide_rescale(R::wide_add_prod(k, self.k, other.w));
         Quaternion { i, j, k, w }
-    }
-}
-
-/// Crate-internal scalar forms of upstream's `approx::RelativeEq` / `approx::UlpsEq`, shared by
-/// the `relative_eq` / `ulps_eq` of `Quaternion`, `UnitQuaternion` and `UnitComplex` (tolerances
-/// in ulp, DESIGN D3). See `QuaternionTrait::relative_eq` / `ulps_eq` for the semantics.
-#[generate_trait]
-pub(crate) impl ApproxEqImpl<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Sub<T>, +Mul<T>, +PartialEq<T>,
-> of ApproxEqTrait<T> {
-    /// `|a - b| <= epsilon` ulp, or same signs and `|a - b| <= max(|a|, |b|) · max_relative`.
-    #[inline(always)]
-    fn relative_eq(a: T, b: T, epsilon: u64, max_relative: T) -> bool {
-        if R::abs_diff_eq(a, b, epsilon) {
-            return true;
-        }
-        if R::is_sign_negative(a) != R::is_sign_negative(b) {
-            return false;
-        }
-        // `|a - b| <= limit`, with `Real` comparisons only (no `PartialOrd` needed by callers).
-        let limit = R::max(R::abs(a), R::abs(b)) * max_relative;
-        R::max(R::abs(a - b), limit) == limit
-    }
-
-    /// `|a - b| <= epsilon` ulp, or same signs and `|a - b| <= max_ulps` ulp.
-    #[inline(always)]
-    fn ulps_eq(a: T, b: T, epsilon: u64, max_ulps: u32) -> bool {
-        if R::abs_diff_eq(a, b, epsilon) {
-            return true;
-        }
-        R::is_sign_negative(a) == R::is_sign_negative(b) && R::abs_diff_eq(a, b, max_ulps.into())
     }
 }
 

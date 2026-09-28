@@ -3,9 +3,9 @@
 //! `nalgebra::linalg::FullPivLU<T, U6, U6>`), fully unrolled (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
-use crate::base::solve::SolveKernel;
 use crate::linalg::lu::Perm6;
 use crate::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
 

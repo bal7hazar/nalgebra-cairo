@@ -21,19 +21,6351 @@
 //! `nalgebra: index out of bounds`. A runtime position selects ONE struct literal through a
 //! `match` (no loop, no per-component test).
 
-use super::errors;
-use super::matrix1::Matrix1;
-use super::matrix6::Matrix6;
-use super::row_vector2::RowVector2;
-use super::row_vector3::RowVector3;
-use super::row_vector4::RowVector4;
-use super::row_vector5::RowVector5;
-use super::row_vector6::RowVector6;
-use super::vector2::Vector2;
-use super::vector3::Vector3;
-use super::vector4::Vector4;
-use super::vector5::Vector5;
-use super::vector6::Vector6;
+use nalgebra_core::base::matrix1::Matrix1;
+use nalgebra_core::base::matrix2::Matrix2;
+use nalgebra_core::base::matrix2x3::Matrix2x3;
+use nalgebra_core::base::matrix2x4::Matrix2x4;
+use nalgebra_core::base::matrix3::Matrix3;
+use nalgebra_core::base::matrix3x2::Matrix3x2;
+use nalgebra_core::base::matrix3x4::Matrix3x4;
+use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_core::base::matrix4x2::Matrix4x2;
+use nalgebra_core::base::matrix4x3::Matrix4x3;
+use nalgebra_core::base::row_vector2::RowVector2;
+use nalgebra_core::base::row_vector3::RowVector3;
+use nalgebra_core::base::row_vector4::RowVector4;
+use nalgebra_core::base::vector2::Vector2;
+use nalgebra_core::base::vector3::Vector3;
+use nalgebra_core::base::vector4::Vector4;
+use nalgebra_core::internal::base::matrix1::Matrix1EditTrait;
+use nalgebra_core::internal::base::matrix2::Matrix2EditTrait;
+use nalgebra_core::internal::base::matrix2x3::Matrix2x3EditTrait;
+use nalgebra_core::internal::base::matrix2x4::Matrix2x4EditTrait;
+use nalgebra_core::internal::base::matrix3::Matrix3EditTrait;
+use nalgebra_core::internal::base::matrix3x2::Matrix3x2EditTrait;
+use nalgebra_core::internal::base::matrix3x4::Matrix3x4EditTrait;
+use nalgebra_core::internal::base::matrix4::Matrix4EditTrait;
+use nalgebra_core::internal::base::matrix4x2::Matrix4x2EditTrait;
+use nalgebra_core::internal::base::matrix4x3::Matrix4x3EditTrait;
+use nalgebra_core::internal::base::matrix_view::{ColumnVectorLen, RowVectorLen};
+use nalgebra_core::internal::base::row_vector2::RowVector2EditTrait;
+use nalgebra_core::internal::base::row_vector3::RowVector3EditTrait;
+use nalgebra_core::internal::base::row_vector4::RowVector4EditTrait;
+use nalgebra_core::internal::base::vector2::Vector2EditTrait;
+use nalgebra_core::internal::base::vector3::Vector3EditTrait;
+use nalgebra_core::internal::base::vector4::Vector4EditTrait;
+use crate::base::errors;
+use crate::base::matrix6::Matrix6;
+
+/// The 1 consecutive rows of a `Matrix1` as a `Matrix1` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix1FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix1<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix1<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix1<T>, irows: Span<usize>) -> Matrix1<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix1EditTrait::row_at(self, *irows[0]);
+        Matrix1 { x: r0.x }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix1` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix1FixedColumnsMatrix1<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix1<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix1<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix1<T>, icols: Span<usize>) -> Matrix1<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix1EditTrait::column_at(self, *icols[0]);
+        Matrix1 { x: c0.x }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix1` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix1FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix1<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix1<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix1PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix1<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix1<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: val,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: val,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix1` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix1CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix1<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix1<T> {
+        Matrix1 { x: m.m11 }
+    }
+}
+
+/// `(1, 1)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix1ShapeDims<T> of ShapeDims<Matrix1<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (1, 1)
+    }
+}
+
+/// The 1 consecutive rows of a `RowVector2` as a `RowVector2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl RowVector2FixedRowsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<RowVector2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: RowVector2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.x, y: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: RowVector2<T>, irows: Span<usize>) -> RowVector2<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = RowVector2EditTrait::row_at(self, *irows[0]);
+        RowVector2 { x: r0.x, y: r0.y }
+    }
+}
+
+/// The 1 consecutive columns of a `RowVector2` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl RowVector2FixedColumnsMatrix1<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector2<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector2<T>, icols: Span<usize>) -> Matrix1<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector2EditTrait::column_at(self, *icols[0]);
+        Matrix1 { x: c0.x }
+    }
+}
+
+/// The 2 consecutive columns of a `RowVector2` as a `RowVector2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl RowVector2FixedColumnsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.x, y: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector2<T>, icols: Span<usize>) -> RowVector2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector2EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector2EditTrait::column_at(self, *icols[1]);
+        RowVector2 { x: c0.x, y: c1.x }
+    }
+}
+
+/// The 1x1 blocks of a `RowVector2` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl RowVector2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<RowVector2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector2<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `RowVector2` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl RowVector2FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector2<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.x, y: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl RowVector2PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<RowVector2<T>, T> {
+    #[inline(always)]
+    fn pad(self: RowVector2<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: val,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.y,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `RowVector2` of a `Matrix6` (`FixedResize`).
+pub(crate) impl RowVector2CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<RowVector2<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> RowVector2<T> {
+        RowVector2 { x: m.m11, y: m.m12 }
+    }
+}
+
+/// `(1, 2)`: the size checks of the runtime-sized views.
+pub(crate) impl RowVector2ShapeDims<T> of ShapeDims<RowVector2<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (1, 2)
+    }
+}
+
+/// The 1 consecutive rows of a `RowVector3` as a `RowVector3` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl RowVector3FixedRowsRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<RowVector3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: RowVector3<T>, i: usize) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: self.x, y: self.y, z: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: RowVector3<T>, irows: Span<usize>) -> RowVector3<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = RowVector3EditTrait::row_at(self, *irows[0]);
+        RowVector3 { x: r0.x, y: r0.y, z: r0.z }
+    }
+}
+
+/// The 1 consecutive columns of a `RowVector3` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl RowVector3FixedColumnsMatrix1<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector3<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector3<T>, icols: Span<usize>) -> Matrix1<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector3EditTrait::column_at(self, *icols[0]);
+        Matrix1 { x: c0.x }
+    }
+}
+
+/// The 2 consecutive columns of a `RowVector3` as a `RowVector2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl RowVector3FixedColumnsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector3<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector3<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.x, y: self.y },
+            1 => RowVector2 { x: self.y, y: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector3<T>, icols: Span<usize>) -> RowVector2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector3EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector3EditTrait::column_at(self, *icols[1]);
+        RowVector2 { x: c0.x, y: c1.x }
+    }
+}
+
+/// The 3 consecutive columns of a `RowVector3` as a `RowVector3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl RowVector3FixedColumnsRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector3<T>, i: usize) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: self.x, y: self.y, z: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector3<T>, icols: Span<usize>) -> RowVector3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector3EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector3EditTrait::column_at(self, *icols[1]);
+        let c2 = RowVector3EditTrait::column_at(self, *icols[2]);
+        RowVector3 { x: c0.x, y: c1.x, z: c2.x }
+    }
+}
+
+/// The 1x1 blocks of a `RowVector3` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl RowVector3FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<RowVector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector3<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `RowVector3` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl RowVector3FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector3<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector3<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.x, y: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.y, y: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `RowVector3` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl RowVector3FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector3<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.x, y: self.y, z: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl RowVector3PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<RowVector3<T>, T> {
+    #[inline(always)]
+    fn pad(self: RowVector3<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: val,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.y,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.z,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `RowVector3` of a `Matrix6` (`FixedResize`).
+pub(crate) impl RowVector3CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<RowVector3<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> RowVector3<T> {
+        RowVector3 { x: m.m11, y: m.m12, z: m.m13 }
+    }
+}
+
+/// `(1, 3)`: the size checks of the runtime-sized views.
+pub(crate) impl RowVector3ShapeDims<T> of ShapeDims<RowVector3<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (1, 3)
+    }
+}
+
+/// The 1 consecutive rows of a `RowVector4` as a `RowVector4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl RowVector4FixedRowsRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<RowVector4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: RowVector4<T>, i: usize) -> RowVector4<T> {
+        match i {
+            0 => RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: RowVector4<T>, irows: Span<usize>) -> RowVector4<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = RowVector4EditTrait::row_at(self, *irows[0]);
+        RowVector4 { x: r0.x, y: r0.y, z: r0.z, w: r0.w }
+    }
+}
+
+/// The 1 consecutive columns of a `RowVector4` as a `Matrix1` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl RowVector4FixedColumnsMatrix1<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector4<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            3 => Matrix1 { x: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector4<T>, icols: Span<usize>) -> Matrix1<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector4EditTrait::column_at(self, *icols[0]);
+        Matrix1 { x: c0.x }
+    }
+}
+
+/// The 2 consecutive columns of a `RowVector4` as a `RowVector2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl RowVector4FixedColumnsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector4<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector4<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.x, y: self.y },
+            1 => RowVector2 { x: self.y, y: self.z },
+            2 => RowVector2 { x: self.z, y: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector4<T>, icols: Span<usize>) -> RowVector2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector4EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector4EditTrait::column_at(self, *icols[1]);
+        RowVector2 { x: c0.x, y: c1.x }
+    }
+}
+
+/// The 3 consecutive columns of a `RowVector4` as a `RowVector3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl RowVector4FixedColumnsRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector4<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector4<T>, i: usize) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: self.x, y: self.y, z: self.z },
+            1 => RowVector3 { x: self.y, y: self.z, z: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector4<T>, icols: Span<usize>) -> RowVector3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector4EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector4EditTrait::column_at(self, *icols[1]);
+        let c2 = RowVector4EditTrait::column_at(self, *icols[2]);
+        RowVector3 { x: c0.x, y: c1.x, z: c2.x }
+    }
+}
+
+/// The 4 consecutive columns of a `RowVector4` as a `RowVector4` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<4>`, `select_columns`.
+pub impl RowVector4FixedColumnsRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<RowVector4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: RowVector4<T>, i: usize) -> RowVector4<T> {
+        match i {
+            0 => RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: RowVector4<T>, icols: Span<usize>) -> RowVector4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = RowVector4EditTrait::column_at(self, *icols[0]);
+        let c1 = RowVector4EditTrait::column_at(self, *icols[1]);
+        let c2 = RowVector4EditTrait::column_at(self, *icols[2]);
+        let c3 = RowVector4EditTrait::column_at(self, *icols[3]);
+        RowVector4 { x: c0.x, y: c1.x, z: c2.x, w: c3.x }
+    }
+}
+
+/// The 1x1 blocks of a `RowVector4` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl RowVector4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<RowVector4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector4<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `RowVector4` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl RowVector4FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector4<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector4<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.x, y: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.y, y: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.z, y: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `RowVector4` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl RowVector4FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector4<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector4<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.x, y: self.y, z: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.y, y: self.z, z: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x4 blocks of a `RowVector4` as a `RowVector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 4>`.
+pub impl RowVector4FixedViewRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<RowVector4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: RowVector4<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl RowVector4PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<RowVector4<T>, T> {
+    #[inline(always)]
+    fn pad(self: RowVector4<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: val,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.y,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.z,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: self.w,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `RowVector4` of a `Matrix6` (`FixedResize`).
+pub(crate) impl RowVector4CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<RowVector4<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> RowVector4<T> {
+        RowVector4 { x: m.m11, y: m.m12, z: m.m13, w: m.m14 }
+    }
+}
+
+/// `(1, 4)`: the size checks of the runtime-sized views.
+pub(crate) impl RowVector4ShapeDims<T> of ShapeDims<RowVector4<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (1, 4)
+    }
+}
+
+/// The 1 consecutive rows of a `Vector2` as a `Matrix1` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Vector2FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Vector2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector2<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector2<T>, irows: Span<usize>) -> Matrix1<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector2EditTrait::row_at(self, *irows[0]);
+        Matrix1 { x: r0.x }
+    }
+}
+
+/// The 2 consecutive rows of a `Vector2` as a `Vector2` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Vector2FixedRowsVector2<T, +Copy<T>, +Drop<T>> of FixedRows<Vector2<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector2<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.x, y: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector2<T>, irows: Span<usize>) -> Vector2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector2EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector2EditTrait::row_at(self, *irows[1]);
+        Vector2 { x: r0.x, y: r1.x }
+    }
+}
+
+/// The 1 consecutive columns of a `Vector2` as a `Vector2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Vector2FixedColumnsVector2<T, +Copy<T>, +Drop<T>> of FixedColumns<Vector2<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Vector2<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.x, y: self.y },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Vector2<T>, icols: Span<usize>) -> Vector2<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Vector2EditTrait::column_at(self, *icols[0]);
+        Vector2 { x: c0.x, y: c0.y }
+    }
+}
+
+/// The 1x1 blocks of a `Vector2` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
+pub impl Vector2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Vector2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector2<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                1 => Matrix1 { x: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Vector2` as a `Vector2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 1>`.
+pub impl Vector2FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Vector2<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector2<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.x, y: self.y },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Vector2PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Vector2<T>, T> {
+    #[inline(always)]
+    fn pad(self: Vector2<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: self.y,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: val,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Vector2` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Vector2CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Vector2<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Vector2<T> {
+        Vector2 { x: m.m11, y: m.m21 }
+    }
+}
+
+/// `(2, 1)`: the size checks of the runtime-sized views.
+pub(crate) impl Vector2ShapeDims<T> of ShapeDims<Vector2<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (2, 1)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix2` as a `RowVector2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix2FixedRowsRowVector2<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.m11, y: self.m12 },
+            1 => RowVector2 { x: self.m21, y: self.m22 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2<T>, irows: Span<usize>) -> RowVector2<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2EditTrait::row_at(self, *irows[0]);
+        RowVector2 { x: r0.x, y: r0.y }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix2` as a `Matrix2` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix2FixedRowsMatrix2<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2<T>, i: usize) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2<T>, irows: Span<usize>) -> Matrix2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix2EditTrait::row_at(self, *irows[1]);
+        Matrix2 { m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix2` as a `Vector2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix2FixedColumnsVector2<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix2<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.m11, y: self.m21 },
+            1 => Vector2 { x: self.m12, y: self.m22 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2<T>, icols: Span<usize>) -> Vector2<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2EditTrait::column_at(self, *icols[0]);
+        Vector2 { x: c0.x, y: c0.y }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix2` as a `Matrix2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix2FixedColumnsMatrix2<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2<T>, i: usize) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2<T>, icols: Span<usize>) -> Matrix2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2EditTrait::column_at(self, *icols[1]);
+        Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix2` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix2` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix2FixedViewRowVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix2` as a `Vector2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix2FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix2` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix2FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix2PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix2<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix2<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix2` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix2CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix2<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix2<T> {
+        Matrix2 { m11: m.m11, m21: m.m21, m12: m.m12, m22: m.m22 }
+    }
+}
+
+/// `(2, 2)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix2ShapeDims<T> of ShapeDims<Matrix2<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (2, 2)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix2x3` as a `RowVector3` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix2x3FixedRowsRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix2x3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2x3<T>, i: usize) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+            1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2x3<T>, irows: Span<usize>) -> RowVector3<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2x3EditTrait::row_at(self, *irows[0]);
+        RowVector3 { x: r0.x, y: r0.y, z: r0.z }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix2x3` as a `Matrix2x3` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix2x3FixedRowsMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix2x3<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2x3<T>, i: usize) -> Matrix2x3<T> {
+        match i {
+            0 => Matrix2x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2x3<T>, irows: Span<usize>) -> Matrix2x3<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2x3EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix2x3EditTrait::row_at(self, *irows[1]);
+        Matrix2x3 { m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y, m13: r0.z, m23: r1.z }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix2x3` as a `Vector2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix2x3FixedColumnsVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x3<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.m11, y: self.m21 },
+            1 => Vector2 { x: self.m12, y: self.m22 },
+            2 => Vector2 { x: self.m13, y: self.m23 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x3<T>, icols: Span<usize>) -> Vector2<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x3EditTrait::column_at(self, *icols[0]);
+        Vector2 { x: c0.x, y: c0.y }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix2x3` as a `Matrix2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix2x3FixedColumnsMatrix2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x3<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x3<T>, i: usize) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+            1 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x3<T>, icols: Span<usize>) -> Matrix2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x3EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x3EditTrait::column_at(self, *icols[1]);
+        Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix2x3` as a `Matrix2x3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl Matrix2x3FixedColumnsMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x3<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x3<T>, i: usize) -> Matrix2x3<T> {
+        match i {
+            0 => Matrix2x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x3<T>, icols: Span<usize>) -> Matrix2x3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x3EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x3EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix2x3EditTrait::column_at(self, *icols[2]);
+        Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix2x3` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix2x3FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x3<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix2x3` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix2x3FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x3<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x3<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `Matrix2x3` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl Matrix2x3FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x3<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix2x3` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix2x3FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x3<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix2x3` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix2x3FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x3<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x3<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x3 blocks of a `Matrix2x3` as a `Matrix2x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 3>`.
+pub impl Matrix2x3FixedViewMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x3<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x3<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix2x3PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix2x3<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix2x3` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix2x3CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix2x3<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix2x3<T> {
+        Matrix2x3 { m11: m.m11, m21: m.m21, m12: m.m12, m22: m.m22, m13: m.m13, m23: m.m23 }
+    }
+}
+
+/// `(2, 3)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix2x3ShapeDims<T> of ShapeDims<Matrix2x3<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (2, 3)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix2x4` as a `RowVector4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix2x4FixedRowsRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix2x4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2x4<T>, i: usize) -> RowVector4<T> {
+        match i {
+            0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+            1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2x4<T>, irows: Span<usize>) -> RowVector4<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2x4EditTrait::row_at(self, *irows[0]);
+        RowVector4 { x: r0.x, y: r0.y, z: r0.z, w: r0.w }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix2x4` as a `Matrix2x4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix2x4FixedRowsMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix2x4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix2x4<T>, i: usize) -> Matrix2x4<T> {
+        match i {
+            0 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix2x4<T>, irows: Span<usize>) -> Matrix2x4<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix2x4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix2x4EditTrait::row_at(self, *irows[1]);
+        Matrix2x4 {
+            m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y, m13: r0.z, m23: r1.z, m14: r0.w, m24: r1.w,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix2x4` as a `Vector2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix2x4FixedColumnsVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x4<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.m11, y: self.m21 },
+            1 => Vector2 { x: self.m12, y: self.m22 },
+            2 => Vector2 { x: self.m13, y: self.m23 },
+            3 => Vector2 { x: self.m14, y: self.m24 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x4<T>, icols: Span<usize>) -> Vector2<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x4EditTrait::column_at(self, *icols[0]);
+        Vector2 { x: c0.x, y: c0.y }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix2x4` as a `Matrix2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix2x4FixedColumnsMatrix2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x4<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x4<T>, i: usize) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+            1 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+            2 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x4<T>, icols: Span<usize>) -> Matrix2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x4EditTrait::column_at(self, *icols[1]);
+        Matrix2 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix2x4` as a `Matrix2x3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl Matrix2x4FixedColumnsMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x4<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x4<T>, i: usize) -> Matrix2x3<T> {
+        match i {
+            0 => Matrix2x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+            },
+            1 => Matrix2x3 {
+                m11: self.m12,
+                m21: self.m22,
+                m12: self.m13,
+                m22: self.m23,
+                m13: self.m14,
+                m23: self.m24,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x4<T>, icols: Span<usize>) -> Matrix2x3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix2x4EditTrait::column_at(self, *icols[2]);
+        Matrix2x3 { m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y }
+    }
+}
+
+/// The 4 consecutive columns of a `Matrix2x4` as a `Matrix2x4` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<4>`, `select_columns`.
+pub impl Matrix2x4FixedColumnsMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix2x4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix2x4<T>, i: usize) -> Matrix2x4<T> {
+        match i {
+            0 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix2x4<T>, icols: Span<usize>) -> Matrix2x4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix2x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix2x4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix2x4EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix2x4EditTrait::column_at(self, *icols[3]);
+        Matrix2x4 {
+            m11: c0.x, m21: c0.y, m12: c1.x, m22: c1.y, m13: c2.x, m23: c2.y, m14: c3.x, m24: c3.y,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix2x4` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix2x4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.m14 },
+                1 => Matrix1 { x: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix2x4` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix2x4FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x4<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.m13, y: self.m14 },
+                1 => RowVector2 { x: self.m23, y: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `Matrix2x4` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl Matrix2x4FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x4<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.m12, y: self.m13, z: self.m14 },
+                1 => RowVector3 { x: self.m22, y: self.m23, z: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x4 blocks of a `Matrix2x4` as a `RowVector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 4>`.
+pub impl Matrix2x4FixedViewRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+                1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix2x4` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix2x4FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector2 { x: self.m14, y: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix2x4` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix2x4FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix2x4<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x3 blocks of a `Matrix2x4` as a `Matrix2x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 3>`.
+pub impl Matrix2x4FixedViewMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x4<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x4 blocks of a `Matrix2x4` as a `Matrix2x4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 4>`.
+pub impl Matrix2x4FixedViewMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix2x4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix2x4<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix2x4PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix2x4<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix2x4<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: val,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: self.m14,
+            m24: self.m24,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix2x4` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix2x4CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix2x4<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix2x4<T> {
+        Matrix2x4 {
+            m11: m.m11,
+            m21: m.m21,
+            m12: m.m12,
+            m22: m.m22,
+            m13: m.m13,
+            m23: m.m23,
+            m14: m.m14,
+            m24: m.m24,
+        }
+    }
+}
+
+/// `(2, 4)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix2x4ShapeDims<T> of ShapeDims<Matrix2x4<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (2, 4)
+    }
+}
+
+/// The 1 consecutive rows of a `Vector3` as a `Matrix1` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Vector3FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Vector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector3<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector3<T>, irows: Span<usize>) -> Matrix1<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector3EditTrait::row_at(self, *irows[0]);
+        Matrix1 { x: r0.x }
+    }
+}
+
+/// The 2 consecutive rows of a `Vector3` as a `Vector2` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Vector3FixedRowsVector2<T, +Copy<T>, +Drop<T>> of FixedRows<Vector3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector3<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.x, y: self.y },
+            1 => Vector2 { x: self.y, y: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector3<T>, irows: Span<usize>) -> Vector2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector3EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector3EditTrait::row_at(self, *irows[1]);
+        Vector2 { x: r0.x, y: r1.x }
+    }
+}
+
+/// The 3 consecutive rows of a `Vector3` as a `Vector3` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Vector3FixedRowsVector3<T, +Copy<T>, +Drop<T>> of FixedRows<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector3<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.x, y: self.y, z: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector3<T>, irows: Span<usize>) -> Vector3<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector3EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector3EditTrait::row_at(self, *irows[1]);
+        let r2 = Vector3EditTrait::row_at(self, *irows[2]);
+        Vector3 { x: r0.x, y: r1.x, z: r2.x }
+    }
+}
+
+/// The 1 consecutive columns of a `Vector3` as a `Vector3` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Vector3FixedColumnsVector3<T, +Copy<T>, +Drop<T>> of FixedColumns<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Vector3<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.x, y: self.y, z: self.z },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Vector3<T>, icols: Span<usize>) -> Vector3<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Vector3EditTrait::column_at(self, *icols[0]);
+        Vector3 { x: c0.x, y: c0.y, z: c0.z }
+    }
+}
+
+/// The 1x1 blocks of a `Vector3` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
+pub impl Vector3FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Vector3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector3<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                1 => Matrix1 { x: self.y },
+                2 => Matrix1 { x: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Vector3` as a `Vector2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 1>`.
+pub impl Vector3FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Vector3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector3<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.x, y: self.y },
+                1 => Vector2 { x: self.y, y: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Vector3` as a `Vector3` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<3, 1>`.
+pub impl Vector3FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Vector3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector3<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.x, y: self.y, z: self.z },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Vector3PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Vector3<T>, T> {
+    #[inline(always)]
+    fn pad(self: Vector3<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: self.y,
+            m31: self.z,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: val,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Vector3` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Vector3CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Vector3<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Vector3<T> {
+        Vector3 { x: m.m11, y: m.m21, z: m.m31 }
+    }
+}
+
+/// `(3, 1)`: the size checks of the runtime-sized views.
+pub(crate) impl Vector3ShapeDims<T> of ShapeDims<Vector3<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (3, 1)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix3x2` as a `RowVector2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix3x2FixedRowsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.m11, y: self.m12 },
+            1 => RowVector2 { x: self.m21, y: self.m22 },
+            2 => RowVector2 { x: self.m31, y: self.m32 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x2<T>, irows: Span<usize>) -> RowVector2<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x2EditTrait::row_at(self, *irows[0]);
+        RowVector2 { x: r0.x, y: r0.y }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix3x2` as a `Matrix2` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix3x2FixedRowsMatrix2<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix3x2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x2<T>, i: usize) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+            1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x2<T>, irows: Span<usize>) -> Matrix2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x2EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3x2EditTrait::row_at(self, *irows[1]);
+        Matrix2 { m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix3x2` as a `Matrix3x2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Matrix3x2FixedRowsMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x2<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x2<T>, i: usize) -> Matrix3x2<T> {
+        match i {
+            0 => Matrix3x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x2<T>, irows: Span<usize>) -> Matrix3x2<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x2EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3x2EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix3x2EditTrait::row_at(self, *irows[2]);
+        Matrix3x2 { m11: r0.x, m21: r1.x, m31: r2.x, m12: r0.y, m22: r1.y, m32: r2.y }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix3x2` as a `Vector3` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix3x2FixedColumnsVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x2<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x2<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+            1 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x2<T>, icols: Span<usize>) -> Vector3<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x2EditTrait::column_at(self, *icols[0]);
+        Vector3 { x: c0.x, y: c0.y, z: c0.z }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix3x2` as a `Matrix3x2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix3x2FixedColumnsMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x2<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x2<T>, i: usize) -> Matrix3x2<T> {
+        match i {
+            0 => Matrix3x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x2<T>, icols: Span<usize>) -> Matrix3x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x2EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3x2EditTrait::column_at(self, *icols[1]);
+        Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix3x2` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix3x2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x2<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix3x2` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix3x2FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x2<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix3x2` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix3x2FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x2<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x2<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix3x2` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix3x2FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x2<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Matrix3x2` as a `Vector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 1>`.
+pub impl Matrix3x2FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x2<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x2<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x2 blocks of a `Matrix3x2` as a `Matrix3x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 2>`.
+pub impl Matrix3x2FixedViewMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x2<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x2<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix3x2PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix3x2<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix3x2<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix3x2` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix3x2CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix3x2<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix3x2<T> {
+        Matrix3x2 { m11: m.m11, m21: m.m21, m31: m.m31, m12: m.m12, m22: m.m22, m32: m.m32 }
+    }
+}
+
+/// `(3, 2)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix3x2ShapeDims<T> of ShapeDims<Matrix3x2<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (3, 2)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix3` as a `RowVector3` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix3FixedRowsRowVector3<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3<T>, i: usize) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+            1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+            2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3<T>, irows: Span<usize>) -> RowVector3<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3EditTrait::row_at(self, *irows[0]);
+        RowVector3 { x: r0.x, y: r0.y, z: r0.z }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix3` as a `Matrix2x3` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix3FixedRowsMatrix2x3<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix3<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3<T>, i: usize) -> Matrix2x3<T> {
+        match i {
+            0 => Matrix2x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+            },
+            1 => Matrix2x3 {
+                m11: self.m21,
+                m21: self.m31,
+                m12: self.m22,
+                m22: self.m32,
+                m13: self.m23,
+                m23: self.m33,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3<T>, irows: Span<usize>) -> Matrix2x3<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3EditTrait::row_at(self, *irows[1]);
+        Matrix2x3 { m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y, m13: r0.z, m23: r1.z }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix3` as a `Matrix3` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Matrix3FixedRowsMatrix3<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix3<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3<T>, i: usize) -> Matrix3<T> {
+        match i {
+            0 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3<T>, irows: Span<usize>) -> Matrix3<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix3EditTrait::row_at(self, *irows[2]);
+        Matrix3 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix3` as a `Vector3` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix3FixedColumnsVector3<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+            1 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+            2 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3<T>, icols: Span<usize>) -> Vector3<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3EditTrait::column_at(self, *icols[0]);
+        Vector3 { x: c0.x, y: c0.y, z: c0.z }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix3` as a `Matrix3x2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix3FixedColumnsMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3<T>, i: usize) -> Matrix3x2<T> {
+        match i {
+            0 => Matrix3x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+            },
+            1 => Matrix3x2 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3<T>, icols: Span<usize>) -> Matrix3x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3EditTrait::column_at(self, *icols[1]);
+        Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix3` as a `Matrix3` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl Matrix3FixedColumnsMatrix3<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix3<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3<T>, i: usize) -> Matrix3<T> {
+        match i {
+            0 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3<T>, icols: Span<usize>) -> Matrix3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix3EditTrait::column_at(self, *icols[2]);
+        Matrix3 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix3` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix3FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                2 => Matrix1 { x: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix3` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix3FixedViewRowVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                2 => RowVector2 { x: self.m32, y: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `Matrix3` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl Matrix3FixedViewRowVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix3` as a `Vector2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix3FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                1 => Vector2 { x: self.m23, y: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix3` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix3FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                1 => Matrix2 { m11: self.m22, m21: self.m32, m12: self.m23, m22: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x3 blocks of a `Matrix3` as a `Matrix2x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 3>`.
+pub impl Matrix3FixedViewMatrix2x3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Matrix3` as a `Vector3` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<3, 1>`.
+pub impl Matrix3FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x2 blocks of a `Matrix3` as a `Matrix3x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 2>`.
+pub impl Matrix3FixedViewMatrix3x2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x3 blocks of a `Matrix3` as a `Matrix3` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<3, 3>`.
+pub impl Matrix3FixedViewMatrix3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix3PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix3<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix3<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix3` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix3CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix3<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix3<T> {
+        Matrix3 {
+            m11: m.m11,
+            m21: m.m21,
+            m31: m.m31,
+            m12: m.m12,
+            m22: m.m22,
+            m32: m.m32,
+            m13: m.m13,
+            m23: m.m23,
+            m33: m.m33,
+        }
+    }
+}
+
+/// `(3, 3)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix3ShapeDims<T> of ShapeDims<Matrix3<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (3, 3)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix3x4` as a `RowVector4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix3x4FixedRowsRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x4<T>, i: usize) -> RowVector4<T> {
+        match i {
+            0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+            1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+            2 => RowVector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x4<T>, irows: Span<usize>) -> RowVector4<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x4EditTrait::row_at(self, *irows[0]);
+        RowVector4 { x: r0.x, y: r0.y, z: r0.z, w: r0.w }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix3x4` as a `Matrix2x4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix3x4FixedRowsMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x4<T>, i: usize) -> Matrix2x4<T> {
+        match i {
+            0 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+            },
+            1 => Matrix2x4 {
+                m11: self.m21,
+                m21: self.m31,
+                m12: self.m22,
+                m22: self.m32,
+                m13: self.m23,
+                m23: self.m33,
+                m14: self.m24,
+                m24: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x4<T>, irows: Span<usize>) -> Matrix2x4<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3x4EditTrait::row_at(self, *irows[1]);
+        Matrix2x4 {
+            m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y, m13: r0.z, m23: r1.z, m14: r0.w, m24: r1.w,
+        }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix3x4` as a `Matrix3x4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Matrix3x4FixedRowsMatrix3x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix3x4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix3x4<T>, i: usize) -> Matrix3x4<T> {
+        match i {
+            0 => Matrix3x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix3x4<T>, irows: Span<usize>) -> Matrix3x4<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix3x4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix3x4EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix3x4EditTrait::row_at(self, *irows[2]);
+        Matrix3x4 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix3x4` as a `Vector3` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix3x4FixedColumnsVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+            1 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+            2 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+            3 => Vector3 { x: self.m14, y: self.m24, z: self.m34 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Vector3<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        Vector3 { x: c0.x, y: c0.y, z: c0.z }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix3x4` as a `Matrix3x2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix3x4FixedColumnsMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Matrix3x2<T> {
+        match i {
+            0 => Matrix3x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+            },
+            1 => Matrix3x2 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+            },
+            2 => Matrix3x2 {
+                m11: self.m13,
+                m21: self.m23,
+                m31: self.m33,
+                m12: self.m14,
+                m22: self.m24,
+                m32: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Matrix3x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3x4EditTrait::column_at(self, *icols[1]);
+        Matrix3x2 { m11: c0.x, m21: c0.y, m31: c0.z, m12: c1.x, m22: c1.y, m32: c1.z }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix3x4` as a `Matrix3` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl Matrix3x4FixedColumnsMatrix3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Matrix3<T> {
+        match i {
+            0 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+            },
+            1 => Matrix3 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Matrix3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3x4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix3x4EditTrait::column_at(self, *icols[2]);
+        Matrix3 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+        }
+    }
+}
+
+/// The 4 consecutive columns of a `Matrix3x4` as a `Matrix3x4` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<4>`, `select_columns`.
+pub impl Matrix3x4FixedColumnsMatrix3x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix3x4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix3x4<T>, i: usize) -> Matrix3x4<T> {
+        match i {
+            0 => Matrix3x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix3x4<T>, icols: Span<usize>) -> Matrix3x4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix3x4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix3x4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix3x4EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix3x4EditTrait::column_at(self, *icols[3]);
+        Matrix3x4 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m14: c3.x,
+            m24: c3.y,
+            m34: c3.z,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix3x4` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix3x4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                2 => Matrix1 { x: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.m14 },
+                1 => Matrix1 { x: self.m24 },
+                2 => Matrix1 { x: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix3x4` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix3x4FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                2 => RowVector2 { x: self.m32, y: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.m13, y: self.m14 },
+                1 => RowVector2 { x: self.m23, y: self.m24 },
+                2 => RowVector2 { x: self.m33, y: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `Matrix3x4` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl Matrix3x4FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.m12, y: self.m13, z: self.m14 },
+                1 => RowVector3 { x: self.m22, y: self.m23, z: self.m24 },
+                2 => RowVector3 { x: self.m32, y: self.m33, z: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x4 blocks of a `Matrix3x4` as a `RowVector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 4>`.
+pub impl Matrix3x4FixedViewRowVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+                1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+                2 => RowVector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix3x4` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix3x4FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                1 => Vector2 { x: self.m23, y: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector2 { x: self.m14, y: self.m24 },
+                1 => Vector2 { x: self.m24, y: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix3x4` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix3x4FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                1 => Matrix2 { m11: self.m22, m21: self.m32, m12: self.m23, m22: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+                1 => Matrix2 { m11: self.m23, m21: self.m33, m12: self.m24, m22: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x3 blocks of a `Matrix3x4` as a `Matrix2x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 3>`.
+pub impl Matrix3x4FixedViewMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m13: self.m24,
+                    m23: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x4 blocks of a `Matrix3x4` as a `Matrix2x4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 4>`.
+pub impl Matrix3x4FixedViewMatrix2x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                },
+                1 => Matrix2x4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m14: self.m24,
+                    m24: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Matrix3x4` as a `Vector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 1>`.
+pub impl Matrix3x4FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector3 { x: self.m14, y: self.m24, z: self.m34 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x2 blocks of a `Matrix3x4` as a `Matrix3x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 2>`.
+pub impl Matrix3x4FixedViewMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x3 blocks of a `Matrix3x4` as a `Matrix3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 3>`.
+pub impl Matrix3x4FixedViewMatrix3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix3x4<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x4 blocks of a `Matrix3x4` as a `Matrix3x4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 4>`.
+pub impl Matrix3x4FixedViewMatrix3x4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix3x4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix3x4<T>, irow: usize, icol: usize) -> Matrix3x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix3x4PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix3x4<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: val,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: self.m14,
+            m24: self.m24,
+            m34: self.m34,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix3x4` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix3x4CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix3x4<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix3x4<T> {
+        Matrix3x4 {
+            m11: m.m11,
+            m21: m.m21,
+            m31: m.m31,
+            m12: m.m12,
+            m22: m.m22,
+            m32: m.m32,
+            m13: m.m13,
+            m23: m.m23,
+            m33: m.m33,
+            m14: m.m14,
+            m24: m.m24,
+            m34: m.m34,
+        }
+    }
+}
+
+/// `(3, 4)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix3x4ShapeDims<T> of ShapeDims<Matrix3x4<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (3, 4)
+    }
+}
+
+/// The 1 consecutive rows of a `Vector4` as a `Matrix1` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Vector4FixedRowsMatrix1<T, +Copy<T>, +Drop<T>> of FixedRows<Vector4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector4<T>, i: usize) -> Matrix1<T> {
+        match i {
+            0 => Matrix1 { x: self.x },
+            1 => Matrix1 { x: self.y },
+            2 => Matrix1 { x: self.z },
+            3 => Matrix1 { x: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector4<T>, irows: Span<usize>) -> Matrix1<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector4EditTrait::row_at(self, *irows[0]);
+        Matrix1 { x: r0.x }
+    }
+}
+
+/// The 2 consecutive rows of a `Vector4` as a `Vector2` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Vector4FixedRowsVector2<T, +Copy<T>, +Drop<T>> of FixedRows<Vector4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector4<T>, i: usize) -> Vector2<T> {
+        match i {
+            0 => Vector2 { x: self.x, y: self.y },
+            1 => Vector2 { x: self.y, y: self.z },
+            2 => Vector2 { x: self.z, y: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector4<T>, irows: Span<usize>) -> Vector2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector4EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector4EditTrait::row_at(self, *irows[1]);
+        Vector2 { x: r0.x, y: r1.x }
+    }
+}
+
+/// The 3 consecutive rows of a `Vector4` as a `Vector3` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Vector4FixedRowsVector3<T, +Copy<T>, +Drop<T>> of FixedRows<Vector4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector4<T>, i: usize) -> Vector3<T> {
+        match i {
+            0 => Vector3 { x: self.x, y: self.y, z: self.z },
+            1 => Vector3 { x: self.y, y: self.z, z: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector4<T>, irows: Span<usize>) -> Vector3<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector4EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector4EditTrait::row_at(self, *irows[1]);
+        let r2 = Vector4EditTrait::row_at(self, *irows[2]);
+        Vector3 { x: r0.x, y: r1.x, z: r2.x }
+    }
+}
+
+/// The 4 consecutive rows of a `Vector4` as a `Vector4` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<4>`, `select_rows`.
+pub impl Vector4FixedRowsVector4<T, +Copy<T>, +Drop<T>> of FixedRows<Vector4<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Vector4<T>, i: usize) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Vector4<T>, irows: Span<usize>) -> Vector4<T> {
+        if irows.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Vector4EditTrait::row_at(self, *irows[0]);
+        let r1 = Vector4EditTrait::row_at(self, *irows[1]);
+        let r2 = Vector4EditTrait::row_at(self, *irows[2]);
+        let r3 = Vector4EditTrait::row_at(self, *irows[3]);
+        Vector4 { x: r0.x, y: r1.x, z: r2.x, w: r3.x }
+    }
+}
+
+/// The 1 consecutive columns of a `Vector4` as a `Vector4` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Vector4FixedColumnsVector4<T, +Copy<T>, +Drop<T>> of FixedColumns<Vector4<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Vector4<T>, i: usize) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Vector4<T>, icols: Span<usize>) -> Vector4<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Vector4EditTrait::column_at(self, *icols[0]);
+        Vector4 { x: c0.x, y: c0.y, z: c0.z, w: c0.w }
+    }
+}
+
+/// The 1x1 blocks of a `Vector4` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
+pub impl Vector4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Vector4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector4<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.x },
+                1 => Matrix1 { x: self.y },
+                2 => Matrix1 { x: self.z },
+                3 => Matrix1 { x: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Vector4` as a `Vector2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 1>`.
+pub impl Vector4FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Vector4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector4<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.x, y: self.y },
+                1 => Vector2 { x: self.y, y: self.z },
+                2 => Vector2 { x: self.z, y: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Vector4` as a `Vector3` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<3, 1>`.
+pub impl Vector4FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Vector4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector4<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.x, y: self.y, z: self.z },
+                1 => Vector3 { x: self.y, y: self.z, z: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x1 blocks of a `Vector4` as a `Vector4` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<4, 1>`.
+pub impl Vector4FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Vector4<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Vector4<T>, irow: usize, icol: usize) -> Vector4<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector4 { x: self.x, y: self.y, z: self.z, w: self.w },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Vector4PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Vector4<T>, T> {
+    #[inline(always)]
+    fn pad(self: Vector4<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.x,
+            m21: self.y,
+            m31: self.z,
+            m41: self.w,
+            m51: val,
+            m61: val,
+            m12: val,
+            m22: val,
+            m32: val,
+            m42: val,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Vector4` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Vector4CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Vector4<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Vector4<T> {
+        Vector4 { x: m.m11, y: m.m21, z: m.m31, w: m.m41 }
+    }
+}
+
+/// `(4, 1)`: the size checks of the runtime-sized views.
+pub(crate) impl Vector4ShapeDims<T> of ShapeDims<Vector4<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (4, 1)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix4x2` as a `RowVector2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix4x2FixedRowsRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix4x2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x2<T>, i: usize) -> RowVector2<T> {
+        match i {
+            0 => RowVector2 { x: self.m11, y: self.m12 },
+            1 => RowVector2 { x: self.m21, y: self.m22 },
+            2 => RowVector2 { x: self.m31, y: self.m32 },
+            3 => RowVector2 { x: self.m41, y: self.m42 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x2<T>, irows: Span<usize>) -> RowVector2<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x2EditTrait::row_at(self, *irows[0]);
+        RowVector2 { x: r0.x, y: r0.y }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix4x2` as a `Matrix2` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix4x2FixedRowsMatrix2<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix4x2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x2<T>, i: usize) -> Matrix2<T> {
+        match i {
+            0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+            1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+            2 => Matrix2 { m11: self.m31, m21: self.m41, m12: self.m32, m22: self.m42 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x2<T>, irows: Span<usize>) -> Matrix2<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x2EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4x2EditTrait::row_at(self, *irows[1]);
+        Matrix2 { m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix4x2` as a `Matrix3x2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Matrix4x2FixedRowsMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix4x2<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x2<T>, i: usize) -> Matrix3x2<T> {
+        match i {
+            0 => Matrix3x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+            },
+            1 => Matrix3x2 {
+                m11: self.m21,
+                m21: self.m31,
+                m31: self.m41,
+                m12: self.m22,
+                m22: self.m32,
+                m32: self.m42,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x2<T>, irows: Span<usize>) -> Matrix3x2<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x2EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4x2EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix4x2EditTrait::row_at(self, *irows[2]);
+        Matrix3x2 { m11: r0.x, m21: r1.x, m31: r2.x, m12: r0.y, m22: r1.y, m32: r2.y }
+    }
+}
+
+/// The 4 consecutive rows of a `Matrix4x2` as a `Matrix4x2` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<4>`, `select_rows`.
+pub impl Matrix4x2FixedRowsMatrix4x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix4x2<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x2<T>, i: usize) -> Matrix4x2<T> {
+        match i {
+            0 => Matrix4x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x2<T>, irows: Span<usize>) -> Matrix4x2<T> {
+        if irows.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x2EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4x2EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix4x2EditTrait::row_at(self, *irows[2]);
+        let r3 = Matrix4x2EditTrait::row_at(self, *irows[3]);
+        Matrix4x2 {
+            m11: r0.x, m21: r1.x, m31: r2.x, m41: r3.x, m12: r0.y, m22: r1.y, m32: r2.y, m42: r3.y,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix4x2` as a `Vector4` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix4x2FixedColumnsVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix4x2<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4x2<T>, i: usize) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 },
+            1 => Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4x2<T>, icols: Span<usize>) -> Vector4<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4x2EditTrait::column_at(self, *icols[0]);
+        Vector4 { x: c0.x, y: c0.y, z: c0.z, w: c0.w }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix4x2` as a `Matrix4x2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix4x2FixedColumnsMatrix4x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix4x2<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4x2<T>, i: usize) -> Matrix4x2<T> {
+        match i {
+            0 => Matrix4x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4x2<T>, icols: Span<usize>) -> Matrix4x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4x2EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix4x2EditTrait::column_at(self, *icols[1]);
+        Matrix4x2 {
+            m11: c0.x, m21: c0.y, m31: c0.z, m41: c0.w, m12: c1.x, m22: c1.y, m32: c1.z, m42: c1.w,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix4x2` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix4x2FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x2<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                3 => Matrix1 { x: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                3 => Matrix1 { x: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix4x2` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix4x2FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x2<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                3 => RowVector2 { x: self.m41, y: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix4x2` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix4x2FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x2<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                2 => Vector2 { x: self.m31, y: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                2 => Vector2 { x: self.m32, y: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix4x2` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix4x2FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x2<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                2 => Matrix2 { m11: self.m31, m21: self.m41, m12: self.m32, m22: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Matrix4x2` as a `Vector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 1>`.
+pub impl Matrix4x2FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x2<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                1 => Vector3 { x: self.m21, y: self.m31, z: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                1 => Vector3 { x: self.m22, y: self.m32, z: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x2 blocks of a `Matrix4x2` as a `Matrix3x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 2>`.
+pub impl Matrix4x2FixedViewMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x2<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x1 blocks of a `Matrix4x2` as a `Vector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 1>`.
+pub impl Matrix4x2FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x2<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> Vector4<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x2 blocks of a `Matrix4x2` as a `Matrix4x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 2>`.
+pub impl Matrix4x2FixedViewMatrix4x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x2<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x2<T>, irow: usize, icol: usize) -> Matrix4x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix4x2PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix4x2<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix4x2<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: self.m41,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: self.m42,
+            m52: val,
+            m62: val,
+            m13: val,
+            m23: val,
+            m33: val,
+            m43: val,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix4x2` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix4x2CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix4x2<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix4x2<T> {
+        Matrix4x2 {
+            m11: m.m11,
+            m21: m.m21,
+            m31: m.m31,
+            m41: m.m41,
+            m12: m.m12,
+            m22: m.m22,
+            m32: m.m32,
+            m42: m.m42,
+        }
+    }
+}
+
+/// `(4, 2)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix4x2ShapeDims<T> of ShapeDims<Matrix4x2<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (4, 2)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix4x3` as a `RowVector3` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix4x3FixedRowsRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix4x3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x3<T>, i: usize) -> RowVector3<T> {
+        match i {
+            0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+            1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+            2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+            3 => RowVector3 { x: self.m41, y: self.m42, z: self.m43 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x3<T>, irows: Span<usize>) -> RowVector3<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x3EditTrait::row_at(self, *irows[0]);
+        RowVector3 { x: r0.x, y: r0.y, z: r0.z }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix4x3` as a `Matrix2x3` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix4x3FixedRowsMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix4x3<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x3<T>, i: usize) -> Matrix2x3<T> {
+        match i {
+            0 => Matrix2x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+            },
+            1 => Matrix2x3 {
+                m11: self.m21,
+                m21: self.m31,
+                m12: self.m22,
+                m22: self.m32,
+                m13: self.m23,
+                m23: self.m33,
+            },
+            2 => Matrix2x3 {
+                m11: self.m31,
+                m21: self.m41,
+                m12: self.m32,
+                m22: self.m42,
+                m13: self.m33,
+                m23: self.m43,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x3<T>, irows: Span<usize>) -> Matrix2x3<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x3EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4x3EditTrait::row_at(self, *irows[1]);
+        Matrix2x3 { m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y, m13: r0.z, m23: r1.z }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix4x3` as a `Matrix3` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Matrix4x3FixedRowsMatrix3<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix4x3<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x3<T>, i: usize) -> Matrix3<T> {
+        match i {
+            0 => Matrix3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+            },
+            1 => Matrix3 {
+                m11: self.m21,
+                m21: self.m31,
+                m31: self.m41,
+                m12: self.m22,
+                m22: self.m32,
+                m32: self.m42,
+                m13: self.m23,
+                m23: self.m33,
+                m33: self.m43,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x3<T>, irows: Span<usize>) -> Matrix3<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x3EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4x3EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix4x3EditTrait::row_at(self, *irows[2]);
+        Matrix3 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+        }
+    }
+}
+
+/// The 4 consecutive rows of a `Matrix4x3` as a `Matrix4x3` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<4>`, `select_rows`.
+pub impl Matrix4x3FixedRowsMatrix4x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedRows<Matrix4x3<T>, Matrix4x3<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4x3<T>, i: usize) -> Matrix4x3<T> {
+        match i {
+            0 => Matrix4x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4x3<T>, irows: Span<usize>) -> Matrix4x3<T> {
+        if irows.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4x3EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4x3EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix4x3EditTrait::row_at(self, *irows[2]);
+        let r3 = Matrix4x3EditTrait::row_at(self, *irows[3]);
+        Matrix4x3 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m41: r3.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m42: r3.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m43: r3.z,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix4x3` as a `Vector4` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix4x3FixedColumnsVector4<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix4x3<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4x3<T>, i: usize) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 },
+            1 => Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 },
+            2 => Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4x3<T>, icols: Span<usize>) -> Vector4<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4x3EditTrait::column_at(self, *icols[0]);
+        Vector4 { x: c0.x, y: c0.y, z: c0.z, w: c0.w }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix4x3` as a `Matrix4x2` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix4x3FixedColumnsMatrix4x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix4x3<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4x3<T>, i: usize) -> Matrix4x2<T> {
+        match i {
+            0 => Matrix4x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+            },
+            1 => Matrix4x2 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4x3<T>, icols: Span<usize>) -> Matrix4x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4x3EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix4x3EditTrait::column_at(self, *icols[1]);
+        Matrix4x2 {
+            m11: c0.x, m21: c0.y, m31: c0.z, m41: c0.w, m12: c1.x, m22: c1.y, m32: c1.z, m42: c1.w,
+        }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix4x3` as a `Matrix4x3` (`columns` / `columns_range`:
+/// default methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl Matrix4x3FixedColumnsMatrix4x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix4x3<T>, Matrix4x3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4x3<T>, i: usize) -> Matrix4x3<T> {
+        match i {
+            0 => Matrix4x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4x3<T>, icols: Span<usize>) -> Matrix4x3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4x3EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix4x3EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix4x3EditTrait::column_at(self, *icols[2]);
+        Matrix4x3 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m43: c2.w,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix4x3` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix4x3FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x3<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                3 => Matrix1 { x: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                3 => Matrix1 { x: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                2 => Matrix1 { x: self.m33 },
+                3 => Matrix1 { x: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix4x3` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix4x3FixedViewRowVector2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x3<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                3 => RowVector2 { x: self.m41, y: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                2 => RowVector2 { x: self.m32, y: self.m33 },
+                3 => RowVector2 { x: self.m42, y: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `Matrix4x3` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl Matrix4x3FixedViewRowVector3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x3<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+                3 => RowVector3 { x: self.m41, y: self.m42, z: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix4x3` as a `Vector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix4x3FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x3<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                2 => Vector2 { x: self.m31, y: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                2 => Vector2 { x: self.m32, y: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                1 => Vector2 { x: self.m23, y: self.m33 },
+                2 => Vector2 { x: self.m33, y: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix4x3` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix4x3FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x3<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                2 => Matrix2 { m11: self.m31, m21: self.m41, m12: self.m32, m22: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                1 => Matrix2 { m11: self.m22, m21: self.m32, m12: self.m23, m22: self.m33 },
+                2 => Matrix2 { m11: self.m32, m21: self.m42, m12: self.m33, m22: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x3 blocks of a `Matrix4x3` as a `Matrix2x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 3>`.
+pub impl Matrix4x3FixedViewMatrix2x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x3<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                },
+                2 => Matrix2x3 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m13: self.m33,
+                    m23: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Matrix4x3` as a `Vector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 1>`.
+pub impl Matrix4x3FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x3<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                1 => Vector3 { x: self.m21, y: self.m31, z: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                1 => Vector3 { x: self.m22, y: self.m32, z: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+                1 => Vector3 { x: self.m23, y: self.m33, z: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x2 blocks of a `Matrix4x3` as a `Matrix3x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 2>`.
+pub impl Matrix4x3FixedViewMatrix3x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x3<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x3 blocks of a `Matrix4x3` as a `Matrix3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 3>`.
+pub impl Matrix4x3FixedViewMatrix3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x3<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                },
+                1 => Matrix3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x1 blocks of a `Matrix4x3` as a `Vector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 1>`.
+pub impl Matrix4x3FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4x3<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Vector4<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x2 blocks of a `Matrix4x3` as a `Matrix4x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 2>`.
+pub impl Matrix4x3FixedViewMatrix4x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x3<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Matrix4x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x3 blocks of a `Matrix4x3` as a `Matrix4x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 3>`.
+pub impl Matrix4x3FixedViewMatrix4x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedView<Matrix4x3<T>, Matrix4x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4x3<T>, irow: usize, icol: usize) -> Matrix4x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix4x3PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix4x3<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix4x3<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: self.m41,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: self.m42,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m43: self.m43,
+            m53: val,
+            m63: val,
+            m14: val,
+            m24: val,
+            m34: val,
+            m44: val,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix4x3` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix4x3CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix4x3<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix4x3<T> {
+        Matrix4x3 {
+            m11: m.m11,
+            m21: m.m21,
+            m31: m.m31,
+            m41: m.m41,
+            m12: m.m12,
+            m22: m.m22,
+            m32: m.m32,
+            m42: m.m42,
+            m13: m.m13,
+            m23: m.m23,
+            m33: m.m33,
+            m43: m.m43,
+        }
+    }
+}
+
+/// `(4, 3)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix4x3ShapeDims<T> of ShapeDims<Matrix4x3<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (4, 3)
+    }
+}
+
+/// The 1 consecutive rows of a `Matrix4` as a `RowVector4` (`rows` / `rows_range`: default
+/// methods). Upstream: `fixed_rows::<1>`, `select_rows`.
+pub impl Matrix4FixedRowsRowVector4<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4<T>, i: usize) -> RowVector4<T> {
+        match i {
+            0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+            1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+            2 => RowVector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 },
+            3 => RowVector4 { x: self.m41, y: self.m42, z: self.m43, w: self.m44 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4<T>, irows: Span<usize>) -> RowVector4<T> {
+        if irows.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4EditTrait::row_at(self, *irows[0]);
+        RowVector4 { x: r0.x, y: r0.y, z: r0.z, w: r0.w }
+    }
+}
+
+/// The 2 consecutive rows of a `Matrix4` as a `Matrix2x4` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<2>`, `select_rows`.
+pub impl Matrix4FixedRowsMatrix2x4<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4<T>, i: usize) -> Matrix2x4<T> {
+        match i {
+            0 => Matrix2x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m12: self.m12,
+                m22: self.m22,
+                m13: self.m13,
+                m23: self.m23,
+                m14: self.m14,
+                m24: self.m24,
+            },
+            1 => Matrix2x4 {
+                m11: self.m21,
+                m21: self.m31,
+                m12: self.m22,
+                m22: self.m32,
+                m13: self.m23,
+                m23: self.m33,
+                m14: self.m24,
+                m24: self.m34,
+            },
+            2 => Matrix2x4 {
+                m11: self.m31,
+                m21: self.m41,
+                m12: self.m32,
+                m22: self.m42,
+                m13: self.m33,
+                m23: self.m43,
+                m14: self.m34,
+                m24: self.m44,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4<T>, irows: Span<usize>) -> Matrix2x4<T> {
+        if irows.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4EditTrait::row_at(self, *irows[1]);
+        Matrix2x4 {
+            m11: r0.x, m21: r1.x, m12: r0.y, m22: r1.y, m13: r0.z, m23: r1.z, m14: r0.w, m24: r1.w,
+        }
+    }
+}
+
+/// The 3 consecutive rows of a `Matrix4` as a `Matrix3x4` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<3>`, `select_rows`.
+pub impl Matrix4FixedRowsMatrix3x4<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4<T>, i: usize) -> Matrix3x4<T> {
+        match i {
+            0 => Matrix3x4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+            },
+            1 => Matrix3x4 {
+                m11: self.m21,
+                m21: self.m31,
+                m31: self.m41,
+                m12: self.m22,
+                m22: self.m32,
+                m32: self.m42,
+                m13: self.m23,
+                m23: self.m33,
+                m33: self.m43,
+                m14: self.m24,
+                m24: self.m34,
+                m34: self.m44,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4<T>, irows: Span<usize>) -> Matrix3x4<T> {
+        if irows.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix4EditTrait::row_at(self, *irows[2]);
+        Matrix3x4 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+        }
+    }
+}
+
+/// The 4 consecutive rows of a `Matrix4` as a `Matrix4` (`rows` / `rows_range`: default methods).
+/// Upstream: `fixed_rows::<4>`, `select_rows`.
+pub impl Matrix4FixedRowsMatrix4<T, +Copy<T>, +Drop<T>> of FixedRows<Matrix4<T>, Matrix4<T>> {
+    #[inline(always)]
+    fn fixed_rows(self: Matrix4<T>, i: usize) -> Matrix4<T> {
+        match i {
+            0 => Matrix4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_rows(self: Matrix4<T>, irows: Span<usize>) -> Matrix4<T> {
+        if irows.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let r0 = Matrix4EditTrait::row_at(self, *irows[0]);
+        let r1 = Matrix4EditTrait::row_at(self, *irows[1]);
+        let r2 = Matrix4EditTrait::row_at(self, *irows[2]);
+        let r3 = Matrix4EditTrait::row_at(self, *irows[3]);
+        Matrix4 {
+            m11: r0.x,
+            m21: r1.x,
+            m31: r2.x,
+            m41: r3.x,
+            m12: r0.y,
+            m22: r1.y,
+            m32: r2.y,
+            m42: r3.y,
+            m13: r0.z,
+            m23: r1.z,
+            m33: r2.z,
+            m43: r3.z,
+            m14: r0.w,
+            m24: r1.w,
+            m34: r2.w,
+            m44: r3.w,
+        }
+    }
+}
+
+/// The 1 consecutive columns of a `Matrix4` as a `Vector4` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<1>`, `select_columns`.
+pub impl Matrix4FixedColumnsVector4<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix4<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4<T>, i: usize) -> Vector4<T> {
+        match i {
+            0 => Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 },
+            1 => Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 },
+            2 => Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 },
+            3 => Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4<T>, icols: Span<usize>) -> Vector4<T> {
+        if icols.len() != 1 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4EditTrait::column_at(self, *icols[0]);
+        Vector4 { x: c0.x, y: c0.y, z: c0.z, w: c0.w }
+    }
+}
+
+/// The 2 consecutive columns of a `Matrix4` as a `Matrix4x2` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<2>`, `select_columns`.
+pub impl Matrix4FixedColumnsMatrix4x2<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix4<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4<T>, i: usize) -> Matrix4x2<T> {
+        match i {
+            0 => Matrix4x2 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+            },
+            1 => Matrix4x2 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+            },
+            2 => Matrix4x2 {
+                m11: self.m13,
+                m21: self.m23,
+                m31: self.m33,
+                m41: self.m43,
+                m12: self.m14,
+                m22: self.m24,
+                m32: self.m34,
+                m42: self.m44,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4<T>, icols: Span<usize>) -> Matrix4x2<T> {
+        if icols.len() != 2 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix4EditTrait::column_at(self, *icols[1]);
+        Matrix4x2 {
+            m11: c0.x, m21: c0.y, m31: c0.z, m41: c0.w, m12: c1.x, m22: c1.y, m32: c1.z, m42: c1.w,
+        }
+    }
+}
+
+/// The 3 consecutive columns of a `Matrix4` as a `Matrix4x3` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<3>`, `select_columns`.
+pub impl Matrix4FixedColumnsMatrix4x3<
+    T, +Copy<T>, +Drop<T>,
+> of FixedColumns<Matrix4<T>, Matrix4x3<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4<T>, i: usize) -> Matrix4x3<T> {
+        match i {
+            0 => Matrix4x3 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+            },
+            1 => Matrix4x3 {
+                m11: self.m12,
+                m21: self.m22,
+                m31: self.m32,
+                m41: self.m42,
+                m12: self.m13,
+                m22: self.m23,
+                m32: self.m33,
+                m42: self.m43,
+                m13: self.m14,
+                m23: self.m24,
+                m33: self.m34,
+                m43: self.m44,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4<T>, icols: Span<usize>) -> Matrix4x3<T> {
+        if icols.len() != 3 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix4EditTrait::column_at(self, *icols[2]);
+        Matrix4x3 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m43: c2.w,
+        }
+    }
+}
+
+/// The 4 consecutive columns of a `Matrix4` as a `Matrix4` (`columns` / `columns_range`: default
+/// methods). Upstream: `fixed_columns::<4>`, `select_columns`.
+pub impl Matrix4FixedColumnsMatrix4<T, +Copy<T>, +Drop<T>> of FixedColumns<Matrix4<T>, Matrix4<T>> {
+    #[inline(always)]
+    fn fixed_columns(self: Matrix4<T>, i: usize) -> Matrix4<T> {
+        match i {
+            0 => Matrix4 {
+                m11: self.m11,
+                m21: self.m21,
+                m31: self.m31,
+                m41: self.m41,
+                m12: self.m12,
+                m22: self.m22,
+                m32: self.m32,
+                m42: self.m42,
+                m13: self.m13,
+                m23: self.m23,
+                m33: self.m33,
+                m43: self.m43,
+                m14: self.m14,
+                m24: self.m24,
+                m34: self.m34,
+                m44: self.m44,
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    #[inline(always)]
+    fn select_columns(self: Matrix4<T>, icols: Span<usize>) -> Matrix4<T> {
+        if icols.len() != 4 {
+            core::panic_with_felt252(errors::DIMENSION_MISMATCH)
+        }
+        let c0 = Matrix4EditTrait::column_at(self, *icols[0]);
+        let c1 = Matrix4EditTrait::column_at(self, *icols[1]);
+        let c2 = Matrix4EditTrait::column_at(self, *icols[2]);
+        let c3 = Matrix4EditTrait::column_at(self, *icols[3]);
+        Matrix4 {
+            m11: c0.x,
+            m21: c0.y,
+            m31: c0.z,
+            m41: c0.w,
+            m12: c1.x,
+            m22: c1.y,
+            m32: c1.z,
+            m42: c1.w,
+            m13: c2.x,
+            m23: c2.y,
+            m33: c2.z,
+            m43: c2.w,
+            m14: c3.x,
+            m24: c3.y,
+            m34: c3.z,
+            m44: c3.w,
+        }
+    }
+}
+
+/// The 1x1 blocks of a `Matrix4` as a `Matrix1` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<1, 1>`.
+pub impl Matrix4FixedViewMatrix1<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix1<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix1<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix1 { x: self.m11 },
+                1 => Matrix1 { x: self.m21 },
+                2 => Matrix1 { x: self.m31 },
+                3 => Matrix1 { x: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix1 { x: self.m12 },
+                1 => Matrix1 { x: self.m22 },
+                2 => Matrix1 { x: self.m32 },
+                3 => Matrix1 { x: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix1 { x: self.m13 },
+                1 => Matrix1 { x: self.m23 },
+                2 => Matrix1 { x: self.m33 },
+                3 => Matrix1 { x: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Matrix1 { x: self.m14 },
+                1 => Matrix1 { x: self.m24 },
+                2 => Matrix1 { x: self.m34 },
+                3 => Matrix1 { x: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x2 blocks of a `Matrix4` as a `RowVector2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 2>`.
+pub impl Matrix4FixedViewRowVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, RowVector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> RowVector2<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector2 { x: self.m11, y: self.m12 },
+                1 => RowVector2 { x: self.m21, y: self.m22 },
+                2 => RowVector2 { x: self.m31, y: self.m32 },
+                3 => RowVector2 { x: self.m41, y: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector2 { x: self.m12, y: self.m13 },
+                1 => RowVector2 { x: self.m22, y: self.m23 },
+                2 => RowVector2 { x: self.m32, y: self.m33 },
+                3 => RowVector2 { x: self.m42, y: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => RowVector2 { x: self.m13, y: self.m14 },
+                1 => RowVector2 { x: self.m23, y: self.m24 },
+                2 => RowVector2 { x: self.m33, y: self.m34 },
+                3 => RowVector2 { x: self.m43, y: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x3 blocks of a `Matrix4` as a `RowVector3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 3>`.
+pub impl Matrix4FixedViewRowVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, RowVector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> RowVector3<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector3 { x: self.m11, y: self.m12, z: self.m13 },
+                1 => RowVector3 { x: self.m21, y: self.m22, z: self.m23 },
+                2 => RowVector3 { x: self.m31, y: self.m32, z: self.m33 },
+                3 => RowVector3 { x: self.m41, y: self.m42, z: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => RowVector3 { x: self.m12, y: self.m13, z: self.m14 },
+                1 => RowVector3 { x: self.m22, y: self.m23, z: self.m24 },
+                2 => RowVector3 { x: self.m32, y: self.m33, z: self.m34 },
+                3 => RowVector3 { x: self.m42, y: self.m43, z: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 1x4 blocks of a `Matrix4` as a `RowVector4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<1, 4>`.
+pub impl Matrix4FixedViewRowVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, RowVector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> RowVector4<T> {
+        match icol {
+            0 => match irow {
+                0 => RowVector4 { x: self.m11, y: self.m12, z: self.m13, w: self.m14 },
+                1 => RowVector4 { x: self.m21, y: self.m22, z: self.m23, w: self.m24 },
+                2 => RowVector4 { x: self.m31, y: self.m32, z: self.m33, w: self.m34 },
+                3 => RowVector4 { x: self.m41, y: self.m42, z: self.m43, w: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x1 blocks of a `Matrix4` as a `Vector2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 1>`.
+pub impl Matrix4FixedViewVector2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Vector2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Vector2<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector2 { x: self.m11, y: self.m21 },
+                1 => Vector2 { x: self.m21, y: self.m31 },
+                2 => Vector2 { x: self.m31, y: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector2 { x: self.m12, y: self.m22 },
+                1 => Vector2 { x: self.m22, y: self.m32 },
+                2 => Vector2 { x: self.m32, y: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector2 { x: self.m13, y: self.m23 },
+                1 => Vector2 { x: self.m23, y: self.m33 },
+                2 => Vector2 { x: self.m33, y: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector2 { x: self.m14, y: self.m24 },
+                1 => Vector2 { x: self.m24, y: self.m34 },
+                2 => Vector2 { x: self.m34, y: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x2 blocks of a `Matrix4` as a `Matrix2` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<2, 2>`.
+pub impl Matrix4FixedViewMatrix2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2 { m11: self.m11, m21: self.m21, m12: self.m12, m22: self.m22 },
+                1 => Matrix2 { m11: self.m21, m21: self.m31, m12: self.m22, m22: self.m32 },
+                2 => Matrix2 { m11: self.m31, m21: self.m41, m12: self.m32, m22: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2 { m11: self.m12, m21: self.m22, m12: self.m13, m22: self.m23 },
+                1 => Matrix2 { m11: self.m22, m21: self.m32, m12: self.m23, m22: self.m33 },
+                2 => Matrix2 { m11: self.m32, m21: self.m42, m12: self.m33, m22: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix2 { m11: self.m13, m21: self.m23, m12: self.m14, m22: self.m24 },
+                1 => Matrix2 { m11: self.m23, m21: self.m33, m12: self.m24, m22: self.m34 },
+                2 => Matrix2 { m11: self.m33, m21: self.m43, m12: self.m34, m22: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x3 blocks of a `Matrix4` as a `Matrix2x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 3>`.
+pub impl Matrix4FixedViewMatrix2x3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix2x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix2x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                },
+                2 => Matrix2x3 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m13: self.m33,
+                    m23: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix2x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m13: self.m14,
+                    m23: self.m24,
+                },
+                1 => Matrix2x3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m13: self.m24,
+                    m23: self.m34,
+                },
+                2 => Matrix2x3 {
+                    m11: self.m32,
+                    m21: self.m42,
+                    m12: self.m33,
+                    m22: self.m43,
+                    m13: self.m34,
+                    m23: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 2x4 blocks of a `Matrix4` as a `Matrix2x4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<2, 4>`.
+pub impl Matrix4FixedViewMatrix2x4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix2x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix2x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix2x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m14: self.m14,
+                    m24: self.m24,
+                },
+                1 => Matrix2x4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m14: self.m24,
+                    m24: self.m34,
+                },
+                2 => Matrix2x4 {
+                    m11: self.m31,
+                    m21: self.m41,
+                    m12: self.m32,
+                    m22: self.m42,
+                    m13: self.m33,
+                    m23: self.m43,
+                    m14: self.m34,
+                    m24: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x1 blocks of a `Matrix4` as a `Vector3` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<3, 1>`.
+pub impl Matrix4FixedViewVector3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Vector3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Vector3<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector3 { x: self.m11, y: self.m21, z: self.m31 },
+                1 => Vector3 { x: self.m21, y: self.m31, z: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector3 { x: self.m12, y: self.m22, z: self.m32 },
+                1 => Vector3 { x: self.m22, y: self.m32, z: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector3 { x: self.m13, y: self.m23, z: self.m33 },
+                1 => Vector3 { x: self.m23, y: self.m33, z: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector3 { x: self.m14, y: self.m24, z: self.m34 },
+                1 => Vector3 { x: self.m24, y: self.m34, z: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x2 blocks of a `Matrix4` as a `Matrix3x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 2>`.
+pub impl Matrix4FixedViewMatrix3x2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix3x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix3x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix3x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                },
+                1 => Matrix3x2 {
+                    m11: self.m23,
+                    m21: self.m33,
+                    m31: self.m43,
+                    m12: self.m24,
+                    m22: self.m34,
+                    m32: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x3 blocks of a `Matrix4` as a `Matrix3` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<3, 3>`.
+pub impl Matrix4FixedViewMatrix3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                },
+                1 => Matrix3 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                },
+                1 => Matrix3 {
+                    m11: self.m22,
+                    m21: self.m32,
+                    m31: self.m42,
+                    m12: self.m23,
+                    m22: self.m33,
+                    m32: self.m43,
+                    m13: self.m24,
+                    m23: self.m34,
+                    m33: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 3x4 blocks of a `Matrix4` as a `Matrix3x4` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<3, 4>`.
+pub impl Matrix4FixedViewMatrix3x4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix3x4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix3x4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix3x4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                },
+                1 => Matrix3x4 {
+                    m11: self.m21,
+                    m21: self.m31,
+                    m31: self.m41,
+                    m12: self.m22,
+                    m22: self.m32,
+                    m32: self.m42,
+                    m13: self.m23,
+                    m23: self.m33,
+                    m33: self.m43,
+                    m14: self.m24,
+                    m24: self.m34,
+                    m34: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x1 blocks of a `Matrix4` as a `Vector4` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<4, 1>`.
+pub impl Matrix4FixedViewVector4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Vector4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Vector4<T> {
+        match icol {
+            0 => match irow {
+                0 => Vector4 { x: self.m11, y: self.m21, z: self.m31, w: self.m41 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Vector4 { x: self.m12, y: self.m22, z: self.m32, w: self.m42 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Vector4 { x: self.m13, y: self.m23, z: self.m33, w: self.m43 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            3 => match irow {
+                0 => Vector4 { x: self.m14, y: self.m24, z: self.m34, w: self.m44 },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x2 blocks of a `Matrix4` as a `Matrix4x2` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 2>`.
+pub impl Matrix4FixedViewMatrix4x2<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix4x2<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix4x2<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match irow {
+                0 => Matrix4x2 {
+                    m11: self.m13,
+                    m21: self.m23,
+                    m31: self.m33,
+                    m41: self.m43,
+                    m12: self.m14,
+                    m22: self.m24,
+                    m32: self.m34,
+                    m42: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x3 blocks of a `Matrix4` as a `Matrix4x3` (`view`, `fixed_slice`, `slice`: default
+/// methods). Upstream: `fixed_view::<4, 3>`.
+pub impl Matrix4FixedViewMatrix4x3<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix4x3<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix4x3<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4x3 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match irow {
+                0 => Matrix4x3 {
+                    m11: self.m12,
+                    m21: self.m22,
+                    m31: self.m32,
+                    m41: self.m42,
+                    m12: self.m13,
+                    m22: self.m23,
+                    m32: self.m33,
+                    m42: self.m43,
+                    m13: self.m14,
+                    m23: self.m24,
+                    m33: self.m34,
+                    m43: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// The 4x4 blocks of a `Matrix4` as a `Matrix4` (`view`, `fixed_slice`, `slice`: default methods).
+/// Upstream: `fixed_view::<4, 4>`.
+pub impl Matrix4FixedViewMatrix4<T, +Copy<T>, +Drop<T>> of FixedView<Matrix4<T>, Matrix4<T>> {
+    #[inline(always)]
+    fn fixed_view(self: Matrix4<T>, irow: usize, icol: usize) -> Matrix4<T> {
+        match icol {
+            0 => match irow {
+                0 => Matrix4 {
+                    m11: self.m11,
+                    m21: self.m21,
+                    m31: self.m31,
+                    m41: self.m41,
+                    m12: self.m12,
+                    m22: self.m22,
+                    m32: self.m32,
+                    m42: self.m42,
+                    m13: self.m13,
+                    m23: self.m23,
+                    m33: self.m33,
+                    m43: self.m43,
+                    m14: self.m14,
+                    m24: self.m24,
+                    m34: self.m34,
+                    m44: self.m44,
+                },
+                _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(errors::INDEX_OUT_OF_BOUNDS),
+        }
+    }
+}
+
+/// `self` in the top-left corner of a `Matrix6` filled with `val` (`FixedResize`).
+pub(crate) impl Matrix4PadTo6<T, +Copy<T>, +Drop<T>> of PadTo6<Matrix4<T>, T> {
+    #[inline(always)]
+    fn pad(self: Matrix4<T>, val: T) -> Matrix6<T> {
+        Matrix6 {
+            m11: self.m11,
+            m21: self.m21,
+            m31: self.m31,
+            m41: self.m41,
+            m51: val,
+            m61: val,
+            m12: self.m12,
+            m22: self.m22,
+            m32: self.m32,
+            m42: self.m42,
+            m52: val,
+            m62: val,
+            m13: self.m13,
+            m23: self.m23,
+            m33: self.m33,
+            m43: self.m43,
+            m53: val,
+            m63: val,
+            m14: self.m14,
+            m24: self.m24,
+            m34: self.m34,
+            m44: self.m44,
+            m54: val,
+            m64: val,
+            m15: val,
+            m25: val,
+            m35: val,
+            m45: val,
+            m55: val,
+            m65: val,
+            m16: val,
+            m26: val,
+            m36: val,
+            m46: val,
+            m56: val,
+            m66: val,
+        }
+    }
+}
+
+/// The top-left `Matrix4` of a `Matrix6` (`FixedResize`).
+pub(crate) impl Matrix4CropFrom6<T, +Copy<T>, +Drop<T>> of CropFrom6<Matrix4<T>, T> {
+    #[inline(always)]
+    fn crop(m: Matrix6<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: m.m11,
+            m21: m.m21,
+            m31: m.m31,
+            m41: m.m41,
+            m12: m.m12,
+            m22: m.m22,
+            m32: m.m32,
+            m42: m.m42,
+            m13: m.m13,
+            m23: m.m23,
+            m33: m.m33,
+            m43: m.m43,
+            m14: m.m14,
+            m24: m.m24,
+            m34: m.m34,
+            m44: m.m44,
+        }
+    }
+}
+
+/// `(4, 4)`: the size checks of the runtime-sized views.
+pub(crate) impl Matrix4ShapeDims<T> of ShapeDims<Matrix4<T>> {
+    #[inline(always)]
+    fn dims() -> (usize, usize) {
+        (4, 4)
+    }
+}
 
 /// `D` consecutive rows (`Out` has `D` rows and the columns of `M`). Upstream: `fixed_rows`,
 /// `rows`, `rows_range`, `select_rows`.
@@ -166,16 +6498,6 @@ pub(crate) trait ShapeDims<S> {
     fn dims() -> (usize, usize);
 }
 
-/// The length of a row vector `S` (`RowPart`).
-pub(crate) trait RowVectorLen<S> {
-    fn len() -> usize;
-}
-
-/// The length of a column vector `S` (`ColumnPart`).
-pub(crate) trait ColumnVectorLen<S> {
-    fn len() -> usize;
-}
-
 /// `self` in the top-left corner of a `Matrix6` filled with `val` (the canvas of `FixedResize`).
 pub(crate) trait PadTo6<M, T> {
     fn pad(self: M, val: T) -> Matrix6<T>;
@@ -184,90 +6506,6 @@ pub(crate) trait PadTo6<M, T> {
 /// The top-left block of a `Matrix6` of the shape `Out` (the canvas of `FixedResize`).
 pub(crate) trait CropFrom6<Out, T> {
     fn crop(m: Matrix6<T>) -> Out;
-}
-
-impl Matrix1RowVectorLen<T> of RowVectorLen<Matrix1<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        1
-    }
-}
-
-impl Matrix1ColumnVectorLen<T> of ColumnVectorLen<Matrix1<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        1
-    }
-}
-
-impl RowVector2RowVectorLen<T> of RowVectorLen<RowVector2<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        2
-    }
-}
-
-impl Vector2ColumnVectorLen<T> of ColumnVectorLen<Vector2<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        2
-    }
-}
-
-impl RowVector3RowVectorLen<T> of RowVectorLen<RowVector3<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        3
-    }
-}
-
-impl Vector3ColumnVectorLen<T> of ColumnVectorLen<Vector3<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        3
-    }
-}
-
-impl RowVector4RowVectorLen<T> of RowVectorLen<RowVector4<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        4
-    }
-}
-
-impl Vector4ColumnVectorLen<T> of ColumnVectorLen<Vector4<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        4
-    }
-}
-
-impl RowVector5RowVectorLen<T> of RowVectorLen<RowVector5<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        5
-    }
-}
-
-impl Vector5ColumnVectorLen<T> of ColumnVectorLen<Vector5<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        5
-    }
-}
-
-impl RowVector6RowVectorLen<T> of RowVectorLen<RowVector6<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        6
-    }
-}
-
-impl Vector6ColumnVectorLen<T> of ColumnVectorLen<Vector6<T>> {
-    #[inline(always)]
-    fn len() -> usize {
-        6
-    }
 }
 
 /// `row_part` for every row-vector output: `fixed_view(i, 0)` after the length check.

@@ -5,10 +5,10 @@
 //! algorithm is the modified Gram-Schmidt of `qr3`, one column longer; the study of the
 //! alternatives (Householder, classical Gram-Schmidt, completed basis) lives there.
 
+use nalgebra_core::internal::base::solve::SolveKernel;
 use simba::scalar::Real;
 use crate::base::MatrixTrMul;
 use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
-use crate::base::solve::SolveKernel;
 use crate::base::vector4::Vector4;
 
 /// The QR factorisation of a `Matrix4<T>`: `A = Q * R`.

@@ -20,12 +20,12 @@
 //! `NaN`). Upstream's `relative_eq!(a, b)` assertions use the default tolerances of DESIGN D3
 //! (`default_epsilon` = 1 ulp, absolute and relative).
 
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix4::Matrix4;
 use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use super::projective3::Projective3;
-use super::quaternion::ApproxEqTrait;
 
 /// Panic messages of `Orthographic3` (upstream's assertion messages do not fit a `felt252`: each
 /// constant quotes its upstream message).

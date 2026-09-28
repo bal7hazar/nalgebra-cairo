@@ -1,0 +1,26 @@
+[package]
+name = "nalgebra_core"
+description = "The structs of the 36 static shapes and their core-trait impls; products, transposed products, indexing, solve kernels, permutations and Givens impls of the shapes up to 4x4; the declarations of every generic trait (MatrixMul, MatrixTrMul, MatrixIndex, Norm, views, MatrixSolve, PermuteRows, GivensRotate, LuSteps); Point1..4, Translation1, Translation4, Unit, errors, kernels."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "geometry", "linalg"]
+readme = "README.md"
+# `associated_item_constraints`: the `core::iter::Sum` / `Product` impls of the shapes
+# (`+Iterator<I>[Item: A]`, DESIGN D10), as in `nalgebra`.
+experimental-features = ["associated_item_constraints"]
+
+[dependencies]
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

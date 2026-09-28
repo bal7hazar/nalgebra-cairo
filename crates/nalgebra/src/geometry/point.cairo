@@ -12,20 +12,14 @@
 //! they are used.
 
 use core::num::traits::Bounded;
-use core::ops::Index;
+pub use nalgebra_core::base::point2::{Point2Index, Point2PartialOrd};
+pub use nalgebra_core::base::point3::{Point3Index, Point3PartialOrd};
+pub use nalgebra_core::geometry::point::errors;
+use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use simba::scalar::Real;
 use crate::base::point2::Point2;
 use crate::base::point3::Point3;
 use super::point::errors as point_errors;
-use super::quaternion::ApproxEqTrait;
-
-/// Panic messages of the point types (stable API).
-pub mod errors {
-    /// `p[i]` with `i` at least the dimension.
-    pub const INDEX_OUT_OF_BOUNDS: felt252 = 'nalgebra: index out of bounds';
-    /// `from_slice` of a span whose length is not the dimension.
-    pub const WRONG_SLICE_LENGTH: felt252 = 'nalgebra: wrong slice length';
-}
 
 /// The WP 8.4-P09a completion of `Point2<T>` (`crate::base::point2` is outside this package's
 /// module; its operators and conversions live there). By value, unrolled, no loop.
@@ -114,45 +108,6 @@ pub impl Point2ExtImpl<
     /// `Bounded::max_value`.
     fn max_value<+Bounded<T>>() -> Point2<T> {
         Point2 { x: Bounded::MAX, y: Bounded::MAX }
-    }
-}
-
-/// `p[i]`: the coordinate `i` (`x, y`). Panics with `nalgebra: index out of bounds` for
-/// `i > 1`. Upstream: `Index<usize> for Point`.
-pub impl Point2Index<T, +Copy<T>, +Drop<T>> of Index<Point2<T>, usize> {
-    type Target = T;
-
-    fn index(ref self: Point2<T>, index: usize) -> T {
-        match index {
-            0 => self.x,
-            1 => self.y,
-            _ => core::panic_with_felt252(point_errors::INDEX_OUT_OF_BOUNDS),
-        }
-    }
-}
-
-/// The component-wise partial order of upstream: `p < q` (resp. `<=`, `>`, `>=`) when EVERY
-/// coordinate of `p` is `<` (resp. ...) the matching coordinate of `q`; two points may be
-/// incomparable (`!(p <= q) && !(q <= p)`). Upstream: `PartialOrd for Point` (the `Matrix` one).
-pub impl Point2PartialOrd<T, +PartialOrd<T>, +Copy<T>, +Drop<T>> of PartialOrd<Point2<T>> {
-    #[inline(always)]
-    fn lt(lhs: Point2<T>, rhs: Point2<T>) -> bool {
-        lhs.x < rhs.x && lhs.y < rhs.y
-    }
-
-    #[inline(always)]
-    fn le(lhs: Point2<T>, rhs: Point2<T>) -> bool {
-        lhs.x <= rhs.x && lhs.y <= rhs.y
-    }
-
-    #[inline(always)]
-    fn gt(lhs: Point2<T>, rhs: Point2<T>) -> bool {
-        lhs.x > rhs.x && lhs.y > rhs.y
-    }
-
-    #[inline(always)]
-    fn ge(lhs: Point2<T>, rhs: Point2<T>) -> bool {
-        lhs.x >= rhs.x && lhs.y >= rhs.y
     }
 }
 
@@ -245,45 +200,5 @@ pub impl Point3ExtImpl<
     /// `Bounded::max_value`.
     fn max_value<+Bounded<T>>() -> Point3<T> {
         Point3 { x: Bounded::MAX, y: Bounded::MAX, z: Bounded::MAX }
-    }
-}
-
-/// `p[i]`: the coordinate `i` (`x, y, z`). Panics with `nalgebra: index out of bounds` for
-/// `i > 2`. Upstream: `Index<usize> for Point`.
-pub impl Point3Index<T, +Copy<T>, +Drop<T>> of Index<Point3<T>, usize> {
-    type Target = T;
-
-    fn index(ref self: Point3<T>, index: usize) -> T {
-        match index {
-            0 => self.x,
-            1 => self.y,
-            2 => self.z,
-            _ => core::panic_with_felt252(point_errors::INDEX_OUT_OF_BOUNDS),
-        }
-    }
-}
-
-/// The component-wise partial order of upstream: `p < q` (resp. `<=`, `>`, `>=`) when EVERY
-/// coordinate of `p` is `<` (resp. ...) the matching coordinate of `q`; two points may be
-/// incomparable (`!(p <= q) && !(q <= p)`). Upstream: `PartialOrd for Point` (the `Matrix` one).
-pub impl Point3PartialOrd<T, +PartialOrd<T>, +Copy<T>, +Drop<T>> of PartialOrd<Point3<T>> {
-    #[inline(always)]
-    fn lt(lhs: Point3<T>, rhs: Point3<T>) -> bool {
-        lhs.x < rhs.x && lhs.y < rhs.y && lhs.z < rhs.z
-    }
-
-    #[inline(always)]
-    fn le(lhs: Point3<T>, rhs: Point3<T>) -> bool {
-        lhs.x <= rhs.x && lhs.y <= rhs.y && lhs.z <= rhs.z
-    }
-
-    #[inline(always)]
-    fn gt(lhs: Point3<T>, rhs: Point3<T>) -> bool {
-        lhs.x > rhs.x && lhs.y > rhs.y && lhs.z > rhs.z
-    }
-
-    #[inline(always)]
-    fn ge(lhs: Point3<T>, rhs: Point3<T>) -> bool {
-        lhs.x >= rhs.x && lhs.y >= rhs.y && lhs.z >= rhs.z
     }
 }
