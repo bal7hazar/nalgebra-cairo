@@ -558,8 +558,8 @@ def make_final():
     crates = [
         "core", "dim3v", "dim3", "types5", "dim4", "geometry", "types6", "dim5", "dim5a", "dim6a",
         "dim6", "dim6b", "edition", "views", "kronecker", "norm", "geometry_nd", "statistics", "blas",
-        "linalg", "linalg_svd", "linalg_ext", "linalg5", "linalg5_ext", "linalg6", "linalg6_pivot",
-        "linalg6_spectral", "dynamic", "sparse", "facade",
+        "linalg", "linalg_svd", "linalg_pivot", "linalg_spectral", "linalg5", "linalg5_pivot",
+        "linalg5_spectral", "linalg6", "linalg6_pivot", "linalg6_spectral", "dynamic", "sparse", "facade",
     ]
     rename = {
         "core": "core", "base3": "dim3", "t5": "types5", "base4": "dim4", "geometry": "geometry",
@@ -570,9 +570,9 @@ def make_final():
     }
     la_map = {
         "s": {"lu": "linalg", "chol": "linalg", "qr": "linalg", "eig": "linalg_svd",
-              "svd": "linalg_svd", "rest": "linalg_ext"},
+              "svd": "linalg_svd", "rest": None},
         "5": {"lu": "linalg5", "chol": "linalg5", "qr": "linalg5", "eig": "linalg5",
-              "svd": "linalg5", "rest": "linalg5_ext"},
+              "svd": "linalg5", "rest": None},
         "6": {"lu": "linalg6", "chol": "linalg6", "qr": "linalg6", "eig": "linalg6",
               "svd": "linalg6", "rest": None},
     }
@@ -625,7 +625,8 @@ def make_final():
             c = la_map[b][fam]
             if c is None:
                 stem = p.split("/")[1].split(".")[0]
-                c = "linalg6_pivot" if stem in PIVOT6 else "linalg6_spectral"
+                pre = {"s": "linalg", "5": "linalg5", "6": "linalg6"}[b]
+                c = f"{pre}_pivot" if stem in PIVOT6 else f"{pre}_spectral"
             return c
         return rename[h]
 
