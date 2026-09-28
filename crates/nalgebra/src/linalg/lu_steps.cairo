@@ -4,396 +4,25 @@
 //! (`src/linalg/lu.rs`), as free functions over the static squares (`gauss_step(ref m, diag, i)`).
 //! The 0-based step index is a run-time value: each square matches it on its unrolled steps.
 
-use nalgebra_core::base::errors::INDEX_OUT_OF_BOUNDS;
-use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix3::Matrix3;
 use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::internal::linalg::lu_steps::{LuInvert, LuSteps};
 use simba::scalar::Real;
-use crate::linalg::lu::{Lu2Trait, Lu3Trait, Lu4Trait};
+use crate::base::matrix6::Matrix6;
+use crate::linalg::lu::{Lu2Trait, Lu3Trait, Lu4Trait, Lu6Trait};
 
-impl Matrix1LuSteps<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
-> of LuSteps<Matrix1<T>, T> {
-    fn gauss_step(ref matrix: Matrix1<T>, diag: T, i: usize) {
-        let _ = diag;
-        match i {
-            0 => {},
-            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-        }
-    }
-
-    fn gauss_step_swap(ref matrix: Matrix1<T>, diag: T, i: usize, piv: usize) {
-        let _ = diag;
-        let _ = i;
-        let _ = piv;
-        core::panic_with_felt252(INDEX_OUT_OF_BOUNDS)
-    }
+/// The LU inverse of one square shape (crate-private).
+pub(crate) trait LuInvert<M> {
+    fn try_invert_to(matrix: M, ref out: M) -> bool;
 }
 
-impl Matrix2LuSteps<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
-> of LuSteps<Matrix2<T>, T> {
-    fn gauss_step(ref matrix: Matrix2<T>, diag: T, i: usize) {
-        match i {
-            0 => {
-                let c1 = R::div(matrix.m21, diag);
-                let n1 = -matrix.m12;
-                matrix =
-                    Matrix2 {
-                        m11: matrix.m11,
-                        m21: c1,
-                        m12: matrix.m12,
-                        m22: R::mul_add(n1, c1, matrix.m22),
-                    };
-            },
-            1 => {},
-            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-        }
-    }
-
-    fn gauss_step_swap(ref matrix: Matrix2<T>, diag: T, i: usize, piv: usize) {
-        match i {
-            0 => match piv {
-                1 => {
-                    matrix =
-                        Matrix2 {
-                            m11: matrix.m21, m21: matrix.m11, m12: matrix.m22, m22: matrix.m12,
-                        };
-                },
-                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-            },
-            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-        }
-        Self::gauss_step(ref matrix, diag, i);
-    }
-}
-
-impl Matrix3LuSteps<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
-> of LuSteps<Matrix3<T>, T> {
-    fn gauss_step(ref matrix: Matrix3<T>, diag: T, i: usize) {
-        match i {
-            0 => {
-                let c1 = R::div(matrix.m21, diag);
-                let c2 = R::div(matrix.m31, diag);
-                let n1 = -matrix.m12;
-                let n2 = -matrix.m13;
-                matrix =
-                    Matrix3 {
-                        m11: matrix.m11,
-                        m21: c1,
-                        m31: c2,
-                        m12: matrix.m12,
-                        m22: R::mul_add(n1, c1, matrix.m22),
-                        m32: R::mul_add(n1, c2, matrix.m32),
-                        m13: matrix.m13,
-                        m23: R::mul_add(n2, c1, matrix.m23),
-                        m33: R::mul_add(n2, c2, matrix.m33),
-                    };
-            },
-            1 => {
-                let c2 = R::div(matrix.m32, diag);
-                let n2 = -matrix.m23;
-                matrix =
-                    Matrix3 {
-                        m11: matrix.m11,
-                        m21: matrix.m21,
-                        m31: matrix.m31,
-                        m12: matrix.m12,
-                        m22: matrix.m22,
-                        m32: c2,
-                        m13: matrix.m13,
-                        m23: matrix.m23,
-                        m33: R::mul_add(n2, c2, matrix.m33),
-                    };
-            },
-            2 => {},
-            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-        }
-    }
-
-    fn gauss_step_swap(ref matrix: Matrix3<T>, diag: T, i: usize, piv: usize) {
-        match i {
-            0 => match piv {
-                1 => {
-                    matrix =
-                        Matrix3 {
-                            m11: matrix.m21,
-                            m21: matrix.m11,
-                            m31: matrix.m31,
-                            m12: matrix.m22,
-                            m22: matrix.m12,
-                            m32: matrix.m32,
-                            m13: matrix.m23,
-                            m23: matrix.m13,
-                            m33: matrix.m33,
-                        };
-                },
-                2 => {
-                    matrix =
-                        Matrix3 {
-                            m11: matrix.m31,
-                            m21: matrix.m21,
-                            m31: matrix.m11,
-                            m12: matrix.m32,
-                            m22: matrix.m22,
-                            m32: matrix.m12,
-                            m13: matrix.m33,
-                            m23: matrix.m23,
-                            m33: matrix.m13,
-                        };
-                },
-                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-            },
-            1 => match piv {
-                2 => {
-                    matrix =
-                        Matrix3 {
-                            m11: matrix.m11,
-                            m21: matrix.m21,
-                            m31: matrix.m31,
-                            m12: matrix.m12,
-                            m22: matrix.m32,
-                            m32: matrix.m22,
-                            m13: matrix.m13,
-                            m23: matrix.m33,
-                            m33: matrix.m23,
-                        };
-                },
-                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-            },
-            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-        }
-        Self::gauss_step(ref matrix, diag, i);
-    }
-}
-
-impl Matrix4LuSteps<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
-> of LuSteps<Matrix4<T>, T> {
-    fn gauss_step(ref matrix: Matrix4<T>, diag: T, i: usize) {
-        match i {
-            0 => {
-                let (c1, c2, c3) = R::div3(matrix.m21, matrix.m31, matrix.m41, diag);
-                let n1 = -matrix.m12;
-                let n2 = -matrix.m13;
-                let n3 = -matrix.m14;
-                matrix =
-                    Matrix4 {
-                        m11: matrix.m11,
-                        m21: c1,
-                        m31: c2,
-                        m41: c3,
-                        m12: matrix.m12,
-                        m22: R::mul_add(n1, c1, matrix.m22),
-                        m32: R::mul_add(n1, c2, matrix.m32),
-                        m42: R::mul_add(n1, c3, matrix.m42),
-                        m13: matrix.m13,
-                        m23: R::mul_add(n2, c1, matrix.m23),
-                        m33: R::mul_add(n2, c2, matrix.m33),
-                        m43: R::mul_add(n2, c3, matrix.m43),
-                        m14: matrix.m14,
-                        m24: R::mul_add(n3, c1, matrix.m24),
-                        m34: R::mul_add(n3, c2, matrix.m34),
-                        m44: R::mul_add(n3, c3, matrix.m44),
-                    };
-            },
-            1 => {
-                let c2 = R::div(matrix.m32, diag);
-                let c3 = R::div(matrix.m42, diag);
-                let n2 = -matrix.m23;
-                let n3 = -matrix.m24;
-                matrix =
-                    Matrix4 {
-                        m11: matrix.m11,
-                        m21: matrix.m21,
-                        m31: matrix.m31,
-                        m41: matrix.m41,
-                        m12: matrix.m12,
-                        m22: matrix.m22,
-                        m32: c2,
-                        m42: c3,
-                        m13: matrix.m13,
-                        m23: matrix.m23,
-                        m33: R::mul_add(n2, c2, matrix.m33),
-                        m43: R::mul_add(n2, c3, matrix.m43),
-                        m14: matrix.m14,
-                        m24: matrix.m24,
-                        m34: R::mul_add(n3, c2, matrix.m34),
-                        m44: R::mul_add(n3, c3, matrix.m44),
-                    };
-            },
-            2 => {
-                let c3 = R::div(matrix.m43, diag);
-                let n3 = -matrix.m34;
-                matrix =
-                    Matrix4 {
-                        m11: matrix.m11,
-                        m21: matrix.m21,
-                        m31: matrix.m31,
-                        m41: matrix.m41,
-                        m12: matrix.m12,
-                        m22: matrix.m22,
-                        m32: matrix.m32,
-                        m42: matrix.m42,
-                        m13: matrix.m13,
-                        m23: matrix.m23,
-                        m33: matrix.m33,
-                        m43: c3,
-                        m14: matrix.m14,
-                        m24: matrix.m24,
-                        m34: matrix.m34,
-                        m44: R::mul_add(n3, c3, matrix.m44),
-                    };
-            },
-            3 => {},
-            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-        }
-    }
-
-    fn gauss_step_swap(ref matrix: Matrix4<T>, diag: T, i: usize, piv: usize) {
-        match i {
-            0 => match piv {
-                1 => {
-                    matrix =
-                        Matrix4 {
-                            m11: matrix.m21,
-                            m21: matrix.m11,
-                            m31: matrix.m31,
-                            m41: matrix.m41,
-                            m12: matrix.m22,
-                            m22: matrix.m12,
-                            m32: matrix.m32,
-                            m42: matrix.m42,
-                            m13: matrix.m23,
-                            m23: matrix.m13,
-                            m33: matrix.m33,
-                            m43: matrix.m43,
-                            m14: matrix.m24,
-                            m24: matrix.m14,
-                            m34: matrix.m34,
-                            m44: matrix.m44,
-                        };
-                },
-                2 => {
-                    matrix =
-                        Matrix4 {
-                            m11: matrix.m31,
-                            m21: matrix.m21,
-                            m31: matrix.m11,
-                            m41: matrix.m41,
-                            m12: matrix.m32,
-                            m22: matrix.m22,
-                            m32: matrix.m12,
-                            m42: matrix.m42,
-                            m13: matrix.m33,
-                            m23: matrix.m23,
-                            m33: matrix.m13,
-                            m43: matrix.m43,
-                            m14: matrix.m34,
-                            m24: matrix.m24,
-                            m34: matrix.m14,
-                            m44: matrix.m44,
-                        };
-                },
-                3 => {
-                    matrix =
-                        Matrix4 {
-                            m11: matrix.m41,
-                            m21: matrix.m21,
-                            m31: matrix.m31,
-                            m41: matrix.m11,
-                            m12: matrix.m42,
-                            m22: matrix.m22,
-                            m32: matrix.m32,
-                            m42: matrix.m12,
-                            m13: matrix.m43,
-                            m23: matrix.m23,
-                            m33: matrix.m33,
-                            m43: matrix.m13,
-                            m14: matrix.m44,
-                            m24: matrix.m24,
-                            m34: matrix.m34,
-                            m44: matrix.m14,
-                        };
-                },
-                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-            },
-            1 => match piv {
-                2 => {
-                    matrix =
-                        Matrix4 {
-                            m11: matrix.m11,
-                            m21: matrix.m21,
-                            m31: matrix.m31,
-                            m41: matrix.m41,
-                            m12: matrix.m12,
-                            m22: matrix.m32,
-                            m32: matrix.m22,
-                            m42: matrix.m42,
-                            m13: matrix.m13,
-                            m23: matrix.m33,
-                            m33: matrix.m23,
-                            m43: matrix.m43,
-                            m14: matrix.m14,
-                            m24: matrix.m34,
-                            m34: matrix.m24,
-                            m44: matrix.m44,
-                        };
-                },
-                3 => {
-                    matrix =
-                        Matrix4 {
-                            m11: matrix.m11,
-                            m21: matrix.m21,
-                            m31: matrix.m31,
-                            m41: matrix.m41,
-                            m12: matrix.m12,
-                            m22: matrix.m42,
-                            m32: matrix.m32,
-                            m42: matrix.m22,
-                            m13: matrix.m13,
-                            m23: matrix.m43,
-                            m33: matrix.m33,
-                            m43: matrix.m23,
-                            m14: matrix.m14,
-                            m24: matrix.m44,
-                            m34: matrix.m34,
-                            m44: matrix.m24,
-                        };
-                },
-                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-            },
-            2 => match piv {
-                3 => {
-                    matrix =
-                        Matrix4 {
-                            m11: matrix.m11,
-                            m21: matrix.m21,
-                            m31: matrix.m31,
-                            m41: matrix.m41,
-                            m12: matrix.m12,
-                            m22: matrix.m22,
-                            m32: matrix.m32,
-                            m42: matrix.m42,
-                            m13: matrix.m13,
-                            m23: matrix.m23,
-                            m33: matrix.m43,
-                            m43: matrix.m33,
-                            m14: matrix.m14,
-                            m24: matrix.m24,
-                            m34: matrix.m44,
-                            m44: matrix.m34,
-                        };
-                },
-                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-            },
-            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
-        }
-        Self::gauss_step(ref matrix, diag, i);
-    }
+/// Overwrites `out` with the inverse of `matrix` by LU decomposition with partial pivoting and
+/// returns `true`, or returns `false` and leaves `out` unchanged when a pivot is exactly zero
+/// (upstream fills `out` with the identity first and leaves a partial result). The inverse is
+/// `LuN::new(matrix).try_inverse()`, bit for bit. The squares that have an LU decomposition:
+/// `Matrix2`, `Matrix3`, `Matrix4`, `Matrix6`. Upstream: `nalgebra::linalg::try_invert_to`.
+pub fn try_invert_to<M, impl I: LuInvert<M>>(matrix: M, ref out: M) -> bool {
+    I::try_invert_to(matrix, ref out)
 }
 
 impl Matrix2LuInvert<
@@ -450,6 +79,25 @@ impl Matrix4LuInvert<
     #[inline(always)]
     fn try_invert_to(matrix: Matrix4<T>, ref out: Matrix4<T>) -> bool {
         Lu4Trait::try_inverse_to(Lu4Trait::new(matrix), ref out)
+    }
+}
+
+impl Matrix6LuInvert<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of LuInvert<Matrix6<T>> {
+    #[inline(always)]
+    fn try_invert_to(matrix: Matrix6<T>, ref out: Matrix6<T>) -> bool {
+        Lu6Trait::try_inverse_to(Lu6Trait::new(matrix), ref out)
     }
 }
 

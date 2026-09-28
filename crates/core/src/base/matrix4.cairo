@@ -12,6 +12,7 @@ use core::num::traits::{Bounded, One};
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::Real;
 use crate::base::errors;
+use crate::base::errors::INDEX_OUT_OF_BOUNDS;
 use crate::base::matrix4x2::Matrix4x2;
 use crate::base::matrix4x3::Matrix4x3;
 use crate::base::matrix_index::MatrixIndex;
@@ -20,6 +21,7 @@ use crate::base::matrix_tr_mul::MatrixTrMul;
 use crate::base::vector4::Vector4;
 use crate::internal::base::solve::SolveKernel;
 use crate::internal::base::transpose::BlasTranspose;
+use crate::internal::linalg::lu_steps::LuSteps;
 
 /// A 4x4 matrix. `mRC` is the component at row `R`, column `C`.
 ///
@@ -2192,5 +2194,231 @@ impl Matrix4SolveKernelMatrix4<
     #[inline(always)]
     fn tr_mul_rhs(self: Matrix4<T>, b: Matrix4<T>) -> Matrix4<T> {
         MatrixTrMul::tr_mul(self, b)
+    }
+}
+
+impl Matrix4LuSteps<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
+> of LuSteps<Matrix4<T>, T> {
+    fn gauss_step(ref matrix: Matrix4<T>, diag: T, i: usize) {
+        match i {
+            0 => {
+                let (c1, c2, c3) = R::div3(matrix.m21, matrix.m31, matrix.m41, diag);
+                let n1 = -matrix.m12;
+                let n2 = -matrix.m13;
+                let n3 = -matrix.m14;
+                matrix =
+                    Matrix4 {
+                        m11: matrix.m11,
+                        m21: c1,
+                        m31: c2,
+                        m41: c3,
+                        m12: matrix.m12,
+                        m22: R::mul_add(n1, c1, matrix.m22),
+                        m32: R::mul_add(n1, c2, matrix.m32),
+                        m42: R::mul_add(n1, c3, matrix.m42),
+                        m13: matrix.m13,
+                        m23: R::mul_add(n2, c1, matrix.m23),
+                        m33: R::mul_add(n2, c2, matrix.m33),
+                        m43: R::mul_add(n2, c3, matrix.m43),
+                        m14: matrix.m14,
+                        m24: R::mul_add(n3, c1, matrix.m24),
+                        m34: R::mul_add(n3, c2, matrix.m34),
+                        m44: R::mul_add(n3, c3, matrix.m44),
+                    };
+            },
+            1 => {
+                let c2 = R::div(matrix.m32, diag);
+                let c3 = R::div(matrix.m42, diag);
+                let n2 = -matrix.m23;
+                let n3 = -matrix.m24;
+                matrix =
+                    Matrix4 {
+                        m11: matrix.m11,
+                        m21: matrix.m21,
+                        m31: matrix.m31,
+                        m41: matrix.m41,
+                        m12: matrix.m12,
+                        m22: matrix.m22,
+                        m32: c2,
+                        m42: c3,
+                        m13: matrix.m13,
+                        m23: matrix.m23,
+                        m33: R::mul_add(n2, c2, matrix.m33),
+                        m43: R::mul_add(n2, c3, matrix.m43),
+                        m14: matrix.m14,
+                        m24: matrix.m24,
+                        m34: R::mul_add(n3, c2, matrix.m34),
+                        m44: R::mul_add(n3, c3, matrix.m44),
+                    };
+            },
+            2 => {
+                let c3 = R::div(matrix.m43, diag);
+                let n3 = -matrix.m34;
+                matrix =
+                    Matrix4 {
+                        m11: matrix.m11,
+                        m21: matrix.m21,
+                        m31: matrix.m31,
+                        m41: matrix.m41,
+                        m12: matrix.m12,
+                        m22: matrix.m22,
+                        m32: matrix.m32,
+                        m42: matrix.m42,
+                        m13: matrix.m13,
+                        m23: matrix.m23,
+                        m33: matrix.m33,
+                        m43: c3,
+                        m14: matrix.m14,
+                        m24: matrix.m24,
+                        m34: matrix.m34,
+                        m44: R::mul_add(n3, c3, matrix.m44),
+                    };
+            },
+            3 => {},
+            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    fn gauss_step_swap(ref matrix: Matrix4<T>, diag: T, i: usize, piv: usize) {
+        match i {
+            0 => match piv {
+                1 => {
+                    matrix =
+                        Matrix4 {
+                            m11: matrix.m21,
+                            m21: matrix.m11,
+                            m31: matrix.m31,
+                            m41: matrix.m41,
+                            m12: matrix.m22,
+                            m22: matrix.m12,
+                            m32: matrix.m32,
+                            m42: matrix.m42,
+                            m13: matrix.m23,
+                            m23: matrix.m13,
+                            m33: matrix.m33,
+                            m43: matrix.m43,
+                            m14: matrix.m24,
+                            m24: matrix.m14,
+                            m34: matrix.m34,
+                            m44: matrix.m44,
+                        };
+                },
+                2 => {
+                    matrix =
+                        Matrix4 {
+                            m11: matrix.m31,
+                            m21: matrix.m21,
+                            m31: matrix.m11,
+                            m41: matrix.m41,
+                            m12: matrix.m32,
+                            m22: matrix.m22,
+                            m32: matrix.m12,
+                            m42: matrix.m42,
+                            m13: matrix.m33,
+                            m23: matrix.m23,
+                            m33: matrix.m13,
+                            m43: matrix.m43,
+                            m14: matrix.m34,
+                            m24: matrix.m24,
+                            m34: matrix.m14,
+                            m44: matrix.m44,
+                        };
+                },
+                3 => {
+                    matrix =
+                        Matrix4 {
+                            m11: matrix.m41,
+                            m21: matrix.m21,
+                            m31: matrix.m31,
+                            m41: matrix.m11,
+                            m12: matrix.m42,
+                            m22: matrix.m22,
+                            m32: matrix.m32,
+                            m42: matrix.m12,
+                            m13: matrix.m43,
+                            m23: matrix.m23,
+                            m33: matrix.m33,
+                            m43: matrix.m13,
+                            m14: matrix.m44,
+                            m24: matrix.m24,
+                            m34: matrix.m34,
+                            m44: matrix.m14,
+                        };
+                },
+                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match piv {
+                2 => {
+                    matrix =
+                        Matrix4 {
+                            m11: matrix.m11,
+                            m21: matrix.m21,
+                            m31: matrix.m31,
+                            m41: matrix.m41,
+                            m12: matrix.m12,
+                            m22: matrix.m32,
+                            m32: matrix.m22,
+                            m42: matrix.m42,
+                            m13: matrix.m13,
+                            m23: matrix.m33,
+                            m33: matrix.m23,
+                            m43: matrix.m43,
+                            m14: matrix.m14,
+                            m24: matrix.m34,
+                            m34: matrix.m24,
+                            m44: matrix.m44,
+                        };
+                },
+                3 => {
+                    matrix =
+                        Matrix4 {
+                            m11: matrix.m11,
+                            m21: matrix.m21,
+                            m31: matrix.m31,
+                            m41: matrix.m41,
+                            m12: matrix.m12,
+                            m22: matrix.m42,
+                            m32: matrix.m32,
+                            m42: matrix.m22,
+                            m13: matrix.m13,
+                            m23: matrix.m43,
+                            m33: matrix.m33,
+                            m43: matrix.m23,
+                            m14: matrix.m14,
+                            m24: matrix.m44,
+                            m34: matrix.m34,
+                            m44: matrix.m24,
+                        };
+                },
+                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+            },
+            2 => match piv {
+                3 => {
+                    matrix =
+                        Matrix4 {
+                            m11: matrix.m11,
+                            m21: matrix.m21,
+                            m31: matrix.m31,
+                            m41: matrix.m41,
+                            m12: matrix.m12,
+                            m22: matrix.m22,
+                            m32: matrix.m32,
+                            m42: matrix.m42,
+                            m13: matrix.m13,
+                            m23: matrix.m23,
+                            m33: matrix.m43,
+                            m43: matrix.m33,
+                            m14: matrix.m14,
+                            m24: matrix.m24,
+                            m34: matrix.m44,
+                            m44: matrix.m34,
+                        };
+                },
+                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+        }
+        Self::gauss_step(ref matrix, diag, i);
     }
 }

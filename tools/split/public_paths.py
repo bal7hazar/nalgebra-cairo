@@ -264,6 +264,33 @@ def build_consumer(paths, keep=None):
     return r.returncode == 0
 
 
+def transient_anchor_paths(extra, expected, root=ROOT):
+    """The extra paths that are public impls moved by the crate map's anchor rule into a module of
+    a crate still hosted by the facade package (docs/SPLIT.md §3.2, §12.6), while the facade package
+    hosts other crates than the facade (the moves NS3..NS11): the impl is DEFINED in that module
+    (hence public there) and keeps its 0.1.0 path through the router's explicit re-export. Such a
+    path is accepted only if the same impl name is expected (and exported) at another module. Empty
+    once the facade package hosts the facade crate alone (the anchor modules are then re-exported
+    with explicit name lists)."""
+    cm = cratemap.load()
+    if not any(p == cm.facade_package for c, p in cm.crates.items() if c != cm.facade):
+        return set()
+    by_name = {}
+    for p in expected:
+        by_name.setdefault(p.rsplit("::", 1)[-1], set()).add(p.rsplit("::", 1)[0])
+    src = os.path.join(root, cratemap.package_dir(cm.facade_package), "src")
+    out = set()
+    for p in extra:
+        mod, name = p.rsplit("::", 1)
+        elsewhere = by_name.get(name, set()) - {mod}
+        if not elsewhere:
+            continue
+        f = os.path.join(src, *mod.split("::")[1:]) + ".cairo"
+        if os.path.exists(f) and re.search(rf"^pub\s+impl\s+{re.escape(name)}\b", cc.mask(open(f).read()), re.M):
+            out.add(p)
+    return out
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--check", action="store_true", help="the proof (surface equality + consumer build)")
@@ -289,6 +316,12 @@ def main(argv=None):
         sys.exit(f"error: {FROZEN} is missing (--freeze v0.1.0)")
     have = set(paths)
     missing, extra = sorted(expected - have), sorted(have - expected)
+    transient = transient_anchor_paths(extra, expected, a.root)
+    extra = [p for p in extra if p not in transient]
+    if transient:
+        print(f"transient: {len(transient)} public impls moved to an anchor module of a crate the facade "
+              f"package still hosts (their 0.1.0 path is exported; they leave with that crate, "
+              f"docs/SPLIT.md §12.6), e.g. {', '.join(sorted(transient)[:3])}")
     for p in missing:
         print(f"MISSING {p}")
     for p in extra:

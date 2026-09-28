@@ -4,7 +4,7 @@
 //! (`src/linalg/lu.rs`), as free functions over the static squares (`gauss_step(ref m, diag, i)`).
 //! The 0-based step index is a run-time value: each square matches it on its unrolled steps.
 
-use crate::internal::linalg::lu_steps::{LuInvert, LuSteps};
+use crate::internal::linalg::lu_steps::LuSteps;
 
 /// One step of Gaussian elimination at the 0-based pivot `(i, i)` of `matrix`, in place: each
 /// entry `a_ri` below the pivot becomes the multiplier `a_ri / diag` (a correctly rounded quotient,
@@ -26,13 +26,4 @@ pub fn gauss_step<M, T, impl S: LuSteps<M, T>>(ref matrix: M, diag: T, i: usize)
 /// `nalgebra::linalg::gauss_step_swap` (`#[doc(hidden)]`).
 pub fn gauss_step_swap<M, T, impl S: LuSteps<M, T>>(ref matrix: M, diag: T, i: usize, piv: usize) {
     S::gauss_step_swap(ref matrix, diag, i, piv)
-}
-
-/// Overwrites `out` with the inverse of `matrix` by LU decomposition with partial pivoting and
-/// returns `true`, or returns `false` and leaves `out` unchanged when a pivot is exactly zero
-/// (upstream fills `out` with the identity first and leaves a partial result). The inverse is
-/// `LuN::new(matrix).try_inverse()`, bit for bit. The squares that have an LU decomposition:
-/// `Matrix2`, `Matrix3`, `Matrix4`, `Matrix6`. Upstream: `nalgebra::linalg::try_invert_to`.
-pub fn try_invert_to<M, impl I: LuInvert<M>>(matrix: M, ref out: M) -> bool {
-    I::try_invert_to(matrix, ref out)
 }

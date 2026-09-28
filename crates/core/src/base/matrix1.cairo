@@ -12,6 +12,7 @@ use core::num::traits::{Bounded, One};
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::Real;
 use crate::base::errors;
+use crate::base::errors::INDEX_OUT_OF_BOUNDS;
 use crate::base::matrix_index::MatrixIndex;
 use crate::base::matrix_mul::MatrixMul;
 use crate::base::matrix_tr_mul::MatrixTrMul;
@@ -22,6 +23,7 @@ use crate::base::unit::Unit;
 use crate::internal::base::matrix_view::{ColumnVectorLen, RowVectorLen};
 use crate::internal::base::solve::SolveKernel;
 use crate::internal::base::transpose::BlasTranspose;
+use crate::internal::linalg::lu_steps::LuSteps;
 
 /// A 1x1 matrix. Components are named like upstream's `Deref` targets (`x, y, z, w, a, b`).
 #[derive(Copy, Drop, PartialEq, Serde, Default, Debug, Hash)]
@@ -680,5 +682,24 @@ impl Matrix1SolveKernelRowVector4<
     #[inline(always)]
     fn tr_mul_rhs(self: Matrix1<T>, b: RowVector4<T>) -> RowVector4<T> {
         MatrixTrMul::tr_mul(self, b)
+    }
+}
+
+impl Matrix1LuSteps<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
+> of LuSteps<Matrix1<T>, T> {
+    fn gauss_step(ref matrix: Matrix1<T>, diag: T, i: usize) {
+        let _ = diag;
+        match i {
+            0 => {},
+            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    fn gauss_step_swap(ref matrix: Matrix1<T>, diag: T, i: usize, piv: usize) {
+        let _ = diag;
+        let _ = i;
+        let _ = piv;
+        core::panic_with_felt252(INDEX_OUT_OF_BOUNDS)
     }
 }

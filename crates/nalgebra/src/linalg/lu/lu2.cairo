@@ -39,6 +39,10 @@ pub struct Lu2<T> {
     pub p: Perm2,
 }
 
+// the test-only `PartialEq` of `Perm2` (`linalg::lu`, not `Perm2`'s module since the split)
+#[cfg(test)]
+use super::Perm2PartialEq;
+
 /// Test-only field-wise equality (upstream `Lu2` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.
 #[cfg(test)]

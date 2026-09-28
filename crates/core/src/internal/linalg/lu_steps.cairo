@@ -7,8 +7,3 @@ pub trait LuSteps<M, T> {
     fn gauss_step(ref matrix: M, diag: T, i: usize);
     fn gauss_step_swap(ref matrix: M, diag: T, i: usize, piv: usize);
 }
-
-/// The LU inverse of one square shape (crate-private).
-pub trait LuInvert<M> {
-    fn try_invert_to(matrix: M, ref out: M) -> bool;
-}

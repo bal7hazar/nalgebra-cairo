@@ -8,8 +8,9 @@
 #           lowest crate first (a crate may only depend on crates above it in the table).
 #           Single-crate mode (the committed default until NS3): every crate is hosted by
 #           `nalgebra`, so every generator writes exactly what it wrote before the split tooling.
-#           A move WP switches its crates to their package (`core = "nalgebra_core"`); a package
-#           `nalgebra_x` lives in `crates/x/` (like `nalgebra_tests_base` in `crates/tests_base/`).
+#           A move WP switches its crates to their package (`core = "nalgebra_core"`, WP 9-NS3); a
+#           package `nalgebra_x` lives in `crates/x/` (like `nalgebra_tests_base` in
+#           `crates/tests_base/`).
 # facade    the crate that hosts what no rule places elsewhere (root functions, macros) and that
 #           re-exports every sub-crate at the 0.1.0 paths.
 # [[rule]]  placement of the top-level items, FIRST MATCH WINS. Every item keeps its module path
@@ -80,7 +81,7 @@ facade = "nalgebra"
 [internal]
 names = [
     "ApproxEqTrait", "BlasTranspose", "ColumnVectorLen", "RowVectorLen", "FusedTrait", "PowiTrait",
-    "LuSteps", "LuInvert", "SolveKernel", "(Matrix\\d(x\\d)?|Vector\\d|RowVector\\d)EditTrait",
+    "LuSteps", "SolveKernel", "(Matrix\\d(x\\d)?|Vector\\d|RowVector\\d)EditTrait",
     "slerp_unit", "Point2InternalTrait", "Point3InternalTrait", "UnitInternalTrait", "SymMatrix2",
     "SymMatrix2Trait", "SymMatrix3", "SymMatrix3Trait", "GivensRotationInternalTrait",
 ]
@@ -126,12 +127,14 @@ file = ["geometry/point4.cairo", "geometry/translation4.cairo", "geometry/point1
     "geometry/translation1.cairo"]
 crate = "core"
 
-# LU steps of each size: with the LU of the band (`Lu6` sits with `Matrix6`)
+# LU steps of each size: up to 4x4 with the types (WP 9-NS3: the public `gauss_step` /
+# `gauss_step_swap` resolve the impl at the caller, so it must sit in the module of its type or of
+# `LuSteps`, both in `core`), then with the LU of the band (`Lu6` sits with `Matrix6`)
 [[rule]]
 trait = ["LuSteps"]
 by = "name"
-bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static6_wide" }
-default = "linalg4"
+bands = { "4" = "core", "5" = "linalg5", "6" = "static6_wide" }
+default = "core"
 
 # `Perm6` and its permutation impls: with `Matrix6` (`is_invertible` runs `Lu6`)
 [[rule]]
@@ -163,12 +166,15 @@ by = "args"
 bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
-# crate-private `LuInvert` impls: with the LU of their size (their only callers)
+# `LuInvert`, its impls and the public `try_invert_to` that resolves them at the caller: together
+# in `linalg4` (the module of the trait, where every caller finds them; `Lu6` is below), WP 9-NS3
+[[rule]]
+name = "LuInvert|try_invert_to"
+crate = "linalg4"
+
 [[rule]]
 trait = ["LuInvert"]
-by = "args"
-bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static6_wide" }
-default = "linalg4"
+crate = "linalg4"
 
 [[rule]]
 file = ["linalg/lu_steps.cairo"]

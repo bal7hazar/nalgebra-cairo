@@ -12,6 +12,7 @@ use core::num::traits::{Bounded, One};
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::Real;
 use crate::base::errors;
+use crate::base::errors::INDEX_OUT_OF_BOUNDS;
 use crate::base::matrix2x3::Matrix2x3;
 use crate::base::matrix2x4::Matrix2x4;
 use crate::base::matrix_index::MatrixIndex;
@@ -22,6 +23,7 @@ use crate::base::vector2::Vector2;
 use crate::geometry::{Translation1, Translation1Trait};
 use crate::internal::base::solve::SolveKernel;
 use crate::internal::base::transpose::BlasTranspose;
+use crate::internal::linalg::lu_steps::LuSteps;
 
 /// A 2x2 matrix. `mRC` is the component at row `R`, column `C`.
 ///
@@ -825,5 +827,43 @@ impl Matrix2SolveKernelMatrix2x4<
     #[inline(always)]
     fn tr_mul_rhs(self: Matrix2<T>, b: Matrix2x4<T>) -> Matrix2x4<T> {
         MatrixTrMul::tr_mul(self, b)
+    }
+}
+
+impl Matrix2LuSteps<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
+> of LuSteps<Matrix2<T>, T> {
+    fn gauss_step(ref matrix: Matrix2<T>, diag: T, i: usize) {
+        match i {
+            0 => {
+                let c1 = R::div(matrix.m21, diag);
+                let n1 = -matrix.m12;
+                matrix =
+                    Matrix2 {
+                        m11: matrix.m11,
+                        m21: c1,
+                        m12: matrix.m12,
+                        m22: R::mul_add(n1, c1, matrix.m22),
+                    };
+            },
+            1 => {},
+            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    fn gauss_step_swap(ref matrix: Matrix2<T>, diag: T, i: usize, piv: usize) {
+        match i {
+            0 => match piv {
+                1 => {
+                    matrix =
+                        Matrix2 {
+                            m11: matrix.m21, m21: matrix.m11, m12: matrix.m22, m22: matrix.m12,
+                        };
+                },
+                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+        }
+        Self::gauss_step(ref matrix, diag, i);
     }
 }

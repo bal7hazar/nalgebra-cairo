@@ -12,6 +12,7 @@ use core::num::traits::{Bounded, One};
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use simba::scalar::Real;
 use crate::base::errors;
+use crate::base::errors::INDEX_OUT_OF_BOUNDS;
 use crate::base::matrix3x2::Matrix3x2;
 use crate::base::matrix3x4::Matrix3x4;
 use crate::base::matrix_index::MatrixIndex;
@@ -21,6 +22,7 @@ use crate::base::point3::Point3;
 use crate::base::vector3::Vector3;
 use crate::internal::base::solve::SolveKernel;
 use crate::internal::base::transpose::BlasTranspose;
+use crate::internal::linalg::lu_steps::LuSteps;
 
 /// A 3x3 matrix. `mRC` is the component at row `R`, column `C`.
 ///
@@ -1401,5 +1403,105 @@ impl Matrix3SolveKernelMatrix3x4<
     #[inline(always)]
     fn tr_mul_rhs(self: Matrix3<T>, b: Matrix3x4<T>) -> Matrix3x4<T> {
         MatrixTrMul::tr_mul(self, b)
+    }
+}
+
+impl Matrix3LuSteps<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
+> of LuSteps<Matrix3<T>, T> {
+    fn gauss_step(ref matrix: Matrix3<T>, diag: T, i: usize) {
+        match i {
+            0 => {
+                let c1 = R::div(matrix.m21, diag);
+                let c2 = R::div(matrix.m31, diag);
+                let n1 = -matrix.m12;
+                let n2 = -matrix.m13;
+                matrix =
+                    Matrix3 {
+                        m11: matrix.m11,
+                        m21: c1,
+                        m31: c2,
+                        m12: matrix.m12,
+                        m22: R::mul_add(n1, c1, matrix.m22),
+                        m32: R::mul_add(n1, c2, matrix.m32),
+                        m13: matrix.m13,
+                        m23: R::mul_add(n2, c1, matrix.m23),
+                        m33: R::mul_add(n2, c2, matrix.m33),
+                    };
+            },
+            1 => {
+                let c2 = R::div(matrix.m32, diag);
+                let n2 = -matrix.m23;
+                matrix =
+                    Matrix3 {
+                        m11: matrix.m11,
+                        m21: matrix.m21,
+                        m31: matrix.m31,
+                        m12: matrix.m12,
+                        m22: matrix.m22,
+                        m32: c2,
+                        m13: matrix.m13,
+                        m23: matrix.m23,
+                        m33: R::mul_add(n2, c2, matrix.m33),
+                    };
+            },
+            2 => {},
+            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+        }
+    }
+
+    fn gauss_step_swap(ref matrix: Matrix3<T>, diag: T, i: usize, piv: usize) {
+        match i {
+            0 => match piv {
+                1 => {
+                    matrix =
+                        Matrix3 {
+                            m11: matrix.m21,
+                            m21: matrix.m11,
+                            m31: matrix.m31,
+                            m12: matrix.m22,
+                            m22: matrix.m12,
+                            m32: matrix.m32,
+                            m13: matrix.m23,
+                            m23: matrix.m13,
+                            m33: matrix.m33,
+                        };
+                },
+                2 => {
+                    matrix =
+                        Matrix3 {
+                            m11: matrix.m31,
+                            m21: matrix.m21,
+                            m31: matrix.m11,
+                            m12: matrix.m32,
+                            m22: matrix.m22,
+                            m32: matrix.m12,
+                            m13: matrix.m33,
+                            m23: matrix.m23,
+                            m33: matrix.m13,
+                        };
+                },
+                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+            },
+            1 => match piv {
+                2 => {
+                    matrix =
+                        Matrix3 {
+                            m11: matrix.m11,
+                            m21: matrix.m21,
+                            m31: matrix.m31,
+                            m12: matrix.m12,
+                            m22: matrix.m32,
+                            m32: matrix.m22,
+                            m13: matrix.m13,
+                            m23: matrix.m33,
+                            m33: matrix.m23,
+                        };
+                },
+                _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+            },
+            _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
+        }
+        Self::gauss_step(ref matrix, diag, i);
     }
 }

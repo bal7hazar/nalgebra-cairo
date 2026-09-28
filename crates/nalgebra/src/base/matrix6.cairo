@@ -17256,9 +17256,9 @@ pub impl Matrix6InfSup<
 use nalgebra_core::base::errors::INDEX_OUT_OF_BOUNDS;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
-use nalgebra_core::internal::linalg::lu_steps::{LuInvert, LuSteps};
+use nalgebra_core::internal::linalg::lu_steps::LuSteps;
 use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
-use crate::linalg::lu::{Lu6Trait, Perm6};
+use crate::linalg::lu::Perm6;
 
 /// The Kronecker product of a `Matrix1` and a `Matrix6`, a `Matrix6`: one floored product per
 /// component. Panics on overflow. Upstream: `kronecker`.
@@ -25139,24 +25139,5 @@ impl Matrix6LuSteps<
             _ => core::panic_with_felt252(INDEX_OUT_OF_BOUNDS),
         }
         Self::gauss_step(ref matrix, diag, i);
-    }
-}
-
-impl Matrix6LuInvert<
-    T,
-    impl R: Real<T>,
-    +Copy<T>,
-    +Drop<T>,
-    +Drop<R::Wide>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +PartialOrd<T>,
-> of LuInvert<Matrix6<T>> {
-    #[inline(always)]
-    fn try_invert_to(matrix: Matrix6<T>, ref out: Matrix6<T>) -> bool {
-        Lu6Trait::try_inverse_to(Lu6Trait::new(matrix), ref out)
     }
 }

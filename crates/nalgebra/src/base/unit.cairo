@@ -27,3 +27,6 @@ pub use nalgebra_core::base::unit::*;
 // the crate-private by-value helpers the in-crate tests use (`nalgebra_core::internal`)
 #[cfg(test)]
 use nalgebra_core::internal::base::unit::UnitInternalTrait;
+// `Normed` of `Vector5` / `Vector6`: in the modules of their types (docs/SPLIT.md §3.2)
+pub use crate::base::vector5::Vector5Normed;
+pub use crate::base::vector6::Vector6Normed;
