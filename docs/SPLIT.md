@@ -495,3 +495,32 @@ Reproduce: `python3 tools/split/edges.py crates/nalgebra --json /tmp/e.json`;
 `python3 tools/split/glam_proto.py /tmp/e.json /tmp/p.json /tmp/proto`; then in `/tmp/proto`
 `scarb build -p path_proof`, and `flock ~/orchestrator/heavy-build.lock python3
 tools/split/measure.py /tmp/proto --cache /tmp/m.json --crate core …`.
+
+## 12. Decisions of the programme session (2026-09-28, plan approved)
+
+1. **Cost regression of `default-features = false` on the facade** (28.7 s / 5.2 GB → 58.8 s /
+   10.0 GB): accepted. The facade is for parity with nalgebra-rs paths; a light build depends on
+   sub-crates. Conditions: a CHANGELOG note with the figures; the facade's README opens with a table
+   "what you need → which crates to depend on → measured cost" for the declared closures; a
+   facade feature that no longer does anything is **removed** in the release that ships the split
+   (and the removal is announced), not kept as a no-op.
+2. **Release load** (34 packages, one version 0.1.1, fixed order, each verified against the
+   registry): accepted. The release script is **resumable** (a failure at package k restarts at
+   k) and **refuses to start** unless the `Consumer cost` job is green at the release commit. The
+   smallest crates merge with their natural neighbour when no declared closure worsens (fewer
+   packages at equal cost; the orchestrator's call).
+3. **Names and internals**: names are public and permanent; band names are acceptable only if they
+   say what is inside (dimension and content, no bare `a` / `b` suffix). The final list (name,
+   one-line description, lines, direct dependencies) is approved by the programme session and shown
+   to the owner **before NS3**. Former `pub(crate)` items that become `pub` live under a module
+   path that says it (`internal::`), are documented "internal, no stability promise", are never
+   re-exported by the facade, and the path-proof tool proves that the public surface of 0.1.0 and
+   of the facade are equal (nothing more, nothing less). Inline tests of crate-private items stay
+   in `src/`.
+4. **Gates**: the two close closures (static 1–4 + geometry, static 1–4 + LU / Cholesky / QR) must
+   pass on a GitHub runner with interleaved repeats (median < 15 s) **before NS3**; if one fails,
+   the closure's heaviest crate is cut further rather than the gate relaxed.
+5. `nalgebra_glam` on `glam_core` + `glam_int` (glam 0.4.1): agreed, measured in NS4.
+
+Order: NS2 (tooling, crate names read from a configuration) → NS1b (final names, small-crate
+merges, GitHub-runner measurement of the closures) → NS3..NS11.
