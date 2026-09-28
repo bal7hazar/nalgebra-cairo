@@ -1,10 +1,11 @@
-# Crate map of the package split (docs/SPLIT.md §3, §7; WP 9-NS2).
+# Crate map of the package split (docs/SPLIT.md §3, §7; WP 9-NS2, final names WP 9-NS1b).
 #
 # Read by `tools/split/cratemap.py`, hence by the generators (`tools/shapegen`, `tools/linalggen`),
 # `scripts/api_parity.py`, `tools/split/public_paths.py` and `tools/split/rewrite_imports.py`.
 #
-# [crates]  planned crate (the NS1 names; NS1b renames them HERE only) -> Cairo package that hosts
-#           it TODAY, lowest crate first (a crate may only depend on crates above it in the table).
+# [crates]  planned crate (the final names of docs/SPLIT.md §3.1, WP 9-NS1b: the package of crate
+#           `x` is `nalgebra_x`; the names live HERE only) -> Cairo package that hosts it TODAY,
+#           lowest crate first (a crate may only depend on crates above it in the table).
 #           Single-crate mode (the committed default until NS3): every crate is hosted by
 #           `nalgebra`, so every generator writes exactly what it wrote before the split tooling.
 #           A move WP switches its crates to their package (`core = "nalgebra_core"`); a package
@@ -40,40 +41,48 @@ lift = true
 
 [crates]
 core = "nalgebra"
-dim3v = "nalgebra"
-dim3 = "nalgebra"
-types5 = "nalgebra"
-dim4 = "nalgebra"
-geometry = "nalgebra"
-types6 = "nalgebra"
-dim5 = "nalgebra"
-dim5a = "nalgebra"
-dim6a = "nalgebra"
-dim6 = "nalgebra"
-dim6b = "nalgebra"
-edition = "nalgebra"
+static3 = "nalgebra"
+shapes5 = "nalgebra"
+static4 = "nalgebra"
+geometry4 = "nalgebra"
+shapes6 = "nalgebra"
+static5 = "nalgebra"
+static_6xc = "nalgebra"
+static_rx6 = "nalgebra"
+blocks = "nalgebra"
 views = "nalgebra"
-kronecker = "nalgebra"
 norm = "nalgebra"
-geometry_nd = "nalgebra"
+geometry6 = "nalgebra"
 statistics = "nalgebra"
 blas = "nalgebra"
-linalg = "nalgebra"
-linalg_svd = "nalgebra"
-linalg_pivot = "nalgebra"
-linalg_spectral = "nalgebra"
+linalg4 = "nalgebra"
+linalg_svd_eigen4 = "nalgebra"
+linalg_pivot4 = "nalgebra"
+linalg_spectral4 = "nalgebra"
 linalg5 = "nalgebra"
-linalg5_pivot = "nalgebra"
-linalg5_spectral = "nalgebra"
+linalg_pivot5 = "nalgebra"
+linalg_spectral5 = "nalgebra"
 linalg6 = "nalgebra"
-linalg6_pivot = "nalgebra"
-linalg6_bidiagonal = "nalgebra"
-linalg6_spectral = "nalgebra"
+linalg_pivot6 = "nalgebra"
+linalg_spectral6 = "nalgebra"
 dynamic = "nalgebra"
 sparse = "nalgebra"
 facade = "nalgebra"
 
-# --- rules (NS1's `final` layout, docs/SPLIT.md §3.1-3.2) -------------------------------------------
+# [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of
+# a product pulls in together, measured on a GitHub runner by `.github/workflows/split-measure.yml`
+# (`tools/split/mapplan.py` carries them into the plan, renamed by its merges). `glam_bridge` is
+# `nalgebra_glam` rewritten on the sub-crates (`glam_proto.py`), `@x` a registry crate of
+# `measure.py`. `consumer_cost.toml` lists the same closures by package name ("planned").
+[closures]
+nalgebra_glam = ["glam_bridge"]
+static3_svd = ["core", "static3", "linalg_svd_eigen4"]
+core_pivot = ["core", "linalg_pivot4"]
+static4_geometry = ["core", "static3", "shapes5", "static4", "geometry4"]
+static4_factor = ["core", "static3", "shapes5", "static4", "linalg4"]
+glam_0_4_1_alone = ["@glam_core", "@glam_int"]
+
+# --- rules (NS1's `final` layout under the final names, docs/SPLIT.md §3.1-3.2) -------------------------------------------
 
 # core-trait impls of ONE nalgebra type (`Add<Matrix3>`, `PartialOrd`, array `Into`): with the struct
 [[rule]]
@@ -88,13 +97,13 @@ follow = "struct"
 [[rule]]
 shape_file = true
 name = ".*EditTrait"
-bands = { "4" = "core", "5" = "types5", "6" = "dim6a" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "static_6xc" }
 
 # the 1- and 4-dimensional point / translation types (`nalgebra_glam` converts them); the methods
 # of `Point4` / `Translation4` build dimension-5 types
 [[rule]]
 name = "Point4Trait|Translation4Trait"
-crate = "types5"
+crate = "shapes5"
 
 [[rule]]
 file = ["geometry/point4.cairo", "geometry/translation4.cairo", "geometry/point1.cairo",
@@ -105,45 +114,45 @@ crate = "core"
 [[rule]]
 trait = ["LuSteps"]
 by = "name"
-bands = { "4" = "linalg", "5" = "linalg5", "6" = "dim6" }
-default = "linalg"
+bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static_rx6" }
+default = "linalg4"
 
 # `Perm6` and its permutation impls: with `Matrix6` (`is_invertible` runs `Lu6`)
 [[rule]]
 name = "Perm6|Perm6Trait"
-crate = "dim6"
+crate = "static_rx6"
 
 [[rule]]
 trait = ["PermuteRows", "PermuteColumns"]
 args_any = ["Perm6"]
-crate = "dim6"
+crate = "static_rx6"
 
 # solve / permutation families: declarations low, impls with the types of their largest shape
 [[rule]]
 name = "SolveKernel|MatrixSolve|PermuteRows|PermuteColumns"
 by = "name"
-bands = { "4" = "core", "5" = "types5", "6" = "types6" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
 [[rule]]
 file = ["linalg/lu.cairo", "linalg/lu/perm1_5.cairo"]
 name = "Perm.*"
 by = "name"
-bands = { "4" = "core", "5" = "types5", "6" = "types6" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
 [[rule]]
 trait = ["SolveKernel", "MatrixSolve", "PermuteRows", "PermuteColumns"]
 by = "args"
-bands = { "4" = "core", "5" = "types5", "6" = "types6" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
 # crate-private `LuInvert` impls: with the LU of their size (their only callers)
 [[rule]]
 trait = ["LuInvert"]
 by = "args"
-bands = { "4" = "linalg", "5" = "linalg5", "6" = "dim6" }
-default = "linalg"
+bands = { "4" = "linalg4", "5" = "linalg5", "6" = "static_rx6" }
+default = "linalg4"
 
 [[rule]]
 file = ["linalg/lu_steps.cairo"]
@@ -154,7 +163,7 @@ crate = "core"
 file = ["linalg/givens.cairo"]
 kind = ["impl"]
 by = "args"
-bands = { "4" = "core", "5" = "types5", "6" = "types6" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
 [[rule]]
@@ -169,11 +178,11 @@ crate = "core"
 # generic families: own crates, impls in the trait's module (the anchor rule moves them)
 [[rule]]
 name = "MatrixKronecker"
-crate = "kronecker"
+crate = "blocks"
 
 [[rule]]
 trait = ["MatrixKronecker"]
-crate = "kronecker"
+crate = "blocks"
 
 [[rule]]
 name = "FixedView|ColumnPart|RowPart"
@@ -185,17 +194,17 @@ crate = "views"
 
 [[rule]]
 name = "FixedRows|FixedColumns|FixedResize|PadTo6|CropFrom6|ShapeDims"
-crate = "edition"
+crate = "blocks"
 
 [[rule]]
 trait = ["FixedRows", "FixedColumns", "FixedResize", "PadTo6", "CropFrom6", "ShapeDims"]
-crate = "edition"
+crate = "blocks"
 
 # products, transposed products, indexing: in the module of the larger operand
 [[rule]]
 trait = ["MatrixMul", "MatrixTrMul", "MatrixIndex"]
 by = "args"
-bands = { "4" = "core", "5" = "types5", "6" = "types6" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
 [[rule]]
@@ -224,63 +233,63 @@ crate = "facade"
 [[rule]]
 file = ["base/vector2.cairo", "base/vector3.cairo", "base/matrix1.cairo"]
 kind = ["inherent"]
-crate = "dim3v"
+crate = "static3"
 
 [[rule]]
 shape_file = true
 kind = ["inherent"]
 band = [1, 2, 3]
-crate = "dim3"
+crate = "static3"
 
 [[rule]]
 shape_file = true
 kind = ["inherent"]
 band = [4]
-crate = "dim4"
+crate = "static4"
 
 [[rule]]
 shape = ["Matrix2x5", "Matrix3x5", "Matrix4x5", "RowVector5"]
 kind = ["inherent"]
-crate = "dim5a"
+crate = "static5"
 
 [[rule]]
 shape_file = true
 kind = ["inherent"]
 band = [5]
-crate = "dim5"
+crate = "static5"
 
 [[rule]]
 shape = ["Matrix2x6", "Matrix3x6", "Matrix4x6", "Matrix5x6", "RowVector6"]
 kind = ["inherent"]
 name = "(Matrix\\dx6|RowVector6)(Angle)?Trait"
-crate = "dim6b"
+crate = "static_rx6"
 
 [[rule]]
 file = ["base/matrix6.cairo"]
 kind = ["inherent"]
 name = "Matrix6(Angle)?Trait"
-crate = "dim6"
+crate = "static_rx6"
 
 [[rule]]
 shape_file = true
 kind = ["inherent"]
 band = [6]
-crate = "dim6a"
+crate = "static_6xc"
 
 # shapes: structs, aliases and the rest with the types of their band
 [[rule]]
 shape_file = true
-bands = { "4" = "core", "5" = "types5", "6" = "types6" }
+bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 
 # base families (the swizzles of `Point5` / `Point6` with those types; `Matrix6CgTrait` builds
 # dimension-6 types only)
 [[rule]]
 name = "Point5SwizzleTrait|Point6SwizzleTrait"
-crate = "geometry_nd"
+crate = "geometry6"
 
 [[rule]]
 name = "Matrix6CgTrait"
-crate = "types6"
+crate = "shapes6"
 
 [[rule]]
 file = ["base/dynamic.cairo", "base/dynamic/*"]
@@ -296,7 +305,7 @@ crate = "blas"
 
 [[rule]]
 file = ["base/*cg*"]
-crate = "geometry"
+crate = "geometry4"
 
 [[rule]]
 file = ["base/*", "base.cairo"]
@@ -311,64 +320,64 @@ file = ["geometry/abstract_rotation.cairo", "geometry/point.cairo", "geometry/qu
     "geometry/isometry_matrix3.cairo", "geometry/similarity2.cairo", "geometry/similarity3.cairo",
     "geometry/similarity_matrix2.cairo", "geometry/similarity_matrix3.cairo",
     "geometry/dual_quaternion.cairo", "geometry/unit_dual_quaternion.cairo"]
-crate = "dim3"
+crate = "static3"
 
 [[rule]]
 file = ["geometry/point5.cairo", "geometry/point6.cairo", "geometry/translation5.cairo",
     "geometry/translation6.cairo", "geometry/scale5.cairo", "geometry/scale6.cairo",
     "geometry/reflection5.cairo", "geometry/reflection6.cairo"]
-crate = "geometry_nd"
+crate = "geometry6"
 
 [[rule]]
 file = ["geometry/*", "geometry.cairo"]
-crate = "geometry"
+crate = "geometry4"
 
 # linalg: family x band (dimension <= 4, 5, 6); the size is the file's, else the item name's
 [[rule]]
 file = ["linalg/lu/lu6*"]
-crate = "dim6"
+crate = "static_rx6"
 
 [[rule]]
 file = ["linalg/householder*.cairo"]
 kind = ["impl"]
 by = "args"
-bands = { "4" = "linalg", "5" = "linalg5_spectral", "6" = "linalg6_spectral" }
-default = "linalg"
+bands = { "4" = "linalg4", "5" = "linalg_spectral5", "6" = "linalg_spectral6" }
+default = "linalg4"
 
 [[rule]]
 file = ["linalg/householder*.cairo"]
-crate = "linalg"
+crate = "linalg4"
 
 [[rule]]
 file = ["linalg/lu.cairo", "linalg/lu/*", "linalg/inverse.cairo", "linalg/cholesky*", "linalg/ldlt*",
     "linalg/udu*", "linalg/qr.cairo", "linalg/qr/*"]
 by = "auto"
-bands = { "4" = "linalg", "5" = "linalg5", "6" = "linalg6" }
-default = "linalg"
+bands = { "4" = "linalg4", "5" = "linalg5", "6" = "linalg6" }
+default = "linalg4"
 
 [[rule]]
 file = ["linalg/svd*", "linalg/symmetric_eigen*"]
 by = "auto"
-bands = { "4" = "linalg_svd", "5" = "linalg5", "6" = "linalg6" }
-default = "linalg_svd"
+bands = { "4" = "linalg_svd_eigen4", "5" = "linalg5", "6" = "linalg6" }
+default = "linalg_svd_eigen4"
 
 [[rule]]
 file = ["linalg/col_piv_qr*", "linalg/full_piv_lu*", "linalg/lblt*"]
 by = "auto"
-bands = { "4" = "linalg_pivot", "5" = "linalg5_pivot", "6" = "linalg6_pivot" }
-default = "linalg_pivot"
+bands = { "4" = "linalg_pivot4", "5" = "linalg_pivot5", "6" = "linalg_pivot6" }
+default = "linalg_pivot4"
 
 [[rule]]
 file = ["linalg/bidiagonal*"]
 by = "auto"
-bands = { "4" = "linalg_spectral", "5" = "linalg5_spectral", "6" = "linalg6_bidiagonal" }
-default = "linalg_spectral"
+bands = { "4" = "linalg_spectral4", "5" = "linalg_spectral5", "6" = "linalg_spectral6" }
+default = "linalg_spectral4"
 
 [[rule]]
 file = ["linalg/*"]
 by = "auto"
-bands = { "4" = "linalg_spectral", "5" = "linalg5_spectral", "6" = "linalg6_spectral" }
-default = "linalg_spectral"
+bands = { "4" = "linalg_spectral4", "5" = "linalg_spectral5", "6" = "linalg_spectral6" }
+default = "linalg_spectral4"
 
 [[rule]]
 file = ["sparse*", "io*"]

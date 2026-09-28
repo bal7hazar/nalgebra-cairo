@@ -88,9 +88,11 @@ def feature_table():
 
 class Splitter:
     def __init__(self, edges, plan):
-        # the band crates of the split kernel traits: the plan's names (v3..v6 or final)
+        # the band crates of the split kernel traits: the plan's (`mapplan.py`), else NS1's names
         for gen, (impl, crates) in list(BAND_SPLIT.items()):
-            if "linalg5" in plan["crates"]:
+            if plan.get("band_split", {}).get(gen):
+                BAND_SPLIT[gen] = (impl, dict(plan["band_split"][gen]))
+            elif "linalg5" in plan["crates"]:
                 BAND_SPLIT[gen] = (impl, {"5": "linalg5", "6": "linalg6"})
         self.edges = edges
         self.order = plan["crates"]

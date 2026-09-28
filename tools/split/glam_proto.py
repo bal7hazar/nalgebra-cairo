@@ -3,8 +3,10 @@
 
 Copies `crates/nalgebra_glam/src` (library files only) into `PROTO/crates/glam_bridge`, rewrites
 every `use nalgebra::{..}` to the sub-crate that defines each name (plan + prototype relocation
-map), and depends on those sub-crates only (plus `glam`, `fixed`). Building it proves which
-sub-crates `nalgebra_glam` needs; measuring an empty consumer of it gives its closure cost.
+map), and depends on those sub-crates only, plus glam 0.4.1's split packages `glam_core` (every
+glam type `nalgebra_glam` names: `use glam::X` -> `use glam_core::X`) and `glam_int` (docs/SPLIT.md
+§12.5), and `fixed`. Building it proves which sub-crates `nalgebra_glam` needs; measuring an empty
+consumer of it gives its closure cost.
 
     python3 tools/split/glam_proto.py EDGES.json PLAN.json PROTO_DIR
 """
@@ -57,12 +59,14 @@ def main():
             return "\n".join(out)
 
         text = re.sub(r"^use (nalgebra::[^;]*);", repl, text, flags=re.M)
+        text = re.sub(r"^use glam::", "use glam_core::", text, flags=re.M)
         with open(os.path.join(dst, "src", f), "w") as fh:
             fh.write(text)
     deps = "".join(f'nalgebra_{c} = {{ path = "../{c}" }}\n' for c in sorted(used))
     with open(os.path.join(dst, "Scarb.toml"), "w") as fh:
         fh.write('[package]\nname = "glam_bridge"\nversion = "0.1.0"\nedition = "2024_07"\n\n'
-                 f'[dependencies]\n{deps}glam = "0.4.0"\nfixed = "0.4.0"\nsimba = "0.2.0"\n')
+                 f'[dependencies]\n{deps}glam_core = "0.4.1"\nglam_int = "0.4.1"\nfixed = "0.4.0"\n'
+                 'simba = "0.2.0"\n')
     ws = os.path.join(proto, "Scarb.toml")
     t = open(ws).read()
     if "crates/glam_bridge" not in t:
