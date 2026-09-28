@@ -1,7 +1,30 @@
 # Execution plan
 
-> **State (2026-09-26): `nalgebra` 0.1.0 and `nalgebra_glam` 0.1.0 are published** (M8 done, parity
-> 99.9 %). Paused until a consumer asks or the owner directs otherwise; see [HANDOFF.md](HANDOFF.md).
+> **State (2026-09-28): `nalgebra` 0.1.0 and `nalgebra_glam` 0.1.0 are published** (M8 done, parity
+> 99.9 %). Active: **M9, package split behind a facade** (owner decision 2026-09-28). See
+> [HANDOFF.md](HANDOFF.md).
+
+## M9 — Package split under the size rule (owner, 2026-09-28)
+
+Scarb compiles a dependency crate whole: nalgebra 0.1.0 costs a consumer that never names it 115 s and
+11.6 GB (38 s / 6.1 GB with `default-features = false`), against 3.4 s / 0.8 GB for `fixed` (programme
+study `pm/research/R7-package-granularity.md`). Owner-validated rule (`pm/decisions/2026-09-28-package-
+granularity-rule.md`): a published crate has at most **40,000 library lines** (inline tests excluded);
+an empty consumer of the crate alone adds at most **5 s and 1 GB** to the no-dependency build (cold);
+a typical product closure stays under 15 s / 3 GB; scopes follow the upstream module tree; a **facade
+crate `nalgebra`** re-exports every sub-crate so names and paths do not change (no breaking change,
+parity kept); the split costs **zero Cairo steps** (gas snapshots); CI checks the gates with a shared
+script. Model: keep-starknet-strange/alexandria (one `nalgebra_` prefix, one shared version, tests
+outside `src/`, one README per package).
+
+| WP | Content | Depends on |
+|---|---|---|
+| NS0 | `scripts/consumer_cost.py` (repository-agnostic: glam and rapier copy it): an empty consumer per published crate from its local path, cold wall time, peak RSS, library lines, gates; a CI job | — |
+| NS1 | Research, no code moved: inventory and cut plan (sub-crates with lines and an acyclic dependency graph, impls pinned by Cairo's coherence rules, what the features become, `nalgebra_glam`'s dependencies, measured cost per planned crate, release order); sent to the programme session before any move | NS0 |
+| NS2..n | The moves, one family per PR, each with zero step change on the gas snapshots and unchanged public paths through the facade | NS1 |
+
+Releases: no publication without the programme session's written go; sub-crates share the repository
+version.
 
 Execution model: one **orchestrator** session owns the plan, the workspace manifests, CI, the gas
 snapshot and the merges. Work packages are delegated to **sub-agents running in parallel**, each
