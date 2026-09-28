@@ -1,0 +1,10 @@
+[package]
+name = "pc"
+version.workspace = true
+edition.workspace = true
+experimental-features = ["user_defined_inline_macros", "associated_item_constraints"]
+[dependencies]
+pa = { path = "../pa", default-features = false }
+pb = { path = "../pb" }
+[dev-dependencies]
+assert_macros.workspace = true
