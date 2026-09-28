@@ -22,6 +22,7 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
+ "nalgebra_static3",
  "simba",
  "snforge_std",
 ]
@@ -206,6 +207,16 @@ dependencies = [
  "fixed",
  "nalgebra",
  "nalgebra_testing",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_static3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
  "simba",
  "snforge_std",
 ]

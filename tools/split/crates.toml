@@ -42,7 +42,7 @@ lift = true
 
 [crates]
 core = "nalgebra_core"
-static3 = "nalgebra"
+static3 = "nalgebra_static3"
 shapes5 = "nalgebra"
 static4 = "nalgebra"
 geometry4 = "nalgebra"
@@ -84,6 +84,11 @@ names = [
     "LuSteps", "SolveKernel", "(Matrix\\d(x\\d)?|Vector\\d|RowVector\\d)EditTrait",
     "slerp_unit", "Point2InternalTrait", "Point3InternalTrait", "UnitInternalTrait", "SymMatrix2",
     "SymMatrix2Trait", "SymMatrix3", "SymMatrix3Trait", "GivensRotationInternalTrait",
+    # WP 9-NS4 (`static3`): used by the linalg of `nalgebra` or by the in-crate tests it keeps
+    "Matrix2InternalTrait", "Matrix3InternalTrait", "Vector3InternalTrait", "QuaternionInternalTrait",
+    "UnitQuaternionInternalTrait", "UnitQuaternionAngleInternalTrait", "Rotation2InternalTrait",
+    "Rotation3InternalTrait", "Isometry2InternalTrait", "Isometry3InternalTrait",
+    "UnitComplexInternalTrait", "UnitComplexAngleInternalTrait",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of
