@@ -194,6 +194,15 @@ def solve(g, layout, verbose=False):
     for n, c in crate.items():
         if c not in rank:
             raise SystemExit(f"unknown crate {c} for {g.label(n)} ({n})")
+    ignore = getattr(layout, "ignore_edge", None)
+    ignored = collections.Counter()
+    if ignore is not None:
+        for n in g.nodes:
+            for m in list(g.deps[n]):
+                if ignore(g, n, m):
+                    g.deps[n].discard(m)
+                    ignored[(g.label(n).split(":")[0], g.label(m).split(":")[0])] += 1
+    g.ignored = ignored
     lifted_by = {}
     changed = True
     it = 0
@@ -231,6 +240,9 @@ def solve(g, layout, verbose=False):
                 allowed.add(crate[s])
         if it_["of"] in CORE_TRAITS and not allowed:
             continue
+        if tn is not None and not g.info[tn].get("public", True):
+            # a crate-private trait: its callers are ours and import the impl
+            continue
         if crate[n] not in allowed:
             violations.append((n, crate[n], sorted(allowed)))
     return crate, lifted_by, violations
@@ -267,6 +279,11 @@ def report(g, layout, crate, lifted_by, violations, verbose=False):
                 m = lifted_by[m]
                 chain.append(f"{g.label(m)} [{g.file(m)}]")
             print(f"    {g.lines[n]:6d} {g.label(n)} [{g.file(n)}] {home[n]}->{crate[n]} via {' <- '.join(chain)}")
+    ign = getattr(g, "ignored", {})
+    if ign:
+        print(f"\nedges ignored (crate-internal items the moves split per band): {len(ign)}")
+        for (a, b), v in sorted(ign.items())[:20]:
+            print(f"  {a} -> {b}")
     print(f"\nanchor violations: {len(violations)}")
     vagg = collections.Counter()
     for n, c, allowed in violations:

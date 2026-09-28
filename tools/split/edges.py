@@ -12,6 +12,7 @@ the names they reference outside the file:
 
 `group_of(path)` in `tools/split/plan.py` maps files to planned crates; `plan.py` consumes this JSON.
 """
+import collections
 import json
 import os
 import re
@@ -87,7 +88,7 @@ def items(text):
                 gen = of = None
                 if kind == "impl":
                     head = text[i:end].split("{", 1)[0]
-                    g = re.search(r"\bof\s+(\w+)", head)
+                    g = re.search(r"\bof\s+(?:\w+::)*(\w+)", head)
                     of = g.group(1) if g else None
                     before = text[max(0, i - 200) : i]
                     if g and "#[generate_trait]" in before.split("\n}")[-1]:
@@ -134,7 +135,7 @@ def methods(body):
     return out
 
 
-def crossrefs(body, resolve, own, p):
+def crossrefs(body, resolve, own, p, imported=()):
     """Crate names referenced by `body` (other items, same file included; a name defined in the
     file wins over a homonym elsewhere): capitalised names (types, traits, impls, constants)
     anywhere, lower-case functions when called through a path (`kernels::f(`) or defined in the
@@ -146,7 +147,7 @@ def crossrefs(body, resolve, own, p):
             continue
         seg = re.search(r"(\w+)::$", body[max(0, mm.start() - 64) : mm.start()])
         local_call = resolve[x].startswith(p + "#") and body[mm.end() : mm.end() + 1] in ("(", "<")
-        if x[0].isupper() or local_call or (seg is not None and seg.group(1)[0].islower()):
+        if x[0].isupper() or local_call or x in imported or (seg is not None and seg.group(1)[0].islower()):
             out.add(x)
     return sorted(out)
 
@@ -178,6 +179,59 @@ def raw_start(raw_lines, starts, pos):
     return starts[k]
 
 
+def expand_use(tree):
+    """`a::{b, c::{d, e}}` -> ["a::b", "a::c::d", "a::c::e"] (aliases kept: "a::b as x")."""
+    tree = " ".join(tree.split())
+    i = tree.find("{")
+    if i < 0:
+        return [tree.strip()]
+    prefix = tree[:i]
+    inner = tree[i + 1 : tree.rfind("}")]
+    parts, depth, cur = [], 0, ""
+    for ch in inner:
+        if ch == "," and depth == 0:
+            parts.append(cur)
+            cur = ""
+            continue
+        depth += ch == "{"
+        depth -= ch == "}"
+        cur += ch
+    parts.append(cur)
+    out = []
+    for part in parts:
+        if part.strip():
+            out.extend(prefix + x for x in expand_use(part.strip()))
+    return out
+
+
+def import_map(p, text, local_defs):
+    """{local name: "file#k"} of the `use` statements of file `p` that name an item of a module
+    file of the crate directly (re-exports through module roots are left to the global lookup)."""
+    out = {}
+    for u in USE.findall(text):
+        for full in expand_use(u):
+            alias = None
+            if " as " in full:
+                full, alias = [x.strip() for x in full.split(" as ")]
+            segs = [x.strip() for x in full.split("::")]
+            cur = p[: -len(".cairo")].split("/")
+            if segs[0] == "crate":
+                cur, segs = [], segs[1:]
+            elif segs[0] == "self":
+                segs = segs[1:]
+            elif segs[0] != "super":
+                continue
+            while segs and segs[0] == "super":
+                cur, segs = cur[:-1], segs[1:]
+            if not segs:
+                continue
+            q = "/".join(cur + segs[:-1]) + ".cairo"
+            nid = local_defs.get(q, {}).get(segs[-1])
+            if nid:
+                out[alias or segs[-1]] = nid
+    return out
+
+
 def main():
     crate = sys.argv[1]
     src = os.path.join(crate, "src")
@@ -197,6 +251,10 @@ def main():
                     defs.setdefault(nm, set()).add((p, k))
             k += 1
     unique = {k: next(iter(v))[0] for k, v in defs.items() if len(v) == 1}
+    local_defs = collections.defaultdict(dict)
+    for nm, locs in defs.items():
+        for q, k in locs:
+            local_defs[q][nm] = f"{q}#{k}"
     unique_item = {k: "%s#%d" % next(iter(v)) for k, v in defs.items() if len(v) == 1}
     res = {}
     for p, t in texts.items():
@@ -208,19 +266,14 @@ def main():
             starts.append(starts[-1] + len(line) + 1)
         its = []
         resolve = dict(unique_item)
-        k = 0
-        for kind, name, gen, of, s, e in per_file_items[p]:
-            if kind in ("use", "mod"):
-                continue
-            for nm in (name, gen):
-                if nm:
-                    resolve[nm] = f"{p}#{k}"
-            k += 1
+        imap = import_map(p, t, local_defs)
+        resolve.update(imap)
+        resolve.update(local_defs[p])
         for kind, name, gen, of, s, e in per_file_items[p]:
             if kind in ("use", "mod"):
                 continue
             body = t[s:e]
-            refs = crossrefs(body, resolve, {name, gen}, p)
+            refs = crossrefs(body, resolve, {name, gen}, p, imap)
             ref_ids = [resolve[x] for x in refs]
             calls = sorted(set(CALL.findall(body)))
             args = []
@@ -228,19 +281,21 @@ def main():
                 head = body.split("{", 1)[0]
                 tail = head[head.find(" of ") + 4 :] if " of " in head else ""
                 args = sorted({x for x in IDENT.findall(tail) if x in unique and x != of})
+            head_vis = body[: body.find(kind)].strip().split()[-1:] if body.find(kind) > 0 else []
             entry = {"kind": kind, "name": name, "gen": gen, "of": of, "lines": body.count("\n") + 1,
+                     "public": bool(head_vis) and head_vis[0] == "pub",
                      "span": [raw_start(raw_lines, starts, s), e],
                      "refs": refs, "ref_ids": ref_ids, "calls": calls, "args": args}
             if kind in ("impl", "trait"):
                 ms = []
                 for mn, ms_, me in methods(body):
                     mb = body[ms_:me]
-                    mrefs = crossrefs(mb, resolve, {name, gen}, p)
+                    mrefs = crossrefs(mb, resolve, {name, gen}, p, imap)
                     ms.append({"name": mn, "lines": mb.count("\n") + 1, "refs": mrefs})
                 entry["methods"] = ms
             its.append(entry)
         imports = sorted({x for u in USE.findall(t) for x in IDENT.findall(u.split("::")[-1] if "{" not in u else u[u.index("{"):])})
-        res[p] = {"lines": lines[p], "items": its, "imports": imports}
+        res[p] = {"lines": lines[p], "items": its, "imports": imports, "import_ids": imap}
     out = {"defs": unique, "items": unique_item, "files": res}
     path = sys.argv[sys.argv.index("--json") + 1] if "--json" in sys.argv else "/dev/stdout"
     with open(path, "w") as f:
