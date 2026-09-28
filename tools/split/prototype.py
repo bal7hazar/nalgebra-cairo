@@ -88,6 +88,10 @@ def feature_table():
 
 class Splitter:
     def __init__(self, edges, plan):
+        # the band crates of the split kernel traits: the plan's names (v3..v6 or final)
+        for gen, (impl, crates) in list(BAND_SPLIT.items()):
+            if "linalg5" in plan["crates"]:
+                BAND_SPLIT[gen] = (impl, {"5": "linalg5", "6": "linalg6"})
         self.edges = edges
         self.order = plan["crates"]
         self.rank = {c: i for i, c in enumerate(self.order)}
@@ -504,6 +508,11 @@ class Splitter:
             "deps": {c: sorted(v) for c, v in self.deps.items()},
             "upward": [[c, y, n, v] for (c, y, n), v in self.upward.most_common()],
             "relocated": [[a, b, v] for (a, b), v in self.relocated.most_common()],
+            "moved_items": {
+                nid: [self.item_crate[nid], self.module_of[nid]]
+                for nid in self.item_crate
+                if self.module_of[nid] != nid.rsplit("#", 1)[0]
+            },
         }
         with open(os.path.join(out, "prototype.json"), "w") as f:
             json.dump(rep, f, indent=1)

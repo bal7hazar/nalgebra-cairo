@@ -20,14 +20,51 @@ import argparse
 import json
 import os
 import re
+import shutil
+import statistics
+import subprocess
 import sys
+import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "scripts"))
-import consumer_cost as cc  # noqa: E402
 
 PREFIX = "nalgebra_"
 EXTERNAL = {"simba": 'simba = "0.2.0"', "glam": 'glam = "0.4.0"', "fixed": 'fixed = "0.4.0"'}
+
+
+def cold_build(label, manifest_text, repeat):
+    """Median wall seconds, CPU seconds (user + sys) and peak RSS (GB) of cold consumer builds."""
+    env = dict(os.environ, SCARB_INCREMENTAL="false")
+    walls, cpus, rsss = [], [], []
+    with tempfile.TemporaryDirectory(prefix="split_cost_") as tmp:
+        os.makedirs(os.path.join(tmp, "src"))
+        with open(os.path.join(tmp, "Scarb.toml"), "w") as f:
+            f.write(manifest_text)
+        with open(os.path.join(tmp, "src", "lib.cairo"), "w") as f:
+            f.write("pub fn consumer_cost_answer() -> u32 {\n    42\n}\n")
+        subprocess.run(["scarb", "fetch"], cwd=tmp, env=env, capture_output=True, text=True)
+        for k in range(repeat):
+            shutil.rmtree(os.path.join(tmp, "target"), ignore_errors=True)
+            tfile = os.path.join(tmp, "time.out")
+            t0 = time.monotonic()
+            p = subprocess.run(["/usr/bin/time", "-v", "-o", tfile, "scarb", "build"], cwd=tmp,
+                               env=env, capture_output=True, text=True)
+            wall = time.monotonic() - t0
+            if p.returncode != 0:
+                sys.exit(f"error: build of {label} failed:\n{p.stdout[-3000:]}{p.stderr[-2000:]}")
+            t = open(tfile).read()
+            user = float(re.search(r"User time \(seconds\): ([\d.]+)", t).group(1))
+            syst = float(re.search(r"System time \(seconds\): ([\d.]+)", t).group(1))
+            rss = int(re.search(r"Maximum resident set size \(kbytes\): (\d+)", t).group(1)) * 1024
+            print(f"  {label} [{k + 1}/{repeat}]: {wall:.1f} s wall, {user + syst:.1f} s CPU, "
+                  f"{rss / 1e9:.2f} GB", file=sys.stderr)
+            walls.append(wall)
+            cpus.append(user + syst)
+            rsss.append(rss)
+    return statistics.median(walls), statistics.median(cpus), statistics.median(rsss) / 1e9, {
+        "wall": walls, "cpu": cpus, "rss_bytes": rsss}
 
 
 def direct_deps(proto, crate):
@@ -74,8 +111,8 @@ def main():
             if args.report:
                 return None
             print(f"measuring {key}", file=sys.stderr)
-            s, rss, samples = cc.measure(key, manifest(proto, members), args.repeat, "scarb")
-            cache[key] = {"seconds": s, "gb": rss / cc.GB, "samples": samples}
+            s, cpu, gb, samples = cold_build(key, manifest(proto, members), args.repeat)
+            cache[key] = {"seconds": s, "cpu": cpu, "gb": gb, "samples": samples}
             with open(args.cache, "w") as f:
                 json.dump(cache, f, indent=1, sort_keys=True)
         return cache[key]
@@ -87,15 +124,17 @@ def main():
         full, dep = cost([c]), cost(deps)
         if full is None or dep is None:
             continue
-        rows.append((c, ", ".join(d.lstrip("@") for d in deps), full["seconds"] - dep["seconds"],
-                     full["gb"] - dep["gb"], full["seconds"] - base["seconds"], full["gb"] - base["gb"]))
-    print("| crate | direct deps | marginal s | marginal GB | closure s | closure GB |")
-    print("|---|---|---:|---:|---:|---:|")
+        rows.append((c, ", ".join(d.lstrip("@") for d in deps),
+                     full["seconds"] - dep["seconds"], full["cpu"] - dep["cpu"], full["gb"] - dep["gb"],
+                     full["seconds"] - base["seconds"], full["cpu"] - base["cpu"], full["gb"] - base["gb"]))
+    print("| crate | direct deps | marginal s (wall) | marginal s (CPU) | marginal GB "
+          "| closure s (wall) | closure s (CPU) | closure GB |")
+    print("|---|---|---:|---:|---:|---:|---:|---:|")
     for r in rows:
-        print(f"| {r[0]} | {r[1]} | {r[2]:.1f} | {r[3]:.2f} | {r[4]:.1f} | {r[5]:.2f} |")
+        print(f"| {r[0]} | {r[1]} | {r[2]:.1f} | {r[3]:.1f} | {r[4]:.2f} | {r[5]:.1f} | {r[6]:.1f} | {r[7]:.2f} |")
     if args.closure:
-        print("\n| closure | crates | added s | added GB |")
-        print("|---|---|---:|---:|")
+        print("\n| closure | crates | added s (wall) | added s (CPU) | added GB |")
+        print("|---|---|---:|---:|---:|")
         for spec in args.closure:
             name, members = spec.split("=", 1)
             ms = [m for m in members.split(",") if m]
@@ -103,8 +142,9 @@ def main():
             if r is None:
                 continue
             print(f"| {name} | {', '.join(ms)} | {r['seconds'] - base['seconds']:.1f} | "
-                  f"{r['gb'] - base['gb']:.2f} |")
-    print(f"\nbaseline (no dependency): {base['seconds']:.1f} s, {base['gb']:.2f} GB")
+                  f"{r['cpu'] - base['cpu']:.1f} | {r['gb'] - base['gb']:.2f} |")
+    print(f"\nbaseline (no dependency): {base['seconds']:.1f} s wall, {base['cpu']:.1f} s CPU, "
+          f"{base['gb']:.2f} GB")
 
 
 if __name__ == "__main__":

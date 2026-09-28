@@ -378,3 +378,231 @@ def make_v3():
 
 
 v3 = make_v3()
+
+
+def make_v4():
+    """Zero-break layout, fourth cut (measured, docs/SPLIT.md): TYPES per dimension band (structs,
+    core-trait impls, products / transposed products / indexing anchored on the larger operand),
+    inherent traits above them per band, the view / Kronecker / norm families in crates of their
+    own (impls in the module of the trait or of the norm marker)."""
+    v3 = make_v3()
+    la = [c for c in v3.CRATES if c.startswith("la_")]
+    crates = [
+        "core", "base3", "t5", "base4", "geometry", "t6", "base5", "base6a", "solve", "perm",
+        "base6", "views_b", "views_a", "kron", "norms", "geometry_nd", "statistics", "blas",
+    ] + la + ["dynamic", "sparse", "top"]
+
+    def arg_band(g, n):
+        """Band of the largest nalgebra shape among an impl's arguments (None: no shape)."""
+        best = None
+        for a in g.info[n]["args"]:
+            st = g.struct_node.get(a)
+            if st is None:
+                continue
+            s = shape_of(g.file(st))
+            if s:
+                best = max(best or 0, max(s))
+        return best
+
+    def home(g, n):
+        h = v3.home(g, n)
+        it = g.info[n]
+        of = it["of"] or ""
+        name = it["gen"] or it["name"]
+        p = g.file(n)
+        s = shape_of(p)
+        if h in ("core", "products"):
+            b = None
+            if of in PRODUCT_TRAITS or of in ("MatrixIndex",) or (g.kind(n) == "typebound" and s):
+                b = arg_band(g, n)
+            elif s and (it["kind"] == "struct" or name.endswith("EditTrait")):
+                b = max(s)
+            if b is not None:
+                return "core" if b <= 4 else ("t5" if b == 5 else "t6")
+            if h == "products":
+                return "core"
+        return h
+
+    return types.SimpleNamespace(CRATES=crates, home=home, ignore_edge=v3.ignore_edge)
+
+
+v4 = make_v4()
+
+
+SOLVE_PERM_TRAITS = {"SolveKernel", "MatrixSolve", "PermuteRows", "PermuteColumns"}
+
+
+def make_v5(la_group=None):
+    """Zero-break layout, fifth cut: v4 plus the solve / permutation families spread over the type
+    bands (declarations in `core`, impls in the module of their largest shape) and the linalg
+    items of shared files banded by the size in their name."""
+    v4 = make_v4()
+    la_group = la_group or (lambda fam, b: f"la_{fam if fam in ('lu', 'chol', 'qr', 'eig', 'svd') else 'rest'}_{b}")
+    la = []
+    for b in ("s", "5", "6"):
+        for fam in ("lu", "chol", "qr", "eig", "svd", "rest"):
+            c = la_group(fam, b)
+            if c not in la:
+                la.append(c)
+    crates = [c for c in v4.CRATES if not c.startswith("la_") and c not in ("solve", "perm")]
+    i = crates.index("dynamic")
+    crates = crates[:i] + ["la_hh"] + la + crates[i:]
+
+    def shape_band(g, n):
+        best = None
+        for a in g.info[n]["args"]:
+            st = g.struct_node.get(a)
+            if st is not None and shape_of(g.file(st)):
+                best = max(best or 0, max(shape_of(g.file(st))))
+        return best
+
+    def home(g, n):
+        it = g.info[n]
+        of = it["of"] or ""
+        name = it["gen"] or it["name"]
+        p = g.file(n)
+        if name in SOLVE_PERM_TRAITS or (
+            p in ("linalg/lu.cairo", "linalg/lu/perm1_5.cairo") and name.startswith("Perm")
+        ):
+            b = band_of_label(name)
+            return "core" if b is None or b <= 4 else ("t5" if b == 5 else "t6")
+        if of in SOLVE_PERM_TRAITS:
+            b = shape_band(g, n) or 1
+            return "core" if b <= 4 else ("t5" if b == 5 else "t6")
+        if p == "linalg/lu_steps.cairo":
+            return "core"
+        if p == "linalg/givens.cairo":
+            # public `GivensRotation` (upstream linalg::givens): declarations low, impls anchored
+            # on their shape's module
+            b = shape_band(g, n) if it["kind"] == "impl" else None
+            return "core" if b is None or b <= 4 else ("t5" if b == 5 else "t6")
+        h = v4.home(g, n)
+        if h == "la_hh" and it["kind"] == "impl" and it["args"]:
+            # impls of the crate-private Householder / Givens traits: with the linalg of their band
+            b = shape_band(g, n)
+            if b is not None and b > 4:
+                return la_group("rest", str(b))
+        if p.startswith("linalg/") and h.startswith("la_") and h not in ("la_hh",):
+            fam, b = linalg_key(p)
+            if b == "x":
+                lb = band_of_label(name)
+                b = "s" if lb is None or lb <= 4 else str(lb)
+            key = {"lu": "lu", "chol": "chol", "qr": "qr", "eig": "eig", "svd": "svd"}.get(fam, "rest")
+            return la_group(key, b)
+        return h
+
+    def ignore_edge(g, n, m):
+        if v4.ignore_edge(g, n, m):
+            return True
+        # shared linalg files (`exp.cairo`...) import every size's traits: a method call of a
+        # sized item resolved to a LARGER size is the over-approximation of plan.py (the prototype
+        # build proves the cut)
+        if g.file(n).startswith("linalg/"):
+            bn = band_of_label(g.label(n).split(":")[0])
+            bm = band_of_label(g.label(m).split(":")[0])
+            if bn is not None and bm is not None and bm > max(bn, 4):
+                return True
+        return False
+
+    return types.SimpleNamespace(CRATES=crates, home=home, ignore_edge=ignore_edge)
+
+
+v5 = make_v5()
+
+
+def make_v6():
+    """v5, with `t6` under the line cap: the crate-private edit kernels (`MatrixRxCEditTrait`) with
+    the row / column views that use them, the crate-private `LuSteps` impls with the LU of their
+    size, `Perm6` and the permutation impls it anchors in a crate of their own above `t6`."""
+    v5 = make_v5()
+    crates = list(v5.CRATES)
+    crates.insert(crates.index("base6"), "perm6")
+
+    def home(g, n):
+        h = v5.home(g, n)
+        it = g.info[n]
+        name = it["gen"] or it["name"]
+        of = it["of"] or ""
+        s = shape_of(g.file(n))
+        if s and name.endswith("EditTrait"):
+            return "views_b"
+        if of == "LuSteps" and h in ("core", "t5", "t6"):
+            return {"core": "la_lu_s", "t5": "la_lu_5", "t6": "base6"}[h]
+        if name == "Perm6" or (p_is_perm(of) and "Perm6" in it["args"]) or name in ("Perm6Trait",):
+            return "perm6"
+        return h
+
+    return types.SimpleNamespace(CRATES=crates, home=home, ignore_edge=v5.ignore_edge)
+
+
+def p_is_perm(of):
+    return of in ("PermuteRows", "PermuteColumns")
+
+
+v6 = make_v6()
+
+
+# the r x 5 family (their methods use `Matrix5Trait`): the crate above the 5-row family
+DIM5_A = {"Matrix2x5", "Matrix3x5", "Matrix4x5", "RowVector5"}
+
+
+def make_final():
+    """The recommended cut (docs/SPLIT.md §3): v6 with the crate names of the plan, the edit
+    kernels with the methods of their band, `base5` in two, the dimension-6 linalg in three and
+    the small linalg crates merged."""
+    v5 = make_v5()
+    crates = [
+        "core", "dim3", "types5", "dim4", "geometry", "types6", "dim5", "dim5a", "dim6a",
+        "dim6", "edition", "views", "kronecker", "norm", "geometry_nd", "statistics", "blas",
+        "linalg", "linalg_ext", "linalg5", "linalg5_ext", "linalg6", "linalg6_pivot",
+        "linalg6_spectral", "dynamic", "sparse", "facade",
+    ]
+    rename = {
+        "core": "core", "base3": "dim3", "t5": "types5", "base4": "dim4", "geometry": "geometry",
+        "t6": "types6", "base5": "dim5", "base6a": "dim6a", "base6": "dim6", "perm6": "dim6",
+        "views_b": "edition", "views_a": "views", "kron": "kronecker", "norms": "norm",
+        "geometry_nd": "geometry_nd", "statistics": "statistics", "blas": "blas",
+        "dynamic": "dynamic", "sparse": "sparse", "top": "facade", "la_hh": "linalg",
+    }
+    la_map = {
+        "s": {"lu": "linalg", "chol": "linalg", "qr": "linalg", "eig": "linalg", "svd": "linalg",
+              "rest": "linalg_ext"},
+        "5": {"lu": "linalg5", "chol": "linalg5", "qr": "linalg5", "eig": "linalg5",
+              "svd": "linalg5", "rest": "linalg5_ext"},
+        "6": {"lu": "linalg6", "chol": "linalg6", "qr": "linalg6", "eig": "linalg6",
+              "svd": "linalg6", "rest": None},
+    }
+    PIVOT6 = ("col_piv_qr", "full_piv_lu", "lblt", "lu")
+
+    def home(g, n):
+        h = v5.home(g, n)
+        it = g.info[n]
+        name = it["gen"] or it["name"]
+        of = it["of"] or ""
+        p = g.file(n)
+        s = shape_of(p)
+        if s and name.endswith("EditTrait"):
+            b = max(s)
+            return {5: "types5", 6: "dim6a"}.get(b, "core")
+        if of == "LuSteps":
+            b = band_of_label(name) or 1
+            return "linalg" if b <= 4 else ("linalg5" if b == 5 else "dim6")
+        if name in ("Perm6", "Perm6Trait") or (of in ("PermuteRows", "PermuteColumns") and "Perm6" in it["args"]):
+            return "dim6"
+        if h == "base5" and s:
+            shape = p.split("/")[-1][:-6]
+            tname = "".join(w.capitalize() for w in shape.split("_"))
+            return "dim5a" if tname in DIM5_A else "dim5"
+        if h.startswith("la_") and h != "la_hh":
+            fam, b = h[3:].rsplit("_", 1)
+            c = la_map[b][fam]
+            if c is None:
+                stem = p.split("/")[1].split(".")[0]
+                c = "linalg6_pivot" if stem in PIVOT6 else "linalg6_spectral"
+            return c
+        return rename[h]
+
+    return types.SimpleNamespace(CRATES=crates, home=home, ignore_edge=v5.ignore_edge)
+
+
+final = make_final()
