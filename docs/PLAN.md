@@ -23,6 +23,13 @@ outside `src/`, one README per package).
 | NS1 | Research, no code moved: inventory and cut plan (sub-crates with lines and an acyclic dependency graph, impls pinned by Cairo's coherence rules, what the features become, `nalgebra_glam`'s dependencies, measured cost per planned crate, release order); sent to the programme session before any move | NS0 |
 | NS2..n | The moves, one family per PR, each with zero step change on the gas snapshots and unchanged public paths through the facade | NS1 |
 
+Gates, precisely (programme session, 2026-09-28): gate 2 (5 s / 1 GB) is a crate's **marginal** cost,
+cost(empty consumer of the crate) − cost(empty consumer of its direct dependencies together); gate 3
+(15 s / 3 GB) is a **declared closure**'s cost over the no-dependency baseline. Facades and products are
+judged on gate 3 only: the facade `nalgebra` (it re-exports everything) cannot pass it, so the plan
+declares the closures that must (e.g. core + geometry, core + one decomposition family, `nalgebra_glam`'s
+closure, the first consumer to fix: +37 s / +5.5 GB today).
+
 Releases: no publication without the programme session's written go; sub-crates share the repository
 version.
 
