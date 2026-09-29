@@ -83,18 +83,18 @@ use nalgebra_shapes6::base::matrix6x4::Matrix6x4;
 use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
 use nalgebra_shapes6::base::row_vector6::RowVector6;
 use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_static6_tall::internal::base::matrix2x6::Matrix2x6EditTrait;
+use nalgebra_static6_tall::internal::base::matrix3x6::Matrix3x6EditTrait;
+use nalgebra_static6_tall::internal::base::matrix4x6::Matrix4x6EditTrait;
+use nalgebra_static6_tall::internal::base::matrix5x6::Matrix5x6EditTrait;
+use nalgebra_static6_tall::internal::base::matrix6::Matrix6EditTrait;
+use nalgebra_static6_tall::internal::base::matrix6x2::Matrix6x2EditTrait;
+use nalgebra_static6_tall::internal::base::matrix6x3::Matrix6x3EditTrait;
+use nalgebra_static6_tall::internal::base::matrix6x4::Matrix6x4EditTrait;
+use nalgebra_static6_tall::internal::base::matrix6x5::Matrix6x5EditTrait;
+use nalgebra_static6_tall::internal::base::row_vector6::RowVector6EditTrait;
+use nalgebra_static6_tall::internal::base::vector6::Vector6EditTrait;
 use crate::base::errors;
-use crate::base::matrix2x6::Matrix2x6EditTrait;
-use crate::base::matrix3x6::Matrix3x6EditTrait;
-use crate::base::matrix4x6::Matrix4x6EditTrait;
-use crate::base::matrix5x6::Matrix5x6EditTrait;
-use crate::base::matrix6::Matrix6EditTrait;
-use crate::base::matrix6x2::Matrix6x2EditTrait;
-use crate::base::matrix6x3::Matrix6x3EditTrait;
-use crate::base::matrix6x4::Matrix6x4EditTrait;
-use crate::base::matrix6x5::Matrix6x5EditTrait;
-use crate::base::row_vector6::RowVector6EditTrait;
-use crate::base::vector6::Vector6EditTrait;
 
 /// The 1 consecutive rows of a `Matrix1` as a `Matrix1` (`rows` / `rows_range`: default methods).
 /// Upstream: `fixed_rows::<1>`, `select_rows`.
