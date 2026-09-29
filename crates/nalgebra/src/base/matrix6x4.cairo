@@ -10003,3 +10003,175 @@ pub impl Perm6PermuteRowsMatrix6x4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm6, 
             };
     }
 }
+use nalgebra_geometry4::geometry::reflection4::{Reflection4, Reflection4Rows, Reflection4Trait};
+
+// crate-map: generated items (tools/split/cratemap.py) [split]
+// crate-map: from geometry/reflection4.cairo
+/// `Reflection4Rows` on `Matrix6x4` with the scratch vector `Vector6`.
+pub impl Reflection4RowsMatrix6x4<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Mul<T>, +Neg<T>,
+> of Reflection4Rows<Matrix6x4<T>, Vector6<T>, T> {
+    fn reflect_rows(self: Reflection4<T>, ref lhs: Matrix6x4<T>, ref work: Vector6<T>) {
+        let (a, b, m) = (Reflection4Trait::axis(self), Reflection4Trait::bias(self), lhs);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m11, a.x);
+        let w = R::wide_add_prod(w, m.m12, a.y);
+        let w = R::wide_add_prod(w, m.m13, a.z);
+        let w = R::wide_add_prod(w, m.m14, a.w);
+        let w = R::wide_sub(w, b);
+        let s1 = R::wide_rescale(w);
+        let f1 = -(s1 + s1);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m21, a.x);
+        let w = R::wide_add_prod(w, m.m22, a.y);
+        let w = R::wide_add_prod(w, m.m23, a.z);
+        let w = R::wide_add_prod(w, m.m24, a.w);
+        let w = R::wide_sub(w, b);
+        let s2 = R::wide_rescale(w);
+        let f2 = -(s2 + s2);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m31, a.x);
+        let w = R::wide_add_prod(w, m.m32, a.y);
+        let w = R::wide_add_prod(w, m.m33, a.z);
+        let w = R::wide_add_prod(w, m.m34, a.w);
+        let w = R::wide_sub(w, b);
+        let s3 = R::wide_rescale(w);
+        let f3 = -(s3 + s3);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m41, a.x);
+        let w = R::wide_add_prod(w, m.m42, a.y);
+        let w = R::wide_add_prod(w, m.m43, a.z);
+        let w = R::wide_add_prod(w, m.m44, a.w);
+        let w = R::wide_sub(w, b);
+        let s4 = R::wide_rescale(w);
+        let f4 = -(s4 + s4);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m51, a.x);
+        let w = R::wide_add_prod(w, m.m52, a.y);
+        let w = R::wide_add_prod(w, m.m53, a.z);
+        let w = R::wide_add_prod(w, m.m54, a.w);
+        let w = R::wide_sub(w, b);
+        let s5 = R::wide_rescale(w);
+        let f5 = -(s5 + s5);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m61, a.x);
+        let w = R::wide_add_prod(w, m.m62, a.y);
+        let w = R::wide_add_prod(w, m.m63, a.z);
+        let w = R::wide_add_prod(w, m.m64, a.w);
+        let w = R::wide_sub(w, b);
+        let s6 = R::wide_rescale(w);
+        let f6 = -(s6 + s6);
+        lhs =
+            Matrix6x4 {
+                m11: R::mul_add(f1, a.x, m.m11),
+                m12: R::mul_add(f1, a.y, m.m12),
+                m13: R::mul_add(f1, a.z, m.m13),
+                m14: R::mul_add(f1, a.w, m.m14),
+                m21: R::mul_add(f2, a.x, m.m21),
+                m22: R::mul_add(f2, a.y, m.m22),
+                m23: R::mul_add(f2, a.z, m.m23),
+                m24: R::mul_add(f2, a.w, m.m24),
+                m31: R::mul_add(f3, a.x, m.m31),
+                m32: R::mul_add(f3, a.y, m.m32),
+                m33: R::mul_add(f3, a.z, m.m33),
+                m34: R::mul_add(f3, a.w, m.m34),
+                m41: R::mul_add(f4, a.x, m.m41),
+                m42: R::mul_add(f4, a.y, m.m42),
+                m43: R::mul_add(f4, a.z, m.m43),
+                m44: R::mul_add(f4, a.w, m.m44),
+                m51: R::mul_add(f5, a.x, m.m51),
+                m52: R::mul_add(f5, a.y, m.m52),
+                m53: R::mul_add(f5, a.z, m.m53),
+                m54: R::mul_add(f5, a.w, m.m54),
+                m61: R::mul_add(f6, a.x, m.m61),
+                m62: R::mul_add(f6, a.y, m.m62),
+                m63: R::mul_add(f6, a.z, m.m63),
+                m64: R::mul_add(f6, a.w, m.m64),
+            };
+        work = Vector6 { x: s1, y: s2, z: s3, w: s4, a: s5, b: s6 };
+    }
+
+    fn reflect_rows_with_sign(
+        self: Reflection4<T>, ref lhs: Matrix6x4<T>, ref work: Vector6<T>, sign: T,
+    ) {
+        let (a, b, m) = (Reflection4Trait::axis(self), Reflection4Trait::bias(self), lhs);
+        let m_two = -(sign + sign);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m11, a.x);
+        let w = R::wide_add_prod(w, m.m12, a.y);
+        let w = R::wide_add_prod(w, m.m13, a.z);
+        let w = R::wide_add_prod(w, m.m14, a.w);
+        let w = R::wide_sub(w, b);
+        let s1 = R::wide_rescale(w);
+        let f1 = m_two * s1;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m21, a.x);
+        let w = R::wide_add_prod(w, m.m22, a.y);
+        let w = R::wide_add_prod(w, m.m23, a.z);
+        let w = R::wide_add_prod(w, m.m24, a.w);
+        let w = R::wide_sub(w, b);
+        let s2 = R::wide_rescale(w);
+        let f2 = m_two * s2;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m31, a.x);
+        let w = R::wide_add_prod(w, m.m32, a.y);
+        let w = R::wide_add_prod(w, m.m33, a.z);
+        let w = R::wide_add_prod(w, m.m34, a.w);
+        let w = R::wide_sub(w, b);
+        let s3 = R::wide_rescale(w);
+        let f3 = m_two * s3;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m41, a.x);
+        let w = R::wide_add_prod(w, m.m42, a.y);
+        let w = R::wide_add_prod(w, m.m43, a.z);
+        let w = R::wide_add_prod(w, m.m44, a.w);
+        let w = R::wide_sub(w, b);
+        let s4 = R::wide_rescale(w);
+        let f4 = m_two * s4;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m51, a.x);
+        let w = R::wide_add_prod(w, m.m52, a.y);
+        let w = R::wide_add_prod(w, m.m53, a.z);
+        let w = R::wide_add_prod(w, m.m54, a.w);
+        let w = R::wide_sub(w, b);
+        let s5 = R::wide_rescale(w);
+        let f5 = m_two * s5;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.m61, a.x);
+        let w = R::wide_add_prod(w, m.m62, a.y);
+        let w = R::wide_add_prod(w, m.m63, a.z);
+        let w = R::wide_add_prod(w, m.m64, a.w);
+        let w = R::wide_sub(w, b);
+        let s6 = R::wide_rescale(w);
+        let f6 = m_two * s6;
+        lhs =
+            Matrix6x4 {
+                m11: R::sum_prod2(f1, a.x, sign, m.m11),
+                m12: R::sum_prod2(f1, a.y, sign, m.m12),
+                m13: R::sum_prod2(f1, a.z, sign, m.m13),
+                m14: R::sum_prod2(f1, a.w, sign, m.m14),
+                m21: R::sum_prod2(f2, a.x, sign, m.m21),
+                m22: R::sum_prod2(f2, a.y, sign, m.m22),
+                m23: R::sum_prod2(f2, a.z, sign, m.m23),
+                m24: R::sum_prod2(f2, a.w, sign, m.m24),
+                m31: R::sum_prod2(f3, a.x, sign, m.m31),
+                m32: R::sum_prod2(f3, a.y, sign, m.m32),
+                m33: R::sum_prod2(f3, a.z, sign, m.m33),
+                m34: R::sum_prod2(f3, a.w, sign, m.m34),
+                m41: R::sum_prod2(f4, a.x, sign, m.m41),
+                m42: R::sum_prod2(f4, a.y, sign, m.m42),
+                m43: R::sum_prod2(f4, a.z, sign, m.m43),
+                m44: R::sum_prod2(f4, a.w, sign, m.m44),
+                m51: R::sum_prod2(f5, a.x, sign, m.m51),
+                m52: R::sum_prod2(f5, a.y, sign, m.m52),
+                m53: R::sum_prod2(f5, a.z, sign, m.m53),
+                m54: R::sum_prod2(f5, a.w, sign, m.m54),
+                m61: R::sum_prod2(f6, a.x, sign, m.m61),
+                m62: R::sum_prod2(f6, a.y, sign, m.m62),
+                m63: R::sum_prod2(f6, a.z, sign, m.m63),
+                m64: R::sum_prod2(f6, a.w, sign, m.m64),
+            };
+        work = Vector6 { x: s1, y: s2, z: s3, w: s4, a: s5, b: s6 };
+    }
+}
+// crate-map: end

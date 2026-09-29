@@ -3265,6 +3265,19 @@ pub impl RowVector4TrMulRowVector6<
     }
 }
 
+/// `selfᵀ * rhs`, a `Matrix5x6`: `mul_mat` of the transposed components, so one floored product
+/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
+/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
+pub impl RowVector5TrMulRowVector6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixTrMul<RowVector5<T>, RowVector6<T>> {
+    type Output = Matrix5x6<T>;
+    #[inline(always)]
+    fn tr_mul(self: RowVector5<T>, rhs: RowVector6<T>) -> Matrix5x6<T> {
+        MatrixMul::mul_mat(Vector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }, rhs)
+    }
+}
+
 /// `self * rhs`, a `Matrix2x6`: one floored product per component. Panics on overflow. Upstream:
 /// `Vector2 * RowVector6` (`Mul`).
 pub impl Vector2MulRowVector6<
@@ -3446,6 +3459,90 @@ pub impl Vector4KroneckerRowVector6<
     }
 }
 
+/// `self * rhs`, a `Matrix5x6`: one floored product per component. Panics on overflow. Upstream:
+/// `Vector5 * RowVector6` (`Mul`).
+pub impl Vector5MulRowVector6<
+    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
+> of MatrixMul<Vector5<T>, RowVector6<T>> {
+    type Output = Matrix5x6<T>;
+    fn mul_mat(self: Vector5<T>, rhs: RowVector6<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m51: self.a * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m52: self.a * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m53: self.a * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+            m54: self.a * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+            m45: self.w * rhs.a,
+            m55: self.a * rhs.a,
+            m16: self.x * rhs.b,
+            m26: self.y * rhs.b,
+            m36: self.z * rhs.b,
+            m46: self.w * rhs.b,
+            m56: self.a * rhs.b,
+        }
+    }
+}
+
+/// The Kronecker product of a `Vector5` and a `RowVector6`, a `Matrix5x6`: one floored product per
+/// component. Panics on overflow. Upstream: `kronecker`.
+pub impl Vector5KroneckerRowVector6<
+    T, +Mul<T>, +Copy<T>, +Drop<T>,
+> of MatrixKronecker<Vector5<T>, RowVector6<T>> {
+    type Output = Matrix5x6<T>;
+    fn kronecker(self: Vector5<T>, rhs: RowVector6<T>) -> Matrix5x6<T> {
+        Matrix5x6 {
+            m11: self.x * rhs.x,
+            m21: self.y * rhs.x,
+            m31: self.z * rhs.x,
+            m41: self.w * rhs.x,
+            m51: self.a * rhs.x,
+            m12: self.x * rhs.y,
+            m22: self.y * rhs.y,
+            m32: self.z * rhs.y,
+            m42: self.w * rhs.y,
+            m52: self.a * rhs.y,
+            m13: self.x * rhs.z,
+            m23: self.y * rhs.z,
+            m33: self.z * rhs.z,
+            m43: self.w * rhs.z,
+            m53: self.a * rhs.z,
+            m14: self.x * rhs.w,
+            m24: self.y * rhs.w,
+            m34: self.z * rhs.w,
+            m44: self.w * rhs.w,
+            m54: self.a * rhs.w,
+            m15: self.x * rhs.a,
+            m25: self.y * rhs.a,
+            m35: self.z * rhs.a,
+            m45: self.w * rhs.a,
+            m55: self.a * rhs.a,
+            m16: self.x * rhs.b,
+            m26: self.y * rhs.b,
+            m36: self.z * rhs.b,
+            m46: self.w * rhs.b,
+            m56: self.a * rhs.b,
+        }
+    }
+}
+
 impl RowVector6RowVectorLen<T> of RowVectorLen<RowVector6<T>> {
     #[inline(always)]
     fn len() -> usize {
@@ -3514,6 +3611,91 @@ impl Matrix1SolveKernelRowVector6<
 }
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
+use nalgebra_geometry4::geometry::reflection1::{Reflection1, Reflection1Columns, Reflection1Trait};
+
+// crate-map: generated items (tools/split/cratemap.py) [split]
+// crate-map: from geometry/reflection1.cairo
+/// `Reflection1Columns` on `RowVector6`.
+pub impl Reflection1ColumnsRowVector6<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Neg<T>,
+> of Reflection1Columns<RowVector6<T>, T> {
+    fn reflect(self: Reflection1<T>, ref rhs: RowVector6<T>) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), rhs);
+        let m_two = -R::TWO;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.x);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.y);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.z);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.w);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.a);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.b);
+        let w = R::wide_sub(w, b);
+        let f6 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            RowVector6 {
+                x: R::mul_add(f1, a.x, m.x),
+                y: R::mul_add(f2, a.x, m.y),
+                z: R::mul_add(f3, a.x, m.z),
+                w: R::mul_add(f4, a.x, m.w),
+                a: R::mul_add(f5, a.x, m.a),
+                b: R::mul_add(f6, a.x, m.b),
+            };
+    }
+
+    fn reflect_with_sign(self: Reflection1<T>, ref rhs: RowVector6<T>, sign: T) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), rhs);
+        let m_two = -(sign + sign);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.x);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.y);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.z);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.w);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.a);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.b);
+        let w = R::wide_sub(w, b);
+        let f6 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            RowVector6 {
+                x: R::sum_prod2(f1, a.x, sign, m.x),
+                y: R::sum_prod2(f2, a.x, sign, m.y),
+                z: R::sum_prod2(f3, a.x, sign, m.z),
+                w: R::sum_prod2(f4, a.x, sign, m.w),
+                a: R::sum_prod2(f5, a.x, sign, m.a),
+                b: R::sum_prod2(f6, a.x, sign, m.b),
+            };
+    }
+}
+// crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
 // crate-map: from linalg/lu/perm1_5.cairo

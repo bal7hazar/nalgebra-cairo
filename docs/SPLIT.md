@@ -550,7 +550,13 @@ shares under `nalgebra_core::internal` (`crates.toml` `[internal]`). **NS4 done*
 `nalgebra_static3`, 29,486 library lines, marginal 3.2 s / 0.63 GB (CI `Consumer cost`, GitHub
 runner; NS1b: 2.9 s / 0.64 GB), zero step change, path proof green (transient set 524 → 502);
 `nalgebra_glam` on `nalgebra_core` + `nalgebra_static3` + `glam_core` / `glam_int` 0.4.1: closure
-7.3 s / 1.69 GB (was 37 s / 5.5 GB on `nalgebra` + `glam`).
+7.3 s / 1.69 GB (was 37 s / 5.5 GB on `nalgebra` + `glam`). **NS5 done** (PR #68):
+`nalgebra_shapes5` (23,176 lines, marginal 1.5 s / 0.39 GB), `nalgebra_static4` (16,114, 1.8 s /
+0.35 GB), `nalgebra_geometry4` (13,560, 1.7 s / 0.30 GB) (CI `Consumer cost`, GitHub runner; NS1b:
+1.4 / 1.9 / 1.6 s), zero step change, path proof green (transient set 502 → 752: the impls of the
+dimension-5 files anchored in dimension-6 modules, until NS6); closure static 1–4 + geometry
+(`static4_geometry`) **11.0 s / 2.42 GB** (NS1b: 11.0 s / 2.38 GB); `nalgebra_glam` without
+`glam_int`: 6.9 s / 1.62 GB; `cratemap.py --anchors` (the step-7 checks).
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible

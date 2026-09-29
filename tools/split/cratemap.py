@@ -424,6 +424,10 @@ class CrateMap:
                 mod = self.module_of(it, c, idx)
                 rows.append((it, pkg, mod))
                 placed[(f, it.label)] = (pkg, mod)
+                if it.kind == "inherent" and it.name and it.name != it.label:
+                    # the impl of a `#[generate_trait]` trait, named by its own name
+                    # (`Matrix4Kernels::pmp`) in the other pieces (WP 9-NS5)
+                    placed.setdefault((f, it.name), (pkg, mod))
             pkgs = {pkg for _it, pkg, mod in rows if mod == f} or {self.facade_package}
             if len(pkgs) == 1 and all(mod == f for _i, _p, mod in rows):
                 # the whole file goes to one package: written as it is (comments, markers)
@@ -464,6 +468,27 @@ class CrateMap:
             # (nor is `Self::gauss_step`: a name after `::` is never imported)
             used = set(IDENT.findall(re.sub(r"\bfn\s+\w+|::\s*\w+", " ", masked_joined)))
             used -= _defined(masked_joined + "\n" + cc.mask(whole.get((pkg, mod), "")))
+            # a trait the piece uses through method calls only (`Rotation2AngleTrait::new(a)
+            # .to_homogeneous()` needs `Rotation2Trait`): kept when one of the original file's
+            # `use` names is a trait of a type the piece names (`Rotation2`, `Rotation2...Trait`)
+            # declaring a method the piece calls (WP 9-NS5)
+            called = set(re.findall(r"\.\s*(\w+)\s*\(", masked_joined))
+            for o in origins:
+                for u in uses_of[o]:
+                    mu = USE.match(u.strip())
+                    if mu is None:
+                        continue
+                    for full in expand_use(mu.group(1)):
+                        nm = full.split(" as ")[-1].split("::")[-1].strip()
+                        it = idx.get(nm)
+                        if nm in used or it is None or it.kind not in ("trait", "inherent"):
+                            continue
+                        stem = re.sub(r"(Angle)?Trait$", "", nm)
+                        if stem == nm or not any(x == stem or (x.startswith(stem) and x.endswith("Trait"))
+                                                 for x in used):
+                            continue
+                        if self._methods(it, texts) & called:
+                            used.add(nm)
             lines = []
             for o in origins:
                 for u in uses_of[o]:
@@ -527,7 +552,8 @@ class CrateMap:
             subs = sorted((p for p in hosted.get(mod, ()) if p != self.facade_package), key=self.package_rank)
             path = mod[: -len(".cairo")].replace("/", "::")
             stmts[os.path.join(facade_dir, "src", mod)].extend(
-                [f"pub use {p}::{path}::*;" for p in subs] + sorted(explicit.get(mod, [])))
+                [self._facade_reexport(p, mod, bodies, stmts, items, tag) for p in subs]
+                + sorted(explicit.get(mod, [])))
         # the module roots of the sub-crates: `pub mod x;` down to every hosted module
         for mod, pkgs in hosted.items():
             for pkg in pkgs - {self.facade_package}:
@@ -538,6 +564,36 @@ class CrateMap:
         for path in sorted(set(bodies) | set(stmts) | set(items)):
             out[path] = self._assemble(path, bodies.get(path), stmts.get(path, []), items.get(path, []), tag)
         return out
+
+    def _facade_reexport(self, pkg, mod, bodies, stmts, items, tag):
+        """The facade's re-export of module `mod` of package `pkg`: `pub use <pkg>::<path>::*;`,
+        or an explicit name list when that module also holds public impls moved in from other
+        modules (their 0.1.0 path is another module, which re-exports them explicitly), so that no
+        path appears twice (docs/SPLIT.md §12.6; WP 9-NS5)."""
+        path = mod[: -len(".cairo")].replace("/", "::")
+        glob = f"pub use {pkg}::{path}::*;"
+        sub = os.path.join(package_dir(pkg), "src", mod)
+        if sub in bodies or sub in stmts or sub in items:
+            text = self._assemble(sub, bodies.get(sub), stmts.get(sub, []), items.get(sub, []), tag)
+        elif os.path.exists(os.path.join(ROOT, sub)):
+            text = open(os.path.join(ROOT, sub), encoding="utf-8").read()
+        else:
+            return glob
+        names = public_names(text)
+        expected = expected_paths()
+        if names is None or not expected:
+            return glob
+        here = f"nalgebra::{path}::"
+        moved = {n for n in names if here + n not in expected and n in expected_names()}
+        if not moved:
+            return glob
+        return f"pub use {pkg}::{path}::{{{', '.join(sorted(names - moved))}}};"
+
+    @staticmethod
+    def _methods(it, texts):
+        """The names of the methods a trait (or `#[generate_trait]` impl) declares."""
+        body = cc.mask(texts.get(it.file, ""))[it.start:it.end]
+        return set(re.findall(r"\bfn\s+(\w+)", body))
 
     @staticmethod
     def _assemble(path, body, stmts, items, tag):
@@ -562,8 +618,13 @@ class CrateMap:
             # the `use` lines of the committed file that the kept blocks of other generators need
             need = set(IDENT.findall(cc.mask("\n".join(foreign))))
             have = statements(base)
-            for m in USE.finditer(cc.mask(ITEM_BLOCK.sub("", committed))):
-                stmt = committed[m.start():m.end()].strip()
+            stripped = ITEM_BLOCK.sub("", committed)
+            masked = cc.mask(stripped)
+            for m in USE.finditer(masked):
+                # the statement alone: the offsets are the block-free text's, and the comments
+                # right above it (masked to spaces) are not part of it (WP 9-NS5)
+                lead = len(masked[m.start():m.end()]) - len(masked[m.start():m.end()].lstrip())
+                stmt = stripped[m.start() + lead:m.end()].strip()
                 names = {x.split(" as ")[-1].split("::")[-1].strip() for x in expand_use(m.group(1))}
                 if names & need and not statements(stmt) <= have:
                     stmts = [stmt] + list(stmts)
@@ -689,12 +750,19 @@ class CrateMap:
                 elif it is None and ("/".join(absolute[:-1]) + ".cairo", absolute[-1]) not in placed:
                     # a module (`crate::base::errors`): the package whose `src/` holds its file
                     # when this package does not (WP 9-NS4)
-                    rel = os.path.join(*absolute) + ".cairo"
-                    if not os.path.exists(os.path.join(ROOT, package_dir(pkg), "src", rel)):
-                        for p in self.packages():
-                            if os.path.exists(os.path.join(ROOT, package_dir(p), "src", rel)):
-                                target_pkg = p
-                                break
+                    # (or a name of such a module, `crate::base::errors::INDEX_OUT_OF_BOUNDS`,
+                    # WP 9-NS5)
+                    rels = [os.path.join(*absolute) + ".cairo"]
+                    if len(absolute) > 1:
+                        rels.append(os.path.join(*absolute[:-1]) + ".cairo")
+                    for rel in rels:
+                        if os.path.exists(os.path.join(ROOT, package_dir(pkg), "src", rel)):
+                            break
+                        hit = [p for p in self.packages()
+                               if os.path.exists(os.path.join(ROOT, package_dir(p), "src", rel))]
+                        if hit:
+                            target_pkg = hit[0]
+                            break
                 root = "crate" if target_pkg == pkg else target_pkg
                 full = "::".join([root] + absolute)
             keep.append(full + (f" as {alias}" if alias else ""))
@@ -717,6 +785,51 @@ def _defined(masked):
     out = set(re.findall(r"^(?:pub(?:\(crate\))?\s+)?(?:impl|trait|struct|enum|fn|const|type)\s+(\w+)", masked, re.M))
     out |= set(re.findall(r"#\[generate_trait\]\s*(?:pub(?:\(crate\))?\s+)?impl\s+\w+[^{;]*?\bof\s+(\w+)", masked))
     return out
+
+
+def public_names(text):
+    """The public names a module text defines or re-exports (child modules but `internal`
+    included), or None if it re-exports a glob."""
+    masked = cc.mask(text)
+    out = set()
+    for kind, name, gen, _of, s, e in cut_items(masked):
+        if not re.match(r"pub\s", masked[s:e]):
+            continue
+        if kind == "use":
+            for full in expand_use(re.sub(r"\s+", " ", text[s:e]).split("use", 1)[1].rsplit(";", 1)[0].strip()):
+                last = full.split(" as ")[-1].split("::")[-1].strip()
+                if last == "*":
+                    return None
+                out.add(last)
+            continue
+        if kind == "mod" and name == "internal":
+            continue
+        if name:
+            out.add(name)
+        if gen:
+            out.add(gen)
+    return out
+
+
+_EXPECTED = None
+
+
+def expected_paths():
+    """The public paths the facade exports: 0.1.0's (`public_paths_0.1.0.txt`) and the added ones
+    (`public_paths_added.txt`), as `tools/split/public_paths.py --check` expects them."""
+    global _EXPECTED
+    if _EXPECTED is None:
+        _EXPECTED = set()
+        for f in ("public_paths_0.1.0.txt", "public_paths_added.txt"):
+            p = os.path.join(HERE, f)
+            if os.path.exists(p):
+                _EXPECTED |= {ln.strip() for ln in open(p, encoding="utf-8")
+                              if ln.strip() and not ln.startswith("#")}
+    return _EXPECTED
+
+
+def expected_names():
+    return {p.rsplit("::", 1)[-1] for p in expected_paths()}
 
 
 def publish(chunk):
@@ -857,6 +970,53 @@ NS1_NAMES = {
 }
 
 
+def check_anchors(cm):
+    """The move-PR checklist's step 7 (docs/SPLIT.md §15), two checks; the number of findings.
+
+    1. Anchors: every impl with type arguments is placed in the module of its trait or of one of
+       its argument types, in its own package (Cairo finds it nowhere else).
+    2. Placement: every item of the committed tree sits in the package of its crate (a hand-written
+       block the generators do not rewrite, `Vector5Normed`, WP 9-NS5); test-only items aside."""
+    from files import files as walk
+
+    texts = cm.library_files()
+    idx, known = cm.index(texts)
+    placed = cm.place_all(texts)
+    bad = 0
+    for f, rows in sorted(placed.items()):
+        for it, c, m in rows:
+            if it.kind != "impl" or not it.args:
+                continue
+            anchors = []
+            for a in list(it.args) + ([it.of] if it.of else []):
+                an = idx.get(a)
+                if an is None or an.kind not in ("struct", "enum", "trait", "inherent"):
+                    continue
+                ca = cm.crate_of(an, idx)
+                anchors.append((cm.crates[ca], cm.module_of(an, ca, idx)))
+            if anchors and (cm.crates[c], m) not in anchors:
+                bad += 1
+                print(f"anchor: {it.label} ({c}, {m}) is in none of {anchors}")
+    for pkg in cm.packages():
+        d = os.path.join(ROOT, package_dir(pkg))
+        if not os.path.exists(os.path.join(d, "src", "lib.cairo")):
+            continue
+        for rel in walk(d):
+            if rel == "lib.cairo":
+                continue
+            text = open(os.path.join(d, "src", rel), encoding="utf-8").read()
+            f = rel[len(INTERNAL):] if rel.startswith(INTERNAL) else rel
+            for it in parse(f, text, known):
+                if it.kind in ("use", "mod") or TEST_ONLY.search(text[it.start:it.end].split("{", 1)[0]):
+                    continue
+                c = cm.crate_of(it, idx)
+                if cm.crates[c] != pkg:
+                    bad += 1
+                    print(f"placement: {it.label} ({pkg}, {rel}) belongs to {c} ({cm.crates[c]})")
+    print(f"anchors and placement: {bad} finding(s)")
+    return bad
+
+
 def compare_plan(cm, edges_path, plan_path, generated_only):
     import json
 
@@ -993,6 +1153,8 @@ def main():
     ap.add_argument("--compare-plan", nargs=2, metavar=("EDGES", "PLAN"))
     ap.add_argument("--generated", action="store_true", help="--compare-plan: generated files only")
     ap.add_argument("--split-map", metavar="OUT")
+    ap.add_argument("--anchors", action="store_true",
+                    help="the anchor and placement checks of a move PR (docs/SPLIT.md §15)")
     ap.add_argument("--compare-tree", nargs=2, metavar=("CHECKOUT", "PROTO"),
                     help="a checkout the generators wrote in split mode against prototype.py's output")
     a = ap.parse_args()
@@ -1011,6 +1173,9 @@ def main():
         counts = collections.Counter(c for rows in placed.values() for _it, c, _m in rows)
         for c in cm.order:
             print(f"  {c:20s} {counts[c]:6d} items")
+    if a.anchors:
+        sys.path.insert(0, HERE)
+        return 1 if check_anchors(cm) else 0
     if a.compare_tree:
         return 1 if compare_tree(cm, *a.compare_tree) else 0
     if a.compare_plan:

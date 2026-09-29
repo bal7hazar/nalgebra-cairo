@@ -6,9 +6,10 @@
 //! alternatives (Householder, classical Gram-Schmidt, completed basis) lives there.
 
 use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_static4::internal::base::matrix4::Matrix4InternalTrait;
 use simba::scalar::Real;
 use crate::base::MatrixTrMul;
-use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
+use crate::base::matrix4::{Matrix4, Matrix4Trait};
 use crate::base::vector4::Vector4;
 
 /// The QR factorisation of a `Matrix4<T>`: `A = Q * R`.
@@ -310,8 +311,9 @@ mod tests {
     //! are in `crates/tests_linalg/src/qr/qr4/tests.cairo`.
 
     use fixed::Fixed;
+    use nalgebra_static4::internal::base::matrix4::Matrix4InternalTrait;
     use simba::scalar::Real;
-    use crate::base::matrix4::{Matrix4, Matrix4InternalTrait, Matrix4Trait};
+    use crate::base::matrix4::{Matrix4, Matrix4Trait};
     use crate::base::matrix_test_utils::{
         amax_m4, int, m4, max_ulp_diff4, orthonormality_error_m4, v4t,
     };
