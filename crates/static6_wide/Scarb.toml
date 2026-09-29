@@ -22,9 +22,6 @@ closures = []
 nalgebra_core = { path = "../core", version = "0.1.0" }
 nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
 nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
-nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
-nalgebra_static4 = { path = "../static4", version = "0.1.0", default-features = false }
-nalgebra_static5 = { path = "../static5", version = "0.1.0", default-features = false }
 nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.0", default-features = false }
 simba.workspace = true
 

@@ -14,7 +14,7 @@ use crate::base::matrix_test_utils::{
     fx, m6, max_abs_v6, max_ulp_diff6, max_ulp_diff_v6, oracle_tol, v6it, v6t,
 };
 use crate::base::vector6::Vector6;
-use crate::linalg::lu::{Perm6, Perm6Trait, oracle_lu6 as oracle};
+use crate::linalg::lu::{Perm6, Perm6PartialEq, Perm6Trait, oracle_lu6 as oracle};
 use super::benches::{new_no_pivot, solve_recip};
 use super::{Lu6InternalTrait, Lu6Trait};
 

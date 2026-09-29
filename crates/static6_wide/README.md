@@ -16,8 +16,8 @@ physics.
 
 The types themselves (`Matrix6`, `RowVector6`...) are in [`nalgebra_shapes6`](../shapes6/README.md);
 this crate depends on it, on [`nalgebra_core`](../core/README.md),
-[`nalgebra_shapes5`](../shapes5/README.md) and on the method crates below it (up to
-[`nalgebra_static6_tall`](../static6_tall/README.md), whose edit kernels it calls). The other LU
+[`nalgebra_shapes5`](../shapes5/README.md) and on
+[`nalgebra_static6_tall`](../static6_tall/README.md), whose edit kernels it calls. The other LU
 factorisations (`Lu2`..`Lu4`) and the decompositions of dimension 6 are in the `linalg` crates.
 Upstream's module paths are kept: `nalgebra_static6_wide::base::matrix6::Matrix6Trait` is
 `nalgebra::base::matrix6::Matrix6Trait`, `nalgebra_static6_wide::linalg::lu::lu6::Lu6` is
