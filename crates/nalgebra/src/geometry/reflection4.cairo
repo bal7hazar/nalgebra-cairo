@@ -18,8 +18,6 @@
 //! nothing wraps silently. Unlike upstream, the bias is subtracted unconditionally (upstream skips
 //! it when zero: subtracting zero is exact, so the results are identical).
 
-
-
 pub use nalgebra_types4::geometry::reflection4::*;
 
 pub use nalgebra_types5::base::matrix4x5::Reflection4ColumnsMatrix4x5;
