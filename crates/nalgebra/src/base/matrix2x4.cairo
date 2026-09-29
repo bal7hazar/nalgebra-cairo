@@ -11,9 +11,9 @@
 pub use nalgebra_core::base::matrix2x4::*;
 pub use nalgebra_shapes5::base::matrix2x5::Matrix2x4TrMulMatrix2x5;
 pub use nalgebra_shapes5::base::matrix4x5::Matrix2x4MulMatrix4x5;
+pub use nalgebra_shapes6::base::matrix2x6::Matrix2x4TrMulMatrix2x6;
+pub use nalgebra_shapes6::base::matrix4x6::Matrix2x4MulMatrix4x6;
 pub use nalgebra_static4::base::matrix2x4::*;
-pub use crate::base::matrix2x6::Matrix2x4TrMulMatrix2x6;
-pub use crate::base::matrix4x6::Matrix2x4MulMatrix4x6;
 pub use crate::base::matrix_kronecker::{
     Matrix2x4KroneckerMatrix1, Matrix2x4KroneckerVector2, Matrix2x4KroneckerVector3,
 };

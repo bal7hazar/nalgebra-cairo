@@ -11,10 +11,10 @@
 pub use nalgebra_core::base::matrix4x3::*;
 pub use nalgebra_shapes5::base::matrix3x5::Matrix4x3MulMatrix3x5;
 pub use nalgebra_shapes5::base::matrix4x5::Matrix4x3TrMulMatrix4x5;
+pub use nalgebra_shapes6::base::matrix3x6::Matrix4x3MulMatrix3x6;
+pub use nalgebra_shapes6::base::matrix4x6::Matrix4x3TrMulMatrix4x6;
 pub use nalgebra_static3::geometry::rotation3::Matrix4x3MulRotation3;
 pub use nalgebra_static4::base::matrix4x3::*;
-pub use crate::base::matrix3x6::Matrix4x3MulMatrix3x6;
-pub use crate::base::matrix4x6::Matrix4x3TrMulMatrix4x6;
 pub use crate::base::matrix_kronecker::{Matrix4x3KroneckerMatrix1, Matrix4x3KroneckerRowVector2};
 pub use crate::base::matrix_view::{
     Matrix4x3FixedColumnsMatrix4x2, Matrix4x3FixedColumnsMatrix4x3, Matrix4x3FixedColumnsVector4,

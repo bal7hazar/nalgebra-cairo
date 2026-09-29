@@ -20,9 +20,9 @@ use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
 use nalgebra_shapes5::base::matrix5x2::Matrix5x2;
 use nalgebra_shapes5::base::row_vector5::RowVector5;
 use nalgebra_shapes5::internal::base::vector5::{Vector5EditTrait, slerp_unit};
+use nalgebra_shapes6::base::vector6::Vector6;
 use simba::scalar::{Real, Transcendental};
 use crate::base::errors;
-use crate::base::vector6::Vector6;
 
 /// Methods of `Vector5<T>` for any `Real` scalar.
 #[generate_trait]
@@ -1982,10 +1982,11 @@ pub use nalgebra_shapes5::base::vector5::{
     Vector5Sub, Vector5SubAssign, Vector5Sum, Vector5SumSnapshot, Vector5TrMulMatrix5,
     Vector5TrMulMatrix5x2, Vector5TrMulMatrix5x3, Vector5TrMulMatrix5x4, Vector5TrMulVector5,
 };
-pub use crate::base::matrix5x6::Vector5TrMulMatrix5x6;
+pub use nalgebra_shapes6::base::matrix5x6::Vector5TrMulMatrix5x6;
+pub use nalgebra_shapes6::base::row_vector6::Vector5MulRowVector6;
 pub use crate::base::matrix_kronecker::{
     Vector5KroneckerMatrix1, Vector5KroneckerRowVector2, Vector5KroneckerRowVector3,
-    Vector5KroneckerRowVector4, Vector5KroneckerRowVector5,
+    Vector5KroneckerRowVector4, Vector5KroneckerRowVector5, Vector5KroneckerRowVector6,
 };
 pub use crate::base::matrix_view::{
     Vector5FixedColumnsVector5, Vector5FixedRowsMatrix1, Vector5FixedRowsVector2,
@@ -1996,5 +1997,4 @@ pub use crate::base::matrix_view::{
 pub use crate::base::norm::{
     Vector5EuclideanNorm, Vector5LpNorm, Vector5OneNorm, Vector5UniformNorm,
 };
-pub use crate::base::row_vector6::{Vector5KroneckerRowVector6, Vector5MulRowVector6};
 pub use crate::root::Vector5InfSup;

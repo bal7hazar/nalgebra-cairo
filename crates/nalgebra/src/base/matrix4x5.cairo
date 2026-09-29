@@ -21,9 +21,9 @@ use nalgebra_shapes5::base::matrix5x4::Matrix5x4;
 use nalgebra_shapes5::base::row_vector5::RowVector5;
 use nalgebra_shapes5::base::vector5::Vector5;
 use nalgebra_shapes5::internal::base::matrix4x5::Matrix4x5EditTrait;
+use nalgebra_shapes6::base::matrix4x6::Matrix4x6;
 use simba::scalar::{Real, Transcendental};
 use crate::base::errors;
-use crate::base::matrix4x6::Matrix4x6;
 use crate::base::matrix5::Matrix5Trait;
 
 /// Methods of `Matrix4x5<T>` for any `Real` scalar.
@@ -3844,8 +3844,8 @@ pub use nalgebra_shapes5::base::matrix4x5::{
     Matrix4x5Sum, Matrix4x5SumSnapshot, Matrix4x5TrMulMatrix4, Matrix4x5TrMulMatrix4x2,
     Matrix4x5TrMulMatrix4x3, Matrix4x5TrMulMatrix4x5, Matrix4x5TrMulVector4,
 };
-pub use crate::base::matrix4x6::Matrix4x5TrMulMatrix4x6;
-pub use crate::base::matrix5x6::Matrix4x5MulMatrix5x6;
+pub use nalgebra_shapes6::base::matrix4x6::Matrix4x5TrMulMatrix4x6;
+pub use nalgebra_shapes6::base::matrix5x6::Matrix4x5MulMatrix5x6;
 pub use crate::base::matrix_kronecker::Matrix4x5KroneckerMatrix1;
 pub use crate::base::matrix_view::{
     Matrix4x5FixedColumnsMatrix4, Matrix4x5FixedColumnsMatrix4x2, Matrix4x5FixedColumnsMatrix4x3,

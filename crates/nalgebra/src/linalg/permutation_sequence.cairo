@@ -12,13 +12,15 @@ pub use nalgebra_shapes5::base::matrix4x5::Perm4PermuteRowsMatrix4x5;
 pub use nalgebra_shapes5::base::matrix5x2::Perm2PermuteColumnsMatrix5x2;
 pub use nalgebra_shapes5::base::matrix5x3::Perm3PermuteColumnsMatrix5x3;
 pub use nalgebra_shapes5::base::matrix5x4::Perm4PermuteColumnsMatrix5x4;
-pub use crate::base::matrix2x6::{Perm2PermuteRowsMatrix2x6, Perm6PermuteColumnsMatrix2x6};
-pub use crate::base::matrix3x6::{Perm3PermuteRowsMatrix3x6, Perm6PermuteColumnsMatrix3x6};
-pub use crate::base::matrix4x6::{Perm4PermuteRowsMatrix4x6, Perm6PermuteColumnsMatrix4x6};
-pub use crate::base::matrix5x6::Perm6PermuteColumnsMatrix5x6;
-pub use crate::base::matrix6::{Perm6PermuteColumnsMatrix6, Perm6PermuteRowsMatrix6};
-pub use crate::base::matrix6x2::{Perm2PermuteColumnsMatrix6x2, Perm6PermuteRowsMatrix6x2};
-pub use crate::base::matrix6x3::{Perm3PermuteColumnsMatrix6x3, Perm6PermuteRowsMatrix6x3};
-pub use crate::base::matrix6x4::{Perm4PermuteColumnsMatrix6x4, Perm6PermuteRowsMatrix6x4};
-pub use crate::base::matrix6x5::Perm6PermuteRowsMatrix6x5;
-pub use crate::linalg::lu::{Perm6PermuteColumnsRowVector6, Perm6PermuteRowsVector6};
+pub use nalgebra_shapes6::base::matrix2x6::Perm2PermuteRowsMatrix2x6;
+pub use nalgebra_shapes6::base::matrix3x6::Perm3PermuteRowsMatrix3x6;
+pub use nalgebra_shapes6::base::matrix4x6::Perm4PermuteRowsMatrix4x6;
+pub use nalgebra_shapes6::base::matrix6x2::Perm2PermuteColumnsMatrix6x2;
+pub use nalgebra_shapes6::base::matrix6x3::Perm3PermuteColumnsMatrix6x3;
+pub use nalgebra_shapes6::base::matrix6x4::Perm4PermuteColumnsMatrix6x4;
+pub use crate::linalg::lu::{
+    Perm6PermuteColumnsMatrix2x6, Perm6PermuteColumnsMatrix3x6, Perm6PermuteColumnsMatrix4x6,
+    Perm6PermuteColumnsMatrix5x6, Perm6PermuteColumnsMatrix6, Perm6PermuteColumnsRowVector6,
+    Perm6PermuteRowsMatrix6, Perm6PermuteRowsMatrix6x2, Perm6PermuteRowsMatrix6x3,
+    Perm6PermuteRowsMatrix6x4, Perm6PermuteRowsMatrix6x5, Perm6PermuteRowsVector6,
+};

@@ -440,6 +440,14 @@ class CrateMap:
                 chunk = text[it.start:it.end]
                 if mod.startswith(INTERNAL) and not it.public:
                     chunk = publish(chunk)
+                elif (pkg == self.facade_package and not it.public
+                      and any(r.fullmatch(it.label or "") for r in self.internal)):
+                    # an `[internal]` item the facade package still hosts, private in 0.1.0: the
+                    # impls of a family crate that moved to their trait's module in the same
+                    # package call it from there (`Matrix2x6EditTrait` from `base::matrix_view`
+                    # once `Matrix2x6` left, WP 9-NS6); `pub(crate)` until its crate moves (then
+                    # `pub` in `internal`), never public
+                    chunk = crate_visible(chunk)
                 pieces[(pkg, mod)].append((f, chunk))
                 if mod != f and it.public:
                     # a public impl moved to an anchor module keeps its 0.1.0 path in the facade
@@ -839,6 +847,15 @@ def publish(chunk):
     if m is None:
         return chunk
     return chunk[: m.start()] + "pub " + chunk[m.end(1) if m.group(1) else m.start():]
+
+
+def crate_visible(chunk):
+    """A private item made `pub(crate)`: its first item line (an item already `pub(crate)` as is)."""
+    masked = cc.mask(chunk)
+    m = re.search(r"^(pub\(crate\)\s+)?(?=(impl|trait|struct|enum|fn|const|type|mod)\s)", masked, re.M)
+    if m is None or m.group(1):
+        return chunk
+    return chunk[: m.start()] + "pub(crate) " + chunk[m.start():]
 
 
 def use_local(full):

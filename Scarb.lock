@@ -23,7 +23,9 @@ dependencies = [
  "fixed",
  "nalgebra_core",
  "nalgebra_geometry4",
+ "nalgebra_geometry6",
  "nalgebra_shapes5",
+ "nalgebra_shapes6",
  "nalgebra_static3",
  "nalgebra_static4",
  "simba",
@@ -53,6 +55,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_geometry6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_glam"
 version = "0.1.0"
 dependencies = [
@@ -69,6 +83,19 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
+ "nalgebra_static3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_shapes6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_geometry4",
+ "nalgebra_shapes5",
  "nalgebra_static3",
  "simba",
  "snforge_std",

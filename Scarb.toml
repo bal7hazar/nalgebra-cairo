@@ -5,6 +5,8 @@ members = [
     "crates/shapes5",
     "crates/static4",
     "crates/geometry4",
+    "crates/shapes6",
+    "crates/geometry6",
     "crates/nalgebra",
     "crates/nalgebra_glam",
     "crates/testing",

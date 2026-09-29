@@ -19,5 +19,5 @@
 //! it when zero: subtracting zero is exact, so the results are identical).
 
 pub use nalgebra_geometry4::geometry::reflection1::*;
-pub use crate::base::row_vector6::Reflection1ColumnsRowVector6;
-pub use crate::base::vector6::Reflection1RowsVector6;
+pub use nalgebra_shapes6::base::row_vector6::Reflection1ColumnsRowVector6;
+pub use nalgebra_shapes6::base::vector6::Reflection1RowsVector6;
