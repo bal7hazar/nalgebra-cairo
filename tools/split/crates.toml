@@ -101,6 +101,8 @@ names = [
     # WP 9-NS9 (`shapes5`): the traits of the public Householder / balancing building blocks,
     # declared low so that every impl sits with its type (see the rule above)
     "ColumnMajor", "Balancing", "HouseholderAxis",
+    # WP 9-NS9 (`linalg4`): the Householder kernels of the reductions of `linalg_spectral4..6`
+    "HouseholderKernelTrait",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of
@@ -203,14 +205,18 @@ bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
 default = "core"
 
 # `LuInvert`, its impls and the public `try_invert_to` that resolves them at the caller: together
-# in `linalg4` (the module of the trait, where every caller finds them; `Lu6` is below), WP 9-NS3
+# in the module of the trait, where every caller finds them (WP 9-NS3). Not in `linalg4` (WP 9-NS9):
+# `Matrix6LuInvert` runs `Lu6` (`static6_wide`) and cannot sit in `Matrix6`'s module (`shapes6`,
+# below `static6_wide`), so the trait's crate must be above both `linalg4` (`Lu2`..`Lu4`) and
+# `static6_wide`; in `linalg4` that would pull every dimension-6 crate into the closure
+# `static4_factor`. The facade holds them, as it holds `MatrixInfSup` (0.1.0 path kept)
 [[rule]]
 name = "LuInvert|try_invert_to"
-crate = "linalg4"
+crate = "facade"
 
 [[rule]]
 trait = ["LuInvert"]
-crate = "linalg4"
+crate = "facade"
 
 [[rule]]
 file = ["linalg/lu_steps.cairo"]
