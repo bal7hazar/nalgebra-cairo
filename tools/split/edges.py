@@ -139,14 +139,19 @@ def crossrefs(body, resolve, own, p, imported=()):
     """Crate names referenced by `body` (other items, same file included; a name defined in the
     file wins over a homonym elsewhere): capitalised names (types, traits, impls, constants)
     anywhere, lower-case functions when called through a path (`kernels::f(`) or defined in the
-    same file."""
+    same file (a method defined or called under the name of a free function is not a
+    reference to it)."""
     out = set()
     for mm in IDENT.finditer(body):
         x = mm.group(0)
         if x not in resolve or x in own:
             continue
         seg = re.search(r"(\w+)::$", body[max(0, mm.start() - 64) : mm.start()])
-        local_call = resolve[x].startswith(p + "#") and body[mm.end() : mm.end() + 1] in ("(", "<")
+        # (not a method defined or called under the same name: `fn f(` / `.f(` in an impl, WP 9-NS13)
+        before = body[max(0, mm.start() - 8) : mm.start()]
+        method = re.search(r"(\bfn\s+|\.\s*)$", before) is not None
+        local_call = (resolve[x].startswith(p + "#") and body[mm.end() : mm.end() + 1] in ("(", "<")
+                      and not method)
         if x[0].isupper() or local_call or x in imported or (seg is not None and seg.group(1)[0].islower()):
             out.add(x)
     return sorted(out)

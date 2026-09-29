@@ -35,6 +35,14 @@ CORE_TRAITS = {
     "Index", "Into", "TryInto", "Serde", "Debug", "Display", "Hash", "Copy", "Drop", "Felt252DictValue",
 }
 
+# Cairo corelib method names (`Option::unwrap`, `Into::into`...): a call of one of them is never
+# resolved to a nalgebra trait of ANOTHER top-level module by the last, "any trait in scope",
+# fallback below (WP 9-NS13: `.unwrap()` in `Matrix2AngleTrait` is not `UnitComplexTrait::unwrap`)
+CORE_METHODS = {
+    "unwrap", "expect", "into", "try_into", "clone", "len", "append", "span", "at", "is_some",
+    "is_none", "unwrap_or", "is_empty", "pop_front", "get", "index", "new",
+}
+
 SHAPE_RE = re.compile(r"(?:^|/)(matrix|vector|row_vector)(\d)(?:x(\d))?\.cairo$")
 
 
@@ -127,7 +135,7 @@ class Graph:
                 for pick in (
                     [tr for tr in cands if self.trait_node[tr].startswith(p + "#")],
                     [tr for tr in cands if self.trait_node[tr].split("/")[0] == top],
-                    cands,
+                    [] if c in CORE_METHODS else cands,
                 ):
                     if pick:
                         break

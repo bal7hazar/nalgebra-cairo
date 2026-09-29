@@ -8,7 +8,10 @@ name: Split measurement
 # `runner_report.py` then writes the tables of docs/SPLIT.md §3.1 / §6.2 (job summary + artifact).
 # `compare=true` with merges also measures every closure on the map without them, interleaved in the
 # same job (a paired comparison: runners differ by up to ~30 % between jobs).
-# Manual only: `gh workflow run split-measure.yml --ref <branch> [-f merges="new=a+b ..."]`.
+# `map` measures another crate map (the per-dimension re-cut proposal, WP 9-NS13); `source` takes the
+# library from a ref whose `crates/nalgebra` still holds all of it (the tree is split since WP 9-NS11a).
+# Manual only: `gh workflow run split-measure.yml --ref <branch> [-f merges="new=a+b ..."]
+# [-f map=tools/split/crates.recut.toml -f source=a35e55b]`.
 
 run-name: Split measurement ${{ inputs.label }}
 
@@ -43,6 +46,14 @@ on:
         description: With merges, also measure every closure on the map WITHOUT them, in the same jobs
         type: string
         default: "false"
+      map:
+        description: Crate map (empty = tools/split/crates.toml; the re-cut proposal is tools/split/crates.recut.toml)
+        type: string
+        default: ""
+      source:
+        description: Git ref whose crates/nalgebra holds the whole library (empty = this ref; after the moves, the pre-split a35e55b)
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -58,6 +69,8 @@ env:
   REPEAT: ${{ inputs.repeat || '9' }}
   CLOSURE_REPEAT: ${{ inputs.closure_repeat || '15' }}
   COMPARE: ${{ inputs.compare || 'false' }}
+  MAP: ${{ inputs.map }}
+  SOURCE: ${{ inputs.source }}
 
 jobs:
   prepare:
@@ -69,11 +82,18 @@ jobs:
       closures: ${{ steps.matrix.outputs.closures }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Library source (the monolithic crates/nalgebra of SOURCE, docs/SPLIT.md §18)
+        if: env.SOURCE != ''
+        run: |
+          git fetch --no-tags --depth=1 origin "$SOURCE"
+          rm -rf crates/*
+          git archive FETCH_HEAD crates/nalgebra crates/nalgebra_glam | tar -x
       - name: Item graph, plan of the map, prototype workspace
         run: |
           mkdir -p build
           python3 tools/split/edges.py crates/nalgebra --json build/edges.json > /dev/null
           args=()
+          if [ -n "$MAP" ]; then args+=(--map "$MAP"); fi
           for m in $MERGES; do args+=(--merge "$m"); done
           python3 tools/split/mapplan.py build/edges.json build/plan.json --lines "${args[@]}" | tee build/plan.txt
           python3 tools/split/prototype.py build/edges.json build/plan.json build/proto | tee build/prototype.txt
@@ -81,7 +101,7 @@ jobs:
           grep -q "^upward references (not imported): 0$" build/prototype.txt
           if [ "$COMPARE" = true ] && [ -n "$MERGES" ]; then
             # the same closures on the map without the merges, measured in the same jobs (paired)
-            python3 tools/split/mapplan.py build/edges.json build/plan_ref.json > /dev/null
+            python3 tools/split/mapplan.py build/edges.json build/plan_ref.json ${MAP:+--map "$MAP"} > /dev/null
             python3 tools/split/prototype.py build/edges.json build/plan_ref.json build/proto_ref > /dev/null
             python3 tools/split/glam_proto.py build/edges.json build/plan_ref.json build/proto_ref
           fi
