@@ -63,18 +63,36 @@ closures = [
 dynamic = []
 sparse = ["dynamic"]
 io = ["sparse"]
-eigen = ["nalgebra_linalg_svd_eigen4/eigen"]
-svd = ["eigen", "nalgebra_linalg_svd_eigen4/svd"]
-qr = ["nalgebra_linalg4/qr"]
-cholesky_update = ["nalgebra_linalg4/cholesky_update"]
-full_piv_lu = ["nalgebra_linalg_pivot4/full_piv_lu"]
-col_piv_qr = ["nalgebra_linalg_pivot4/col_piv_qr"]
-lblt = ["nalgebra_linalg_pivot4/lblt"]
+eigen = [
+    "nalgebra_linalg_svd_eigen4/eigen", "nalgebra_linalg5/eigen", "nalgebra_linalg6/eigen",
+]
+svd = ["eigen", "nalgebra_linalg_svd_eigen4/svd", "nalgebra_linalg5/svd", "nalgebra_linalg6/svd"]
+qr = ["nalgebra_linalg4/qr", "nalgebra_linalg5/qr", "nalgebra_linalg6/qr"]
+cholesky_update = ["nalgebra_linalg4/cholesky_update", "nalgebra_linalg6/cholesky_update"]
+full_piv_lu = [
+    "nalgebra_linalg_pivot4/full_piv_lu", "nalgebra_linalg_pivot5/full_piv_lu", "nalgebra_linalg_pivot6/full_piv_lu",
+]
+col_piv_qr = [
+    "nalgebra_linalg_pivot4/col_piv_qr", "nalgebra_linalg_pivot5/col_piv_qr", "nalgebra_linalg_pivot6/col_piv_qr",
+]
+lblt = [
+    "nalgebra_linalg_pivot4/lblt", "nalgebra_linalg_pivot5/lblt", "nalgebra_linalg_pivot6/lblt",
+]
 macros = []
-hessenberg = ["nalgebra_linalg4/hessenberg", "nalgebra_linalg_spectral4/hessenberg"]
-bidiagonal = ["nalgebra_linalg_spectral4/bidiagonal"]
-schur = ["hessenberg", "nalgebra_linalg_spectral4/schur"]
-exp = ["nalgebra_linalg_spectral4/exp"]
+hessenberg = [
+    "nalgebra_linalg4/hessenberg", "nalgebra_linalg_spectral4/hessenberg",
+    "nalgebra_linalg_spectral5/hessenberg", "nalgebra_linalg_spectral6/hessenberg",
+]
+bidiagonal = [
+    "nalgebra_linalg_spectral4/bidiagonal", "nalgebra_linalg_spectral5/bidiagonal", "nalgebra_linalg_spectral6/bidiagonal",
+]
+schur = [
+    "hessenberg", "nalgebra_linalg_spectral4/schur", "nalgebra_linalg_spectral5/schur",
+    "nalgebra_linalg_spectral6/schur",
+]
+exp = [
+    "nalgebra_linalg_spectral4/exp", "nalgebra_linalg_spectral5/exp", "nalgebra_linalg_spectral6/exp",
+]
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
@@ -96,6 +114,12 @@ nalgebra_linalg4 = { path = "../linalg4", version = "0.1.0", default-features = 
 nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.1.0", default-features = false }
 nalgebra_linalg_pivot4 = { path = "../linalg_pivot4", version = "0.1.0", default-features = false }
 nalgebra_linalg_spectral4 = { path = "../linalg_spectral4", version = "0.1.0", default-features = false }
+nalgebra_linalg5 = { path = "../linalg5", version = "0.1.0", default-features = false }
+nalgebra_linalg_pivot5 = { path = "../linalg_pivot5", version = "0.1.0", default-features = false }
+nalgebra_linalg_spectral5 = { path = "../linalg_spectral5", version = "0.1.0", default-features = false }
+nalgebra_linalg6 = { path = "../linalg6", version = "0.1.0", default-features = false }
+nalgebra_linalg_pivot6 = { path = "../linalg_pivot6", version = "0.1.0", default-features = false }
+nalgebra_linalg_spectral6 = { path = "../linalg_spectral6", version = "0.1.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

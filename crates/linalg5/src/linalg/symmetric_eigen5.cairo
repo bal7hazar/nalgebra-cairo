@@ -14,6 +14,7 @@ use core::internal::revoke_ap_tracking;
 use nalgebra_shapes5::base::matrix5::Matrix5;
 use nalgebra_shapes5::base::vector5::Vector5;
 use simba::scalar::Real;
+use crate::internal::linalg::symmetric_eigen5::Sym5;
 
 /// The eigendecomposition `S = V * diag(eigenvalues) * Vᵀ` of a symmetric 5x5 matrix.
 ///
@@ -39,27 +40,6 @@ impl SymmetricEigen5PartialEq<T, +PartialEq<T>> of PartialEq<SymmetricEigen5<T>>
     fn eq(lhs: @SymmetricEigen5<T>, rhs: @SymmetricEigen5<T>) -> bool {
         lhs.eigenvalues == rhs.eigenvalues && lhs.eigenvectors == rhs.eigenvectors
     }
-}
-
-/// The 15 independent components of a symmetric 5x5 matrix, `mIJ` with `I <= J`
-/// (crate-internal: the input of the Jacobi kernel and the Gram matrix of the SVD).
-#[derive(Copy, Drop)]
-pub(crate) struct Sym5<T> {
-    pub m11: T,
-    pub m12: T,
-    pub m13: T,
-    pub m14: T,
-    pub m15: T,
-    pub m22: T,
-    pub m23: T,
-    pub m24: T,
-    pub m25: T,
-    pub m33: T,
-    pub m34: T,
-    pub m35: T,
-    pub m44: T,
-    pub m45: T,
-    pub m55: T,
 }
 
 /// The running state of the Jacobi iteration: the partially diagonalised matrix `s` and the

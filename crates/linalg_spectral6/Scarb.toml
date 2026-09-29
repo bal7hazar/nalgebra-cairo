@@ -1,0 +1,42 @@
+[package]
+name = "nalgebra_linalg_spectral6"
+description = "Bidiagonal, Schur, eigen, Hessenberg, tridiagonal of dimension 6."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "linalg", "schur", "hessenberg", "bidiagonal", "eigen"]
+readme = "README.md"
+
+# `hessenberg`, `bidiagonal`, `schur`, `exp` (as in `nalgebra`, whose features of the same names
+# forward to these): `linalg::hessenberg` and `linalg::symmetric_tridiagonal`; `linalg::bidiagonal`;
+# `linalg::schur` and `linalg::eigen` (on `hessenberg`); `linalg::exp` and `linalg::pow`, each of
+# dimension 6. On by default; `nalgebra` depends on this package with `default-features = false`, so
+# `nalgebra` without its default features still leaves them out (features unify per compilation
+# unit, docs/SPLIT.md §1).
+[features]
+default = ["hessenberg", "bidiagonal", "schur", "exp"]
+hessenberg = []
+bidiagonal = []
+schur = ["hessenberg"]
+exp = ["nalgebra_linalg_spectral4/exp"]
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_linalg4 = { path = "../linalg4", version = "0.1.0", default-features = false }
+nalgebra_linalg_spectral4 = { path = "../linalg_spectral4", version = "0.1.0", default-features = false }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_static6_wide = { path = "../static6_wide", version = "0.1.0", default-features = false }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

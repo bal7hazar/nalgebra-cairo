@@ -7,7 +7,7 @@ use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_linalg5::internal::linalg::svd::kernels::SvdRightImpl5;
-use nalgebra_linalg5::linalg::symmetric_eigen5::Sym5;
+use nalgebra_linalg5::internal::linalg::symmetric_eigen5::Sym5;
 use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
 use nalgebra_shapes5::base::matrix5::Matrix5;
 use nalgebra_shapes5::base::vector5::Vector5;

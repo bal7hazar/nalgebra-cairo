@@ -11,8 +11,8 @@ use nalgebra_shapes5::base::matrix5::Matrix5;
 use nalgebra_shapes5::base::vector5::Vector5;
 use simba::scalar::Real;
 use crate::internal::linalg::svd::kernels::SvdRightImpl5;
+use crate::internal::linalg::symmetric_eigen5::Sym5;
 use crate::linalg::svd::kernels::SvdComplete5Impl;
-use crate::linalg::symmetric_eigen5::Sym5;
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix5<T>`:
 /// `u` is 5x5 with orthonormal columns, `v_t` is 5x5 with orthonormal rows, the 5

@@ -3,7 +3,8 @@
 
 use nalgebra_shapes5::base::matrix5::Matrix5;
 use simba::scalar::Real;
-use crate::linalg::symmetric_eigen5::{Sym5, SymmetricEigen5InternalTrait};
+use crate::internal::linalg::symmetric_eigen5::Sym5;
+use crate::linalg::symmetric_eigen5::SymmetricEigen5InternalTrait;
 
 /// The right singular vectors of a matrix with 5 columns (crate-internal).
 #[generate_trait]
