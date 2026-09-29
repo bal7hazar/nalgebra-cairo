@@ -18,6 +18,15 @@
 //! nothing wraps silently. Unlike upstream, the bias is subtracted unconditionally (upstream skips
 //! it when zero: subtracting zero is exact, so the results are identical).
 
-pub use nalgebra_geometry4::geometry::reflection2::*;
-pub use nalgebra_shapes6::base::matrix2x6::Reflection2ColumnsMatrix2x6;
-pub use nalgebra_shapes6::base::matrix6x2::Reflection2RowsMatrix6x2;
+
+
+pub use nalgebra_types2::geometry::reflection2::*;
+
+pub use nalgebra_types3::base::matrix2x3::Reflection2ColumnsMatrix2x3;
+pub use nalgebra_types3::base::matrix3x2::Reflection2RowsMatrix3x2;
+pub use nalgebra_types4::base::matrix2x4::Reflection2ColumnsMatrix2x4;
+pub use nalgebra_types4::base::matrix4x2::Reflection2RowsMatrix4x2;
+pub use nalgebra_types5::base::matrix2x5::Reflection2ColumnsMatrix2x5;
+pub use nalgebra_types5::base::matrix5x2::Reflection2RowsMatrix5x2;
+pub use nalgebra_types6::base::matrix2x6::Reflection2ColumnsMatrix2x6;
+pub use nalgebra_types6::base::matrix6x2::Reflection2RowsMatrix6x2;

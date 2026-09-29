@@ -16,13 +16,11 @@ use crate::base::errors::INDEX_OUT_OF_BOUNDS;
 use crate::base::matrix_index::MatrixIndex;
 use crate::base::matrix_mul::MatrixMul;
 use crate::base::matrix_tr_mul::MatrixTrMul;
-use crate::base::row_vector2::RowVector2;
-use crate::base::row_vector3::RowVector3;
-use crate::base::row_vector4::RowVector4;
 use crate::base::unit::Unit;
 use crate::internal::base::matrix_view::{ColumnVectorLen, RowVectorLen};
 use crate::internal::base::solve::SolveKernel;
 use crate::internal::base::transpose::BlasTranspose;
+use crate::internal::linalg::householder::HouseholderAxis;
 use crate::internal::linalg::lu_steps::LuSteps;
 
 /// A 1x1 matrix. Components are named like upstream's `Deref` targets (`x, y, z, w, a, b`).
@@ -129,42 +127,6 @@ pub impl Matrix1MulMatrix1<
     }
 }
 
-/// `self * rhs`, a `RowVector2`: one floored product per component. Panics on overflow. Upstream:
-/// `Matrix1 * RowVector2` (`Mul`).
-pub impl Matrix1MulRowVector2<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
-> of MatrixMul<Matrix1<T>, RowVector2<T>> {
-    type Output = RowVector2<T>;
-    #[inline(always)]
-    fn mul_mat(self: Matrix1<T>, rhs: RowVector2<T>) -> RowVector2<T> {
-        RowVector2 { x: self.x * rhs.x, y: self.x * rhs.y }
-    }
-}
-
-/// `self * rhs`, a `RowVector3`: one floored product per component. Panics on overflow. Upstream:
-/// `Matrix1 * RowVector3` (`Mul`).
-pub impl Matrix1MulRowVector3<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
-> of MatrixMul<Matrix1<T>, RowVector3<T>> {
-    type Output = RowVector3<T>;
-    #[inline(always)]
-    fn mul_mat(self: Matrix1<T>, rhs: RowVector3<T>) -> RowVector3<T> {
-        RowVector3 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z }
-    }
-}
-
-/// `self * rhs`, a `RowVector4`: one floored product per component. Panics on overflow. Upstream:
-/// `Matrix1 * RowVector4` (`Mul`).
-pub impl Matrix1MulRowVector4<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
-> of MatrixMul<Matrix1<T>, RowVector4<T>> {
-    type Output = RowVector4<T>;
-    #[inline(always)]
-    fn mul_mat(self: Matrix1<T>, rhs: RowVector4<T>) -> RowVector4<T> {
-        RowVector4 { x: self.x * rhs.x, y: self.x * rhs.y, z: self.x * rhs.z, w: self.x * rhs.w }
-    }
-}
-
 /// `selfᵀ * rhs`, a `Matrix1`: `mul_mat` of the transposed components, so one floored product per
 /// component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose only
 /// relabels values). Panics on overflow. Upstream: `tr_mul`.
@@ -174,45 +136,6 @@ pub impl Matrix1TrMulMatrix1<
     type Output = Matrix1<T>;
     #[inline(always)]
     fn tr_mul(self: Matrix1<T>, rhs: Matrix1<T>) -> Matrix1<T> {
-        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
-    }
-}
-
-/// `selfᵀ * rhs`, a `RowVector2`: `mul_mat` of the transposed components, so one floored product
-/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
-/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
-pub impl Matrix1TrMulRowVector2<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
-> of MatrixTrMul<Matrix1<T>, RowVector2<T>> {
-    type Output = RowVector2<T>;
-    #[inline(always)]
-    fn tr_mul(self: Matrix1<T>, rhs: RowVector2<T>) -> RowVector2<T> {
-        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
-    }
-}
-
-/// `selfᵀ * rhs`, a `RowVector3`: `mul_mat` of the transposed components, so one floored product
-/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
-/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
-pub impl Matrix1TrMulRowVector3<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
-> of MatrixTrMul<Matrix1<T>, RowVector3<T>> {
-    type Output = RowVector3<T>;
-    #[inline(always)]
-    fn tr_mul(self: Matrix1<T>, rhs: RowVector3<T>) -> RowVector3<T> {
-        MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
-    }
-}
-
-/// `selfᵀ * rhs`, a `RowVector4`: `mul_mat` of the transposed components, so one floored product
-/// per component; bit-identical to `self.transpose().mul_mat(rhs)`, at the same gas (the transpose
-/// only relabels values). Panics on overflow. Upstream: `tr_mul`.
-pub impl Matrix1TrMulRowVector4<
-    T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
-> of MatrixTrMul<Matrix1<T>, RowVector4<T>> {
-    type Output = RowVector4<T>;
-    #[inline(always)]
-    fn tr_mul(self: Matrix1<T>, rhs: RowVector4<T>) -> RowVector4<T> {
         MatrixMul::mul_mat(Matrix1 { x: self.x }, rhs)
     }
 }
@@ -533,158 +456,6 @@ impl Matrix1SolveKernelMatrix1<
     }
 }
 
-impl Matrix1SolveKernelRowVector2<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Mul<T>, +Neg<T>, +PartialEq<T>,
-> of SolveKernel<Matrix1<T>, RowVector2<T>> {
-    type Scalar = T;
-
-    #[inline(always)]
-    fn lower(self: Matrix1<T>, b: RowVector2<T>) -> RowVector2<T> {
-        let x00 = R::div(b.x, self.x);
-        let x01 = R::div(b.y, self.x);
-        RowVector2 { x: x00, y: x01 }
-    }
-
-    #[inline(always)]
-    fn upper(self: Matrix1<T>, b: RowVector2<T>) -> RowVector2<T> {
-        let x00 = R::div(b.x, self.x);
-        let x01 = R::div(b.y, self.x);
-        RowVector2 { x: x00, y: x01 }
-    }
-
-    #[inline(always)]
-    fn lower_unit(self: Matrix1<T>, b: RowVector2<T>) -> RowVector2<T> {
-        let x00 = b.x;
-        let x01 = b.y;
-        RowVector2 { x: x00, y: x01 }
-    }
-
-    #[inline(always)]
-    fn lower_with_diag(self: Matrix1<T>, b: RowVector2<T>, diag: T) -> RowVector2<T> {
-        let x00 = b.x;
-        let x01 = b.y;
-        let _ = diag;
-        RowVector2 { x: x00, y: x01 }
-    }
-
-    #[inline(always)]
-    fn nonzero_diagonal(self: Matrix1<T>) -> bool {
-        self.x != R::zero()
-    }
-
-    #[inline(always)]
-    fn is_zero(x: T) -> bool {
-        x == R::zero()
-    }
-
-    #[inline(always)]
-    fn tr_mul_rhs(self: Matrix1<T>, b: RowVector2<T>) -> RowVector2<T> {
-        MatrixTrMul::tr_mul(self, b)
-    }
-}
-
-impl Matrix1SolveKernelRowVector3<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Mul<T>, +Neg<T>, +PartialEq<T>,
-> of SolveKernel<Matrix1<T>, RowVector3<T>> {
-    type Scalar = T;
-
-    #[inline(always)]
-    fn lower(self: Matrix1<T>, b: RowVector3<T>) -> RowVector3<T> {
-        let (x00, x01, x02) = R::div3(b.x, b.y, b.z, self.x);
-        RowVector3 { x: x00, y: x01, z: x02 }
-    }
-
-    #[inline(always)]
-    fn upper(self: Matrix1<T>, b: RowVector3<T>) -> RowVector3<T> {
-        let (x00, x01, x02) = R::div3(b.x, b.y, b.z, self.x);
-        RowVector3 { x: x00, y: x01, z: x02 }
-    }
-
-    #[inline(always)]
-    fn lower_unit(self: Matrix1<T>, b: RowVector3<T>) -> RowVector3<T> {
-        let x00 = b.x;
-        let x01 = b.y;
-        let x02 = b.z;
-        RowVector3 { x: x00, y: x01, z: x02 }
-    }
-
-    #[inline(always)]
-    fn lower_with_diag(self: Matrix1<T>, b: RowVector3<T>, diag: T) -> RowVector3<T> {
-        let x00 = b.x;
-        let x01 = b.y;
-        let x02 = b.z;
-        let _ = diag;
-        RowVector3 { x: x00, y: x01, z: x02 }
-    }
-
-    #[inline(always)]
-    fn nonzero_diagonal(self: Matrix1<T>) -> bool {
-        self.x != R::zero()
-    }
-
-    #[inline(always)]
-    fn is_zero(x: T) -> bool {
-        x == R::zero()
-    }
-
-    #[inline(always)]
-    fn tr_mul_rhs(self: Matrix1<T>, b: RowVector3<T>) -> RowVector3<T> {
-        MatrixTrMul::tr_mul(self, b)
-    }
-}
-
-impl Matrix1SolveKernelRowVector4<
-    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Mul<T>, +Neg<T>, +PartialEq<T>,
-> of SolveKernel<Matrix1<T>, RowVector4<T>> {
-    type Scalar = T;
-
-    #[inline(always)]
-    fn lower(self: Matrix1<T>, b: RowVector4<T>) -> RowVector4<T> {
-        let (x00, x01, x02, x03) = R::div4(b.x, b.y, b.z, b.w, self.x);
-        RowVector4 { x: x00, y: x01, z: x02, w: x03 }
-    }
-
-    #[inline(always)]
-    fn upper(self: Matrix1<T>, b: RowVector4<T>) -> RowVector4<T> {
-        let (x00, x01, x02, x03) = R::div4(b.x, b.y, b.z, b.w, self.x);
-        RowVector4 { x: x00, y: x01, z: x02, w: x03 }
-    }
-
-    #[inline(always)]
-    fn lower_unit(self: Matrix1<T>, b: RowVector4<T>) -> RowVector4<T> {
-        let x00 = b.x;
-        let x01 = b.y;
-        let x02 = b.z;
-        let x03 = b.w;
-        RowVector4 { x: x00, y: x01, z: x02, w: x03 }
-    }
-
-    #[inline(always)]
-    fn lower_with_diag(self: Matrix1<T>, b: RowVector4<T>, diag: T) -> RowVector4<T> {
-        let x00 = b.x;
-        let x01 = b.y;
-        let x02 = b.z;
-        let x03 = b.w;
-        let _ = diag;
-        RowVector4 { x: x00, y: x01, z: x02, w: x03 }
-    }
-
-    #[inline(always)]
-    fn nonzero_diagonal(self: Matrix1<T>) -> bool {
-        self.x != R::zero()
-    }
-
-    #[inline(always)]
-    fn is_zero(x: T) -> bool {
-        x == R::zero()
-    }
-
-    #[inline(always)]
-    fn tr_mul_rhs(self: Matrix1<T>, b: RowVector4<T>) -> RowVector4<T> {
-        MatrixTrMul::tr_mul(self, b)
-    }
-}
-
 impl Matrix1LuSteps<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>, +Neg<T>,
 > of LuSteps<Matrix1<T>, T> {
@@ -703,3 +474,129 @@ impl Matrix1LuSteps<
         core::panic_with_felt252(INDEX_OUT_OF_BOUNDS)
     }
 }
+
+impl Matrix1HouseholderAxis<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of HouseholderAxis<Matrix1<T>, T> {
+    fn reflection_axis_mut(ref column: Matrix1<T>) -> (T, bool) {
+        let norm = R::wide_sqrt(R::wide_add_prod(R::wide_zero(), column.x, column.x));
+        if norm == R::zero() {
+            return (R::zero(), false);
+        }
+        let x0 = column.x;
+        let signed = if x0 < R::zero() {
+            -norm
+        } else {
+            norm
+        };
+        let y0 = x0 + signed;
+        let d = R::wide_sqrt(R::wide_add_prod(R::wide_zero(), y0, y0));
+        let u0 = R::div(y0, d);
+        column = Matrix1 { x: u0 };
+        (-signed, true)
+    }
+}
+use crate::base::errors::SLICE_LENGTH;
+use crate::internal::linalg::balancing::Balancing;
+use crate::internal::linalg::householder_steps::ColumnMajor;
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/balancing.cairo
+// crate-map: from linalg/householder_steps.cairo
+/// `balance_parlett_reinsch` / `unbalance` on `Matrix1` (see the free functions).
+impl Matrix1Balancing<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Balancing<Matrix1<T>, Matrix1<T>> {
+    fn balance_parlett_reinsch(ref matrix: Matrix1<T>) -> Matrix1<T> {
+        let mut a00 = matrix.x;
+        let mut d0 = R::one();
+        let two = R::from_int(2);
+        let half = R::from_ratio(1, 2);
+        let tol = R::from_ratio(95, 100);
+        let mut converged = false;
+        while !converged {
+            converged = true;
+            {
+                let c0 = R::abs(a00);
+                let r0 = R::abs(a00);
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
+                    let mut f = R::one();
+                    let mut finv = R::one();
+                    while n_col < n_row * half {
+                        n_col = n_col * two;
+                        n_row = n_row * half;
+                        f = f * two;
+                        finv = finv * half;
+                    }
+                    while n_col >= n_row * two {
+                        n_col = n_col * half;
+                        n_row = n_row * two;
+                        f = f * half;
+                        finv = finv * two;
+                    }
+                    if R::sum_prod2(n_col, n_col, n_row, n_row) < tol * s {
+                        converged = false;
+                        d0 = d0 * f;
+                        a00 = a00 * f;
+                        a00 = a00 * finv;
+                    }
+                }
+            }
+        }
+        matrix = Matrix1 { x: a00 };
+        Matrix1 { x: d0 }
+    }
+
+    fn unbalance(ref m: Matrix1<T>, d: Matrix1<T>) {
+        let dinv0 = R::recip(d.x);
+        m = Matrix1 { x: m.x * (d.x * dinv0) };
+    }
+}
+
+impl Matrix1ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Matrix1<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        1
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        1
+    }
+
+    fn to_column_major(self: Matrix1<T>) -> Array<T> {
+        array![self.x]
+    }
+
+    fn from_column_major(data: Span<T>) -> Matrix1<T> {
+        let boxed: @Box<[T; 1]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0] = boxed.unbox();
+        Matrix1 { x: v0 }
+    }
+}
+// crate-map: end

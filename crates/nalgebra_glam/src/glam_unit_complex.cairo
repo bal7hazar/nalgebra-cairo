@@ -12,8 +12,8 @@
 
 use fixed::Fixed;
 use glam_core::{Mat2, Vec2};
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_static3::geometry::unit_complex::{UnitComplex, UnitComplexTrait};
+use nalgebra_geometry2::geometry::unit_complex::{UnitComplex, UnitComplexTrait};
+use nalgebra_types2::base::vector2::Vector2;
 
 /// The rotation matrix of a `UnitComplex<Fixed>`, `x_axis = (re, im)`, `y_axis = (-im, re)`.
 /// Exact. Upstream: `From<UnitComplex<f32>> for Mat2` (`to_rotation_matrix().into_inner()`).

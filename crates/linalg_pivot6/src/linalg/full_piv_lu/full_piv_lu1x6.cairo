@@ -5,8 +5,8 @@
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
-use nalgebra_shapes6::base::row_vector6::RowVector6;
 use nalgebra_static6_wide::linalg::lu::Perm6;
+use nalgebra_types6::base::row_vector6::RowVector6;
 use simba::scalar::Real;
 
 /// The LU factorisation with full (row and column) pivoting of a `RowVector6<T>`: `P A Q = L U`.

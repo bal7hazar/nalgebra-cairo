@@ -200,7 +200,8 @@ bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "t
 # in `geometry5` / `geometry6` (above `types6`), which keeps `types6` under the line gate
 [[rule]]
 name = "Rotation2|Rotation3|Reflection[1-4]|Reflection[1-4](Columns|Rows)"
-kind = ["struct", "trait"]
+# (`inherent`: a trait with a single impl in its file, `Reflection1Columns` once split)
+kind = ["struct", "trait", "inherent"]
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 

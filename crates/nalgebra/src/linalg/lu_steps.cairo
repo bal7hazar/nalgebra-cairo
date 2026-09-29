@@ -4,14 +4,14 @@
 //! (`src/linalg/lu.rs`), as free functions over the static squares (`gauss_step(ref m, diag, i)`).
 //! The 0-based step index is a run-time value: each square matches it on its unrolled steps.
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix4::Matrix4;
 use nalgebra_linalg4::linalg::lu::lu2::Lu2Trait;
 use nalgebra_linalg4::linalg::lu::lu3::Lu3Trait;
 use nalgebra_linalg4::linalg::lu::lu4::Lu4Trait;
-use nalgebra_shapes6::base::matrix6::Matrix6;
 use nalgebra_static6_wide::linalg::lu::lu6::Lu6Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types6::base::matrix6::Matrix6;
 use simba::scalar::Real;
 
 /// The LU inverse of one square shape (crate-private).

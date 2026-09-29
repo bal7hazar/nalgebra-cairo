@@ -1,6 +1,6 @@
 use fixed::Fixed;
 use glam_core::{Mat2, Vec2};
-use nalgebra_static3::geometry::unit_complex::UnitComplex;
+use nalgebra_geometry2::geometry::unit_complex::UnitComplex;
 use crate::black_box;
 use crate::glam_unit_complex::*;
 use super::int;

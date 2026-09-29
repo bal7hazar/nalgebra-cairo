@@ -11,8 +11,8 @@
 //! of margin; see `SymmetricEigen5Trait::new` for the figures.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 use crate::internal::linalg::symmetric_eigen5::Sym5;
 

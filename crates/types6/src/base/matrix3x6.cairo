@@ -11,23 +11,23 @@
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use nalgebra_core::base::errors;
-use nalgebra_core::base::matrix2x3::Matrix2x3;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix3x2::Matrix3x2;
-use nalgebra_core::base::matrix3x4::Matrix3x4;
-use nalgebra_core::base::matrix4x3::Matrix4x3;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::row_vector3::RowVector3;
-use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::internal::base::kernels::Fused;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
-use nalgebra_core::linalg::lu::Perm3;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
-use nalgebra_shapes5::base::matrix3x5::Matrix3x5;
-use nalgebra_shapes5::base::matrix5x3::Matrix5x3;
+use nalgebra_types3::base::matrix2x3::Matrix2x3;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::matrix3x2::Matrix3x2;
+use nalgebra_types3::base::row_vector3::RowVector3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::linalg::lu::Perm3;
+use nalgebra_types4::base::matrix3x4::Matrix3x4;
+use nalgebra_types4::base::matrix4x3::Matrix4x3;
+use nalgebra_types5::base::matrix3x5::Matrix3x5;
+use nalgebra_types5::base::matrix5x3::Matrix5x3;
 use simba::scalar::Real;
 use crate::base::matrix2x6::Matrix2x6;
 use crate::base::matrix4x6::Matrix4x6;
@@ -2757,8 +2757,8 @@ pub impl Perm3PermuteRowsMatrix3x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm3, 
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
-use nalgebra_geometry4::geometry::reflection3::{Reflection3, Reflection3Columns, Reflection3Trait};
-use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_types3::geometry::reflection3::{Reflection3, Reflection3Columns, Reflection3Trait};
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection3.cairo

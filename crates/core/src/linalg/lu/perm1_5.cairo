@@ -8,12 +8,6 @@
 use simba::scalar::Real;
 use crate::base::errors::INDEX_OUT_OF_BOUNDS;
 use crate::base::matrix1::Matrix1;
-use crate::base::row_vector2::RowVector2;
-use crate::base::row_vector3::RowVector3;
-use crate::base::row_vector4::RowVector4;
-use crate::base::vector2::Vector2;
-use crate::base::vector3::Vector3;
-use crate::base::vector4::Vector4;
 use crate::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
 
 /// The row permutation of a 1x1 factorisation: no transposition at all (upstream
@@ -89,42 +83,6 @@ pub impl Perm1PermuteRowsMatrix1<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, Ma
     }
 }
 
-pub impl Perm1PermuteRowsRowVector2<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector2<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-
-pub impl Perm1PermuteRowsRowVector3<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector3<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-
-pub impl Perm1PermuteRowsRowVector4<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector4<T>> {
-    fn permute_rows(self: Perm1, ref rhs: RowVector4<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_rows(self: Perm1, ref rhs: RowVector4<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-
 pub impl Perm1PermuteColumnsMatrix1<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Matrix1<T>> {
     fn permute_columns(self: Perm1, ref rhs: Matrix1<T>) {
         let _ = self;
@@ -132,42 +90,6 @@ pub impl Perm1PermuteColumnsMatrix1<T, +Copy<T>, +Drop<T>> of PermuteColumns<Per
     }
 
     fn inv_permute_columns(self: Perm1, ref rhs: Matrix1<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-
-pub impl Perm1PermuteColumnsVector2<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector2<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector2<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-
-pub impl Perm1PermuteColumnsVector3<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector3<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector3<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-}
-
-pub impl Perm1PermuteColumnsVector4<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector4<T>> {
-    fn permute_columns(self: Perm1, ref rhs: Vector4<T>) {
-        let _ = self;
-        let _ = rhs;
-    }
-
-    fn inv_permute_columns(self: Perm1, ref rhs: Vector4<T>) {
         let _ = self;
         let _ = rhs;
     }

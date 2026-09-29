@@ -25,13 +25,13 @@
 //!   four Jacobi sweeps rather than a closed form, and one formula for both sizes is worth more
 //!   than a few ulp.
 
-use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::internal::base::sym_matrix2::SymMatrix2Trait;
-use nalgebra_static3::base::matrix2::Matrix2Trait;
-use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
+use nalgebra_static2::base::matrix2::Matrix2Trait;
+use nalgebra_static2::internal::base::matrix2::Matrix2InternalTrait;
+use nalgebra_static2::internal::base::sym_matrix2::SymMatrix2Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
 use simba::scalar::Real;
 use crate::internal::linalg::svd2::Svd2InternalTrait;
 use crate::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;

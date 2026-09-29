@@ -9,20 +9,20 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use nalgebra_core::base::errors;
-use nalgebra_core::base::matrix2x4::Matrix2x4;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::norm::Norm;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_core::internal::base::kernels::Powi;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
-use nalgebra_shapes5::base::matrix2x5::Matrix2x5;
-use nalgebra_shapes5::base::matrix3x5::Matrix3x5;
-use nalgebra_shapes5::base::matrix5x2::Matrix5x2;
-use nalgebra_shapes5::base::row_vector5::RowVector5;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes5::internal::base::matrix2x5::Matrix2x5EditTrait;
-use nalgebra_shapes6::base::matrix2x6::Matrix2x6;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types4::base::matrix2x4::Matrix2x4;
+use nalgebra_types5::base::matrix2x5::Matrix2x5;
+use nalgebra_types5::base::matrix3x5::Matrix3x5;
+use nalgebra_types5::base::matrix5x2::Matrix5x2;
+use nalgebra_types5::base::row_vector5::RowVector5;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types5::internal::base::matrix2x5::Matrix2x5EditTrait;
+use nalgebra_types6::base::matrix2x6::Matrix2x6;
 use simba::scalar::{Real, Transcendental};
 use crate::base::matrix5::Matrix5Trait;
 

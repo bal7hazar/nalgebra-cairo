@@ -1,19 +1,22 @@
 [package]
 name = "nalgebra_geometry6"
-description = "Points, translations, scales and reflections of dimension 5 and 6."
+description = "The 6D geometry: points, translations, scales, reflections of dimension 6 (Reflection6 whole)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "geometry"]
+keywords = ["linear-algebra", "fixed-point", "geometry", "cg"]
 readme = "README.md"
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
-nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_types4 = { path = "../types4", version = "0.1.0" }
+nalgebra_types5 = { path = "../types5", version = "0.1.0" }
+nalgebra_types6 = { path = "../types6", version = "0.1.0" }
 simba.workspace = true
 
 [dev-dependencies]

@@ -3,7 +3,7 @@
 
 use nalgebra_core::base::errors;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::vector6::Vector6;
 
 /// Private helpers of the `swap*` methods (runtime positions: one `match` each).
 #[generate_trait]

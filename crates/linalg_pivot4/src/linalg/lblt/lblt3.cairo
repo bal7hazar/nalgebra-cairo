@@ -3,10 +3,10 @@
 //! `nalgebra::linalg::LBLT<T, U3>`), fully unrolled (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix3::Matrix3;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_core::linalg::lu::Perm3;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::linalg::lu::Perm3;
 use simba::scalar::Real;
 
 /// The Bunch-Kaufman factorisation `P A Pᵀ = L B Lᵀ` of a symmetric `Matrix3<T>` (only the

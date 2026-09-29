@@ -15,19 +15,19 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::row_vector2::RowVector2;
-use nalgebra_core::base::row_vector3::RowVector3;
-use nalgebra_core::base::row_vector4::RowVector4;
 use nalgebra_core::base::unit::Unit;
 use nalgebra_core::internal::base::matrix_view::ColumnVectorLen;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
+use nalgebra_core::internal::linalg::householder::HouseholderAxis;
+use nalgebra_types2::base::row_vector2::RowVector2;
+use nalgebra_types3::base::row_vector3::RowVector3;
+use nalgebra_types4::base::row_vector4::RowVector4;
 use simba::scalar::Real;
 use crate::base::matrix5::Matrix5;
 use crate::base::matrix5x2::Matrix5x2;
 use crate::base::matrix5x3::Matrix5x3;
 use crate::base::matrix5x4::Matrix5x4;
 use crate::base::row_vector5::RowVector5;
-use crate::internal::linalg::householder::HouseholderAxis;
 
 /// A 5-dimensional column vector. Components are named like upstream's `Deref` targets (`x, y, z,
 /// w, a, b`).
@@ -655,9 +655,97 @@ impl Vector5HouseholderAxis<
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_core::base::unit::Normed;
+use nalgebra_core::geometry::reflection1::{Reflection1, Reflection1Rows, Reflection1Trait};
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
-use crate::internal::linalg::householder_steps::ColumnMajor;
+
+// crate-map: generated items (tools/split/cratemap.py) [split]
+// crate-map: from geometry/reflection1.cairo
+/// `Reflection1Rows` on `Vector5` with the scratch vector `Vector5`.
+pub impl Reflection1RowsVector5<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Mul<T>, +Neg<T>,
+> of Reflection1Rows<Vector5<T>, Vector5<T>, T> {
+    fn reflect_rows(self: Reflection1<T>, ref lhs: Vector5<T>, ref work: Vector5<T>) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), lhs);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.x, a.x);
+        let w = R::wide_sub(w, b);
+        let s1 = R::wide_rescale(w);
+        let f1 = -(s1 + s1);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.y, a.x);
+        let w = R::wide_sub(w, b);
+        let s2 = R::wide_rescale(w);
+        let f2 = -(s2 + s2);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.z, a.x);
+        let w = R::wide_sub(w, b);
+        let s3 = R::wide_rescale(w);
+        let f3 = -(s3 + s3);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.w, a.x);
+        let w = R::wide_sub(w, b);
+        let s4 = R::wide_rescale(w);
+        let f4 = -(s4 + s4);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.a, a.x);
+        let w = R::wide_sub(w, b);
+        let s5 = R::wide_rescale(w);
+        let f5 = -(s5 + s5);
+        lhs =
+            Vector5 {
+                x: R::mul_add(f1, a.x, m.x),
+                y: R::mul_add(f2, a.x, m.y),
+                z: R::mul_add(f3, a.x, m.z),
+                w: R::mul_add(f4, a.x, m.w),
+                a: R::mul_add(f5, a.x, m.a),
+            };
+        work = Vector5 { x: s1, y: s2, z: s3, w: s4, a: s5 };
+    }
+
+    fn reflect_rows_with_sign(
+        self: Reflection1<T>, ref lhs: Vector5<T>, ref work: Vector5<T>, sign: T,
+    ) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), lhs);
+        let m_two = -(sign + sign);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.x, a.x);
+        let w = R::wide_sub(w, b);
+        let s1 = R::wide_rescale(w);
+        let f1 = m_two * s1;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.y, a.x);
+        let w = R::wide_sub(w, b);
+        let s2 = R::wide_rescale(w);
+        let f2 = m_two * s2;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.z, a.x);
+        let w = R::wide_sub(w, b);
+        let s3 = R::wide_rescale(w);
+        let f3 = m_two * s3;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.w, a.x);
+        let w = R::wide_sub(w, b);
+        let s4 = R::wide_rescale(w);
+        let f4 = m_two * s4;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, m.a, a.x);
+        let w = R::wide_sub(w, b);
+        let s5 = R::wide_rescale(w);
+        let f5 = m_two * s5;
+        lhs =
+            Vector5 {
+                x: R::sum_prod2(f1, a.x, sign, m.x),
+                y: R::sum_prod2(f2, a.x, sign, m.y),
+                z: R::sum_prod2(f3, a.x, sign, m.z),
+                w: R::sum_prod2(f4, a.x, sign, m.w),
+                a: R::sum_prod2(f5, a.x, sign, m.a),
+            };
+        work = Vector5 { x: s1, y: s2, z: s3, w: s4, a: s5 };
+    }
+}
+// crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [unit]
 // crate-map: from base/unit.cairo

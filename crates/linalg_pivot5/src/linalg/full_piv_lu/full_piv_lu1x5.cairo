@@ -5,8 +5,8 @@
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
-use nalgebra_shapes5::base::row_vector5::RowVector5;
-use nalgebra_shapes5::linalg::lu::perm1_5::Perm5;
+use nalgebra_types5::base::row_vector5::RowVector5;
+use nalgebra_types5::linalg::lu::perm1_5::Perm5;
 use simba::scalar::Real;
 
 /// The LU factorisation with full (row and column) pivoting of a `RowVector5<T>`: `P A Q = L U`.

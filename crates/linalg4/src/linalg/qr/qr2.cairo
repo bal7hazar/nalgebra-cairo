@@ -3,10 +3,10 @@
 //! `A = Q * R` with `Q` orthonormal and `R` upper triangular with a non-negative diagonal — the
 //! convention of upstream's unpacked `q()` / `r()`, see the module doc of `linalg::qr`.
 
-use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
 use simba::scalar::Real;
 
 /// The QR factorisation of a `Matrix2<T>`: `A = Q * R`.

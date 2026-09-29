@@ -4,11 +4,11 @@
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::matrix4x2::Matrix4x2;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::matrix4x2::Matrix4x2;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use super::kernels::QrComplete4Impl;
 

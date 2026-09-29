@@ -1,6 +1,6 @@
 [package]
-name = "nalgebra_shapes5"
-description = "The types of dimension 5 (structs, core-trait impls, products, indexing, solve / permutation / Givens impls, edit kernels); Point4Trait, Translation4Trait."
+name = "nalgebra_types5"
+description = "The types of dimension 5 (shapes with max(rows, cols) = 5, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point5, Translation5, Perm5."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -15,7 +15,9 @@ experimental-features = ["associated_item_constraints"]
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_types4 = { path = "../types4", version = "0.1.0" }
 simba.workspace = true
 
 [dev-dependencies]

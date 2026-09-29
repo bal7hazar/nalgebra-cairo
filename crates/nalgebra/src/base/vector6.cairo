@@ -32,7 +32,8 @@ pub use nalgebra_blocks::base::matrix_view::{
 pub use nalgebra_norm::base::norm::{
     Vector6EuclideanNorm, Vector6LpNorm, Vector6OneNorm, Vector6UniformNorm,
 };
-pub use nalgebra_shapes6::base::vector6::{
+pub use nalgebra_static6_tall::base::vector6::*;
+pub use nalgebra_types6::base::vector6::{
     Matrix6x1, UnitVector6, Vector6, Vector6Add, Vector6AddAssign, Vector6Bounded, Vector6DivAssign,
     Vector6FromArray, Vector6FromColumnArrays, Vector6IndexLinear, Vector6IndexPair,
     Vector6IntoArray, Vector6IntoColumnArrays, Vector6MatrixIndexLinear, Vector6MatrixIndexPair,
@@ -42,7 +43,6 @@ pub use nalgebra_shapes6::base::vector6::{
     Vector6TrMulMatrix6x2, Vector6TrMulMatrix6x3, Vector6TrMulMatrix6x4, Vector6TrMulMatrix6x5,
     Vector6TrMulVector6,
 };
-pub use nalgebra_static6_tall::base::vector6::*;
 pub use nalgebra_views::base::matrix_view::{
     Vector6FixedViewMatrix1, Vector6FixedViewVector2, Vector6FixedViewVector3,
     Vector6FixedViewVector4, Vector6FixedViewVector5, Vector6FixedViewVector6,

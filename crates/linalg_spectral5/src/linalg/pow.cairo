@@ -5,8 +5,8 @@
 //! `docs/API_PARITY.md`).
 
 use nalgebra_core::base::matrix_mul::MatrixMul;
-use nalgebra_shapes5::base::matrix5::Matrix5;
 use nalgebra_static5::base::matrix5::Matrix5Trait;
+use nalgebra_types5::base::matrix5::Matrix5;
 use simba::scalar::Real;
 
 /// `Matrix5::pow` / `pow_mut`. Import `Matrix5PowTrait` to use them.

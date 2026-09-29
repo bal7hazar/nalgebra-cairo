@@ -19,5 +19,4 @@
 //! one fused kernel (`Real::mul_add`); overflow and division by zero panic (upstream's `inf` /
 //! `NaN`). Upstream's `relative_eq!(a, b)` assertions use the default tolerances of DESIGN D3
 //! (`default_epsilon` = 1 ulp, absolute and relative).
-
-pub use nalgebra_geometry4::geometry::orthographic3::*;
+pub use nalgebra_transform3::geometry::orthographic3::*;

@@ -19,7 +19,8 @@ pub use nalgebra_blocks::base::matrix_view::{
 pub use nalgebra_norm::base::norm::{
     Matrix3x6EuclideanNorm, Matrix3x6LpNorm, Matrix3x6OneNorm, Matrix3x6UniformNorm,
 };
-pub use nalgebra_shapes6::base::matrix3x6::{
+pub use nalgebra_static6_wide::base::matrix3x6::*;
+pub use nalgebra_types6::base::matrix3x6::{
     Matrix3x6, Matrix3x6Add, Matrix3x6AddAssign, Matrix3x6Bounded, Matrix3x6DivAssignScalar,
     Matrix3x6FromColumnArrays, Matrix3x6IndexLinear, Matrix3x6IndexPair, Matrix3x6IntoColumnArrays,
     Matrix3x6MatrixIndexLinear, Matrix3x6MatrixIndexPair, Matrix3x6MulAssignScalar,
@@ -29,7 +30,6 @@ pub use nalgebra_shapes6::base::matrix3x6::{
     Matrix3x6TrMulMatrix3x2, Matrix3x6TrMulMatrix3x4, Matrix3x6TrMulMatrix3x5,
     Matrix3x6TrMulMatrix3x6, Matrix3x6TrMulVector3,
 };
-pub use nalgebra_static6_wide::base::matrix3x6::*;
 pub use nalgebra_views::base::matrix_view::{
     Matrix3x6FixedViewMatrix1, Matrix3x6FixedViewMatrix2, Matrix3x6FixedViewMatrix2x3,
     Matrix3x6FixedViewMatrix2x4, Matrix3x6FixedViewMatrix2x5, Matrix3x6FixedViewMatrix2x6,

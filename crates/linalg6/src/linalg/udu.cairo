@@ -9,9 +9,9 @@
 //! `LDLᵀ` `l`, `solve`, `inverse` and `determinant`, which upstream's `UDU` does not have, are
 //! crate-internal).
 
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::vector6::Vector6;
 use nalgebra_static6_wide::base::matrix6::Matrix6Trait;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use crate::internal::linalg::ldlt::Ldlt6Trait;
 

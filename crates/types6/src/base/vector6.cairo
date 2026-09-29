@@ -27,14 +27,14 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::row_vector2::RowVector2;
-use nalgebra_core::base::row_vector3::RowVector3;
-use nalgebra_core::base::row_vector4::RowVector4;
 use nalgebra_core::base::unit::Unit;
 use nalgebra_core::internal::base::matrix_view::ColumnVectorLen;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
-use nalgebra_shapes5::base::row_vector5::RowVector5;
-use nalgebra_shapes5::internal::linalg::householder::HouseholderAxis;
+use nalgebra_core::internal::linalg::householder::HouseholderAxis;
+use nalgebra_types2::base::row_vector2::RowVector2;
+use nalgebra_types3::base::row_vector3::RowVector3;
+use nalgebra_types4::base::row_vector4::RowVector4;
+use nalgebra_types5::base::row_vector5::RowVector5;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::matrix6x2::Matrix6x2;
@@ -808,88 +808,10 @@ impl Vector6HouseholderAxis<
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_core::base::unit::Normed;
+use nalgebra_core::geometry::reflection1::{Reflection1, Reflection1Rows, Reflection1Trait};
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
-use nalgebra_geometry4::geometry::reflection1::{Reflection1, Reflection1Rows, Reflection1Trait};
-use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
-
-// crate-map: generated items (tools/split/cratemap.py) [unit]
-// crate-map: from base/unit.cairo
-/// `Normed` of `Vector6` (`UnitVector6`): the kernels of `Vector6Trait`, whose one-line
-/// `#[inline(always)]` bodies are written out here (`Vector6Trait` lives above this crate,
-/// docs/SPLIT.md §3.3.3; same code, same steps).
-pub impl Vector6Normed<
-    T,
-    impl R: Real<T>,
-    +Copy<T>,
-    +Drop<T>,
-    +Drop<R::Wide>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +PartialOrd<T>,
-> of Normed<Vector6<T>, T> {
-    #[inline(always)]
-    fn norm(self: Vector6<T>) -> T {
-        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
-        let w = R::wide_add_prod(w, self.y, self.y);
-        let w = R::wide_add_prod(w, self.z, self.z);
-        let w = R::wide_add_prod(w, self.w, self.w);
-        let w = R::wide_add_prod(w, self.a, self.a);
-        R::wide_sqrt(R::wide_add_prod(w, self.b, self.b))
-    }
-
-    #[inline(always)]
-    fn norm_squared(self: Vector6<T>) -> T {
-        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
-        let w = R::wide_add_prod(w, self.y, self.y);
-        let w = R::wide_add_prod(w, self.z, self.z);
-        let w = R::wide_add_prod(w, self.w, self.w);
-        let w = R::wide_add_prod(w, self.a, self.a);
-        R::wide_rescale(R::wide_add_prod(w, self.b, self.b))
-    }
-
-    #[inline(always)]
-    fn scale(self: Vector6<T>, k: T) -> Vector6<T> {
-        Vector6 {
-            x: self.x * k,
-            y: self.y * k,
-            z: self.z * k,
-            w: self.w * k,
-            a: self.a * k,
-            b: self.b * k,
-        }
-    }
-
-    #[inline(always)]
-    fn unscale(self: Vector6<T>, k: T) -> Vector6<T> {
-        let (x, y, z, w, a, b) = R::div6(self.x, self.y, self.z, self.w, self.a, self.b, k);
-        Vector6 { x, y, z, w, a, b }
-    }
-
-    #[inline(always)]
-    fn dot(self: Vector6<T>, rhs: Vector6<T>) -> T {
-        let w = R::wide_add_prod(R::wide_zero(), self.x, rhs.x);
-        let w = R::wide_add_prod(w, self.y, rhs.y);
-        let w = R::wide_add_prod(w, self.z, rhs.z);
-        let w = R::wide_add_prod(w, self.w, rhs.w);
-        let w = R::wide_add_prod(w, self.a, rhs.a);
-        R::wide_rescale(R::wide_add_prod(w, self.b, rhs.b))
-    }
-
-    #[inline(always)]
-    fn abs_diff_eq(self: Vector6<T>, rhs: Vector6<T>, ulps: u64) -> bool {
-        R::abs_diff_eq(self.x, rhs.x, ulps)
-            && R::abs_diff_eq(self.y, rhs.y, ulps)
-            && R::abs_diff_eq(self.z, rhs.z, ulps)
-            && R::abs_diff_eq(self.w, rhs.w, ulps)
-            && R::abs_diff_eq(self.a, rhs.a, ulps)
-            && R::abs_diff_eq(self.b, rhs.b, ulps)
-    }
-}
-// crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection1.cairo
@@ -986,6 +908,84 @@ pub impl Reflection1RowsVector6<
                 b: R::sum_prod2(f6, a.x, sign, m.b),
             };
         work = Vector6 { x: s1, y: s2, z: s3, w: s4, a: s5, b: s6 };
+    }
+}
+// crate-map: end
+
+// crate-map: generated items (tools/split/cratemap.py) [unit]
+// crate-map: from base/unit.cairo
+/// `Normed` of `Vector6` (`UnitVector6`): the kernels of `Vector6Trait`, whose one-line
+/// `#[inline(always)]` bodies are written out here (`Vector6Trait` lives above this crate,
+/// docs/SPLIT.md §3.3.3; same code, same steps).
+pub impl Vector6Normed<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Normed<Vector6<T>, T> {
+    #[inline(always)]
+    fn norm(self: Vector6<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
+        let w = R::wide_add_prod(w, self.y, self.y);
+        let w = R::wide_add_prod(w, self.z, self.z);
+        let w = R::wide_add_prod(w, self.w, self.w);
+        let w = R::wide_add_prod(w, self.a, self.a);
+        R::wide_sqrt(R::wide_add_prod(w, self.b, self.b))
+    }
+
+    #[inline(always)]
+    fn norm_squared(self: Vector6<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, self.x);
+        let w = R::wide_add_prod(w, self.y, self.y);
+        let w = R::wide_add_prod(w, self.z, self.z);
+        let w = R::wide_add_prod(w, self.w, self.w);
+        let w = R::wide_add_prod(w, self.a, self.a);
+        R::wide_rescale(R::wide_add_prod(w, self.b, self.b))
+    }
+
+    #[inline(always)]
+    fn scale(self: Vector6<T>, k: T) -> Vector6<T> {
+        Vector6 {
+            x: self.x * k,
+            y: self.y * k,
+            z: self.z * k,
+            w: self.w * k,
+            a: self.a * k,
+            b: self.b * k,
+        }
+    }
+
+    #[inline(always)]
+    fn unscale(self: Vector6<T>, k: T) -> Vector6<T> {
+        let (x, y, z, w, a, b) = R::div6(self.x, self.y, self.z, self.w, self.a, self.b, k);
+        Vector6 { x, y, z, w, a, b }
+    }
+
+    #[inline(always)]
+    fn dot(self: Vector6<T>, rhs: Vector6<T>) -> T {
+        let w = R::wide_add_prod(R::wide_zero(), self.x, rhs.x);
+        let w = R::wide_add_prod(w, self.y, rhs.y);
+        let w = R::wide_add_prod(w, self.z, rhs.z);
+        let w = R::wide_add_prod(w, self.w, rhs.w);
+        let w = R::wide_add_prod(w, self.a, rhs.a);
+        R::wide_rescale(R::wide_add_prod(w, self.b, rhs.b))
+    }
+
+    #[inline(always)]
+    fn abs_diff_eq(self: Vector6<T>, rhs: Vector6<T>, ulps: u64) -> bool {
+        R::abs_diff_eq(self.x, rhs.x, ulps)
+            && R::abs_diff_eq(self.y, rhs.y, ulps)
+            && R::abs_diff_eq(self.z, rhs.z, ulps)
+            && R::abs_diff_eq(self.w, rhs.w, ulps)
+            && R::abs_diff_eq(self.a, rhs.a, ulps)
+            && R::abs_diff_eq(self.b, rhs.b, ulps)
     }
 }
 // crate-map: end

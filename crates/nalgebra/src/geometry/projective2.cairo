@@ -15,5 +15,11 @@
 //!
 //! Numeric contract (AGENTS.md): every sum of products is one fused `Real` kernel (one floor per
 //! output scalar), every quotient correctly rounded; overflow panics.
-
-pub use nalgebra_geometry4::geometry::projective2::*;
+pub use nalgebra_transform2::geometry::projective2::{
+    Matrix3FromProjective2, Projective2, Projective2Default, Projective2Div, Projective2FromAffine2,
+    Projective2FromIsometry2, Projective2FromIsometryMatrix2, Projective2FromRotation2,
+    Projective2FromScale2, Projective2FromSimilarity2, Projective2FromSimilarityMatrix2,
+    Projective2FromTranslation2, Projective2FromUnitComplex, Projective2Impl, Projective2Index,
+    Projective2Mul, Projective2One, Projective2Trait, Projective2TryFromMatrix3,
+    Projective2TryFromTransform2,
+};

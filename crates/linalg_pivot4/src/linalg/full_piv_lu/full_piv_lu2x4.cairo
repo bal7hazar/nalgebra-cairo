@@ -3,9 +3,10 @@
 //! `nalgebra::linalg::FullPivLU<T, U2, U4>`), fully unrolled (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix2x4::Matrix2x4;
-use nalgebra_core::linalg::lu::{Perm2, Perm4};
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::linalg::lu::Perm2;
+use nalgebra_types4::base::matrix2x4::Matrix2x4;
+use nalgebra_types4::linalg::lu::Perm4;
 use simba::scalar::Real;
 
 /// The LU factorisation with full (row and column) pivoting of a `Matrix2x4<T>`: `P A Q = L U`.

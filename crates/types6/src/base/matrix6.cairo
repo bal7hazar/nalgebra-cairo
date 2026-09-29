@@ -29,12 +29,14 @@ use nalgebra_core::internal::base::kernels::Fused;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
 use nalgebra_core::internal::linalg::lu_steps::LuSteps;
+use nalgebra_types5::geometry::translation5::Translation5;
 use simba::scalar::Real;
 use crate::base::matrix6x2::Matrix6x2;
 use crate::base::matrix6x3::Matrix6x3;
 use crate::base::matrix6x4::Matrix6x4;
 use crate::base::matrix6x5::Matrix6x5;
 use crate::base::vector6::Vector6;
+use crate::internal::geometry::translation5::Matrix6FromTranslation5KernelTrait;
 
 /// A 6x6 matrix. `mRC` is the component at row `R`, column `C`.
 ///
@@ -3705,6 +3707,27 @@ pub impl Matrix6DivAssignScalar<
                 m56,
                 m66,
             };
+    }
+}
+
+/// `translation5.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream:
+/// `From<Translation5> for Matrix6`.
+pub impl Matrix6FromTranslation5<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Translation5<T>, Matrix6<T>> {
+    #[inline(always)]
+    fn into(self: Translation5<T>) -> Matrix6<T> {
+        Matrix6FromTranslation5KernelTrait::to_homogeneous(self)
     }
 }
 
@@ -10258,8 +10281,8 @@ impl Matrix6LuSteps<
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
-use nalgebra_shapes5::internal::linalg::balancing::Balancing;
-use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_core::internal::linalg::balancing::Balancing;
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
 // crate-map: from linalg/balancing.cairo

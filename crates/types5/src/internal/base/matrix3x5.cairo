@@ -2,7 +2,7 @@
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
 use nalgebra_core::base::errors;
-use nalgebra_core::base::vector3::Vector3;
+use nalgebra_types3::base::vector3::Vector3;
 use crate::base::matrix3x5::Matrix3x5;
 use crate::base::row_vector5::RowVector5;
 

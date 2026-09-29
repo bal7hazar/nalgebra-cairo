@@ -1,0 +1,29 @@
+[package]
+name = "nalgebra_statistics6"
+description = "base::statistics of the dimension-6 shapes (one inherent trait per shape)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "statistics"]
+readme = "README.md"
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_types4 = { path = "../types4", version = "0.1.0" }
+nalgebra_types5 = { path = "../types5", version = "0.1.0" }
+nalgebra_types6 = { path = "../types6", version = "0.1.0" }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

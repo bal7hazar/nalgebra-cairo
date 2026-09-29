@@ -17,15 +17,15 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::internal::base::kernels::Fused;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
-use nalgebra_shapes5::base::matrix2x5::Matrix2x5;
-use nalgebra_shapes5::base::matrix3x5::Matrix3x5;
-use nalgebra_shapes5::base::matrix4x5::Matrix4x5;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::matrix5x2::Matrix5x2;
-use nalgebra_shapes5::base::matrix5x3::Matrix5x3;
-use nalgebra_shapes5::base::matrix5x4::Matrix5x4;
-use nalgebra_shapes5::base::row_vector5::RowVector5;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types5::base::matrix2x5::Matrix2x5;
+use nalgebra_types5::base::matrix3x5::Matrix3x5;
+use nalgebra_types5::base::matrix4x5::Matrix4x5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::matrix5x2::Matrix5x2;
+use nalgebra_types5::base::matrix5x3::Matrix5x3;
+use nalgebra_types5::base::matrix5x4::Matrix5x4;
+use nalgebra_types5::base::row_vector5::RowVector5;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 use crate::base::matrix2x6::Matrix2x6;
 use crate::base::matrix3x6::Matrix3x6;
@@ -5164,9 +5164,9 @@ impl Matrix5SolveKernelMatrix5x6<
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
-use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
-use nalgebra_shapes5::linalg::lu::perm1_5::Perm5;
+use nalgebra_types5::linalg::lu::perm1_5::Perm5;
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
 // crate-map: from linalg/householder_steps.cairo

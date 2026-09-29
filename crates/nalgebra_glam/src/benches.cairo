@@ -5,20 +5,20 @@
 
 use fixed::{Fixed, ONE, ONE_RAW, ZERO};
 use glam_core::{Mat2, Mat3, Mat4, Quat, Vec2, Vec3, Vec4};
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::{UnitVector3, Vector3};
+use nalgebra_geometry2::geometry::isometry2::{Isometry2, Isometry2AngleTrait};
+use nalgebra_geometry2::geometry::unit_complex::UnitComplex;
+use nalgebra_geometry3::geometry::isometry3::Isometry3;
+use nalgebra_geometry3::geometry::quaternion::Quaternion;
+use nalgebra_geometry3::geometry::similarity3::Similarity3;
+use nalgebra_geometry3::geometry::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static3::base::vector3::Vector3Trait;
-use nalgebra_static3::geometry::isometry2::{Isometry2, Isometry2AngleTrait};
-use nalgebra_static3::geometry::isometry3::Isometry3;
-use nalgebra_static3::geometry::quaternion::Quaternion;
-use nalgebra_static3::geometry::rotation3::Rotation3;
-use nalgebra_static3::geometry::similarity3::Similarity3;
-use nalgebra_static3::geometry::translation2::Translation2;
-use nalgebra_static3::geometry::translation3::Translation3;
-use nalgebra_static3::geometry::unit_complex::UnitComplex;
-use nalgebra_static3::geometry::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::geometry::translation2::Translation2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::{UnitVector3, Vector3};
+use nalgebra_types3::geometry::rotation3::Rotation3;
+use nalgebra_types3::geometry::translation3::Translation3;
 use crate::black_box;
 use crate::glam_isometry::*;
 use crate::glam_matrix::*;
@@ -173,14 +173,14 @@ fn bench_mat4_to_matrix4__baseline() {
 #[inline(never)]
 fn bench_mat4_to_matrix4__into() {
     let m = mat4();
-    let r: nalgebra_core::base::matrix4::Matrix4<Fixed> = m.into();
+    let r: nalgebra_types4::base::matrix4::Matrix4<Fixed> = m.into();
     assert!(r.m44 == int(44));
 }
 
 #[test]
 #[inline(never)]
 fn bench_matrix4_to_mat4__baseline() {
-    let n: nalgebra_core::base::matrix4::Matrix4<Fixed> = mat4().into();
+    let n: nalgebra_types4::base::matrix4::Matrix4<Fixed> = mat4().into();
     let n = black_box(n);
     assert!(n.m44 == int(44));
 }
@@ -189,7 +189,7 @@ fn bench_matrix4_to_mat4__baseline() {
 #[inline(never)]
 fn bench_matrix4_to_mat4__into() {
     let m = mat4();
-    let n: nalgebra_core::base::matrix4::Matrix4<Fixed> = m.into();
+    let n: nalgebra_types4::base::matrix4::Matrix4<Fixed> = m.into();
     let n = black_box(n);
     let r: Mat4 = n.into();
     assert!(r.w_axis.w == int(44));
@@ -258,7 +258,7 @@ fn bench_mat2_to_rotation2__into() {
     let m = black_box(
         Mat2 { x_axis: Vec2 { x: ZERO, y: int(3) }, y_axis: Vec2 { x: -int(3), y: ZERO } },
     );
-    let r: nalgebra_static3::geometry::rotation2::Rotation2<Fixed> = m.into();
+    let r: nalgebra_types2::geometry::rotation2::Rotation2<Fixed> = m.into();
     assert!(r.matrix.m21 == ONE);
 }
 
@@ -563,7 +563,7 @@ fn bench_mat3_to_similarity2__baseline() {
 #[inline(never)]
 fn bench_mat3_to_similarity2__try_into() {
     let m = sim3();
-    let s: Option<nalgebra_static3::geometry::similarity2::Similarity2<Fixed>> = m.try_into();
+    let s: Option<nalgebra_geometry2::geometry::similarity2::Similarity2<Fixed>> = m.try_into();
     assert!(s.is_some());
 }
 

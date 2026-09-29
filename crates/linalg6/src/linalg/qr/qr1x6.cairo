@@ -6,7 +6,7 @@
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_shapes6::base::row_vector6::RowVector6;
+use nalgebra_types6::base::row_vector6::RowVector6;
 use simba::scalar::Real;
 
 /// The QR factorisation `A = q * r` of a `RowVector6<T>`: `q` is 1x1, `r` is 1x6

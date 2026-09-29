@@ -8,9 +8,9 @@
 
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_linalg_spectral4::internal::linalg::exp::SINGULAR_PADE;
-use nalgebra_shapes6::base::matrix6::Matrix6;
 use nalgebra_static6_wide::base::matrix6::Matrix6Trait;
 use nalgebra_static6_wide::linalg::lu::lu6::Lu6Trait;
+use nalgebra_types6::base::matrix6::Matrix6;
 use simba::scalar::Real;
 
 /// `Matrix6::exp`. Import `Matrix6ExpTrait` to use it.

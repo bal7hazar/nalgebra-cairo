@@ -27,5 +27,4 @@
 //! particular each component of the dual part of a product, `a.real · b.dual + a.dual · b.real`,
 //! is ONE accumulation of eight products floored once, where upstream rounds two Hamilton
 //! products and their sum.
-
-pub use nalgebra_static3::geometry::dual_quaternion::*;
+pub use nalgebra_geometry3::geometry::dual_quaternion::*;

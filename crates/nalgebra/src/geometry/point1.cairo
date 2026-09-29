@@ -9,5 +9,5 @@
 //! Numeric contract (AGENTS.md): every operation is exact except the divisions (`unscale`,
 //! `from_homogeneous`: correctly rounded) and `lerp` (one fused kernel per coordinate); nothing
 //! wraps silently.
-
 pub use nalgebra_core::geometry::point1::*;
+pub use nalgebra_geometry2::geometry::point1::*;

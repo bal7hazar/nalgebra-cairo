@@ -15,16 +15,16 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::row_vector2::RowVector2;
-use nalgebra_core::base::row_vector3::RowVector3;
-use nalgebra_core::base::row_vector4::RowVector4;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::kernels::Fused;
 use nalgebra_core::internal::base::matrix_view::RowVectorLen;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
+use nalgebra_types2::base::row_vector2::RowVector2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types3::base::row_vector3::RowVector3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::row_vector4::RowVector4;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use crate::base::matrix2x5::Matrix2x5;
 use crate::base::matrix3x5::Matrix3x5;
@@ -800,9 +800,84 @@ impl Matrix1SolveKernelRowVector5<
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
+use nalgebra_core::geometry::reflection1::{Reflection1, Reflection1Columns, Reflection1Trait};
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
-use crate::internal::linalg::householder_steps::ColumnMajor;
+
+// crate-map: generated items (tools/split/cratemap.py) [split]
+// crate-map: from geometry/reflection1.cairo
+/// `Reflection1Columns` on `RowVector5`.
+pub impl Reflection1ColumnsRowVector5<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Neg<T>,
+> of Reflection1Columns<RowVector5<T>, T> {
+    fn reflect(self: Reflection1<T>, ref rhs: RowVector5<T>) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), rhs);
+        let m_two = -R::TWO;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.x);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.y);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.z);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.w);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.a);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            RowVector5 {
+                x: R::mul_add(f1, a.x, m.x),
+                y: R::mul_add(f2, a.x, m.y),
+                z: R::mul_add(f3, a.x, m.z),
+                w: R::mul_add(f4, a.x, m.w),
+                a: R::mul_add(f5, a.x, m.a),
+            };
+    }
+
+    fn reflect_with_sign(self: Reflection1<T>, ref rhs: RowVector5<T>, sign: T) {
+        let (a, b, m) = (Reflection1Trait::axis(self), Reflection1Trait::bias(self), rhs);
+        let m_two = -(sign + sign);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.x);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.y);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.z);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.w);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.a);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            RowVector5 {
+                x: R::sum_prod2(f1, a.x, sign, m.x),
+                y: R::sum_prod2(f2, a.x, sign, m.y),
+                z: R::sum_prod2(f3, a.x, sign, m.z),
+                w: R::sum_prod2(f4, a.x, sign, m.w),
+                a: R::sum_prod2(f5, a.x, sign, m.a),
+            };
+    }
+}
+// crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
 // crate-map: from linalg/householder_steps.cairo

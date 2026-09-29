@@ -1,11 +1,11 @@
 //! Internal, no stability promise: the crate-private items of `linalg::svd::kernels` that the
 //! packages above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
-use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::internal::base::sym_matrix2::SymMatrix2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::internal::base::sym_matrix3::SymMatrix3;
+use nalgebra_types4::base::matrix4::Matrix4;
 use simba::scalar::Real;
 use crate::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 use crate::internal::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;

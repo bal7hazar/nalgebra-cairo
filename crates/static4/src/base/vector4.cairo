@@ -20,18 +20,18 @@
 
 use nalgebra_core::base::errors;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::matrix4x2::Matrix4x2;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::norm::Norm;
-use nalgebra_core::base::row_vector4::RowVector4;
 use nalgebra_core::base::unit::Unit;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::kernels::Powi;
-use nalgebra_core::internal::base::vector4::{Vector4EditTrait, slerp_unit};
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::matrix4x2::Matrix4x2;
+use nalgebra_types4::base::row_vector4::RowVector4;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types4::internal::base::vector4::{Vector4EditTrait, slerp_unit};
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::{Real, Transcendental};
 
 /// Operations of `Vector4<T>` over a `Real` scalar. By value, unrolled, no loop.

@@ -2,8 +2,8 @@
 //! `Eigen6`: the eigen decomposition of a `Matrix6` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U6>`), WP 8.5-P16.
 
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use crate::linalg::schur::schur6::Schur6Trait;
 

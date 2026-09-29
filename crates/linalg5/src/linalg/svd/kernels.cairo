@@ -5,7 +5,7 @@
 //! Gram-Schmidt of the left singular vectors when a column vanishes EXACTLY.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 
 /// The left singular vectors of the SVDs with 5 rows (crate-internal): the first one, the

@@ -5,11 +5,11 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::row_vector2::RowVector2;
-use nalgebra_core::base::vector2::Vector2;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::row_vector2::RowVector2;
+use nalgebra_types2::base::vector2::Vector2;
 use simba::scalar::Real;
 use crate::internal::linalg::svd::kernels::SvdRightImpl;
 use crate::linalg::svd::kernels::SvdComplete2Impl;

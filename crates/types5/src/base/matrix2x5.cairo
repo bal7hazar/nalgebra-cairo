@@ -11,23 +11,23 @@
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use nalgebra_core::base::errors;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix2x3::Matrix2x3;
-use nalgebra_core::base::matrix2x4::Matrix2x4;
-use nalgebra_core::base::matrix3x2::Matrix3x2;
-use nalgebra_core::base::matrix4x2::Matrix4x2;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::row_vector2::RowVector2;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_core::internal::base::kernels::Fused;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
-use nalgebra_core::internal::linalg::givens::GivensRotationInternalTrait;
-use nalgebra_core::linalg::givens::{GivensRotate, GivensRotation};
-use nalgebra_core::linalg::lu::Perm2;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::row_vector2::RowVector2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::internal::linalg::givens::GivensRotationInternalTrait;
+use nalgebra_types2::linalg::givens::{GivensRotate, GivensRotation};
+use nalgebra_types2::linalg::lu::Perm2;
+use nalgebra_types3::base::matrix2x3::Matrix2x3;
+use nalgebra_types3::base::matrix3x2::Matrix3x2;
+use nalgebra_types4::base::matrix2x4::Matrix2x4;
+use nalgebra_types4::base::matrix4x2::Matrix4x2;
 use simba::scalar::Real;
 use crate::base::matrix3x5::Matrix3x5;
 use crate::base::matrix4x5::Matrix4x5;
@@ -1500,7 +1500,102 @@ pub impl Perm2PermuteRowsMatrix2x5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, 
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
-use crate::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_types2::geometry::reflection2::{Reflection2, Reflection2Columns, Reflection2Trait};
+
+// crate-map: generated items (tools/split/cratemap.py) [split]
+// crate-map: from geometry/reflection2.cairo
+/// `Reflection2Columns` on `Matrix2x5`.
+pub impl Reflection2ColumnsMatrix2x5<
+    T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Add<T>, +Neg<T>,
+> of Reflection2Columns<Matrix2x5<T>, T> {
+    fn reflect(self: Reflection2<T>, ref rhs: Matrix2x5<T>) {
+        let (a, b, m) = (Reflection2Trait::axis(self), Reflection2Trait::bias(self), rhs);
+        let m_two = -R::TWO;
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m11);
+        let w = R::wide_add_prod(w, a.y, m.m21);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m12);
+        let w = R::wide_add_prod(w, a.y, m.m22);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m13);
+        let w = R::wide_add_prod(w, a.y, m.m23);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m14);
+        let w = R::wide_add_prod(w, a.y, m.m24);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m15);
+        let w = R::wide_add_prod(w, a.y, m.m25);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            Matrix2x5 {
+                m11: R::mul_add(f1, a.x, m.m11),
+                m21: R::mul_add(f1, a.y, m.m21),
+                m12: R::mul_add(f2, a.x, m.m12),
+                m22: R::mul_add(f2, a.y, m.m22),
+                m13: R::mul_add(f3, a.x, m.m13),
+                m23: R::mul_add(f3, a.y, m.m23),
+                m14: R::mul_add(f4, a.x, m.m14),
+                m24: R::mul_add(f4, a.y, m.m24),
+                m15: R::mul_add(f5, a.x, m.m15),
+                m25: R::mul_add(f5, a.y, m.m25),
+            };
+    }
+
+    fn reflect_with_sign(self: Reflection2<T>, ref rhs: Matrix2x5<T>, sign: T) {
+        let (a, b, m) = (Reflection2Trait::axis(self), Reflection2Trait::bias(self), rhs);
+        let m_two = -(sign + sign);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m11);
+        let w = R::wide_add_prod(w, a.y, m.m21);
+        let w = R::wide_sub(w, b);
+        let f1 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m12);
+        let w = R::wide_add_prod(w, a.y, m.m22);
+        let w = R::wide_sub(w, b);
+        let f2 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m13);
+        let w = R::wide_add_prod(w, a.y, m.m23);
+        let w = R::wide_sub(w, b);
+        let f3 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m14);
+        let w = R::wide_add_prod(w, a.y, m.m24);
+        let w = R::wide_sub(w, b);
+        let f4 = R::wide_mul_scalar(w, m_two);
+        let w = R::wide_zero();
+        let w = R::wide_add_prod(w, a.x, m.m15);
+        let w = R::wide_add_prod(w, a.y, m.m25);
+        let w = R::wide_sub(w, b);
+        let f5 = R::wide_mul_scalar(w, m_two);
+        rhs =
+            Matrix2x5 {
+                m11: R::sum_prod2(f1, a.x, sign, m.m11),
+                m21: R::sum_prod2(f1, a.y, sign, m.m21),
+                m12: R::sum_prod2(f2, a.x, sign, m.m12),
+                m22: R::sum_prod2(f2, a.y, sign, m.m22),
+                m13: R::sum_prod2(f3, a.x, sign, m.m13),
+                m23: R::sum_prod2(f3, a.y, sign, m.m23),
+                m14: R::sum_prod2(f4, a.x, sign, m.m14),
+                m24: R::sum_prod2(f4, a.y, sign, m.m24),
+                m15: R::sum_prod2(f5, a.x, sign, m.m15),
+                m25: R::sum_prod2(f5, a.y, sign, m.m25),
+            };
+    }
+}
+// crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
 // crate-map: from linalg/householder_steps.cairo

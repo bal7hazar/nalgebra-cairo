@@ -15,18 +15,18 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::row_vector2::RowVector2;
-use nalgebra_core::base::row_vector3::RowVector3;
-use nalgebra_core::base::row_vector4::RowVector4;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::kernels::Fused;
 use nalgebra_core::internal::base::matrix_view::RowVectorLen;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
-use nalgebra_shapes5::base::row_vector5::RowVector5;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types2::base::row_vector2::RowVector2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types3::base::row_vector3::RowVector3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::row_vector4::RowVector4;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types5::base::row_vector5::RowVector5;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 use crate::base::matrix2x6::Matrix2x6;
 use crate::base::matrix3x6::Matrix3x6;
@@ -1203,10 +1203,10 @@ impl Matrix1SolveKernelRowVector6<
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
+use nalgebra_core::geometry::reflection1::{Reflection1, Reflection1Columns, Reflection1Trait};
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
-use nalgebra_geometry4::geometry::reflection1::{Reflection1, Reflection1Columns, Reflection1Trait};
-use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection1.cairo

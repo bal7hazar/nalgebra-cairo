@@ -4,8 +4,8 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use crate::linalg::hessenberg::hessenberg6::Hessenberg6Trait;
 

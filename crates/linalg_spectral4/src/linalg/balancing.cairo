@@ -2,7 +2,7 @@
 //! Matrix balancing (upstream `nalgebra::linalg::balancing`, WP 8.5-P16):
 //! `balance_parlett_reinsch` and `unbalance` on the static squares `Matrix1` .. `Matrix6`.
 
-use nalgebra_shapes5::internal::linalg::balancing::Balancing;
+use nalgebra_core::internal::linalg::balancing::Balancing;
 
 /// Applies in place a modified Parlett and Reinsch balancing with 2-norm to `matrix` (`matrix <-
 /// D⁻¹ matrix D`) and returns the diagonal of `D`. Upstream:

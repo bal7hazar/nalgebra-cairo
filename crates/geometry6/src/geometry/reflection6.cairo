@@ -20,23 +20,23 @@
 
 use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::unit::Unit;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes6::base::matrix2x6::Matrix2x6;
-use nalgebra_shapes6::base::matrix3x6::Matrix3x6;
-use nalgebra_shapes6::base::matrix4x6::Matrix4x6;
-use nalgebra_shapes6::base::matrix5x6::Matrix5x6;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::matrix6x2::Matrix6x2;
-use nalgebra_shapes6::base::matrix6x3::Matrix6x3;
-use nalgebra_shapes6::base::matrix6x4::Matrix6x4;
-use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
-use nalgebra_shapes6::base::row_vector6::RowVector6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types6::base::matrix2x6::Matrix2x6;
+use nalgebra_types6::base::matrix3x6::Matrix3x6;
+use nalgebra_types6::base::matrix4x6::Matrix4x6;
+use nalgebra_types6::base::matrix5x6::Matrix5x6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::matrix6x2::Matrix6x2;
+use nalgebra_types6::base::matrix6x3::Matrix6x3;
+use nalgebra_types6::base::matrix6x4::Matrix6x4;
+use nalgebra_types6::base::matrix6x5::Matrix6x5;
+use nalgebra_types6::base::row_vector6::RowVector6;
+use nalgebra_types6::base::vector6::Vector6;
+use nalgebra_types6::geometry::point6::Point6;
 use simba::scalar::Real;
-use crate::geometry::point6::Point6;
 
 /// A reflection with respect to the hyperplane orthogonal to `axis` at position `bias` along it.
 /// The fields are private, like upstream's: build one with `new` / `new_containing_point`.

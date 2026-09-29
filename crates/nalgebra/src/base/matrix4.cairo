@@ -19,19 +19,25 @@ pub use nalgebra_blocks::base::matrix_view::{
     Matrix4FixedColumnsVector4, Matrix4FixedRowsMatrix2x4, Matrix4FixedRowsMatrix3x4,
     Matrix4FixedRowsMatrix4, Matrix4FixedRowsRowVector4,
 };
-
-pub use nalgebra_core::base::matrix4::*;
+pub use nalgebra_geometry3::geometry::isometry3::Matrix4FromIsometry3;
+pub use nalgebra_geometry3::geometry::similarity3::Matrix4FromSimilarity3;
+pub use nalgebra_geometry3::geometry::unit_quaternion::Matrix4FromUnitQuaternion;
 pub use nalgebra_norm::base::norm::{
     Matrix4EuclideanNorm, Matrix4LpNorm, Matrix4OneNorm, Matrix4UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix4x5::{Matrix4MulMatrix4x5, Matrix4TrMulMatrix4x5};
-pub use nalgebra_shapes6::base::matrix4x6::{Matrix4MulMatrix4x6, Matrix4TrMulMatrix4x6};
-pub use nalgebra_static3::geometry::isometry3::Matrix4FromIsometry3;
-pub use nalgebra_static3::geometry::rotation3::Matrix4FromRotation3;
-pub use nalgebra_static3::geometry::similarity3::Matrix4FromSimilarity3;
-pub use nalgebra_static3::geometry::translation3::Matrix4FromTranslation3;
-pub use nalgebra_static3::geometry::unit_quaternion::Matrix4FromUnitQuaternion;
 pub use nalgebra_static4::base::matrix4::*;
+
+pub use nalgebra_types4::base::matrix4::{
+    Matrix4, Matrix4Add, Matrix4AddAssign, Matrix4Bounded, Matrix4DivAssignScalar,
+    Matrix4FromColumnArrays, Matrix4FromRotation3, Matrix4FromTranslation3, Matrix4IndexLinear,
+    Matrix4IndexPair, Matrix4IntoColumnArrays, Matrix4MatrixIndexLinear, Matrix4MatrixIndexPair,
+    Matrix4Mul, Matrix4MulAssign, Matrix4MulAssignScalar, Matrix4MulMatrix4, Matrix4MulMatrix4x2,
+    Matrix4MulMatrix4x3, Matrix4MulVector4, Matrix4Neg, Matrix4One, Matrix4PartialOrd,
+    Matrix4ProductSnapshot, Matrix4Sub, Matrix4SubAssign, Matrix4Sum, Matrix4SumSnapshot,
+    Matrix4TrMulMatrix4, Matrix4TrMulMatrix4x2, Matrix4TrMulMatrix4x3, Matrix4TrMulVector4,
+};
+pub use nalgebra_types5::base::matrix4x5::{Matrix4MulMatrix4x5, Matrix4TrMulMatrix4x5};
+pub use nalgebra_types6::base::matrix4x6::{Matrix4MulMatrix4x6, Matrix4TrMulMatrix4x6};
 pub use nalgebra_views::base::matrix_view::{
     Matrix4FixedViewMatrix1, Matrix4FixedViewMatrix2, Matrix4FixedViewMatrix2x3,
     Matrix4FixedViewMatrix2x4, Matrix4FixedViewMatrix3, Matrix4FixedViewMatrix3x2,

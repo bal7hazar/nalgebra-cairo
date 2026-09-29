@@ -45,7 +45,8 @@ mod oracle_ext;
 mod tests;
 #[cfg(test)]
 mod tests_ext;
-pub use nalgebra_static3::geometry::quaternion::*;
+pub use nalgebra_geometry3::geometry::quaternion::*;
+
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
-use nalgebra_static3::internal::geometry::quaternion::{QuaternionInternalTrait};
+use nalgebra_geometry3::internal::geometry::quaternion::QuaternionInternalTrait;

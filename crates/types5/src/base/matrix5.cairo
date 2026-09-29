@@ -15,17 +15,17 @@ use nalgebra_core::base::errors::INDEX_OUT_OF_BOUNDS;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::geometry::translation4::Translation4;
 use nalgebra_core::internal::base::kernels::Fused;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
 use nalgebra_core::internal::linalg::lu_steps::LuSteps;
+use nalgebra_types4::geometry::translation4::Translation4;
 use simba::scalar::Real;
 use crate::base::matrix5x2::Matrix5x2;
 use crate::base::matrix5x3::Matrix5x3;
 use crate::base::matrix5x4::Matrix5x4;
 use crate::base::vector5::Vector5;
-use crate::geometry::Translation4Trait;
+use crate::internal::geometry::translation4::Matrix5FromTranslation4KernelTrait;
 
 /// A 5x5 matrix. `mRC` is the component at row `R`, column `C`.
 ///
@@ -2034,7 +2034,7 @@ pub impl Matrix5FromTranslation4<
 > of Into<Translation4<T>, Matrix5<T>> {
     #[inline(always)]
     fn into(self: Translation4<T>) -> Matrix5<T> {
-        Translation4Trait::to_homogeneous(self)
+        Matrix5FromTranslation4KernelTrait::to_homogeneous(self)
     }
 }
 
@@ -5395,8 +5395,8 @@ impl Matrix5LuSteps<
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
-use crate::internal::linalg::balancing::Balancing;
-use crate::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_core::internal::linalg::balancing::Balancing;
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
 // crate-map: from linalg/balancing.cairo

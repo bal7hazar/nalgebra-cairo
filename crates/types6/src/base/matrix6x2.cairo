@@ -11,20 +11,20 @@
 use core::num::traits::Bounded;
 use core::ops::{AddAssign, DivAssign, IndexView, MulAssign, SubAssign};
 use nalgebra_core::base::errors;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix2x3::Matrix2x3;
-use nalgebra_core::base::matrix2x4::Matrix2x4;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
-use nalgebra_core::internal::linalg::givens::GivensRotationInternalTrait;
-use nalgebra_core::linalg::givens::{GivensRotateRows, GivensRotation};
-use nalgebra_core::linalg::lu::Perm2;
 use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
-use nalgebra_shapes5::base::matrix2x5::Matrix2x5;
-use nalgebra_static3::geometry::rotation2::Rotation2;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::geometry::rotation2::Rotation2;
+use nalgebra_types2::internal::linalg::givens::GivensRotationInternalTrait;
+use nalgebra_types2::linalg::givens::{GivensRotateRows, GivensRotation};
+use nalgebra_types2::linalg::lu::Perm2;
+use nalgebra_types3::base::matrix2x3::Matrix2x3;
+use nalgebra_types4::base::matrix2x4::Matrix2x4;
+use nalgebra_types5::base::matrix2x5::Matrix2x5;
 use simba::scalar::Real;
 use crate::base::matrix2x6::Matrix2x6;
 use crate::base::matrix6::Matrix6;
@@ -1090,8 +1090,8 @@ pub impl Perm2PermuteColumnsMatrix6x2<
     }
 }
 use nalgebra_core::base::errors::SLICE_LENGTH;
-use nalgebra_geometry4::geometry::reflection2::{Reflection2, Reflection2Rows, Reflection2Trait};
-use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_types2::geometry::reflection2::{Reflection2, Reflection2Rows, Reflection2Trait};
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection2.cairo

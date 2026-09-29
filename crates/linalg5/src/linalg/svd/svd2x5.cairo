@@ -4,14 +4,14 @@
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
-use nalgebra_shapes5::base::matrix2x5::Matrix2x5;
-use nalgebra_shapes5::base::matrix5x2::Matrix5x2;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types5::base::matrix2x5::Matrix2x5;
+use nalgebra_types5::base::matrix5x2::Matrix5x2;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 use super::svd5x2::{Svd5x2InternalTrait, Svd5x2Trait};
 

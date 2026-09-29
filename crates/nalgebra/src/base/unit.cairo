@@ -23,10 +23,21 @@ mod benches;
 mod oracle;
 #[cfg(test)]
 mod tests;
+
+
 pub use nalgebra_core::base::unit::*;
+
 // the crate-private by-value helpers the in-crate tests use (`nalgebra_core::internal`)
 #[cfg(test)]
 use nalgebra_core::internal::base::unit::UnitInternalTrait;
+pub use nalgebra_static2::base::unit::*;
+pub use nalgebra_static3::base::unit::*;
+pub use nalgebra_static4::base::unit::*;
+
+
+pub use nalgebra_types2::base::vector2::Vector2Normed;
+pub use nalgebra_types3::base::vector3::Vector3Normed;
+pub use nalgebra_types4::base::vector4::Vector4Normed;
 // `Normed` of `Vector5` / `Vector6`: in the modules of their types (docs/SPLIT.md §3.2)
-pub use nalgebra_shapes5::base::vector5::Vector5Normed;
-pub use nalgebra_shapes6::base::vector6::Vector6Normed;
+pub use nalgebra_types5::base::vector5::Vector5Normed;
+pub use nalgebra_types6::base::vector6::Vector6Normed;

@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_static6_tall"
-description = "Methods of the shapes with 6 rows and fewer columns (Matrix6x1..Matrix6x5, Vector6); dimension-6 edit kernels."
+description = "The methods of the shapes with 6 rows and fewer columns (Matrix6x1..Matrix6x5, Vector6); the dimension-6 edit kernels."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -20,8 +20,12 @@ closures = []
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
-nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_types4 = { path = "../types4", version = "0.1.0" }
+nalgebra_types5 = { path = "../types5", version = "0.1.0" }
+nalgebra_types6 = { path = "../types6", version = "0.1.0" }
+nalgebra_static2 = { path = "../static2", version = "0.1.0", default-features = false }
 nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
 nalgebra_static4 = { path = "../static4", version = "0.1.0", default-features = false }
 nalgebra_static5 = { path = "../static5", version = "0.1.0", default-features = false }

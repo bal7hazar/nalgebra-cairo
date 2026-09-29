@@ -23,5 +23,4 @@
 //! fewer times (`znear`, `zfar`, `project_*`), the doc comment says so: the result is closer to
 //! upstream's (near-exact `f64`) value than the literal fixed-point transcription, whose variants
 //! are kept and measured in the benchmarks of `nalgebra_tests_geometry_projections`.
-
-pub use nalgebra_geometry4::geometry::perspective3::*;
+pub use nalgebra_transform3::geometry::perspective3::*;

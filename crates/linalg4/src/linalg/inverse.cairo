@@ -2,12 +2,12 @@
 //! `src/linalg/inverse.rs`), on the sizes that have an inverse: the closed forms of
 //! `Matrix2/3/4::try_inverse` and the LU inverse of `Matrix6` (`Matrix6LuTrait::try_inverse`).
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_static3::base::matrix2::Matrix2Trait;
+use nalgebra_static2::base::matrix2::Matrix2Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types4::base::matrix4::Matrix4;
 use simba::scalar::Real;
 
 /// `SquareMatrix::try_inverse_mut` on `Matrix2<T>`.

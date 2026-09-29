@@ -5,8 +5,8 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::row_vector2::RowVector2;
 use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_types2::base::row_vector2::RowVector2;
 use simba::scalar::Real;
 
 /// The QR factorisation `A = q * r` of a `RowVector2<T>`: `q` is 1x1, `r` is 1x2

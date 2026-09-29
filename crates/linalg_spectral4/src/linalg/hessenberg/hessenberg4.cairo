@@ -4,10 +4,10 @@
 //! (WP 8.5-P16).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 
 /// The Hessenberg decomposition `A = Q H Qᵀ` of a `Matrix4<T>`: `H` upper Hessenberg (zero below

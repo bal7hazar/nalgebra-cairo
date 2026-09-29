@@ -4,9 +4,9 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::linalg::lu::Perm2;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::linalg::lu::Perm2;
 use simba::scalar::Real;
 
 /// The LU factorisation with full (row and column) pivoting of a `Vector2<T>`: `P A Q = L U`.

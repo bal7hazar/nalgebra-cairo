@@ -26,14 +26,16 @@
 mod benches;
 #[cfg(test)]
 mod tests;
-// an explicit list: the conversions and products of the shapes into this module's type (0.1.0:
-// `base::matrix*`, `base::row_vector*`) sit in this module of `nalgebra_static3`, the module of
-// their geometry type (docs/SPLIT.md §3.2, §12.6)
-pub use nalgebra_static3::geometry::rotation3::{
-    Isometry3FromRotation3, Rotation3, Rotation3AngleImpl, Rotation3AngleTrait, Rotation3Default,
-    Rotation3Div, Rotation3FromUnitQuaternion, Rotation3Impl, Rotation3Index, Rotation3Mul,
-    Rotation3One, Rotation3Trait, Similarity3FromRotation3, UnitQuaternionFromRotation3, errors,
+
+
+pub use nalgebra_geometry3::geometry::isometry3::Isometry3FromRotation3;
+pub use nalgebra_geometry3::geometry::rotation3::*;
+pub use nalgebra_geometry3::geometry::similarity3::Similarity3FromRotation3;
+pub use nalgebra_geometry3::geometry::unit_quaternion::{
+    Rotation3FromUnitQuaternion, UnitQuaternionFromRotation3,
 };
+
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
-use nalgebra_static3::internal::geometry::rotation3::{Rotation3InternalTrait};
+use nalgebra_geometry3::internal::geometry::rotation3::Rotation3InternalTrait;
+pub use nalgebra_types3::geometry::rotation3::*;

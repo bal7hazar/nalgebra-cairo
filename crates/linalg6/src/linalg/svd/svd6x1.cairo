@@ -8,9 +8,9 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::row_vector6::RowVector6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::row_vector6::RowVector6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use crate::linalg::svd::kernels::SvdComplete6Impl;
 

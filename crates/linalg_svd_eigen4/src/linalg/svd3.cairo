@@ -32,12 +32,12 @@
 //! (`new_one_sided_jacobi`, `bench_svd3_new__alt_one_sided_jacobi`,
 //! `test_one_sided_jacobi_candidate`).
 
-use nalgebra_core::base::matrix3::Matrix3;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::internal::base::sym_matrix3::SymMatrix3Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
+use nalgebra_static3::internal::base::sym_matrix3::SymMatrix3Trait;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
 use simba::scalar::Real;
 use crate::internal::linalg::svd3::Svd3InternalTrait;
 use crate::internal::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;

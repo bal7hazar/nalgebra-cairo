@@ -5,8 +5,8 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_types2::base::vector2::Vector2;
 use simba::scalar::Real;
 
 /// The bidiagonalisation `A = U D Vᵀ` of a `Vector2<T>`: `D` 1x1 UPPER bidiagonal (`2 >= 1`),
