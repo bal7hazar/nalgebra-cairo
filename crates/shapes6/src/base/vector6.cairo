@@ -34,6 +34,7 @@ use nalgebra_core::base::unit::Unit;
 use nalgebra_core::internal::base::matrix_view::ColumnVectorLen;
 use nalgebra_core::internal::base::transpose::BlasTranspose;
 use nalgebra_shapes5::base::row_vector5::RowVector5;
+use nalgebra_shapes5::internal::linalg::householder::HouseholderAxis;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::matrix6x2::Matrix6x2;
@@ -731,10 +732,86 @@ impl Vector6BlasTranspose<T> of BlasTranspose<Vector6<T>> {
         RowVector6 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a, b: self.b }
     }
 }
+
+impl Vector6HouseholderAxis<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of HouseholderAxis<Vector6<T>, T> {
+    fn reflection_axis_mut(ref column: Vector6<T>) -> (T, bool) {
+        let norm = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), column.x, column.x),
+                                column.y,
+                                column.y,
+                            ),
+                            column.z,
+                            column.z,
+                        ),
+                        column.w,
+                        column.w,
+                    ),
+                    column.a,
+                    column.a,
+                ),
+                column.b,
+                column.b,
+            ),
+        );
+        if norm == R::zero() {
+            return (R::zero(), false);
+        }
+        let x0 = column.x;
+        let signed = if x0 < R::zero() {
+            -norm
+        } else {
+            norm
+        };
+        let y0 = x0 + signed;
+        let d = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(R::wide_zero(), y0, y0), column.y, column.y,
+                            ),
+                            column.z,
+                            column.z,
+                        ),
+                        column.w,
+                        column.w,
+                    ),
+                    column.a,
+                    column.a,
+                ),
+                column.b,
+                column.b,
+            ),
+        );
+        let (u0, u1, u2, u3, u4, u5) = R::div6(
+            y0, column.y, column.z, column.w, column.a, column.b, d,
+        );
+        column = Vector6 { x: u0, y: u1, z: u2, w: u3, a: u4, b: u5 };
+        (-signed, true)
+    }
+}
+use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_core::base::unit::Normed;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
 use nalgebra_geometry4::geometry::reflection1::{Reflection1, Reflection1Rows, Reflection1Trait};
+use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [unit]
 // crate-map: from base/unit.cairo
@@ -914,6 +991,7 @@ pub impl Reflection1RowsVector6<
 // crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
 // crate-map: from linalg/lu/perm1_5.cairo
 pub impl Perm1PermuteColumnsVector6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector6<T>> {
     fn permute_columns(self: Perm1, ref rhs: Vector6<T>) {
@@ -924,6 +1002,28 @@ pub impl Perm1PermuteColumnsVector6<T, +Copy<T>, +Drop<T>> of PermuteColumns<Per
     fn inv_permute_columns(self: Perm1, ref rhs: Vector6<T>) {
         let _ = self;
         let _ = rhs;
+    }
+}
+
+impl Vector6ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Vector6<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        6
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        1
+    }
+
+    fn to_column_major(self: Vector6<T>) -> Array<T> {
+        array![self.x, self.y, self.z, self.w, self.a, self.b]
+    }
+
+    fn from_column_major(data: Span<T>) -> Vector6<T> {
+        let boxed: @Box<[T; 6]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5] = boxed.unbox();
+        Vector6 { x: v0, y: v1, z: v2, w: v3, a: v4, b: v5 }
     }
 }
 // crate-map: end

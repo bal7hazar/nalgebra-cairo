@@ -799,10 +799,13 @@ impl Matrix1SolveKernelRowVector5<
         MatrixTrMul::tr_mul(self, b)
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
+use crate::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
 // crate-map: from linalg/lu/perm1_5.cairo
 pub impl Perm1PermuteRowsRowVector5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector5<T>> {
     fn permute_rows(self: Perm1, ref rhs: RowVector5<T>) {
@@ -813,6 +816,28 @@ pub impl Perm1PermuteRowsRowVector5<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1,
     fn inv_permute_rows(self: Perm1, ref rhs: RowVector5<T>) {
         let _ = self;
         let _ = rhs;
+    }
+}
+
+impl RowVector5ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<RowVector5<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        1
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        5
+    }
+
+    fn to_column_major(self: RowVector5<T>) -> Array<T> {
+        array![self.x, self.y, self.z, self.w, self.a]
+    }
+
+    fn from_column_major(data: Span<T>) -> RowVector5<T> {
+        let boxed: @Box<[T; 5]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4] = boxed.unbox();
+        RowVector5 { x: v0, y: v1, z: v2, w: v3, a: v4 }
     }
 }
 // crate-map: end

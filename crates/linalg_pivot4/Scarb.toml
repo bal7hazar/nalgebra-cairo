@@ -1,0 +1,34 @@
+[package]
+name = "nalgebra_linalg_pivot4"
+description = "Column-pivoting QR, full-pivoting LU, LBLᵀ up to 4x4."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "linalg", "col-piv-qr", "full-piv-lu", "lblt"]
+readme = "README.md"
+
+# `full_piv_lu`, `col_piv_qr`, `lblt` (as in `nalgebra`, whose features of the same names forward to
+# these): `linalg::full_piv_lu`, `linalg::col_piv_qr` and `linalg::lblt` up to 4x4. On by default;
+# `nalgebra` depends on this package with `default-features = false`, so `nalgebra` without its
+# default features still leaves them out (features unify per compilation unit, docs/SPLIT.md §1).
+[features]
+default = ["full_piv_lu", "col_piv_qr", "lblt"]
+full_piv_lu = []
+col_piv_qr = []
+lblt = []
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

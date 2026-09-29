@@ -3,11 +3,11 @@
 //! `nalgebra::linalg::Schur<T, U5>`), WP 8.5-P16.
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 use crate::base::matrix5::Matrix5;
 use crate::base::vector5::Vector5;
 use crate::linalg::hessenberg::hessenberg5::Hessenberg5Trait;
-use crate::linalg::householder_kernels::HouseholderKernelTrait;
 
 /// The real Schur decomposition `A = Q T Qᵀ` of a `Matrix5<T>`: `Q` orthogonal, `T` upper
 /// quasi-triangular (1x1 blocks for the real eigenvalues, 2x2 blocks with complex-conjugate

@@ -25,11 +25,8 @@ nalgebra_glam = ["nalgebra_glam", "nalgebra_core", "nalgebra_static3", "glam_cor
 static4_geometry = ["nalgebra_core", "nalgebra_static3", "nalgebra_shapes5", "nalgebra_static4",
     "nalgebra_geometry4"]
 
-# Planned (docs/SPLIT.md §6.2, §12.4; WP 9-NS1b): the declared closures of the package split under
-# the final crate names, enabled by the move WPs as the crates come to exist (NS3..NS11). Measured
-# on GitHub runners before the moves by `.github/workflows/split-measure.yml` (the crate map's own
-# `[closures]`, tools/split/crates.toml).
-#   static3_svd = ["nalgebra_core", "nalgebra_static3", "nalgebra_linalg_svd_eigen4"]
-#   core_pivot = ["nalgebra_core", "nalgebra_linalg_pivot4"]
-#   static4_factor = ["nalgebra_core", "nalgebra_static3", "nalgebra_shapes5", "nalgebra_static4",
-#       "nalgebra_linalg4"]
+# WP 9-NS9: the SVD / eigen, pivoting and factorisation closures (docs/SPLIT.md §6.2, §12.4)
+static3_svd = ["nalgebra_core", "nalgebra_static3", "nalgebra_linalg_svd_eigen4"]
+core_pivot = ["nalgebra_core", "nalgebra_linalg_pivot4"]
+static4_factor = ["nalgebra_core", "nalgebra_static3", "nalgebra_shapes5", "nalgebra_static4",
+    "nalgebra_linalg4"]

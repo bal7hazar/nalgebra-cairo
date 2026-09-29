@@ -491,6 +491,12 @@ class CrateMap:
                         it = idx.get(nm)
                         if nm in used or it is None or it.kind not in ("trait", "inherent"):
                             continue
+                        if it.kind == "trait" and self._methods(it, texts) & called \
+                                and re.search(r"\btrait\s+\w+\s*<", cc.mask(texts.get(it.file, ""))[it.start:it.end]):
+                            # a generic trait of the original file's imports whose methods the
+                            # piece calls (`MatrixMul::mul_mat` in `linalg::exp`, WP 9-NS9)
+                            used.add(nm)
+                            continue
                         stem = re.sub(r"(Angle)?Trait$", "", nm)
                         if stem == nm or not any(x == stem or (x.startswith(stem) and x.endswith("Trait"))
                                                  for x in used):

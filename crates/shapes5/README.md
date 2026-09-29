@@ -13,6 +13,11 @@ port of the Rust `nalgebra` crate on `fixed::Fixed` (Q32.32), built for provable
   rotations (`GivensRotate`), the LU steps of `Matrix5` and the edit kernels of these shapes;
 - `Point4Trait` and `Translation4Trait`, the methods of `Point4` / `Translation4` (they build
   dimension-5 types: `to_homogeneous`...).
+- the crate-private traits of three public generic building blocks of `linalg` (`HouseholderAxis`
+  of `reflection_axis_mut`, `ColumnMajor` of `clear_column_unchecked` / `clear_row_unchecked` /
+  `assemble_q`, `Balancing` of `balance_parlett_reinsch` / `unbalance`) with their impls up to
+  dimension 5: a caller finds such an impl only in the trait's or the type's module, so the traits
+  sit below every shape that implements them (under `internal`, WP 9-NS9).
 
 The traits they implement and the types up to 4x4 are in [`nalgebra_core`](../core/README.md),
 which this crate depends on (with `nalgebra_static3`). The METHODS of the dimension-5 shapes
@@ -32,7 +37,8 @@ paths.
 ## `internal`
 
 `nalgebra_shapes5::internal` holds items that `nalgebra` 0.1.0 keeps crate-private but that the
-crates above `nalgebra_shapes5` use (the edit kernels of the shapes, `slerp_unit`). They are public
+crates above `nalgebra_shapes5` use (the edit kernels of the shapes, `slerp_unit`, the three
+`linalg` traits above). They are public
 only for those crates: **internal, no stability promise**, they may change or disappear in any
 release, and the facade never re-exports them.
 

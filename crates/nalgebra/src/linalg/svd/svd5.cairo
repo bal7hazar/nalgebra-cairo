@@ -4,12 +4,13 @@
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
 use simba::scalar::Real;
 use crate::base::matrix5::Matrix5;
 use crate::base::vector5::Vector5;
 use crate::base::{MatrixMul, MatrixTrMul};
+use crate::linalg::svd::kernels::{SvdComplete5Impl, SvdRightImpl5};
 use crate::linalg::symmetric_eigen5::Sym5;
-use super::kernels::{SvdComplete5Impl, SvdRightImpl};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix5<T>`:
 /// `u` is 5x5 with orthonormal columns, `v_t` is 5x5 with orthonormal rows, the 5
@@ -1288,13 +1289,13 @@ pub(crate) impl Svd5InternalImpl<
     /// The right singular vectors (the columns of `v`, ascending eigenvalue order of `MᵀM`).
     #[inline(always)]
     fn right(m: Matrix5<T>) -> Matrix5<T> {
-        SvdRightImpl::<T>::right5(Self::gram(Self::normalised(m)))
+        SvdRightImpl5::<T>::right5(Self::gram(Self::normalised(m)))
     }
 
     /// `right`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`.
     #[inline(always)]
     fn try_right(m: Matrix5<T>, eps: T) -> Option<Matrix5<T>> {
-        SvdRightImpl::<T>::try_right5(Self::gram(Self::normalised(m)), eps)
+        SvdRightImpl5::<T>::try_right5(Self::gram(Self::normalised(m)), eps)
     }
 
     /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`

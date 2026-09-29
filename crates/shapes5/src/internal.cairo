@@ -5,3 +5,5 @@
 //! the facade `nalgebra` never re-exports them.
 
 pub mod base;
+
+pub mod linalg;

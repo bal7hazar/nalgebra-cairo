@@ -41,7 +41,13 @@ experimental-features = ["associated_item_constraints", "user_defined_inline_mac
 # `bidiagonal` (linalg/bidiagonal*, 0.37 GB), `schur` (linalg/schur*, linalg/eigen*, on top of
 # `hessenberg`, 0.40 GB more). WP 8.5-P17: `exp` (linalg/exp.cairo, the matrix exponential, and,
 # grouped with it because each saves less than 0.1 GB, linalg/pow.cairo, the integer power:
-# 0.03 GB together).
+# 0.03 GB together). WP 9-NS9: the linalg families up to 4x4 live in `nalgebra_linalg4`,
+# `nalgebra_linalg_svd_eigen4`, `nalgebra_linalg_pivot4` and `nalgebra_linalg_spectral4`, which this
+# package depends on with `default-features = false`: each linalg feature above still gates the
+# dimension-5 / 6 code this package hosts and its re-exports, and forwards to the feature of the same
+# name of the sub-crate that holds its part up to 4x4 (`hessenberg` to both `nalgebra_linalg4`,
+# `householder_steps`, and `nalgebra_linalg_spectral4`), so `default-features = false` still leaves
+# them out.
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
@@ -57,18 +63,18 @@ closures = [
 dynamic = []
 sparse = ["dynamic"]
 io = ["sparse"]
-eigen = []
-svd = ["eigen"]
-qr = []
-cholesky_update = []
-full_piv_lu = []
-col_piv_qr = []
-lblt = []
+eigen = ["nalgebra_linalg_svd_eigen4/eigen"]
+svd = ["eigen", "nalgebra_linalg_svd_eigen4/svd"]
+qr = ["nalgebra_linalg4/qr"]
+cholesky_update = ["nalgebra_linalg4/cholesky_update"]
+full_piv_lu = ["nalgebra_linalg_pivot4/full_piv_lu"]
+col_piv_qr = ["nalgebra_linalg_pivot4/col_piv_qr"]
+lblt = ["nalgebra_linalg_pivot4/lblt"]
 macros = []
-hessenberg = []
-bidiagonal = []
-schur = ["hessenberg"]
-exp = []
+hessenberg = ["nalgebra_linalg4/hessenberg", "nalgebra_linalg_spectral4/hessenberg"]
+bidiagonal = ["nalgebra_linalg_spectral4/bidiagonal"]
+schur = ["hessenberg", "nalgebra_linalg_spectral4/schur"]
+exp = ["nalgebra_linalg_spectral4/exp"]
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
@@ -86,6 +92,10 @@ nalgebra_norm = { path = "../norm", version = "0.1.0" }
 nalgebra_geometry6 = { path = "../geometry6", version = "0.1.0" }
 nalgebra_statistics = { path = "../statistics", version = "0.1.0" }
 nalgebra_blas = { path = "../blas", version = "0.1.0" }
+nalgebra_linalg4 = { path = "../linalg4", version = "0.1.0", default-features = false }
+nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.1.0", default-features = false }
+nalgebra_linalg_pivot4 = { path = "../linalg_pivot4", version = "0.1.0", default-features = false }
+nalgebra_linalg_spectral4 = { path = "../linalg_spectral4", version = "0.1.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

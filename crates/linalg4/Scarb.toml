@@ -1,0 +1,39 @@
+[package]
+name = "nalgebra_linalg4"
+description = "LU, Cholesky, LDLᵀ / UDU, Cholesky update, QR up to 4x4; Householder reflections, LU steps."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "linalg", "lu", "cholesky", "qr", "householder"]
+readme = "README.md"
+
+# `qr`, `cholesky_update`, `hessenberg` (as in `nalgebra`, whose features of the same names forward
+# to these): `linalg::qr` up to 4x4, `linalg::cholesky_update` up to 4x4, and
+# `linalg::householder_steps` (`clear_column_unchecked`, `clear_row_unchecked`, `assemble_q`, grouped
+# with the Hessenberg reductions in 0.1.0). On by default; `nalgebra` depends on this package with
+# `default-features = false`, so `nalgebra` without its default features still leaves them out
+# (features unify per compilation unit, docs/SPLIT.md §1).
+[features]
+default = ["qr", "cholesky_update", "hessenberg"]
+qr = []
+cholesky_update = []
+hessenberg = []
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
+nalgebra_static4 = { path = "../static4", version = "0.1.0", default-features = false }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

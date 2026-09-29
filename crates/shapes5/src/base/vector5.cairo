@@ -27,6 +27,7 @@ use crate::base::matrix5x2::Matrix5x2;
 use crate::base::matrix5x3::Matrix5x3;
 use crate::base::matrix5x4::Matrix5x4;
 use crate::base::row_vector5::RowVector5;
+use crate::internal::linalg::householder::HouseholderAxis;
 
 /// A 5-dimensional column vector. Components are named like upstream's `Deref` targets (`x, y, z,
 /// w, a, b`).
@@ -588,9 +589,75 @@ impl Vector5BlasTranspose<T> of BlasTranspose<Vector5<T>> {
         RowVector5 { x: self.x, y: self.y, z: self.z, w: self.w, a: self.a }
     }
 }
+
+impl Vector5HouseholderAxis<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of HouseholderAxis<Vector5<T>, T> {
+    fn reflection_axis_mut(ref column: Vector5<T>) -> (T, bool) {
+        let norm = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_zero(), column.x, column.x),
+                            column.y,
+                            column.y,
+                        ),
+                        column.z,
+                        column.z,
+                    ),
+                    column.w,
+                    column.w,
+                ),
+                column.a,
+                column.a,
+            ),
+        );
+        if norm == R::zero() {
+            return (R::zero(), false);
+        }
+        let x0 = column.x;
+        let signed = if x0 < R::zero() {
+            -norm
+        } else {
+            norm
+        };
+        let y0 = x0 + signed;
+        let d = R::wide_sqrt(
+            R::wide_add_prod(
+                R::wide_add_prod(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(R::wide_zero(), y0, y0), column.y, column.y,
+                        ),
+                        column.z,
+                        column.z,
+                    ),
+                    column.w,
+                    column.w,
+                ),
+                column.a,
+                column.a,
+            ),
+        );
+        let (u0, u1, u2, u3, u4) = R::div5(y0, column.y, column.z, column.w, column.a, d);
+        column = Vector5 { x: u0, y: u1, z: u2, w: u3, a: u4 };
+        (-signed, true)
+    }
+}
+use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_core::base::unit::Normed;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteColumns;
+use crate::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [unit]
 // crate-map: from base/unit.cairo
@@ -660,6 +727,7 @@ pub impl Vector5Normed<
 // crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
 // crate-map: from linalg/lu/perm1_5.cairo
 pub impl Perm1PermuteColumnsVector5<T, +Copy<T>, +Drop<T>> of PermuteColumns<Perm1, Vector5<T>> {
     fn permute_columns(self: Perm1, ref rhs: Vector5<T>) {
@@ -670,6 +738,28 @@ pub impl Perm1PermuteColumnsVector5<T, +Copy<T>, +Drop<T>> of PermuteColumns<Per
     fn inv_permute_columns(self: Perm1, ref rhs: Vector5<T>) {
         let _ = self;
         let _ = rhs;
+    }
+}
+
+impl Vector5ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Vector5<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        5
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        1
+    }
+
+    fn to_column_major(self: Vector5<T>) -> Array<T> {
+        array![self.x, self.y, self.z, self.w, self.a]
+    }
+
+    fn from_column_major(data: Span<T>) -> Vector5<T> {
+        let boxed: @Box<[T; 5]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4] = boxed.unbox();
+        Vector5 { x: v0, y: v1, z: v2, w: v3, a: v4 }
     }
 }
 // crate-map: end

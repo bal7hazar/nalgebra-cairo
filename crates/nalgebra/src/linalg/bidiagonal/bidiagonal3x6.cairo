@@ -4,12 +4,12 @@
 //! (WP 8.5-P16).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix3x6::Matrix3x6;
 use crate::base::vector2::Vector2;
 use crate::base::vector3::Vector3;
-use crate::linalg::householder_kernels::HouseholderKernelTrait;
 
 /// The bidiagonalisation `A = U D Vᵀ` of a `Matrix3x6<T>`: `D` 3x3 LOWER bidiagonal (`3 < 6`),
 /// `U` (3x3) and `Vᵀ` (3x6) with orthonormal columns / rows.

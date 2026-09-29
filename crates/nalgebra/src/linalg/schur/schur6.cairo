@@ -3,11 +3,11 @@
 //! `nalgebra::linalg::Schur<T, U6>`), WP 8.5-P16.
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 use crate::base::matrix6::Matrix6;
 use crate::base::vector6::Vector6;
 use crate::linalg::hessenberg::hessenberg6::Hessenberg6Trait;
-use crate::linalg::householder_kernels::HouseholderKernelTrait;
 
 /// The real Schur decomposition `A = Q T Qᵀ` of a `Matrix6<T>`: `Q` orthogonal, `T` upper
 /// quasi-triangular (1x1 blocks for the real eigenvalues, 2x2 blocks with complex-conjugate

@@ -1202,9 +1202,11 @@ impl Matrix1SolveKernelRowVector6<
         MatrixTrMul::tr_mul(self, b)
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
 use nalgebra_geometry4::geometry::reflection1::{Reflection1, Reflection1Columns, Reflection1Trait};
+use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection1.cairo
@@ -1291,6 +1293,7 @@ pub impl Reflection1ColumnsRowVector6<
 // crate-map: end
 
 // crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
 // crate-map: from linalg/lu/perm1_5.cairo
 pub impl Perm1PermuteRowsRowVector6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1, RowVector6<T>> {
     fn permute_rows(self: Perm1, ref rhs: RowVector6<T>) {
@@ -1301,6 +1304,28 @@ pub impl Perm1PermuteRowsRowVector6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm1,
     fn inv_permute_rows(self: Perm1, ref rhs: RowVector6<T>) {
         let _ = self;
         let _ = rhs;
+    }
+}
+
+impl RowVector6ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<RowVector6<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        1
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        6
+    }
+
+    fn to_column_major(self: RowVector6<T>) -> Array<T> {
+        array![self.x, self.y, self.z, self.w, self.a, self.b]
+    }
+
+    fn from_column_major(data: Span<T>) -> RowVector6<T> {
+        let boxed: @Box<[T; 6]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5] = boxed.unbox();
+        RowVector6 { x: v0, y: v1, z: v2, w: v3, a: v4, b: v5 }
     }
 }
 // crate-map: end

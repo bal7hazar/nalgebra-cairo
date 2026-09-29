@@ -1,0 +1,771 @@
+//! `Lu4`: the LU factorisation with partial pivoting of a `Matrix4` (upstream
+//! `nalgebra::linalg::LU` on a 4x4 matrix).
+//!
+//! `P * A = L * U`, with `L` unit lower triangular, `U` upper triangular and `P` the product of the
+//! 3 row transpositions chosen by partial pivoting. Both factors share one `Matrix4` like upstream
+//! (strict lower triangle = `L`, whose unit diagonal is implicit; upper triangle = `U`) and the
+//! permutation is the compact `Perm4`.
+//!
+//! Everything is unrolled (DESIGN D4: no loop in static code) and every sum of products goes
+//! through a fused `Real` kernel — `mul_add` for a single product, the explicit `Real::Wide`
+//! accumulator beyond that — so each output scalar is floored once and range-checked once
+//! (AGENTS.md rule 4).
+//!
+//! Partial pivoting costs 6 `abs` and comparisons plus 3 conditional row swaps (moves only), and
+//! every swap duplicates the row it moves, so it also costs Sierra statements. Dropping it would be
+//! cheaper and shorter and it is not an option: without it the pivot of step `k` is whatever sits
+//! at `a_kk`, nothing bounds `|l_ik|`, and a matrix as ordinary as a permuted identity factors with
+//! a zero pivot. `bench_lu4_new__alt_no_pivot` and `test_no_pivot_candidate_is_wrong` keep the
+//! measurement and the counter-example. Upstream has no unpivoted variant either, only `LU`
+//! (partial pivoting) and `FullPivLU` (complete pivoting).
+
+use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_core::base::vector4::Vector4;
+use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_core::linalg::lu::Perm4;
+use nalgebra_core::linalg::permutation_sequence::PermuteRows;
+use simba::scalar::Real;
+use crate::internal::linalg::lu::lu4::Lu4InternalTrait;
+
+/// The LU factorisation with partial pivoting of a `Matrix4<T>`: `P * A = L * U`.
+///
+/// `lu` packs both factors (strict lower triangle = `L` without its unit diagonal, upper triangle =
+/// `U`) and `p` is the row permutation. Built by `Lu4Trait::new` or `Matrix4LuTrait::lu`. Upstream:
+/// `nalgebra::linalg::LU`.
+#[derive(Copy, Drop, Serde, Debug)]
+pub struct Lu4<T> {
+    /// `L` (strict lower triangle) and `U` (upper triangle) packed in one matrix.
+    pub lu: Matrix4<T>,
+    /// The row transpositions applied by partial pivoting.
+    pub p: Perm4,
+}
+
+/// Methods of `Lu4<T>` for any `Real` scalar.
+#[generate_trait]
+pub impl Lu4Impl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Lu4Trait<T> {
+    /// The LU factorisation of `matrix` with partial pivoting, fully unrolled. Upstream:
+    /// `matrix.lu()` / `LU::new(matrix)`.
+    ///
+    /// Always succeeds, like upstream: a singular matrix simply leaves a zero on the diagonal of
+    /// `U` (see `is_invertible`). At step `k`, the row of largest `|a_ik|` among rows `k..4` is
+    /// swapped onto the diagonal (the FIRST such row, like upstream's `icamax`), the 6 multipliers
+    /// `l_ik = a_ik / a_kk` are each one correctly rounded division, and the trailing submatrix is
+    /// updated entry by entry with `Real::mul_add(-l_ik, a_kj, a_ij)`: ONE floor rounding and one
+    /// overflow check per entry, never the two roundings of `a_ij - l_ik * a_kj`.
+    ///
+    /// A pivot column that is exactly zero is skipped — no swap, no permutation, zero multipliers
+    /// —
+    /// exactly like upstream's `continue`, so the division is never reached with a zero divisor.
+    ///
+    /// Error model: `l_ik` is off by at most 1 ulp (correctly rounded quotient) and every update
+    /// floors once, so after each of the 3 steps an entry of `U` is within about `k * (1 + |a_kj|)`
+    /// raw units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
+    /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
+    /// not fit.
+    fn new(matrix: Matrix4<T>) -> Lu4<T> {
+        let mut a11 = matrix.m11;
+        let mut a12 = matrix.m12;
+        let mut a13 = matrix.m13;
+        let mut a14 = matrix.m14;
+        let mut a21 = matrix.m21;
+        let mut a22 = matrix.m22;
+        let mut a23 = matrix.m23;
+        let mut a24 = matrix.m24;
+        let mut a31 = matrix.m31;
+        let mut a32 = matrix.m32;
+        let mut a33 = matrix.m33;
+        let mut a34 = matrix.m34;
+        let mut a41 = matrix.m41;
+        let mut a42 = matrix.m42;
+        let mut a43 = matrix.m43;
+        let mut a44 = matrix.m44;
+        // step 1: largest pivot among rows 1..4 of column 1
+        let mut p1 = 1_u8;
+        let mut piv = R::abs(a11);
+        let c = R::abs(a21);
+        if c > piv {
+            piv = c;
+            p1 = 2;
+        }
+        let c = R::abs(a31);
+        if c > piv {
+            piv = c;
+            p1 = 3;
+        }
+        let c = R::abs(a41);
+        if c > piv {
+            piv = c;
+            p1 = 4;
+        }
+        if p1 == 2 {
+            let t = a11;
+            a11 = a21;
+            a21 = t;
+            let t = a12;
+            a12 = a22;
+            a22 = t;
+            let t = a13;
+            a13 = a23;
+            a23 = t;
+            let t = a14;
+            a14 = a24;
+            a24 = t;
+        } else if p1 == 3 {
+            let t = a11;
+            a11 = a31;
+            a31 = t;
+            let t = a12;
+            a12 = a32;
+            a32 = t;
+            let t = a13;
+            a13 = a33;
+            a33 = t;
+            let t = a14;
+            a14 = a34;
+            a34 = t;
+        } else if p1 == 4 {
+            let t = a11;
+            a11 = a41;
+            a41 = t;
+            let t = a12;
+            a12 = a42;
+            a42 = t;
+            let t = a13;
+            a13 = a43;
+            a43 = t;
+            let t = a14;
+            a14 = a44;
+            a44 = t;
+        }
+        if piv != R::zero() {
+            let (l_a21, l_a31, l_a41) = R::div3(a21, a31, a41, a11);
+            let l = l_a21;
+            let nl = -l;
+            a22 = R::mul_add(nl, a12, a22);
+            a23 = R::mul_add(nl, a13, a23);
+            a24 = R::mul_add(nl, a14, a24);
+            a21 = l;
+            let l = l_a31;
+            let nl = -l;
+            a32 = R::mul_add(nl, a12, a32);
+            a33 = R::mul_add(nl, a13, a33);
+            a34 = R::mul_add(nl, a14, a34);
+            a31 = l;
+            let l = l_a41;
+            let nl = -l;
+            a42 = R::mul_add(nl, a12, a42);
+            a43 = R::mul_add(nl, a13, a43);
+            a44 = R::mul_add(nl, a14, a44);
+            a41 = l;
+        }
+        // step 2: largest pivot among rows 2..4 of column 2
+        let mut p2 = 2_u8;
+        let mut piv = R::abs(a22);
+        let c = R::abs(a32);
+        if c > piv {
+            piv = c;
+            p2 = 3;
+        }
+        let c = R::abs(a42);
+        if c > piv {
+            piv = c;
+            p2 = 4;
+        }
+        if p2 == 3 {
+            let t = a21;
+            a21 = a31;
+            a31 = t;
+            let t = a22;
+            a22 = a32;
+            a32 = t;
+            let t = a23;
+            a23 = a33;
+            a33 = t;
+            let t = a24;
+            a24 = a34;
+            a34 = t;
+        } else if p2 == 4 {
+            let t = a21;
+            a21 = a41;
+            a41 = t;
+            let t = a22;
+            a22 = a42;
+            a42 = t;
+            let t = a23;
+            a23 = a43;
+            a43 = t;
+            let t = a24;
+            a24 = a44;
+            a44 = t;
+        }
+        if piv != R::zero() {
+            let l = R::div(a32, a22);
+            let nl = -l;
+            a33 = R::mul_add(nl, a23, a33);
+            a34 = R::mul_add(nl, a24, a34);
+            a32 = l;
+            let l = R::div(a42, a22);
+            let nl = -l;
+            a43 = R::mul_add(nl, a23, a43);
+            a44 = R::mul_add(nl, a24, a44);
+            a42 = l;
+        }
+        // step 3: largest pivot among rows 3..4 of column 3
+        let mut p3 = 3_u8;
+        let mut piv = R::abs(a33);
+        let c = R::abs(a43);
+        if c > piv {
+            piv = c;
+            p3 = 4;
+        }
+        if p3 == 4 {
+            let t = a31;
+            a31 = a41;
+            a41 = t;
+            let t = a32;
+            a32 = a42;
+            a42 = t;
+            let t = a33;
+            a33 = a43;
+            a43 = t;
+            let t = a34;
+            a34 = a44;
+            a44 = t;
+        }
+        if piv != R::zero() {
+            let l = R::div(a43, a33);
+            let nl = -l;
+            a44 = R::mul_add(nl, a34, a44);
+            a43 = l;
+        }
+        Lu4 {
+            lu: Matrix4 {
+                m11: a11,
+                m21: a21,
+                m31: a31,
+                m41: a41,
+                m12: a12,
+                m22: a22,
+                m32: a32,
+                m42: a42,
+                m13: a13,
+                m23: a23,
+                m33: a33,
+                m43: a43,
+                m14: a14,
+                m24: a24,
+                m34: a34,
+                m44: a44,
+            },
+            p: Perm4 { p1, p2, p3 },
+        }
+    }
+
+    /// The unit lower triangular factor `L` (its diagonal of ones is implicit in the packed
+    /// storage). Exact: moves only. Upstream: `LU::l`.
+    #[inline(always)]
+    fn l(self: Lu4<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: R::one(),
+            m21: self.lu.m21,
+            m31: self.lu.m31,
+            m41: self.lu.m41,
+            m12: R::zero(),
+            m22: R::one(),
+            m32: self.lu.m32,
+            m42: self.lu.m42,
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
+            m43: self.lu.m43,
+            m14: R::zero(),
+            m24: R::zero(),
+            m34: R::zero(),
+            m44: R::one(),
+        }
+    }
+
+    /// The upper triangular factor `U`. Exact: moves only. Upstream: `LU::u`.
+    #[inline(always)]
+    fn u(self: Lu4<T>) -> Matrix4<T> {
+        Matrix4 {
+            m11: self.lu.m11,
+            m21: R::zero(),
+            m31: R::zero(),
+            m41: R::zero(),
+            m12: self.lu.m12,
+            m22: self.lu.m22,
+            m32: R::zero(),
+            m42: R::zero(),
+            m13: self.lu.m13,
+            m23: self.lu.m23,
+            m33: self.lu.m33,
+            m43: R::zero(),
+            m14: self.lu.m14,
+            m24: self.lu.m24,
+            m34: self.lu.m34,
+            m44: self.lu.m44,
+        }
+    }
+
+    /// The packed factors as the factorisation stores them: `L` (strict lower triangle, unit
+    /// diagonal implicit) and `U` (upper triangle) in one matrix. Exact: a move. Upstream:
+    /// `LU::lu_internal` (`#[doc(hidden)]`).
+    #[inline(always)]
+    fn lu_internal(self: Lu4<T>) -> Matrix4<T> {
+        self.lu
+    }
+
+    /// The unit lower triangular factor `L`, consuming the factorisation: `l()` (exact, moves
+    /// only). Upstream: `LU::l_unpack`.
+    #[inline(always)]
+    fn l_unpack(self: Lu4<T>) -> Matrix4<T> {
+        Self::l(self)
+    }
+
+    /// The three factors `(P, L, U)` of `P * A = L * U`: `(p(), l(), u())`, exact. Upstream:
+    /// `LU::unpack`.
+    #[inline(always)]
+    fn unpack(self: Lu4<T>) -> (Perm4, Matrix4<T>, Matrix4<T>) {
+        (self.p, Self::l(self), Self::u(self))
+    }
+
+    /// Overwrites `b` (any shape with 4 rows: a vector or a matrix) with the solution `x` of `A *
+    /// x = b` and returns `true`, or returns `false` and leaves `b` unchanged when a pivot is
+    /// exactly zero (`is_invertible`; upstream returns `false` after overwriting `b` with an
+    /// unspecified partial result). Upstream: `LU::solve_mut`.
+    ///
+    /// Upstream's steps, on every column of `b` at once: `P b` (moves), `L y = P b` by forward
+    /// substitution on the implicit unit diagonal (one floor per component, no division: `L`'s
+    /// quotients by 1 are exact, bit-identical to upstream's `solve_lower_triangular_with_diag_mut
+    /// (b, 1)`), then `U x = y` by back substitution (one floor and one correctly rounded division
+    /// per component, one prepared divisor per row from 3 columns on). On a vector it is
+    /// bit-identical to `solve`. Panics on overflow.
+    fn solve_mut<B, impl P: PermuteRows<Perm4, B>, impl K: SolveKernel<Matrix4<T>, B>, +Drop<B>>(
+        self: Lu4<T>, ref b: B,
+    ) -> bool {
+        if !Self::is_invertible(self) {
+            return false;
+        }
+        P::permute_rows(self.p, ref b);
+        b = K::upper(self.lu, K::lower_unit(self.lu, b));
+        true
+    }
+
+    /// Overwrites `out` with the inverse and returns `true`, or returns `false` and leaves `out`
+    /// unchanged when a pivot is exactly zero (upstream fills `out` with the identity first and
+    /// leaves a partial result). The inverse is `try_inverse`'s, bit for bit (upstream's
+    /// `try_inverse` is `try_inverse_to` on the identity). Upstream: `LU::try_inverse_to`.
+    #[inline(always)]
+    fn try_inverse_to(self: Lu4<T>, ref out: Matrix4<T>) -> bool {
+        match Self::try_inverse(self) {
+            Option::Some(m) => {
+                out = m;
+                true
+            },
+            Option::None => false,
+        }
+    }
+
+    /// The row permutation `P`, as the compact sequence of 3 transpositions `Perm4` — never as a
+    /// matrix, and never as an array (DESIGN D4). Upstream: `LU::p`, which returns a heap-allocated
+    /// `PermutationSequence`.
+    #[inline(always)]
+    fn p(self: Lu4<T>) -> Perm4 {
+        self.p
+    }
+
+    /// Whether the factorisation is invertible: all 4 diagonal entries of `U` are EXACTLY nonzero
+    /// (no epsilon), like upstream's `LU::is_invertible`.
+    ///
+    /// This is NOT the criterion of `Matrix4::try_inverse` (a computed determinant exactly zero),
+    /// even though the determinant is the product of these very pivots: a matrix rejected here is
+    /// rejected there too, but a matrix with 4 nonzero pivots can still have a determinant that
+    /// underflows to zero in the product chain — then `Matrix4::try_inverse` gives `None` while
+    /// the factorisation still solves. Neither criterion rejects a merely ill-conditioned matrix:
+    /// it is factored and solved with the precision its conditioning allows.
+    #[inline(always)]
+    fn is_invertible(self: Lu4<T>) -> bool {
+        self.lu.m11 != R::zero()
+            && self.lu.m22 != R::zero()
+            && self.lu.m33 != R::zero()
+            && self.lu.m44 != R::zero()
+    }
+
+    /// The solution of `A * x = b` for the factored `A`, or `None` when a pivot is exactly zero
+    /// (`is_invertible`). Upstream: `LU::solve`.
+    ///
+    /// `b` is permuted (exactly), then `L y = P b` is solved by forward substitution and `U x = y`
+    /// by back substitution. Each `y_i` costs ONE rounding — the whole sum of products is
+    /// accumulated in `Real::Wide` and rescaled once — and each `x_i` costs TWO: the numerator,
+    /// then the correctly rounded division by the pivot.
+    ///
+    /// The 4 correctly rounded divisions are kept rather than 4 reciprocals and 4 multiplications.
+    /// That candidate loses on both counts here: a reciprocal plus a multiplication is dearer than
+    /// a division and a single right-hand side amortises nothing, and rounding `1 / u_ii` before
+    /// using it costs accuracy when `|u_ii| >> 1`. `bench_lu4_solve__alt_recip` and
+    /// `test_solve_candidates_error` keep both measurements. `try_inverse` amortises a reciprocal
+    /// over 4 columns and would be cheaper with one, and still does not use one (see there).
+    ///
+    /// Panics with the scalar's overflow error if a component of `x` does not fit.
+    fn solve(self: Lu4<T>, b: Vector4<T>) -> Option<Vector4<T>> {
+        if !Self::is_invertible(self) {
+            return None;
+        }
+        let pb = Lu4InternalTrait::permute(self, b);
+        let y1 = pb.x;
+        let y2 = R::mul_add(-self.lu.m21, y1, pb.y);
+        let y3 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), pb.z), self.lu.m31, y1),
+                self.lu.m32,
+                y2,
+            ),
+        );
+        let y4 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), pb.w), self.lu.m41, y1),
+                    self.lu.m42,
+                    y2,
+                ),
+                self.lu.m43,
+                y3,
+            ),
+        );
+        let x4 = R::div(y4, self.lu.m44);
+        let x3 = R::div(R::mul_add(-self.lu.m34, x4, y3), self.lu.m33);
+        let x2 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y2), self.lu.m23, x3),
+                    self.lu.m24,
+                    x4,
+                ),
+            ),
+            self.lu.m22,
+        );
+        let x1 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), y1), self.lu.m12, x2),
+                        self.lu.m13,
+                        x3,
+                    ),
+                    self.lu.m14,
+                    x4,
+                ),
+            ),
+            self.lu.m11,
+        );
+        Some(Vector4 { x: x1, y: x2, z: x3, w: x4 })
+    }
+
+    /// The inverse, or `None` when a pivot is exactly zero (`is_invertible`). Upstream:
+    /// `LU::try_inverse`.
+    ///
+    /// Computed as `A^-1 = (L U)^-1 P`, NOT as 4 calls to `solve`: the right-hand sides of `L U M =
+    /// I` are then the STATIC unit vectors, whose leading zeros disappear at generation time (the
+    /// forward substitution is 10 products instead of 24), and the permutation is applied at the
+    /// end by swapping the COLUMNS of `M` in reverse factorisation order — moves only, exact.
+    ///
+    /// Rounding: one per entry of the forward substitution, two per entry of the back substitution
+    /// (the numerator, then the correctly rounded division by the pivot). Panics with the scalar's
+    /// overflow error if an entry of the inverse does not fit.
+    ///
+    /// Unlike `solve`, this one WOULD be cheaper with one reciprocal per pivot, which 4 columns
+    /// amortise: 84 220 against 108 840 gas (net, `fixed` 0.3.0). It still divides — upstream's
+    /// `solve_mut` divides by the pivot — because `mul(x, recip(u))` rounds twice where `x / u`
+    /// rounds once, which is the rule DESIGN D2 and `Vector4::unscale` already follow; the drift is
+    /// small but real (7 ulp on the oracle inverses).
+    /// `bench_lu4_try_inverse__alt_recip` and `test_try_inverse_candidates` keep the measurement.
+    ///
+    /// The back substitution runs ROW by row across the 4 columns, so the quotients that
+    /// share a pivot go through ONE prepared divisor (`Real::div3` / `Real::div4`, bit-identical
+    /// to per-element division, cheaper from 3 quotients) and the corner `1 / u_44` is
+    /// `Real::recip` (WP 7.2).
+    fn try_inverse(self: Lu4<T>) -> Option<Matrix4<T>> {
+        if !Self::is_invertible(self) {
+            return None;
+        }
+        let y21 = -self.lu.m21;
+        let y31 = R::wide_rescale(
+            R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m31), self.lu.m32, y21),
+        );
+        let y41 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m41), self.lu.m42, y21),
+                self.lu.m43,
+                y31,
+            ),
+        );
+        let y32 = -self.lu.m32;
+        let y42 = R::wide_rescale(
+            R::wide_sub_prod(R::wide_sub(R::wide_zero(), self.lu.m42), self.lu.m43, y32),
+        );
+        let y43 = -self.lu.m43;
+        let x44 = R::recip(self.lu.m44);
+        let (x41, x42, x43) = R::div3(y41, y42, y43, self.lu.m44);
+        let n31 = R::mul_add(-self.lu.m34, x41, y31);
+        let n32 = R::mul_add(-self.lu.m34, x42, y32);
+        let n33 = R::mul_add(-self.lu.m34, x43, R::one());
+        let n34 = R::wide_rescale(R::wide_sub_prod(R::wide_zero(), self.lu.m34, x44));
+        let (x31, x32, x33, x34) = R::div4(n31, n32, n33, n34, self.lu.m33);
+        let n21 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), y21), self.lu.m23, x31),
+                self.lu.m24,
+                x41,
+            ),
+        );
+        let n22 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), R::one()), self.lu.m23, x32),
+                self.lu.m24,
+                x42,
+            ),
+        );
+        let n23 = R::wide_rescale(
+            R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), self.lu.m23, x33), self.lu.m24, x43),
+        );
+        let n24 = R::wide_rescale(
+            R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), self.lu.m23, x34), self.lu.m24, x44),
+        );
+        let (x21, x22, x23, x24) = R::div4(n21, n22, n23, n24, self.lu.m22);
+        let n11 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), R::one()), self.lu.m12, x21),
+                    self.lu.m13,
+                    x31,
+                ),
+                self.lu.m14,
+                x41,
+            ),
+        );
+        let n12 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12, x22), self.lu.m13, x32,
+                ),
+                self.lu.m14,
+                x42,
+            ),
+        );
+        let n13 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12, x23), self.lu.m13, x33,
+                ),
+                self.lu.m14,
+                x43,
+            ),
+        );
+        let n14 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_zero(), self.lu.m12, x24), self.lu.m13, x34,
+                ),
+                self.lu.m14,
+                x44,
+            ),
+        );
+        let (x11, x12, x13, x14) = R::div4(n11, n12, n13, n14, self.lu.m11);
+        let mut c11 = x11;
+        let mut c12 = x12;
+        let mut c13 = x13;
+        let mut c14 = x14;
+        let mut c21 = x21;
+        let mut c22 = x22;
+        let mut c23 = x23;
+        let mut c24 = x24;
+        let mut c31 = x31;
+        let mut c32 = x32;
+        let mut c33 = x33;
+        let mut c34 = x34;
+        let mut c41 = x41;
+        let mut c42 = x42;
+        let mut c43 = x43;
+        let mut c44 = x44;
+        if self.p.p3 == 4 {
+            let t = c13;
+            c13 = c14;
+            c14 = t;
+            let t = c23;
+            c23 = c24;
+            c24 = t;
+            let t = c33;
+            c33 = c34;
+            c34 = t;
+            let t = c43;
+            c43 = c44;
+            c44 = t;
+        }
+        if self.p.p2 == 3 {
+            let t = c12;
+            c12 = c13;
+            c13 = t;
+            let t = c22;
+            c22 = c23;
+            c23 = t;
+            let t = c32;
+            c32 = c33;
+            c33 = t;
+            let t = c42;
+            c42 = c43;
+            c43 = t;
+        } else if self.p.p2 == 4 {
+            let t = c12;
+            c12 = c14;
+            c14 = t;
+            let t = c22;
+            c22 = c24;
+            c24 = t;
+            let t = c32;
+            c32 = c34;
+            c34 = t;
+            let t = c42;
+            c42 = c44;
+            c44 = t;
+        }
+        if self.p.p1 == 2 {
+            let t = c11;
+            c11 = c12;
+            c12 = t;
+            let t = c21;
+            c21 = c22;
+            c22 = t;
+            let t = c31;
+            c31 = c32;
+            c32 = t;
+            let t = c41;
+            c41 = c42;
+            c42 = t;
+        } else if self.p.p1 == 3 {
+            let t = c11;
+            c11 = c13;
+            c13 = t;
+            let t = c21;
+            c21 = c23;
+            c23 = t;
+            let t = c31;
+            c31 = c33;
+            c33 = t;
+            let t = c41;
+            c41 = c43;
+            c43 = t;
+        } else if self.p.p1 == 4 {
+            let t = c11;
+            c11 = c14;
+            c14 = t;
+            let t = c21;
+            c21 = c24;
+            c24 = t;
+            let t = c31;
+            c31 = c34;
+            c34 = t;
+            let t = c41;
+            c41 = c44;
+            c44 = t;
+        }
+        Some(
+            Matrix4 {
+                m11: c11,
+                m21: c21,
+                m31: c31,
+                m41: c41,
+                m12: c12,
+                m22: c22,
+                m32: c32,
+                m42: c42,
+                m13: c13,
+                m23: c23,
+                m33: c33,
+                m43: c43,
+                m14: c14,
+                m24: c24,
+                m34: c34,
+                m44: c44,
+            },
+        )
+    }
+
+    /// The determinant: the product of the 4 pivots, with the sign of the permutation. Upstream:
+    /// `LU::determinant`.
+    ///
+    /// The sign is applied to the FIRST pivot — an exact negation — and the product is then a
+    /// left-to-right chain of 3 floored multiplications, so the result stays a floor chain instead
+    /// of the negation of one (`-floor(x)` is `ceil(-x)`, one ulp off). `Real` exposes no `Wide *
+    /// T`, so a product of 4 scalars cannot be accumulated exactly: each intermediate is floored
+    /// once, which adds at most 3 ulp to the error already carried by the pivots.
+    ///
+    /// Exactly zero for a singular matrix. Panics with the scalar's overflow error if an
+    /// intermediate product does not fit; partial pivoting makes the 4 pivots comparable in
+    /// magnitude, so the partial products grow monotonically toward the determinant and an
+    /// intermediate overflow implies the determinant itself does not fit.
+    ///
+    /// PREFER `Matrix4::determinant` when the factorisation is not needed for something else: the
+    /// closed form sums exact minors, where this one multiplies pivots that already carry the
+    /// rounding of the elimination. Measured on the 3x3 oracle vectors, the gap is not subtle —
+    /// worst error 556 ulp for the cofactors against 181 307 427 for the pivots, 4 of the 18 cases
+    /// outside the oracle tolerance, and 10 660 gas against 41 240
+    /// (`bench_lu3_vs_matrix3_determinant` and `test_try_inverse_versus_matrix3_cofactors` in
+    /// `lu3`). This method earns its keep on the 6x6, which has no closed form, and whenever the
+    /// factorisation is already in hand.
+    fn determinant(self: Lu4<T>) -> T {
+        let mut neg = false;
+        if self.p.p1 != 1 {
+            neg = !neg;
+        }
+        if self.p.p2 != 2 {
+            neg = !neg;
+        }
+        if self.p.p3 != 3 {
+            neg = !neg;
+        }
+        let d = if neg {
+            -self.lu.m11
+        } else {
+            self.lu.m11
+        };
+        let d = d * self.lu.m22;
+        let d = d * self.lu.m33;
+        d * self.lu.m44
+    }
+}
+
+/// `Matrix4` methods that go through the LU factorisation; upstream carries them on the matrix
+/// itself. Import `Matrix4LuTrait` to use them.
+#[generate_trait]
+pub impl Matrix4LuImpl<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Matrix4LuTrait<T> {
+    /// The LU factorisation with partial pivoting. Upstream: `Matrix4::lu`.
+    #[inline(always)]
+    fn lu(self: Matrix4<T>) -> Lu4<T> {
+        Lu4Trait::new(self)
+    }
+}

@@ -1078,8 +1078,12 @@ use crate::base::matrix1::Matrix1;
             m33: R::diff_prod(a1, b2, a2, b1),
         }
     }""")
+    banded = {}
     for c in (4, 5, 6):
-        body.append(f"""    /// The eigenvectors of the {c}x{c} Gram matrix (`SymmetricEigen{c}`, already renormalised and
+        # docs/SPLIT.md §3.3.2 (WP 9-NS9): `right5` / `right6` in one crate-internal trait per
+        # band (`SvdRightTrait5` / `SvdRightTrait6`), so each lives with the decompositions of its
+        # dimension (`linalg5` / `linalg6`); same bodies, callers renamed
+        (body if c == 4 else banded.setdefault(c, [])).append(f"""    /// The eigenvectors of the {c}x{c} Gram matrix (`SymmetricEigen{c}`, already renormalised and
     /// signed), as the columns of a `Matrix{c}`, ascending eigenvalue order.
     #[inline(always)]
     fn right{c}(g: Sym{c}<T>) -> Matrix{c}<T> {{
@@ -1117,6 +1121,15 @@ pub(crate) impl SvdRightImpl<
 {BOUNDS}
 > of SvdRightTrait<T> {{
 {chr(10).join(body)}
+}}
+""")
+    for c, fns in banded.items():
+        parts.append(f"""/// The right singular vectors of a matrix with {c} columns (crate-internal).
+#[generate_trait]
+pub(crate) impl SvdRightImpl{c}<
+{BOUNDS}
+> of SvdRightTrait{c}<T> {{
+{chr(10).join(fns)}
 }}
 """)
     # completions
@@ -1262,11 +1275,12 @@ def svd_tall_kernel(r: int, c: int) -> str:
     if c == 1:
         right, try_right, gram = f"{MC} {{ x: R::one() }}", f"Some({MC} {{ x: R::one() }})", ""
     else:
-        right = f"SvdRightImpl::<T>::right{c}(Self::gram(Self::normalised(m)))"
+        band = "" if c <= 4 else str(c)
+        right = f"SvdRightImpl{band}::<T>::right{c}(Self::gram(Self::normalised(m)))"
         if c == 2:
             try_right = f"Some({right})"
         else:
-            try_right = f"SvdRightImpl::<T>::try_right{c}(Self::gram(Self::normalised(m)), eps)"
+            try_right = f"SvdRightImpl{band}::<T>::try_right{c}(Self::gram(Self::normalised(m)), eps)"
         comps = [f"m.{fld(r, c, i, j)}" for j in range(c) for i in range(r)]
         amax = " ".join(f"if {x}.abs() > a {{ a = {x}.abs(); }}" for x in comps[1:])
         chunks = [comps[i:i + 6] for i in range(0, len(comps), 6)]
@@ -1524,7 +1538,7 @@ def render_svd(r: int, c: int) -> str:
         elif c >= 4:
             uses.append(f"use crate::linalg::symmetric_eigen{c}::Sym{c};")
         uses.append("use core::internal::revoke_ap_tracking;")
-        kern = ["SvdRightImpl", f"SvdComplete{r}Impl"]
+        kern = ["SvdRightImpl", f"SvdComplete{r}Impl"] + ([f"SvdRightImpl{c}"] if c >= 5 else [])
         uses.append(f"use super::kernels::{{{', '.join(kern)}}};")
     else:
         uses.append(f"use super::{svd_mod(c, r)}::{{{svd_name(c, r)}InternalTrait, {svd_name(c, r)}Trait}};")

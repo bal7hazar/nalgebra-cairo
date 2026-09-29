@@ -3844,7 +3844,9 @@ pub impl Perm4PermuteRowsMatrix4x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm4, 
             };
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_geometry4::geometry::reflection4::{Reflection4, Reflection4Columns, Reflection4Trait};
+use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection4.cairo
@@ -3998,6 +4000,87 @@ pub impl Reflection4ColumnsMatrix4x6<
                 m36: R::sum_prod2(f6, a.z, sign, m.m36),
                 m46: R::sum_prod2(f6, a.w, sign, m.m46),
             };
+    }
+}
+// crate-map: end
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
+impl Matrix4x6ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Matrix4x6<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        4
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        6
+    }
+
+    fn to_column_major(self: Matrix4x6<T>) -> Array<T> {
+        array![
+            self.m11, self.m21, self.m31, self.m41, self.m12, self.m22, self.m32, self.m42,
+            self.m13, self.m23, self.m33, self.m43, self.m14, self.m24, self.m34, self.m44,
+            self.m15, self.m25, self.m35, self.m45, self.m16, self.m26, self.m36, self.m46,
+        ]
+    }
+
+    fn from_column_major(data: Span<T>) -> Matrix4x6<T> {
+        let boxed: @Box<[T; 24]> = data.try_into().expect(SLICE_LENGTH);
+        let [
+            v0,
+            v1,
+            v2,
+            v3,
+            v4,
+            v5,
+            v6,
+            v7,
+            v8,
+            v9,
+            v10,
+            v11,
+            v12,
+            v13,
+            v14,
+            v15,
+            v16,
+            v17,
+            v18,
+            v19,
+            v20,
+            v21,
+            v22,
+            v23,
+        ] =
+            boxed
+            .unbox();
+        Matrix4x6 {
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m41: v3,
+            m12: v4,
+            m22: v5,
+            m32: v6,
+            m42: v7,
+            m13: v8,
+            m23: v9,
+            m33: v10,
+            m43: v11,
+            m14: v12,
+            m24: v13,
+            m34: v14,
+            m44: v15,
+            m15: v16,
+            m25: v17,
+            m35: v18,
+            m45: v19,
+            m16: v20,
+            m26: v21,
+            m36: v22,
+            m46: v23,
+        }
     }
 }
 // crate-map: end

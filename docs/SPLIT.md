@@ -574,7 +574,17 @@ edit kernels and `Lu6InternalTrait` under `internal`. **NS8 done** (PR #73): `na
 change, path proof green (transient set
 1,069 → 36: only the `MatrixInfSup` impls of `root` remain, until NS11); `PadTo6` / `CropFrom6` /
 `ShapeDims` under `nalgebra_blocks::internal`; the facade features `statistics` / `blas` now gate its
-re-exports of the two crates only (their removal: NS11, §12.1).
+re-exports of the two crates only (their removal: NS11, §12.1). **NS9 done** (PR #74):
+`nalgebra_linalg4` (9,488 lines, marginal 0.9 s / 0.21 GB), `nalgebra_linalg_svd_eigen4` (11,154,
+1.1 s / 0.25 GB), `nalgebra_linalg_pivot4` (12,726, 1.2 s / 0.26 GB), `nalgebra_linalg_spectral4`
+(12,101, 1.6 s / 0.30 GB) (CI `Consumer cost`, GitHub runner; NS1b: 0.9 / 0.8 / 1.0 / 1.4 s), zero
+step change, path proof green (transient set 36, unchanged); closures `static3_svd` **7.6 s /
+1.58 GB**, `core_pivot` **3.9 s / 0.94 GB**, `static4_factor` **10.8 s / 2.36 GB**; the linalg
+features forwarded to the sub-crates (none a no-op yet); `SvdRightTrait` split per band; anchor
+fixes: `ColumnMajor` / `Balancing` / `HouseholderAxis` declared in `nalgebra_shapes5::internal`
+with their impls on their type's band (`shapes5` 25,438 lines, `shapes6` 37,645), `LuInvert` /
+`try_invert_to` held by the facade (`Matrix6LuInvert` runs `Lu6`: in `linalg4` it would pull
+dimension 6 into `static4_factor`; replaces §15's "stay together in `linalg4`").
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible

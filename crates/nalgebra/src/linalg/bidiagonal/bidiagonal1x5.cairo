@@ -4,10 +4,10 @@
 //! (WP 8.5-P16).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
 use crate::base::row_vector5::RowVector5;
-use crate::linalg::householder_kernels::HouseholderKernelTrait;
 
 /// The bidiagonalisation `A = U D Vᵀ` of a `RowVector5<T>`: `D` 1x1 LOWER bidiagonal (`1 < 5`),
 /// `U` (1x1) and `Vᵀ` (1x5) with orthonormal columns / rows.
