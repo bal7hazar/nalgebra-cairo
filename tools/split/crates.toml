@@ -205,6 +205,16 @@ kind = ["struct", "trait"]
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
+# the constructors and accessors of `Reflection1`..`Reflection4` (`Reflection2Trait::new`, `axis`,
+# `bias`: field reads and fused kernels only) stay with their struct, whose fields are private: the
+# `ReflectionNColumns` / `ReflectionNRows` impls on the shapes of a larger dimension read them through
+# `axis` / `bias` from the types crates above (WP 9-R1)
+[[rule]]
+name = "Reflection[1-4]Trait"
+kind = ["inherent"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4" }
+
 # the conversions of a rotation / translation into a matrix (`Matrix3FromRotation2`): with the
 # matrix's types (whichever file holds them: the pre-split tree and today's differ); those that run
 # a method get a type-level kernel (`kernel_wrappers` above)
