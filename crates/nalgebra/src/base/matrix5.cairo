@@ -18,11 +18,11 @@ use nalgebra_shapes5::base::matrix5x4::Matrix5x4;
 use nalgebra_shapes5::base::row_vector5::RowVector5;
 use nalgebra_shapes5::base::vector5::Vector5;
 use nalgebra_shapes5::internal::base::matrix5::Matrix5EditTrait;
+use nalgebra_shapes6::base::matrix5x6::Matrix5x6;
+use nalgebra_shapes6::base::matrix6::Matrix6;
+use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
 use simba::scalar::{Real, Transcendental};
 use crate::base::errors;
-use crate::base::matrix5x6::Matrix5x6;
-use crate::base::matrix6::Matrix6;
-use crate::base::matrix6x5::Matrix6x5;
 
 /// Methods of `Matrix5<T>` for any `Real` scalar.
 #[generate_trait]
@@ -5050,7 +5050,7 @@ pub impl Matrix5AngleImpl<
 }
 
 pub use nalgebra_shapes5::base::matrix5::*;
-pub use crate::base::matrix5x6::{Matrix5MulMatrix5x6, Matrix5TrMulMatrix5x6};
+pub use nalgebra_shapes6::base::matrix5x6::{Matrix5MulMatrix5x6, Matrix5TrMulMatrix5x6};
 pub use crate::base::matrix_kronecker::Matrix5KroneckerMatrix1;
 pub use crate::base::matrix_view::{
     Matrix5FixedColumnsMatrix5, Matrix5FixedColumnsMatrix5x2, Matrix5FixedColumnsMatrix5x3,

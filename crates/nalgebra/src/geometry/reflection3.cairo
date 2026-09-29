@@ -19,5 +19,5 @@
 //! it when zero: subtracting zero is exact, so the results are identical).
 
 pub use nalgebra_geometry4::geometry::reflection3::*;
-pub use crate::base::matrix3x6::Reflection3ColumnsMatrix3x6;
-pub use crate::base::matrix6x3::Reflection3RowsMatrix6x3;
+pub use nalgebra_shapes6::base::matrix3x6::Reflection3ColumnsMatrix3x6;
+pub use nalgebra_shapes6::base::matrix6x3::Reflection3RowsMatrix6x3;

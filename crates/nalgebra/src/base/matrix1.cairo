@@ -10,26 +10,21 @@
 
 pub use nalgebra_core::base::matrix1::*;
 pub use nalgebra_shapes5::base::row_vector5::{Matrix1MulRowVector5, Matrix1TrMulRowVector5};
+pub use nalgebra_shapes6::base::row_vector6::{Matrix1MulRowVector6, Matrix1TrMulRowVector6};
 pub use nalgebra_static3::base::matrix1::*;
-pub use crate::base::matrix2x6::Matrix1KroneckerMatrix2x6;
-pub use crate::base::matrix3x6::Matrix1KroneckerMatrix3x6;
-pub use crate::base::matrix4x6::Matrix1KroneckerMatrix4x6;
-pub use crate::base::matrix5x6::Matrix1KroneckerMatrix5x6;
-pub use crate::base::matrix6::Matrix1KroneckerMatrix6;
-pub use crate::base::matrix6x2::Matrix1KroneckerMatrix6x2;
-pub use crate::base::matrix6x3::Matrix1KroneckerMatrix6x3;
-pub use crate::base::matrix6x4::Matrix1KroneckerMatrix6x4;
-pub use crate::base::matrix6x5::Matrix1KroneckerMatrix6x5;
 pub use crate::base::matrix_kronecker::{
     Matrix1KroneckerMatrix1, Matrix1KroneckerMatrix2, Matrix1KroneckerMatrix2x3,
-    Matrix1KroneckerMatrix2x4, Matrix1KroneckerMatrix2x5, Matrix1KroneckerMatrix3,
-    Matrix1KroneckerMatrix3x2, Matrix1KroneckerMatrix3x4, Matrix1KroneckerMatrix3x5,
-    Matrix1KroneckerMatrix4, Matrix1KroneckerMatrix4x2, Matrix1KroneckerMatrix4x3,
-    Matrix1KroneckerMatrix4x5, Matrix1KroneckerMatrix5, Matrix1KroneckerMatrix5x2,
-    Matrix1KroneckerMatrix5x3, Matrix1KroneckerMatrix5x4, Matrix1KroneckerRowVector2,
+    Matrix1KroneckerMatrix2x4, Matrix1KroneckerMatrix2x5, Matrix1KroneckerMatrix2x6,
+    Matrix1KroneckerMatrix3, Matrix1KroneckerMatrix3x2, Matrix1KroneckerMatrix3x4,
+    Matrix1KroneckerMatrix3x5, Matrix1KroneckerMatrix3x6, Matrix1KroneckerMatrix4,
+    Matrix1KroneckerMatrix4x2, Matrix1KroneckerMatrix4x3, Matrix1KroneckerMatrix4x5,
+    Matrix1KroneckerMatrix4x6, Matrix1KroneckerMatrix5, Matrix1KroneckerMatrix5x2,
+    Matrix1KroneckerMatrix5x3, Matrix1KroneckerMatrix5x4, Matrix1KroneckerMatrix5x6,
+    Matrix1KroneckerMatrix6, Matrix1KroneckerMatrix6x2, Matrix1KroneckerMatrix6x3,
+    Matrix1KroneckerMatrix6x4, Matrix1KroneckerMatrix6x5, Matrix1KroneckerRowVector2,
     Matrix1KroneckerRowVector3, Matrix1KroneckerRowVector4, Matrix1KroneckerRowVector5,
-    Matrix1KroneckerVector2, Matrix1KroneckerVector3, Matrix1KroneckerVector4,
-    Matrix1KroneckerVector5,
+    Matrix1KroneckerRowVector6, Matrix1KroneckerVector2, Matrix1KroneckerVector3,
+    Matrix1KroneckerVector4, Matrix1KroneckerVector5, Matrix1KroneckerVector6,
 };
 pub use crate::base::matrix_view::{
     Matrix1FixedColumnsMatrix1, Matrix1FixedRowsMatrix1, Matrix1FixedViewMatrix1,
@@ -37,8 +32,4 @@ pub use crate::base::matrix_view::{
 pub use crate::base::norm::{
     Matrix1EuclideanNorm, Matrix1LpNorm, Matrix1OneNorm, Matrix1UniformNorm,
 };
-pub use crate::base::row_vector6::{
-    Matrix1KroneckerRowVector6, Matrix1MulRowVector6, Matrix1TrMulRowVector6,
-};
-pub use crate::base::vector6::Matrix1KroneckerVector6;
 pub use crate::root::Matrix1InfSup;

@@ -19,6 +19,7 @@ mod tests;
 
 pub use nalgebra_core::base::matrix3::*;
 pub use nalgebra_shapes5::base::matrix3x5::{Matrix3MulMatrix3x5, Matrix3TrMulMatrix3x5};
+pub use nalgebra_shapes6::base::matrix3x6::{Matrix3MulMatrix3x6, Matrix3TrMulMatrix3x6};
 pub use nalgebra_static3::base::matrix3::*;
 pub use nalgebra_static3::geometry::isometry2::Matrix3FromIsometry2;
 pub use nalgebra_static3::geometry::rotation2::Matrix3FromRotation2;
@@ -27,7 +28,6 @@ pub use nalgebra_static3::geometry::similarity2::Matrix3FromSimilarity2;
 pub use nalgebra_static3::geometry::translation2::Matrix3FromTranslation2;
 pub use nalgebra_static3::geometry::unit_complex::Matrix3FromUnitComplex;
 pub use nalgebra_static3::geometry::unit_quaternion::Matrix3FromUnitQuaternion;
-pub use crate::base::matrix3x6::{Matrix3MulMatrix3x6, Matrix3TrMulMatrix3x6};
 pub use crate::base::matrix_kronecker::{
     Matrix3KroneckerMatrix1, Matrix3KroneckerMatrix2, Matrix3KroneckerRowVector2,
     Matrix3KroneckerVector2,

@@ -29,4 +29,4 @@ pub use nalgebra_core::base::unit::*;
 use nalgebra_core::internal::base::unit::UnitInternalTrait;
 // `Normed` of `Vector5` / `Vector6`: in the modules of their types (docs/SPLIT.md §3.2)
 pub use nalgebra_shapes5::base::vector5::Vector5Normed;
-pub use crate::base::vector6::Vector6Normed;
+pub use nalgebra_shapes6::base::vector6::Vector6Normed;

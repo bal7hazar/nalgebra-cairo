@@ -20,9 +20,9 @@ use nalgebra_shapes5::base::matrix5x2::Matrix5x2;
 use nalgebra_shapes5::base::row_vector5::RowVector5;
 use nalgebra_shapes5::base::vector5::Vector5;
 use nalgebra_shapes5::internal::base::matrix2x5::Matrix2x5EditTrait;
+use nalgebra_shapes6::base::matrix2x6::Matrix2x6;
 use simba::scalar::{Real, Transcendental};
 use crate::base::errors;
-use crate::base::matrix2x6::Matrix2x6;
 use crate::base::matrix5::Matrix5Trait;
 
 /// Methods of `Matrix2x5<T>` for any `Real` scalar.
@@ -2315,8 +2315,8 @@ pub use nalgebra_shapes5::base::matrix2x5::{
     Matrix2x5Sum, Matrix2x5SumSnapshot, Matrix2x5TrMulMatrix2, Matrix2x5TrMulMatrix2x3,
     Matrix2x5TrMulMatrix2x4, Matrix2x5TrMulMatrix2x5, Matrix2x5TrMulVector2,
 };
-pub use crate::base::matrix2x6::Matrix2x5TrMulMatrix2x6;
-pub use crate::base::matrix5x6::Matrix2x5MulMatrix5x6;
+pub use nalgebra_shapes6::base::matrix2x6::Matrix2x5TrMulMatrix2x6;
+pub use nalgebra_shapes6::base::matrix5x6::Matrix2x5MulMatrix5x6;
 pub use crate::base::matrix_kronecker::{
     Matrix2x5KroneckerMatrix1, Matrix2x5KroneckerVector2, Matrix2x5KroneckerVector3,
 };

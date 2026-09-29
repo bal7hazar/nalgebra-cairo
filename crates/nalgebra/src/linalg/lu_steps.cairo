@@ -7,8 +7,8 @@
 use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix3::Matrix3;
 use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_shapes6::base::matrix6::Matrix6;
 use simba::scalar::Real;
-use crate::base::matrix6::Matrix6;
 use crate::linalg::lu::{Lu2Trait, Lu3Trait, Lu4Trait, Lu6Trait};
 
 /// The LU inverse of one square shape (crate-private).

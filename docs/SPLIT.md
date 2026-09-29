@@ -556,7 +556,13 @@ runner; NS1b: 2.9 s / 0.64 GB), zero step change, path proof green (transient se
 1.4 / 1.9 / 1.6 s), zero step change, path proof green (transient set 502 → 752: the impls of the
 dimension-5 files anchored in dimension-6 modules, until NS6); closure static 1–4 + geometry
 (`static4_geometry`) **11.0 s / 2.42 GB** (NS1b: 11.0 s / 2.38 GB); `nalgebra_glam` without
-`glam_int`: 6.9 s / 1.62 GB; `cratemap.py --anchors` (the step-7 checks).
+`glam_int`: 6.9 s / 1.62 GB; `cratemap.py --anchors` (the step-7 checks). **NS6 done** (PR #69):
+`nalgebra_shapes6` (36,214 lines, marginal 2.5 s / 0.69 GB), `nalgebra_geometry6` (5,912, 0.7 s /
+0.18 GB) (CI `Consumer cost`, GitHub runner; NS1b: 2.4 / 1.1 s), zero step change, path proof green
+(transient set 752 → 1,081: 106 dimension-≤5 impls left with the dimension-6 modules, 435 family
+impls of the dimension-6 shapes now wait in their trait's module, `matrix_view`, `matrix_kronecker`,
+`norm`, `root`, `lu`, until NS7 / NS8 / NS11); the dimension-6 edit kernels are `pub(crate)` in the
+facade package until `static6_tall` moves (NS7).
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible
