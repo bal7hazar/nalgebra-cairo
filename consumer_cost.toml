@@ -27,7 +27,9 @@ report_only = true
 #
 # A closure is a list of members, or a table `{ members = [..], default_features = false,
 # features = [..], report_only = true }` (the configuration of its workspace members; a
-# `report_only` closure is measured for the documentation, never gated).
+# `report_only` closure is measured for the documentation, never gated). The table form may also carry
+# its own budget instead of the default `closure_seconds` / `closure_gb`:
+# `budget = { seconds = 20, gb = 4.5 }` (the dimension 5-6 closures, declared on the re-cut map).
 [closures]
 # The facade with `nalgebra_glam` and the facade without its default features (docs/SPLIT.md §4,
 # §12.1: the cost regression of `default-features = false`): reported for the CHANGELOG.

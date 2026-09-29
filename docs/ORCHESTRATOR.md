@@ -91,6 +91,11 @@ large directly.
 - Gas snapshots live in `gas/<module>.json` (one per CI shard); `snforge test -p <pkg> | python3
   scripts/gas_report.py --update gas/` regenerates a package's shards, `./scripts/check.sh --update`
   all of them (orchestrator only), CI checks each shard's file.
+- `scripts/packages_table.py` (repository-agnostic): renders a `consumer_cost.py --json` file as the
+  `docs/PACKAGES.md` table (lines and marginal cost with their margins against the gates, closures
+  against their budget, run header); the `Consumer cost` job uploads it in the artifact
+  `consumer-cost` and appends it to the job summary. A closure may carry its own budget
+  (`budget = { seconds = 20, gb = 4.5 }` in `consumer_cost.toml`, or `--closure NAME=a,b::20s,4.5gb`).
 - `scripts/consumer_cost.py` (repository-agnostic, copied unchanged by the sibling repositories):
   library lines of each published crate (inline tests excluded) and what an empty consumer of it
   adds to a cold build (time, peak memory), against the package granularity rule (40,000 lines,

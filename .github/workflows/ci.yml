@@ -49,6 +49,7 @@ jobs:
       - name: Consumer cost script (self-test, consumer manifests of the dry run; no build)
         run: |
           python3 scripts/consumer_cost.py --self-test
+          python3 scripts/packages_table.py --self-test
           python3 scripts/consumer_cost.py --dry-run --report-only
       - name: Lint (default features, then the lightest `nalgebra`)
         run: |
@@ -126,6 +127,13 @@ jobs:
           set -e
           { echo "### Consumer cost"; echo; cat consumer_cost.md; } >> "$GITHUB_STEP_SUMMARY"
           exit $status
+      - name: Package table (docs/PACKAGES.md format, artifact and job summary)
+        if: always() && hashFiles('consumer_cost.json') != ''
+        run: |
+          python3 scripts/packages_table.py consumer_cost.json \
+            --runner "ubuntu-latest, shards of $(nproc) vCPU / $(free -g | awk '/Mem:/ {print $2}') GB" \
+            --output PACKAGES.md
+          cat PACKAGES.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -133,6 +141,7 @@ jobs:
           path: |
             consumer_cost.json
             consumer_cost.md
+            PACKAGES.md
           if-no-files-found: warn
           retention-days: 30
 
